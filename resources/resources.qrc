@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/fonts">
+        <file alias="Inter.ttc">fonts/Inter.ttc</file>
+		<file alias="PretendardVariable.ttf">fonts/PretendardVariable.ttf</file>
+    </qresource>
+
+    <qresource prefix="/icons">
+		<file alias="icon_256x256.png">icons/icon_256x256.png</file>
+		<file alias="app_icon.ico">icons/app_icon.ico</file>
+    </qresource>
+
+    <qresource prefix="/splash">
+        <file alias="splash.png">splash/splash.png</file>
+    </qresource>
+</RCC>
