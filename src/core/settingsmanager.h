@@ -154,5 +154,3 @@ private:
 
     QSettings m_settings;
 };
-
-#endif // SETTINGSMANAGER_H

@@ -1,6 +1,8 @@
 #include "colorutils.h"
+#include "services/dataservice.h"
 
 #include <algorithm>
+#include <QColor>
 
 // =====================================================
 // Default Colors
@@ -118,19 +120,21 @@ void ColorUtils::loadCustomColors(
 {
     QStringList savedColors =
         ds->loadSetting(
-            "custom_colors",
-            QStringList(
-                DEFAULT_CUSTOM_COLORS.begin(),
-                DEFAULT_CUSTOM_COLORS.end()
-                )
-            );
+              "custom_colors",
+              QStringList(
+                  DEFAULT_CUSTOM_COLORS.begin(),
+                  DEFAULT_CUSTOM_COLORS.end()
+                  )
+              ).toStringList();
 
-    for (int i = 0;
-         i < std::min(
-             savedColors.size(),
-             CUSTOM_COLOR_COUNT
-             );
-         ++i)
+    for (
+        int i = 0;
+        i < std::min(
+            static_cast<int>(savedColors.size()),
+            CUSTOM_COLOR_COUNT
+            );
+        ++i
+        )
     {
         QColorDialog::setCustomColor(
             i,

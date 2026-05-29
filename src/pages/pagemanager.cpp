@@ -1,11 +1,11 @@
 #include "pagemanager.h"
 
-#include "../pages/campus/campusdashboardpage.h"
-#include "../pages/classinfo/classinfopage.h"
-#include "../pages/roster/rosterpage.h"
-#include "../pages/schedule/schedulepage.h"
-#include "../pages/speaking/speakingevalpage.h"
-#include "../pages/teacher/teacherinfopage.h"
+#include "../pages/campus/campus_dashboard_page.h"
+#include "../pages/class/class_info_page.h"
+#include "../pages/roster/roster_page.h"
+#include "../pages/schedule/schedule_page.h"
+#include "../pages/speakingeval/speaking_eval_page.h"
+#include "../pages/teacher/teacher_info_page.h"
 
 
 
