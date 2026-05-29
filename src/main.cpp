@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
 
     SplashScreen splash;
 
+    splash.centerOnScreen();
     splash.show();
-    splash.centerOnScreen(app);
 
     app.processEvents();
 

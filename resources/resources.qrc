@@ -1,15 +1,40 @@
 <RCC>
-    <qresource prefix="/fonts">
-        <file alias="Inter.ttc">fonts/Inter.ttc</file>
-		<file alias="PretendardVariable.ttf">fonts/PretendardVariable.ttf</file>
+
+    <!-- =====================================================
+         Assets Root
+         Everything lives under :/assets/
+         ===================================================== -->
+
+    <!-- Fonts -->
+    <qresource prefix="/assets/fonts">
+        <file alias="Inter.ttc">assets/fonts/Inter.ttc</file>
+        <file alias="PretendardVariable.ttf">assets/fonts/PretendardVariable.ttf</file>
     </qresource>
 
-    <qresource prefix="/icons">
-		<file alias="icon_256x256.png">icons/icon_256x256.png</file>
-		<file alias="app_icon.ico">icons/app_icon.ico</file>
+    <!-- Icons -->
+    <qresource prefix="/assets/icons">
+        <file alias="icon_256x256.png">assets/icons/icon_256x256.png</file>
+        <file alias="app_icon.ico">assets/icons/app_icon.ico</file>
     </qresource>
 
-    <qresource prefix="/splash">
-        <file alias="splash.png">splash/splash.png</file>
+    <!-- Images -->
+    <qresource prefix="/assets/images">
+        <!-- future images -->
     </qresource>
+
+    <!-- Splash -->
+    <qresource prefix="/assets/splash">
+        <file alias="splash.png">assets/splash/splash.png</file>
+    </qresource>
+
+    <!-- Templates -->
+    <qresource prefix="/assets/templates">
+        <!-- future templates -->
+    </qresource>
+
+    <!-- Translations -->
+    <qresource prefix="/assets/translations">
+        <file alias="ClassMngr_en_US.ts">assets/translations/ClassMngr_en_US.ts</file>
+    </qresource>
+
 </RCC>

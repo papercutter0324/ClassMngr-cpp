@@ -291,6 +291,8 @@ void SplashScreen::fadeOut(
 
 void SplashScreen::centerOnScreen()
 {
+    // adjustSize();
+
     QScreen *screen =
         QGuiApplication::primaryScreen();
 
