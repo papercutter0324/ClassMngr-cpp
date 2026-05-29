@@ -1,0 +1,193 @@
+#include "settingsmanager.h"
+
+// =========================================================
+// Singleton Access
+// =========================================================
+
+SettingsManager&
+SettingsManager::instance()
+{
+    static SettingsManager instance;
+    return instance;
+}
+
+// =========================================================
+// Init
+// =========================================================
+
+SettingsManager::SettingsManager()
+    : m_settings(ORG, APP)
+{
+}
+
+// =========================================================
+// Generic Helpers
+// =========================================================
+
+QVariant SettingsManager::get(
+    const QString& key,
+    const QVariant& defaultValue
+    ) const
+{
+    return m_settings.value(key, defaultValue);
+}
+
+void SettingsManager::set(
+    const QString& key,
+    const QVariant& value
+    )
+{
+    m_settings.setValue(key, value);
+}
+
+void SettingsManager::remove(
+    const QString& key
+    )
+{
+    m_settings.remove(key);
+}
+
+void SettingsManager::clear()
+{
+    m_settings.clear();
+}
+
+void SettingsManager::sync()
+{
+    m_settings.sync();
+}
+
+// =========================================================
+// Theme
+// =========================================================
+
+QString SettingsManager::getTheme() const
+{
+    return get(
+               Keys::THEME,
+               "system"
+               ).toString();
+}
+
+void SettingsManager::setTheme(
+    const QString& theme
+    )
+{
+    set(Keys::THEME, theme);
+}
+
+// =========================================================
+// Save Mode
+// =========================================================
+
+QString SettingsManager::getSaveMode() const
+{
+    return get(
+               Keys::SAVE_MODE,
+               "Automatic (on change)"
+               ).toString();
+}
+
+void SettingsManager::setSaveMode(
+    const QString& mode
+    )
+{
+    set(Keys::SAVE_MODE, mode);
+}
+
+// =========================================================
+// Window Geometry
+// =========================================================
+
+QByteArray SettingsManager::getWindowGeometry() const
+{
+    return get(
+               Keys::WINDOW_GEOMETRY
+               ).toByteArray();
+}
+
+void SettingsManager::setWindowGeometry(
+    const QByteArray& geometry
+    )
+{
+    set(
+        Keys::WINDOW_GEOMETRY,
+        geometry
+        );
+}
+
+// =========================================================
+// Campus
+// =========================================================
+
+std::optional<int>
+SettingsManager::getLastCampusId() const
+{
+    QVariant value =
+        get(Keys::LAST_CAMPUS_ID);
+
+    if (!value.isValid())
+    {
+        return std::nullopt;
+    }
+
+    return value.toInt();
+}
+
+void SettingsManager::setLastCampusId(
+    int campusId
+    )
+{
+    set(
+        Keys::LAST_CAMPUS_ID,
+        campusId
+        );
+}
+
+// =========================================================
+// Recent Files
+// =========================================================
+
+QStringList
+SettingsManager::getRecentFiles() const
+{
+    return get(
+               Keys::RECENT_FILES,
+               QStringList()
+               ).toStringList();
+}
+
+void SettingsManager::setRecentFiles(
+    const QStringList& files
+    )
+{
+    set(
+        Keys::RECENT_FILES,
+        files
+        );
+
+    sync();
+}
+
+void SettingsManager::clearRecentFiles()
+{
+    setRecentFiles({});
+}
+
+QString SettingsManager::getLastFile() const
+{
+    return get(
+               Keys::LAST_FILE,
+               ""
+               ).toString();
+}
+
+void SettingsManager::setLastFile(
+    const QString& path
+    )
+{
+    set(
+        Keys::LAST_FILE,
+        path
+        );
+}
