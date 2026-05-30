@@ -133,7 +133,7 @@
      <x>0</x>
      <y>0</y>
      <width>974</width>
-     <height>23</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -406,13 +406,13 @@
   <customwidget>
    <class>PageManager</class>
    <extends>QStackedWidget</extends>
-   <header>pages/pagemanager.h</header>
+   <header>ui/pages/pagemanager.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Sidebar</class>
    <extends>QWidget</extends>
-   <header>widgets/sidebar/sidebar.h</header>
+   <header>ui/widgets/sidebar/sidebar.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

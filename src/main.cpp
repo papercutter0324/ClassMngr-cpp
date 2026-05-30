@@ -1,6 +1,6 @@
 #include "app/mainwindow.h"
 #include "core/fontmanager.h"
-#include "widgets/splash/splashscreen.h"
+#include "ui/widgets/splash/splashscreen.h"
 #include "utils/platform.h"
 
 #include <QApplication>

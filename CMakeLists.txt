@@ -39,32 +39,43 @@ qt_add_executable(ClassMngr
     src/core/fontmanager.h
     src/core/fontmanager.cpp
 
-    src/pages/basepage.h
-
-    src/pages/pagemanager.h
-    src/pages/pagemanager.cpp
-
-    src/pages/campus/campus_dashboard_page.h
-    src/pages/campus/campus_dashboard_page.cpp
-
-    src/pages/teacher/teacher_info_page.h
-    src/pages/teacher/teacher_info_page.cpp
-
-    src/pages/class/class_info_page.h
-    src/pages/class/class_info_page.cpp
-
-
-    src/pages/schedule/schedule_page.h
-    src/pages/schedule/schedule_page.cpp
-
-    src/pages/roster/roster_page.h
-    src/pages/roster/roster_page.cpp
-
-    src/pages/speakingeval/speaking_eval_page.h
-    src/pages/speakingeval/speaking_eval_page.cpp
-
     src/services/dataservice.h
     src/services/dataservice.cpp
+
+    src/ui/pages/basepage.h
+
+    src/ui/pages/pagemanager.h
+    src/ui/pages/pagemanager.cpp
+
+    src/ui/pages/campus/campus_dashboard_page.h
+    src/ui/pages/campus/campus_dashboard_page.cpp
+
+    src/ui/pages/teacher/teacher_info_page.h
+    src/ui/pages/teacher/teacher_info_page.cpp
+
+    src/ui/pages/class/class_info_page.h
+    src/ui/pages/class/class_info_page.cpp
+
+    src/ui/pages/schedule/schedule_page.h
+    src/ui/pages/schedule/schedule_page.cpp
+
+    src/ui/pages/roster/roster_page.h
+    src/ui/pages/roster/roster_page.cpp
+
+    src/ui/pages/speakingeval/speaking_eval_page.h
+    src/ui/pages/speakingeval/speaking_eval_page.cpp
+
+    src/ui/widgets/splash/splashscreen.cpp
+    src/ui/widgets/splash/splashscreen.h
+
+    src/ui/widgets/sidebar/sidebar.h
+    src/ui/widgets/sidebar/sidebar.cpp
+    src/ui/widgets/sidebar/sidebar_definitions.h
+    src/ui/widgets/sidebar/sidebar_definitions.cpp
+    src/ui/widgets/sidebar/sidebar_types.h
+
+    src/ui/widgets/sectioncards/teacher_section_card.h
+    src/ui/widgets/sectioncards/teacher_section_card.cpp
 
     src/utils/platform.cpp
     src/utils/platform.h
@@ -72,18 +83,8 @@ qt_add_executable(ClassMngr
     src/utils/colorutils.cpp
     src/utils/colorutils.h
 
-    src/widgets/splash/splashscreen.cpp
-    src/widgets/splash/splashscreen.h
-
-    src/widgets/sidebar/sidebar.h
-    src/widgets/sidebar/sidebar.cpp
-
-    src/widgets/sidebar/sidebar_definitions.h
-    src/widgets/sidebar/sidebar_definitions.cpp
-
-    src/widgets/sidebar/sidebar_types.h
-
     resources/resources.qrc
+    src/models/teacher.h
 )
 
 target_include_directories(ClassMngr
