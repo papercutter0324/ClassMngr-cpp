@@ -1,16 +1,16 @@
 #ifndef APPSETTINGS_H
 #define APPSETTINGS_H
 
-namespace AppConfig
+namespace AppSettings
 {
-inline constexpr auto APP_NAME =
+inline constexpr auto ApplicationName =
     "ClassMngr";
 
-inline constexpr auto ORG_NAME =
+inline constexpr auto OrganizationName =
     "PaperCloud";
 
-inline constexpr int SIDEBAR_WIDTH =
-    240;
+inline constexpr auto DefaultDatabasePath =
+    "data/app.db";
 }
 
 #endif // APPSETTINGS_H
