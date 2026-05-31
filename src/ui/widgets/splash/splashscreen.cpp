@@ -1,6 +1,6 @@
 #include "splashscreen.h"
 
-#include "../../core/fontmanager.h"
+#include "core/fontmanager.h"
 
 #include <QApplication>
 #include <QEasingCurve>
