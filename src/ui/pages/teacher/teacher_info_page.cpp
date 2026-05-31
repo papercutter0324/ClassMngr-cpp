@@ -21,6 +21,10 @@
 
 TeacherInfoPage::TeacherInfoPage(
     ApplicationServices* services,
+    QWidget* parent
+)
+    : BasePage(parent),
+      m_services(services)
 {
     buildUi();
 }

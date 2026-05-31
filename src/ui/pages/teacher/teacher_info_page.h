@@ -22,19 +22,27 @@ public:
         QWidget* parent = nullptr
         );
 
-    void loadTeacher(const Teacher& teacher);
+    void loadTeacher(
+        const Teacher& teacher
+        );
 
     void saveData() override;
+
     void refresh() override;
 
     Teacher teacher() const;
 
 private slots:
+
     void saveTeacher();
 
 private:
+
     void buildUi();
-    QLabel* createFieldLabel(const QString& text);
+
+    QLabel* createFieldLabel(
+        const QString& text
+        );
 
 private:
 
@@ -46,25 +54,34 @@ private:
 
 
 
+    // =====================================================
+    // State
+    // =====================================================
 
     Teacher m_teacher;
 
-    QScrollArea* m_scroll;
 
-    QLabel* m_titleLabel;
-    QLabel* m_subtitleLabel;
 
-    QLineEdit* m_teacherKrEdit;
-    QLineEdit* m_teacherEnEdit;
-    QLineEdit* m_roomNumberEdit;
+    // =====================================================
+    // Widgets
+    // =====================================================
 
-    QLineEdit* m_wifiNameEdit;
-    QLineEdit* m_wifiPasswordEdit;
+    QScrollArea* m_scroll = nullptr;
 
-    QLineEdit* m_zoomIdEdit;
-    QLineEdit* m_zoomPasswordEdit;
+    QLabel* m_titleLabel = nullptr;
+    QLabel* m_subtitleLabel = nullptr;
 
-    QTextEdit* m_notesEdit;
+    QLineEdit* m_teacherKrEdit = nullptr;
+    QLineEdit* m_teacherEnEdit = nullptr;
+    QLineEdit* m_roomNumberEdit = nullptr;
 
-    QPushButton* m_saveButton;
+    QLineEdit* m_wifiNameEdit = nullptr;
+    QLineEdit* m_wifiPasswordEdit = nullptr;
+
+    QLineEdit* m_zoomIdEdit = nullptr;
+    QLineEdit* m_zoomPasswordEdit = nullptr;
+
+    QTextEdit* m_notesEdit = nullptr;
+
+    QPushButton* m_saveButton = nullptr;
 };

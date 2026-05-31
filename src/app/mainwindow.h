@@ -2,7 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+
 #include <functional>
+#include <memory>
 
 
 
@@ -81,6 +83,10 @@ private:
     // UI
     // =====================================================
 
+    Ui::MainWindow* ui = nullptr;
+
+
+
     // =====================================================
     // Services
     // =====================================================
@@ -93,9 +99,9 @@ private:
     // Core Widgets
     // =====================================================
 
-    Sidebar *m_sidebar = nullptr;
+    Sidebar* m_sidebar = nullptr;
 
-    PageManager *m_pages = nullptr;
+    PageManager* m_pages = nullptr;
 
 
 
@@ -103,9 +109,9 @@ private:
     // Controllers
     // =====================================================
 
-    SidebarController *m_sidebarController = nullptr;
+    SidebarController* m_sidebarController = nullptr;
 
-    NavigationController *m_navigationController = nullptr;
+    NavigationController* m_navigationController = nullptr;
 
 
 
