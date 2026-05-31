@@ -1,6 +1,7 @@
 #include "teacher_info_page.h"
 
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "models/teacher.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
