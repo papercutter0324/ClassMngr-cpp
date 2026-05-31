@@ -3,30 +3,60 @@
 
 #include <QWidget>
 
-// =========================================================
-// Base Page
-// =========================================================
+class QVBoxLayout;
+class QHBoxLayout;
+class QWidget;
 
 class BasePage : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit BasePage(QWidget* parent = nullptr)
-        : QWidget(parent)
-    {
-    }
+    explicit BasePage(
+        QWidget* parent = nullptr
+        );
 
-    virtual ~BasePage() = default;
+    virtual ~BasePage() override = default;
 
-    virtual void saveData()
-    {
-        // Default: nothing to save.
-    }
 
-    virtual void refresh()
-    {
-    }
+
+    // =====================================================
+    // Persistence
+    // =====================================================
+
+    virtual void saveData();
+
+
+
+    // =====================================================
+    // Refresh
+    // =====================================================
+
+    virtual void refresh();
+
+
+
+protected:
+
+    QVBoxLayout* contentLayout() const;
+
+    QHBoxLayout* bottomLayout() const;
+
+
+
+private:
+
+    // =====================================================
+    // Layouts
+    // =====================================================
+
+    QVBoxLayout* m_mainLayout = nullptr;
+
+    QVBoxLayout* m_contentLayout = nullptr;
+
+    QWidget* m_bottomBar = nullptr;
+
+    QHBoxLayout* m_bottomLayout = nullptr;
 };
 
 #endif // BASEPAGE_H
