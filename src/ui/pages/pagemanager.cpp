@@ -18,6 +18,26 @@
         )
     : QStackedWidget(parent)
 {
+}
+
+
+
+// =========================================================
+// Initialization
+// =========================================================
+
+void PageManager::initialize(
+    ApplicationServices* services
+    )
+{
+    if (m_initialized)
+    {
+        return;
+    }
+
+    m_initialized = true;
+    m_services = services;
+
     m_schedulePage =
         new SchedulePage(this);
 

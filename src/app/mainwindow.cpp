@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "core/application_services.h"
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
 

@@ -1,5 +1,6 @@
 #include "teacher_info_page.h"
 
+#include "core/application_services.h"
 #include "models/teacher.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/widgets/sectioncards/teacher_section_card.h"
@@ -18,13 +19,7 @@
 
 
 TeacherInfoPage::TeacherInfoPage(
-    DataContext* context,
-    QWidget* parent)
-    : BasePage(
-          false,   // enableSaveModes
-          false,   // showSaveUi
-          parent),
-    m_context(context)
+    ApplicationServices* services,
 {
     buildUi();
 }

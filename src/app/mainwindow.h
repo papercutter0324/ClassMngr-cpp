@@ -21,6 +21,8 @@ QT_END_NAMESPACE
 // Forward Declarations
 // =========================================================
 
+class ApplicationServices;
+
 class Sidebar;
 class PageManager;
 
@@ -79,7 +81,11 @@ private:
     // UI
     // =====================================================
 
-    Ui::MainWindow *ui;
+    // =====================================================
+    // Services
+    // =====================================================
+
+    std::unique_ptr<ApplicationServices> m_services;
 
 
 

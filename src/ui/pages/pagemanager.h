@@ -12,6 +12,8 @@
 // Forward Declarations
 // =========================================================
 
+class ApplicationServices;
+
 class SchedulePage;
 class ClassInfoPage;
 class TeacherInfoPage;
@@ -48,7 +50,12 @@ class PageManager : public QStackedWidget
 public:
 
     explicit PageManager(
-        QWidget *parent = nullptr
+    // =====================================================
+    // Initialization
+    // =====================================================
+
+    void initialize(
+        ApplicationServices* services
         );
 
 
@@ -90,6 +97,13 @@ public:
 
 
 private:
+    // =====================================================
+    // Services
+    // =====================================================
+
+    ApplicationServices* m_services = nullptr;
+
+
 
     // =====================================================
     // Setup

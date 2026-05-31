@@ -9,15 +9,16 @@ class QLineEdit;
 class QTextEdit;
 class QPushButton;
 
-class DataContext;
+class ApplicationServices;
 
 class TeacherInfoPage : public BasePage
 {
     Q_OBJECT
 
 public:
+
     explicit TeacherInfoPage(
-        DataContext* context,
+        ApplicationServices* services,
         QWidget* parent = nullptr
         );
 
@@ -36,7 +37,15 @@ private:
     QLabel* createFieldLabel(const QString& text);
 
 private:
-    DataContext* m_context;
+
+    // =====================================================
+    // Services
+    // =====================================================
+
+    ApplicationServices* m_services = nullptr;
+
+
+
 
     Teacher m_teacher;
 
