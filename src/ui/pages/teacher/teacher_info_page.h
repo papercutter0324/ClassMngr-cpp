@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../basepage.h"
+#include "ui/pages/basepage.h"
 #include "models/teacher.h"
 
 class QScrollArea;
