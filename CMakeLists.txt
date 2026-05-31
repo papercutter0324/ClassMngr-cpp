@@ -33,16 +33,27 @@ qt_add_executable(ClassMngr
 
     src/core/appsettings.h
 
+    src/core/application_services.h
+    src/core/application_services.cpp
+
     src/core/resourcepaths.h
     src/core/resourcepaths.cpp
 
     src/core/fontmanager.h
     src/core/fontmanager.cpp
 
+    src/models/teacher.h
+
     src/services/dataservice.h
     src/services/dataservice.cpp
 
+    src/services/theme_service.h
+    src/services/theme_service.cpp
+
+    src/ui/constants/gui_constants.h
+
     src/ui/pages/basepage.h
+    src/ui/pages/basepage.cpp
 
     src/ui/pages/pagemanager.h
     src/ui/pages/pagemanager.cpp
@@ -70,21 +81,25 @@ qt_add_executable(ClassMngr
 
     src/ui/widgets/sidebar/sidebar.h
     src/ui/widgets/sidebar/sidebar.cpp
+
     src/ui/widgets/sidebar/sidebar_definitions.h
     src/ui/widgets/sidebar/sidebar_definitions.cpp
+
     src/ui/widgets/sidebar/sidebar_types.h
 
     src/ui/widgets/sectioncards/teacher_section_card.h
     src/ui/widgets/sectioncards/teacher_section_card.cpp
 
-    src/utils/platform.cpp
     src/utils/platform.h
+    src/utils/platform.cpp
 
-    src/utils/colorutils.cpp
     src/utils/colorutils.h
+    src/utils/colorutils.cpp
+
+    src/utils/sidebar_node_naming.h
+    src/utils/sidebar_node_naming.cpp
 
     resources/resources.qrc
-    src/models/teacher.h
 )
 
 target_include_directories(ClassMngr
