@@ -4,7 +4,7 @@
 #include <QFontDatabase>
 #include <QGuiApplication>
 
-#include "../utils/platform.h"
+#include "utils/platform.h"
 
 #include <QDebug>
 
