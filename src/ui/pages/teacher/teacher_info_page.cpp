@@ -63,7 +63,7 @@ void TeacherInfoPage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
 
     m_titleLabel->setFont(
-        FontManager::uiFont(
+        FontManager::getUiFont(
             24,
             QFont::Bold
             )
@@ -75,7 +75,7 @@ void TeacherInfoPage::buildUi()
     m_subtitleLabel->setObjectName("pageSubtitle");
 
     m_subtitleLabel->setFont(
-        FontManager::uiFont(11)
+        FontManager::getUiFont(11)
         );
 
     headerLayout->addWidget(m_titleLabel);
