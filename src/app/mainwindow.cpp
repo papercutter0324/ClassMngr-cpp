@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
 
 #include <QSettings>
@@ -25,10 +26,21 @@ MainWindow::MainWindow(
 
 
     // =====================================================
+    // Services
+    // =====================================================
+
+    m_services =
+        std::make_unique<ApplicationServices>(
+            AppSettings::DefaultDatabasePath
+        );
+
+
+
+    // =====================================================
     // Window Setup
     // =====================================================
 
-    setWindowTitle(tr("ClassMngr"));
+    setWindowTitle(AppSettings::ApplicationName);
 
 
 
@@ -143,8 +155,8 @@ void MainWindow::connectSignals()
 void MainWindow::restoreSplitter()
 {
     QSettings settings(
-        "PaperCloud",
-        "ClassMngr"
+        AppSettings::OrganizationName,
+        AppSettings::ApplicationName
         );
 
     QList<int> sizes =
@@ -161,8 +173,8 @@ void MainWindow::restoreSplitter()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QSettings settings(
-        "PaperCloud",
-        "ClassMngr"
+        AppSettings::OrganizationName,
+        AppSettings::ApplicationName
         );
 
     settings.setValue(
