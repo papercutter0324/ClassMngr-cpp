@@ -2,9 +2,9 @@
 
 #include "core/application_services.h"
 #include "models/teacher.h"
+#include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/widgets/sectioncards/teacher_section_card.h"
-#include "core/fontmanager.h"
 #include "utils/sidebar_node_naming.h"
 
 #include <QFont>
@@ -236,10 +236,39 @@ void TeacherInfoPage::loadTeacher(
 
 void TeacherInfoPage::saveData()
 {
-    if (m_teacher.id < 0)
+    if (m_teacher.id <= 0)
         return;
 
     saveTeacher();
+}
+
+void TeacherInfoPage::saveTeacher()
+{
+    if (m_teacher.id <= 0)
+        return;
+
+    auto* dataService = m_services->dataService();
+
+    // Build updated model directly from UI
+    Teacher updated = m_teacher;
+
+    updated.teacherKr = m_teacherKrEdit->text().trimmed();
+    updated.teacherEn = m_teacherEnEdit->text().trimmed();
+
+    updated.roomNumber = m_roomNumberEdit->text().trimmed();
+
+    updated.wifiName = m_wifiNameEdit->text().trimmed();
+    updated.wifiPassword = m_wifiPasswordEdit->text().trimmed();
+
+    updated.zoomId = m_zoomIdEdit->text().trimmed();
+    updated.zoomPassword = m_zoomPasswordEdit->text().trimmed();
+
+    updated.notes = m_notesEdit->toPlainText().trimmed();
+
+    dataService->updateTeacher(updated);
+
+    m_teacher = dataService->getTeacher(m_teacher.id);
+    loadTeacher(m_teacher);
 }
 
 void TeacherInfoPage::refresh()
