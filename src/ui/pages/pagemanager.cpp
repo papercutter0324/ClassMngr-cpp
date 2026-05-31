@@ -1,5 +1,7 @@
 #include "pagemanager.h"
 
+#include "core/application_services.h"
+
 #include "ui/pages/campus/campus_dashboard_page.h"
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/roster/roster_page.h"
@@ -9,13 +11,13 @@
 
 
 
-    // =========================================================
-    // Constructor
-    // =========================================================
+// =========================================================
+// Constructor
+// =========================================================
 
-    PageManager::PageManager(
-        QWidget *parent
-        )
+PageManager::PageManager(
+    QWidget* parent
+    )
     : QStackedWidget(parent)
 {
 }
@@ -45,7 +47,10 @@ void PageManager::initialize(
         new ClassInfoPage(this);
 
     m_teacherPage =
-        new TeacherInfoPage(this);
+        new TeacherInfoPage(
+            m_services,
+            this
+            );
 
     m_campusDashboard =
         new CampusDashboardPage(this);
@@ -57,6 +62,10 @@ void PageManager::initialize(
         new SpeakingEvalPage(this);
 
     registerPages();
+
+    showPage(
+        PageType::Schedule
+        );
 }
 
 
@@ -85,13 +94,7 @@ void PageManager::registerPages()
     m_pages[PageType::SpeakingEval] =
         m_speakingPage;
 
-
-
-    // =====================================================
-    // Add To Stack
-    // =====================================================
-
-    for (BasePage *page : m_pages)
+    for (BasePage* page : m_pages)
     {
         addWidget(page);
     }
@@ -125,7 +128,7 @@ void PageManager::showPage(
 
 void PageManager::refreshAll()
 {
-    for (BasePage *page : m_pages)
+    for (BasePage* page : m_pages)
     {
         if (page)
         {

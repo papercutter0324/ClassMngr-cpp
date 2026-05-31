@@ -1,7 +1,7 @@
 #ifndef PAGEMANAGER_H
 #define PAGEMANAGER_H
 
-#include <QHash>
+#include <QMap>
 #include <QStackedWidget>
 
 #include "basepage.h"
@@ -50,6 +50,11 @@ class PageManager : public QStackedWidget
 public:
 
     explicit PageManager(
+        QWidget* parent = nullptr
+    );
+
+
+
     // =====================================================
     // Initialization
     // =====================================================
@@ -97,6 +102,13 @@ public:
 
 
 private:
+
+    // =====================================================
+    // State
+    // =====================================================
+
+    bool m_initialized = false;
+
     // =====================================================
     // Services
     // =====================================================
@@ -117,17 +129,17 @@ private:
     // Pages
     // =====================================================
 
-    SchedulePage *m_schedulePage = nullptr;
+    SchedulePage* m_schedulePage = nullptr;
 
-    ClassInfoPage *m_classInfoPage = nullptr;
+    ClassInfoPage* m_classInfoPage = nullptr;
 
-    TeacherInfoPage *m_teacherPage = nullptr;
+    TeacherInfoPage* m_teacherPage = nullptr;
 
-    CampusDashboardPage *m_campusDashboard = nullptr;
+    CampusDashboardPage* m_campusDashboard = nullptr;
 
-    RosterPage *m_rosterPage = nullptr;
+    RosterPage* m_rosterPage = nullptr;
 
-    SpeakingEvalPage *m_speakingPage = nullptr;
+    SpeakingEvalPage* m_speakingPage = nullptr;
 
 
 
@@ -135,10 +147,7 @@ private:
     // Registry
     // =====================================================
 
-    QHash<
-        PageType,
-        BasePage*
-        > m_pages;
+    QMap<PageType, BasePage*> m_pages;
 };
 
 

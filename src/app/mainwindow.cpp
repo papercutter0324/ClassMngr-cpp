@@ -1,8 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/pages/pagemanager.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -126,7 +129,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::initializePages()
 {
-    // TODO
+    m_pages = ui->pagesWidget;
+
+    m_pages->initialize(
+        m_services.get()
+        );
 }
 
 
@@ -158,7 +165,7 @@ void MainWindow::restoreSplitter()
     QSettings settings(
         AppSettings::OrganizationName,
         AppSettings::ApplicationName
-        );
+    );
 
     QList<int> sizes =
         settings.value("splitterSizes")
@@ -176,7 +183,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QSettings settings(
         AppSettings::OrganizationName,
         AppSettings::ApplicationName
-        );
+    );
 
     settings.setValue(
         "splitterSizes",
