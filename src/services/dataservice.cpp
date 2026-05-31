@@ -367,7 +367,7 @@ QVariant DataService::loadSetting(
 // =========================================================
 
 int DataService::createTeacher(
-    const TeacherRecord &teacher
+    const Teacher& teacher
     )
 {
     QSqlQuery query;
@@ -403,7 +403,7 @@ int DataService::createTeacher(
 
 
 void DataService::updateTeacher(
-    const TeacherRecord &teacher
+    const Teacher& teacher
     )
 {
     QSqlQuery query;
@@ -437,10 +437,10 @@ void DataService::updateTeacher(
 
 
 
-QList<TeacherRecord>
+QList<Teacher>
 DataService::getAllTeachers()
 {
-    QList<TeacherRecord> teachers;
+    QList<Teacher> teachers;
 
     QSqlQuery query;
 
@@ -452,7 +452,7 @@ DataService::getAllTeachers()
 
     while (query.next())
     {
-        TeacherRecord teacher;
+        Teacher teacher;
 
         teacher.id =
             query.value("id").toInt();
@@ -497,11 +497,11 @@ DataService::getAllTeachers()
 
 
 
-TeacherRecord DataService::getTeacher(
+Teacher DataService::getTeacher(
     int teacherId
     )
 {
-    TeacherRecord teacher;
+    Teacher teacher;
 
     QSqlQuery query;
 
@@ -513,23 +513,37 @@ TeacherRecord DataService::getTeacher(
 
     query.addBindValue(teacherId);
 
-    query.exec();
-
-    if (!query.next())
+    if (!query.exec() || !query.next())
     {
-        return teacher;
+        return teacher; // returns empty/default teacher
     }
 
     teacher.id =
         query.value("id").toInt();
 
     teacher.teacherKr =
-        query.value("teacher_kr")
-            .toString();
+        query.value("teacher_kr").toString();
 
     teacher.teacherEn =
-        query.value("teacher_en")
-            .toString();
+        query.value("teacher_en").toString();
+
+    teacher.roomNumber =
+        query.value("room_number").toString();
+
+    teacher.wifiName =
+        query.value("wifi_name").toString();
+
+    teacher.wifiPassword =
+        query.value("wifi_password").toString();
+
+    teacher.zoomId =
+        query.value("zoom_id").toString();
+
+    teacher.zoomPassword =
+        query.value("zoom_password").toString();
+
+    teacher.notes =
+        query.value("notes").toString();
 
     return teacher;
 }
@@ -551,8 +565,6 @@ void DataService::deleteTeacher(
     query.addBindValue(teacherId);
 
     query.exec();
-
-
 
     query.prepare(R"(
         DELETE FROM teachers

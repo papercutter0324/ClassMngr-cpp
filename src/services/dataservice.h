@@ -1,34 +1,12 @@
 #ifndef DATASERVICE_H
 #define DATASERVICE_H
 
+#include "models/teacher.h"
+
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
-
-
-
-// =========================================================
-// Teacher Record
-// =========================================================
-
-struct TeacherRecord
-{
-    int id = -1;
-
-    QString teacherKr;
-    QString teacherEn;
-
-    QString roomNumber;
-
-    QString wifiName;
-    QString wifiPassword;
-
-    QString zoomId;
-    QString zoomPassword;
-
-    QString notes;
-};
 
 
 
@@ -124,16 +102,16 @@ public:
     // =====================================================
 
     int createTeacher(
-        const TeacherRecord &teacher
+        const Teacher& teacher
         );
 
     void updateTeacher(
-        const TeacherRecord &teacher
+        const Teacher& teacher
         );
 
-    QList<TeacherRecord> getAllTeachers();
+    QList<Teacher> getAllTeachers();
 
-    TeacherRecord getTeacher(
+    Teacher getTeacher(
         int teacherId
         );
 

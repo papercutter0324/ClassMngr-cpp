@@ -27,7 +27,7 @@ public:
     void saveData() override;
     void refresh() override;
 
-    QVariantMap getTeacherData() const;
+    Teacher teacher() const;
 
 private slots:
     void saveTeacher();

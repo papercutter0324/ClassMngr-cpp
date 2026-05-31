@@ -5,7 +5,7 @@
 
 struct Teacher
 {
-    int id;
+    int id = -1;
 
     QString teacherKr;
     QString teacherEn;
