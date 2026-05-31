@@ -1,6 +1,7 @@
 #include "teacher_info_page.h"
 
 #include "models/teacher.h"
+#include "ui/constants/gui_constants.h"
 #include "ui/widgets/sectioncards/teacher_section_card.h"
 #include "core/fontmanager.h"
 #include "utils/sidebar_node_naming.h"
@@ -41,8 +42,16 @@ void TeacherInfoPage::buildUi()
     auto* scrollContainer = new QWidget;
 
     auto* scrollLayout = new QVBoxLayout(scrollContainer);
-    scrollLayout->setContentsMargins(24, 24, 24, 24);
-    scrollLayout->setSpacing(10);
+
+    scrollLayout->setContentsMargins(
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin);
+
+    scrollLayout->setSpacing(
+        UiConstants::Pages::Spacing);
+
     scrollLayout->setAlignment(Qt::AlignTop);
 
     m_scroll->setWidget(scrollContainer);

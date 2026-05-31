@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "ui/constants/gui_constants.h"
 
 #include <QSettings>
 #include <QTimer>
@@ -37,10 +38,14 @@ MainWindow::MainWindow(
 
     ui->splitter->setChildrenCollapsible(false);
 
-    ui->sidebarWidget->setMinimumWidth(200);
-    ui->sidebarWidget->setMaximumWidth(400);
+    ui->sidebarWidget->setMinimumWidth(
+        UiConstants::MainWindow::SidebarMinWidth);
 
-    ui->pagesWidget->setMinimumWidth(600);
+    ui->sidebarWidget->setMaximumWidth(
+        UiConstants::MainWindow::SidebarMaxWidth);
+
+    ui->pagesWidget->setMinimumWidth(
+        UiConstants::MainWindow::PagesMinWidth);
 
 
 
