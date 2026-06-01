@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     app.setApplicationName(AppSettings::ApplicationName);
+    app.setOrganizationName(AppSettings::OrganizationName);
     app.setWindowIcon(getAppIcon());
 
 
@@ -196,14 +197,5 @@ int main(int argc, char *argv[])
     // Run App
     // =====================================================
 
-    qDebug() << "[Main] Entering app.exec()";
-
-    int result =
-        app.exec();
-
-    qDebug() << "[Main] app.exec() returned";
-
-    return result;
-
-    // return app.exec();
+    return app.exec();
 }

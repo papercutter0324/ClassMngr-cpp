@@ -116,8 +116,6 @@ void MainWindow::showEvent(
     QShowEvent* event
     )
 {
-    qDebug() << "[MainWindow] showEvent";
-
     QMainWindow::showEvent(event);
 }
 
@@ -173,43 +171,24 @@ void MainWindow::connectSignals()
 
 void MainWindow::restoreSplitter()
 {
-    qDebug() << "[MainWindow] restoreSplitter START";
+    QSettings settings;
 
-    QSettings settings(
-        AppSettings::OrganizationName,
-        AppSettings::ApplicationName
+    ui->splitter->restoreState(
+        settings.value("splitterState")
+            .toByteArray()
         );
-
-    QVariant value =
-        settings.value("splitterSizes");
-
-    qDebug() << "[MainWindow] QVariant type:"
-             << value.typeName();
-
-    QList<int> sizes =
-        value.value<QList<int>>();
-
-    qDebug() << "[MainWindow] restoreSplitter END";
-
-    if (!sizes.isEmpty())
-    {
-        ui->splitter->setSizes(sizes);
-    }
 }
 
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(
+    QCloseEvent *event
+    )
 {
-    QSettings settings(
-        AppSettings::OrganizationName,
-        AppSettings::ApplicationName
-    );
+    QSettings settings;
 
     settings.setValue(
-        "splitterSizes",
-        QVariant::fromValue(
-            ui->splitter->sizes()
-            )
+        "splitterState",
+        ui->splitter->saveState()
         );
 
     QMainWindow::closeEvent(event);
