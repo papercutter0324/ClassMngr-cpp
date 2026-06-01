@@ -3,15 +3,10 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-ClassInfoPage::ClassInfoPage(
-    QWidget *parent
-    )
+ClassInfoPage::ClassInfoPage(QWidget *parent)
     : BasePage(parent)
 {
-    auto *layout =
-        new QVBoxLayout(this);
-
-    layout->addWidget(
-        new QLabel("Class Information")
+    contentLayout()->addWidget(
+        new QLabel(tr("Class Information"))
         );
 }

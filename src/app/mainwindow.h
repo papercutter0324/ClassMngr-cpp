@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QShowEvent>
 
 #include <functional>
 #include <memory>
@@ -50,6 +51,11 @@ public:
         );
 
     ~MainWindow() override;
+
+
+
+protected:
+    void showEvent(QShowEvent* event) override;
 
 
 

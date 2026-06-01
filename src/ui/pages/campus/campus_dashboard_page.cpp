@@ -3,15 +3,10 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-CampusDashboardPage::CampusDashboardPage(
-    QWidget *parent
-    )
+CampusDashboardPage::CampusDashboardPage(QWidget *parent)
     : BasePage(parent)
 {
-    auto *layout =
-        new QVBoxLayout(this);
-
-    layout->addWidget(
-        new QLabel("Campus Dashboard")
+    contentLayout()->addWidget(
+        new QLabel(tr("Campus Dashboard"))
         );
 }

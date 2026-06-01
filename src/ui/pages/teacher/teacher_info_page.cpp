@@ -208,7 +208,7 @@ void TeacherInfoPage::loadTeacher(
     m_teacher = teacher;
 
     QString displayName =
-        SidebarNodeNaming::teacherDisplayName(teacher);
+        SidebarNodeNaming::formatTeacherDisplayName(teacher);
 
     m_titleLabel->setText(
         QString("Teacher Information for %1")

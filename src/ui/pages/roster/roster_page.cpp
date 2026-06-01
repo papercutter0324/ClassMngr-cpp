@@ -3,15 +3,10 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-RosterPage::RosterPage(
-    QWidget *parent
-    )
+RosterPage::RosterPage(QWidget *parent)
     : BasePage(parent)
 {
-    auto *layout =
-        new QVBoxLayout(this);
-
-    layout->addWidget(
-        new QLabel("Class Roster")
+    contentLayout()->addWidget(
+        new QLabel(tr("Class Roster"))
         );
 }

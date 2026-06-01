@@ -1,12 +1,9 @@
 #include "fontmanager.h"
 
+#include <QDebug>
 #include <QFile>
 #include <QFontDatabase>
 #include <QGuiApplication>
-
-#include "utils/platform.h"
-
-#include <QDebug>
 
 
 
@@ -20,16 +17,13 @@ QString FontManager::s_interFamily;
 
 QString FontManager::s_pretendardFamily;
 
+QStringList FontManager::s_loadedFamilies;
+
 QStringList FontManager::s_fontPaths =
     {
-        ":/fonts/Inter.ttc",
-        ":/fonts/PretendardVariable.ttf"
+        ":/assets/fonts/Inter.ttc",
+        ":/assets/fonts/PretendardVariable.ttf"
 };
-
-QHash<
-    QString,
-    QHash<QString, FontStyleInfo>
-    > FontManager::s_styles;
 
 
 
@@ -53,7 +47,10 @@ void FontManager::loadFonts()
 
     qDebug() << "Checking font existence:";
 
-    for (const QString &path : s_fontPaths)
+    const QStringList& fontPaths =
+        s_fontPaths;
+
+    for (const QString& path : fontPaths)
     {
         qDebug()
         << path
@@ -66,14 +63,18 @@ void FontManager::loadFonts()
     // Load Fonts
     // =====================================================
 
-    for (const QString &path : s_fontPaths)
+    s_loadedFamilies.clear();
+
+    for (const QString& path : fontPaths)
     {
         int fontId = -1;
 
         if (QFile::exists(path))
         {
             fontId =
-                QFontDatabase::addApplicationFont(path);
+                QFontDatabase::addApplicationFont(
+                    path
+                    );
         }
 
         if (fontId == -1)
@@ -85,10 +86,14 @@ void FontManager::loadFonts()
             continue;
         }
 
-        QStringList families =
+        const QStringList families =
             QFontDatabase::applicationFontFamilies(
                 fontId
                 );
+
+        s_loadedFamilies.append(
+            families
+            );
 
         qDebug()
             << "[FontManager] Loaded:"
@@ -100,10 +105,8 @@ void FontManager::loadFonts()
 
 
     // =====================================================
-    // Setup
+    // Resolve Families
     // =====================================================
-
-    buildStyleRegistry();
 
     resolveCoreFamilies();
 
@@ -131,53 +134,18 @@ void FontManager::loadFonts()
 
 
 // =========================================================
-// Build Style Registry
-// =========================================================
-
-void FontManager::buildStyleRegistry()
-{
-    QFontDatabase db;
-
-    QStringList families =
-        db.families();
-
-    for (const QString &family : families)
-    {
-        QStringList styles =
-            db.styles(family);
-
-        for (const QString &style : styles)
-        {
-            QFont font =
-                db.font(
-                    family,
-                    style,
-                    DEFAULT_SIZE
-                    );
-
-            FontStyleInfo info;
-
-            info.weight = font.weight();
-
-            info.italic =
-                style.toLower().contains("italic");
-
-            s_styles[family][style.toLower()] = info;
-        }
-    }
-}
-
-
-
-// =========================================================
 // Resolve Preferred Families
 // =========================================================
 
 void FontManager::resolveCoreFamilies()
 {
-    for (const QString &family : s_styles.keys())
+    s_interFamily.clear();
+    s_pretendardFamily.clear();
+
+    for (const QString& family :
+         std::as_const(s_loadedFamilies))
     {
-        QString lower =
+        const QString lower =
             family.toLower();
 
         if (lower == "inter")
@@ -185,31 +153,9 @@ void FontManager::resolveCoreFamilies()
             s_interFamily = family;
         }
 
-        if (lower.contains("pretendard variable"))
+        if (lower.contains("pretendard"))
         {
             s_pretendardFamily = family;
-        }
-    }
-
-
-
-    // =====================================================
-    // Fallback Pretendard Search
-    // =====================================================
-
-    if (s_pretendardFamily.isEmpty())
-    {
-        for (const QString &family : s_styles.keys())
-        {
-            if (
-                family.toLower()
-                    .contains("pretendard")
-                )
-            {
-                s_pretendardFamily = family;
-
-                break;
-            }
         }
     }
 }
@@ -227,60 +173,6 @@ int FontManager::getPlatformFontSize()
 #else
     return DEFAULT_SIZE;
 #endif
-}
-
-
-
-// =========================================================
-// Style Matching
-// =========================================================
-
-QString FontManager::findBestStyle(
-    const QString &family,
-    int weight,
-    bool italic
-    )
-{
-    if (!s_styles.contains(family))
-    {
-        return QString();
-    }
-
-    const auto &styles =
-        s_styles[family];
-
-    QString bestStyle;
-
-    int bestScore = INT_MAX;
-
-    for (
-        auto it = styles.begin();
-        it != styles.end();
-        ++it
-        )
-    {
-        const QString &styleName =
-            it.key();
-
-        const FontStyleInfo &info =
-            it.value();
-
-        int score =
-            qAbs(info.weight - weight);
-
-        if (info.italic != italic)
-        {
-            score += 100;
-        }
-
-        if (score < bestScore)
-        {
-            bestScore = score;
-            bestStyle = styleName;
-        }
-    }
-
-    return bestStyle;
 }
 
 
@@ -307,42 +199,23 @@ QFont FontManager::getUiFont(
 
     if (size < 0)
     {
-        size = getPlatformFontSize();
+        size =
+            getPlatformFontSize();
     }
 
-    QFontDatabase db;
-
-    QString style =
-        findBestStyle(
-            s_interFamily,
-            weight,
-            italic
-            );
-
-    if (style.isEmpty())
-    {
-        return QFont();
-    }
-
-    QFont font =
-        db.font(
-            s_interFamily,
-            style,
-            size
-            );
-
-
-
-    // =====================================================
-    // Enforce Exact Style
-    // =====================================================
-
-    font.setStyleName(style);
-
-    font.setItalic(italic);
+    QFont font(
+        s_interFamily,
+        size
+        );
 
     font.setWeight(
-        static_cast<QFont::Weight>(weight)
+        static_cast<QFont::Weight>(
+            weight
+            )
+        );
+
+    font.setItalic(
+        italic
         );
 
 
@@ -357,8 +230,7 @@ QFont FontManager::getUiFont(
             {
                 s_interFamily,
                 s_pretendardFamily
-            }
-            );
+            });
     }
 
 
@@ -385,10 +257,12 @@ QFont FontManager::getUiFont(
 // =========================================================
 
 QFontMetrics FontManager::getFontMetrics(
-    const QFont &font
+    const QFont& font
     )
 {
-    return QFontMetrics(font);
+    return QFontMetrics(
+        font
+        );
 }
 
 
@@ -398,13 +272,15 @@ QFontMetrics FontManager::getFontMetrics(
 // =========================================================
 
 void FontManager::applyGlobalFont(
-    QApplication &app
+    QApplication& app
     )
 {
-    QFont font =
+    const QFont font =
         getUiFont();
 
-    app.setFont(font);
+    app.setFont(
+        font
+        );
 
     qDebug()
         << "[FontManager] Global font applied:"
@@ -435,44 +311,25 @@ void FontManager::debugDump()
         loadFonts();
     }
 
-    qDebug() << "\n[FontManager Debug]";
+    qDebug()
+        << "\n[FontManager Debug]";
 
-    qDebug() << "Inter:"
-             << s_interFamily;
+    qDebug()
+        << "Inter:"
+        << s_interFamily;
 
-    qDebug() << "Pretendard:"
-             << s_pretendardFamily;
+    qDebug()
+        << "Pretendard:"
+        << s_pretendardFamily;
 
-    for (
-        auto familyIt = s_styles.begin();
-        familyIt != s_styles.end();
-        ++familyIt
-        )
+    qDebug()
+        << "\nLoaded Families:";
+
+    for (const QString& family :
+         std::as_const(s_loadedFamilies))
     {
         qDebug()
-        << "\n"
-        << familyIt.key()
-        << ":";
-
-        const auto &styles =
-            familyIt.value();
-
-        for (
-            auto styleIt = styles.begin();
-            styleIt != styles.end();
-            ++styleIt
-            )
-        {
-            const FontStyleInfo &info =
-                styleIt.value();
-
-            qDebug()
-                << " "
-                << styleIt.key()
-                << "-> weight="
-                << info.weight
-                << "italic="
-                << info.italic;
-        }
+        << " "
+        << family;
     }
 }

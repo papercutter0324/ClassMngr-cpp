@@ -4,21 +4,8 @@
 #include <QApplication>
 #include <QFont>
 #include <QFontMetrics>
-#include <QHash>
 #include <QString>
 #include <QStringList>
-
-
-
-// =========================================================
-// Font Style Metadata
-// =========================================================
-
-struct FontStyleInfo
-{
-    int weight;
-    bool italic;
-};
 
 
 
@@ -37,7 +24,7 @@ public:
     static void loadFonts();
 
     static void applyGlobalFont(
-        QApplication &app
+        QApplication& app
         );
 
 
@@ -59,7 +46,7 @@ public:
     // =====================================================
 
     static QFontMetrics getFontMetrics(
-        const QFont &font
+        const QFont& font
         );
 
 
@@ -82,15 +69,7 @@ private:
     // Internal Helpers
     // =====================================================
 
-    static void buildStyleRegistry();
-
     static void resolveCoreFamilies();
-
-    static QString findBestStyle(
-        const QString &family,
-        int weight,
-        bool italic
-        );
 
 
 
@@ -104,12 +83,9 @@ private:
 
     static QString s_pretendardFamily;
 
-    static QStringList s_fontPaths;
+    static QStringList s_loadedFamilies;
 
-    static QHash<
-        QString,
-        QHash<QString, FontStyleInfo>
-        > s_styles;
+    static QStringList s_fontPaths;
 
 
 
@@ -119,7 +95,5 @@ private:
 
     static constexpr int DEFAULT_SIZE = 12;
 };
-
-
 
 #endif // FONTMANAGER_H

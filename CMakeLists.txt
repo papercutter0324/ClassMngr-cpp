@@ -36,8 +36,8 @@ qt_add_executable(ClassMngr
     src/core/application_services.h
     src/core/application_services.cpp
 
-    src/core/resourcepaths.h
-    src/core/resourcepaths.cpp
+
+
 
     src/core/fontmanager.h
     src/core/fontmanager.cpp
@@ -100,6 +100,7 @@ qt_add_executable(ClassMngr
     src/utils/sidebar_node_naming.cpp
 
     resources/resources.qrc
+    src/core/resources_paths.h
 )
 
 target_include_directories(ClassMngr

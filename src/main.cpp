@@ -1,5 +1,7 @@
 #include "app/mainwindow.h"
+#include "core/appsettings.h"
 #include "core/fontmanager.h"
+#include "core/resources_paths.h"
 #include "ui/widgets/splash/splashscreen.h"
 #include "utils/platform.h"
 
@@ -9,6 +11,8 @@
 #include <QElapsedTimer>
 #include <QLocale>
 #include <QTranslator>
+
+#include <QDebug>
 
 
 
@@ -22,16 +26,16 @@ QIcon getAppIcon()
 
     if (usrPlatform == Platform::WINDOWS)
     {
-        return QIcon(":/icons/app_icon.ico");
+        return QIcon(ResourcePaths::Icons::AppWindows);
     }
 
-    return QIcon(":/icons/icon_256x256.png");
+    return QIcon(ResourcePaths::Icons::AppDefault);
 }
 
 
 bool isAdminMode(const QStringList &args)
 {
-    return args.contains("--enable-admin");
+    return args.contains(AppSettings::AdminModeArgument);
 }
 
 
@@ -44,7 +48,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    app.setApplicationName("ClassMngr");
+    app.setApplicationName(AppSettings::ApplicationName);
     app.setWindowIcon(getAppIcon());
 
 
@@ -61,7 +65,7 @@ int main(int argc, char *argv[])
     for (const QString &locale : uiLanguages)
     {
         const QString baseName =
-            "ClassMngr_" + QLocale(locale).name();
+            AppSettings::TranslationPrefix + QLocale(locale).name();
 
         if (translator.load(":/i18n/" + baseName))
         {
@@ -77,8 +81,7 @@ int main(int argc, char *argv[])
     // =====================================================
 
     FontManager::applyGlobalFont(app);
-    FontManager::debugDump();
-
+    // FontManager::debugDump();
 
 
     // =====================================================
@@ -100,10 +103,8 @@ int main(int argc, char *argv[])
 
     int progress = 0;
 
-    constexpr int TOTAL_STEPS = 8;
-
     const double step =
-        100.0 / TOTAL_STEPS;
+        100.0 / AppSettings::StartupProgressSteps;
 
     auto updateProgress =
         [&](const QString &message)
@@ -146,15 +147,13 @@ int main(int argc, char *argv[])
     // Ensure Minimum Splash Time
     // =====================================================
 
-    constexpr int MIN_SPLASH_MS = 2000;
-
     int elapsed =
         static_cast<int>(
             startupTimer.elapsed()
             );
 
     int remaining =
-        qMax(0, MIN_SPLASH_MS - elapsed);
+        qMax(0, AppSettings::MinimumSplashDurationMs - elapsed);
 
 
 
@@ -165,14 +164,25 @@ int main(int argc, char *argv[])
     auto finish =
         [&]()
     {
+        qDebug() << "[Main] finish() start";
+
         window.show();
+
+        qDebug() << "[Main] window.show() complete";
+
         splash.close();
+
+        qDebug() << "[Main] splash.close() complete";
     };
 
     auto startFinish =
         [&]()
     {
+        qDebug() << "[Main] startFinish()";
+
         splash.fadeOut(finish);
+
+        qDebug() << "[Main] fadeOut() called";
     };
 
     QTimer::singleShot(
@@ -186,5 +196,14 @@ int main(int argc, char *argv[])
     // Run App
     // =====================================================
 
-    return app.exec();
+    qDebug() << "[Main] Entering app.exec()";
+
+    int result =
+        app.exec();
+
+    qDebug() << "[Main] app.exec() returned";
+
+    return result;
+
+    // return app.exec();
 }

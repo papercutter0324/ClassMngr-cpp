@@ -112,6 +112,17 @@ MainWindow::MainWindow(
 
 
 
+void MainWindow::showEvent(
+    QShowEvent* event
+    )
+{
+    qDebug() << "[MainWindow] showEvent";
+
+    QMainWindow::showEvent(event);
+}
+
+
+
 // =========================================================
 // Destructor
 // =========================================================
@@ -162,14 +173,23 @@ void MainWindow::connectSignals()
 
 void MainWindow::restoreSplitter()
 {
+    qDebug() << "[MainWindow] restoreSplitter START";
+
     QSettings settings(
         AppSettings::OrganizationName,
         AppSettings::ApplicationName
-    );
+        );
+
+    QVariant value =
+        settings.value("splitterSizes");
+
+    qDebug() << "[MainWindow] QVariant type:"
+             << value.typeName();
 
     QList<int> sizes =
-        settings.value("splitterSizes")
-            .value<QList<int>>();
+        value.value<QList<int>>();
+
+    qDebug() << "[MainWindow] restoreSplitter END";
 
     if (!sizes.isEmpty())
     {

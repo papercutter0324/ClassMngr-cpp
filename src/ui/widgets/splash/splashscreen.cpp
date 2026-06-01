@@ -1,6 +1,7 @@
 #include "splashscreen.h"
 
 #include "core/fontmanager.h"
+#include "core/resources_paths.h"
 
 #include <QApplication>
 #include <QEasingCurve>
@@ -46,7 +47,7 @@ SplashScreen::SplashScreen(QWidget *parent)
     // =====================================================
 
     QPixmap pixmap(
-        ":/splash/splash.png"
+        ResourcePaths::Images::Splash
         );
 
     setFixedSize(
