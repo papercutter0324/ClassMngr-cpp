@@ -28,6 +28,23 @@ qt_add_executable(ClassMngr
     src/app/mainwindow.h
     src/app/mainwindow.ui
 
+    src/app/menu_builder.h
+    src/app/menu_builder.cpp
+
+    src/ui/constants/options.h
+
+    src/controllers/file_controller.h
+    src/controllers/file_controller.cpp
+
+    src/controllers/edit_controller.h
+    src/controllers/edit_controller.cpp
+
+    src/controllers/class_controller.h
+    src/controllers/class_controller.cpp
+
+    src/controllers/theme_controller.h
+    src/controllers/theme_controller.cpp
+
     src/core/settingsmanager.h
     src/core/settingsmanager.cpp
 
@@ -36,11 +53,10 @@ qt_add_executable(ClassMngr
     src/core/application_services.h
     src/core/application_services.cpp
 
-
-
-
     src/core/fontmanager.h
     src/core/fontmanager.cpp
+
+    src/core/resources_paths.h
 
     src/models/teacher.h
 
@@ -50,7 +66,12 @@ qt_add_executable(ClassMngr
     src/services/theme_service.h
     src/services/theme_service.cpp
 
+    src/ui/actions/action_registry.h
+    src/ui/actions/action_registry.cpp
+
     src/ui/constants/gui_constants.h
+
+    src/ui/menus/menu_utils.h
 
     src/ui/pages/basepage.h
     src/ui/pages/basepage.cpp
@@ -76,6 +97,9 @@ qt_add_executable(ClassMngr
     src/ui/pages/speakingeval/speaking_eval_page.h
     src/ui/pages/speakingeval/speaking_eval_page.cpp
 
+    src/ui/state/option_state.h
+    src/ui/state/option_state_keys.h
+
     src/ui/widgets/splash/splashscreen.cpp
     src/ui/widgets/splash/splashscreen.h
 
@@ -100,7 +124,6 @@ qt_add_executable(ClassMngr
     src/utils/sidebar_node_naming.cpp
 
     resources/resources.qrc
-    src/core/resources_paths.h
 )
 
 target_include_directories(ClassMngr

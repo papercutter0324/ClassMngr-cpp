@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "menu_builder.h"
 
 
 #include "core/application_services.h"
@@ -19,38 +20,54 @@
 MainWindow::MainWindow(
     std::function<void(const QString&)> progressCallback,
     bool isAdmin,
-    QWidget *parent
-)
+    QWidget* parent
+    )
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    , ui(new Ui::MainWindow())
     , m_isAdmin(isAdmin)
 {
     ui->setupUi(this);
 
+    initializeServices();
 
+    initializeWindow();
 
-    // =====================================================
-    // Services
-    // =====================================================
+    progressCallback(tr("Loading pages..."));
+    initializePages();
 
+    progressCallback(tr("Loading sidebar..."));
+    initializeSidebar();
+
+    progressCallback(tr("Initializing actions..."));
+    createActions();
+
+    progressCallback(tr("Initializing controllers..."));
+    connectControllers();
+
+    progressCallback(tr("Building menus..."));
+    buildMenus();
+
+    progressCallback(tr("Connecting signals..."));
+    connectSignals();
+
+    QTimer::singleShot(
+        0,
+        this,
+        &MainWindow::restoreSplitter
+        );
+}
+
+void MainWindow::initializeServices()
+{
     m_services =
         std::make_unique<ApplicationServices>(
             AppSettings::DefaultDatabasePath
-        );
+            );
+}
 
-
-
-    // =====================================================
-    // Window Setup
-    // =====================================================
-
+void MainWindow::initializeWindow()
+{
     setWindowTitle(AppSettings::ApplicationName);
-
-
-
-    // =====================================================
-    // Initial UI Configuration
-    // =====================================================
 
     ui->splitter->setChildrenCollapsible(false);
 
@@ -62,79 +79,7 @@ MainWindow::MainWindow(
 
     ui->pagesWidget->setMinimumWidth(
         UiConstants::MainWindow::PagesMinWidth);
-
-
-
-    // =====================================================
-    // Initialize Components
-    // =====================================================
-
-    progressCallback(tr("Loading pages..."));
-
-    initializePages();
-
-    progressCallback(tr("Loading sidebar..."));
-
-    initializeSidebar();
-
-
-
-    // =====================================================
-    // Controllers
-    // =====================================================
-
-    progressCallback(tr("Initializing controllers..."));
-
-    initializeControllers();
-
-
-
-    // =====================================================
-    // Signals
-    // =====================================================
-
-    progressCallback(tr("Connecting signals..."));
-
-    connectSignals();
-
-
-
-    // =====================================================
-    // Restore Splitter
-    // =====================================================
-
-    QTimer::singleShot(
-        0,
-        this,
-        &MainWindow::restoreSplitter
-        );
 }
-
-
-
-void MainWindow::showEvent(
-    QShowEvent* event
-    )
-{
-    QMainWindow::showEvent(event);
-}
-
-
-
-// =========================================================
-// Destructor
-// =========================================================
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
-
-
-// =========================================================
-// Initialization
-// =========================================================
 
 void MainWindow::initializePages()
 {
@@ -145,23 +90,48 @@ void MainWindow::initializePages()
         );
 }
 
-
 void MainWindow::initializeSidebar()
 {
     // TODO
 }
 
-
-void MainWindow::initializeControllers()
+void MainWindow::createActions()
 {
-    // TODO
+    m_actions.createActions();
 }
 
+void MainWindow::connectControllers()
+{
+    m_fileController.connectActions(m_actions);
+
+    // future:
+    // m_editController.connectActions(m_actions);
+    // m_sidebarController.connectActions(m_actions);
+    // m_themeController.connectActions(m_actions);
+}
+
+void MainWindow::buildMenus()
+{
+    MenuBuilder::build(this);
+}
 
 void MainWindow::connectSignals()
 {
     // TODO
 }
+
+void MainWindow::showEvent(QShowEvent* event)
+{
+    QMainWindow::showEvent(event);
+}
+
+
+
+// =========================================================
+// Destructor
+// =========================================================
+
+MainWindow::~MainWindow() = default;
 
 
 
@@ -174,22 +144,19 @@ void MainWindow::restoreSplitter()
     QSettings settings;
 
     ui->splitter->restoreState(
-        settings.value("splitterState")
-            .toByteArray()
-        );
+        settings.value("splitterState").toByteArray()
+    );
 }
 
 
-void MainWindow::closeEvent(
-    QCloseEvent *event
-    )
+void MainWindow::closeEvent(QCloseEvent *event)
 {
     QSettings settings;
 
     settings.setValue(
         "splitterState",
         ui->splitter->saveState()
-        );
+    );
 
     QMainWindow::closeEvent(event);
 }

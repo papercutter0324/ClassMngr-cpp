@@ -1,8 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "controllers/file_controller.h"
+#include "ui/actions/action_registry.h"
+
 #include <QMainWindow>
 #include <QShowEvent>
+#include <QCloseEvent>
 
 #include <functional>
 #include <memory>
@@ -32,8 +36,6 @@ class PageManager;
 class SidebarController;
 class NavigationController;
 
-
-
 // =========================================================
 // Main Window
 // =========================================================
@@ -52,20 +54,16 @@ public:
 
     ~MainWindow() override;
 
-
+    // Change to: const ActionRegistry& actions() const; ??
+    ActionRegistry& actions()
+    {
+        return m_actions;
+    }
 
 protected:
+
     void showEvent(QShowEvent* event) override;
-
-
-
-protected:
-
-    void closeEvent(
-        QCloseEvent *event
-        ) override;
-
-
+    void closeEvent(QCloseEvent* event) override;
 
 private:
 
@@ -73,17 +71,19 @@ private:
     // Initialization
     // =====================================================
 
-    void initializePages();
+    void initializeServices();
+    void initializeWindow();
 
+    void initializePages();
     void initializeSidebar();
 
-    void initializeControllers();
+    void createActions();
+    void connectControllers();
+    void buildMenus();
 
     void connectSignals();
 
     void restoreSplitter();
-
-
 
     // =====================================================
     // UI
@@ -91,7 +91,8 @@ private:
 
     Ui::MainWindow* ui = nullptr;
 
-
+    ActionRegistry m_actions;
+    FileController m_fileController;
 
     // =====================================================
     // Services
@@ -99,35 +100,27 @@ private:
 
     std::unique_ptr<ApplicationServices> m_services;
 
-
-
     // =====================================================
     // Core Widgets
     // =====================================================
 
     Sidebar* m_sidebar = nullptr;
-
     PageManager* m_pages = nullptr;
-
-
 
     // =====================================================
     // Controllers
     // =====================================================
 
+    // Move away from raw pointers
     SidebarController* m_sidebarController = nullptr;
-
     NavigationController* m_navigationController = nullptr;
-
-
 
     // =====================================================
     // State
     // =====================================================
 
     bool m_isAdmin = false;
+    bool isAdmin() const { return m_isAdmin; }
 };
-
-
 
 #endif // MAINWINDOW_H

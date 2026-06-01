@@ -12,9 +12,7 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include <QDebug>
-
-
+// Later: move MainWindow construction behind an ApplicationBootstrap class
 
 // =========================================================
 // Helpers
@@ -22,9 +20,9 @@
 
 QIcon getAppIcon()
 {
-    Platform usrPlatform = getPlatform();
+    Platform userPlatform = getPlatform();
 
-    if (usrPlatform == Platform::WINDOWS)
+    if (userPlatform == Platform::WINDOWS)
     {
         return QIcon(ResourcePaths::Icons::AppWindows);
     }
@@ -59,6 +57,8 @@ int main(int argc, char *argv[])
     // =====================================================
 
     QTranslator translator;
+
+    // Update this later to use: auto* translator = new QTranslator(&app);
 
     const QStringList uiLanguages =
         QLocale::system().uiLanguages();
@@ -162,34 +162,21 @@ int main(int argc, char *argv[])
     // Finish Startup
     // =====================================================
 
-    auto finish =
-        [&]()
+    auto finish = [&window, &splash]()
     {
-        qDebug() << "[Main] finish() start";
-
         window.show();
-
-        qDebug() << "[Main] window.show() complete";
-
         splash.close();
-
-        qDebug() << "[Main] splash.close() complete";
     };
 
-    auto startFinish =
-        [&]()
+    auto startFinish = [&splash, &finish]()
     {
-        qDebug() << "[Main] startFinish()";
-
         splash.fadeOut(finish);
-
-        qDebug() << "[Main] fadeOut() called";
     };
 
-    QTimer::singleShot(
-        remaining,
-        startFinish
-        );
+    if (remaining <= 0)
+        startFinish();
+    else
+        QTimer::singleShot(remaining, startFinish);
 
 
 
