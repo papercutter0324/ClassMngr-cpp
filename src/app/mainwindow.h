@@ -3,6 +3,7 @@
 
 #include "controllers/file_controller.h"
 #include "ui/actions/action_registry.h"
+#include "ui/widgets/sidebar/sidebar_types.h"
 
 #include <QMainWindow>
 #include <QShowEvent>
@@ -86,6 +87,10 @@ private:
     void buildMenus();
 
     void connectSignals();
+
+    void onSidebarItemSelected(
+        const NavigationData& data
+        );
 
     void restoreSplitter();
 

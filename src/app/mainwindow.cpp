@@ -117,7 +117,12 @@ void MainWindow::buildMenus()
 
 void MainWindow::connectSignals()
 {
-    // TODO
+    connect(
+        ui->sidebarWidget,
+        &Sidebar::itemSelected,
+        this,
+        &MainWindow::onSidebarItemSelected
+        );
 }
 
 void MainWindow::showEvent(QShowEvent* event)
@@ -125,7 +130,21 @@ void MainWindow::showEvent(QShowEvent* event)
     QMainWindow::showEvent(event);
 }
 
+void MainWindow::onSidebarItemSelected(
+    const NavigationData& data)
+{
+    if (data.type == NodeType::Teacher)
+    {
+        m_pages->showPage(PageType::TeacherInfo);
+        return;
+    }
 
+    if (data.type == NodeType::Class)
+    {
+        m_pages->showPage(PageType::ClassInfo);
+        return;
+    }
+}
 
 // =========================================================
 // Destructor
