@@ -124,6 +124,8 @@ qt_add_executable(ClassMngr
     src/utils/sidebar_node_naming.cpp
 
     resources/resources.qrc
+    src/ui/components/bottom_bar_builder.h
+    src/ui/components/bottom_bar_builder.cpp
 )
 
 target_include_directories(ClassMngr
