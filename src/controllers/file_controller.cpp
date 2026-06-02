@@ -35,11 +35,11 @@ void FileController::connectActions(ActionRegistry& actions)
     connect(actions.closeFile, &QAction::triggered,
             this, [this] { closeFile(); });
 
-    connect(actions.saveModeState, &OptionState<SaveMode>::changed,
-            this, [this](SaveMode mode)
-            {
-                setSaveMode(mode);
-            });
+    actions.saveModeState->onChanged =
+        [this](SaveMode mode)
+    {
+        setSaveMode(mode);
+    };
 }
 
 void FileController::setSaveMode(SaveMode mode)

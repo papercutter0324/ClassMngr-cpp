@@ -1,10 +1,13 @@
 #include "action_registry.h"
 #include "ui/state/option_state.h"
+#include "ui/state/option_state_keys.h"
 #include "ui/constants/options.h"
 
 #include <QAction>
 #include <QActionGroup>
 #include <QKeySequence>
+#include <QApplication>
+#include <QStyle>
 
 // =========================================================
 // Constructor
@@ -21,14 +24,18 @@ ActionRegistry::ActionRegistry(QObject* parent)
 
 QAction* ActionRegistry::createAction(
     const QString& text,
-    const QString& statusTip
-    )
+    const QString& statusTip)
 {
-    auto* action =
-        new QAction(text, this);
+    return createAction(QIcon(), text, statusTip);
+}
 
+QAction* ActionRegistry::createAction(
+    const QIcon& icon,
+    const QString& text,
+    const QString& statusTip)
+{
+    auto* action = new QAction(icon, text, this);
     action->setStatusTip(statusTip);
-
     return action;
 }
 
@@ -67,24 +74,32 @@ void ActionRegistry::createFileActions()
 {
     newFile =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_FileIcon),
             tr("New"),
             tr("Create a new file")
             );
 
     openFile =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogOpenButton),
             tr("Open..."),
             tr("Open an existing file")
             );
 
     saveFile =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogSaveButton),
             tr("Save"),
             tr("Save the current file")
             );
 
     saveAsFile =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogSaveButton),
             tr("Save As..."),
             tr("Save the file with a new name")
             );
@@ -97,12 +112,16 @@ void ActionRegistry::createFileActions()
 
     closeFile =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogCloseButton),
             tr("Close"),
             tr("Close the current file")
             );
 
     exitApp =
         createAction(
+            QApplication::style()->standardIcon(
+                QStyle::SP_MessageBoxInformation),
             tr("Exit"),
             tr("Exit the application")
             );
@@ -121,30 +140,35 @@ void ActionRegistry::createEditActions()
 {
     undo =
         createAction(
+            QIcon::fromTheme(QIcon::ThemeIcon::EditUndo),
             tr("Undo"),
             tr("Undo the last action")
             );
 
     redo =
         createAction(
+            QIcon::fromTheme(QIcon::ThemeIcon::EditRedo),
             tr("Redo"),
             tr("Redo the last undone action")
             );
 
     cut =
         createAction(
+            QIcon::fromTheme(QIcon::ThemeIcon::EditCut),
             tr("Cut"),
             tr("Cut the selected content")
             );
 
     copy =
         createAction(
+            QIcon::fromTheme(QIcon::ThemeIcon::EditCopy),
             tr("Copy"),
             tr("Copy the selected content")
             );
 
     paste =
         createAction(
+            QIcon::fromTheme(QIcon::ThemeIcon::EditPaste),
             tr("Paste"),
             tr("Paste content from the clipboard")
             );
@@ -214,7 +238,6 @@ void ActionRegistry::createOptionActions()
 
     // LOAD from settings (THIS is the correct place)
     saveModeState->loadFromSettings(
-        OptionKeys::SaveMode,
         SaveMode::Automatic
         );
 
@@ -239,7 +262,6 @@ void ActionRegistry::createOptionActions()
 
     // LOAD from settings (THIS is the correct place)
     themeState->loadFromSettings(
-        OptionKeys::Theme,
         Theme::Dark
     );
 }

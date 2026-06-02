@@ -12,16 +12,19 @@ public:
     explicit EditController(QObject* parent = nullptr);
 
     void connectActions(ActionRegistry& actions);
+    void setEnabled(bool enabled);
 
 private:
     ActionRegistry* m_actions = nullptr;
 
-private:
     void cut();
     void copy();
     void paste();
+
     void undo();
     void redo();
+
+    void updatePasteState();
 };
 
 #endif // EDIT_CONTROLLER_H

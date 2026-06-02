@@ -68,8 +68,12 @@ public:
 private:
     QAction* createAction(
         const QString& text,
-        const QString& statusTip = QString()
-        );
+        const QString& statusTip);
+
+    QAction* createAction(
+        const QIcon& icon,
+        const QString& text,
+        const QString& statusTip);
 
     QAction* createCheckableAction(
         const QString& text,

@@ -60,6 +60,10 @@ public:
         return m_actions;
     }
 
+    bool isAdmin() const {
+        return m_isAdmin;
+    }
+
 protected:
 
     void showEvent(QShowEvent* event) override;
@@ -120,7 +124,6 @@ private:
     // =====================================================
 
     bool m_isAdmin = false;
-    bool isAdmin() const { return m_isAdmin; }
 };
 
 #endif // MAINWINDOW_H

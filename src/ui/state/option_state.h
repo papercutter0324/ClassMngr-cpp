@@ -9,56 +9,68 @@
 template <typename T>
 class OptionState : public QObject
 {
-    // Q_OBJECT
-
 public:
-    explicit OptionState(const QString& settingsKey, QObject* parent = nullptr)
-        : QObject(parent),
-        m_settingsKey(settingsKey)
+    explicit OptionState(
+        const QString& settingsKey,
+        QObject* parent = nullptr
+        )
+        : QObject(parent)
+        , m_settingsKey(settingsKey)
     {
-        group = new QActionGroup(this);
-        group->setExclusive(true);
+        m_group = new QActionGroup(this);
+        m_group->setExclusive(true);
     }
 
-    QAction* addOption(T value, QAction* action)
+    std::function<void(T)> onChanged;
+
+    QAction* addOption(
+        T value,
+        QAction* action
+        )
     {
         action->setCheckable(true);
 
-        group->addAction(action);
-        actions[value] = action;
+        m_group->addAction(action);
+        m_actions[value] = action;
 
-        connect(action, &QAction::triggered, this, [this, value]()
-                {
-                    set(value);
-                });
+        connect(
+            action,
+            &QAction::triggered,
+            this,
+            [this, value]()
+            {
+                set(value);
+            });
 
         return action;
     }
 
     QAction* action(T value) const
     {
-        return actions.value(value, nullptr);
+        return m_actions.value(value, nullptr);
     }
 
     void set(T value)
     {
-        if (!actions.contains(value))
+        if (!m_actions.contains(value))
             return;
 
-        if (currentValue == value)
-            return; // prevent redundant writes
+        if (m_currentValue == value)
+            return;
 
-        currentValue = value;
+        m_currentValue = value;
 
-        actions[value]->setChecked(true);
+        m_actions[value]->setChecked(true);
 
         saveToSettings(value);
-        emit changed(value);
+
+        if (onChanged)
+            onChanged(value);
     }
 
     T current() const
     {
-        return currentValue;
+        return m_currentValue;
     }
 
     void loadFromSettings(T fallback = T())
@@ -67,28 +79,31 @@ public:
 
         T value =
             static_cast<T>(
-                settings.value(m_settingsKey, static_cast<int>(fallback)).toInt()
+                settings.value(
+                            m_settingsKey,
+                            static_cast<int>(fallback)
+                            ).toInt()
                 );
 
-        if (!actions.contains(value))
+        if (!m_actions.contains(value))
             return;
 
-        set(value); // reuse full logic (BEST FIX)
+        set(value);
     }
-
-signals:
-    void changed(T value);
 
 private:
     void saveToSettings(T value)
     {
         QSettings settings;
-        settings.setValue(m_settingsKey, static_cast<int>(value));
+        settings.setValue(
+            m_settingsKey,
+            static_cast<int>(value)
+            );
     }
 
 private:
-    QActionGroup* group = nullptr;
-    QHash<T, QAction*> actions;
-    T currentValue{};
+    QActionGroup* m_group = nullptr;
+    QHash<T, QAction*> m_actions;
+    T m_currentValue{};
     QString m_settingsKey;
 };

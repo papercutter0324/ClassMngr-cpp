@@ -6,6 +6,11 @@
 #include <QApplication>
 #include <QClipboard>
 
+EditController::EditController(QObject* parent)
+    : QObject(parent)
+{
+}
+
 void EditController::connectActions(ActionRegistry& actions)
 {
     m_actions = &actions;
@@ -36,4 +41,39 @@ void EditController::setEnabled(bool enabled)
     m_actions->paste->setEnabled(enabled);
     m_actions->undo->setEnabled(enabled);
     m_actions->redo->setEnabled(enabled);
+}
+
+void EditController::cut()
+{
+    // TODO
+}
+
+void EditController::copy()
+{
+    // TODO
+}
+
+void EditController::paste()
+{
+    // TODO
+}
+
+void EditController::undo()
+{
+    // TODO
+}
+
+void EditController::redo()
+{
+    // TODO
+}
+
+void EditController::updatePasteState()
+{
+    if (!m_actions)
+        return;
+
+    m_actions->paste->setEnabled(
+        !QApplication::clipboard()->text().isEmpty()
+        );
 }

@@ -32,7 +32,9 @@ void MenuBuilder::buildFileMenu(MainWindow* window)
     auto& actions = window->actions();
 
     QMenu* fileMenu =
-        window->menuBar()->addMenu(tr("File"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "File")
+    );
 
     fileMenu->addAction(actions.newFile);
     fileMenu->addAction(actions.openFile);
@@ -57,7 +59,9 @@ void MenuBuilder::buildEditMenu(MainWindow* window)
     auto& a = window->actions();
 
     QMenu* menu =
-        window->menuBar()->addMenu(tr("Edit"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Edit")
+    );
 
     menu->addAction(a.undo);
     menu->addAction(a.redo);
@@ -74,7 +78,9 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
     auto& a = window->actions();
 
     QMenu* menu =
-        window->menuBar()->addMenu(tr("Classes"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Classes")
+    );
 
     menu->addAction(a.newClass);
     menu->addAction(a.deleteClass);
@@ -90,13 +96,17 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
     auto& actions = window->actions();
 
     QMenu* options =
-        window->menuBar()->addMenu(tr("Options"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Options")
+    );
 
     //
     // Save Mode
     //
     QMenu* saveMenu =
-        options->addMenu(tr("Save Mode"));
+        options->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Save Mode")
+    );
 
     addOptionMenu<SaveMode>(
         saveMenu,
@@ -111,7 +121,9 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
     // Theme
     //
     QMenu* themeMenu =
-        options->addMenu(tr("Theme"));
+        options->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Theme")
+    );
 
     addOptionMenu<Theme>(
         themeMenu,
@@ -128,7 +140,9 @@ void MenuBuilder::buildHelpMenu(MainWindow* window)
     auto& a = window->actions();
 
     QMenu* menu =
-        window->menuBar()->addMenu(tr("Help"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Help")
+    );
 
     menu->addAction(a.about);
 }
@@ -138,7 +152,9 @@ void MenuBuilder::buildAdminMenu(MainWindow* window)
     auto& a = window->actions();
 
     QMenu* menu =
-        window->menuBar()->addMenu(tr("Admin"));
+        window->menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Admin")
+    );
 
     menu->addAction(a.manageCampuses);
 }
