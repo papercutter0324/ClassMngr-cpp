@@ -5,75 +5,192 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QMetaObject>
+#include <QWidget>
 
-EditController::EditController(QObject* parent)
+EditController::EditController(
+    QObject* parent
+    )
     : QObject(parent)
 {
 }
 
-void EditController::connectActions(ActionRegistry& actions)
+void EditController::connectActions(
+    ActionRegistry& actions
+    )
 {
     m_actions = &actions;
 
-    connect(actions.cut, &QAction::triggered,
-            this, [this] { cut(); });
+    connect(
+        actions.cut,
+        &QAction::triggered,
+        this,
+        &EditController::cut
+        );
 
-    connect(actions.copy, &QAction::triggered,
-            this, [this] { copy(); });
+    connect(
+        actions.copy,
+        &QAction::triggered,
+        this,
+        &EditController::copy
+        );
 
-    connect(actions.paste, &QAction::triggered,
-            this, [this] { paste(); });
+    connect(
+        actions.paste,
+        &QAction::triggered,
+        this,
+        &EditController::paste
+        );
 
-    connect(actions.undo, &QAction::triggered,
-            this, [this] { undo(); });
+    connect(
+        actions.undo,
+        &QAction::triggered,
+        this,
+        &EditController::undo
+        );
 
-    connect(actions.redo, &QAction::triggered,
-            this, [this] { redo(); });
+    connect(
+        actions.redo,
+        &QAction::triggered,
+        this,
+        &EditController::redo
+        );
 
-    connect(QApplication::clipboard(), &QClipboard::dataChanged,
-            this, &EditController::updatePasteState);
+    connect(
+        QApplication::clipboard(),
+        &QClipboard::dataChanged,
+        this,
+        &EditController::updatePasteState
+        );
+
+    connect(
+        qApp,
+        &QApplication::focusChanged,
+        this,
+        [this](QWidget*, QWidget*)
+        {
+            updateActions();
+        }
+        );
+
+    updateActions();
 }
 
-void EditController::setEnabled(bool enabled)
-{
-    m_actions->cut->setEnabled(enabled);
-    m_actions->copy->setEnabled(enabled);
-    m_actions->paste->setEnabled(enabled);
-    m_actions->undo->setEnabled(enabled);
-    m_actions->redo->setEnabled(enabled);
-}
-
-void EditController::cut()
-{
-    // TODO
-}
-
-void EditController::copy()
-{
-    // TODO
-}
-
-void EditController::paste()
-{
-    // TODO
-}
-
-void EditController::undo()
-{
-    // TODO
-}
-
-void EditController::redo()
-{
-    // TODO
-}
-
-void EditController::updatePasteState()
+void EditController::updateActions()
 {
     if (!m_actions)
         return;
 
-    m_actions->paste->setEnabled(
-        !QApplication::clipboard()->text().isEmpty()
+    QWidget* widget =
+        QApplication::focusWidget();
+
+    m_actions->copy->setEnabled(
+        hasMethod(widget, "copy")
         );
+
+    m_actions->cut->setEnabled(
+        hasMethod(widget, "cut")
+        );
+
+    m_actions->undo->setEnabled(
+        hasMethod(widget, "undo")
+        );
+
+    m_actions->redo->setEnabled(
+        hasMethod(widget, "redo")
+        );
+
+    m_actions->paste->setEnabled(
+        hasMethod(widget, "paste")
+        && !QApplication::clipboard()
+                ->text()
+                .isEmpty()
+        );
+}
+
+bool EditController::dispatch(
+    const char* method
+    )
+{
+    QWidget* widget =
+        QApplication::focusWidget();
+
+    while (widget)
+    {
+        if (
+            QMetaObject::invokeMethod(
+                widget,
+                method,
+                Qt::DirectConnection
+                )
+            )
+        {
+            return true;
+        }
+
+        widget =
+            qobject_cast<QWidget*>(
+                widget->parent()
+                );
+    }
+
+    return false;
+}
+
+bool EditController::hasMethod(
+    QWidget* widget,
+    const char* method
+    ) const
+{
+    while (widget)
+    {
+        const QByteArray signature =
+            QByteArray(method) + "()";
+
+        if (
+            widget->metaObject()->indexOfMethod(
+                signature.constData()
+                ) >= 0
+            )
+        {
+            return true;
+        }
+
+        widget =
+            qobject_cast<QWidget*>(
+                widget->parent()
+                );
+    }
+
+    return false;
+}
+
+void EditController::cut()
+{
+    dispatch("cut");
+}
+
+void EditController::copy()
+{
+    dispatch("copy");
+}
+
+void EditController::paste()
+{
+    dispatch("paste");
+}
+
+void EditController::undo()
+{
+    dispatch("undo");
+}
+
+void EditController::redo()
+{
+    dispatch("redo");
+}
+
+void EditController::updatePasteState()
+{
+    updateActions();
 }

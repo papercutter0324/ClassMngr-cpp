@@ -1,57 +1,17 @@
-#ifndef DATASERVICE_H
-#define DATASERVICE_H
+#pragma once
 
+#include "models/campus.h"
+#include "models/class_info.h"
+#include "models/class_conflict.h"
+#include "models/classroom.h"
+#include "models/roster.h"
+#include "models/speaking_evaluation.h"
 #include "models/teacher.h"
 
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
-
-
-
-// =========================================================
-// Classroom Record
-// =========================================================
-
-struct ClassroomRecord
-{
-    int id = -1;
-
-    QString name;
-};
-
-
-
-// =========================================================
-// Campus Record
-// =========================================================
-
-struct CampusRecord
-{
-    int id = -1;
-
-    QString name;
-
-    QString buildingName;
-    QString address;
-    QString phoneNumber;
-
-    QString transitSteps;
-    QString arrivalInfo;
-
-    QString imagePath;
-
-    QString officeWifi;
-    QString officeWifiPassword;
-
-    QString printerName;
-    QString printerSteps;
-
-    QString photocopierCode;
-
-    QString housingLocations;
-};
 
 
 
@@ -126,18 +86,18 @@ public:
     // =====================================================
 
     int createClass(
-        const QString &name
+        const QString& name
         );
 
-    QList<ClassroomRecord> getClasses();
+    QList<Classroom> getClasses();
 
-    ClassroomRecord getClassById(
+    Classroom getClassById(
         int classId
         );
 
     void updateClassName(
         int classId,
-        const QString &name
+        const QString& name
         );
 
     void deleteClass(
@@ -150,9 +110,15 @@ public:
     // Class Info
     // =====================================================
 
+    void saveClassInfo(
+        const ClassInfo& info
+        );
+
+    ClassInfo loadClassInfo(
+        int classId
+        );
+
     // TODO:
-    // Port saveClassInfo()
-    // Port loadClassInfo()
     // Port class time management
     // Port intensive time management
 
@@ -172,8 +138,11 @@ public:
     // Conflict Detection
     // =====================================================
 
+    QList<ClassConflict> getClassTimeConflicts(
+        int classId
+        );
+
     // TODO:
-    // Port getClassTimeConflicts()
     // Port time parsing helpers
 
 
@@ -182,11 +151,20 @@ public:
     // Roster
     // =====================================================
 
-    // TODO:
-    // Port saveRoster()
-    // Port loadRoster()
+    void saveRoster(
+        int classId,
+        const Roster& roster
+        );
+
+    Roster loadRoster(
+        int classId
+        );
+
+    int getRosterStudentCount(
+        int classId
+        );
+
     // Port buildRosterScoreImport()
-    // Port getRosterStudentCount()
 
 
 
@@ -194,9 +172,14 @@ public:
     // Speaking Evaluations
     // =====================================================
 
-    // TODO:
-    // Port saveSpeakingEval()
-    // Port loadSpeakingEval()
+    void saveSpeakingEvaluations(
+        int classId,
+        const SpeakingEvaluations& evaluations
+        );
+
+    SpeakingEvaluations loadSpeakingEvaluations(
+        int classId
+        );
 
 
 
@@ -242,7 +225,3 @@ private:
 
     QSqlDatabase m_db;
 };
-
-
-
-#endif // DATASERVICE_H

@@ -88,10 +88,6 @@ private:
 
     void connectSignals();
 
-    void onSidebarItemSelected(
-        const NavigationData& data
-        );
-
     void restoreSplitter();
 
     // =====================================================
@@ -101,7 +97,11 @@ private:
     Ui::MainWindow* ui = nullptr;
 
     ActionRegistry m_actions;
-    FileController m_fileController;
+    std::unique_ptr<FileController> m_fileController;
+
+    void onSidebarItemSelected(
+        const NavigationData& data
+    );
 
     // =====================================================
     // Services
@@ -120,8 +120,8 @@ private:
     // Controllers
     // =====================================================
 
-    // Move away from raw pointers
-    SidebarController* m_sidebarController = nullptr;
+    // Move away from raw pointer
+    std::unique_ptr<SidebarController> m_sidebarController;
     NavigationController* m_navigationController = nullptr;
 
     // =====================================================

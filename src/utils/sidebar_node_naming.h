@@ -2,13 +2,14 @@
 
 #include <QString>
 
-class Teacher;
-class ClassInfoRecord;
+struct ClassInfo;
+struct Teacher;
 
 namespace SidebarNodeNaming
 {
 QString formatClassDisplayName(
-    const ClassInfoRecord& classInfo
+    const ClassInfo& classInfo,
+    const Teacher& teacher
     );
 
 QString formatTeacherDisplayName(

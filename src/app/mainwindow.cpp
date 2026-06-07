@@ -3,6 +3,7 @@
 #include "menu_builder.h"
 
 
+#include "controllers/navigation_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
@@ -102,7 +103,21 @@ void MainWindow::createActions()
 
 void MainWindow::connectControllers()
 {
-    m_fileController.connectActions(m_actions);
+    m_sidebarController =
+        std::make_unique<SidebarController>(
+            m_services.get(),
+            ui->sidebarWidget,
+            m_pages,
+            this
+            );
+    m_sidebarController->connectActions(m_actions);
+
+    m_fileController =
+        std::make_unique<FileController>(
+            m_services.get(),
+            this
+            );
+    m_fileController->connectActions(m_actions);
 
     // future:
     // m_editController.connectActions(m_actions);
@@ -120,8 +135,8 @@ void MainWindow::connectSignals()
     connect(
         ui->sidebarWidget,
         &Sidebar::itemSelected,
-        this,
-        &MainWindow::onSidebarItemSelected
+        m_navigationController, // this,
+        &NavigationController::handleNavigation // &MainWindow::onSidebarItemSelected
         );
 }
 
@@ -133,7 +148,11 @@ void MainWindow::showEvent(QShowEvent* event)
 void MainWindow::onSidebarItemSelected(
     const NavigationData& data)
 {
-    if (data.type == NodeType::Teacher)
+    m_pages->showPage(
+        PageType::TeacherInfo
+        );
+
+    /*if (data.type == NodeType::Teacher)
     {
         m_pages->showPage(PageType::TeacherInfo);
         return;
@@ -143,7 +162,7 @@ void MainWindow::onSidebarItemSelected(
     {
         m_pages->showPage(PageType::ClassInfo);
         return;
-    }
+    }*/
 }
 
 // =========================================================

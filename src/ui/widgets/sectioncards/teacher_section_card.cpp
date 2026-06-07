@@ -5,11 +5,11 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-SectionCard::SectionCard(const QString& title, QWidget* parent)
+TeacherSectionCard::TeacherSectionCard(const QString& title, QWidget* parent)
     : QFrame(parent)
 {
     setProperty("role", "card");
-    setObjectName("sectionCard");
+    setObjectName("TeacherSectionCard");
 
     m_layout = new QVBoxLayout(this);
     m_layout->setAlignment(Qt::AlignTop);
@@ -33,7 +33,7 @@ SectionCard::SectionCard(const QString& title, QWidget* parent)
         );
 }
 
-QVBoxLayout* SectionCard::contentLayout() const
+QVBoxLayout* TeacherSectionCard::contentLayout() const
 {
     return m_layout;
 }

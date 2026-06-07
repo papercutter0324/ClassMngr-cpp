@@ -93,7 +93,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* detailsCard =
-        new SectionCard("Teacher Details");
+        new TeacherSectionCard("Teacher Details");
 
     auto* detailsGrid = new QGridLayout;
 
@@ -126,7 +126,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* connectivityCard =
-        new SectionCard("Connectivity");
+        new TeacherSectionCard("Connectivity");
 
     auto* connectivityGrid = new QGridLayout;
 
@@ -165,7 +165,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* notesCard =
-        new SectionCard("Notes");
+        new TeacherSectionCard("Notes");
 
     m_notesEdit = new QTextEdit;
     m_notesEdit->setMinimumHeight(180);

@@ -1,17 +1,58 @@
-#ifndef CLASS_INFO_PAGE_H
-#define CLASS_INFO_PAGE_H
+#pragma once
 
-#include "../basepage.h"
+#include "ui/pages/basepage.h"
+#include "models/classroom.h"
+
+class ApplicationServices;
+class TeacherInfoSection;
+class ClassDetailsSection;
+class ClassScheduleSection;
+
+class QLabel;
+class QPushButton;
 
 class ClassInfoPage : public BasePage
 {
     Q_OBJECT
 
 public:
-
     explicit ClassInfoPage(
-        QWidget *parent = nullptr
+        ApplicationServices* services,
+        QWidget* parent = nullptr
         );
-};
 
-#endif // CLASS_INFO_PAGE_H
+    void loadClass(
+        const Classroom& classroom
+        );
+
+    void refresh() override;
+    void saveData() override;
+
+private:
+    void buildUi();
+
+    void markDirty();
+    void clearDirty();
+
+    bool showScheduleConflicts(
+        const QVariantList& times,
+        const QString& title
+        );
+
+private:
+    ApplicationServices* m_services{nullptr};
+
+    Classroom m_classroom;
+
+    bool m_loading{false};
+    bool m_dirty{false};
+
+    TeacherInfoSection* m_teacherSection{nullptr};
+    ClassDetailsSection* m_detailsSection{nullptr};
+    ClassScheduleSection* m_scheduleSection{nullptr};
+
+    QLabel* m_titleLabel{nullptr};
+    QLabel* m_subtitleLabel{nullptr};
+
+    QPushButton* m_saveButton{nullptr};
+};

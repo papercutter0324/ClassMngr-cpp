@@ -4,12 +4,12 @@
 
 class QVBoxLayout;
 
-class SectionCard : public QFrame
+class TeacherSectionCard : public QFrame
 {
     Q_OBJECT
 
 public:
-    explicit SectionCard(const QString& title, QWidget* parent = nullptr);
+    explicit TeacherSectionCard(const QString& title, QWidget* parent = nullptr);
 
     QVBoxLayout* contentLayout() const;
 

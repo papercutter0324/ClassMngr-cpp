@@ -604,10 +604,10 @@ int DataService::createClass(
 
 
 
-QList<ClassroomRecord>
+QList<Classroom>
 DataService::getClasses()
 {
-    QList<ClassroomRecord> classes;
+    QList<Classroom> classes;
 
     QSqlQuery query;
 
@@ -619,7 +619,7 @@ DataService::getClasses()
 
     while (query.next())
     {
-        ClassroomRecord classroom;
+        Classroom classroom;
 
         classroom.id =
             query.value("id").toInt();
@@ -635,11 +635,11 @@ DataService::getClasses()
 
 
 
-ClassroomRecord DataService::getClassById(
+Classroom DataService::getClassById(
     int classId
     )
 {
-    ClassroomRecord classroom;
+    Classroom classroom;
 
     QSqlQuery query;
 
