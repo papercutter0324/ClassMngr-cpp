@@ -1,4 +1,0 @@
-#ifndef THEME_CONTROLLER_H
-#define THEME_CONTROLLER_H
-
-#endif // THEME_CONTROLLER_H
