@@ -65,6 +65,10 @@ public:
         const Teacher& teacher
         );
 
+    int saveTeacher(
+        const Teacher& teacher
+        );
+
     void updateTeacher(
         const Teacher& teacher
         );

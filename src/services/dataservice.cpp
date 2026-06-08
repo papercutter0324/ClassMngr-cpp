@@ -19,8 +19,6 @@ DataService::DataService(
 {
 }
 
-
-
 DataService::~DataService()
 {
     if (m_db.isOpen())
@@ -28,8 +26,6 @@ DataService::~DataService()
         m_db.close();
     }
 }
-
-
 
 // =========================================================
 // Database
@@ -64,12 +60,7 @@ void DataService::createTables()
 {
     QSqlQuery query;
 
-
-
-    // =====================================================
     // App Settings
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS app_settings (
             key TEXT PRIMARY KEY,
@@ -77,12 +68,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Roster
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS roster_columns (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -96,8 +82,6 @@ void DataService::createTables()
             width INTEGER
         )
     )");
-
-
 
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS roster_data (
@@ -117,12 +101,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Speaking Evaluations
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS speaking_evaluations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,21 +117,12 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // TODO
     // Dynamic speaking_eval_data schema
-    // =====================================================
 
     // query.exec(...)
 
-
-
-    // =====================================================
     // Campuses
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS campuses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,12 +150,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Teachers
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,12 +170,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Classes
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS classes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -219,12 +179,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Class Info
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS class_info (
             class_id INTEGER PRIMARY KEY,
@@ -244,12 +199,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Class Times
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS class_times (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,12 +212,7 @@ void DataService::createTables()
         )
     )");
 
-
-
-    // =====================================================
     // Intensive Times
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS class_intensive_times (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,15 +222,13 @@ void DataService::createTables()
             day TEXT,
             start_time TEXT,
             end_time TEXT
+
+
+            UNIQUE(day, start_time)
         )
     )");
 
-
-
-    // =====================================================
     // Intensive Slot States
-    // =====================================================
-
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS intensive_slot_states (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -298,8 +241,6 @@ void DataService::createTables()
         )
     )");
 }
-
-
 
 // =========================================================
 // Settings
@@ -330,8 +271,6 @@ void DataService::saveSetting(
     query.exec();
 }
 
-
-
 QVariant DataService::loadSetting(
     const QString &key,
     const QVariant &defaultValue
@@ -359,8 +298,6 @@ QVariant DataService::loadSetting(
 
     return query.value(0);
 }
-
-
 
 // =========================================================
 // Teachers
@@ -400,7 +337,19 @@ int DataService::createTeacher(
     return query.lastInsertId().toInt();
 }
 
+int DataService::saveTeacher(
+    const Teacher& teacher
+    )
+{
+    if (teacher.id > 0)
+    {
+        updateTeacher(teacher);
 
+        return teacher.id;
+    }
+
+    return createTeacher(teacher);
+}
 
 void DataService::updateTeacher(
     const Teacher& teacher
@@ -435,68 +384,6 @@ void DataService::updateTeacher(
     query.exec();
 }
 
-
-
-QList<Teacher>
-DataService::getAllTeachers()
-{
-    QList<Teacher> teachers;
-
-    QSqlQuery query;
-
-    query.exec(R"(
-        SELECT *
-        FROM teachers
-        ORDER BY teacher_en
-    )");
-
-    while (query.next())
-    {
-        Teacher teacher;
-
-        teacher.id =
-            query.value("id").toInt();
-
-        teacher.teacherKr =
-            query.value("teacher_kr")
-                .toString();
-
-        teacher.teacherEn =
-            query.value("teacher_en")
-                .toString();
-
-        teacher.roomNumber =
-            query.value("room_number")
-                .toString();
-
-        teacher.wifiName =
-            query.value("wifi_name")
-                .toString();
-
-        teacher.wifiPassword =
-            query.value("wifi_password")
-                .toString();
-
-        teacher.zoomId =
-            query.value("zoom_id")
-                .toString();
-
-        teacher.zoomPassword =
-            query.value("zoom_password")
-                .toString();
-
-        teacher.notes =
-            query.value("notes")
-                .toString();
-
-        teachers.append(teacher);
-    }
-
-    return teachers;
-}
-
-
-
 Teacher DataService::getTeacher(
     int teacherId
     )
@@ -518,37 +405,51 @@ Teacher DataService::getTeacher(
         return teacher; // returns empty/default teacher
     }
 
-    teacher.id =
-        query.value("id").toInt();
-
-    teacher.teacherKr =
-        query.value("teacher_kr").toString();
-
-    teacher.teacherEn =
-        query.value("teacher_en").toString();
-
-    teacher.roomNumber =
-        query.value("room_number").toString();
-
-    teacher.wifiName =
-        query.value("wifi_name").toString();
-
-    teacher.wifiPassword =
-        query.value("wifi_password").toString();
-
-    teacher.zoomId =
-        query.value("zoom_id").toString();
-
-    teacher.zoomPassword =
-        query.value("zoom_password").toString();
-
-    teacher.notes =
-        query.value("notes").toString();
+    teacher.id =           query.value("id").toInt();
+    teacher.teacherKr =    query.value("teacher_kr").toString();
+    teacher.teacherEn =    query.value("teacher_en").toString();
+    teacher.roomNumber =   query.value("room_number").toString();
+    teacher.wifiName =     query.value("wifi_name").toString();
+    teacher.wifiPassword = query.value("wifi_password").toString();
+    teacher.zoomId =       query.value("zoom_id").toString();
+    teacher.zoomPassword = query.value("zoom_password").toString();
+    teacher.notes =        query.value("notes").toString();
 
     return teacher;
 }
 
+QList<Teacher>
+DataService::getAllTeachers()
+{
+    QList<Teacher> teachers;
 
+    QSqlQuery query;
+
+    query.exec(R"(
+        SELECT *
+        FROM teachers
+        ORDER BY teacher_en
+    )");
+
+    while (query.next())
+    {
+        Teacher teacher;
+
+        teacher.id =           query.value("id").toInt();
+        teacher.teacherKr =    query.value("teacher_kr").toString();
+        teacher.teacherEn =    query.value("teacher_en").toString();
+        teacher.roomNumber =   query.value("room_number").toString();
+        teacher.wifiName =     query.value("wifi_name").toString();
+        teacher.wifiPassword = query.value("wifi_password").toString();
+        teacher.zoomId =       query.value("zoom_id").toString();
+        teacher.zoomPassword = query.value("zoom_password").toString();
+        teacher.notes =        query.value("notes").toString();
+
+        teachers.append(teacher);
+    }
+
+    return teachers;
+}
 
 void DataService::deleteTeacher(
     int teacherId
@@ -576,8 +477,6 @@ void DataService::deleteTeacher(
     query.exec();
 }
 
-
-
 // =========================================================
 // Classes
 // =========================================================
@@ -602,38 +501,125 @@ int DataService::createClass(
     return query.lastInsertId().toInt();
 }
 
-
-
-QList<Classroom>
-DataService::getClasses()
+void DataService::saveClassInfo(
+    const ClassInfo& info
+    )
 {
-    QList<Classroom> classes;
-
     QSqlQuery query;
 
-    query.exec(R"(
-        SELECT *
-        FROM classes
-        ORDER BY name
+    query.prepare(R"(
+        INSERT INTO class_info (
+            class_id,
+            teacher_id,
+            class_grade,
+            class_level,
+            reading_book,
+            essay_book,
+            class_color,
+            font_color,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+        ON CONFLICT(class_id)
+        DO UPDATE SET
+            teacher_id=excluded.teacher_id,
+            class_grade=excluded.class_grade,
+            class_level=excluded.class_level,
+            reading_book=excluded.reading_book,
+            essay_book=excluded.essay_book,
+            class_color=excluded.class_color,
+            font_color=excluded.font_color,
+            notes=excluded.notes
     )");
 
-    while (query.next())
+    query.addBindValue(info.classId);
+    query.addBindValue(info.teacherId);
+    query.addBindValue(info.classGrade);
+    query.addBindValue(info.classLevel);
+    query.addBindValue(info.readingBook);
+    query.addBindValue(info.essayBook);
+    query.addBindValue(info.classColor);
+    query.addBindValue(info.fontColor);
+    query.addBindValue(info.notes);
+
+    query.exec();
+
+    // Times
+    query.prepare(
+        "DELETE FROM class_times WHERE class_id=?"
+        );
+
+    query.addBindValue(info.classId);
+    query.exec();
+
+    for (const ClassTime& time : info.classTimes)
     {
-        Classroom classroom;
+        query.prepare(R"(
+            INSERT INTO class_times (
+                class_id,
+                day,
+                start_time,
+                end_time
+            )
+            VALUES (?, ?, ?, ?)
+        )");
 
-        classroom.id =
-            query.value("id").toInt();
+        query.addBindValue(info.classId);
+        query.addBindValue(time.day);
+        query.addBindValue(time.startTime);
+        query.addBindValue(time.endTime);
 
-        classroom.name =
-            query.value("name").toString();
-
-        classes.append(classroom);
+        query.exec();
     }
 
-    return classes;
+    // Intensive Times
+    query.prepare(
+        "DELETE FROM class_intensive_times WHERE class_id=?"
+        );
+
+    query.addBindValue(info.classId);
+    query.exec();
+
+    for (const ClassTime& time : info.intensiveTimes)
+    {
+        query.prepare(R"(
+            INSERT INTO class_intensive_times (
+                class_id,
+                day,
+                start_time,
+                end_time
+            )
+            VALUES (?, ?, ?, ?)
+        )");
+
+        query.addBindValue(info.classId);
+        query.addBindValue(time.day);
+        query.addBindValue(time.startTime);
+        query.addBindValue(time.endTime);
+
+        query.exec();
+    }
 }
 
+void DataService::updateClassName(
+    int classId,
+    const QString &name
+    )
+{
+    QSqlQuery query;
 
+    query.prepare(R"(
+        UPDATE classes
+        SET name=?
+        WHERE id=?
+    )");
+
+    query.addBindValue(name);
+    query.addBindValue(classId);
+
+    query.exec();
+}
 
 Classroom DataService::getClassById(
     int classId
@@ -667,28 +653,152 @@ Classroom DataService::getClassById(
     return classroom;
 }
 
-
-
-void DataService::updateClassName(
-    int classId,
-    const QString &name
-    )
+QList<Classroom>
+DataService::getClasses()
 {
+    QList<Classroom> classes;
+
     QSqlQuery query;
 
-    query.prepare(R"(
-        UPDATE classes
-        SET name=?
-        WHERE id=?
+    query.exec(R"(
+        SELECT *
+        FROM classes
+        ORDER BY name
     )");
 
-    query.addBindValue(name);
+    while (query.next())
+    {
+        Classroom classroom;
+
+        classroom.id =
+            query.value("id").toInt();
+
+        classroom.name =
+            query.value("name").toString();
+
+        classes.append(classroom);
+    }
+
+    return classes;
+}
+
+ClassInfo DataService::loadClassInfo(
+    int classId
+    )
+{
+    ClassInfo info;
+    info.classId =    classId;
+    info.classColor = "#FFFFFF";
+    info.fontColor =  "#000000";
+
+    QSqlQuery query;
+
+    // Main Class Info + Teacher Join
+    query.prepare(R"(
+        SELECT
+            ci.*,
+
+            t.teacher_kr,
+            t.teacher_en,
+            t.room_number,
+            t.wifi_name,
+            t.wifi_password,
+            t.zoom_id,
+            t.zoom_password
+
+        FROM class_info ci
+
+        LEFT JOIN teachers t
+        ON ci.teacher_id = t.id
+
+        WHERE ci.class_id = ?
+    )");
+
+    query.addBindValue(classId);
+    query.exec();
+
+    if (query.next())
+    {
+        info.teacherId =    query.value("teacher_id").toInt();
+        info.teacherKr =    query.value("teacher_kr").toString();
+        info.teacherEn =    query.value("teacher_en").toString();
+        info.roomNumber =   query.value("room_number").toString();
+        info.wifiName =     query.value("wifi_name").toString();
+        info.wifiPassword = query.value("wifi_password").toString();
+        info.zoomId =       query.value("zoom_id").toString();
+        info.zoomPassword = query.value("zoom_password").toString();
+        info.classGrade =   query.value("class_grade").toString();
+        info.classLevel =   query.value("class_level").toString();
+        info.readingBook =  query.value("reading_book").toString();
+        info.essayBook =    query.value("essay_book").toString();
+
+        const QString classColor =
+            query.value("class_color").toString();
+
+        if (!classColor.isEmpty())
+        {
+            info.classColor = classColor;
+        }
+
+        const QString fontColor =
+            query.value("font_color").toString();
+
+        if (!fontColor.isEmpty())
+        {
+            info.fontColor = fontColor;
+        }
+
+        info.notes =
+            query.value("notes").toString();
+    }
+
+    // Regular Times
+    query.prepare(R"(
+        SELECT *
+        FROM class_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+
+    query.addBindValue(classId);
+    query.exec();
+
+    while (query.next())
+    {
+        ClassTime time;
+
+        time.day =       query.value("day").toString();
+        time.startTime = query.value("start_time").toString();
+        time.endTime =   query.value("end_time").toString();
+
+        info.classTimes.append(time);
+    }
+
+    // Intensive Times
+    query.prepare(R"(
+        SELECT *
+        FROM class_intensive_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+
     query.addBindValue(classId);
 
     query.exec();
+
+    while (query.next())
+    {
+        ClassTime time;
+
+        time.day =       query.value("day").toString();
+        time.startTime = query.value("start_time").toString();
+        time.endTime =   query.value("end_time").toString();
+
+        info.intensiveTimes.append(time);
+    }
+
+    return info;
 }
-
-
 
 void DataService::deleteClass(
     int classId
@@ -696,101 +806,54 @@ void DataService::deleteClass(
 {
     QSqlQuery query;
 
-
-
-    // =====================================================
-    // Classes
-    // =====================================================
-
-    query.prepare(R"(
-        DELETE FROM classes
-        WHERE id=?
-    )");
-
+    query.prepare("DELETE FROM classes WHERE id=?");
     query.addBindValue(classId);
-
     query.exec();
 
-
-
-    // =====================================================
-    // Roster
-    // =====================================================
-
-    query.prepare(R"(
-        DELETE FROM roster_columns
-        WHERE class_id=?
-    )");
-
+    query.prepare("DELETE FROM roster_columns WHERE class_id=?");
     query.addBindValue(classId);
-
     query.exec();
 
-
-
-    query.prepare(R"(
-        DELETE FROM roster_data
-        WHERE class_id=?
-    )");
-
+    query.prepare("DELETE FROM roster_data WHERE class_id=?");
     query.addBindValue(classId);
-
     query.exec();
 
-
-
-    // =====================================================
-    // Class Info
-    // =====================================================
-
-    query.prepare(R"(
-        DELETE FROM class_info
-        WHERE class_id=?
-    )");
-
+    query.prepare("DELETE FROM class_info WHERE class_id=?");
     query.addBindValue(classId);
-
     query.exec();
 
-
-
-    // =====================================================
-    // Class Times
-    // =====================================================
-
-    query.prepare(R"(
-        DELETE FROM class_times
-        WHERE class_id=?
-    )");
-
+    query.prepare("DELETE FROM class_times WHERE class_id=?");
     query.addBindValue(classId);
-
     query.exec();
 
-
-
-    // =====================================================
-    // Intensive Times
-    // =====================================================
-
-    query.prepare(R"(
-        DELETE FROM class_intensive_times
-        WHERE class_id=?
-    )");
-
+    query.prepare("DELETE FROM class_intensive_times WHERE class_id=?");
     query.addBindValue(classId);
-
     query.exec();
 
+    query.prepare("SELECT id FROM speaking_evaluations WHERE class_id=?");
+    query.addBindValue(classId);
+    query.exec();
 
+    QList<int> evaluationIds;
 
-    // =====================================================
-    // TODO
-    // Delete speaking evaluation rows
-    // =====================================================
+    while (query.next())
+    {
+        evaluationIds.append(
+            query.value("id").toInt()
+            );
+    }
+
+    for (int evaluationId : evaluationIds)
+    {
+        query.prepare("DELETE FROM speaking_eval_data WHERE evaluation_id=?");
+        query.addBindValue(evaluationId);
+        query.exec();
+    }
+
+    query.prepare("DELETE FROM speaking_evaluations WHERE class_id=?");
+    query.addBindValue(classId);
+    query.exec();
 }
-
-
 
 // =========================================================
 // Campuses
@@ -883,8 +946,6 @@ int DataService::saveCampus(
     return query.lastInsertId().toInt();
 }
 
-
-
 CampusRecord DataService::getCampus(
     int campusId
     )
@@ -893,14 +954,8 @@ CampusRecord DataService::getCampus(
 
     QSqlQuery query;
 
-    query.prepare(R"(
-        SELECT *
-        FROM campuses
-        WHERE id=?
-    )");
-
+    query.prepare("SELECT * FROM campuses WHERE id=?");
     query.addBindValue(campusId);
-
     query.exec();
 
     if (!query.next())
@@ -908,21 +963,12 @@ CampusRecord DataService::getCampus(
         return campus;
     }
 
-    campus.id =
-        query.value("id").toInt();
-
-    campus.name =
-        query.value("name")
-            .toString();
-
-    campus.address =
-        query.value("address")
-            .toString();
+    campus.id =      query.value("id").toInt();
+    campus.name =    query.value("name").toString();
+    campus.address = query.value("address").toString();
 
     return campus;
 }
-
-
 
 QList<CampusRecord>
 DataService::getAllCampuses()
@@ -954,8 +1000,6 @@ DataService::getAllCampuses()
     return campuses;
 }
 
-
-
 void DataService::deleteCampus(
     int campusId
     )
@@ -972,8 +1016,6 @@ void DataService::deleteCampus(
     query.exec();
 }
 
-
-
 // =========================================================
 // Manual Saving
 // =========================================================
@@ -983,30 +1025,18 @@ void DataService::save()
     m_db.commit();
 }
 
-
-
 void DataService::saveAs(
     const QString &destinationPath
     )
 {
     QFile::remove(destinationPath);
-
-    QFile::copy(
-        m_dbPath,
-        destinationPath
-        );
+    QFile::copy(m_dbPath, destinationPath);
 }
-
-
 
 void DataService::exportAs(
     const QString &destinationPath
     )
 {
     QFile::remove(destinationPath);
-
-    QFile::copy(
-        m_dbPath,
-        destinationPath
-        );
+    QFile::copy(m_dbPath, destinationPath);
 }

@@ -65,11 +65,11 @@ void SidebarController::refreshClassSidebar()
 {
     auto* ds = m_services->dataService();
 
-    auto classes = ds->getClasses();
+    const auto classes = ds->getClasses();
 
     m_sidebar->clearClasses();
 
-    for (const auto& classroom : classes)
+    for (const Classroom& classroom : classes)
     {
         auto classInfo =
             ds->loadClassInfo(

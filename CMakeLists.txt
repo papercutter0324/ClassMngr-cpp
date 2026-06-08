@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 project(ClassMngr LANGUAGES CXX)
 
-find_package(Qt6 6.11 REQUIRED COMPONENTS
+find_package(Qt6 REQUIRED COMPONENTS
     Core
     Gui
     Sql
