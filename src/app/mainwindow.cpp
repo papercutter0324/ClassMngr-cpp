@@ -2,8 +2,8 @@
 #include "ui_mainwindow.h"
 #include "menu_builder.h"
 
-
 #include "controllers/navigation_controller.h"
+#include "controllers/sidebar_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"

@@ -7,12 +7,15 @@ class Sidebar;
 class PageManager;
 class ActionRegistry;
 
+class Classroom;
+struct Teacher;
+
 class SidebarController : public QObject
 {
     Q_OBJECT
 
 public:
-    SidebarController(
+    explicit SidebarController(
         ApplicationServices* services,
         Sidebar* sidebar,
         PageManager* pages,
@@ -23,18 +26,48 @@ public:
         ActionRegistry& actions
         );
 
+    // =====================================================
+    // Refresh
+    // =====================================================
+
     void refreshClassSidebar();
     void refreshTeacherSidebar();
 
 private slots:
+
+    // =====================================================
+    // Class Actions
+    // =====================================================
+
     void addClass();
     void deleteClass();
+
+    // =====================================================
+    // Teacher Actions
+    // =====================================================
 
     void addTeacher();
     void deleteTeacher();
 
 private:
-    ApplicationServices* m_services;
-    Sidebar* m_sidebar;
-    PageManager* m_pages;
+
+    // =====================================================
+    // Lookup Helpers
+    // =====================================================
+
+    Classroom getSelectedClass() const;
+
+    Classroom getClassById(
+        int classId
+        ) const;
+
+    Teacher getTeacherById(
+        int teacherId
+        ) const;
+
+private:
+
+    ApplicationServices* m_services{nullptr};
+    Sidebar* m_sidebar{nullptr};
+    PageManager* m_pages{nullptr};
 };
