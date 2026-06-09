@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/enums/schedule_type.h"
+#include "models/class_info.h"
 #include "ui/pages/basepage.h"
 #include "models/classroom.h"
 
@@ -40,7 +42,8 @@ private:
     void clearDirty();
 
     bool showScheduleConflicts(
-        const QVariantList& times,
+        const QList<ClassTime>& times,
+        ScheduleType type,
         const QString& title
         );
 

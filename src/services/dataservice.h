@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/enums/schedule_type.h"
 #include "models/campus.h"
 #include "models/class_info.h"
 #include "models/class_conflict.h"
@@ -143,7 +144,9 @@ public:
     // =====================================================
 
     QList<ClassConflict> getClassTimeConflicts(
-        int classId
+        int classId,
+        const QList<ClassTime>& times,
+        ScheduleType type
         );
 
     // TODO:

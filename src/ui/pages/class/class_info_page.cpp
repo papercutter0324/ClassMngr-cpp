@@ -5,12 +5,14 @@
 #include "ui/widgets/sections/class_schedule_section.h"
 
 #include "core/application_services.h"
+#include "models/class_conflict.h"
 #include "models/class_info.h"
 #include "services/dataservice.h"
 
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QStringList>
 #include <QVBoxLayout>
 #include <QtAssert>
 
@@ -224,6 +226,28 @@ void ClassInfoPage::saveData()
     info.notes =
         m_notes;
 
+    if (
+        showScheduleConflicts(
+            info.classTimes,
+            ScheduleType::Regular,
+            tr("Regular Schedule Conflicts")
+            )
+        )
+    {
+        return;
+    }
+
+    if (
+        showScheduleConflicts(
+            info.intensiveTimes,
+            ScheduleType::Intensive,
+            tr("Intensive Schedule Conflicts")
+            )
+        )
+    {
+        return;
+    }
+
     const bool saved =
         m_services
             ->dataService()
@@ -267,9 +291,53 @@ void ClassInfoPage::refresh()
 }
 
 bool ClassInfoPage::showScheduleConflicts(
-    const QVariantList&,
-    const QString&
+    const QList<ClassTime>& times,
+    ScheduleType type,
+    const QString& title
     )
 {
-    return false;
+    const QList<ClassConflict> conflicts =
+        m_services
+            ->dataService()
+            ->getClassTimeConflicts(
+                m_classroom.id,
+                times,
+                type
+                );
+
+    if (conflicts.isEmpty())
+    {
+        return false;
+    }
+
+    QStringList details;
+
+    for (const ClassConflict& conflict : conflicts)
+    {
+        QString conflictingClass =
+            conflict.conflictingClassName;
+
+        if (conflictingClass == conflict.className)
+        {
+            conflictingClass =
+                tr("another time in this class");
+        }
+
+        details.append(
+            tr("%1 %2-%3 conflicts with %4.")
+                .arg(conflict.day)
+                .arg(conflict.startTime)
+                .arg(conflict.endTime)
+                .arg(conflictingClass)
+            );
+    }
+
+    QMessageBox::warning(
+        this,
+        title,
+        tr("Please resolve these schedule conflicts before saving:\n\n%1")
+            .arg(details.join('\n'))
+        );
+
+    return true;
 }

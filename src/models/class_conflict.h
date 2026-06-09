@@ -1,6 +1,8 @@
 #ifndef CLASS_CONFLICT_H
 #define CLASS_CONFLICT_H
 
+#include <QString>
+
 struct ClassConflict
 {
     int classId{-1};

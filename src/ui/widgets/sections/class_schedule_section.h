@@ -18,9 +18,6 @@ class ClassScheduleSection : public QWidget
 public:
     explicit ClassScheduleSection(QWidget* parent = nullptr);
 
-    QList<ClassTimeRow*> regularRows() const;
-    QList<ClassTimeRow*> intensiveRows() const;
-
     void loadSchedules(
         const QVariantList& regular,
         const QVariantList& intensive

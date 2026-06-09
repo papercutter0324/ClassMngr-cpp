@@ -5,7 +5,166 @@
 #include <QFile>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QStringList>
 #include <QVariant>
+
+namespace
+{
+
+struct TimeInterval
+{
+    int start{-1};
+    int end{-1};
+};
+
+constexpr int MinutesPerDay = 24 * 60;
+constexpr int MinutesPerWeek = 7 * MinutesPerDay;
+
+int dayIndex(const QString& day)
+{
+    static const QStringList days{
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+    };
+
+    return days.indexOf(day);
+}
+
+int timeToMinutes(const QString& value)
+{
+    const QStringList parts =
+        value.trimmed().split(
+            ' ',
+            Qt::SkipEmptyParts
+            );
+
+    if (parts.size() != 2)
+    {
+        return -1;
+    }
+
+    const QStringList timeParts =
+        parts[0].split(':');
+
+    if (timeParts.size() != 2)
+    {
+        return -1;
+    }
+
+    bool hourOk = false;
+    bool minuteOk = false;
+
+    int hour =
+        timeParts[0].toInt(&hourOk);
+
+    const int minute =
+        timeParts[1].toInt(&minuteOk);
+
+    const QString period =
+        parts[1].toUpper();
+
+    if (
+        !hourOk
+        || !minuteOk
+        || hour < 1
+        || hour > 12
+        || minute < 0
+        || minute > 59
+        || (period != "AM" && period != "PM")
+        )
+    {
+        return -1;
+    }
+
+    if (period == "AM")
+    {
+        if (hour == 12)
+        {
+            hour = 0;
+        }
+    }
+    else if (hour != 12)
+    {
+        hour += 12;
+    }
+
+    return hour * 60 + minute;
+}
+
+bool toInterval(
+    const ClassTime& time,
+    TimeInterval& interval
+    )
+{
+    const int day =
+        dayIndex(time.day);
+
+    const int start =
+        timeToMinutes(time.startTime);
+
+    const int end =
+        timeToMinutes(time.endTime);
+
+    if (day < 0 || start < 0 || end < 0)
+    {
+        return false;
+    }
+
+    interval.start =
+        day * MinutesPerDay + start;
+
+    interval.end =
+        day * MinutesPerDay + end;
+
+    if (interval.end <= interval.start)
+    {
+        interval.end += MinutesPerDay;
+    }
+
+    return true;
+}
+
+bool intervalsOverlap(
+    const TimeInterval& first,
+    const TimeInterval& second
+    )
+{
+    for (int offset : { -MinutesPerWeek, 0, MinutesPerWeek })
+    {
+        const int secondStart =
+            second.start + offset;
+
+        const int secondEnd =
+            second.end + offset;
+
+        if (first.start < secondEnd && secondStart < first.end)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+QString classDisplayName(
+    const QString& className,
+    int classId
+    )
+{
+    if (!className.trimmed().isEmpty())
+    {
+        return className.trimmed();
+    }
+
+    return QString("Class %1").arg(classId);
+}
+
+} // namespace
 
 
 
@@ -868,6 +1027,164 @@ ClassInfo DataService::loadClassInfo(
     }
 
     return info;
+}
+
+QList<ClassConflict> DataService::getClassTimeConflicts(
+    int classId,
+    const QList<ClassTime>& times,
+    ScheduleType type
+    )
+{
+    QList<ClassConflict> conflicts;
+
+    const Classroom currentClass =
+        getClassById(classId);
+
+    const QString currentClassName =
+        classDisplayName(
+            currentClass.name,
+            classId
+            );
+
+    QList<TimeInterval> candidateIntervals;
+
+    for (const ClassTime& time : times)
+    {
+        TimeInterval interval;
+
+        if (toInterval(time, interval))
+        {
+            candidateIntervals.append(interval);
+        }
+        else
+        {
+            candidateIntervals.append(TimeInterval{});
+        }
+    }
+
+    for (int i = 0; i < times.size(); ++i)
+    {
+        if (candidateIntervals[i].start < 0)
+        {
+            continue;
+        }
+
+        for (int j = i + 1; j < times.size(); ++j)
+        {
+            if (candidateIntervals[j].start < 0)
+            {
+                continue;
+            }
+
+            if (
+                intervalsOverlap(
+                    candidateIntervals[i],
+                    candidateIntervals[j]
+                    )
+                )
+            {
+                ClassConflict conflict;
+                conflict.classId = classId;
+                conflict.className = currentClassName;
+                conflict.day = times[i].day;
+                conflict.startTime = times[i].startTime;
+                conflict.endTime = times[i].endTime;
+                conflict.conflictingClassName =
+                    currentClassName;
+
+                conflicts.append(conflict);
+            }
+        }
+    }
+
+    const QString tableName =
+        type == ScheduleType::Regular
+            ? QString("class_times")
+            : QString("class_intensive_times");
+
+    QSqlQuery query(m_db);
+
+    query.prepare(
+        QString(R"(
+            SELECT
+                times.class_id,
+                classes.name AS class_name,
+                times.day,
+                times.start_time,
+                times.end_time
+            FROM %1 times
+            LEFT JOIN classes
+            ON classes.id = times.class_id
+            WHERE times.class_id != ?
+        )").arg(tableName)
+        );
+
+    query.addBindValue(classId);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load class time conflicts:"
+            << query.lastError().text();
+
+        return conflicts;
+    }
+
+    while (query.next())
+    {
+        ClassTime existingTime;
+        existingTime.day =
+            query.value("day").toString();
+        existingTime.startTime =
+            query.value("start_time").toString();
+        existingTime.endTime =
+            query.value("end_time").toString();
+
+        TimeInterval existingInterval;
+
+        if (!toInterval(existingTime, existingInterval))
+        {
+            continue;
+        }
+
+        const int conflictingClassId =
+            query.value("class_id").toInt();
+
+        const QString conflictingClassName =
+            classDisplayName(
+                query.value("class_name").toString(),
+                conflictingClassId
+                );
+
+        for (int i = 0; i < times.size(); ++i)
+        {
+            if (candidateIntervals[i].start < 0)
+            {
+                continue;
+            }
+
+            if (
+                intervalsOverlap(
+                    candidateIntervals[i],
+                    existingInterval
+                    )
+                )
+            {
+                ClassConflict conflict;
+                conflict.classId = classId;
+                conflict.className = currentClassName;
+                conflict.day = times[i].day;
+                conflict.startTime = times[i].startTime;
+                conflict.endTime = times[i].endTime;
+                conflict.conflictingClassName =
+                    conflictingClassName;
+
+                conflicts.append(conflict);
+            }
+        }
+    }
+
+    return conflicts;
 }
 
 void DataService::deleteClass(
