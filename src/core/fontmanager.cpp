@@ -1,5 +1,7 @@
 #include "fontmanager.h"
 
+#include "core/resources_paths.h"
+
 #include <QDebug>
 #include <QFile>
 #include <QFontDatabase>
@@ -19,11 +21,7 @@ QString FontManager::s_pretendardFamily;
 
 QStringList FontManager::s_loadedFamilies;
 
-QStringList FontManager::s_fontPaths =
-    {
-        ":/assets/fonts/Inter.ttc",
-        ":/assets/fonts/PretendardVariable.ttf"
-};
+QStringList FontManager::s_fontPaths;
 
 
 
@@ -46,6 +44,12 @@ void FontManager::loadFonts()
     }
 
     qDebug() << "Checking font existence:";
+
+    s_fontPaths =
+        {
+            ResourcePaths::Fonts::inter(),
+            ResourcePaths::Fonts::pretendard()
+        };
 
     const QStringList& fontPaths =
         s_fontPaths;

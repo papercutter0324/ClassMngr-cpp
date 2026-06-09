@@ -20,8 +20,6 @@ qt_add_executable(ClassMngr
     WIN32
     MACOSX_BUNDLE
 
-    resources/resources.qrc
-
     src/main.cpp
 
     src/app/mainwindow.cpp
@@ -140,6 +138,17 @@ qt_add_executable(ClassMngr
 
 )
 
+qt_add_resources(ClassMngr app_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/fonts/Inter.ttc
+        resources/assets/fonts/PretendardVariable.ttf
+        resources/assets/icons/app_icon.ico
+        resources/assets/icons/icon_256x256.png
+        resources/assets/splash/splash.png
+)
+
 qt_add_translations(
     TARGETS ClassMngr
     TS_FILES ClassMngr_en_US.ts
@@ -157,6 +166,11 @@ set_target_properties(ClassMngr PROPERTIES
 target_include_directories(ClassMngr
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src
+)
+
+target_compile_definitions(ClassMngr
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
 )
 
 target_link_libraries(ClassMngr

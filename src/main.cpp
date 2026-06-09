@@ -24,10 +24,10 @@ QIcon getAppIcon()
 
     if (userPlatform == Platform::WINDOWS)
     {
-        return QIcon(ResourcePaths::Icons::AppWindows);
+        return QIcon(ResourcePaths::Icons::appWindows());
     }
 
-    return QIcon(ResourcePaths::Icons::AppDefault);
+    return QIcon(ResourcePaths::Icons::appDefault());
 }
 
 

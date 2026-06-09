@@ -47,7 +47,7 @@ SplashScreen::SplashScreen(QWidget *parent)
     // =====================================================
 
     QPixmap pixmap(
-        ResourcePaths::Images::Splash
+        ResourcePaths::Images::splash()
         );
 
     setFixedSize(
