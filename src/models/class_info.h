@@ -17,6 +17,14 @@ struct ClassInfo
 
     int teacherId{-1};
 
+    QString teacherKr;
+    QString teacherEn;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString zoomId;
+    QString zoomPassword;
+
     QString classGrade;
     QString classLevel;
 
