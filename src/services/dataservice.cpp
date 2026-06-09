@@ -1,5 +1,6 @@
 #include "dataservice.h"
 
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QSqlError>
@@ -500,11 +501,38 @@ int DataService::createClass(
     return query.lastInsertId().toInt();
 }
 
-void DataService::saveClassInfo(
+bool DataService::saveClassInfo(
     const ClassInfo& info
     )
 {
-    QSqlQuery query;
+    if (!m_db.transaction())
+    {
+        qWarning()
+            << "Failed to start class info save transaction:"
+            << m_db.lastError().text();
+
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    auto rollbackOnFailure =
+        [this, &query](const QString& operation)
+        {
+            qWarning()
+                << operation
+                << "failed while saving class info:"
+                << query.lastError().text();
+
+            if (!m_db.rollback())
+            {
+                qWarning()
+                    << "Failed to roll back class info save transaction:"
+                    << m_db.lastError().text();
+            }
+
+            return false;
+        };
 
     query.prepare(R"(
         INSERT INTO class_info (
@@ -542,7 +570,12 @@ void DataService::saveClassInfo(
     query.addBindValue(info.fontColor);
     query.addBindValue(info.notes);
 
-    query.exec();
+    if (!query.exec())
+    {
+        return rollbackOnFailure(
+            "Upserting class_info"
+            );
+    }
 
     // Times
     query.prepare(
@@ -550,7 +583,12 @@ void DataService::saveClassInfo(
         );
 
     query.addBindValue(info.classId);
-    query.exec();
+    if (!query.exec())
+    {
+        return rollbackOnFailure(
+            "Deleting class_times"
+            );
+    }
 
     for (const ClassTime& time : info.classTimes)
     {
@@ -569,7 +607,12 @@ void DataService::saveClassInfo(
         query.addBindValue(time.startTime);
         query.addBindValue(time.endTime);
 
-        query.exec();
+        if (!query.exec())
+        {
+            return rollbackOnFailure(
+                "Inserting class_times"
+                );
+        }
     }
 
     // Intensive Times
@@ -578,7 +621,12 @@ void DataService::saveClassInfo(
         );
 
     query.addBindValue(info.classId);
-    query.exec();
+    if (!query.exec())
+    {
+        return rollbackOnFailure(
+            "Deleting class_intensive_times"
+            );
+    }
 
     for (const ClassTime& time : info.intensiveTimes)
     {
@@ -597,8 +645,31 @@ void DataService::saveClassInfo(
         query.addBindValue(time.startTime);
         query.addBindValue(time.endTime);
 
-        query.exec();
+        if (!query.exec())
+        {
+            return rollbackOnFailure(
+                "Inserting class_intensive_times"
+                );
+        }
     }
+
+    if (!m_db.commit())
+    {
+        qWarning()
+            << "Failed to commit class info save transaction:"
+            << m_db.lastError().text();
+
+        if (!m_db.rollback())
+        {
+            qWarning()
+                << "Failed to roll back failed class info save commit:"
+                << m_db.lastError().text();
+        }
+
+        return false;
+    }
+
+    return true;
 }
 
 void DataService::updateClassName(

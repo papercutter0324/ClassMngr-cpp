@@ -114,7 +114,7 @@ public:
     // Class Info
     // =====================================================
 
-    void saveClassInfo(
+    bool saveClassInfo(
         const ClassInfo& info
         );
 

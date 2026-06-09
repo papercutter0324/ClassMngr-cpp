@@ -9,6 +9,7 @@
 #include "services/dataservice.h"
 
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtAssert>
@@ -223,9 +224,28 @@ void ClassInfoPage::saveData()
     info.notes =
         m_notes;
 
-    m_services
-        ->dataService()
-        ->saveClassInfo(info);
+    const bool saved =
+        m_services
+            ->dataService()
+            ->saveClassInfo(info);
+
+    if (!saved)
+    {
+        m_dirty = true;
+
+        m_saveButton->setEnabled(true);
+        m_saveButton->setText(
+            tr("Save Changes *")
+            );
+
+        QMessageBox::warning(
+            this,
+            tr("Save Class Information"),
+            tr("Class information could not be saved.")
+            );
+
+        return;
+    }
 
     clearDirty();
 
