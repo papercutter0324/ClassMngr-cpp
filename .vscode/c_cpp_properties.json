@@ -3,30 +3,15 @@
         {
             "name": "Linux",
             "includePath": [
-                "/home/papercutter0324/Projects/ClassMngr-cpp/**"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c23",
-            "cppStandard": "c++23",
-            "intelliSenseMode": "linux-gcc-x64",
-            "compilerPathInCppPropertiesJson": "/usr/bin/gcc",
-            "mergeConfigurations": false,
-            "recursiveIncludes": {},
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true
-            }
-        },
-        {
-            "name": "Fedora",
-            "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "~/Projects/ClassMngr-cpp/**",
+                "~/Qt/6.11.1/gcc_64/include/QtCore"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
-            "cppStandard": "c++98",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

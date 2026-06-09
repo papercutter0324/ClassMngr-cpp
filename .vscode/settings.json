@@ -1,0 +1,17 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": true,
+
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.cppStandard": "c++23",
+
+  "files.associations": {
+    "*.h": "cpp",
+    "*.hpp": "cpp",
+    "*.cpp": "cpp",
+    "*.ui": "xml",
+    "*.qrc": "xml"
+  },
+
+  "cmake.buildDirectory": "${workspaceFolder}/build/${presetName}"
+}
