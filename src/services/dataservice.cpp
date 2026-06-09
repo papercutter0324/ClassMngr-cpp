@@ -221,8 +221,7 @@ void DataService::createTables()
 
             day TEXT,
             start_time TEXT,
-            end_time TEXT
-
+            end_time TEXT,
 
             UNIQUE(day, start_time)
         )
