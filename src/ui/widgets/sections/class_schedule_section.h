@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/enums/schedule_type.h"
+#include "models/class_info.h"
 
 #include <QWidget>
 #include <QList>
@@ -25,8 +26,16 @@ public:
         const QVariantList& intensive
         );
 
+    void loadSchedules(
+        const QList<ClassTime>& regular,
+        const QList<ClassTime>& intensive
+        );
+
     QVariantList serializeRegular() const;
     QVariantList serializeIntensive() const;
+
+    QList<ClassTime> regularTimes() const;
+    QList<ClassTime> intensiveTimes() const;
 
 signals:
     void dataChanged();

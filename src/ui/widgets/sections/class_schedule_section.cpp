@@ -190,41 +190,127 @@ void ClassScheduleSection::loadSchedules(
     const QVariantList& intensive
     )
 {
+    QList<ClassTime> regularTimes;
+    QList<ClassTime> intensiveTimes;
+
+    for (const auto& item : regular)
+    {
+        const auto map =
+            item.toMap();
+
+        ClassTime time;
+        time.day = map["day"].toString();
+        time.startTime = map["start_time"].toString();
+        time.endTime = map["end_time"].toString();
+
+        regularTimes.append(time);
+    }
+
+    for (const auto& item : intensive)
+    {
+        const auto map =
+            item.toMap();
+
+        ClassTime time;
+        time.day = map["day"].toString();
+        time.startTime = map["start_time"].toString();
+        time.endTime = map["end_time"].toString();
+
+        intensiveTimes.append(time);
+    }
+
+    loadSchedules(
+        regularTimes,
+        intensiveTimes
+        );
+}
+
+void ClassScheduleSection::loadSchedules(
+    const QList<ClassTime>& regular,
+    const QList<ClassTime>& intensive
+    )
+{
     for (auto* r : m_regularRows)
+    {
+        m_regularGrid->removeWidget(r->dayCombo());
+        m_regularGrid->removeWidget(r->startWidget());
+        m_regularGrid->removeWidget(r->endCombo());
+        m_regularGrid->removeWidget(r->removeButton());
         r->deleteLater();
+    }
+
     m_regularRows.clear();
 
     for (auto* r : m_intensiveRows)
+    {
+        m_intensiveGrid->removeWidget(r->dayCombo());
+        m_intensiveGrid->removeWidget(r->startWidget());
+        m_intensiveGrid->removeWidget(r->endCombo());
+        m_intensiveGrid->removeWidget(r->removeButton());
         r->deleteLater();
+    }
+
     m_intensiveRows.clear();
 
-    for (const auto& item : regular)
+    for (const ClassTime& time : regular)
     {
         addRow(m_regularGrid, m_regularRows, ScheduleType::Regular, false);
 
         auto* row = m_regularRows.last();
 
-        auto map = item.toMap();
-        row->setDay(map["day"].toString());
-        row->setStartTime(map["start_time"].toString());
-        row->setEndTime(map["end_time"].toString());
+        row->setDay(time.day);
+        row->setStartTime(time.startTime);
+        row->setEndTime(time.endTime);
     }
 
     if (m_regularRows.isEmpty())
-        addRegularRow();
+        addRegularRow(false);
 
-    for (const auto& item : intensive)
+    for (const ClassTime& time : intensive)
     {
         addRow(m_intensiveGrid, m_intensiveRows, ScheduleType::Intensive, false);
 
         auto* row = m_intensiveRows.last();
 
-        auto map = item.toMap();
-        row->setDay(map["day"].toString());
-        row->setStartTime(map["start_time"].toString());
-        row->setEndTime(map["end_time"].toString());
+        row->setDay(time.day);
+        row->setStartTime(time.startTime);
+        row->setEndTime(time.endTime);
     }
 
     if (m_intensiveRows.isEmpty())
-        addIntensiveRow();
+        addIntensiveRow(false);
+}
+
+QList<ClassTime> ClassScheduleSection::regularTimes() const
+{
+    QList<ClassTime> out;
+
+    for (auto* row : m_regularRows)
+    {
+        ClassTime time;
+        time.day = row->day();
+        time.startTime = row->startTime();
+        time.endTime = row->endTime();
+
+        out.append(time);
+    }
+
+    return out;
+}
+
+QList<ClassTime> ClassScheduleSection::intensiveTimes() const
+{
+    QList<ClassTime> out;
+
+    for (auto* row : m_intensiveRows)
+    {
+        ClassTime time;
+        time.day = row->day();
+        time.startTime = row->startTime();
+        time.endTime = row->endTime();
+
+        out.append(time);
+    }
+
+    return out;
 }

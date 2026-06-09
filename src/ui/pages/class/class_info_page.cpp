@@ -4,9 +4,14 @@
 #include "ui/widgets/sections/class_details_section.h"
 #include "ui/widgets/sections/class_schedule_section.h"
 
+#include "core/application_services.h"
+#include "models/class_info.h"
+#include "services/dataservice.h"
+
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <QtAssert>
 
 ClassInfoPage::ClassInfoPage(
     ApplicationServices* services,
@@ -15,6 +20,8 @@ ClassInfoPage::ClassInfoPage(
     : BasePage(parent)
     , m_services(services)
 {
+    Q_ASSERT(m_services);
+
     buildUi();
 
     connect(
@@ -27,6 +34,13 @@ ClassInfoPage::ClassInfoPage(
     connect(
         m_detailsSection,
         &ClassDetailsSection::dataChanged,
+        this,
+        &ClassInfoPage::markDirty
+        );
+
+    connect(
+        m_teacherSection,
+        &TeacherInfoSection::dataChanged,
         this,
         &ClassInfoPage::markDirty
         );
@@ -129,15 +143,25 @@ void ClassInfoPage::loadClass(
             .arg(classroom.name)
         );
 
-    /*
-    auto info =
+    auto* dataService =
         m_services
-        ->dataService()
-        ->loadClassInfo(
+            ->dataService();
+
+    m_teacherSection->setTeachers(
+        dataService->getAllTeachers()
+        );
+
+    const ClassInfo info =
+        dataService->loadClassInfo(
             classroom.id
             );
 
-    m_teacherSection->loadInfo(...);
+    m_notes =
+        info.notes;
+
+    m_teacherSection->selectTeacher(
+        info.teacherId
+        );
 
     m_detailsSection->loadInfo(
         info.classGrade,
@@ -149,10 +173,9 @@ void ClassInfoPage::loadClass(
         );
 
     m_scheduleSection->loadSchedules(
-        info.times,
+        info.classTimes,
         info.intensiveTimes
         );
-    */
 
     m_loading = false;
 
@@ -166,43 +189,49 @@ void ClassInfoPage::saveData()
         return;
     }
 
-    QVariantList regular =
-        m_scheduleSection
-            ->serializeRegular();
+    ClassInfo info;
+    info.classId =
+        m_classroom.id;
 
-    QVariantList intensive =
-        m_scheduleSection
-            ->serializeIntensive();
+    info.teacherId =
+        m_teacherSection->teacherId();
 
-    if (
-        showScheduleConflicts(
-            regular,
-            tr("Regular Schedule Conflicts")
-            )
-        )
-    {
-        return;
-    }
+    info.classGrade =
+        m_detailsSection->grade();
 
-    if (
-        showScheduleConflicts(
-            intensive,
-            tr("Intensive Schedule Conflicts")
-            )
-        )
-    {
-        return;
-    }
+    info.classLevel =
+        m_detailsSection->level();
 
-    /*
+    info.readingBook =
+        m_detailsSection->readingBook();
+
+    info.essayBook =
+        m_detailsSection->essayBook();
+
+    info.classColor =
+        m_detailsSection->classColor();
+
+    info.fontColor =
+        m_detailsSection->fontColor();
+
+    info.classTimes =
+        m_scheduleSection->regularTimes();
+
+    info.intensiveTimes =
+        m_scheduleSection->intensiveTimes();
+
+    info.notes =
+        m_notes;
+
     m_services
         ->dataService()
-        ->saveClassInfo(
-            ...
-            );
-    */
+        ->saveClassInfo(info);
 
     clearDirty();
+
+    emit classInfoSaved(
+        m_classroom.id
+        );
 }
 
 void ClassInfoPage::refresh()
@@ -224,4 +253,3 @@ bool ClassInfoPage::showScheduleConflicts(
 {
     return false;
 }
-

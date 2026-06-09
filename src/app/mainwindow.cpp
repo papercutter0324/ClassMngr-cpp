@@ -7,6 +7,7 @@
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/pages/class/class_info_page.h"
 #include "ui/pages/pagemanager.h"
 
 #include <QSettings>
@@ -145,6 +146,13 @@ void MainWindow::connectSignals()
         &Sidebar::itemSelected,
         m_navigationController.get(),
         &NavigationController::handleNavigation
+        );
+
+    connect(
+        m_pages->classInfoPage(),
+        &ClassInfoPage::classInfoSaved,
+        m_sidebarController.get(),
+        &SidebarController::refreshClassSidebar
         );
 }
 

@@ -2,10 +2,11 @@
 #include "models/teacher_model.h"
 
 #include <QComboBox>
-#include <QLineEdit>
 #include <QGridLayout>
-#include <QVBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
+#include <QSignalBlocker>
+#include <QVBoxLayout>
 
 TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     : QWidget(parent)
@@ -15,6 +16,7 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
 
     m_teacherKrCombo = new QComboBox(this);
     m_teacherEnCombo = new QComboBox(this);
+    m_model = new TeacherModel(this);
 
     m_roomNumberEdit = new QLineEdit(this);
     m_wifiNameEdit = new QLineEdit(this);
@@ -32,15 +34,28 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         w->setReadOnly(true);
     }
 
-    grid->addWidget(new QLabel("Korean"), 0, 0);
-    grid->addWidget(new QLabel("English"), 0, 1);
+    grid->addWidget(new QLabel(tr("Korean"), this), 0, 0);
+    grid->addWidget(new QLabel(tr("English"), this), 0, 1);
+    grid->addWidget(new QLabel(tr("Room"), this), 0, 2);
 
     grid->addWidget(m_teacherKrCombo, 1, 0);
     grid->addWidget(m_teacherEnCombo, 1, 1);
 
     grid->addWidget(m_roomNumberEdit, 1, 2);
 
+    grid->addWidget(new QLabel(tr("Wi-Fi Name"), this), 2, 0);
+    grid->addWidget(new QLabel(tr("Wi-Fi Password"), this), 2, 1);
+    grid->addWidget(m_wifiNameEdit, 3, 0);
+    grid->addWidget(m_wifiPasswordEdit, 3, 1);
+
+    grid->addWidget(new QLabel(tr("Zoom ID"), this), 4, 0);
+    grid->addWidget(new QLabel(tr("Zoom Password"), this), 4, 1);
+    grid->addWidget(m_zoomIdEdit, 5, 0);
+    grid->addWidget(m_zoomPasswordEdit, 5, 1);
+
     layout->addLayout(grid);
+
+    rebuildTeacherCombos();
 
     connect(m_teacherKrCombo, &QComboBox::currentIndexChanged,
             this, &TeacherInfoSection::onTeacherIndexChanged);
@@ -51,13 +66,43 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
 
 void TeacherInfoSection::setTeacherModel(TeacherModel* model)
 {
+    if (!model)
+    {
+        return;
+    }
+
     m_model = model;
+    rebuildTeacherCombos();
+}
 
-    m_teacherKrCombo->setModel(model);
-    m_teacherEnCombo->setModel(model);
+void TeacherInfoSection::setTeachers(const QList<Teacher>& teachers)
+{
+    const int previousTeacherId =
+        teacherId();
 
-    m_teacherKrCombo->setModelColumn(TeacherModel::KrRole);
-    m_teacherEnCombo->setModelColumn(TeacherModel::EnRole);
+    m_model->setTeachers(teachers);
+
+    rebuildTeacherCombos();
+    selectTeacher(previousTeacherId);
+}
+
+void TeacherInfoSection::selectTeacher(int teacherId)
+{
+    const int comboIndex =
+        m_teacherKrCombo->findData(teacherId);
+
+    if (comboIndex < 0)
+    {
+        clearTeacher();
+        return;
+    }
+
+    applyTeacher(comboIndex - 1);
+}
+
+int TeacherInfoSection::teacherId() const
+{
+    return m_selectedTeacherId;
 }
 
 void TeacherInfoSection::onTeacherIndexChanged(int index)
@@ -65,21 +110,70 @@ void TeacherInfoSection::onTeacherIndexChanged(int index)
     if (!m_model)
         return;
 
-    applyTeacher(index);
+    if (index <= 0)
+    {
+        clearTeacher();
+        emit dataChanged();
+        return;
+    }
+
+    applyTeacher(index - 1);
+    emit dataChanged();
+}
+
+void TeacherInfoSection::rebuildTeacherCombos()
+{
+    const QSignalBlocker krBlocker(m_teacherKrCombo);
+    const QSignalBlocker enBlocker(m_teacherEnCombo);
+
+    m_teacherKrCombo->clear();
+    m_teacherEnCombo->clear();
+
+    m_teacherKrCombo->addItem(QString(), -1);
+    m_teacherEnCombo->addItem(QString(), -1);
+
+    if (!m_model)
+    {
+        return;
+    }
+
+    for (int row = 0; row < m_model->rowCount(); ++row)
+    {
+        const Teacher& teacher =
+            m_model->teacherAt(row);
+
+        m_teacherKrCombo->addItem(
+            teacher.teacherKr,
+            teacher.id
+            );
+
+        m_teacherEnCombo->addItem(
+            teacher.teacherEn,
+            teacher.id
+            );
+    }
 }
 
 void TeacherInfoSection::applyTeacher(int index)
 {
     const auto& t = m_model->teacherAt(index);
 
+    if (t.id < 0)
+    {
+        clearTeacher();
+        return;
+    }
+
     m_teacherKrCombo->blockSignals(true);
     m_teacherEnCombo->blockSignals(true);
 
-    m_teacherKrCombo->setCurrentIndex(index);
-    m_teacherEnCombo->setCurrentIndex(index);
+    m_teacherKrCombo->setCurrentIndex(index + 1);
+    m_teacherEnCombo->setCurrentIndex(index + 1);
 
     m_teacherKrCombo->blockSignals(false);
     m_teacherEnCombo->blockSignals(false);
+
+    m_selectedTeacherId = t.id;
 
     m_roomNumberEdit->setText(t.roomNumber);
     m_wifiNameEdit->setText(t.wifiName);
@@ -93,11 +187,13 @@ void TeacherInfoSection::clearTeacher()
     m_teacherKrCombo->blockSignals(true);
     m_teacherEnCombo->blockSignals(true);
 
-    m_teacherKrCombo->setCurrentIndex(-1);
-    m_teacherEnCombo->setCurrentIndex(-1);
+    m_teacherKrCombo->setCurrentIndex(0);
+    m_teacherEnCombo->setCurrentIndex(0);
 
     m_teacherKrCombo->blockSignals(false);
     m_teacherEnCombo->blockSignals(false);
+
+    m_selectedTeacherId = -1;
 
     m_roomNumberEdit->clear();
     m_wifiNameEdit->clear();

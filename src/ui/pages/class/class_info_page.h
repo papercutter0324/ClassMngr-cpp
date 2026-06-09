@@ -3,6 +3,8 @@
 #include "ui/pages/basepage.h"
 #include "models/classroom.h"
 
+#include <QString>
+
 class ApplicationServices;
 class TeacherInfoSection;
 class ClassDetailsSection;
@@ -28,6 +30,9 @@ public:
     void refresh() override;
     void saveData() override;
 
+signals:
+    void classInfoSaved(int classId);
+
 private:
     void buildUi();
 
@@ -43,6 +48,7 @@ private:
     ApplicationServices* m_services{nullptr};
 
     Classroom m_classroom;
+    QString m_notes;
 
     bool m_loading{false};
     bool m_dirty{false};
