@@ -434,23 +434,6 @@ void Sidebar::onItemClicked(
 
 
     // =====================================================
-    // Expand / Collapse
-    // =====================================================
-
-    if (item->childCount() > 0)
-    {
-        item->setExpanded(
-            !item->isExpanded()
-            );
-
-        m_tree->clearSelection();
-
-        return;
-    }
-
-
-
-    // =====================================================
     // Node Type
     // =====================================================
 
@@ -461,6 +444,28 @@ void Sidebar::onItemClicked(
                     Qt::UserRole
                     ).toInt()
             );
+
+
+    // =====================================================
+    // Expand / Collapse Groups
+    // =====================================================
+
+    if (
+        type == NodeType::Root
+        || type == NodeType::ClassSection
+        )
+    {
+        if (item->childCount() > 0)
+        {
+            item->setExpanded(
+                !item->isExpanded()
+                );
+        }
+
+        m_tree->clearSelection();
+
+        return;
+    }
 
 
 
@@ -513,7 +518,37 @@ void Sidebar::onItemClicked(
             item->data(
                     0,
                     Qt::UserRole + 2
-                    ).toInt();
+                           ).toInt();
+    }
+    else
+    {
+        auto* parent =
+            item->parent();
+
+        while (parent)
+        {
+            NodeType parentType =
+                static_cast<NodeType>(
+                    parent->data(
+                            0,
+                            Qt::UserRole
+                            ).toInt()
+                    );
+
+            if (parentType == NodeType::Class)
+            {
+                data.classId =
+                    parent->data(
+                            0,
+                            Qt::UserRole + 2
+                            ).toInt();
+
+                break;
+            }
+
+            parent =
+                parent->parent();
+        }
     }
 
 

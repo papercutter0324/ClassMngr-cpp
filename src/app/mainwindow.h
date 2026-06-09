@@ -120,9 +120,8 @@ private:
     // Controllers
     // =====================================================
 
-    // Move away from raw pointer
     std::unique_ptr<SidebarController> m_sidebarController;
-    NavigationController* m_navigationController = nullptr;
+    std::unique_ptr<NavigationController> m_navigationController;
 
     // =====================================================
     // State

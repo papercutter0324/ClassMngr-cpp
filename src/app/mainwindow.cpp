@@ -112,6 +112,14 @@ void MainWindow::connectControllers()
             );
     m_sidebarController->connectActions(m_actions);
 
+    m_navigationController =
+        std::make_unique<NavigationController>(
+            m_services.get(),
+            ui->sidebarWidget,
+            m_pages,
+            this
+            );
+
     m_fileController =
         std::make_unique<FileController>(
             m_services.get(),
@@ -135,8 +143,8 @@ void MainWindow::connectSignals()
     connect(
         ui->sidebarWidget,
         &Sidebar::itemSelected,
-        m_navigationController, // this,
-        &NavigationController::handleNavigation // &MainWindow::onSidebarItemSelected
+        m_navigationController.get(),
+        &NavigationController::handleNavigation
         );
 }
 
