@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
-project(ClassMngr LANGUAGES CXX)
 
-find_package(Qt6 REQUIRED COMPONENTS
+project(ClassMngr
+    VERSION 0.1.0
+    LANGUAGES CXX
+)
+
+find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
     Sql
@@ -13,7 +17,8 @@ find_package(Qt6 REQUIRED COMPONENTS
 qt_standard_project_setup()
 
 qt_add_executable(ClassMngr
-    WIN32 MACOSX_BUNDLE
+    WIN32
+    MACOSX_BUNDLE
 
     resources/resources.qrc
 
@@ -135,20 +140,23 @@ qt_add_executable(ClassMngr
 
 )
 
-target_include_directories(ClassMngr
-    PRIVATE
-        ${PROJECT_SOURCE_DIR}/src
+qt_add_translations(
+    TARGETS ClassMngr
+    TS_FILES ClassMngr_en_US.ts
 )
 
-target_compile_features(ClassMngr PRIVATE cxx_std_23)
+target_compile_features(ClassMngr
+    PRIVATE
+        cxx_std_23
+)
 
 set_target_properties(ClassMngr PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
-qt_add_translations(
-    TARGETS ClassMngr
-    TS_FILES ClassMngr_en_US.ts
+target_include_directories(ClassMngr
+    PRIVATE
+        ${PROJECT_SOURCE_DIR}/src
 )
 
 target_link_libraries(ClassMngr
