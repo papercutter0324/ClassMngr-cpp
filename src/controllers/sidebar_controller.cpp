@@ -122,6 +122,29 @@ void SidebarController::refreshTeacherSidebar()
     }
 }
 
+void SidebarController::handleClassInfoSaved(
+    int classId
+    )
+{
+    refreshClassSidebar();
+
+    m_sidebar->selectClass(
+        classId
+        );
+}
+
+void SidebarController::handleTeacherSaved(
+    int teacherId
+    )
+{
+    refreshTeacherSidebar();
+    refreshClassSidebar();
+
+    m_sidebar->selectTeacher(
+        teacherId
+        );
+}
+
 Classroom SidebarController::getClassById(int classId) const
 {
     return m_services

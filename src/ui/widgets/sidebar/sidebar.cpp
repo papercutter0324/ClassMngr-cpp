@@ -259,6 +259,8 @@ void Sidebar::addClassNode(
     m_nodes["classes"]->addChild(item);
 
     m_nodes["classes"]->setExpanded(true);
+
+    m_classItems[classId] = item;
 }
 
 
@@ -275,6 +277,25 @@ void Sidebar::clearClasses()
     }
 
     m_nodes["classes"]->takeChildren();
+
+    m_classItems.clear();
+}
+
+void Sidebar::selectClass(
+    int classId
+    )
+{
+    if (!m_classItems.contains(classId))
+    {
+        return;
+    }
+
+    auto *item =
+        m_classItems[classId];
+
+    m_tree->setCurrentItem(item);
+
+    m_tree->scrollToItem(item);
 }
 
 

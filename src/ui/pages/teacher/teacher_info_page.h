@@ -32,6 +32,12 @@ public:
 
     Teacher teacher() const;
 
+signals:
+
+    void teacherSaved(
+        int teacherId
+        );
+
 private slots:
 
     void saveTeacher();

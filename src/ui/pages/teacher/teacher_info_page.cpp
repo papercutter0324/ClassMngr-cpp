@@ -274,6 +274,10 @@ void TeacherInfoPage::saveTeacher()
 
     m_teacher = dataService->getTeacher(m_teacher.id);
     loadTeacher(m_teacher);
+
+    emit teacherSaved(
+        m_teacher.id
+        );
 }
 
 void TeacherInfoPage::refresh()

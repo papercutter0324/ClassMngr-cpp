@@ -8,6 +8,7 @@
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/pages/class/class_info_page.h"
+#include "ui/pages/teacher/teacher_info_page.h"
 #include "ui/pages/pagemanager.h"
 
 #include <QSettings>
@@ -152,7 +153,14 @@ void MainWindow::connectSignals()
         m_pages->classInfoPage(),
         &ClassInfoPage::classInfoSaved,
         m_sidebarController.get(),
-        &SidebarController::refreshClassSidebar
+        &SidebarController::handleClassInfoSaved
+        );
+
+    connect(
+        m_pages->teacherPage(),
+        &TeacherInfoPage::teacherSaved,
+        m_sidebarController.get(),
+        &SidebarController::handleTeacherSaved
         );
 }
 

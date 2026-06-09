@@ -38,6 +38,10 @@ public:
 
     void clearClasses();
 
+    void selectClass(
+        int classId
+        );
+
     int getSelectedClassId() const;
 
 
@@ -140,6 +144,11 @@ private:
         QString,
         QTreeWidgetItem*
         > m_nodes;
+
+    QHash<
+        int,
+        QTreeWidgetItem*
+        > m_classItems;
 
     QHash<
         int,

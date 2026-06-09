@@ -33,6 +33,16 @@ public:
     void refreshClassSidebar();
     void refreshTeacherSidebar();
 
+public slots:
+
+    void handleClassInfoSaved(
+        int classId
+        );
+
+    void handleTeacherSaved(
+        int teacherId
+        );
+
 private slots:
 
     // =====================================================
