@@ -53,6 +53,8 @@ MainWindow::MainWindow(
     progressCallback(tr("Connecting signals..."));
     connectSignals();
 
+    m_sidebarController->refreshAllSidebars();
+
     QTimer::singleShot(
         0,
         this,

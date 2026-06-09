@@ -122,6 +122,12 @@ void SidebarController::refreshTeacherSidebar()
     }
 }
 
+void SidebarController::refreshAllSidebars()
+{
+    refreshTeacherSidebar();
+    refreshClassSidebar();
+}
+
 void SidebarController::handleClassInfoSaved(
     int classId
     )

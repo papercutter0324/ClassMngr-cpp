@@ -32,6 +32,7 @@ public:
 
     void refreshClassSidebar();
     void refreshTeacherSidebar();
+    void refreshAllSidebars();
 
 public slots:
 

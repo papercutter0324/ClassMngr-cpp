@@ -549,7 +549,7 @@ Teacher DataService::getTeacher(
 {
     Teacher teacher;
 
-    QSqlQuery query;
+    QSqlQuery query(m_db);
 
     query.prepare(R"(
         SELECT *
@@ -559,7 +559,16 @@ Teacher DataService::getTeacher(
 
     query.addBindValue(teacherId);
 
-    if (!query.exec() || !query.next())
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load teacher:"
+            << query.lastError().text();
+
+        return teacher;
+    }
+
+    if (!query.next())
     {
         return teacher; // returns empty/default teacher
     }
@@ -582,13 +591,20 @@ DataService::getAllTeachers()
 {
     QList<Teacher> teachers;
 
-    QSqlQuery query;
+    QSqlQuery query(m_db);
 
-    query.exec(R"(
+    if (!query.exec(R"(
         SELECT *
         FROM teachers
         ORDER BY teacher_en
-    )");
+    )"))
+    {
+        qWarning()
+            << "Failed to load teachers:"
+            << query.lastError().text();
+
+        return teachers;
+    }
 
     while (query.next())
     {
@@ -887,13 +903,20 @@ DataService::getClasses()
 {
     QList<Classroom> classes;
 
-    QSqlQuery query;
+    QSqlQuery query(m_db);
 
-    query.exec(R"(
+    if (!query.exec(R"(
         SELECT *
         FROM classes
         ORDER BY name
-    )");
+    )"))
+    {
+        qWarning()
+            << "Failed to load classes:"
+            << query.lastError().text();
+
+        return classes;
+    }
 
     while (query.next())
     {
@@ -920,7 +943,7 @@ ClassInfo DataService::loadClassInfo(
     info.classColor = "#FFFFFF";
     info.fontColor =  "#000000";
 
-    QSqlQuery query;
+    QSqlQuery query(m_db);
 
     // Main Class Info + Teacher Join
     query.prepare(R"(
@@ -944,9 +967,14 @@ ClassInfo DataService::loadClassInfo(
     )");
 
     query.addBindValue(classId);
-    query.exec();
 
-    if (query.next())
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load class info:"
+            << query.lastError().text();
+    }
+    else if (query.next())
     {
         info.teacherId =    query.value("teacher_id").toInt();
         info.teacherKr =    query.value("teacher_kr").toString();
@@ -990,17 +1018,25 @@ ClassInfo DataService::loadClassInfo(
     )");
 
     query.addBindValue(classId);
-    query.exec();
 
-    while (query.next())
+    if (!query.exec())
     {
-        ClassTime time;
+        qWarning()
+            << "Failed to load regular class times:"
+            << query.lastError().text();
+    }
+    else
+    {
+        while (query.next())
+        {
+            ClassTime time;
 
-        time.day =       query.value("day").toString();
-        time.startTime = query.value("start_time").toString();
-        time.endTime =   query.value("end_time").toString();
+            time.day =       query.value("day").toString();
+            time.startTime = query.value("start_time").toString();
+            time.endTime =   query.value("end_time").toString();
 
-        info.classTimes.append(time);
+            info.classTimes.append(time);
+        }
     }
 
     // Intensive Times
@@ -1013,17 +1049,24 @@ ClassInfo DataService::loadClassInfo(
 
     query.addBindValue(classId);
 
-    query.exec();
-
-    while (query.next())
+    if (!query.exec())
     {
-        ClassTime time;
+        qWarning()
+            << "Failed to load intensive class times:"
+            << query.lastError().text();
+    }
+    else
+    {
+        while (query.next())
+        {
+            ClassTime time;
 
-        time.day =       query.value("day").toString();
-        time.startTime = query.value("start_time").toString();
-        time.endTime =   query.value("end_time").toString();
+            time.day =       query.value("day").toString();
+            time.startTime = query.value("start_time").toString();
+            time.endTime =   query.value("end_time").toString();
 
-        info.intensiveTimes.append(time);
+            info.intensiveTimes.append(time);
+        }
     }
 
     return info;
