@@ -7,22 +7,6 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSizePolicy>
-
-namespace
-{
-const QStringList kRegularHours{
-    "3","4","5","6","7","8","9"
-};
-
-const QStringList kIntensiveHours{
-    "1","2","3","4","5","6","7","8","9","10","11","12"
-};
-
-const QStringList kStartMinutes{
-    ":00",":05",":25",":30",":35"
-};
-}
-
 // =========================================================
 // Constructor
 // =========================================================
@@ -55,7 +39,9 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     m_startHourCombo = new QComboBox(this);
     m_startHourCombo->addItems(
-        type == ScheduleType::Regular ? kRegularHours : kIntensiveHours
+        type == ScheduleType::Regular
+            ? ClassInfoConfig::RegularHours
+            : ClassInfoConfig::IntensiveHours
         );
     m_startHourCombo->setFixedWidth(70);
 
@@ -63,7 +49,7 @@ ClassTimeRow::ClassTimeRow(
         m_startHourCombo->setCurrentText("4");
 
     m_startMinuteCombo = new QComboBox(this);
-    m_startMinuteCombo->addItems(kStartMinutes);
+    m_startMinuteCombo->addItems(ClassInfoConfig::StartMinutes);
     m_startMinuteCombo->setFixedWidth(70);
     m_startMinuteCombo->setCurrentText(":00");
 

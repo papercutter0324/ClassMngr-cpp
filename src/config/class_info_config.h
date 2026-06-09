@@ -12,6 +12,10 @@ namespace ClassInfoConfig
 // =========================
 extern const QStringList Grades;
 extern const QStringList Days;
+extern const QStringList RegularHours;
+extern const QStringList IntensiveHours;
+extern const QStringList StartMinutes;
+extern const QStringList EndMinutes;
 
 // =========================
 // Core Lookups

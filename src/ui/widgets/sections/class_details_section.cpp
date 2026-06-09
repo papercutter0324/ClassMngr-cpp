@@ -7,7 +7,7 @@
 #include <QtAssert>
 
 #include "core/application_services.h"
-#include "models/class_info/class_info_config.h"
+#include "config/class_info_config.h"
 #include "utils/colorutils.h"
 
 

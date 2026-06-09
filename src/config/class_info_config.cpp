@@ -16,6 +16,31 @@ const QStringList Days{
     "Friday", "Saturday", "Sunday"
 };
 
+const QStringList RegularHours{
+    "3", "4", "5", "6", "7", "8", "9"
+};
+
+const QStringList IntensiveHours{
+    "1", "2", "3", "4", "5", "6",
+    "7", "8", "9", "10", "11", "12"
+};
+
+const QStringList StartMinutes{
+    ":00",
+    ":05",
+    ":25",
+    ":30",
+    ":35"
+};
+
+const QStringList EndMinutes{
+    ":55",
+    ":50",
+    ":35",
+    ":30",
+    ":25"
+};
+
 // =====================================================
 // Grade → Levels (NO IF CHAINS)
 // =====================================================
