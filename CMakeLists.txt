@@ -182,6 +182,15 @@ target_link_libraries(ClassMngr
         Qt6::Widgets
 )
 
+if(WIN32)
+    add_custom_command(TARGET ClassMngr POST_BUILD
+        COMMAND Qt6::windeployqt
+            --dir "$<TARGET_FILE_DIR:ClassMngr>"
+            "$<TARGET_FILE:ClassMngr>"
+        COMMENT "Deploying Qt runtime dependencies"
+    )
+endif()
+
 install(TARGETS ClassMngr
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
