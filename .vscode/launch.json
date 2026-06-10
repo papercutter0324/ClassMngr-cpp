@@ -1,6 +1,7 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
     {
       "name": "Debug ClassMngr",
       "type": "cppdbg",
@@ -22,7 +23,12 @@
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
-      "environment": [],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "C:\\Qt\\6.11.1\\msvc2022_64\\bin;${env:PATH}"
+        }
+      ],
       "console": "integratedTerminal",
       "preLaunchTask": "CMake: build"
     },
