@@ -350,6 +350,9 @@ ClassDetailsSection::ClassDetailsSection(
     auto* layout =
         new QVBoxLayout(this);
 
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
     layout->addLayout(grid);
 
     updateColorPreview(m_pendingClassColor);

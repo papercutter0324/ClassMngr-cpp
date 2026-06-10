@@ -3,6 +3,7 @@
 #include "ui/widgets/sections/teacher_info_section.h"
 #include "ui/widgets/sections/class_details_section.h"
 #include "ui/widgets/sections/class_schedule_section.h"
+#include "ui/widgets/sectioncards/class_info_section_card.h"
 
 #include "core/application_services.h"
 #include "models/class_conflict.h"
@@ -19,6 +20,26 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtAssert>
+
+namespace
+{
+SectionCard* addSectionCard(
+    QVBoxLayout* layout,
+    const QString& title,
+    QWidget* parent
+    )
+{
+    auto* card = new SectionCard(title, parent);
+
+    layout->addWidget(
+        card,
+        0,
+        Qt::AlignTop
+        );
+
+    return card;
+}
+}
 
 ClassInfoPage::ClassInfoPage(
     ApplicationServices* services,
@@ -117,25 +138,39 @@ void ClassInfoPage::buildUi()
     m_scrollContentLayout->addWidget(m_titleLabel);
     m_scrollContentLayout->addWidget(m_subtitleLabel);
 
+    auto* teacherCard =
+        addSectionCard(
+            m_scrollContentLayout,
+            tr("Korean Teacher"),
+            m_scrollContent
+            );
+
     m_teacherSection =
-        new TeacherInfoSection(this);
+        new TeacherInfoSection(teacherCard);
+
+    teacherCard->contentLayout()->addWidget(
+        m_teacherSection
+        );
+
+    auto* detailsCard =
+        addSectionCard(
+            m_scrollContentLayout,
+            tr("Class Details"),
+            m_scrollContent
+            );
 
     m_detailsSection =
         new ClassDetailsSection(
             m_services,
-            this
+            detailsCard
             );
+
+    detailsCard->contentLayout()->addWidget(
+        m_detailsSection
+        );
 
     m_scheduleSection =
         new ClassScheduleSection(this);
-
-    m_scrollContentLayout->addWidget(
-        m_teacherSection
-        );
-
-    m_scrollContentLayout->addWidget(
-        m_detailsSection
-        );
 
     m_scrollContentLayout->addWidget(
         m_scheduleSection
