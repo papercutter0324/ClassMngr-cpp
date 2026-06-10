@@ -7,6 +7,7 @@
 #include <QActionGroup>
 #include <QKeySequence>
 #include <QApplication>
+#include <QSettings>
 #include <QStyle>
 
 // =========================================================
@@ -264,6 +265,63 @@ void ActionRegistry::createOptionActions()
     themeState->loadFromSettings(
         Theme::Dark
     );
+
+
+    showSidebarTooltips =
+        createCheckableAction(
+            tr("Show Sidebar Tooltips"),
+            tr("Show full sidebar names in tooltips when they do not fit")
+            );
+
+    animateSidebarText =
+        createCheckableAction(
+            tr("Animate Overflowing Sidebar Text"),
+            tr("Animate overflowing sidebar names on hover")
+            );
+
+    QSettings settings;
+
+    showSidebarTooltips->setChecked(
+        settings.value(
+                OptionKeys::SidebarTooltipsEnabled,
+                true
+                ).toBool()
+        );
+
+    animateSidebarText->setChecked(
+        settings.value(
+                OptionKeys::SidebarMarqueeEnabled,
+                false
+                ).toBool()
+        );
+
+    connect(
+        showSidebarTooltips,
+        &QAction::toggled,
+        this,
+        [](bool enabled)
+        {
+            QSettings settings;
+            settings.setValue(
+                OptionKeys::SidebarTooltipsEnabled,
+                enabled
+                );
+        }
+        );
+
+    connect(
+        animateSidebarText,
+        &QAction::toggled,
+        this,
+        [](bool enabled)
+        {
+            QSettings settings;
+            settings.setValue(
+                OptionKeys::SidebarMarqueeEnabled,
+                enabled
+                );
+        }
+        );
 }
 
 // =========================================================

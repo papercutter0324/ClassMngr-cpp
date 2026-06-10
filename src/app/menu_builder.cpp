@@ -133,6 +133,11 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
             Theme::Light
         }
         );
+
+    options->addSeparator();
+
+    options->addAction(actions.showSidebarTooltips);
+    options->addAction(actions.animateSidebarText);
 }
 
 void MenuBuilder::buildHelpMenu(MainWindow* window)

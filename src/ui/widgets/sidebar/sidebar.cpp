@@ -2,11 +2,450 @@
 #include "sidebar_definitions.h"
 #include "sidebar_types.h"
 
+#include <QApplication>
 #include <QDesktopServices>
+#include <QEvent>
+#include <QFontMetrics>
+#include <QHeaderView>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPersistentModelIndex>
+#include <QResizeEvent>
+#include <QStyledItemDelegate>
+#include <QStyle>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QUrl>
 #include <QVBoxLayout>
+
+
+
+// =========================================================
+// Sidebar Marquee Delegate
+// =========================================================
+
+class SidebarMarqueeDelegate : public QStyledItemDelegate
+{
+public:
+    explicit SidebarMarqueeDelegate(
+        QTreeWidget* tree,
+        QObject* parent = nullptr
+        )
+        : QStyledItemDelegate(parent)
+        , m_tree(tree)
+    {
+        m_timer.setInterval(30);
+
+        connect(
+            &m_timer,
+            &QTimer::timeout,
+            this,
+            &SidebarMarqueeDelegate::advanceMarquee
+            );
+
+        if (m_tree && m_tree->viewport())
+        {
+            m_tree->viewport()->setMouseTracking(true);
+            m_tree->viewport()->installEventFilter(this);
+        }
+    }
+
+    void setMarqueeEnabled(
+        bool enabled
+        )
+    {
+        if (m_enabled == enabled)
+        {
+            return;
+        }
+
+        m_enabled = enabled;
+        resetMarquee();
+    }
+
+    void resetMarquee()
+    {
+        const QModelIndex oldIndex =
+            m_hoveredIndex;
+
+        m_timer.stop();
+        m_offset = 0;
+        m_hoveredIndex = QPersistentModelIndex();
+
+        updateIndex(oldIndex);
+    }
+
+    void paint(
+        QPainter* painter,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+
+        const QModelIndex hoveredIndex =
+            m_hoveredIndex;
+
+        if (
+            !m_enabled
+            || hoveredIndex != index
+            || !isOverflowing(opt)
+            )
+        {
+            QStyledItemDelegate::paint(
+                painter,
+                option,
+                index
+                );
+            return;
+        }
+
+        const QWidget* widget =
+            opt.widget;
+
+        QStyle* style =
+            widget
+                ? widget->style()
+                : QApplication::style();
+
+        QStyleOptionViewItem backgroundOpt(opt);
+        backgroundOpt.text.clear();
+        backgroundOpt.features &=
+            ~QStyleOptionViewItem::HasDisplay;
+
+        style->drawControl(
+            QStyle::CE_ItemViewItem,
+            &backgroundOpt,
+            painter,
+            widget
+            );
+
+        const QRect textRect =
+            style->subElementRect(
+                QStyle::SE_ItemViewItemText,
+                &opt,
+                widget
+                );
+
+        const QRect visibleTextRect =
+            clippedTextRect(textRect);
+
+        if (!visibleTextRect.isValid())
+        {
+            return;
+        }
+
+        const int textWidth =
+            opt.fontMetrics.horizontalAdvance(opt.text);
+
+        if (textWidth <= visibleTextRect.width())
+        {
+            return;
+        }
+
+        painter->save();
+
+        painter->setClipRect(
+            visibleTextRect
+            );
+
+        painter->setFont(
+            opt.font
+            );
+
+        const QPalette::ColorGroup colorGroup =
+            (opt.state & QStyle::State_Enabled)
+                ? ((opt.state & QStyle::State_Active)
+                       ? QPalette::Active
+                       : QPalette::Inactive)
+                : QPalette::Disabled;
+
+        const QPalette::ColorRole colorRole =
+            (opt.state & QStyle::State_Selected)
+                ? QPalette::HighlightedText
+                : QPalette::Text;
+
+        painter->setPen(
+            opt.palette.color(
+                colorGroup,
+                colorRole
+                )
+            );
+
+        Qt::Alignment alignment =
+            opt.displayAlignment;
+
+        if (!(alignment & Qt::AlignHorizontal_Mask))
+        {
+            alignment |= Qt::AlignLeft;
+        }
+
+        if (!(alignment & Qt::AlignVertical_Mask))
+        {
+            alignment |= Qt::AlignVCenter;
+        }
+
+        const int cycleWidth =
+            textWidth + ScrollGap;
+
+        const int offset =
+            cycleWidth > 0
+                ? m_offset % cycleWidth
+                : 0;
+
+        int x =
+            textRect.left() - offset;
+
+        while (x < visibleTextRect.right())
+        {
+            painter->drawText(
+                QRect(
+                    x,
+                    textRect.top(),
+                    textWidth,
+                    textRect.height()
+                    ),
+                alignment,
+                opt.text
+                );
+
+            x += cycleWidth;
+        }
+
+        painter->restore();
+    }
+
+protected:
+    bool eventFilter(
+        QObject* watched,
+        QEvent* event
+        ) override
+    {
+        if (
+            m_tree
+            && watched == m_tree->viewport()
+            )
+        {
+            if (event->type() == QEvent::MouseMove)
+            {
+                auto* mouseEvent =
+                    static_cast<QMouseEvent*>(event);
+
+                setHoveredIndex(
+                    m_tree->indexAt(
+                        mouseEvent->pos()
+                        )
+                    );
+            }
+            else if (event->type() == QEvent::Leave)
+            {
+                setHoveredIndex(
+                    QModelIndex()
+                    );
+            }
+        }
+
+        return QStyledItemDelegate::eventFilter(
+            watched,
+            event
+            );
+    }
+
+private:
+    static constexpr int ScrollGap = 32;
+
+    void setHoveredIndex(
+        const QModelIndex& index
+        )
+    {
+        const QModelIndex oldIndex =
+            m_hoveredIndex;
+
+        if (oldIndex == index)
+        {
+            return;
+        }
+
+        m_hoveredIndex =
+            index;
+
+        m_offset = 0;
+
+        updateIndex(oldIndex);
+        updateIndex(index);
+
+        updateTimer();
+    }
+
+    void advanceMarquee()
+    {
+        if (
+            !m_enabled
+            || !m_hoveredIndex.isValid()
+            )
+        {
+            m_timer.stop();
+            return;
+        }
+
+        const QModelIndex index =
+            m_hoveredIndex;
+
+        if (!isIndexOverflowing(index))
+        {
+            m_timer.stop();
+            m_offset = 0;
+            updateIndex(index);
+            return;
+        }
+
+        ++m_offset;
+
+        if (m_offset > 100000)
+        {
+            m_offset = 0;
+        }
+
+        updateIndex(index);
+    }
+
+    void updateTimer()
+    {
+        if (
+            m_enabled
+            && m_hoveredIndex.isValid()
+            && isIndexOverflowing(m_hoveredIndex)
+            )
+        {
+            if (!m_timer.isActive())
+            {
+                m_timer.start();
+            }
+        }
+        else
+        {
+            m_timer.stop();
+        }
+    }
+
+    void updateIndex(
+        const QModelIndex& index
+        ) const
+    {
+        if (
+            !m_tree
+            || !m_tree->viewport()
+            || !index.isValid()
+            )
+        {
+            return;
+        }
+
+        m_tree->viewport()->update(
+            m_tree->visualRect(index)
+            );
+    }
+
+    bool isIndexOverflowing(
+        const QModelIndex& index
+        ) const
+    {
+        if (
+            !m_tree
+            || !index.isValid()
+            )
+        {
+            return false;
+        }
+
+        QStyleOptionViewItem option;
+        option.initFrom(
+            m_tree->viewport()
+            );
+        option.widget =
+            m_tree->viewport();
+        option.rect =
+            m_tree->visualRect(index);
+
+        initStyleOption(
+            &option,
+            index
+            );
+
+        return isOverflowing(option);
+    }
+
+    bool isOverflowing(
+        const QStyleOptionViewItem& option
+        ) const
+    {
+        if (
+            !m_tree
+            || !m_tree->viewport()
+            || option.text.isEmpty()
+            )
+        {
+            return false;
+        }
+
+        const QWidget* widget =
+            option.widget;
+
+        QStyle* style =
+            widget
+                ? widget->style()
+                : QApplication::style();
+
+        const QRect textRect =
+            style->subElementRect(
+                QStyle::SE_ItemViewItemText,
+                &option,
+                widget
+                );
+
+        const QRect visibleTextRect =
+            clippedTextRect(textRect);
+
+        if (!visibleTextRect.isValid())
+        {
+            return false;
+        }
+
+        return option.fontMetrics.horizontalAdvance(
+                   option.text
+                   )
+               > visibleTextRect.width();
+    }
+
+    QRect clippedTextRect(
+        const QRect& textRect
+        ) const
+    {
+        if (
+            !m_tree
+            || !m_tree->viewport()
+            )
+        {
+            return textRect;
+        }
+
+        return textRect.intersected(
+            m_tree->viewport()->rect()
+            );
+    }
+
+    QTreeWidget* m_tree = nullptr;
+
+    QTimer m_timer;
+
+    QPersistentModelIndex m_hoveredIndex;
+
+    int m_offset = 0;
+
+    bool m_enabled = false;
+};
 
 
 
@@ -29,6 +468,65 @@ Sidebar::Sidebar(QWidget *parent)
 
 
 // =========================================================
+// Overflow Display
+// =========================================================
+
+void Sidebar::setOverflowTooltipsEnabled(
+    bool enabled
+    )
+{
+    if (m_overflowTooltipsEnabled == enabled)
+    {
+        return;
+    }
+
+    m_overflowTooltipsEnabled = enabled;
+
+    updateOverflowTooltips();
+}
+
+void Sidebar::setOverflowMarqueeEnabled(
+    bool enabled
+    )
+{
+    if (m_overflowMarqueeEnabled == enabled)
+    {
+        return;
+    }
+
+    m_overflowMarqueeEnabled = enabled;
+
+    if (m_marqueeDelegate)
+    {
+        m_marqueeDelegate->setMarqueeEnabled(
+            enabled
+            );
+    }
+}
+
+
+
+// =========================================================
+// Resize
+// =========================================================
+
+void Sidebar::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QWidget::resizeEvent(event);
+
+    updateOverflowTooltips();
+
+    if (m_marqueeDelegate)
+    {
+        m_marqueeDelegate->resetMarquee();
+    }
+}
+
+
+
+// =========================================================
 // Setup UI
 // =========================================================
 
@@ -45,6 +543,33 @@ void Sidebar::setupUi()
     m_tree->setUniformRowHeights(true);
 
     m_tree->setIndentation(12);
+
+    m_tree->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+
+    m_tree->setTextElideMode(
+        Qt::ElideNone
+        );
+
+    m_tree->setWordWrap(false);
+
+    m_tree->header()->setSectionResizeMode(
+        0,
+        QHeaderView::ResizeToContents
+        );
+
+    m_tree->header()->setStretchLastSection(false);
+
+    m_marqueeDelegate =
+        new SidebarMarqueeDelegate(
+            m_tree,
+            m_tree
+            );
+
+    m_tree->setItemDelegate(
+        m_marqueeDelegate
+        );
 
     layout->addWidget(m_tree);
 
@@ -80,6 +605,36 @@ void Sidebar::setupSignals()
         &QWidget::customContextMenuRequested,
         this,
         &Sidebar::showContextMenu
+        );
+
+    connect(
+        m_tree,
+        &QTreeWidget::itemExpanded,
+        this,
+        [this](QTreeWidgetItem*)
+        {
+            updateTreeColumnWidth();
+
+            if (m_marqueeDelegate)
+            {
+                m_marqueeDelegate->resetMarquee();
+            }
+        }
+        );
+
+    connect(
+        m_tree,
+        &QTreeWidget::itemCollapsed,
+        this,
+        [this](QTreeWidgetItem*)
+        {
+            updateTreeColumnWidth();
+
+            if (m_marqueeDelegate)
+            {
+                m_marqueeDelegate->resetMarquee();
+            }
+        }
         );
 }
 
@@ -165,6 +720,8 @@ void Sidebar::buildTree()
             m_nodes[spec.key] = item;
         }
     }
+
+    updateTreeColumnWidth();
 }
 
 
@@ -261,6 +818,8 @@ void Sidebar::addClassNode(
     m_nodes["classes"]->setExpanded(true);
 
     m_classItems[classId] = item;
+
+    updateTreeColumnWidth();
 }
 
 
@@ -279,6 +838,8 @@ void Sidebar::clearClasses()
     m_nodes["classes"]->takeChildren();
 
     m_classItems.clear();
+
+    updateTreeColumnWidth();
 }
 
 void Sidebar::selectClass(
@@ -361,6 +922,8 @@ void Sidebar::addTeacherNode(
     m_nodes["teachers"]->setExpanded(true);
 
     m_teacherItems[teacherId] = item;
+
+    updateTreeColumnWidth();
 }
 
 
@@ -379,6 +942,153 @@ void Sidebar::clearTeachers()
     m_nodes["teachers"]->takeChildren();
 
     m_teacherItems.clear();
+
+    updateTreeColumnWidth();
+}
+
+
+
+// =========================================================
+// Update Tree Column Width
+// =========================================================
+
+void Sidebar::updateTreeColumnWidth()
+{
+    if (!m_tree)
+    {
+        return;
+    }
+
+    m_tree->resizeColumnToContents(0);
+
+    updateOverflowTooltips();
+}
+
+
+
+// =========================================================
+// Update Overflow Tooltips
+// =========================================================
+
+void Sidebar::updateOverflowTooltips()
+{
+    if (!m_tree)
+    {
+        return;
+    }
+
+    auto* root =
+        m_tree->invisibleRootItem();
+
+    if (!root)
+    {
+        return;
+    }
+
+    for (int i = 0; i < root->childCount(); ++i)
+    {
+        updateItemOverflowTooltips(
+            root->child(i)
+            );
+    }
+}
+
+void Sidebar::updateItemOverflowTooltips(
+    QTreeWidgetItem* item
+    )
+{
+    if (!item)
+    {
+        return;
+    }
+
+    if (
+        m_overflowTooltipsEnabled
+        && isItemTextOverflowing(item)
+        )
+    {
+        item->setToolTip(
+            0,
+            item->text(0)
+            );
+    }
+    else
+    {
+        item->setToolTip(
+            0,
+            QString()
+            );
+    }
+
+    for (int i = 0; i < item->childCount(); ++i)
+    {
+        updateItemOverflowTooltips(
+            item->child(i)
+            );
+    }
+}
+
+bool Sidebar::isItemTextOverflowing(
+    QTreeWidgetItem* item
+    ) const
+{
+    if (
+        !m_tree
+        || !m_tree->viewport()
+        || !item
+        || item->text(0).isEmpty()
+        )
+    {
+        return false;
+    }
+
+    const QFontMetrics metrics(
+        m_tree->font()
+        );
+
+    const int textWidth =
+        metrics.horizontalAdvance(
+            item->text(0)
+            );
+
+    const QRect itemRect =
+        m_tree->visualItemRect(item);
+
+    const int textLeft =
+        itemRect.isValid()
+            ? qMax(0, itemRect.left())
+            : itemDepth(item) * m_tree->indentation() + 24;
+
+    const int availableWidth =
+        m_tree->viewport()->width()
+        - textLeft
+        - 8;
+
+    return textWidth > availableWidth;
+}
+
+int Sidebar::itemDepth(
+    QTreeWidgetItem* item
+    ) const
+{
+    int depth = 0;
+
+    if (!item)
+    {
+        return depth;
+    }
+
+    auto* parent =
+        item->parent();
+
+    while (parent)
+    {
+        ++depth;
+        parent =
+            parent->parent();
+    }
+
+    return depth;
 }
 
 

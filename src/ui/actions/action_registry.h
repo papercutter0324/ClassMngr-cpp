@@ -22,6 +22,9 @@ public:
     OptionState<SaveMode>* saveModeState = nullptr;
     OptionState<Theme>* themeState = nullptr;
 
+    QAction* showSidebarTooltips = nullptr;
+    QAction* animateSidebarText = nullptr;
+
     // =====================================================
     // File
     // =====================================================

@@ -8,6 +8,8 @@
 #include <QWidget>
 
 class QTreeWidget;
+class QResizeEvent;
+class SidebarMarqueeDelegate;
 
 
 
@@ -65,6 +67,20 @@ public:
 
 
 
+    // =====================================================
+    // Overflow Display
+    // =====================================================
+
+    void setOverflowTooltipsEnabled(
+        bool enabled
+        );
+
+    void setOverflowMarqueeEnabled(
+        bool enabled
+        );
+
+
+
 signals:
 
     void itemSelected(
@@ -78,6 +94,14 @@ signals:
     void addTeacherRequested();
 
     void deleteTeacherRequested();
+
+
+
+protected:
+
+    void resizeEvent(
+        QResizeEvent* event
+        ) override;
 
 
 
@@ -126,6 +150,22 @@ private:
         QTreeWidgetItem *item
         ) const;
 
+    void updateTreeColumnWidth();
+
+    void updateOverflowTooltips();
+
+    void updateItemOverflowTooltips(
+        QTreeWidgetItem* item
+        );
+
+    bool isItemTextOverflowing(
+        QTreeWidgetItem* item
+        ) const;
+
+    int itemDepth(
+        QTreeWidgetItem* item
+        ) const;
+
 
 
     // =====================================================
@@ -133,6 +173,12 @@ private:
     // =====================================================
 
     QTreeWidget *m_tree = nullptr;
+
+    SidebarMarqueeDelegate* m_marqueeDelegate = nullptr;
+
+    bool m_overflowTooltipsEnabled = true;
+
+    bool m_overflowMarqueeEnabled = false;
 
 
 

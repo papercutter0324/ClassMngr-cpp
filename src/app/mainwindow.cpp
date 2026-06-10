@@ -144,6 +144,28 @@ void MainWindow::buildMenus()
 
 void MainWindow::connectSignals()
 {
+    ui->sidebarWidget->setOverflowTooltipsEnabled(
+        m_actions.showSidebarTooltips->isChecked()
+        );
+
+    ui->sidebarWidget->setOverflowMarqueeEnabled(
+        m_actions.animateSidebarText->isChecked()
+        );
+
+    connect(
+        m_actions.showSidebarTooltips,
+        &QAction::toggled,
+        ui->sidebarWidget,
+        &Sidebar::setOverflowTooltipsEnabled
+        );
+
+    connect(
+        m_actions.animateSidebarText,
+        &QAction::toggled,
+        ui->sidebarWidget,
+        &Sidebar::setOverflowMarqueeEnabled
+        );
+
     connect(
         ui->sidebarWidget,
         &Sidebar::itemSelected,
