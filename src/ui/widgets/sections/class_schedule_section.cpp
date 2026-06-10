@@ -68,10 +68,7 @@ ClassTimeRow* ClassScheduleSection::addRow(
 
     const int rowIndex = container.size();
 
-    grid->addWidget(row->dayCombo(), rowIndex, 0);
-    grid->addWidget(row->startWidget(), rowIndex, 1);
-    grid->addWidget(row->endCombo(), rowIndex, 2);
-    grid->addWidget(row->removeButton(), rowIndex, 3);
+    grid->addWidget(row, rowIndex, 0, 1, 4);
 
     connect(row, &ClassTimeRow::removeRequested, this,
             [this, grid, &container](ClassTimeRow* r) {
@@ -112,10 +109,7 @@ void ClassScheduleSection::removeRow(
 
     container.removeOne(row);
 
-    grid->removeWidget(row->dayCombo());
-    grid->removeWidget(row->startWidget());
-    grid->removeWidget(row->endCombo());
-    grid->removeWidget(row->removeButton());
+    grid->removeWidget(row);
 
     row->deleteLater();
 
@@ -138,10 +132,7 @@ void ClassScheduleSection::rebuildGrid(
     {
         auto* row = rows[i];
 
-        grid->addWidget(row->dayCombo(), i + 1, 0);
-        grid->addWidget(row->startWidget(), i + 1, 1);
-        grid->addWidget(row->endCombo(), i + 1, 2);
-        grid->addWidget(row->removeButton(), i + 1, 3);
+        grid->addWidget(row, i + 1, 0, 1, 4);
     }
 }
 
@@ -232,10 +223,7 @@ void ClassScheduleSection::loadSchedules(
 {
     for (auto* r : m_regularRows)
     {
-        m_regularGrid->removeWidget(r->dayCombo());
-        m_regularGrid->removeWidget(r->startWidget());
-        m_regularGrid->removeWidget(r->endCombo());
-        m_regularGrid->removeWidget(r->removeButton());
+        m_regularGrid->removeWidget(r);
         r->deleteLater();
     }
 
@@ -243,10 +231,7 @@ void ClassScheduleSection::loadSchedules(
 
     for (auto* r : m_intensiveRows)
     {
-        m_intensiveGrid->removeWidget(r->dayCombo());
-        m_intensiveGrid->removeWidget(r->startWidget());
-        m_intensiveGrid->removeWidget(r->endCombo());
-        m_intensiveGrid->removeWidget(r->removeButton());
+        m_intensiveGrid->removeWidget(r);
         r->deleteLater();
     }
 
