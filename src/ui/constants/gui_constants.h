@@ -85,7 +85,10 @@ inline constexpr int GroupSpacerHeight = 12;
 
 namespace Teacher
 {
-inline constexpr int ColumnStretch = 1;
+inline constexpr int ColumnStretch       = 0;
+inline constexpr int FillerColumnStretch = 1;
+inline constexpr int FieldMinWidth       = 190;
+inline constexpr int FieldMaxWidth       = FieldMinWidth * 2;
 }
 
 namespace Details
@@ -106,6 +109,8 @@ inline constexpr int LevelColumnStretch        = 1;
 inline constexpr int StudentCountColumnStretch = 0;
 inline constexpr int ReadingBookColumnStretch  = 2;
 inline constexpr int EssayBookColumnStretch    = 2;
+inline constexpr int FieldColumnStretch        = 0;
+inline constexpr int FillerColumnStretch       = 1;
 }
 
 namespace Schedule

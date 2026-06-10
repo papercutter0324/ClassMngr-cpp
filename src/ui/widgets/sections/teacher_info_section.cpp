@@ -18,13 +18,13 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
 
-    auto* grid = new QGridLayout();
+    m_grid = new QGridLayout();
 
-    grid->setHorizontalSpacing(
+    m_grid->setHorizontalSpacing(
         UiConstants::ClassInfo::Form::HorizontalSpacing
         );
 
-    grid->setVerticalSpacing(
+    m_grid->setVerticalSpacing(
         UiConstants::ClassInfo::Form::VerticalSpacing
         );
 
@@ -63,16 +63,16 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         w->setReadOnly(true);
     }
 
-    grid->addWidget(fieldLabel(tr("Korean")), 0, 0);
-    grid->addWidget(fieldLabel(tr("English")), 0, 1);
-    grid->addWidget(fieldLabel(tr("Room")), 0, 2);
+    m_grid->addWidget(fieldLabel(tr("Korean")), 0, 0, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("English")), 0, 1, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Room")), 0, 2, Qt::AlignLeft);
 
-    grid->addWidget(m_teacherKrCombo, 1, 0);
-    grid->addWidget(m_teacherEnCombo, 1, 1);
+    m_grid->addWidget(m_teacherKrCombo, 1, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_teacherEnCombo, 1, 1, Qt::AlignLeft);
 
-    grid->addWidget(m_roomNumberEdit, 1, 2);
+    m_grid->addWidget(m_roomNumberEdit, 1, 2, Qt::AlignLeft);
 
-    grid->addItem(
+    m_grid->addItem(
         new QSpacerItem(
             0,
             UiConstants::ClassInfo::Form::GroupSpacerHeight,
@@ -82,15 +82,15 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         2,
         0,
         1,
-        3
+        4
         );
 
-    grid->addWidget(fieldLabel(tr("Wi-Fi Name")), 3, 0);
-    grid->addWidget(fieldLabel(tr("Wi-Fi Password")), 3, 1);
-    grid->addWidget(m_wifiNameEdit, 4, 0);
-    grid->addWidget(m_wifiPasswordEdit, 4, 1);
+    m_grid->addWidget(fieldLabel(tr("Wi-Fi Name")), 3, 0, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Wi-Fi Password")), 3, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiNameEdit, 4, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiPasswordEdit, 4, 1, Qt::AlignLeft);
 
-    grid->addItem(
+    m_grid->addItem(
         new QSpacerItem(
             0,
             UiConstants::ClassInfo::Form::GroupSpacerHeight,
@@ -100,30 +100,36 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         5,
         0,
         1,
-        3
+        4
         );
 
-    grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 0);
-    grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 1);
-    grid->addWidget(m_zoomIdEdit, 7, 0);
-    grid->addWidget(m_zoomPasswordEdit, 7, 1);
+    m_grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 0, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomIdEdit, 7, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomPasswordEdit, 7, 1, Qt::AlignLeft);
 
-    grid->setColumnStretch(
+    m_grid->setColumnStretch(
         0,
         UiConstants::ClassInfo::Teacher::ColumnStretch
         );
 
-    grid->setColumnStretch(
+    m_grid->setColumnStretch(
         1,
         UiConstants::ClassInfo::Teacher::ColumnStretch
         );
 
-    grid->setColumnStretch(
+    m_grid->setColumnStretch(
         2,
         UiConstants::ClassInfo::Teacher::ColumnStretch
         );
+    m_grid->setColumnStretch(
+        3,
+        UiConstants::ClassInfo::Teacher::FillerColumnStretch
+        );
 
-    layout->addLayout(grid);
+    layout->addLayout(m_grid);
+
+    applyFieldWidths();
 
     rebuildTeacherCombos();
 
@@ -270,4 +276,40 @@ void TeacherInfoSection::clearTeacher()
     m_wifiPasswordEdit->clear();
     m_zoomIdEdit->clear();
     m_zoomPasswordEdit->clear();
+}
+
+void TeacherInfoSection::applyFieldWidths()
+{
+    const auto applyWidth =
+        [](QWidget* widget)
+        {
+            if (!widget)
+            {
+                return;
+            }
+
+            widget->setMinimumWidth(
+                UiConstants::ClassInfo::Teacher::FieldMinWidth
+                );
+            widget->setMaximumWidth(
+                UiConstants::ClassInfo::Teacher::FieldMaxWidth
+                );
+            widget->setSizePolicy(
+                QSizePolicy::Maximum,
+                QSizePolicy::Preferred
+                );
+        };
+
+    for (auto* widget : {
+             static_cast<QWidget*>(m_teacherKrCombo),
+             static_cast<QWidget*>(m_teacherEnCombo),
+             static_cast<QWidget*>(m_roomNumberEdit),
+             static_cast<QWidget*>(m_wifiNameEdit),
+             static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_zoomIdEdit),
+             static_cast<QWidget*>(m_zoomPasswordEdit)
+         })
+    {
+        applyWidth(widget);
+    }
 }

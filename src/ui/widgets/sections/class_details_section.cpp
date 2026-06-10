@@ -212,6 +212,17 @@ ClassDetailsSection::ClassDetailsSection(
         UiConstants::ClassInfo::Form::VerticalSpacing
         );
 
+    auto* booksGrid =
+        new QGridLayout;
+
+    booksGrid->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
+        );
+
+    booksGrid->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
+
     const auto fieldLabel =
         [this](const QString& text)
         {
@@ -307,44 +318,56 @@ ClassDetailsSection::ClassDetailsSection(
     grid->addWidget(gradeLabel, 0, 1);
     grid->addWidget(levelLabel, 0, 2);
     grid->addWidget(studentCountLabel, 0, 3);
-    grid->addWidget(readingBookLabel, 0, 4);
-    grid->addWidget(essayBookLabel, 0, 5);
 
     grid->addLayout(colorLayout, 1, 0);
     grid->addWidget(m_gradeCombo, 1, 1);
     grid->addWidget(m_levelCombo, 1, 2);
     grid->addWidget(m_studentCountEdit, 1, 3);
-    grid->addWidget(m_readingBookCombo, 1, 4);
-    grid->addWidget(m_essayBookCombo, 1, 5);
+
+    booksGrid->addWidget(readingBookLabel, 0, 0);
+    booksGrid->addWidget(essayBookLabel, 0, 1);
+
+    booksGrid->addWidget(m_readingBookCombo, 1, 0);
+    booksGrid->addWidget(m_essayBookCombo, 1, 1);
 
     grid->setColumnStretch(
         0,
-        UiConstants::ClassInfo::Details::ColorColumnStretch
+        UiConstants::ClassInfo::Details::FieldColumnStretch
         );
 
     grid->setColumnStretch(
         1,
-        UiConstants::ClassInfo::Details::GradeColumnStretch
+        UiConstants::ClassInfo::Details::FieldColumnStretch
         );
 
     grid->setColumnStretch(
         2,
-        UiConstants::ClassInfo::Details::LevelColumnStretch
+        UiConstants::ClassInfo::Details::FieldColumnStretch
         );
 
     grid->setColumnStretch(
         3,
-        UiConstants::ClassInfo::Details::StudentCountColumnStretch
+        UiConstants::ClassInfo::Details::FieldColumnStretch
         );
 
     grid->setColumnStretch(
         4,
-        UiConstants::ClassInfo::Details::ReadingBookColumnStretch
+        UiConstants::ClassInfo::Details::FillerColumnStretch
         );
 
-    grid->setColumnStretch(
-        5,
-        UiConstants::ClassInfo::Details::EssayBookColumnStretch
+    booksGrid->setColumnStretch(
+        0,
+        UiConstants::ClassInfo::Details::FieldColumnStretch
+        );
+
+    booksGrid->setColumnStretch(
+        1,
+        UiConstants::ClassInfo::Details::FieldColumnStretch
+        );
+
+    booksGrid->setColumnStretch(
+        2,
+        UiConstants::ClassInfo::Details::FillerColumnStretch
         );
 
     auto* layout =
@@ -354,6 +377,10 @@ ClassDetailsSection::ClassDetailsSection(
     layout->setSpacing(0);
 
     layout->addLayout(grid);
+    layout->addSpacing(
+        UiConstants::ClassInfo::Form::GroupSpacerHeight
+        );
+    layout->addLayout(booksGrid);
 
     updateColorPreview(m_pendingClassColor);
     updateLevelOptions();

@@ -6,6 +6,7 @@
 #include <QWidget>
 
 class QComboBox;
+class QGridLayout;
 class QLineEdit;
 class TeacherModel;
 
@@ -32,8 +33,11 @@ private:
     void rebuildTeacherCombos();
     void applyTeacher(int index);
     void clearTeacher();
+    void applyFieldWidths();
 
 private:
+    QGridLayout* m_grid = nullptr;
+
     QComboBox* m_teacherKrCombo = nullptr;
     QComboBox* m_teacherEnCombo = nullptr;
 
