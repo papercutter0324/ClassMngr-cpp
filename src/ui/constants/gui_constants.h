@@ -112,6 +112,8 @@ namespace Schedule
 {
 inline constexpr int HorizontalSpacing = MinimumInterItemSpacing;
 inline constexpr int VerticalSpacing   = 4;
+inline constexpr int OuterMargin       = 0;
+inline constexpr int SubtitleFontSize  = 12;
 
 inline constexpr int DayColumnStretch       = 1;
 inline constexpr int StartTimeColumnStretch = 0;
