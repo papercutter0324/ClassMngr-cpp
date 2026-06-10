@@ -54,6 +54,99 @@ inline constexpr int LabelIndent = 4;
 
 
 // =====================================================
+// Class Info Page
+// =====================================================
+
+namespace ClassInfo
+{
+inline constexpr int MinimumInterItemSpacing = 16;
+inline constexpr int TextWidthPadding        = 10;
+
+namespace Page
+{
+inline constexpr int ContentMargin  = 24;
+inline constexpr int ContentSpacing = 20;
+}
+
+namespace SectionCard
+{
+inline constexpr int Margin  = 20;
+inline constexpr int Spacing = 16;
+}
+
+namespace Form
+{
+inline constexpr int HorizontalSpacing = MinimumInterItemSpacing;
+inline constexpr int VerticalSpacing   = 4;
+inline constexpr int LabelIndent       = 4;
+
+inline constexpr int GroupSpacerHeight = 12;
+}
+
+namespace Teacher
+{
+inline constexpr int ColumnStretch = 1;
+}
+
+namespace Details
+{
+inline constexpr int ColorPreviewWidth         = 40;
+inline constexpr int ColorPreviewHeight        = 24;
+inline constexpr int ColorPreviewButtonSpacing = 5;
+inline constexpr int ColorButtonExtraWidth     = 10;
+
+inline constexpr int GradeMaxWidth            = 95;
+inline constexpr int StudentCountMaxWidth     = 110;
+inline constexpr int LevelComboExtraWidth     = 10;
+inline constexpr int EssayBookWidthReduction = 30;
+
+inline constexpr int ColorColumnStretch        = 1;
+inline constexpr int GradeColumnStretch        = 1;
+inline constexpr int LevelColumnStretch        = 1;
+inline constexpr int StudentCountColumnStretch = 0;
+inline constexpr int ReadingBookColumnStretch  = 2;
+inline constexpr int EssayBookColumnStretch    = 2;
+}
+
+namespace Schedule
+{
+inline constexpr int HorizontalSpacing = MinimumInterItemSpacing;
+inline constexpr int VerticalSpacing   = 4;
+
+inline constexpr int DayColumnStretch       = 1;
+inline constexpr int StartTimeColumnStretch = 0;
+inline constexpr int EndTimeColumnStretch   = 0;
+inline constexpr int RemoveColumnStretch    = 0;
+inline constexpr int FillerColumnStretch    = 1;
+
+inline constexpr int RowColumnSpan       = 5;
+inline constexpr int AddButtonFixedWidth = 200;
+}
+
+namespace TimeRow
+{
+inline constexpr int DayComboMaxWidth = 160;
+
+inline constexpr int StartComboWidth       = 70;
+inline constexpr int MinuteComboExtraWidth = 10;
+inline constexpr int EndComboWidth         = 120;
+inline constexpr int RemoveButtonWidth     = 90;
+
+inline constexpr int StartLayoutSpacing = 4;
+inline constexpr int HorizontalSpacing  = MinimumInterItemSpacing;
+inline constexpr int VerticalSpacing    = 0;
+
+inline constexpr int DayColumnStretch    = 0;
+inline constexpr int StartColumnStretch  = 0;
+inline constexpr int EndColumnStretch    = 0;
+inline constexpr int RemoveColumnStretch = 0;
+inline constexpr int FillerColumnStretch = 1;
+}
+}
+
+
+
+// =====================================================
 // Editors
 // =====================================================
 

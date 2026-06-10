@@ -14,6 +14,9 @@ class ClassScheduleSection;
 
 class QLabel;
 class QPushButton;
+class QScrollArea;
+class QVBoxLayout;
+class QWidget;
 
 class ClassInfoPage : public BasePage
 {
@@ -37,6 +40,7 @@ signals:
 
 private:
     void buildUi();
+    void updateScrollContentMinimumWidth();
 
     void markDirty();
     void clearDirty();
@@ -59,6 +63,10 @@ private:
     TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};
     ClassScheduleSection* m_scheduleSection{nullptr};
+
+    QScrollArea* m_scrollArea{nullptr};
+    QWidget* m_scrollContent{nullptr};
+    QVBoxLayout* m_scrollContentLayout{nullptr};
 
     QLabel* m_titleLabel{nullptr};
     QLabel* m_subtitleLabel{nullptr};

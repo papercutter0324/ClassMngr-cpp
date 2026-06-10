@@ -8,12 +8,16 @@
 #include "models/class_conflict.h"
 #include "models/class_info.h"
 #include "services/dataservice.h"
+#include "ui/constants/gui_constants.h"
 
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QFrame>
+#include <QScrollArea>
 #include <QStringList>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <QtAssert>
 
 ClassInfoPage::ClassInfoPage(
@@ -58,6 +62,50 @@ ClassInfoPage::ClassInfoPage(
 
 void ClassInfoPage::buildUi()
 {
+    contentLayout()->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    contentLayout()->setSpacing(
+        0
+        );
+
+    m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+    m_scrollArea->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+
+    m_scrollContent = new QWidget(m_scrollArea);
+    m_scrollContentLayout = new QVBoxLayout(m_scrollContent);
+    m_scrollContentLayout->setContentsMargins(
+        UiConstants::ClassInfo::Page::ContentMargin,
+        UiConstants::ClassInfo::Page::ContentMargin,
+        UiConstants::ClassInfo::Page::ContentMargin,
+        UiConstants::ClassInfo::Page::ContentMargin
+        );
+    m_scrollContentLayout->setSpacing(
+        UiConstants::ClassInfo::Page::ContentSpacing
+        );
+    m_scrollContentLayout->setAlignment(
+        Qt::AlignTop
+        );
+
+    m_scrollArea->setWidget(
+        m_scrollContent
+        );
+
+    contentLayout()->addWidget(
+        m_scrollArea
+        );
+
     m_titleLabel = new QLabel(
         tr("Class Information")
         );
@@ -66,8 +114,8 @@ void ClassInfoPage::buildUi()
         tr("View and manage details for this class.")
         );
 
-    contentLayout()->addWidget(m_titleLabel);
-    contentLayout()->addWidget(m_subtitleLabel);
+    m_scrollContentLayout->addWidget(m_titleLabel);
+    m_scrollContentLayout->addWidget(m_subtitleLabel);
 
     m_teacherSection =
         new TeacherInfoSection(this);
@@ -81,17 +129,19 @@ void ClassInfoPage::buildUi()
     m_scheduleSection =
         new ClassScheduleSection(this);
 
-    contentLayout()->addWidget(
+    m_scrollContentLayout->addWidget(
         m_teacherSection
         );
 
-    contentLayout()->addWidget(
+    m_scrollContentLayout->addWidget(
         m_detailsSection
         );
 
-    contentLayout()->addWidget(
+    m_scrollContentLayout->addWidget(
         m_scheduleSection
         );
+
+    updateScrollContentMinimumWidth();
 
     m_saveButton =
         new QPushButton(
@@ -103,6 +153,23 @@ void ClassInfoPage::buildUi()
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(
         m_saveButton
+        );
+}
+
+void ClassInfoPage::updateScrollContentMinimumWidth()
+{
+    if (
+        !m_scrollContent
+        || !m_scrollContentLayout
+        )
+    {
+        return;
+    }
+
+    m_scrollContentLayout->activate();
+
+    m_scrollContent->setMinimumWidth(
+        m_scrollContent->minimumSizeHint().width()
         );
 }
 
@@ -179,6 +246,8 @@ void ClassInfoPage::loadClass(
         info.classTimes,
         info.intensiveTimes
         );
+
+    updateScrollContentMinimumWidth();
 
     m_loading = false;
 

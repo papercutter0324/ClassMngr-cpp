@@ -99,6 +99,8 @@ qt_add_executable(ClassMngr
     src/ui/state/option_state.h
     src/ui/state/option_state_keys.h
 
+    src/ui/utils/widget_sizing.h
+
     src/ui/widgets/clickable_color_preview.cpp
     src/ui/widgets/clickable_color_preview.h
     src/ui/widgets/no_wheel_combobox.cpp

@@ -7,13 +7,136 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtAssert>
 
 #include "core/application_services.h"
 #include "config/class_info_config.h"
+#include "ui/constants/gui_constants.h"
+#include "ui/utils/widget_sizing.h"
 #include "utils/colorutils.h"
+
+#include <algorithm>
+
+namespace
+{
+void appendUnique(
+    QStringList& target,
+    const QStringList& values
+    )
+{
+    for (const QString& value : values)
+    {
+        if (!target.contains(value))
+        {
+            target.append(value);
+        }
+    }
+}
+
+QStringList allLevels()
+{
+    QStringList values{QString()};
+
+    for (const QString& grade : ClassInfoConfig::Grades)
+    {
+        appendUnique(
+            values,
+            ClassInfoConfig::levelsForGrade(grade)
+            );
+    }
+
+    return values;
+}
+
+QStringList allReadingBooks()
+{
+    QStringList values{QString()};
+
+    for (const QString& grade : ClassInfoConfig::Grades)
+    {
+        const QStringList levels =
+            ClassInfoConfig::levelsForGrade(grade);
+
+        for (const QString& level : levels)
+        {
+            appendUnique(
+                values,
+                ClassInfoConfig::readingBooks(
+                    grade,
+                    level
+                    )
+                );
+        }
+    }
+
+    return values;
+}
+
+QStringList allEssayBooks()
+{
+    QStringList values{QString()};
+
+    for (const QString& grade : ClassInfoConfig::Grades)
+    {
+        const QStringList levels =
+            ClassInfoConfig::levelsForGrade(grade);
+
+        for (const QString& level : levels)
+        {
+            appendUnique(
+                values,
+                ClassInfoConfig::essayBooks(
+                    grade,
+                    level
+                    )
+                );
+        }
+    }
+
+    return values;
+}
+
+void setLabelMinimumWidth(
+    QLabel* label
+    )
+{
+    if (!label)
+    {
+        return;
+    }
+
+    label->setMinimumWidth(
+        WidgetSizing::labelMinimumWidth(label)
+        );
+}
+
+int setComboMinimumWidthForTexts(
+    QComboBox* combo,
+    const QStringList& texts
+    )
+{
+    if (!combo)
+    {
+        return 0;
+    }
+
+    const int minimumWidth =
+        WidgetSizing::comboMinimumWidthForTexts(
+            combo,
+            texts,
+            UiConstants::ClassInfo::TextWidthPadding
+            );
+
+    combo->setMinimumWidth(
+        minimumWidth
+        );
+
+    return minimumWidth;
+}
+}
 
 
 ClassDetailsSection::ClassDetailsSection(
@@ -26,25 +149,53 @@ ClassDetailsSection::ClassDetailsSection(
     Q_ASSERT(m_services);
 
     m_colorPreview = new QFrame(this);
-    m_colorPreview->setFixedSize(40, 24);
+    m_colorPreview->setFixedSize(
+        UiConstants::ClassInfo::Details::ColorPreviewWidth,
+        UiConstants::ClassInfo::Details::ColorPreviewHeight
+        );
     m_colorPreview->setObjectName("colorPreview");
 
     m_pendingClassColor = "#FFFFFF";
     m_pendingFontColor = "#000000";
 
     m_gradeCombo = new QComboBox(this);
+    m_gradeCombo->setMaximumWidth(
+        UiConstants::ClassInfo::Details::GradeMaxWidth
+        );
     m_gradeCombo->addItem(QString());
     m_gradeCombo->addItems(ClassInfoConfig::Grades);
 
     m_levelCombo = new QComboBox(this);
+    m_studentCountEdit = new QLineEdit(this);
+    m_studentCountEdit->setReadOnly(true);
+    m_studentCountEdit->setMaximumWidth(
+        UiConstants::ClassInfo::Details::StudentCountMaxWidth
+        );
+
     m_readingBookCombo = new QComboBox(this);
     m_essayBookCombo = new QComboBox(this);
 
     auto* colorButton =
         new QPushButton(tr("Choose Color"), this);
 
+    colorButton->setMinimumWidth(
+        std::max(
+            colorButton->minimumSizeHint().width(),
+            WidgetSizing::textWidth(
+                colorButton,
+                colorButton->text()
+                )
+            + UiConstants::ClassInfo::TextWidthPadding
+            )
+        + UiConstants::ClassInfo::Details::ColorButtonExtraWidth
+        );
+
     auto* colorLayout =
         new QHBoxLayout;
+
+    colorLayout->setSpacing(
+        UiConstants::ClassInfo::Details::ColorPreviewButtonSpacing
+        );
 
     colorLayout->addWidget(m_colorPreview);
     colorLayout->addWidget(colorButton);
@@ -53,18 +204,148 @@ ClassDetailsSection::ClassDetailsSection(
     auto* grid =
         new QGridLayout;
 
-    grid->addWidget(new QLabel(tr("Grade"), this), 0, 0);
-    grid->addWidget(new QLabel(tr("Level"), this), 0, 1);
-    grid->addWidget(m_gradeCombo, 1, 0);
-    grid->addWidget(m_levelCombo, 1, 1);
+    grid->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
+        );
 
-    grid->addWidget(new QLabel(tr("Reading Book"), this), 2, 0);
-    grid->addWidget(new QLabel(tr("Essay Book"), this), 2, 1);
-    grid->addWidget(m_readingBookCombo, 3, 0);
-    grid->addWidget(m_essayBookCombo, 3, 1);
+    grid->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
 
-    grid->addWidget(new QLabel(tr("Class Color"), this), 4, 0);
-    grid->addLayout(colorLayout, 5, 0, 1, 2);
+    const auto fieldLabel =
+        [this](const QString& text)
+        {
+            auto* label = new QLabel(text, this);
+
+            label->setContentsMargins(
+                UiConstants::ClassInfo::Form::LabelIndent,
+                0,
+                0,
+                0
+                );
+
+            return label;
+        };
+
+    auto* colorLabel = fieldLabel(tr("Color"));
+    auto* gradeLabel = fieldLabel(tr("Grade"));
+    auto* levelLabel = fieldLabel(tr("Level"));
+    auto* studentCountLabel = fieldLabel(tr("# of Students"));
+    auto* readingBookLabel = fieldLabel(tr("Reading Book"));
+    auto* essayBookLabel = fieldLabel(tr("Essay Book"));
+
+    for (auto* label : {
+             colorLabel,
+             gradeLabel,
+             levelLabel,
+             studentCountLabel,
+             readingBookLabel,
+             essayBookLabel
+         })
+    {
+        setLabelMinimumWidth(label);
+    }
+
+    setComboMinimumWidthForTexts(
+        m_gradeCombo,
+        ClassInfoConfig::Grades
+        );
+
+    m_gradeCombo->setMaximumWidth(
+        std::max(
+            UiConstants::ClassInfo::Details::GradeMaxWidth,
+            m_gradeCombo->minimumWidth()
+            )
+        );
+
+    const int levelMinimumWidth =
+        setComboMinimumWidthForTexts(
+            m_levelCombo,
+            allLevels()
+            );
+
+    m_levelCombo->setMinimumWidth(
+        levelMinimumWidth
+        + UiConstants::ClassInfo::Details::LevelComboExtraWidth
+        );
+
+    const int readingBookMinimumWidth =
+        setComboMinimumWidthForTexts(
+            m_readingBookCombo,
+            allReadingBooks()
+            );
+
+    const int essayBookMinimumWidth =
+        setComboMinimumWidthForTexts(
+            m_essayBookCombo,
+            allEssayBooks()
+            );
+
+    m_essayBookCombo->setMaximumWidth(
+        std::max(
+            essayBookMinimumWidth,
+            readingBookMinimumWidth
+            - UiConstants::ClassInfo::Details::EssayBookWidthReduction
+            )
+        );
+
+    m_studentCountEdit->setMinimumWidth(
+        std::min(
+            UiConstants::ClassInfo::Details::StudentCountMaxWidth,
+            std::max(
+                m_studentCountEdit->minimumSizeHint().width(),
+                WidgetSizing::textWidth(
+                    m_studentCountEdit,
+                    QStringLiteral("000")
+                    )
+                + UiConstants::ClassInfo::TextWidthPadding
+                )
+            )
+        );
+
+    grid->addWidget(colorLabel, 0, 0);
+    grid->addWidget(gradeLabel, 0, 1);
+    grid->addWidget(levelLabel, 0, 2);
+    grid->addWidget(studentCountLabel, 0, 3);
+    grid->addWidget(readingBookLabel, 0, 4);
+    grid->addWidget(essayBookLabel, 0, 5);
+
+    grid->addLayout(colorLayout, 1, 0);
+    grid->addWidget(m_gradeCombo, 1, 1);
+    grid->addWidget(m_levelCombo, 1, 2);
+    grid->addWidget(m_studentCountEdit, 1, 3);
+    grid->addWidget(m_readingBookCombo, 1, 4);
+    grid->addWidget(m_essayBookCombo, 1, 5);
+
+    grid->setColumnStretch(
+        0,
+        UiConstants::ClassInfo::Details::ColorColumnStretch
+        );
+
+    grid->setColumnStretch(
+        1,
+        UiConstants::ClassInfo::Details::GradeColumnStretch
+        );
+
+    grid->setColumnStretch(
+        2,
+        UiConstants::ClassInfo::Details::LevelColumnStretch
+        );
+
+    grid->setColumnStretch(
+        3,
+        UiConstants::ClassInfo::Details::StudentCountColumnStretch
+        );
+
+    grid->setColumnStretch(
+        4,
+        UiConstants::ClassInfo::Details::ReadingBookColumnStretch
+        );
+
+    grid->setColumnStretch(
+        5,
+        UiConstants::ClassInfo::Details::EssayBookColumnStretch
+        );
 
     auto* layout =
         new QVBoxLayout(this);

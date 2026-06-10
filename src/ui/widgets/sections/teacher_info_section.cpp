@@ -1,11 +1,14 @@
 #include "teacher_info_section.h"
 #include "models/teacher_model.h"
+#include "ui/constants/gui_constants.h"
 
 #include <QComboBox>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QSizePolicy>
 #include <QSignalBlocker>
+#include <QSpacerItem>
 #include <QVBoxLayout>
 
 TeacherInfoSection::TeacherInfoSection(QWidget* parent)
@@ -13,6 +16,29 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
 {
     auto* layout = new QVBoxLayout(this);
     auto* grid = new QGridLayout();
+
+    grid->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
+        );
+
+    grid->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
+
+    const auto fieldLabel =
+        [this](const QString& text)
+        {
+            auto* label = new QLabel(text, this);
+
+            label->setContentsMargins(
+                UiConstants::ClassInfo::Form::LabelIndent,
+                0,
+                0,
+                0
+                );
+
+            return label;
+        };
 
     m_teacherKrCombo = new QComboBox(this);
     m_teacherEnCombo = new QComboBox(this);
@@ -34,24 +60,65 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         w->setReadOnly(true);
     }
 
-    grid->addWidget(new QLabel(tr("Korean"), this), 0, 0);
-    grid->addWidget(new QLabel(tr("English"), this), 0, 1);
-    grid->addWidget(new QLabel(tr("Room"), this), 0, 2);
+    grid->addWidget(fieldLabel(tr("Korean")), 0, 0);
+    grid->addWidget(fieldLabel(tr("English")), 0, 1);
+    grid->addWidget(fieldLabel(tr("Room")), 0, 2);
 
     grid->addWidget(m_teacherKrCombo, 1, 0);
     grid->addWidget(m_teacherEnCombo, 1, 1);
 
     grid->addWidget(m_roomNumberEdit, 1, 2);
 
-    grid->addWidget(new QLabel(tr("Wi-Fi Name"), this), 2, 0);
-    grid->addWidget(new QLabel(tr("Wi-Fi Password"), this), 2, 1);
-    grid->addWidget(m_wifiNameEdit, 3, 0);
-    grid->addWidget(m_wifiPasswordEdit, 3, 1);
+    grid->addItem(
+        new QSpacerItem(
+            0,
+            UiConstants::ClassInfo::Form::GroupSpacerHeight,
+            QSizePolicy::Minimum,
+            QSizePolicy::Fixed
+            ),
+        2,
+        0,
+        1,
+        3
+        );
 
-    grid->addWidget(new QLabel(tr("Zoom ID"), this), 4, 0);
-    grid->addWidget(new QLabel(tr("Zoom Password"), this), 4, 1);
-    grid->addWidget(m_zoomIdEdit, 5, 0);
-    grid->addWidget(m_zoomPasswordEdit, 5, 1);
+    grid->addWidget(fieldLabel(tr("Wi-Fi Name")), 3, 0);
+    grid->addWidget(fieldLabel(tr("Wi-Fi Password")), 3, 1);
+    grid->addWidget(m_wifiNameEdit, 4, 0);
+    grid->addWidget(m_wifiPasswordEdit, 4, 1);
+
+    grid->addItem(
+        new QSpacerItem(
+            0,
+            UiConstants::ClassInfo::Form::GroupSpacerHeight,
+            QSizePolicy::Minimum,
+            QSizePolicy::Fixed
+            ),
+        5,
+        0,
+        1,
+        3
+        );
+
+    grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 0);
+    grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 1);
+    grid->addWidget(m_zoomIdEdit, 7, 0);
+    grid->addWidget(m_zoomPasswordEdit, 7, 1);
+
+    grid->setColumnStretch(
+        0,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
+
+    grid->setColumnStretch(
+        1,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
+
+    grid->setColumnStretch(
+        2,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
 
     layout->addLayout(grid);
 

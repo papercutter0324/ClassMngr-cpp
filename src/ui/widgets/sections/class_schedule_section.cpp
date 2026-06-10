@@ -1,5 +1,6 @@
 #include "class_schedule_section.h"
 #include "ui/widgets/sectioncards/class_time_row.h"
+#include "ui/constants/gui_constants.h"
 
 #include <QComboBox>
 #include <QGridLayout>
@@ -17,8 +18,55 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
     m_regularGrid = new QGridLayout();
     m_intensiveGrid = new QGridLayout();
 
+    const auto configureScheduleGrid =
+        [](QGridLayout* grid)
+        {
+            grid->setHorizontalSpacing(
+                UiConstants::ClassInfo::Schedule::HorizontalSpacing
+                );
+
+            grid->setVerticalSpacing(
+                UiConstants::ClassInfo::Schedule::VerticalSpacing
+                );
+
+            grid->setColumnStretch(
+                0,
+                UiConstants::ClassInfo::Schedule::DayColumnStretch
+                );
+
+            grid->setColumnStretch(
+                1,
+                UiConstants::ClassInfo::Schedule::StartTimeColumnStretch
+                );
+
+            grid->setColumnStretch(
+                2,
+                UiConstants::ClassInfo::Schedule::EndTimeColumnStretch
+                );
+
+            grid->setColumnStretch(
+                3,
+                UiConstants::ClassInfo::Schedule::RemoveColumnStretch
+                );
+
+            grid->setColumnStretch(
+                4,
+                UiConstants::ClassInfo::Schedule::FillerColumnStretch
+                );
+        };
+
+    configureScheduleGrid(m_regularGrid);
+    configureScheduleGrid(m_intensiveGrid);
+
     m_addRegularButton = new QPushButton("+ Add Time", this);
     m_addIntensiveButton = new QPushButton("+ Add Intensive Time", this);
+
+    m_addRegularButton->setFixedWidth(
+        UiConstants::ClassInfo::Schedule::AddButtonFixedWidth
+        );
+    m_addIntensiveButton->setFixedWidth(
+        UiConstants::ClassInfo::Schedule::AddButtonFixedWidth
+        );
 
     connect(m_addRegularButton, &QPushButton::clicked, this, [this] {
         addRow(m_regularGrid, m_regularRows, ScheduleType::Regular);
@@ -30,9 +78,17 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
 
     auto* layout = new QVBoxLayout(this);
     layout->addLayout(m_regularGrid);
-    layout->addWidget(m_addRegularButton);
+    layout->addWidget(
+        m_addRegularButton,
+        0,
+        Qt::AlignLeft
+        );
     layout->addLayout(m_intensiveGrid);
-    layout->addWidget(m_addIntensiveButton);
+    layout->addWidget(
+        m_addIntensiveButton,
+        0,
+        Qt::AlignLeft
+        );
 }
 
 // =========================================================
@@ -68,7 +124,13 @@ ClassTimeRow* ClassScheduleSection::addRow(
 
     const int rowIndex = container.size();
 
-    grid->addWidget(row, rowIndex, 0, 1, 4);
+    grid->addWidget(
+        row,
+        rowIndex,
+        0,
+        1,
+        UiConstants::ClassInfo::Schedule::RowColumnSpan
+        );
 
     connect(row, &ClassTimeRow::removeRequested, this,
             [this, grid, &container](ClassTimeRow* r) {
@@ -132,7 +194,13 @@ void ClassScheduleSection::rebuildGrid(
     {
         auto* row = rows[i];
 
-        grid->addWidget(row, i + 1, 0, 1, 4);
+        grid->addWidget(
+            row,
+            i + 1,
+            0,
+            1,
+            UiConstants::ClassInfo::Schedule::RowColumnSpan
+            );
     }
 }
 

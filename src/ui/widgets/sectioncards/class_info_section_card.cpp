@@ -1,5 +1,7 @@
 #include "class_info_section_card.h"
 
+#include "ui/constants/gui_constants.h"
+
 #include <QLabel>
 
 SectionCard::SectionCard(
@@ -14,8 +16,15 @@ SectionCard::SectionCard(
     m_layout = new QVBoxLayout(this);
 
     m_layout->setAlignment(Qt::AlignTop);
-    m_layout->setContentsMargins(20, 20, 20, 20);
-    m_layout->setSpacing(16);
+    m_layout->setContentsMargins(
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin
+        );
+    m_layout->setSpacing(
+        UiConstants::ClassInfo::SectionCard::Spacing
+        );
 
     auto* titleLabel = new QLabel(title);
 

@@ -1,12 +1,129 @@
 #include "class_time_row.h"
 
 #include "config/class_info_config.h"
+#include "ui/constants/gui_constants.h"
+#include "ui/utils/widget_sizing.h"
 
+#include <algorithm>
 #include <QComboBox>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSizePolicy>
+
+namespace
+{
+QStringList periodOptions()
+{
+    return {
+        QStringLiteral("PM"),
+        QStringLiteral("AM")
+    };
+}
+
+QStringList endTimeWidthOptions()
+{
+    QStringList values;
+
+    for (const QString& period : periodOptions())
+    {
+        for (int hour = 1; hour <= 12; ++hour)
+        {
+            for (int minute = 0; minute < 60; minute += 5)
+            {
+                values.append(
+                    QStringLiteral("%1:%2 %3")
+                        .arg(hour)
+                        .arg(minute, 2, 10, QLatin1Char('0'))
+                        .arg(period)
+                    );
+            }
+        }
+    }
+
+    return values;
+}
+
+void applyComboWidth(
+    QComboBox* combo,
+    const QStringList& texts,
+    int preferredWidth,
+    int maximumWidth = 0
+    )
+{
+    if (!combo)
+    {
+        return;
+    }
+
+    const int minimumWidth =
+        WidgetSizing::comboMinimumWidthForTexts(
+            combo,
+            texts,
+            UiConstants::ClassInfo::TextWidthPadding
+            );
+
+    if (
+        preferredWidth > 0
+        && preferredWidth >= minimumWidth
+        )
+    {
+        combo->setFixedWidth(preferredWidth);
+        return;
+    }
+
+    combo->setMinimumWidth(minimumWidth);
+
+    if (maximumWidth > 0)
+    {
+        combo->setMaximumWidth(
+            std::max(
+                maximumWidth,
+                minimumWidth
+                )
+            );
+    }
+
+    combo->setSizePolicy(
+        QSizePolicy::Minimum,
+        QSizePolicy::Preferred
+        );
+}
+
+void applyButtonWidth(
+    QPushButton* button,
+    int preferredWidth
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    const int minimumWidth =
+        std::max(
+            button->minimumSizeHint().width(),
+            WidgetSizing::textWidth(
+                button,
+                button->text()
+                )
+            + UiConstants::ClassInfo::TextWidthPadding
+            );
+
+    if (preferredWidth >= minimumWidth)
+    {
+        button->setFixedWidth(preferredWidth);
+        return;
+    }
+
+    button->setMinimumWidth(minimumWidth);
+    button->setSizePolicy(
+        QSizePolicy::Minimum,
+        QSizePolicy::Preferred
+        );
+}
+}
+
 // =========================================================
 // Constructor
 // =========================================================
@@ -23,6 +140,12 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     m_dayCombo = new QComboBox(this);
     m_dayCombo->addItems(ClassInfoConfig::Days);
+    applyComboWidth(
+        m_dayCombo,
+        ClassInfoConfig::Days,
+        0,
+        UiConstants::ClassInfo::TimeRow::DayComboMaxWidth
+        );
 
     // -------------------------
     // Start widget container
@@ -32,7 +155,9 @@ ClassTimeRow::ClassTimeRow(
 
     auto* startLayout = new QHBoxLayout(m_startWidget);
     startLayout->setContentsMargins(0, 0, 0, 0);
-    startLayout->setSpacing(4);
+    startLayout->setSpacing(
+        UiConstants::ClassInfo::TimeRow::StartLayoutSpacing
+        );
 
     // -------------------------
     // Start time controls
@@ -43,19 +168,34 @@ ClassTimeRow::ClassTimeRow(
             ? ClassInfoConfig::RegularHours
             : ClassInfoConfig::IntensiveHours
         );
-    m_startHourCombo->setFixedWidth(70);
+    applyComboWidth(
+        m_startHourCombo,
+        type == ScheduleType::Regular
+            ? ClassInfoConfig::RegularHours
+            : ClassInfoConfig::IntensiveHours,
+        UiConstants::ClassInfo::TimeRow::StartComboWidth
+        );
 
     if (m_startHourCombo->findText("4") >= 0)
         m_startHourCombo->setCurrentText("4");
 
     m_startMinuteCombo = new QComboBox(this);
     m_startMinuteCombo->addItems(ClassInfoConfig::StartMinutes);
-    m_startMinuteCombo->setFixedWidth(70);
+    applyComboWidth(
+        m_startMinuteCombo,
+        ClassInfoConfig::StartMinutes,
+        UiConstants::ClassInfo::TimeRow::StartComboWidth
+        + UiConstants::ClassInfo::TimeRow::MinuteComboExtraWidth
+        );
     m_startMinuteCombo->setCurrentText(":00");
 
     m_startPeriodCombo = new QComboBox(this);
-    m_startPeriodCombo->addItems({"PM", "AM"});
-    m_startPeriodCombo->setFixedWidth(70);
+    m_startPeriodCombo->addItems(periodOptions());
+    applyComboWidth(
+        m_startPeriodCombo,
+        periodOptions(),
+        UiConstants::ClassInfo::TimeRow::StartComboWidth
+        );
     m_startPeriodCombo->setCurrentText("PM");
 
     startLayout->addWidget(m_startHourCombo);
@@ -66,10 +206,17 @@ ClassTimeRow::ClassTimeRow(
     // End + remove
     // -------------------------
     m_endCombo = new QComboBox(this);
-    m_endCombo->setFixedWidth(120);
+    applyComboWidth(
+        m_endCombo,
+        endTimeWidthOptions(),
+        UiConstants::ClassInfo::TimeRow::EndComboWidth
+        );
 
     m_removeButton = new QPushButton(tr("Remove"), this);
-    m_removeButton->setFixedWidth(90);
+    applyButtonWidth(
+        m_removeButton,
+        UiConstants::ClassInfo::TimeRow::RemoveButtonWidth
+        );
 
     // -------------------------
     // Signals
@@ -97,18 +244,38 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     auto* layout = new QGridLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setHorizontalSpacing(16);
-    layout->setVerticalSpacing(0);
+    layout->setHorizontalSpacing(
+        UiConstants::ClassInfo::TimeRow::HorizontalSpacing
+        );
+    layout->setVerticalSpacing(
+        UiConstants::ClassInfo::TimeRow::VerticalSpacing
+        );
 
-    layout->addWidget(m_dayCombo, 0, 0);
-    layout->addWidget(m_startWidget, 0, 1);
-    layout->addWidget(m_endCombo, 0, 2);
-    layout->addWidget(m_removeButton, 0, 3);
+    layout->addWidget(m_dayCombo, 0, 0, Qt::AlignLeft);
+    layout->addWidget(m_startWidget, 0, 1, Qt::AlignLeft);
+    layout->addWidget(m_endCombo, 0, 2, Qt::AlignLeft);
+    layout->addWidget(m_removeButton, 0, 3, Qt::AlignLeft);
 
-    layout->setColumnStretch(0, 2);
-    layout->setColumnStretch(1, 2);
-    layout->setColumnStretch(2, 2);
-    layout->setColumnStretch(3, 0);
+    layout->setColumnStretch(
+        0,
+        UiConstants::ClassInfo::TimeRow::DayColumnStretch
+        );
+    layout->setColumnStretch(
+        1,
+        UiConstants::ClassInfo::TimeRow::StartColumnStretch
+        );
+    layout->setColumnStretch(
+        2,
+        UiConstants::ClassInfo::TimeRow::EndColumnStretch
+        );
+    layout->setColumnStretch(
+        3,
+        UiConstants::ClassInfo::TimeRow::RemoveColumnStretch
+        );
+    layout->setColumnStretch(
+        4,
+        UiConstants::ClassInfo::TimeRow::FillerColumnStretch
+        );
 
     updateEndTimes();
 }
