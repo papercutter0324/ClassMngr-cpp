@@ -386,7 +386,6 @@ void RosterPage::importScores()
 
             if (
                 !index.isValid()
-                || !(m_model->flags(index) & Qt::ItemIsEditable)
                 || index.data(Qt::EditRole).toString() == finalGrade
                 )
             {

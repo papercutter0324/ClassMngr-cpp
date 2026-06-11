@@ -190,6 +190,23 @@ bool RosterColumnLayoutController::isGroupBoundaryAfter(
     return columnGroup(column) != columnGroup(column + 1);
 }
 
+bool RosterColumnLayoutController::isGroupBoundaryBefore(
+    int column
+    ) const
+{
+    if (!m_model || column < 0 || column >= m_model->columnCount())
+    {
+        return false;
+    }
+
+    if (column == 0)
+    {
+        return true;
+    }
+
+    return columnGroup(column) != columnGroup(column - 1);
+}
+
 bool RosterColumnLayoutController::isCustomColumn(
     int column
     ) const

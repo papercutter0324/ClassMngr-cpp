@@ -175,7 +175,15 @@ Qt::ItemFlags RosterModel::flags(
 
     if (index.isValid())
     {
-        itemFlags |= Qt::ItemIsEditable;
+        const QString column =
+            columnName(
+                index.column()
+                );
+
+        if (!RosterUi::isEvaluationColumn(column))
+        {
+            itemFlags |= Qt::ItemIsEditable;
+        }
     }
 
     return itemFlags;

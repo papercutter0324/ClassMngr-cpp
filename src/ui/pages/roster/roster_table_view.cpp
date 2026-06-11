@@ -53,6 +53,19 @@ void RosterTableView::paintEvent(
 
     for (int column = 0; column < model()->columnCount(); ++column)
     {
+        if (m_controller->isGroupBoundaryBefore(column))
+        {
+            const int x =
+                columnViewportPosition(column);
+
+            painter.drawLine(
+                x,
+                0,
+                x,
+                viewport()->height()
+                );
+        }
+
         if (!m_controller->isGroupBoundaryAfter(column))
         {
             continue;

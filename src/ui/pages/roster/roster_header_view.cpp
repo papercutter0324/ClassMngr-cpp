@@ -151,6 +151,13 @@ void RosterHeaderView::paintGroupRow(
             );
 
         painter.drawLine(
+            groupRect.left(),
+            groupRect.top(),
+            groupRect.left(),
+            RosterUi::HeaderHeight
+            );
+
+        painter.drawLine(
             groupRect.right(),
             groupRect.top(),
             groupRect.right(),
@@ -238,6 +245,20 @@ void RosterHeaderView::paintColumnRow(
                 columnRect.right(),
                 0,
                 columnRect.right(),
+                RosterUi::HeaderHeight
+                );
+        }
+
+        if (m_controller->isGroupBoundaryBefore(column))
+        {
+            painter.setPen(
+                QPen(QColor(55, 65, 81), 2)
+                );
+
+            painter.drawLine(
+                columnRect.left(),
+                0,
+                columnRect.left(),
                 RosterUi::HeaderHeight
                 );
         }

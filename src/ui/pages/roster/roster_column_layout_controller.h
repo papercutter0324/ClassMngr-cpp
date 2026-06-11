@@ -42,6 +42,10 @@ public:
         int column
         ) const;
 
+    bool isGroupBoundaryBefore(
+        int column
+        ) const;
+
     bool isCustomColumn(
         int column
         ) const;
