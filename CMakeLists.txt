@@ -87,8 +87,19 @@ qt_add_executable(ClassMngr
     src/ui/pages/class/class_info_page.h
     src/ui/pages/pagemanager.cpp
     src/ui/pages/pagemanager.h
+    src/ui/pages/roster/roster_column_layout_controller.cpp
+    src/ui/pages/roster/roster_column_layout_controller.h
+    src/ui/pages/roster/roster_constants.h
+    src/ui/pages/roster/roster_header_view.cpp
+    src/ui/pages/roster/roster_header_view.h
+    src/ui/pages/roster/roster_item_delegate.cpp
+    src/ui/pages/roster/roster_item_delegate.h
+    src/ui/pages/roster/roster_model.cpp
+    src/ui/pages/roster/roster_model.h
     src/ui/pages/roster/roster_page.cpp
     src/ui/pages/roster/roster_page.h
+    src/ui/pages/roster/roster_table_view.cpp
+    src/ui/pages/roster/roster_table_view.h
     src/ui/pages/schedule/schedule_page.cpp
     src/ui/pages/schedule/schedule_page.h
     src/ui/pages/speakingeval/speaking_eval_page.cpp

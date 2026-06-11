@@ -59,7 +59,10 @@ void PageManager::initialize(
         new CampusDashboardPage(this);
 
     m_rosterPage =
-        new RosterPage(this);
+        new RosterPage(
+            m_services,
+            this
+            );
 
     m_speakingPage =
         new SpeakingEvalPage(this);

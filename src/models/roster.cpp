@@ -1,17 +1,17 @@
 #include "roster.h"
 
 const QStringList Roster::BaseColumns{
-    "English Name",
-    "Korean Name",
+    "English",
+    "Korean",
     "Winter",
-    "Spring",
+    "Speech Contest",
     "Summer",
-    "Fall",
-    "Speech",
+    "Autumn",
 };
 
 void Roster::reset()
 {
     columns.clear();
+    columnWidths.clear();
     rows.clear();
 }

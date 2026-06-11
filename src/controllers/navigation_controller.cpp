@@ -7,6 +7,7 @@
 
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/pagemanager.h"
+#include "ui/pages/roster/roster_page.h"
 #include "ui/pages/teacher/teacher_info_page.h"
 
 NavigationController::NavigationController(
@@ -93,6 +94,19 @@ void NavigationController::handleNavigation(
 
             if (pageName == tr("Class Roster"))
             {
+                Classroom classroom =
+                    m_services
+                        ->dataService()
+                        ->getClassById(data.classId);
+
+                if (classroom.id < 0)
+                {
+                    return;
+                }
+
+                m_pages->rosterPage()
+                    ->loadClass(classroom);
+
                 m_pages->showPage(PageType::Roster);
                 return;
             }
