@@ -119,6 +119,9 @@ bool SpeakingEvalModel::setData(
         return false;
     }
 
+    const QHash<QString, QStringList> oldErrors =
+        m_errors;
+
     const QString oldValue =
         m_rows[index.row()][index.column()];
 
@@ -129,39 +132,25 @@ bool SpeakingEvalModel::setData(
             value.toString()
             );
 
-    const QString key =
-        cellKey(
-            index.row(),
-            index.column()
-            );
-
-    const QStringList oldErrors =
-        m_errors.value(key);
-
-    if (processed.errors.isEmpty())
-    {
-        m_errors.remove(key);
-    }
-    else
-    {
-        m_errors.insert(
-            key,
-            processed.errors
-            );
-    }
-
     if (oldValue != processed.normalized)
     {
         m_rows[index.row()][index.column()] =
             processed.normalized;
 
-        m_dirtyCells.insert(key);
+        m_dirtyCells.insert(
+            cellKey(
+                index.row(),
+                index.column()
+                )
+            );
         setDirtyState(true);
     }
 
+    revalidateAll();
+
     if (
         oldValue == processed.normalized
-        && oldErrors == processed.errors
+        && oldErrors == m_errors
         )
     {
         return false;
@@ -300,6 +289,158 @@ QStringList SpeakingEvalModel::errorsForCell(
         );
 }
 
+QList<int> SpeakingEvalModel::duplicateNameRows(
+    int row
+    ) const
+{
+    QList<int> rows;
+
+    if (row < 0 || row >= m_rows.size())
+    {
+        return rows;
+    }
+
+    const QString englishName =
+        m_rows[row][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)].trimmed();
+
+    const QString koreanName =
+        m_rows[row][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)].trimmed();
+
+    if (englishName.isEmpty() || koreanName.isEmpty())
+    {
+        return rows;
+    }
+
+    const QString key =
+        namePairKey(
+            englishName,
+            koreanName
+            );
+
+    for (int candidateRow = 0; candidateRow < m_rows.size(); ++candidateRow)
+    {
+        if (candidateRow == row)
+        {
+            continue;
+        }
+
+        if (
+            namePairKey(
+                m_rows[candidateRow][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)],
+                m_rows[candidateRow][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)]
+                ) == key
+            )
+        {
+            rows.append(candidateRow);
+        }
+    }
+
+    return rows;
+}
+
+QString SpeakingEvalModel::suggestedKoreanNameWithSuffix(
+    int row
+    ) const
+{
+    if (row < 0 || row >= m_rows.size())
+    {
+        return {};
+    }
+
+    const QString englishName =
+        m_rows[row][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)].trimmed();
+
+    const QString baseName =
+        baseKoreanName(
+            m_rows[row][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)]
+            );
+
+    if (englishName.isEmpty() || baseName.isEmpty())
+    {
+        return {};
+    }
+
+    QSet<QChar> usedSuffixes;
+
+    for (const QStringList& rowValues : m_rows)
+    {
+        if (
+            englishName.compare(
+                rowValues.value(
+                    SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+                    ).trimmed(),
+                Qt::CaseSensitive
+                ) != 0
+            || baseKoreanName(
+                rowValues.value(
+                    SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+                    )
+                ) != baseName
+            )
+        {
+            continue;
+        }
+
+        const QString suffix =
+            koreanNameSuffix(
+                rowValues.value(
+                    SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+                    )
+                );
+
+        if (suffix.size() == 1)
+        {
+            usedSuffixes.insert(suffix.front());
+        }
+    }
+
+    for (int suffix = 'A'; suffix <= 'Z'; ++suffix)
+    {
+        const QChar suffixCharacter(suffix);
+
+        if (!usedSuffixes.contains(suffixCharacter))
+        {
+            return QStringLiteral("%1(%2)")
+                .arg(baseName)
+                .arg(suffixCharacter);
+        }
+    }
+
+    return {};
+}
+
+bool SpeakingEvalModel::containsNamePair(
+    const QString& englishName,
+    const QString& koreanName
+    ) const
+{
+    const QString key =
+        namePairKey(
+            normalizeEnglishName(englishName),
+            normalizeKoreanName(koreanName)
+            );
+
+    if (key.isEmpty())
+    {
+        return false;
+    }
+
+    for (const QStringList& row : m_rows)
+    {
+        if (
+            namePairKey(
+                row.value(SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+                row.value(SpeakingEval::toInt(SpeakingEvalColumn::KoreanName))
+                ) == key
+            )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool SpeakingEvalModel::hasErrors() const
 {
     return !m_errors.isEmpty();
@@ -375,6 +516,8 @@ void SpeakingEvalModel::revalidateAll()
             }
         }
     }
+
+    validateDuplicateNames();
 }
 
 SpeakingEvalRows SpeakingEvalModel::normalizeStructure(
@@ -589,10 +732,27 @@ QString SpeakingEvalModel::normalizeKoreanName(
     const QString& value
     ) const
 {
-    QString normalized;
-    normalized.reserve(value.size());
+    const QRegularExpression suffixExpression(
+        QStringLiteral("\\(([A-Za-z])\\)\\s*$")
+        );
 
-    for (const QChar& character : value)
+    const QRegularExpressionMatch suffixMatch =
+        suffixExpression.match(value);
+
+    const QString suffix =
+        suffixMatch.hasMatch()
+            ? suffixMatch.captured(1).toUpper()
+            : QString();
+
+    const QString source =
+        suffixMatch.hasMatch()
+            ? value.left(suffixMatch.capturedStart())
+            : value;
+
+    QString normalized;
+    normalized.reserve(source.size());
+
+    for (const QChar& character : source)
     {
         const ushort code =
             character.unicode();
@@ -603,7 +763,60 @@ QString SpeakingEvalModel::normalizeKoreanName(
         }
     }
 
+    if (!normalized.isEmpty() && suffix.size() == 1)
+    {
+        normalized += QStringLiteral("(%1)")
+            .arg(suffix);
+    }
+
     return normalized.trimmed();
+}
+
+QString SpeakingEvalModel::baseKoreanName(
+    const QString& value
+    ) const
+{
+    QString normalized =
+        normalizeKoreanName(value);
+
+    normalized.remove(
+        QRegularExpression(QStringLiteral("\\([A-Z]\\)$"))
+        );
+
+    return normalized;
+}
+
+QString SpeakingEvalModel::koreanNameSuffix(
+    const QString& value
+    ) const
+{
+    const QRegularExpression suffixExpression(
+        QStringLiteral("\\(([A-Z])\\)$")
+        );
+
+    const QRegularExpressionMatch match =
+        suffixExpression.match(
+            normalizeKoreanName(value)
+            );
+
+    return match.hasMatch()
+        ? match.captured(1)
+        : QString();
+}
+
+QString SpeakingEvalModel::namePairKey(
+    const QString& englishName,
+    const QString& koreanName
+    ) const
+{
+    if (englishName.trimmed().isEmpty() || koreanName.trimmed().isEmpty())
+    {
+        return {};
+    }
+
+    return englishName.trimmed()
+        + QChar(0x001F)
+        + koreanName.trimmed();
 }
 
 QString SpeakingEvalModel::normalizeScore(
@@ -703,7 +916,7 @@ QStringList SpeakingEvalModel::validateValue(
     else if (columnId == SpeakingEvalColumn::KoreanName)
     {
         const int length =
-            value.size();
+            baseKoreanName(value).size();
 
         if (length == 3)
         {
@@ -762,6 +975,96 @@ QString SpeakingEvalModel::cellKey(
     return QStringLiteral("%1:%2")
         .arg(row)
         .arg(column);
+}
+
+void SpeakingEvalModel::validateDuplicateNames()
+{
+    const int englishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+
+    const int koreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    QHash<QString, QList<int>> rowsByPair;
+
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        const QString key =
+            namePairKey(
+                m_rows[row][englishColumn],
+                m_rows[row][koreanColumn]
+                );
+
+        if (!key.isEmpty())
+        {
+            rowsByPair[key].append(row);
+        }
+    }
+
+    for (auto it = rowsByPair.constBegin(); it != rowsByPair.constEnd(); ++it)
+    {
+        if (it.value().size() < 2)
+        {
+            continue;
+        }
+
+        for (int row : it.value())
+        {
+            QStringList duplicateRows;
+
+            for (int otherRow : it.value())
+            {
+                if (otherRow != row)
+                {
+                    duplicateRows.append(
+                        QString::number(otherRow + 1)
+                        );
+                }
+            }
+
+            const QString message =
+                tr("Duplicate student name pair. Also used on row(s): %1.")
+                    .arg(duplicateRows.join(QStringLiteral(", ")));
+
+            appendValidationError(
+                row,
+                englishColumn,
+                message
+                );
+
+            appendValidationError(
+                row,
+                koreanColumn,
+                message
+                );
+        }
+    }
+}
+
+void SpeakingEvalModel::appendValidationError(
+    int row,
+    int column,
+    const QString& error
+    )
+{
+    const QString key =
+        cellKey(
+            row,
+            column
+            );
+
+    QStringList errors =
+        m_errors.value(key);
+
+    if (!errors.contains(error))
+    {
+        errors.append(error);
+    }
+
+    m_errors.insert(
+        key,
+        errors
+        );
 }
 
 void SpeakingEvalModel::setDirtyState(

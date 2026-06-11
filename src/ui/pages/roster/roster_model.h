@@ -91,6 +91,26 @@ public:
         int column
         ) const;
 
+    int englishNameColumn() const;
+
+    int koreanNameColumn() const;
+
+    bool isNameColumn(
+        int column
+        ) const;
+
+    QList<int> duplicateNameRows(
+        int row
+        ) const;
+
+    QString suggestedKoreanNameWithSuffix(
+        int row
+        ) const;
+
+    bool hasDuplicateNameErrors() const;
+
+    QStringList duplicateNameErrorList() const;
+
 signals:
     void dirtyChanged(
         bool dirty
@@ -127,6 +147,19 @@ private:
         const QString& value
         ) const;
 
+    QString baseKoreanName(
+        const QString& value
+        ) const;
+
+    QString koreanNameSuffix(
+        const QString& value
+        ) const;
+
+    QString namePairKey(
+        const QString& englishName,
+        const QString& koreanName
+        ) const;
+
     QStringList validateCell(
         const QString& value,
         int column
@@ -145,6 +178,17 @@ private:
         const QString& rawValue
         );
 
+    void validateDuplicateNames();
+
+    void clearDuplicateNameErrors();
+
+    void appendValidationError(
+        int row,
+        int column,
+        const QString& error,
+        bool duplicateNameError = false
+        );
+
     QString cellKey(
         int row,
         int column
@@ -158,6 +202,7 @@ private:
     QStringList m_columns;
     QList<QStringList> m_rows;
     QHash<QString, QStringList> m_validationErrors;
+    QSet<QString> m_duplicateNameErrorCells;
     QSet<QString> m_dirtyCells;
     bool m_dirty = false;
 };

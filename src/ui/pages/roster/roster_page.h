@@ -6,6 +6,7 @@
 
 class ApplicationServices;
 class QLabel;
+class QModelIndex;
 class QPushButton;
 class RosterColumnLayoutController;
 class RosterHeaderView;
@@ -45,11 +46,27 @@ private:
 
     bool hasUnsavedChanges() const;
 
+    void handleNameCellChanged(
+        const QModelIndex& topLeft,
+        const QModelIndex& bottomRight
+        );
+
+    void resolveDuplicateName(
+        int row,
+        int editedColumn
+        );
+
+    void selectRosterCell(
+        int row,
+        int column
+        );
+
 private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
     bool m_loadingRoster = false;
     bool m_widthsDirty = false;
+    bool m_resolvingDuplicateName = false;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;

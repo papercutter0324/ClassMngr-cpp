@@ -60,6 +60,19 @@ public:
         int column
         ) const;
 
+    QList<int> duplicateNameRows(
+        int row
+        ) const;
+
+    QString suggestedKoreanNameWithSuffix(
+        int row
+        ) const;
+
+    bool containsNamePair(
+        const QString& englishName,
+        const QString& koreanName
+        ) const;
+
     bool hasErrors() const;
 
     QStringList errorList() const;
@@ -102,6 +115,19 @@ private:
         const QString& value
         ) const;
 
+    QString baseKoreanName(
+        const QString& value
+        ) const;
+
+    QString koreanNameSuffix(
+        const QString& value
+        ) const;
+
+    QString namePairKey(
+        const QString& englishName,
+        const QString& koreanName
+        ) const;
+
     QString normalizeScore(
         const QString& value
         ) const;
@@ -120,6 +146,14 @@ private:
         int row,
         int column
         ) const;
+
+    void validateDuplicateNames();
+
+    void appendValidationError(
+        int row,
+        int column,
+        const QString& error
+        );
 
     void setDirtyState(
         bool dirty

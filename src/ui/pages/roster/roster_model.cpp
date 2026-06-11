@@ -4,6 +4,8 @@
 
 #include <QRegularExpression>
 
+#include <algorithm>
+
 RosterModel::RosterModel(
     QObject* parent
     )
@@ -102,54 +104,49 @@ bool RosterModel::setData(
         return false;
     }
 
+    const QHash<QString, QStringList> oldErrors =
+        m_validationErrors;
+
     const QString normalized =
         normalizeCell(
             value.toString(),
             index.column()
             );
 
-    if (m_rows[index.row()][index.column()] == normalized)
+    const bool changed =
+        m_rows[index.row()][index.column()] != normalized;
+
+    if (changed)
     {
-        validateCellAt(
-            index.row(),
-            index.column()
-            );
+        m_rows[index.row()][index.column()] =
+            normalized;
 
-        validateRawInput(
-            index.row(),
-            index.column(),
-            value.toString()
+        m_dirtyCells.insert(
+            cellKey(
+                index.row(),
+                index.column()
+                )
             );
-
-        emit dataChanged(
-            index,
-            index,
-            { Qt::ToolTipRole }
-            );
-
-        return true;
     }
-
-    m_rows[index.row()][index.column()] =
-        normalized;
-
-    m_dirtyCells.insert(
-        cellKey(
-            index.row(),
-            index.column()
-            )
-        );
 
     validateCellAt(
         index.row(),
         index.column()
         );
-
     validateRawInput(
         index.row(),
         index.column(),
         value.toString()
         );
+    validateDuplicateNames();
+
+    const bool validationChanged =
+        oldErrors != m_validationErrors;
+
+    if (!changed && !validationChanged)
+    {
+        return false;
+    }
 
     emit dataChanged(
         index,
@@ -161,7 +158,10 @@ bool RosterModel::setData(
         }
         );
 
-    setDirty(true);
+    if (changed)
+    {
+        setDirty(true);
+    }
 
     return true;
 }
@@ -447,6 +447,208 @@ QStringList RosterModel::errorsForCell(
         );
 }
 
+int RosterModel::englishNameColumn() const
+{
+    return findColumn(
+        QStringLiteral("English"),
+        m_columns
+        );
+}
+
+int RosterModel::koreanNameColumn() const
+{
+    return findColumn(
+        QStringLiteral("Korean"),
+        m_columns
+        );
+}
+
+bool RosterModel::isNameColumn(
+    int column
+    ) const
+{
+    return column == englishNameColumn()
+        || column == koreanNameColumn();
+}
+
+QList<int> RosterModel::duplicateNameRows(
+    int row
+    ) const
+{
+    QList<int> rows;
+
+    const int englishColumn =
+        englishNameColumn();
+
+    const int koreanColumn =
+        koreanNameColumn();
+
+    if (
+        row < 0
+        || row >= m_rows.size()
+        || englishColumn < 0
+        || koreanColumn < 0
+        )
+    {
+        return rows;
+    }
+
+    const QString englishName =
+        m_rows[row][englishColumn].trimmed();
+
+    const QString koreanName =
+        m_rows[row][koreanColumn].trimmed();
+
+    if (englishName.isEmpty() || koreanName.isEmpty())
+    {
+        return rows;
+    }
+
+    const QString key =
+        namePairKey(
+            englishName,
+            koreanName
+            );
+
+    for (int candidateRow = 0; candidateRow < m_rows.size(); ++candidateRow)
+    {
+        if (candidateRow == row)
+        {
+            continue;
+        }
+
+        if (
+            namePairKey(
+                m_rows[candidateRow][englishColumn],
+                m_rows[candidateRow][koreanColumn]
+                ) == key
+            )
+        {
+            rows.append(candidateRow);
+        }
+    }
+
+    return rows;
+}
+
+QString RosterModel::suggestedKoreanNameWithSuffix(
+    int row
+    ) const
+{
+    const int englishColumn =
+        englishNameColumn();
+
+    const int koreanColumn =
+        koreanNameColumn();
+
+    if (
+        row < 0
+        || row >= m_rows.size()
+        || englishColumn < 0
+        || koreanColumn < 0
+        )
+    {
+        return {};
+    }
+
+    const QString englishName =
+        m_rows[row][englishColumn].trimmed();
+
+    const QString baseName =
+        baseKoreanName(
+            m_rows[row][koreanColumn]
+            );
+
+    if (englishName.isEmpty() || baseName.isEmpty())
+    {
+        return {};
+    }
+
+    QSet<QChar> usedSuffixes;
+
+    for (const QStringList& candidateRow : m_rows)
+    {
+        if (
+            englishName.compare(
+                candidateRow.value(englishColumn).trimmed(),
+                Qt::CaseSensitive
+                ) != 0
+            || baseKoreanName(
+                candidateRow.value(koreanColumn)
+                ) != baseName
+            )
+        {
+            continue;
+        }
+
+        const QString suffix =
+            koreanNameSuffix(
+                candidateRow.value(koreanColumn)
+                );
+
+        if (suffix.size() == 1)
+        {
+            usedSuffixes.insert(suffix.front());
+        }
+    }
+
+    for (int suffix = 'A'; suffix <= 'Z'; ++suffix)
+    {
+        const QChar suffixCharacter(suffix);
+
+        if (!usedSuffixes.contains(suffixCharacter))
+        {
+            return QStringLiteral("%1(%2)")
+                .arg(baseName)
+                .arg(suffixCharacter);
+        }
+    }
+
+    return {};
+}
+
+bool RosterModel::hasDuplicateNameErrors() const
+{
+    return !m_duplicateNameErrorCells.isEmpty();
+}
+
+QStringList RosterModel::duplicateNameErrorList() const
+{
+    QStringList errors;
+    QSet<QString> seenRows;
+
+    const int englishColumn =
+        englishNameColumn();
+
+    if (englishColumn < 0)
+    {
+        return errors;
+    }
+
+    for (const QString& key : m_duplicateNameErrorCells)
+    {
+        const QStringList parts =
+            key.split(QLatin1Char(':'));
+
+        const int row =
+            parts.value(0).toInt();
+
+        if (seenRows.contains(QString::number(row)))
+        {
+            continue;
+        }
+
+        seenRows.insert(QString::number(row));
+
+        errors.append(
+            tr("Row %1: duplicate English/Korean student name pair.")
+                .arg(row + 1)
+            );
+    }
+
+    return errors;
+}
+
 QString RosterModel::normalizedColumnName(
     const QString& name
     ) const
@@ -674,10 +876,27 @@ QString RosterModel::normalizeKorean(
     const QString& value
     ) const
 {
-    QString normalized;
-    normalized.reserve(value.size());
+    const QRegularExpression suffixExpression(
+        QStringLiteral("\\(([A-Za-z])\\)\\s*$")
+        );
 
-    for (const QChar& character : value)
+    const QRegularExpressionMatch suffixMatch =
+        suffixExpression.match(value);
+
+    const QString suffix =
+        suffixMatch.hasMatch()
+            ? suffixMatch.captured(1).toUpper()
+            : QString();
+
+    const QString source =
+        suffixMatch.hasMatch()
+            ? value.left(suffixMatch.capturedStart())
+            : value;
+
+    QString normalized;
+    normalized.reserve(source.size());
+
+    for (const QChar& character : source)
     {
         const ushort code =
             character.unicode();
@@ -688,7 +907,60 @@ QString RosterModel::normalizeKorean(
         }
     }
 
+    if (!normalized.isEmpty() && suffix.size() == 1)
+    {
+        normalized += QStringLiteral("(%1)")
+            .arg(suffix);
+    }
+
     return normalized;
+}
+
+QString RosterModel::baseKoreanName(
+    const QString& value
+    ) const
+{
+    QString normalized =
+        normalizeKorean(value);
+
+    normalized.remove(
+        QRegularExpression(QStringLiteral("\\([A-Z]\\)$"))
+        );
+
+    return normalized;
+}
+
+QString RosterModel::koreanNameSuffix(
+    const QString& value
+    ) const
+{
+    const QRegularExpression suffixExpression(
+        QStringLiteral("\\(([A-Z])\\)$")
+        );
+
+    const QRegularExpressionMatch match =
+        suffixExpression.match(
+            normalizeKorean(value)
+            );
+
+    return match.hasMatch()
+        ? match.captured(1)
+        : QString();
+}
+
+QString RosterModel::namePairKey(
+    const QString& englishName,
+    const QString& koreanName
+    ) const
+{
+    if (englishName.trimmed().isEmpty() || koreanName.trimmed().isEmpty())
+    {
+        return {};
+    }
+
+    return englishName.trimmed()
+        + QChar(0x001F)
+        + koreanName.trimmed();
 }
 
 QStringList RosterModel::validateCell(
@@ -725,7 +997,7 @@ QStringList RosterModel::validateCell(
     else if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
     {
         const int length =
-            value.size();
+            baseKoreanName(value).size();
 
         if (length == 0 || length == 3)
         {
@@ -758,6 +1030,7 @@ QStringList RosterModel::validateCell(
 void RosterModel::validateAll()
 {
     m_validationErrors.clear();
+    m_duplicateNameErrorCells.clear();
 
     for (int row = 0; row < m_rows.size(); ++row)
     {
@@ -766,9 +1039,11 @@ void RosterModel::validateAll()
             validateCellAt(
                 row,
                 column
-                );
+            );
         }
     }
+
+    validateDuplicateNames();
 }
 
 void RosterModel::validateCellAt(
@@ -858,6 +1133,149 @@ void RosterModel::validateRawInput(
         key,
         errors
         );
+}
+
+void RosterModel::validateDuplicateNames()
+{
+    clearDuplicateNameErrors();
+
+    const int englishColumn =
+        englishNameColumn();
+
+    const int koreanColumn =
+        koreanNameColumn();
+
+    if (englishColumn < 0 || koreanColumn < 0)
+    {
+        return;
+    }
+
+    QHash<QString, QList<int>> rowsByPair;
+
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        const QString key =
+            namePairKey(
+                m_rows[row][englishColumn],
+                m_rows[row][koreanColumn]
+                );
+
+        if (!key.isEmpty())
+        {
+            rowsByPair[key].append(row);
+        }
+    }
+
+    for (auto it = rowsByPair.constBegin(); it != rowsByPair.constEnd(); ++it)
+    {
+        if (it.value().size() < 2)
+        {
+            continue;
+        }
+
+        for (int row : it.value())
+        {
+            QStringList duplicateRows;
+
+            for (int otherRow : it.value())
+            {
+                if (otherRow != row)
+                {
+                    duplicateRows.append(
+                        QString::number(otherRow + 1)
+                        );
+                }
+            }
+
+            const QString message =
+                tr("Duplicate student name pair. Also used on row(s): %1.")
+                    .arg(duplicateRows.join(QStringLiteral(", ")));
+
+            appendValidationError(
+                row,
+                englishColumn,
+                message,
+                true
+                );
+
+            appendValidationError(
+                row,
+                koreanColumn,
+                message,
+                true
+                );
+        }
+    }
+}
+
+void RosterModel::clearDuplicateNameErrors()
+{
+    const QString messagePrefix =
+        tr("Duplicate student name pair.");
+
+    for (const QString& key : m_duplicateNameErrorCells)
+    {
+        QStringList errors =
+            m_validationErrors.value(key);
+
+        errors.erase(
+            std::remove_if(
+                errors.begin(),
+                errors.end(),
+                [&messagePrefix](const QString& error)
+                {
+                    return error.startsWith(messagePrefix);
+                }
+                ),
+            errors.end()
+            );
+
+        if (errors.isEmpty())
+        {
+            m_validationErrors.remove(key);
+        }
+        else
+        {
+            m_validationErrors.insert(
+                key,
+                errors
+                );
+        }
+    }
+
+    m_duplicateNameErrorCells.clear();
+}
+
+void RosterModel::appendValidationError(
+    int row,
+    int column,
+    const QString& error,
+    bool duplicateNameError
+    )
+{
+    const QString key =
+        cellKey(
+            row,
+            column
+            );
+
+    QStringList errors =
+        m_validationErrors.value(key);
+
+    if (!errors.contains(error))
+    {
+        errors.append(error);
+    }
+
+    m_validationErrors.insert(
+        key,
+        errors
+        );
+
+    if (duplicateNameError)
+    {
+        m_duplicateNameErrorCells.insert(key);
+    }
 }
 
 QString RosterModel::cellKey(

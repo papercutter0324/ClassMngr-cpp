@@ -8,13 +8,16 @@
 #include "ui/pages/speakingeval/speaking_eval_delegate.h"
 #include "ui/pages/speakingeval/speaking_eval_model.h"
 
+#include <QAbstractButton>
 #include <QDesktopServices>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPalette>
 #include <QPushButton>
+#include <QSet>
 #include <QSizePolicy>
 #include <QTableView>
 #include <QUndoStack>
@@ -249,6 +252,8 @@ void SpeakingEvalPage::loadEvaluation(
     const QString& evaluationName
     )
 {
+    m_loadingEvaluation = true;
+
     m_classroom =
         classroom;
 
@@ -282,6 +287,8 @@ void SpeakingEvalPage::loadEvaluation(
     setupTable();
     updateHeaderText();
     updateActions();
+
+    m_loadingEvaluation = false;
 }
 
 void SpeakingEvalPage::saveData()
@@ -424,10 +431,15 @@ void SpeakingEvalPage::importNames()
         return;
     }
 
+    m_importingNames = true;
+
     m_table->applyChanges(
         changes,
         tr("Import Names")
         );
+
+    m_importingNames = false;
+    m_table->viewport()->update();
 
     updateActions();
 
@@ -669,6 +681,23 @@ void SpeakingEvalPage::buildUi()
         &SpeakingEvalPage::updateActions
         );
 
+    connect(
+        m_model,
+        &QAbstractItemModel::dataChanged,
+        this,
+        [this](
+            const QModelIndex& topLeft,
+            const QModelIndex& bottomRight,
+            const QList<int>&
+            )
+        {
+            handleNameCellChanged(
+                topLeft,
+                bottomRight
+                );
+        }
+        );
+
     updateActions();
 }
 
@@ -821,4 +850,440 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     }
 
     return changes;
+}
+
+void SpeakingEvalPage::handleNameCellChanged(
+    const QModelIndex& topLeft,
+    const QModelIndex& bottomRight
+    )
+{
+    if (
+        m_loadingEvaluation
+        || m_importingNames
+        || m_resolvingDuplicateName
+        || !m_model
+        || !m_table
+        || !topLeft.isValid()
+        || !bottomRight.isValid()
+        )
+    {
+        return;
+    }
+
+    m_table->viewport()->update();
+
+    const int englishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+
+    const int koreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    for (int row = topLeft.row(); row <= bottomRight.row(); ++row)
+    {
+        for (int column = topLeft.column(); column <= bottomRight.column(); ++column)
+        {
+            if (column == englishColumn || column == koreanColumn)
+            {
+                resolveDuplicateName(
+                    row,
+                    column
+                    );
+                return;
+            }
+        }
+    }
+}
+
+void SpeakingEvalPage::resolveDuplicateName(
+    int row,
+    int editedColumn
+    )
+{
+    if (!m_model || !m_table)
+    {
+        return;
+    }
+
+    const int englishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+
+    const int koreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    if (editedColumn != englishColumn && editedColumn != koreanColumn)
+    {
+        return;
+    }
+
+    const QList<int> duplicateRows =
+        m_model->duplicateNameRows(row);
+
+    if (duplicateRows.isEmpty())
+    {
+        return;
+    }
+
+    QStringList duplicateRowLabels;
+
+    for (int duplicateRow : duplicateRows)
+    {
+        duplicateRowLabels.append(
+            QString::number(duplicateRow + 1)
+            );
+    }
+
+    const QString suggestedName =
+        m_model->suggestedKoreanNameWithSuffix(row);
+
+    const QList<QStringList> rosterCandidates =
+        unmatchedRosterNamePairs();
+
+    QMessageBox dialog(this);
+    dialog.setIcon(QMessageBox::Warning);
+    dialog.setWindowTitle(
+        tr("Duplicate Student Name")
+        );
+    dialog.setText(
+        tr("This English/Korean name combination already exists.")
+        );
+    dialog.setInformativeText(
+        tr("Duplicate row(s): %1").arg(
+            duplicateRowLabels.join(QStringLiteral(", "))
+            )
+        );
+
+    QPushButton* suffixButton =
+        dialog.addButton(
+            suggestedName.isEmpty()
+                ? tr("No Suffix Available")
+                : tr("Use %1").arg(suggestedName),
+            QMessageBox::AcceptRole
+            );
+
+    suffixButton->setEnabled(
+        !suggestedName.isEmpty()
+        );
+
+    QPushButton* clearButton =
+        dialog.addButton(
+            tr("Clear Edited Cell"),
+            QMessageBox::DestructiveRole
+            );
+
+    QPushButton* locateButton =
+        dialog.addButton(
+            tr("Locate Duplicate"),
+            QMessageBox::ActionRole
+            );
+
+    QPushButton* matchButton = nullptr;
+
+    if (!rosterCandidates.isEmpty())
+    {
+        matchButton =
+            dialog.addButton(
+                tr("Use Roster Match..."),
+                QMessageBox::ActionRole
+                );
+    }
+
+    QPushButton* keepButton =
+        dialog.addButton(
+            tr("Keep As-Is"),
+            QMessageBox::RejectRole
+            );
+
+    if (!suggestedName.isEmpty())
+    {
+        dialog.setDefaultButton(suffixButton);
+    }
+    else
+    {
+        dialog.setDefaultButton(clearButton);
+    }
+
+    dialog.exec();
+
+    QAbstractButton* clickedButton =
+        dialog.clickedButton();
+
+    const auto applySingleChange =
+        [this, row](int column, const QString& newValue, const QString& description)
+        {
+            const QModelIndex index =
+                m_model->index(
+                    row,
+                    column
+                    );
+
+            if (!index.isValid())
+            {
+                return;
+            }
+
+            const QString oldValue =
+                index.data(Qt::EditRole).toString();
+
+            if (oldValue == newValue)
+            {
+                return;
+            }
+
+            m_resolvingDuplicateName = true;
+            m_table->applyChanges(
+                {
+                    {
+                        row,
+                        column,
+                        oldValue,
+                        newValue
+                    }
+                },
+                description
+                );
+            m_resolvingDuplicateName = false;
+        };
+
+    if (clickedButton == suffixButton && !suggestedName.isEmpty())
+    {
+        applySingleChange(
+            koreanColumn,
+            suggestedName,
+            tr("Resolve Duplicate Name")
+            );
+
+        selectEvaluationCell(
+            row,
+            SpeakingEvalColumn::KoreanName
+            );
+    }
+    else if (clickedButton == clearButton)
+    {
+        applySingleChange(
+            editedColumn,
+            QString(),
+            tr("Clear Duplicate Name")
+            );
+
+        selectEvaluationCell(
+            row,
+            SpeakingEval::columnFromInt(editedColumn)
+            );
+    }
+    else if (clickedButton == locateButton)
+    {
+        selectEvaluationCell(
+            duplicateRows.first(),
+            SpeakingEvalColumn::EnglishName
+            );
+    }
+    else if (matchButton && clickedButton == matchButton)
+    {
+        QStringList options;
+
+        for (const QStringList& candidate : rosterCandidates)
+        {
+            options.append(
+                tr("%1 / %2")
+                    .arg(candidate.value(0))
+                    .arg(candidate.value(1))
+                );
+        }
+
+        bool accepted = false;
+
+        const QString selected =
+            QInputDialog::getItem(
+                this,
+                tr("Match Roster Student"),
+                tr("Student:"),
+                options,
+                0,
+                false,
+                &accepted
+                );
+
+        const int selectedIndex =
+            options.indexOf(selected);
+
+        if (accepted && selectedIndex >= 0)
+        {
+            const QStringList candidate =
+                rosterCandidates[selectedIndex];
+
+            QList<SpeakingEvalCellEdit> changes;
+
+            const QModelIndex englishIndex =
+                m_model->index(
+                    row,
+                    englishColumn
+                    );
+
+            const QModelIndex koreanIndex =
+                m_model->index(
+                    row,
+                    koreanColumn
+                    );
+
+            const QString oldEnglish =
+                englishIndex.data(Qt::EditRole).toString();
+
+            const QString oldKorean =
+                koreanIndex.data(Qt::EditRole).toString();
+
+            if (oldEnglish != candidate.value(0))
+            {
+                changes.append(
+                    {
+                        row,
+                        englishColumn,
+                        oldEnglish,
+                        candidate.value(0)
+                    }
+                    );
+            }
+
+            if (oldKorean != candidate.value(1))
+            {
+                changes.append(
+                    {
+                        row,
+                        koreanColumn,
+                        oldKorean,
+                        candidate.value(1)
+                    }
+                    );
+            }
+
+            m_resolvingDuplicateName = true;
+            m_table->applyChanges(
+                changes,
+                tr("Match Roster Name")
+                );
+            m_resolvingDuplicateName = false;
+
+            selectEvaluationCell(
+                row,
+                SpeakingEvalColumn::EnglishName
+                );
+        }
+    }
+    else
+    {
+        Q_UNUSED(keepButton);
+    }
+
+    m_table->viewport()->update();
+    updateActions();
+}
+
+QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
+{
+    QList<QStringList> candidates;
+
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_model
+        || m_classroom.id <= 0
+        )
+    {
+        return candidates;
+    }
+
+    const Roster roster =
+        m_services
+            ->dataService()
+            ->loadRoster(
+                m_classroom.id
+                );
+
+    const int englishColumn =
+        findColumn(
+            roster.columns,
+            QStringLiteral("English")
+            );
+
+    const int koreanColumn =
+        findColumn(
+            roster.columns,
+            QStringLiteral("Korean")
+            );
+
+    if (englishColumn < 0 || koreanColumn < 0)
+    {
+        return candidates;
+    }
+
+    QSet<QString> seen;
+
+    for (const QStringList& row : roster.rows)
+    {
+        const QString englishName =
+            englishColumn < row.size()
+                ? row[englishColumn].trimmed()
+                : QString();
+
+        const QString koreanName =
+            koreanColumn < row.size()
+                ? row[koreanColumn].trimmed()
+                : QString();
+
+        if (
+            englishName.isEmpty()
+            || koreanName.isEmpty()
+            || m_model->containsNamePair(
+                englishName,
+                koreanName
+                )
+            )
+        {
+            continue;
+        }
+
+        const QString key =
+            englishName
+            + QChar(0x001F)
+            + koreanName;
+
+        if (seen.contains(key))
+        {
+            continue;
+        }
+
+        seen.insert(key);
+        candidates.append(
+            {
+                englishName,
+                koreanName
+            }
+            );
+    }
+
+    return candidates;
+}
+
+void SpeakingEvalPage::selectEvaluationCell(
+    int row,
+    SpeakingEvalColumn column
+    )
+{
+    if (!m_model || !m_table)
+    {
+        return;
+    }
+
+    const QModelIndex index =
+        m_model->index(
+            row,
+            SpeakingEval::toInt(column)
+            );
+
+    if (!index.isValid())
+    {
+        return;
+    }
+
+    m_table->setCurrentIndex(index);
+    m_table->scrollTo(index);
 }

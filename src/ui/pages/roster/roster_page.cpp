@@ -10,6 +10,7 @@
 #include "ui/pages/roster/roster_model.h"
 #include "ui/pages/roster/roster_table_view.h"
 
+#include <QAbstractButton>
 #include <QHeaderView>
 #include <QHash>
 #include <QInputDialog>
@@ -114,6 +115,23 @@ void RosterPage::saveData()
         || m_classroom.id <= 0
         )
     {
+        return;
+    }
+
+    if (m_model->hasDuplicateNameErrors())
+    {
+        QMessageBox message(this);
+        message.setIcon(QMessageBox::Warning);
+        message.setWindowTitle(
+            tr("Duplicate Student Names")
+            );
+        message.setText(
+            tr("Resolve duplicate English/Korean student name pairs before saving.")
+            );
+        message.setDetailedText(
+            m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
+            );
+        message.exec();
         return;
     }
 
@@ -614,6 +632,23 @@ void RosterPage::buildUi()
         );
 
     connect(
+        m_model,
+        &QAbstractItemModel::dataChanged,
+        this,
+        [this](
+            const QModelIndex& topLeft,
+            const QModelIndex& bottomRight,
+            const QList<int>&
+            )
+        {
+            handleNameCellChanged(
+                topLeft,
+                bottomRight
+                );
+        }
+        );
+
+    connect(
         m_table->selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
@@ -661,4 +696,214 @@ bool RosterPage::hasUnsavedChanges() const
 {
     return m_widthsDirty
         || (m_model && m_model->isDirty());
+}
+
+void RosterPage::handleNameCellChanged(
+    const QModelIndex& topLeft,
+    const QModelIndex& bottomRight
+    )
+{
+    if (
+        m_loadingRoster
+        || m_resolvingDuplicateName
+        || !m_model
+        || !topLeft.isValid()
+        || !bottomRight.isValid()
+        )
+    {
+        return;
+    }
+
+    m_table->viewport()->update();
+
+    for (int row = topLeft.row(); row <= bottomRight.row(); ++row)
+    {
+        for (int column = topLeft.column(); column <= bottomRight.column(); ++column)
+        {
+            if (m_model->isNameColumn(column))
+            {
+                resolveDuplicateName(
+                    row,
+                    column
+                    );
+                return;
+            }
+        }
+    }
+}
+
+void RosterPage::resolveDuplicateName(
+    int row,
+    int editedColumn
+    )
+{
+    if (
+        !m_model
+        || !m_table
+        || !m_model->isNameColumn(editedColumn)
+        )
+    {
+        return;
+    }
+
+    const QList<int> duplicateRows =
+        m_model->duplicateNameRows(row);
+
+    if (duplicateRows.isEmpty())
+    {
+        return;
+    }
+
+    QStringList duplicateRowLabels;
+
+    for (int duplicateRow : duplicateRows)
+    {
+        duplicateRowLabels.append(
+            QString::number(duplicateRow + 1)
+            );
+    }
+
+    const int koreanColumn =
+        m_model->koreanNameColumn();
+
+    const QString suggestedName =
+        m_model->suggestedKoreanNameWithSuffix(row);
+
+    QMessageBox dialog(this);
+    dialog.setIcon(QMessageBox::Warning);
+    dialog.setWindowTitle(
+        tr("Duplicate Student Name")
+        );
+    dialog.setText(
+        tr("This English/Korean name combination already exists.")
+        );
+    dialog.setInformativeText(
+        tr("Duplicate row(s): %1").arg(
+            duplicateRowLabels.join(QStringLiteral(", "))
+            )
+        );
+
+    QPushButton* suffixButton =
+        dialog.addButton(
+            suggestedName.isEmpty()
+                ? tr("No Suffix Available")
+                : tr("Use %1").arg(suggestedName),
+            QMessageBox::AcceptRole
+            );
+
+    suffixButton->setEnabled(
+        !suggestedName.isEmpty()
+        );
+
+    QPushButton* clearButton =
+        dialog.addButton(
+            tr("Clear Edited Cell"),
+            QMessageBox::DestructiveRole
+            );
+
+    QPushButton* locateButton =
+        dialog.addButton(
+            tr("Locate Duplicate"),
+            QMessageBox::ActionRole
+            );
+
+    QPushButton* keepButton =
+        dialog.addButton(
+            tr("Keep As-Is"),
+            QMessageBox::RejectRole
+            );
+
+    if (!suggestedName.isEmpty())
+    {
+        dialog.setDefaultButton(suffixButton);
+    }
+    else
+    {
+        dialog.setDefaultButton(clearButton);
+    }
+
+    dialog.exec();
+
+    QAbstractButton* clickedButton =
+        dialog.clickedButton();
+
+    if (clickedButton == suffixButton && !suggestedName.isEmpty())
+    {
+        m_resolvingDuplicateName = true;
+
+        m_model->setData(
+            m_model->index(
+                row,
+                koreanColumn
+                ),
+            suggestedName,
+            Qt::EditRole
+            );
+
+        m_resolvingDuplicateName = false;
+
+        selectRosterCell(
+            row,
+            koreanColumn
+            );
+    }
+    else if (clickedButton == clearButton)
+    {
+        m_resolvingDuplicateName = true;
+
+        m_model->setData(
+            m_model->index(
+                row,
+                editedColumn
+                ),
+            QString(),
+            Qt::EditRole
+            );
+
+        m_resolvingDuplicateName = false;
+
+        selectRosterCell(
+            row,
+            editedColumn
+            );
+    }
+    else if (clickedButton == locateButton)
+    {
+        selectRosterCell(
+            duplicateRows.first(),
+            m_model->englishNameColumn()
+            );
+    }
+    else
+    {
+        Q_UNUSED(keepButton);
+    }
+
+    m_table->viewport()->update();
+    updateActions();
+}
+
+void RosterPage::selectRosterCell(
+    int row,
+    int column
+    )
+{
+    if (!m_model || !m_table)
+    {
+        return;
+    }
+
+    const QModelIndex index =
+        m_model->index(
+            row,
+            column
+            );
+
+    if (!index.isValid())
+    {
+        return;
+    }
+
+    m_table->setCurrentIndex(index);
+    m_table->scrollTo(index);
 }

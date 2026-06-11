@@ -3,6 +3,7 @@
 #include "../basepage.h"
 
 #include "models/classroom.h"
+#include "models/speaking_evaluation.h"
 #include "ui/pages/speakingeval/speaking_eval_table_view.h"
 
 #include <QList>
@@ -11,6 +12,7 @@
 
 class ApplicationServices;
 class QLabel;
+class QModelIndex;
 class QPushButton;
 class QUndoStack;
 class SpeakingEvalDelegate;
@@ -54,10 +56,30 @@ private:
         const QList<QStringList>& rosterRows
         ) const;
 
+    void handleNameCellChanged(
+        const QModelIndex& topLeft,
+        const QModelIndex& bottomRight
+        );
+
+    void resolveDuplicateName(
+        int row,
+        int editedColumn
+        );
+
+    QList<QStringList> unmatchedRosterNamePairs() const;
+
+    void selectEvaluationCell(
+        int row,
+        SpeakingEvalColumn column
+        );
+
 private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
     QString m_evaluationName;
+    bool m_loadingEvaluation = false;
+    bool m_importingNames = false;
+    bool m_resolvingDuplicateName = false;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
