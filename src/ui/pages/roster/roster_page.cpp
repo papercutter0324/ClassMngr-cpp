@@ -11,6 +11,7 @@
 #include "ui/pages/roster/roster_table_view.h"
 
 #include <QHeaderView>
+#include <QHash>
 #include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QLabel>
@@ -61,7 +62,14 @@ void RosterPage::loadClass(
 
         for (int index = 0; index < roster.columns.size(); ++index)
         {
-            if (roster.columns[index].compare(columnName, Qt::CaseInsensitive) == 0)
+            const bool exactMatch =
+                roster.columns[index].compare(columnName, Qt::CaseInsensitive) == 0;
+
+            const bool legacyFallMatch =
+                columnName.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) == 0
+                && roster.columns[index].compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0;
+
+            if (exactMatch || legacyFallMatch)
             {
                 sourceColumn = index;
                 break;
@@ -233,10 +241,182 @@ void RosterPage::removeColumn()
 
 void RosterPage::importScores()
 {
+    if (
+        !m_services
+        || !m_services->dataService()
+        || m_classroom.id <= 0
+        )
+    {
+        return;
+    }
+
+    const auto findModelColumn =
+        [this](const QString& name)
+        {
+            for (int column = 0; column < m_model->columnCount(); ++column)
+            {
+                if (m_model->columnName(column).compare(name, Qt::CaseInsensitive) == 0)
+                {
+                    return column;
+                }
+            }
+
+            return -1;
+        };
+
+    const int englishColumn =
+        findModelColumn(QStringLiteral("English"));
+
+    const int koreanColumn =
+        findModelColumn(QStringLiteral("Korean"));
+
+    if (englishColumn < 0 || koreanColumn < 0)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Import Scores"),
+            tr("Roster must contain 'English' and 'Korean' columns.")
+            );
+        return;
+    }
+
+    const auto keyFor =
+        [](const QString& englishName, const QString& koreanName)
+        {
+            return englishName.trimmed()
+                + QChar(0x001F)
+                + koreanName.trimmed();
+        };
+
+    const QStringList evaluationColumns{
+        QStringLiteral("Winter"),
+        QStringLiteral("Speech Contest"),
+        QStringLiteral("Summer"),
+        QStringLiteral("Fall")
+    };
+
+    int changeCount = 0;
+
+    for (const QString& evaluationName : evaluationColumns)
+    {
+        const int scoreColumn =
+            findModelColumn(evaluationName);
+
+        if (scoreColumn < 0)
+        {
+            continue;
+        }
+
+        const QList<SpeakingEvalScore> scores =
+            m_services
+                ->dataService()
+                ->buildRosterScoreImport(
+                    m_classroom.id,
+                    evaluationName
+                    );
+
+        if (scores.isEmpty())
+        {
+            continue;
+        }
+
+        QHash<QString, QString> lookup;
+
+        for (const SpeakingEvalScore& score : scores)
+        {
+            lookup.insert(
+                keyFor(
+                    score.englishName,
+                    score.koreanName
+                    ),
+                score.finalGrade
+                );
+        }
+
+        for (int row = 0; row < m_model->rowCount(); ++row)
+        {
+            const QString englishName =
+                m_model
+                    ->index(
+                        row,
+                        englishColumn
+                        )
+                    .data(Qt::EditRole)
+                    .toString()
+                    .trimmed();
+
+            const QString koreanName =
+                m_model
+                    ->index(
+                        row,
+                        koreanColumn
+                        )
+                    .data(Qt::EditRole)
+                    .toString()
+                    .trimmed();
+
+            if (englishName.isEmpty() || koreanName.isEmpty())
+            {
+                continue;
+            }
+
+            const QString finalGrade =
+                lookup.value(
+                    keyFor(
+                        englishName,
+                        koreanName
+                        )
+                    );
+
+            if (finalGrade.isEmpty())
+            {
+                continue;
+            }
+
+            const QModelIndex index =
+                m_model->index(
+                    row,
+                    scoreColumn
+                    );
+
+            if (
+                !index.isValid()
+                || !(m_model->flags(index) & Qt::ItemIsEditable)
+                || index.data(Qt::EditRole).toString() == finalGrade
+                )
+            {
+                continue;
+            }
+
+            if (
+                m_model->setData(
+                    index,
+                    finalGrade,
+                    Qt::EditRole
+                    )
+                )
+            {
+                ++changeCount;
+            }
+        }
+    }
+
+    if (changeCount == 0)
+    {
+        QMessageBox::information(
+            this,
+            tr("Import Scores"),
+            tr("Scores are already up to date.")
+            );
+        return;
+    }
+
+    updateActions();
+
     QMessageBox::information(
         this,
         tr("Import Scores"),
-        tr("Score import is not available until speaking evaluations are ported.")
+        tr("Scores imported successfully.")
         );
 }
 
@@ -363,9 +543,9 @@ void RosterPage::buildUi()
             this
             );
 
-    m_importButton->setEnabled(false);
+    m_importButton->setEnabled(true);
     m_importButton->setToolTip(
-        tr("Score import will be available after speaking evaluations are ported.")
+        tr("Import final grades from speaking evaluations.")
         );
 
     m_addColumnButton =

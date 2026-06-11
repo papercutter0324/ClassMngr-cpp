@@ -65,7 +65,10 @@ void PageManager::initialize(
             );
 
     m_speakingPage =
-        new SpeakingEvalPage(this);
+        new SpeakingEvalPage(
+            m_services,
+            this
+            );
 
     registerPages();
 

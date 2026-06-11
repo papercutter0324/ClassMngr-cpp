@@ -48,6 +48,7 @@ inline bool isEvaluationColumn(
     return name.compare(QStringLiteral("Winter"), Qt::CaseInsensitive) == 0
         || name.compare(QStringLiteral("Speech Contest"), Qt::CaseInsensitive) == 0
         || name.compare(QStringLiteral("Summer"), Qt::CaseInsensitive) == 0
+        || name.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) == 0
         || name.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0;
 }
 

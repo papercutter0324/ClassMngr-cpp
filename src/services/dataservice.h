@@ -179,13 +179,21 @@ public:
     // Speaking Evaluations
     // =====================================================
 
-    void saveSpeakingEvaluations(
+    bool saveSpeakingEval(
         int classId,
-        const SpeakingEvaluations& evaluations
+        const QString& evaluationName,
+        const SpeakingEvalRows& rows,
+        const QList<SpeakingEvalCellChange>& dirtyCells = {}
         );
 
-    SpeakingEvaluations loadSpeakingEvaluations(
-        int classId
+    SpeakingEvalRows loadSpeakingEval(
+        int classId,
+        const QString& evaluationName
+        );
+
+    QList<SpeakingEvalScore> buildRosterScoreImport(
+        int classId,
+        const QString& evaluationName
         );
 
 

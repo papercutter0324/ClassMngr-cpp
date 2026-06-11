@@ -6,7 +6,7 @@ const QStringList Roster::BaseColumns{
     "Winter",
     "Speech Contest",
     "Summer",
-    "Autumn",
+    "Fall",
 };
 
 void Roster::reset()

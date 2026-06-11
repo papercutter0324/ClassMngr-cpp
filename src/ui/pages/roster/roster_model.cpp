@@ -443,7 +443,15 @@ QString RosterModel::normalizedColumnName(
     const QString& name
     ) const
 {
-    return name.simplified();
+    const QString normalized =
+        name.simplified();
+
+    if (normalized.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0)
+    {
+        return QStringLiteral("Fall");
+    }
+
+    return normalized;
 }
 
 int RosterModel::findColumn(
@@ -453,7 +461,13 @@ int RosterModel::findColumn(
 {
     for (int index = 0; index < columns.size(); ++index)
     {
-        if (columns[index].compare(name, Qt::CaseInsensitive) == 0)
+        if (
+            normalizedColumnName(columns[index])
+                .compare(
+                    normalizedColumnName(name),
+                    Qt::CaseInsensitive
+                    ) == 0
+            )
         {
             return index;
         }

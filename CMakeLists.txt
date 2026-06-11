@@ -102,8 +102,14 @@ qt_add_executable(ClassMngr
     src/ui/pages/roster/roster_table_view.h
     src/ui/pages/schedule/schedule_page.cpp
     src/ui/pages/schedule/schedule_page.h
+    src/ui/pages/speakingeval/speaking_eval_delegate.cpp
+    src/ui/pages/speakingeval/speaking_eval_delegate.h
+    src/ui/pages/speakingeval/speaking_eval_model.cpp
+    src/ui/pages/speakingeval/speaking_eval_model.h
     src/ui/pages/speakingeval/speaking_eval_page.cpp
     src/ui/pages/speakingeval/speaking_eval_page.h
+    src/ui/pages/speakingeval/speaking_eval_table_view.cpp
+    src/ui/pages/speakingeval/speaking_eval_table_view.h
     src/ui/pages/teacher/teacher_info_page.cpp
     src/ui/pages/teacher/teacher_info_page.h
 
