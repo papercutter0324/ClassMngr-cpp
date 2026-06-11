@@ -36,6 +36,8 @@ private:
 
     int contentRightEdge() const;
 
+    QBrush trailingBackgroundBrush() const;
+
 private:
     RosterColumnLayoutController* m_controller = nullptr;
 };

@@ -6,6 +6,7 @@
 
 #include <QAbstractItemModel>
 #include <QPainter>
+#include <QTableView>
 
 RosterHeaderView::RosterHeaderView(
     Qt::Orientation orientation,
@@ -57,7 +58,7 @@ void RosterHeaderView::paintEvent(
 
     painter.fillRect(
         rect(),
-        palette().window()
+        trailingBackgroundBrush()
         );
 
     paintGroupRow(painter);
@@ -286,4 +287,20 @@ int RosterHeaderView::contentRightEdge() const
     return sectionViewportPosition(finalColumn)
         + sectionSize(finalColumn)
         - 1;
+}
+
+QBrush RosterHeaderView::trailingBackgroundBrush() const
+{
+    const auto* table =
+        qobject_cast<const QTableView*>(parentWidget());
+
+    if (table && table->viewport())
+    {
+        return table
+            ->viewport()
+            ->palette()
+            .brush(QPalette::Base);
+    }
+
+    return palette().brush(QPalette::Base);
 }
