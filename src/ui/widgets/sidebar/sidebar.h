@@ -150,6 +150,10 @@ private:
         QTreeWidgetItem *item
         ) const;
 
+    QTreeWidgetItem* classInfoChildForClass(
+        QTreeWidgetItem* classItem
+        ) const;
+
     void updateTreeColumnWidth();
 
     void updateOverflowTooltips();

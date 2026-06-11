@@ -1224,6 +1224,28 @@ void Sidebar::onItemClicked(
         return;
     }
 
+    if (type == NodeType::Class)
+    {
+        item->setExpanded(true);
+
+        if (auto* classInfoItem = classInfoChildForClass(item))
+        {
+            item =
+                classInfoItem;
+
+            m_tree->setCurrentItem(item);
+            m_tree->scrollToItem(item);
+
+            type =
+                static_cast<NodeType>(
+                    item->data(
+                            0,
+                            Qt::UserRole
+                            ).toInt()
+                    );
+        }
+    }
+
 
 
     // =====================================================
@@ -1353,6 +1375,56 @@ bool Sidebar::isClassItem(
     }
 
     return false;
+}
+
+QTreeWidgetItem* Sidebar::classInfoChildForClass(
+    QTreeWidgetItem* classItem
+    ) const
+{
+    if (!classItem)
+    {
+        return nullptr;
+    }
+
+    QTreeWidgetItem* fallbackPageItem =
+        nullptr;
+
+    for (int i = 0; i < classItem->childCount(); ++i)
+    {
+        auto* child =
+            classItem->child(i);
+
+        if (!child)
+        {
+            continue;
+        }
+
+        const NodeType type =
+            static_cast<NodeType>(
+                child->data(
+                        0,
+                        Qt::UserRole
+                        ).toInt()
+                );
+
+        if (type != NodeType::Page)
+        {
+            continue;
+        }
+
+        if (!fallbackPageItem)
+        {
+            fallbackPageItem =
+                child;
+        }
+
+        if (child->text(0) == tr("Class Info"))
+        {
+            return child;
+        }
+    }
+
+    return fallbackPageItem;
 }
 
 
