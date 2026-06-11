@@ -158,6 +158,12 @@ QStringList levelsForGrade(const QString& grade)
 
 QStringList readingBooks(const QString& grade, const QString& level)
 {
+    if (grade == "M1" && M1_GRAVOCA_LEVELS.contains(level))
+        return M1_GRAVOCA_BOOKS;
+
+    if (grade == "M2" && M2_GRAVOCA_LEVELS.contains(level))
+        return M2_GRAVOCA_BOOKS;
+
     auto gradeMap = READING_MAP.value(grade);
     if (gradeMap.isEmpty())
         return READING_SMART_BOOKS;
