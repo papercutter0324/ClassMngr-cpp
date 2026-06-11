@@ -34,6 +34,8 @@ private:
         QPainter& painter
         ) const;
 
+    int contentRightEdge() const;
+
 private:
     RosterColumnLayoutController* m_controller = nullptr;
 };

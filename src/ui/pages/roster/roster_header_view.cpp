@@ -63,6 +63,14 @@ void RosterHeaderView::paintEvent(
     paintGroupRow(painter);
     paintColumnRow(painter);
 
+    const int rightEdge =
+        contentRightEdge();
+
+    if (rightEdge < 0)
+    {
+        return;
+    }
+
     painter.setPen(
         QColor(55, 65, 81)
         );
@@ -70,14 +78,14 @@ void RosterHeaderView::paintEvent(
     painter.drawLine(
         0,
         RosterUi::HeaderGroupsHeight - 1,
-        width(),
+        rightEdge,
         RosterUi::HeaderGroupsHeight - 1
         );
 
     painter.drawLine(
         0,
         RosterUi::HeaderHeight - 1,
-        width(),
+        rightEdge,
         RosterUi::HeaderHeight - 1
         );
 }
@@ -263,4 +271,19 @@ void RosterHeaderView::paintColumnRow(
                 );
         }
     }
+}
+
+int RosterHeaderView::contentRightEdge() const
+{
+    if (count() <= 0)
+    {
+        return -1;
+    }
+
+    const int finalColumn =
+        count() - 1;
+
+    return sectionViewportPosition(finalColumn)
+        + sectionSize(finalColumn)
+        - 1;
 }
