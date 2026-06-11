@@ -6,11 +6,15 @@
 #include "ui/widgets/sectioncards/class_info_section_card.h"
 
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "models/class_conflict.h"
 #include "models/class_info.h"
+#include "models/teacher.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
+#include "utils/sidebar_node_naming.h"
 
+#include <QFont>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
@@ -130,9 +134,20 @@ void ClassInfoPage::buildUi()
     m_titleLabel = new QLabel(
         tr("Class Information")
         );
+    m_titleLabel->setObjectName("pageTitle");
+    m_titleLabel->setFont(
+        FontManager::getUiFont(
+            24,
+            QFont::Bold
+            )
+        );
 
     m_subtitleLabel = new QLabel(
         tr("View and manage details for this class.")
+        );
+    m_subtitleLabel->setObjectName("pageSubtitle");
+    m_subtitleLabel->setFont(
+        FontManager::getUiFont(11)
         );
 
     m_scrollContentLayout->addWidget(m_titleLabel);
@@ -243,11 +258,6 @@ void ClassInfoPage::loadClass(
 
     m_classroom = classroom;
 
-    m_titleLabel->setText(
-        tr("Class Information for %1")
-            .arg(classroom.name)
-        );
-
     auto* dataService =
         m_services
             ->dataService();
@@ -260,6 +270,8 @@ void ClassInfoPage::loadClass(
         dataService->loadClassInfo(
             classroom.id
             );
+
+    updateTitle(info);
 
     m_notes =
         info.notes;
@@ -287,6 +299,34 @@ void ClassInfoPage::loadClass(
     m_loading = false;
 
     clearDirty();
+}
+
+void ClassInfoPage::updateTitle(
+    const ClassInfo& info
+    )
+{
+    Teacher teacher;
+
+    if (info.teacherId > 0)
+    {
+        teacher =
+            m_services
+                ->dataService()
+                ->getTeacher(
+                    info.teacherId
+                    );
+    }
+
+    const QString displayName =
+        SidebarNodeNaming::formatClassDisplayName(
+            info,
+            teacher
+            );
+
+    m_titleLabel->setText(
+        tr("Class Information for %1")
+            .arg(displayName)
+        );
 }
 
 void ClassInfoPage::saveData()
@@ -376,6 +416,8 @@ void ClassInfoPage::saveData()
     }
 
     clearDirty();
+
+    updateTitle(info);
 
     emit classInfoSaved(
         m_classroom.id

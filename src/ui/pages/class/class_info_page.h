@@ -41,6 +41,9 @@ signals:
 private:
     void buildUi();
     void updateScrollContentMinimumWidth();
+    void updateTitle(
+        const ClassInfo& info
+        );
 
     void markDirty();
     void clearDirty();
