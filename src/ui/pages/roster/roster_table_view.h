@@ -2,6 +2,7 @@
 
 #include <QTableView>
 
+class QEvent;
 class RosterColumnLayoutController;
 
 class RosterTableView : public QTableView
@@ -17,10 +18,19 @@ public:
         RosterColumnLayoutController* controller
         );
 
+    int contentBottomEdge() const;
+
 protected:
+    void changeEvent(
+        QEvent* event
+        ) override;
+
     void paintEvent(
         QPaintEvent* event
         ) override;
+
+private:
+    void updateVerticalHeaderTrailingBackground();
 
 private:
     RosterColumnLayoutController* m_controller = nullptr;
