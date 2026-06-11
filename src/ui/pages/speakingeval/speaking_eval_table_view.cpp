@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QEvent>
 #include <QHeaderView>
 #include <QKeySequence>
 #include <QMap>
@@ -95,6 +96,7 @@ SpeakingEvalTableView::SpeakingEvalTableView(
     setEditTriggers(
         QAbstractItemView::DoubleClicked
         | QAbstractItemView::EditKeyPressed
+        | QAbstractItemView::AnyKeyPressed
         | QAbstractItemView::SelectedClicked
         );
 
@@ -103,6 +105,27 @@ SpeakingEvalTableView::SpeakingEvalTableView(
     verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
     setupShortcuts();
+}
+
+bool SpeakingEvalTableView::edit(
+    const QModelIndex& index,
+    QAbstractItemView::EditTrigger trigger,
+    QEvent* event
+    )
+{
+    if (
+        trigger == QAbstractItemView::AnyKeyPressed
+        && !allowsImmediateTyping(index)
+        )
+    {
+        return false;
+    }
+
+    return QTableView::edit(
+        index,
+        trigger,
+        event
+        );
 }
 
 void SpeakingEvalTableView::setUndoStack(
@@ -489,6 +512,25 @@ void SpeakingEvalTableView::setupShortcuts()
     addShortcut(QKeySequence::Undo, &SpeakingEvalTableView::undo);
     addShortcut(QKeySequence::Redo, &SpeakingEvalTableView::redo);
     addShortcut(QKeySequence(QStringLiteral("Ctrl+D")), &SpeakingEvalTableView::fillDown);
+}
+
+bool SpeakingEvalTableView::allowsImmediateTyping(
+    const QModelIndex& index
+    ) const
+{
+    if (!index.isValid())
+    {
+        return false;
+    }
+
+    const auto column =
+        SpeakingEval::columnFromInt(
+            index.column()
+            );
+
+    return column == SpeakingEvalColumn::EnglishName
+        || column == SpeakingEvalColumn::KoreanName
+        || SpeakingEval::isScoringColumn(column);
 }
 
 QList<SpeakingEvalCellEdit> SpeakingEvalTableView::changesForIndexes(

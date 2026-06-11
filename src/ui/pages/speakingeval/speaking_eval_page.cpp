@@ -13,8 +13,10 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPalette>
 #include <QPushButton>
 #include <QSizePolicy>
+#include <QTableView>
 #include <QUndoStack>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -158,7 +160,29 @@ protected:
     {
         QHeaderView::paintEvent(event);
 
+        const int rightEdge =
+            contentRightEdge();
+
+        if (rightEdge < 0)
+        {
+            return;
+        }
+
         QPainter painter(viewport());
+
+        if (rightEdge + 1 < viewport()->width())
+        {
+            painter.fillRect(
+                QRect(
+                    rightEdge + 1,
+                    0,
+                    viewport()->width() - rightEdge - 1,
+                    viewport()->height()
+                    ),
+                trailingBackgroundBrush()
+                );
+        }
+
         QPen pen(Qt::black);
         pen.setWidth(2);
         pen.setCosmetic(true);
@@ -167,9 +191,44 @@ protected:
         painter.drawLine(
             0,
             height() - 1,
-            width(),
+            rightEdge,
             height() - 1
             );
+    }
+
+private:
+    int contentRightEdge() const
+    {
+        if (count() <= 0)
+        {
+            return -1;
+        }
+
+        const int lastSection =
+            count() - 1;
+
+        return sectionViewportPosition(lastSection)
+            + sectionSize(lastSection)
+            - 1;
+    }
+
+    QBrush trailingBackgroundBrush() const
+    {
+        if (
+            const auto* table =
+                qobject_cast<const QTableView*>(parentWidget())
+            )
+        {
+            if (table->viewport())
+            {
+                return table
+                    ->viewport()
+                    ->palette()
+                    .brush(QPalette::Base);
+            }
+        }
+
+        return palette().brush(QPalette::Base);
     }
 };
 

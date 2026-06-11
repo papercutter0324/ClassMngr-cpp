@@ -6,6 +6,7 @@
 
 class QMouseEvent;
 class QPaintEvent;
+class QEvent;
 class QUndoStack;
 
 struct SpeakingEvalCellEdit
@@ -50,6 +51,12 @@ public slots:
     void redo();
 
 protected:
+    bool edit(
+        const QModelIndex& index,
+        QAbstractItemView::EditTrigger trigger,
+        QEvent* event
+        ) override;
+
     void mousePressEvent(
         QMouseEvent* event
         ) override;
@@ -68,6 +75,10 @@ protected:
 
 private:
     void setupShortcuts();
+
+    bool allowsImmediateTyping(
+        const QModelIndex& index
+        ) const;
 
     QList<SpeakingEvalCellEdit> changesForIndexes(
         const QModelIndexList& indexes,
