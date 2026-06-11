@@ -177,11 +177,8 @@ void RosterPage::addColumn()
 
     m_layoutController->applyResizeModes();
 
-    m_table->setColumnWidth(
-        column,
-        RosterUi::defaultColumnWidth(
-            m_model->columnName(column)
-            )
+    m_layoutController->initializeAddedCustomColumn(
+        column
         );
 
     const QModelIndex firstCell =
@@ -231,11 +228,19 @@ void RosterPage::removeColumn()
         return;
     }
 
+    const int removedWidth =
+        m_table->columnWidth(
+            current.column()
+            );
+
     m_model->removeRosterColumn(
         current.column()
         );
 
     m_layoutController->applyResizeModes();
+    m_layoutController->handleCustomColumnRemoved(
+        removedWidth
+        );
     updateActions();
 }
 
@@ -620,12 +625,16 @@ void RosterPage::buildUi()
         m_table->horizontalHeader(),
         &QHeaderView::sectionResized,
         this,
-        [this](int, int, int)
+        [this](int logicalIndex, int, int)
         {
             if (m_loadingRoster)
             {
                 return;
             }
+
+            m_layoutController->handleSectionResized(
+                logicalIndex
+                );
 
             m_widthsDirty = true;
             updateActions();

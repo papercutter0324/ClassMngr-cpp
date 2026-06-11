@@ -105,7 +105,7 @@ void RosterItemDelegate::paint(
     painter->setPen(
         option.state & QStyle::State_Selected
             ? option.palette.highlightedText().color()
-            : option.palette.text().color()
+            : QColor(Qt::black)
         );
 
     painter->drawText(

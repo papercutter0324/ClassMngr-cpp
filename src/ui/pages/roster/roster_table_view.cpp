@@ -17,6 +17,7 @@ RosterTableView::RosterTableView(
     setEditTriggers(
         QAbstractItemView::DoubleClicked
         | QAbstractItemView::EditKeyPressed
+        | QAbstractItemView::AnyKeyPressed
         | QAbstractItemView::SelectedClicked
         );
 

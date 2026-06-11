@@ -42,10 +42,45 @@ public:
         int column
         ) const;
 
-private:
+    bool isCustomColumn(
+        int column
+        ) const;
+
+    int customColumnMinimumWidth() const;
+
+    int studentInformationMinimumWidth() const;
+
+    void initializeAddedCustomColumn(
+        int column
+        );
+
+    void handleCustomColumnRemoved(
+        int removedWidth
+        );
+
+    void handleSectionResized(
+        int logicalIndex
+        );
+
     void enforceStudentInformationMinimum();
+
+private:
+    int customColumnCount() const;
+
+    int studentInformationStart() const;
+
+    int studentInformationEnd() const;
+
+    int studentInformationWidth() const;
+
+    void enforceStudentInformationMinimumInternal();
+
+    void enforceCustomColumnMinimumsInternal();
+
+    void updateAttachedViews();
 
 private:
     QTableView* m_table = nullptr;
     RosterModel* m_model = nullptr;
+    bool m_enforcingWidths = false;
 };
