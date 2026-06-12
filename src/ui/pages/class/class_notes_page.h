@@ -40,6 +40,7 @@ private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
     QString m_savedNotes;
+    QString m_savedTimeFillerActivities;
     QString m_subtitleText;
     bool m_loading = false;
     bool m_dirty = false;
@@ -47,5 +48,6 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QTextEdit* m_notesEdit = nullptr;
+    QTextEdit* m_timeFillerActivitiesEdit = nullptr;
     QPushButton* m_saveButton = nullptr;
 };

@@ -73,8 +73,15 @@ void ClassNotesPage::loadClass(
     m_savedNotes =
         info.notes.trimmed();
 
+    m_savedTimeFillerActivities =
+        info.timeFillerActivities.trimmed();
+
     m_notesEdit->setPlainText(
         m_savedNotes
+        );
+
+    m_timeFillerActivitiesEdit->setPlainText(
+        m_savedTimeFillerActivities
         );
 
     updateHeaderText();
@@ -99,7 +106,20 @@ void ClassNotesPage::saveData()
             ->toPlainText()
             .trimmed();
 
-    if (!m_services->dataService()->saveClassNotes(m_classroom.id, notes))
+    const QString timeFillerActivities =
+        m_timeFillerActivitiesEdit
+            ->toPlainText()
+            .trimmed();
+
+    if (
+        !m_services
+            ->dataService()
+            ->saveClassNotes(
+                m_classroom.id,
+                notes,
+                timeFillerActivities
+                )
+        )
     {
         QMessageBox::warning(
             this,
@@ -122,8 +142,15 @@ void ClassNotesPage::saveData()
     m_savedNotes =
         info.notes.trimmed();
 
+    m_savedTimeFillerActivities =
+        info.timeFillerActivities.trimmed();
+
     m_notesEdit->setPlainText(
         m_savedNotes
+        );
+
+    m_timeFillerActivitiesEdit->setPlainText(
+        m_savedTimeFillerActivities
         );
 
     m_loading = false;
@@ -144,7 +171,12 @@ void ClassNotesPage::markDirty()
 
     m_dirty =
         m_notesEdit
-        && m_notesEdit->toPlainText().trimmed() != m_savedNotes;
+        && m_timeFillerActivitiesEdit
+        && (
+            m_notesEdit->toPlainText().trimmed() != m_savedNotes
+            || m_timeFillerActivitiesEdit->toPlainText().trimmed()
+                != m_savedTimeFillerActivities
+            );
 
     updateActions();
 }
@@ -213,6 +245,38 @@ void ClassNotesPage::buildUi()
         m_notesEdit
         );
 
+    notesCard->contentLayout()->addSpacing(
+        UiConstants::Cards::Spacing
+        );
+
+    auto* timeFillerActivitiesLabel =
+        new QLabel(
+            tr("Time Filler Activities"),
+            notesCard
+            );
+
+    timeFillerActivitiesLabel->setContentsMargins(
+        UiConstants::Forms::LabelIndent,
+        0,
+        0,
+        0
+        );
+
+    notesCard->contentLayout()->addWidget(
+        timeFillerActivitiesLabel
+        );
+
+    m_timeFillerActivitiesEdit =
+        new QTextEdit(notesCard);
+
+    m_timeFillerActivitiesEdit->setMinimumHeight(
+        UiConstants::Editors::NotesMinimumHeight
+        );
+
+    notesCard->contentLayout()->addWidget(
+        m_timeFillerActivitiesEdit
+        );
+
     contentLayout()->addWidget(notesCard);
     contentLayout()->addStretch();
 
@@ -230,6 +294,13 @@ void ClassNotesPage::buildUi()
 
     connect(
         m_notesEdit,
+        &QTextEdit::textChanged,
+        this,
+        &ClassNotesPage::markDirty
+        );
+
+    connect(
+        m_timeFillerActivitiesEdit,
         &QTextEdit::textChanged,
         this,
         &ClassNotesPage::markDirty
