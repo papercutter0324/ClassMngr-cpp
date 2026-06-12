@@ -383,28 +383,21 @@ ClassDetailsSection::ClassDetailsSection(
     layout->addLayout(booksGrid);
 
     updateColorPreview(m_pendingClassColor);
-    updateLevelOptions();
+    rebuildLevelOptions(QString());
+    rebuildBookOptions(QString(), QString());
 
     connect(
         m_gradeCombo,
         &QComboBox::currentTextChanged,
         this,
-        [this]
-        {
-            updateLevelOptions();
-            emit dataChanged();
-        }
+        &ClassDetailsSection::updateLevelOptions
         );
 
     connect(
         m_levelCombo,
         &QComboBox::currentTextChanged,
         this,
-        [this]
-        {
-            updateBookOptions();
-            emit dataChanged();
-        }
+        &ClassDetailsSection::updateBookOptions
         );
 
     connect(
@@ -438,6 +431,8 @@ void ClassDetailsSection::loadInfo(
     const QString& fontColor
     )
 {
+    m_loadingInfo = true;
+
     const QSignalBlocker gradeBlocker(m_gradeCombo);
     const QSignalBlocker levelBlocker(m_levelCombo);
     const QSignalBlocker readingBlocker(m_readingBookCombo);
@@ -462,36 +457,12 @@ void ClassDetailsSection::loadInfo(
             : 0
         );
 
-    updateLevelOptions();
-
-    const int levelIndex =
-        m_levelCombo->findText(level);
-
-    m_levelCombo->setCurrentIndex(
-        levelIndex >= 0
-            ? levelIndex
-            : 0
-        );
-
-    updateBookOptions();
-
-    const int readingIndex =
-        m_readingBookCombo->findText(readingBook);
-
-    if (readingIndex >= 0)
-    {
-        m_readingBookCombo->setCurrentIndex(readingIndex);
-    }
-
-    const int essayIndex =
-        m_essayBookCombo->findText(essayBook);
-
-    if (essayIndex >= 0)
-    {
-        m_essayBookCombo->setCurrentIndex(essayIndex);
-    }
+    rebuildLevelOptions(level);
+    rebuildBookOptions(readingBook, essayBook);
 
     updateColorPreview(m_pendingClassColor);
+
+    m_loadingInfo = false;
 }
 
 QString ClassDetailsSection::grade() const
@@ -526,10 +497,34 @@ QString ClassDetailsSection::fontColor() const
 
 void ClassDetailsSection::updateLevelOptions()
 {
-    const QSignalBlocker blocker(m_levelCombo);
+    if (m_loadingInfo)
+    {
+        return;
+    }
 
-    const QString previousLevel =
-        m_levelCombo->currentText();
+    rebuildLevelOptions(QString());
+    rebuildBookOptions(QString(), QString());
+
+    emit dataChanged();
+}
+
+void ClassDetailsSection::updateBookOptions()
+{
+    if (m_loadingInfo)
+    {
+        return;
+    }
+
+    rebuildBookOptions(QString(), QString());
+
+    emit dataChanged();
+}
+
+void ClassDetailsSection::rebuildLevelOptions(
+    const QString& preferredLevel
+    )
+{
+    const QSignalBlocker blocker(m_levelCombo);
 
     m_levelCombo->clear();
     m_levelCombo->addItem(QString());
@@ -543,15 +538,16 @@ void ClassDetailsSection::updateLevelOptions()
     m_levelCombo->addItems(levels);
 
     const int levelIndex =
-        m_levelCombo->findText(previousLevel);
+        m_levelCombo->findText(preferredLevel);
 
     if (levelIndex >= 0)
         m_levelCombo->setCurrentIndex(levelIndex);
-
-    updateBookOptions();
 }
 
-void ClassDetailsSection::updateBookOptions()
+void ClassDetailsSection::rebuildBookOptions(
+    const QString& preferredReadingBook,
+    const QString& preferredEssayBook
+    )
 {
     const QSignalBlocker readingBlocker(
         m_readingBookCombo
@@ -561,12 +557,6 @@ void ClassDetailsSection::updateBookOptions()
         m_essayBookCombo
         );
 
-
-    const QString previousReadingBook =
-        m_readingBookCombo->currentText();
-
-    const QString previousEssayBook =
-        m_essayBookCombo->currentText();
 
     m_readingBookCombo->clear();
     m_essayBookCombo->clear();
@@ -613,13 +603,13 @@ void ClassDetailsSection::updateBookOptions()
     }
 
     const int readingIndex =
-        m_readingBookCombo->findText(previousReadingBook);
+        m_readingBookCombo->findText(preferredReadingBook);
 
     if (readingIndex >= 0)
         m_readingBookCombo->setCurrentIndex(readingIndex);
 
     const int essayIndex =
-        m_essayBookCombo->findText(previousEssayBook);
+        m_essayBookCombo->findText(preferredEssayBook);
 
     if (essayIndex >= 0)
         m_essayBookCombo->setCurrentIndex(essayIndex);

@@ -39,6 +39,8 @@ private:
 
     void loadData();
 
+    void rebuildLevelOptions(const QString& preferredLevel = {});
+
     void updateColorPreviews();
 
     void setComboText(
@@ -54,6 +56,7 @@ private:
     QString m_originalLevel;
     QString m_classColor{"#FFFFFF"};
     QString m_fontColor{"#000000"};
+    bool m_loadingData = false;
 
     QLineEdit* m_teacherKrEdit = nullptr;
     QLineEdit* m_roomNumberEdit = nullptr;

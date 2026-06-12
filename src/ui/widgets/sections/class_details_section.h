@@ -43,6 +43,11 @@ private slots:
     void openColorPicker();
 
 private:
+    void rebuildLevelOptions(const QString& preferredLevel = {});
+    void rebuildBookOptions(
+        const QString& preferredReadingBook = {},
+        const QString& preferredEssayBook = {}
+        );
     void updateColorPreview(const QString& color);
 
 private:
@@ -54,6 +59,7 @@ private:
     // =====================================================
     // UI state
     // =====================================================
+    bool m_loadingInfo{false};
     QString m_pendingClassColor;
     QString m_pendingFontColor;
 

@@ -39,13 +39,22 @@ ScheduleEditorDialog::ScheduleEditorDialog(
 
 void ScheduleEditorDialog::updateLevelOptions()
 {
-    if (!m_levelCombo || !m_gradeCombo)
+    if (m_loadingData)
     {
         return;
     }
 
-    const QString currentLevel =
-        m_levelCombo->currentText();
+    rebuildLevelOptions(QString());
+}
+
+void ScheduleEditorDialog::rebuildLevelOptions(
+    const QString& preferredLevel
+    )
+{
+    if (!m_levelCombo || !m_gradeCombo)
+    {
+        return;
+    }
 
     const QSignalBlocker blocker(m_levelCombo);
 
@@ -57,11 +66,11 @@ void ScheduleEditorDialog::updateLevelOptions()
             )
         );
 
-    if (!currentLevel.isEmpty())
+    if (!preferredLevel.isEmpty())
     {
         setComboText(
             m_levelCombo,
-            currentLevel
+            preferredLevel
             );
     }
 }
@@ -326,6 +335,8 @@ void ScheduleEditorDialog::loadData()
         return;
     }
 
+    m_loadingData = true;
+
     m_cachedInfo =
         m_services
             ->dataService()
@@ -350,12 +361,7 @@ void ScheduleEditorDialog::loadData()
         m_originalGrade
         );
 
-    updateLevelOptions();
-
-    setComboText(
-        m_levelCombo,
-        m_originalLevel
-        );
+    rebuildLevelOptions(m_originalLevel);
 
     m_classColor =
         m_cachedInfo.classColor.isEmpty()
@@ -368,6 +374,8 @@ void ScheduleEditorDialog::loadData()
             : m_cachedInfo.fontColor;
 
     updateColorPreviews();
+
+    m_loadingData = false;
 }
 
 void ScheduleEditorDialog::updateColorPreviews()
