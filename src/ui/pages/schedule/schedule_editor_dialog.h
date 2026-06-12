@@ -5,8 +5,8 @@
 #include <QDialog>
 
 class ApplicationServices;
+class ClickableColorPreview;
 class QComboBox;
-class QFrame;
 class QLineEdit;
 
 class ScheduleEditorDialog : public QDialog
@@ -62,6 +62,6 @@ private:
     QLineEdit* m_roomNumberEdit = nullptr;
     QComboBox* m_gradeCombo = nullptr;
     QComboBox* m_levelCombo = nullptr;
-    QFrame* m_classColorPreview = nullptr;
-    QFrame* m_fontColorPreview = nullptr;
+    ClickableColorPreview* m_classColorPreview = nullptr;
+    ClickableColorPreview* m_fontColorPreview = nullptr;
 };

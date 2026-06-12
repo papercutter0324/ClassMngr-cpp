@@ -4,7 +4,7 @@
 
 class QComboBox;
 class QLineEdit;
-class QFrame;
+class ClickableColorPreview;
 class ApplicationServices;
 
 class ClassDetailsSection : public QWidget
@@ -63,7 +63,7 @@ private:
     QString m_pendingClassColor;
     QString m_pendingFontColor;
 
-    QFrame* m_colorPreview{nullptr};
+    ClickableColorPreview* m_colorPreview{nullptr};
 
     QComboBox* m_gradeCombo{nullptr};
     QComboBox* m_levelCombo{nullptr};

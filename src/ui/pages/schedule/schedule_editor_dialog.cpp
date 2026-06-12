@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "services/dataservice.h"
+#include "ui/widgets/clickable_color_preview.h"
 
 #include <QColorDialog>
 #include <QComboBox>
@@ -213,7 +214,7 @@ void ScheduleEditorDialog::buildUi()
         new QComboBox(this);
 
     m_classColorPreview =
-        new QFrame(this);
+        new ClickableColorPreview(this);
 
     m_classColorPreview->setFixedSize(28, 28);
 
@@ -233,7 +234,7 @@ void ScheduleEditorDialog::buildUi()
     classColorLayout->addStretch();
 
     m_fontColorPreview =
-        new QFrame(this);
+        new ClickableColorPreview(this);
 
     m_fontColorPreview->setFixedSize(28, 28);
 
@@ -309,6 +310,20 @@ void ScheduleEditorDialog::buildUi()
     connect(
         fontColorButton,
         &QPushButton::clicked,
+        this,
+        &ScheduleEditorDialog::chooseFontColor
+        );
+
+    connect(
+        m_classColorPreview,
+        &ClickableColorPreview::clicked,
+        this,
+        &ScheduleEditorDialog::chooseClassColor
+        );
+
+    connect(
+        m_fontColorPreview,
+        &ClickableColorPreview::clicked,
         this,
         &ScheduleEditorDialog::chooseFontColor
         );

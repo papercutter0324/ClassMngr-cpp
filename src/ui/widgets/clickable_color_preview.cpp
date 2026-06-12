@@ -7,6 +7,7 @@ ClickableColorPreview::ClickableColorPreview(
     )
     : QFrame(parent)
 {
+    setCursor(Qt::PointingHandCursor);
 }
 
 void ClickableColorPreview::mousePressEvent(

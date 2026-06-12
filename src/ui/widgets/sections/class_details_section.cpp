@@ -16,6 +16,7 @@
 #include "config/class_info_config.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/utils/widget_sizing.h"
+#include "ui/widgets/clickable_color_preview.h"
 #include "utils/colorutils.h"
 
 #include <algorithm>
@@ -148,7 +149,7 @@ ClassDetailsSection::ClassDetailsSection(
 {
     Q_ASSERT(m_services);
 
-    m_colorPreview = new QFrame(this);
+    m_colorPreview = new ClickableColorPreview(this);
     m_colorPreview->setFixedSize(
         UiConstants::ClassInfo::Details::ColorPreviewWidth,
         UiConstants::ClassInfo::Details::ColorPreviewHeight
@@ -417,6 +418,13 @@ ClassDetailsSection::ClassDetailsSection(
     connect(
         colorButton,
         &QPushButton::clicked,
+        this,
+        &ClassDetailsSection::openColorPicker
+        );
+
+    connect(
+        m_colorPreview,
+        &ClickableColorPreview::clicked,
         this,
         &ClassDetailsSection::openColorPicker
         );
