@@ -56,6 +56,7 @@ qt_add_executable(ClassMngr
     src/models/class_info.h
     src/models/classroom.cpp
     src/models/classroom.h
+    src/models/intensive_slot_state.h
     src/models/roster.cpp
     src/models/roster.h
     src/models/speaking_evaluation.h
@@ -100,6 +101,10 @@ qt_add_executable(ClassMngr
     src/ui/pages/roster/roster_page.h
     src/ui/pages/roster/roster_table_view.cpp
     src/ui/pages/roster/roster_table_view.h
+    src/ui/pages/schedule/schedule_builder.cpp
+    src/ui/pages/schedule/schedule_builder.h
+    src/ui/pages/schedule/schedule_editor_dialog.cpp
+    src/ui/pages/schedule/schedule_editor_dialog.h
     src/ui/pages/schedule/schedule_page.cpp
     src/ui/pages/schedule/schedule_page.h
     src/ui/pages/speakingeval/speaking_eval_delegate.cpp
@@ -180,6 +185,11 @@ target_compile_features(ClassMngr
 
 set_target_properties(ClassMngr PROPERTIES
     CXX_EXTENSIONS OFF
+)
+
+target_compile_options(ClassMngr
+    PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/FS>
 )
 
 target_include_directories(ClassMngr

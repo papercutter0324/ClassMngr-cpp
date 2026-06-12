@@ -8,6 +8,7 @@
 #include "core/appsettings.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/pages/class/class_info_page.h"
+#include "ui/pages/schedule/schedule_page.h"
 #include "ui/pages/teacher/teacher_info_page.h"
 #include "ui/pages/pagemanager.h"
 
@@ -176,6 +177,13 @@ void MainWindow::connectSignals()
     connect(
         m_pages->classInfoPage(),
         &ClassInfoPage::classInfoSaved,
+        m_sidebarController.get(),
+        &SidebarController::handleClassInfoSaved
+        );
+
+    connect(
+        m_pages->schedulePage(),
+        &SchedulePage::classInfoSaved,
         m_sidebarController.get(),
         &SidebarController::handleClassInfoSaved
         );

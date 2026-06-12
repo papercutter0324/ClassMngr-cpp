@@ -41,7 +41,10 @@ void PageManager::initialize(
     m_services = services;
 
     m_schedulePage =
-        new SchedulePage(this);
+        new SchedulePage(
+            m_services,
+            this
+            );
 
     m_classInfoPage =
         new ClassInfoPage(

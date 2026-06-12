@@ -5,6 +5,7 @@
 #include "models/class_info.h"
 #include "models/class_conflict.h"
 #include "models/classroom.h"
+#include "models/intensive_slot_state.h"
 #include "models/roster.h"
 #include "models/speaking_evaluation.h"
 #include "models/teacher.h"
@@ -133,9 +134,13 @@ public:
     // Intensive Slot States
     // =====================================================
 
-    // TODO:
-    // Port loadIntensiveSlotStates()
-    // Port saveIntensiveSlotState()
+    QList<IntensiveSlotState> loadIntensiveSlotStates();
+
+    void saveIntensiveSlotState(
+        const QString& day,
+        const QString& startTime,
+        const QString& state
+        );
 
 
 
