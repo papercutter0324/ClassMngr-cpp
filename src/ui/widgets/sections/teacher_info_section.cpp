@@ -48,15 +48,19 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     m_model = new TeacherModel(this);
 
     m_roomNumberEdit = new QLineEdit(this);
+    m_internetTypeEdit = new QLineEdit(this);
     m_wifiNameEdit = new QLineEdit(this);
     m_wifiPasswordEdit = new QLineEdit(this);
+    m_projectionTypeEdit = new QLineEdit(this);
     m_zoomIdEdit = new QLineEdit(this);
     m_zoomPasswordEdit = new QLineEdit(this);
 
     for (auto* w : {
              m_roomNumberEdit,
+             m_internetTypeEdit,
              m_wifiNameEdit,
              m_wifiPasswordEdit,
+             m_projectionTypeEdit,
              m_zoomIdEdit,
              m_zoomPasswordEdit
          }) {
@@ -85,10 +89,12 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         4
         );
 
-    m_grid->addWidget(fieldLabel(tr("Wi-Fi Name")), 3, 0, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("Wi-Fi Password")), 3, 1, Qt::AlignLeft);
-    m_grid->addWidget(m_wifiNameEdit, 4, 0, Qt::AlignLeft);
-    m_grid->addWidget(m_wifiPasswordEdit, 4, 1, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Internet Type")), 3, 0, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("WiFi Name")), 3, 1, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("WiFi Password")), 3, 2, Qt::AlignLeft);
+    m_grid->addWidget(m_internetTypeEdit, 4, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiNameEdit, 4, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiPasswordEdit, 4, 2, Qt::AlignLeft);
 
     m_grid->addItem(
         new QSpacerItem(
@@ -103,10 +109,12 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         4
         );
 
-    m_grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 0, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 1, Qt::AlignLeft);
-    m_grid->addWidget(m_zoomIdEdit, 7, 0, Qt::AlignLeft);
-    m_grid->addWidget(m_zoomPasswordEdit, 7, 1, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Projection Type")), 6, 0, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 1, Qt::AlignLeft);
+    m_grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 2, Qt::AlignLeft);
+    m_grid->addWidget(m_projectionTypeEdit, 7, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomIdEdit, 7, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomPasswordEdit, 7, 2, Qt::AlignLeft);
 
     m_grid->setColumnStretch(
         0,
@@ -252,8 +260,10 @@ void TeacherInfoSection::applyTeacher(int index)
     m_selectedTeacherId = t.id;
 
     m_roomNumberEdit->setText(t.roomNumber);
+    m_internetTypeEdit->setText(t.internetType);
     m_wifiNameEdit->setText(t.wifiName);
     m_wifiPasswordEdit->setText(t.wifiPassword);
+    m_projectionTypeEdit->setText(t.projectionType);
     m_zoomIdEdit->setText(t.zoomId);
     m_zoomPasswordEdit->setText(t.zoomPassword);
 }
@@ -272,8 +282,10 @@ void TeacherInfoSection::clearTeacher()
     m_selectedTeacherId = -1;
 
     m_roomNumberEdit->clear();
+    m_internetTypeEdit->clear();
     m_wifiNameEdit->clear();
     m_wifiPasswordEdit->clear();
+    m_projectionTypeEdit->clear();
     m_zoomIdEdit->clear();
     m_zoomPasswordEdit->clear();
 }
@@ -304,8 +316,10 @@ void TeacherInfoSection::applyFieldWidths()
              static_cast<QWidget*>(m_teacherKrCombo),
              static_cast<QWidget*>(m_teacherEnCombo),
              static_cast<QWidget*>(m_roomNumberEdit),
+             static_cast<QWidget*>(m_internetTypeEdit),
              static_cast<QWidget*>(m_wifiNameEdit),
              static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_projectionTypeEdit),
              static_cast<QWidget*>(m_zoomIdEdit),
              static_cast<QWidget*>(m_zoomPasswordEdit)
          })

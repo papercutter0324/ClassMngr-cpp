@@ -22,8 +22,10 @@ struct ClassInfo
     QString roomNumber;
     QString wifiName;
     QString wifiPassword;
+    QString internetType;
     QString zoomId;
     QString zoomPassword;
+    QString projectionType;
 
     QString classGrade;
     QString classLevel;
@@ -38,4 +40,5 @@ struct ClassInfo
     QList<ClassTime> intensiveTimes;
 
     QString notes;
+    QString timeFillerActivities;
 };

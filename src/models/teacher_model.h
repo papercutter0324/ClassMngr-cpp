@@ -17,7 +17,9 @@ public:
         WifiNameRole,
         WifiPasswordRole,
         ZoomIdRole,
-        ZoomPasswordRole
+        ZoomPasswordRole,
+        InternetTypeRole,
+        ProjectionTypeRole
     };
 
     explicit TeacherModel(QObject* parent = nullptr);

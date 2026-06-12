@@ -122,7 +122,8 @@ public:
 
     bool saveClassNotes(
         int classId,
-        const QString& notes
+        const QString& notes,
+        const QString& timeFillerActivities
         );
 
     ClassInfo loadClassInfo(

@@ -8,6 +8,7 @@
 #include "ui/widgets/sectioncards/teacher_section_card.h"
 #include "utils/sidebar_node_naming.h"
 
+#include <QComboBox>
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
@@ -15,8 +16,82 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSizePolicy>
+#include <QSpacerItem>
 #include <QTextEdit>
 #include <QVBoxLayout>
+
+namespace
+{
+
+void applyTeacherFieldWidth(
+    QWidget* widget
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    widget->setMinimumWidth(
+        UiConstants::ClassInfo::Teacher::FieldMinWidth
+        );
+
+    widget->setMaximumWidth(
+        UiConstants::ClassInfo::Teacher::FieldMaxWidth
+        );
+
+    widget->setSizePolicy(
+        QSizePolicy::Maximum,
+        QSizePolicy::Preferred
+        );
+}
+
+int findComboText(
+    QComboBox* combo,
+    const QString& value
+    )
+{
+    if (!combo)
+    {
+        return -1;
+    }
+
+    const QString trimmed =
+        value.trimmed();
+
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (combo->itemText(index).compare(trimmed, Qt::CaseInsensitive) == 0)
+        {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
+void setComboTextWithFallback(
+    QComboBox* combo,
+    const QString& value,
+    const QString& fallback
+    )
+{
+    int index =
+        findComboText(combo, value);
+
+    if (index < 0)
+    {
+        index = findComboText(combo, fallback);
+    }
+
+    if (index >= 0)
+    {
+        combo->setCurrentIndex(index);
+    }
+}
+
+} // namespace
 
 
 TeacherInfoPage::TeacherInfoPage(
@@ -130,30 +205,112 @@ void TeacherInfoPage::buildUi()
 
     auto* connectivityGrid = new QGridLayout;
 
-    connectivityGrid->setHorizontalSpacing(16);
-    connectivityGrid->setVerticalSpacing(4);
+    connectivityGrid->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
+        );
+
+    connectivityGrid->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
 
     m_wifiNameEdit = new QLineEdit;
     m_wifiPasswordEdit = new QLineEdit;
+    m_internetTypeCombo = new QComboBox;
+    m_internetTypeCombo->addItems(
+        {
+            QStringLiteral("WiFi"),
+            QStringLiteral("LAN"),
+            QStringLiteral("Both"),
+            QStringLiteral("N/A")
+        });
+
     m_zoomIdEdit = new QLineEdit;
     m_zoomPasswordEdit = new QLineEdit;
+    m_projectionTypeCombo = new QComboBox;
+    m_projectionTypeCombo->addItems(
+        {
+            QStringLiteral("HDMI"),
+            QStringLiteral("Zoom"),
+            QStringLiteral("Any"),
+            QStringLiteral("N/A")
+        });
 
     connectivityGrid->addWidget(
-        createFieldLabel("WiFi Name"), 0, 0);
+        createFieldLabel("Internet Type"), 0, 0, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("WiFi Password"), 0, 1);
+        createFieldLabel("WiFi Name"), 0, 1, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("Zoom ID"), 0, 2);
+        createFieldLabel("WiFi Password"), 0, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("Zoom Password"), 0, 3);
+        m_internetTypeCombo, 1, 0, Qt::AlignLeft);
+    connectivityGrid->addWidget(
+        m_wifiNameEdit, 1, 1, Qt::AlignLeft);
+    connectivityGrid->addWidget(
+        m_wifiPasswordEdit, 1, 2, Qt::AlignLeft);
 
-    connectivityGrid->addWidget(m_wifiNameEdit, 1, 0);
-    connectivityGrid->addWidget(m_wifiPasswordEdit, 1, 1);
-    connectivityGrid->addWidget(m_zoomIdEdit, 1, 2);
-    connectivityGrid->addWidget(m_zoomPasswordEdit, 1, 3);
+    connectivityGrid->addItem(
+        new QSpacerItem(
+            0,
+            UiConstants::ClassInfo::Form::GroupSpacerHeight,
+            QSizePolicy::Minimum,
+            QSizePolicy::Fixed
+            ),
+        2,
+        0,
+        1,
+        4
+        );
+
+    connectivityGrid->addWidget(
+        createFieldLabel("Projection Type"), 3, 0, Qt::AlignLeft);
+
+    connectivityGrid->addWidget(
+        createFieldLabel("Zoom ID"), 3, 1, Qt::AlignLeft);
+
+    connectivityGrid->addWidget(
+        createFieldLabel("Zoom Password"), 3, 2, Qt::AlignLeft);
+
+    connectivityGrid->addWidget(
+        m_projectionTypeCombo, 4, 0, Qt::AlignLeft);
+    connectivityGrid->addWidget(
+        m_zoomIdEdit, 4, 1, Qt::AlignLeft);
+    connectivityGrid->addWidget(
+        m_zoomPasswordEdit, 4, 2, Qt::AlignLeft);
+
+    for (auto* widget : {
+             static_cast<QWidget*>(m_internetTypeCombo),
+             static_cast<QWidget*>(m_wifiNameEdit),
+             static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_projectionTypeCombo),
+             static_cast<QWidget*>(m_zoomIdEdit),
+             static_cast<QWidget*>(m_zoomPasswordEdit)
+         })
+    {
+        applyTeacherFieldWidth(widget);
+    }
+
+    connectivityGrid->setColumnStretch(
+        0,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
+
+    connectivityGrid->setColumnStretch(
+        1,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
+
+    connectivityGrid->setColumnStretch(
+        2,
+        UiConstants::ClassInfo::Teacher::ColumnStretch
+        );
+
+    connectivityGrid->setColumnStretch(
+        3,
+        UiConstants::ClassInfo::Teacher::FillerColumnStretch
+        );
 
     connectivityCard->contentLayout()->addLayout(
         connectivityGrid);
@@ -198,7 +355,13 @@ QLabel* TeacherInfoPage::createFieldLabel(
     const QString& text)
 {
     auto* label = new QLabel(text);
-    label->setContentsMargins(4, 0, 0, 0);
+    label->setContentsMargins(
+        UiConstants::ClassInfo::Form::LabelIndent,
+        0,
+        0,
+        0
+        );
+
     return label;
 }
 
@@ -223,11 +386,23 @@ void TeacherInfoPage::loadTeacher(
     m_roomNumberEdit->setText(
         teacher.roomNumber);
 
+    setComboTextWithFallback(
+        m_internetTypeCombo,
+        teacher.internetType,
+        QStringLiteral("WiFi")
+        );
+
     m_wifiNameEdit->setText(
         teacher.wifiName);
 
     m_wifiPasswordEdit->setText(
         teacher.wifiPassword);
+
+    setComboTextWithFallback(
+        m_projectionTypeCombo,
+        teacher.projectionType,
+        QStringLiteral("HDMI")
+        );
 
     m_zoomIdEdit->setText(
         teacher.zoomId);
@@ -262,9 +437,11 @@ void TeacherInfoPage::saveTeacher()
 
     updated.roomNumber = m_roomNumberEdit->text().trimmed();
 
+    updated.internetType = m_internetTypeCombo->currentText().trimmed();
     updated.wifiName = m_wifiNameEdit->text().trimmed();
     updated.wifiPassword = m_wifiPasswordEdit->text().trimmed();
 
+    updated.projectionType = m_projectionTypeCombo->currentText().trimmed();
     updated.zoomId = m_zoomIdEdit->text().trimmed();
     updated.zoomPassword = m_zoomPasswordEdit->text().trimmed();
 

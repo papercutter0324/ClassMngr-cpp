@@ -6,6 +6,7 @@
 class QScrollArea;
 class QLabel;
 class QLineEdit;
+class QComboBox;
 class QTextEdit;
 class QPushButton;
 
@@ -83,9 +84,11 @@ private:
 
     QLineEdit* m_wifiNameEdit = nullptr;
     QLineEdit* m_wifiPasswordEdit = nullptr;
+    QComboBox* m_internetTypeCombo = nullptr;
 
     QLineEdit* m_zoomIdEdit = nullptr;
     QLineEdit* m_zoomPasswordEdit = nullptr;
+    QComboBox* m_projectionTypeCombo = nullptr;
 
     QTextEdit* m_notesEdit = nullptr;
 

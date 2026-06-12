@@ -44,8 +44,10 @@ private:
     QLineEdit* m_roomNumberEdit = nullptr;
     QLineEdit* m_wifiNameEdit = nullptr;
     QLineEdit* m_wifiPasswordEdit = nullptr;
+    QLineEdit* m_internetTypeEdit = nullptr;
     QLineEdit* m_zoomIdEdit = nullptr;
     QLineEdit* m_zoomPasswordEdit = nullptr;
+    QLineEdit* m_projectionTypeEdit = nullptr;
 
     TeacherModel* m_model = nullptr;
     int m_selectedTeacherId = -1;

@@ -29,6 +29,8 @@ QVariant TeacherModel::data(const QModelIndex& index, int role) const
     case WifiPasswordRole: return t.wifiPassword;
     case ZoomIdRole: return t.zoomId;
     case ZoomPasswordRole: return t.zoomPassword;
+    case InternetTypeRole: return t.internetType;
+    case ProjectionTypeRole: return t.projectionType;
     default: return {};
     }
 }
@@ -43,7 +45,9 @@ QHash<int, QByteArray> TeacherModel::roleNames() const
         { WifiNameRole, "wifiName" },
         { WifiPasswordRole, "wifiPassword" },
         { ZoomIdRole, "zoomId" },
-        { ZoomPasswordRole, "zoomPassword" }
+        { ZoomPasswordRole, "zoomPassword" },
+        { InternetTypeRole, "internetType" },
+        { ProjectionTypeRole, "projectionType" }
     };
 }
 

@@ -14,9 +14,11 @@ struct Teacher
 
     QString wifiName;
     QString wifiPassword;
+    QString internetType = QStringLiteral("WiFi");
 
     QString zoomId;
     QString zoomPassword;
+    QString projectionType = QStringLiteral("HDMI");
 
     QString notes;
 };

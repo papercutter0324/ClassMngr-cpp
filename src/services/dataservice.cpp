@@ -165,6 +165,120 @@ QString classDisplayName(
     return QString("Class %1").arg(classId);
 }
 
+QString normalizedTeacherChoice(
+    const QString& value,
+    const QStringList& choices,
+    const QString& fallback
+    )
+{
+    const QString trimmed =
+        value.trimmed();
+
+    for (const QString& choice : choices)
+    {
+        if (choice.compare(trimmed, Qt::CaseInsensitive) == 0)
+        {
+            return choice;
+        }
+    }
+
+    return fallback;
+}
+
+QString normalizedInternetType(
+    const QString& value
+    )
+{
+    return normalizedTeacherChoice(
+        value,
+        {
+            QStringLiteral("WiFi"),
+            QStringLiteral("LAN"),
+            QStringLiteral("Both"),
+            QStringLiteral("N/A")
+        },
+        QStringLiteral("WiFi")
+        );
+}
+
+QString normalizedProjectionType(
+    const QString& value
+    )
+{
+    return normalizedTeacherChoice(
+        value,
+        {
+            QStringLiteral("HDMI"),
+            QStringLiteral("Zoom"),
+            QStringLiteral("Any"),
+            QStringLiteral("N/A")
+        },
+        QStringLiteral("HDMI")
+        );
+}
+
+bool tableHasColumn(
+    QSqlDatabase& db,
+    const QString& tableName,
+    const QString& columnName
+    )
+{
+    QSqlQuery query(db);
+
+    if (!query.exec(
+            QString("PRAGMA table_info(%1)")
+                .arg(tableName)
+            ))
+    {
+        qWarning()
+            << "Failed to inspect table columns for"
+            << tableName
+            << ":"
+            << query.lastError().text();
+
+        return false;
+    }
+
+    while (query.next())
+    {
+        if (query.value("name").toString() == columnName)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void ensureTableColumn(
+    QSqlDatabase& db,
+    const QString& tableName,
+    const QString& columnName,
+    const QString& definition
+    )
+{
+    if (tableHasColumn(db, tableName, columnName))
+    {
+        return;
+    }
+
+    QSqlQuery query(db);
+
+    if (!query.exec(
+            QString("ALTER TABLE %1 ADD COLUMN %2 %3")
+                .arg(tableName, columnName, definition)
+            ))
+    {
+        qWarning()
+            << "Failed to add column"
+            << columnName
+            << "to"
+            << tableName
+            << ":"
+            << query.lastError().text();
+    }
+}
+
 } // namespace
 
 
@@ -343,13 +457,29 @@ void DataService::createTables()
 
             wifi_name TEXT,
             wifi_password TEXT,
+            internet_type TEXT DEFAULT 'WiFi',
 
             zoom_id TEXT,
             zoom_password TEXT,
+            projection_type TEXT DEFAULT 'HDMI',
 
             notes TEXT
         )
     )");
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("teachers"),
+        QStringLiteral("internet_type"),
+        QStringLiteral("TEXT DEFAULT 'WiFi'")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("teachers"),
+        QStringLiteral("projection_type"),
+        QStringLiteral("TEXT DEFAULT 'HDMI'")
+        );
 
     // Classes
     query.exec(R"(
@@ -376,9 +506,17 @@ void DataService::createTables()
             class_color TEXT DEFAULT '#FFFFFF',
             font_color TEXT DEFAULT '#000000',
 
-            notes TEXT
+            notes TEXT,
+            time_filler_activities TEXT
         )
     )");
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("class_info"),
+        QStringLiteral("time_filler_activities"),
+        QStringLiteral("TEXT")
+        );
 
     // Class Times
     query.exec(R"(
@@ -496,11 +634,13 @@ int DataService::createTeacher(
             room_number,
             wifi_name,
             wifi_password,
+            internet_type,
             zoom_id,
             zoom_password,
+            projection_type,
             notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(teacher.teacherKr);
@@ -508,8 +648,12 @@ int DataService::createTeacher(
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.wifiName);
     query.addBindValue(teacher.wifiPassword);
+    query.addBindValue(
+        normalizedInternetType(teacher.internetType));
     query.addBindValue(teacher.zoomId);
     query.addBindValue(teacher.zoomPassword);
+    query.addBindValue(
+        normalizedProjectionType(teacher.projectionType));
     query.addBindValue(teacher.notes);
 
     query.exec();
@@ -545,8 +689,10 @@ void DataService::updateTeacher(
             room_number=?,
             wifi_name=?,
             wifi_password=?,
+            internet_type=?,
             zoom_id=?,
             zoom_password=?,
+            projection_type=?,
             notes=?
         WHERE id=?
     )");
@@ -556,8 +702,12 @@ void DataService::updateTeacher(
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.wifiName);
     query.addBindValue(teacher.wifiPassword);
+    query.addBindValue(
+        normalizedInternetType(teacher.internetType));
     query.addBindValue(teacher.zoomId);
     query.addBindValue(teacher.zoomPassword);
+    query.addBindValue(
+        normalizedProjectionType(teacher.projectionType));
     query.addBindValue(teacher.notes);
     query.addBindValue(teacher.id);
 
@@ -600,8 +750,16 @@ Teacher DataService::getTeacher(
     teacher.roomNumber =   query.value("room_number").toString();
     teacher.wifiName =     query.value("wifi_name").toString();
     teacher.wifiPassword = query.value("wifi_password").toString();
+    teacher.internetType =
+        normalizedInternetType(
+            query.value("internet_type").toString()
+            );
     teacher.zoomId =       query.value("zoom_id").toString();
     teacher.zoomPassword = query.value("zoom_password").toString();
+    teacher.projectionType =
+        normalizedProjectionType(
+            query.value("projection_type").toString()
+            );
     teacher.notes =        query.value("notes").toString();
 
     return teacher;
@@ -637,8 +795,16 @@ DataService::getAllTeachers()
         teacher.roomNumber =   query.value("room_number").toString();
         teacher.wifiName =     query.value("wifi_name").toString();
         teacher.wifiPassword = query.value("wifi_password").toString();
+        teacher.internetType =
+            normalizedInternetType(
+                query.value("internet_type").toString()
+                );
         teacher.zoomId =       query.value("zoom_id").toString();
         teacher.zoomPassword = query.value("zoom_password").toString();
+        teacher.projectionType =
+            normalizedProjectionType(
+                query.value("projection_type").toString()
+                );
         teacher.notes =        query.value("notes").toString();
 
         teachers.append(teacher);
@@ -740,9 +906,10 @@ bool DataService::saveClassInfo(
             essay_book,
             class_color,
             font_color,
-            notes
+            notes,
+            time_filler_activities
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         ON CONFLICT(class_id)
         DO UPDATE SET
@@ -753,7 +920,8 @@ bool DataService::saveClassInfo(
             essay_book=excluded.essay_book,
             class_color=excluded.class_color,
             font_color=excluded.font_color,
-            notes=excluded.notes
+            notes=excluded.notes,
+            time_filler_activities=excluded.time_filler_activities
     )");
 
     query.addBindValue(info.classId);
@@ -765,6 +933,7 @@ bool DataService::saveClassInfo(
     query.addBindValue(info.classColor);
     query.addBindValue(info.fontColor);
     query.addBindValue(info.notes);
+    query.addBindValue(info.timeFillerActivities);
 
     if (!query.exec())
     {
@@ -870,7 +1039,8 @@ bool DataService::saveClassInfo(
 
 bool DataService::saveClassNotes(
     int classId,
-    const QString& notes
+    const QString& notes,
+    const QString& timeFillerActivities
     )
 {
     if (classId <= 0)
@@ -883,17 +1053,20 @@ bool DataService::saveClassNotes(
     query.prepare(R"(
         INSERT INTO class_info (
             class_id,
-            notes
+            notes,
+            time_filler_activities
         )
-        VALUES (?, ?)
+        VALUES (?, ?, ?)
 
         ON CONFLICT(class_id)
         DO UPDATE SET
-            notes=excluded.notes
+            notes=excluded.notes,
+            time_filler_activities=excluded.time_filler_activities
     )");
 
     query.addBindValue(classId);
     query.addBindValue(notes);
+    query.addBindValue(timeFillerActivities);
 
     if (!query.exec())
     {
@@ -1015,8 +1188,10 @@ ClassInfo DataService::loadClassInfo(
             t.room_number,
             t.wifi_name,
             t.wifi_password,
+            t.internet_type,
             t.zoom_id,
-            t.zoom_password
+            t.zoom_password,
+            t.projection_type
 
         FROM class_info ci
 
@@ -1042,8 +1217,16 @@ ClassInfo DataService::loadClassInfo(
         info.roomNumber =   query.value("room_number").toString();
         info.wifiName =     query.value("wifi_name").toString();
         info.wifiPassword = query.value("wifi_password").toString();
+        info.internetType =
+            normalizedInternetType(
+                query.value("internet_type").toString()
+                );
         info.zoomId =       query.value("zoom_id").toString();
         info.zoomPassword = query.value("zoom_password").toString();
+        info.projectionType =
+            normalizedProjectionType(
+                query.value("projection_type").toString()
+                );
         info.classGrade =   query.value("class_grade").toString();
         info.classLevel =   query.value("class_level").toString();
         info.readingBook =  query.value("reading_book").toString();
@@ -1067,6 +1250,9 @@ ClassInfo DataService::loadClassInfo(
 
         info.notes =
             query.value("notes").toString();
+
+        info.timeFillerActivities =
+            query.value("time_filler_activities").toString();
     }
 
     // Regular Times

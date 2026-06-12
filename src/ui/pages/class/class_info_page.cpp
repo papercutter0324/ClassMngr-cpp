@@ -337,12 +337,11 @@ void ClassInfoPage::saveData()
         m_services
             ->dataService();
 
-    const QString currentNotes =
+    const ClassInfo currentInfo =
         dataService
             ->loadClassInfo(
                 m_classroom.id
-                )
-            .notes;
+                );
 
     ClassInfo info;
     info.classId =
@@ -376,7 +375,10 @@ void ClassInfoPage::saveData()
         m_scheduleSection->intensiveTimes();
 
     info.notes =
-        currentNotes;
+        currentInfo.notes;
+
+    info.timeFillerActivities =
+        currentInfo.timeFillerActivities;
 
     if (
         showScheduleConflicts(
