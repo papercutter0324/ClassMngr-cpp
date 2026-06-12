@@ -117,6 +117,8 @@ qt_add_executable(ClassMngr
     src/ui/pages/speakingeval/speaking_eval_page.h
     src/ui/pages/speakingeval/speaking_eval_table_view.cpp
     src/ui/pages/speakingeval/speaking_eval_table_view.h
+    src/ui/pages/subprep/sub_prep_page.cpp
+    src/ui/pages/subprep/sub_prep_page.h
     src/ui/pages/teacher/teacher_info_page.cpp
     src/ui/pages/teacher/teacher_info_page.h
 

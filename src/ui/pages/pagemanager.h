@@ -21,6 +21,7 @@ class TeacherInfoPage;
 class CampusDashboardPage;
 class RosterPage;
 class SpeakingEvalPage;
+class SubPrepPage;
 
 
 
@@ -36,7 +37,8 @@ enum class PageType
     CampusDashboard,
     Roster,
     ClassNotes,
-    SpeakingEval
+    SpeakingEval,
+    SubPrep
 };
 
 
@@ -82,6 +84,8 @@ public:
     // =====================================================
 
     SchedulePage* schedulePage() const;
+
+    SubPrepPage* subPrepPage() const;
 
     ClassInfoPage* classInfoPage() const;
 
@@ -134,6 +138,8 @@ private:
     // =====================================================
 
     SchedulePage* m_schedulePage = nullptr;
+
+    SubPrepPage* m_subPrepPage = nullptr;
 
     ClassInfoPage* m_classInfoPage = nullptr;
 

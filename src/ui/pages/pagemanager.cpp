@@ -8,6 +8,7 @@
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/schedule/schedule_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
+#include "ui/pages/subprep/sub_prep_page.h"
 #include "ui/pages/teacher/teacher_info_page.h"
 
 
@@ -44,6 +45,11 @@ void PageManager::initialize(
     m_schedulePage =
         new SchedulePage(
             m_services,
+            this
+            );
+
+    m_subPrepPage =
+        new SubPrepPage(
             this
             );
 
@@ -97,6 +103,9 @@ void PageManager::registerPages()
 {
     m_pages[PageType::Schedule] =
         m_schedulePage;
+
+    m_pages[PageType::SubPrep] =
+        m_subPrepPage;
 
     m_pages[PageType::ClassInfo] =
         m_classInfoPage;
@@ -168,6 +177,11 @@ void PageManager::refreshAll()
 SchedulePage* PageManager::schedulePage() const
 {
     return m_schedulePage;
+}
+
+SubPrepPage* PageManager::subPrepPage() const
+{
+    return m_subPrepPage;
 }
 
 ClassInfoPage* PageManager::classInfoPage() const

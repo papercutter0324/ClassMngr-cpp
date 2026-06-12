@@ -171,9 +171,22 @@ void NavigationController::handleMyInfo(
     const NavigationData& data
     )
 {
-    Q_UNUSED(data);
+    const QString pageName =
+        data.path.isEmpty()
+            ? QString()
+            : data.path.last();
 
-    m_pages->showPage(PageType::Schedule);
+    if (pageName == tr("Schedule"))
+    {
+        m_pages->showPage(PageType::Schedule);
+        return;
+    }
+
+    if (pageName == tr("Sub Prep"))
+    {
+        m_pages->showPage(PageType::SubPrep);
+        return;
+    }
 }
 
 void NavigationController::handleCampus(
