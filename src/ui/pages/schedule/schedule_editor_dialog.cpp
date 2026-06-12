@@ -5,8 +5,8 @@
 #include "core/fontmanager.h"
 #include "services/dataservice.h"
 #include "ui/widgets/clickable_color_preview.h"
+#include "utils/colorutils.h"
 
-#include <QColorDialog>
 #include <QComboBox>
 #include <QFrame>
 #include <QGridLayout>
@@ -79,10 +79,11 @@ void ScheduleEditorDialog::rebuildLevelOptions(
 void ScheduleEditorDialog::chooseClassColor()
 {
     QColor color =
-        QColorDialog::getColor(
+        ColorUtils::getColor(
             QColor(m_classColor),
             this,
-            tr("Choose Class Color")
+            tr("Choose Class Color"),
+            m_services->dataService()
             );
 
     if (!color.isValid())
@@ -97,10 +98,11 @@ void ScheduleEditorDialog::chooseClassColor()
 void ScheduleEditorDialog::chooseFontColor()
 {
     QColor color =
-        QColorDialog::getColor(
+        ColorUtils::getColor(
             QColor(m_fontColor),
             this,
-            tr("Choose Font Color")
+            tr("Choose Font Color"),
+            m_services->dataService()
             );
 
     if (!color.isValid())

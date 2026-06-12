@@ -1,7 +1,6 @@
 #include "class_details_section.h"
 
 #include <QSignalBlocker>
-#include <QColorDialog>
 #include <QComboBox>
 #include <QFrame>
 #include <QGridLayout>
@@ -630,10 +629,11 @@ void ClassDetailsSection::openColorPicker()
     if (!currentColor.isValid())
         currentColor = QColor("#FFFFFF");
 
-    QColor color = QColorDialog::getColor(
+    QColor color = ColorUtils::getColor(
         currentColor,
         this,
-        tr("Select Class Color")
+        tr("Select Class Color"),
+        m_services->dataService()
         );
 
     if (!color.isValid())
@@ -647,10 +647,6 @@ void ClassDetailsSection::openColorPicker()
             );
 
     updateColorPreview(m_pendingClassColor);
-
-    ColorUtils::saveCustomColors(
-        m_services->dataService()
-        );
 
     emit dataChanged();
 }

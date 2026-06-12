@@ -1,10 +1,11 @@
 #pragma once
 
 #include <QColor>
-#include <QColorDialog>
 #include <QString>
 #include <QStringList>
-#include <array>
+
+class DataService;
+class QWidget;
 
 class ColorUtils
 {
@@ -34,20 +35,22 @@ public:
         const QColor &color
         );
 
+    static QColor getColor(
+        const QColor& initialColor,
+        QWidget* parent,
+        const QString& title,
+        DataService* ds
+        );
+
     // =====================================================
     // QColorDialog Custom Colors
     // =====================================================
 
     static void loadCustomColors(
-        class DataService *ds
+        DataService *ds
         );
 
     static void saveCustomColors(
-        class DataService *ds
+        DataService *ds
         );
-
-private:
-
-    static const std::array<QString, CUSTOM_COLOR_COUNT>
-        DEFAULT_CUSTOM_COLORS;
 };
