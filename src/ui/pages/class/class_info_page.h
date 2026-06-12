@@ -58,7 +58,6 @@ private:
     ApplicationServices* m_services{nullptr};
 
     Classroom m_classroom;
-    QString m_notes;
 
     bool m_loading{false};
     bool m_dirty{false};

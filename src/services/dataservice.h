@@ -120,6 +120,11 @@ public:
         const ClassInfo& info
         );
 
+    bool saveClassNotes(
+        int classId,
+        const QString& notes
+        );
+
     ClassInfo loadClassInfo(
         int classId
         );

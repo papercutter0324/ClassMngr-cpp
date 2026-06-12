@@ -86,6 +86,8 @@ qt_add_executable(ClassMngr
     src/ui/pages/campus/campus_dashboard_page.h
     src/ui/pages/class/class_info_page.cpp
     src/ui/pages/class/class_info_page.h
+    src/ui/pages/class/class_notes_page.cpp
+    src/ui/pages/class/class_notes_page.h
     src/ui/pages/pagemanager.cpp
     src/ui/pages/pagemanager.h
     src/ui/pages/roster/roster_column_layout_controller.cpp

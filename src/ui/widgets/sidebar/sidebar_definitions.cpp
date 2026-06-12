@@ -125,6 +125,12 @@ const QList<TreeNodeSpec>
 
         {
             "",
+            QObject::tr("Class Notes"),
+            NodeType::Page
+        },
+
+        {
+            "",
             QObject::tr("Student Evaluations"),
             NodeType::ClassSection,
 

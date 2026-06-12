@@ -868,6 +868,45 @@ bool DataService::saveClassInfo(
     return true;
 }
 
+bool DataService::saveClassNotes(
+    int classId,
+    const QString& notes
+    )
+{
+    if (classId <= 0)
+    {
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        INSERT INTO class_info (
+            class_id,
+            notes
+        )
+        VALUES (?, ?)
+
+        ON CONFLICT(class_id)
+        DO UPDATE SET
+            notes=excluded.notes
+    )");
+
+    query.addBindValue(classId);
+    query.addBindValue(notes);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to save class notes:"
+            << query.lastError().text();
+
+        return false;
+    }
+
+    return true;
+}
+
 void DataService::updateClassName(
     int classId,
     const QString &name

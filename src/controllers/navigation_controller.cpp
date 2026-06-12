@@ -6,6 +6,7 @@
 #include "services/dataservice.h"
 
 #include "ui/pages/class/class_info_page.h"
+#include "ui/pages/class/class_notes_page.h"
 #include "ui/pages/pagemanager.h"
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
@@ -109,6 +110,25 @@ void NavigationController::handleNavigation(
                     ->loadClass(classroom);
 
                 m_pages->showPage(PageType::Roster);
+                return;
+            }
+
+            if (pageName == tr("Class Notes"))
+            {
+                Classroom classroom =
+                    m_services
+                        ->dataService()
+                        ->getClassById(data.classId);
+
+                if (classroom.id < 0)
+                {
+                    return;
+                }
+
+                m_pages->classNotesPage()
+                    ->loadClass(classroom);
+
+                m_pages->showPage(PageType::ClassNotes);
                 return;
             }
 

@@ -273,9 +273,6 @@ void ClassInfoPage::loadClass(
 
     updateTitle(info);
 
-    m_notes =
-        info.notes;
-
     m_teacherSection->selectTeacher(
         info.teacherId
         );
@@ -336,6 +333,17 @@ void ClassInfoPage::saveData()
         return;
     }
 
+    auto* dataService =
+        m_services
+            ->dataService();
+
+    const QString currentNotes =
+        dataService
+            ->loadClassInfo(
+                m_classroom.id
+                )
+            .notes;
+
     ClassInfo info;
     info.classId =
         m_classroom.id;
@@ -368,7 +376,7 @@ void ClassInfoPage::saveData()
         m_scheduleSection->intensiveTimes();
 
     info.notes =
-        m_notes;
+        currentNotes;
 
     if (
         showScheduleConflicts(
@@ -393,9 +401,7 @@ void ClassInfoPage::saveData()
     }
 
     const bool saved =
-        m_services
-            ->dataService()
-            ->saveClassInfo(info);
+        dataService->saveClassInfo(info);
 
     if (!saved)
     {

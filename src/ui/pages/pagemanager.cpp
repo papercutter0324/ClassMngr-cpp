@@ -4,6 +4,7 @@
 
 #include "ui/pages/campus/campus_dashboard_page.h"
 #include "ui/pages/class/class_info_page.h"
+#include "ui/pages/class/class_notes_page.h"
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/schedule/schedule_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
@@ -67,6 +68,12 @@ void PageManager::initialize(
             this
             );
 
+    m_classNotesPage =
+        new ClassNotesPage(
+            m_services,
+            this
+            );
+
     m_speakingPage =
         new SpeakingEvalPage(
             m_services,
@@ -102,6 +109,9 @@ void PageManager::registerPages()
 
     m_pages[PageType::Roster] =
         m_rosterPage;
+
+    m_pages[PageType::ClassNotes] =
+        m_classNotesPage;
 
     m_pages[PageType::SpeakingEval] =
         m_speakingPage;
@@ -163,6 +173,11 @@ SchedulePage* PageManager::schedulePage() const
 ClassInfoPage* PageManager::classInfoPage() const
 {
     return m_classInfoPage;
+}
+
+ClassNotesPage* PageManager::classNotesPage() const
+{
+    return m_classNotesPage;
 }
 
 TeacherInfoPage* PageManager::teacherPage() const
