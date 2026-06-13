@@ -104,7 +104,7 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
 
-    bool m_use24h = true;
+    bool m_use24h = false;
     bool m_hideEmptyBlocks = false;
     bool m_showIntensive = false;
     bool m_showWeekends = false;

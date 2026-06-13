@@ -433,9 +433,9 @@ void SchedulePage::loadSettings()
                 ->dataService()
                 ->loadSetting(
                     QStringLiteral("schedule_use_24h"),
-                    QStringLiteral("true")
+                    QStringLiteral("false")
                     ),
-            true
+            false
             );
 
     m_showWeekends =
