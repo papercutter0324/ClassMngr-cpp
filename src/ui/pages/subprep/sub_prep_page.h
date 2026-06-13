@@ -1,8 +1,22 @@
 #pragma once
 
+#include "models/campus.h"
 #include "ui/pages/basepage.h"
 
+#include <QList>
+
+class ApplicationServices;
+class QCheckBox;
+class QComboBox;
+class QEvent;
 class QLabel;
+class QLineEdit;
+class QScrollArea;
+class QShowEvent;
+class QTextEdit;
+class QTimer;
+class QVBoxLayout;
+class QWidget;
 
 class SubPrepPage : public BasePage
 {
@@ -10,13 +24,110 @@ class SubPrepPage : public BasePage
 
 public:
     explicit SubPrepPage(
+        ApplicationServices* services,
         QWidget* parent = nullptr
         );
 
-private:
-    void buildUi();
+    void saveData() override;
+    bool saveChanges() override;
+    bool hasUnsavedChanges() const override;
+    void discardChanges() override;
+    void refresh() override;
+
+protected:
+    void showEvent(
+        QShowEvent* event
+        ) override;
+
+    bool eventFilter(
+        QObject* watched,
+        QEvent* event
+        ) override;
+
+private slots:
+    void handleEditableChanged();
+    void handleZoomNotAvailableChanged(
+        bool checked
+        );
+    void handleCampusChanged(
+        int index
+        );
+    void autosave();
 
 private:
+    void buildUi();
+    void loadPageData();
+    void loadStoredSettings();
+    void loadCampuses();
+    void loadCampusFields(
+        int campusId
+        );
+
+    bool saveSubPrepInternal();
+    bool saveCurrentCampus();
+    int ensureDefaultCampus();
+
+    void refreshGeneratedContent();
+    void rebuildTimeFillerActivities();
+    void rebuildClassInformation();
+
+    void setZoomFieldsEnabled();
+    bool normalizeProtectedFields();
+    bool normalizeLineEdit(
+        QLineEdit* edit,
+        const QString& defaultText
+        );
+    bool restoreBookReportDefaultIfNeeded();
+    QString defaultBookReportText() const;
+
+    QLabel* createTopLevelHeading(
+        const QString& text,
+        QWidget* parent
+        ) const;
+    QLabel* createFieldLabel(
+        const QString& text,
+        QWidget* parent
+        ) const;
+    QTextEdit* createTextEdit(
+        int minimumLines,
+        bool readOnly,
+        QWidget* parent
+        ) const;
+    void clearClassInformation();
+    void clearDirty();
+
+private:
+    ApplicationServices* m_services = nullptr;
+
+    bool m_loading = false;
+    bool m_dirty = false;
+    int m_currentCampusId = -1;
+    QList<CampusRecord> m_campuses;
+
+    QScrollArea* m_scrollArea = nullptr;
+    QWidget* m_scrollContent = nullptr;
+    QVBoxLayout* m_scrollContentLayout = nullptr;
+
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+
+    QLineEdit* m_zoomEmailEdit = nullptr;
+    QLineEdit* m_zoomPasswordEdit = nullptr;
+    QCheckBox* m_zoomNotAvailableCheck = nullptr;
+
+    QComboBox* m_campusCombo = nullptr;
+    QLineEdit* m_officeNumberEdit = nullptr;
+    QLineEdit* m_officeWifiEdit = nullptr;
+    QLineEdit* m_officeWifiPasswordEdit = nullptr;
+    QLineEdit* m_photocopierCodeEdit = nullptr;
+
+    QTextEdit* m_classMaterialsEdit = nullptr;
+    QTextEdit* m_timeFillerActivitiesEdit = nullptr;
+    QTextEdit* m_bookReportGradingEdit = nullptr;
+    QTextEdit* m_subCommentsEdit = nullptr;
+
+    QWidget* m_classInformationContent = nullptr;
+    QVBoxLayout* m_classInformationLayout = nullptr;
+
+    QTimer* m_autosaveTimer = nullptr;
 };

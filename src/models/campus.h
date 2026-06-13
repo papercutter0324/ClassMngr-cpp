@@ -13,6 +13,8 @@ struct CampusRecord
     QString address;
     QString phoneNumber;
 
+    QString officeNumber;
+
     QString transitSteps;
     QString arrivalInfo;
 

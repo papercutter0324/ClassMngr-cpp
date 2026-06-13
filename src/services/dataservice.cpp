@@ -217,6 +217,46 @@ QString normalizedProjectionType(
         );
 }
 
+CampusRecord campusFromQuery(
+    const QSqlQuery& query
+    )
+{
+    CampusRecord campus;
+
+    campus.id =
+        query.value("id").toInt();
+    campus.name =
+        query.value("name").toString();
+    campus.buildingName =
+        query.value("building_name").toString();
+    campus.address =
+        query.value("address").toString();
+    campus.phoneNumber =
+        query.value("phone_number").toString();
+    campus.officeNumber =
+        query.value("office_number").toString();
+    campus.transitSteps =
+        query.value("transit_steps").toString();
+    campus.arrivalInfo =
+        query.value("arrival_info").toString();
+    campus.imagePath =
+        query.value("image_path").toString();
+    campus.officeWifi =
+        query.value("office_wifi").toString();
+    campus.officeWifiPassword =
+        query.value("office_wifi_password").toString();
+    campus.printerName =
+        query.value("printer_name").toString();
+    campus.printerSteps =
+        query.value("printer_steps").toString();
+    campus.photocopierCode =
+        query.value("photocopier_code").toString();
+    campus.housingLocations =
+        query.value("housing_locations").toString();
+
+    return campus;
+}
+
 bool tableHasColumn(
     QSqlDatabase& db,
     const QString& tableName,
@@ -427,6 +467,7 @@ void DataService::createTables()
             building_name TEXT,
             address TEXT,
             phone_number TEXT,
+            office_number TEXT,
 
             transit_steps TEXT,
             arrival_info TEXT,
@@ -444,6 +485,97 @@ void DataService::createTables()
             housing_locations TEXT
         )
     )");
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("building_name"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("address"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("phone_number"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("office_number"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("transit_steps"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("arrival_info"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("image_path"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("office_wifi"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("office_wifi_password"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("printer_name"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("printer_steps"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("photocopier_code"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("campuses"),
+        QStringLiteral("housing_locations"),
+        QStringLiteral("TEXT")
+        );
 
     // Teachers
     query.exec(R"(
@@ -2407,6 +2539,7 @@ int DataService::saveCampus(
                 building_name=?,
                 address=?,
                 phone_number=?,
+                office_number=?,
                 transit_steps=?,
                 arrival_info=?,
                 image_path=?,
@@ -2423,6 +2556,7 @@ int DataService::saveCampus(
         query.addBindValue(campus.buildingName);
         query.addBindValue(campus.address);
         query.addBindValue(campus.phoneNumber);
+        query.addBindValue(campus.officeNumber);
         query.addBindValue(campus.transitSteps);
         query.addBindValue(campus.arrivalInfo);
         query.addBindValue(campus.imagePath);
@@ -2447,6 +2581,7 @@ int DataService::saveCampus(
             building_name,
             address,
             phone_number,
+            office_number,
             transit_steps,
             arrival_info,
             image_path,
@@ -2457,13 +2592,14 @@ int DataService::saveCampus(
             photocopier_code,
             housing_locations
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(campus.name);
     query.addBindValue(campus.buildingName);
     query.addBindValue(campus.address);
     query.addBindValue(campus.phoneNumber);
+    query.addBindValue(campus.officeNumber);
     query.addBindValue(campus.transitSteps);
     query.addBindValue(campus.arrivalInfo);
     query.addBindValue(campus.imagePath);
@@ -2496,11 +2632,7 @@ CampusRecord DataService::getCampus(
         return campus;
     }
 
-    campus.id =      query.value("id").toInt();
-    campus.name =    query.value("name").toString();
-    campus.address = query.value("address").toString();
-
-    return campus;
+    return campusFromQuery(query);
 }
 
 QList<CampusRecord>
@@ -2518,16 +2650,9 @@ DataService::getAllCampuses()
 
     while (query.next())
     {
-        CampusRecord campus;
-
-        campus.id =
-            query.value("id").toInt();
-
-        campus.name =
-            query.value("name")
-                .toString();
-
-        campuses.append(campus);
+        campuses.append(
+            campusFromQuery(query)
+            );
     }
 
     return campuses;

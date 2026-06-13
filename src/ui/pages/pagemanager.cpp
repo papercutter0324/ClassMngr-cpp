@@ -51,6 +51,7 @@ void PageManager::initialize(
 
     m_subPrepPage =
         new SubPrepPage(
+            m_services,
             this
             );
 
