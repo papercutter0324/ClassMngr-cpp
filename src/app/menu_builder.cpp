@@ -79,7 +79,7 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
 
     QMenu* menu =
         window->menuBar()->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Classes && Teachers")
+        QCoreApplication::translate("MenuBuilder", "Manage")
     );
 
     menu->addAction(a.newClass);
