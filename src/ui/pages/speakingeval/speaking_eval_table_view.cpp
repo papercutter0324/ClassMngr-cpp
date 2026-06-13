@@ -174,7 +174,7 @@ void SpeakingEvalTableView::applyChanges(
     }
 }
 
-void SpeakingEvalTableView::copySelection()
+void SpeakingEvalTableView::copy()
 {
     const QString text =
         serializeSelection();
@@ -185,7 +185,7 @@ void SpeakingEvalTableView::copySelection()
     }
 }
 
-void SpeakingEvalTableView::cutSelection()
+void SpeakingEvalTableView::cut()
 {
     QModelIndexList indexes;
 
@@ -216,7 +216,7 @@ void SpeakingEvalTableView::cutSelection()
         );
 }
 
-void SpeakingEvalTableView::pasteSelection()
+void SpeakingEvalTableView::paste()
 {
     if (!model())
     {
@@ -505,9 +505,9 @@ void SpeakingEvalTableView::setupShortcuts()
                 );
         };
 
-    addShortcut(QKeySequence::Copy, &SpeakingEvalTableView::copySelection);
-    addShortcut(QKeySequence::Cut, &SpeakingEvalTableView::cutSelection);
-    addShortcut(QKeySequence::Paste, &SpeakingEvalTableView::pasteSelection);
+    addShortcut(QKeySequence::Copy, &SpeakingEvalTableView::copy);
+    addShortcut(QKeySequence::Cut, &SpeakingEvalTableView::cut);
+    addShortcut(QKeySequence::Paste, &SpeakingEvalTableView::paste);
     addShortcut(QKeySequence::Delete, &SpeakingEvalTableView::clearSelectionValues);
     addShortcut(QKeySequence::Undo, &SpeakingEvalTableView::undo);
     addShortcut(QKeySequence::Redo, &SpeakingEvalTableView::redo);

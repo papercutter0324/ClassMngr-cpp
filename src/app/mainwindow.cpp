@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "menu_builder.h"
 
+#include "controllers/edit_controller.h"
 #include "controllers/navigation_controller.h"
 #include "controllers/sidebar_controller.h"
 #include "core/application_services.h"
@@ -132,8 +133,13 @@ void MainWindow::connectControllers()
             );
     m_fileController->connectActions(m_actions);
 
+    m_editController =
+        std::make_unique<EditController>(
+            this
+            );
+    m_editController->connectActions(m_actions);
+
     // future:
-    // m_editController.connectActions(m_actions);
     // m_sidebarController.connectActions(m_actions);
     // m_themeController.connectActions(m_actions);
 }

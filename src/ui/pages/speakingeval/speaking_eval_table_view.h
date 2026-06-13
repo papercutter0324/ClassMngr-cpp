@@ -36,11 +36,11 @@ public:
         );
 
 public slots:
-    void copySelection();
+    void copy();
 
-    void cutSelection();
+    void cut();
 
-    void pasteSelection();
+    void paste();
 
     void clearSelectionValues();
 
