@@ -10,6 +10,7 @@
 #include "ui/pages/speakingeval/speaking_eval_page.h"
 #include "ui/pages/subprep/sub_prep_page.h"
 #include "ui/pages/teacher/teacher_info_page.h"
+#include "ui/utils/unsaved_changes_dialog.h"
 
 
 
@@ -149,6 +150,62 @@ void PageManager::showPage(
     setCurrentWidget(
         m_pages[type]
         );
+}
+
+bool PageManager::confirmCurrentPageCanLeave(
+    bool exiting
+    )
+{
+    Q_UNUSED(exiting);
+
+    auto* page =
+        qobject_cast<BasePage*>(
+            currentWidget()
+            );
+
+    if (
+        !page
+        || !page->hasUnsavedChanges()
+        )
+    {
+        return true;
+    }
+
+    const UnsavedChangesChoice choice =
+        showUnsavedChangesDialog(
+            this,
+            page->unsavedChangesTitle(),
+            page->unsavedChangesMessage()
+            );
+
+    switch (choice)
+    {
+    case UnsavedChangesChoice::Save:
+        return page->saveChanges()
+            && !page->hasUnsavedChanges();
+
+    case UnsavedChangesChoice::Discard:
+        page->discardChanges();
+        return true;
+
+    case UnsavedChangesChoice::Cancel:
+        return false;
+    }
+
+    return false;
+}
+
+void PageManager::setSaveMode(
+    SaveMode mode
+    )
+{
+    for (BasePage* page : m_pages)
+    {
+        if (page)
+        {
+            page->setSaveMode(mode);
+        }
+    }
 }
 
 

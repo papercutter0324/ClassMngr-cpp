@@ -1,5 +1,6 @@
 #include "controllers/file_controller.h"
 
+#include "app/mainwindow.h"
 #include "core/application_services.h"
 #include "services/dataservice.h"
 
@@ -100,12 +101,8 @@ bool FileController::confirmUnsavedChanges(
     bool exiting
     )
 {
-    Q_UNUSED(exiting);
-
-    // TODO:
-    // Hook into SaveManager
-
-    return true;
+    return !m_window
+        || m_window->confirmCurrentPageCanLeave(exiting);
 }
 
 void FileController::newFile()
@@ -120,6 +117,9 @@ void FileController::newFile()
 
 void FileController::openFile()
 {
+    if (!confirmUnsavedChanges())
+        return;
+
     const QString filePath =
         QFileDialog::getOpenFileName(
             nullptr,
@@ -200,6 +200,9 @@ void FileController::openSpecificFile(
     const QString& filePath
     )
 {
+    if (!confirmUnsavedChanges())
+        return;
+
     if (!QFileInfo::exists(filePath))
     {
         QMessageBox::warning(

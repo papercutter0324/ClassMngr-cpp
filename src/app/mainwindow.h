@@ -65,6 +65,10 @@ public:
         return m_isAdmin;
     }
 
+    bool confirmCurrentPageCanLeave(
+        bool exiting = false
+        ) const;
+
 protected:
 
     void showEvent(QShowEvent* event) override;

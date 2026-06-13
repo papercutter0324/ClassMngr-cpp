@@ -19,6 +19,7 @@
 #include <QSizePolicy>
 #include <QSpacerItem>
 #include <QTextEdit>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace
@@ -102,6 +103,19 @@ TeacherInfoPage::TeacherInfoPage(
       m_services(services)
 {
     buildUi();
+
+    m_autosaveTimer =
+        new QTimer(this);
+
+    m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setInterval(750);
+
+    connect(
+        m_autosaveTimer,
+        &QTimer::timeout,
+        this,
+        &TeacherInfoPage::autosaveTeacher
+        );
 }
 
 void TeacherInfoPage::buildUi()
@@ -347,8 +361,49 @@ void TeacherInfoPage::buildUi()
         this,
         &TeacherInfoPage::saveTeacher);
 
+    for (auto* edit : {
+             m_teacherKrEdit,
+             m_teacherEnEdit,
+             m_roomNumberEdit,
+             m_wifiNameEdit,
+             m_wifiPasswordEdit,
+             m_zoomIdEdit,
+             m_zoomPasswordEdit
+         })
+    {
+        connect(
+            edit,
+            &QLineEdit::textChanged,
+            this,
+            &TeacherInfoPage::handleFieldChanged
+            );
+    }
+
+    connect(
+        m_notesEdit,
+        &QTextEdit::textChanged,
+        this,
+        &TeacherInfoPage::handleFieldChanged
+        );
+
+    connect(
+        m_internetTypeCombo,
+        &QComboBox::currentTextChanged,
+        this,
+        &TeacherInfoPage::handleFieldChanged
+        );
+
+    connect(
+        m_projectionTypeCombo,
+        &QComboBox::currentTextChanged,
+        this,
+        &TeacherInfoPage::handleFieldChanged
+        );
+
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_saveButton);
+
+    updateActions();
 }
 
 QLabel* TeacherInfoPage::createFieldLabel(
@@ -368,6 +423,13 @@ QLabel* TeacherInfoPage::createFieldLabel(
 void TeacherInfoPage::loadTeacher(
     const Teacher& teacher)
 {
+    m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
     m_teacher = teacher;
 
     QString displayName =
@@ -412,24 +474,130 @@ void TeacherInfoPage::loadTeacher(
 
     m_notesEdit->setPlainText(
         teacher.notes);
+
+    m_loading = false;
+    clearDirty();
 }
 
 void TeacherInfoPage::saveData()
 {
-    if (m_teacher.id <= 0)
-        return;
-
     saveTeacher();
+}
+
+bool TeacherInfoPage::saveChanges()
+{
+    if (!m_dirty)
+    {
+        return true;
+    }
+
+    return saveTeacherInternal();
+}
+
+bool TeacherInfoPage::hasUnsavedChanges() const
+{
+    return m_dirty;
+}
+
+void TeacherInfoPage::discardChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    loadTeacher(m_teacher);
+}
+
+QString TeacherInfoPage::unsavedChangesTitle() const
+{
+    return tr("Unsaved Teacher Changes");
+}
+
+QString TeacherInfoPage::unsavedChangesMessage() const
+{
+    return tr("This teacher has unsaved changes.");
+}
+
+void TeacherInfoPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    if (m_saveMode == mode)
+    {
+        return;
+    }
+
+    m_saveMode = mode;
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (
+        m_saveMode == SaveMode::Automatic
+        && m_dirty
+        )
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
 }
 
 void TeacherInfoPage::saveTeacher()
 {
-    if (m_teacher.id <= 0)
+    saveTeacherInternal();
+}
+
+void TeacherInfoPage::handleFieldChanged()
+{
+    if (m_loading)
+    {
         return;
+    }
 
-    auto* dataService = m_services->dataService();
+    m_dirty =
+        formDiffersFromTeacher();
 
-    // Build updated model directly from UI
+    updateActions();
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (
+        m_dirty
+        && m_saveMode == SaveMode::Automatic
+        )
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+}
+
+void TeacherInfoPage::autosaveTeacher()
+{
+    if (
+        !m_dirty
+        || m_teacher.id <= 0
+        )
+    {
+        return;
+    }
+
+    saveTeacherInternal();
+}
+
+Teacher TeacherInfoPage::teacherFromForm() const
+{
     Teacher updated = m_teacher;
 
     updated.teacherKr = m_teacherKrEdit->text().trimmed();
@@ -447,6 +615,47 @@ void TeacherInfoPage::saveTeacher()
 
     updated.notes = m_notesEdit->toPlainText().trimmed();
 
+    return updated;
+}
+
+bool TeacherInfoPage::formDiffersFromTeacher() const
+{
+    const Teacher updated =
+        teacherFromForm();
+
+    return updated.teacherKr != m_teacher.teacherKr.trimmed()
+        || updated.teacherEn != m_teacher.teacherEn.trimmed()
+        || updated.roomNumber != m_teacher.roomNumber.trimmed()
+        || updated.internetType != m_teacher.internetType.trimmed()
+        || updated.wifiName != m_teacher.wifiName.trimmed()
+        || updated.wifiPassword != m_teacher.wifiPassword.trimmed()
+        || updated.projectionType != m_teacher.projectionType.trimmed()
+        || updated.zoomId != m_teacher.zoomId.trimmed()
+        || updated.zoomPassword != m_teacher.zoomPassword.trimmed()
+        || updated.notes != m_teacher.notes.trimmed();
+}
+
+bool TeacherInfoPage::saveTeacherInternal()
+{
+    if (
+        !m_services
+        || !m_services->dataService()
+        || m_teacher.id <= 0
+        )
+    {
+        return false;
+    }
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    auto* dataService = m_services->dataService();
+
+    const Teacher updated =
+        teacherFromForm();
+
     dataService->updateTeacher(updated);
 
     m_teacher = dataService->getTeacher(m_teacher.id);
@@ -455,6 +664,38 @@ void TeacherInfoPage::saveTeacher()
     emit teacherSaved(
         m_teacher.id
         );
+
+    return !m_dirty;
+}
+
+void TeacherInfoPage::clearDirty()
+{
+    m_dirty = false;
+    updateActions();
+}
+
+void TeacherInfoPage::updateActions()
+{
+    if (!m_saveButton)
+    {
+        return;
+    }
+
+    m_saveButton->setEnabled(
+        m_dirty
+        && m_teacher.id > 0
+        );
+
+    m_saveButton->setText(
+        m_dirty
+            ? tr("Save Changes *")
+            : tr("Save Changes")
+        );
+}
+
+Teacher TeacherInfoPage::teacher() const
+{
+    return m_teacher;
 }
 
 void TeacherInfoPage::refresh()

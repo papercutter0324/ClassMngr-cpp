@@ -145,6 +145,30 @@ void MainWindow::buildMenus()
 
 void MainWindow::connectSignals()
 {
+    if (m_actions.saveModeState)
+    {
+        const auto previousSaveModeHandler =
+            m_actions.saveModeState->onChanged;
+
+        m_actions.saveModeState->onChanged =
+            [this, previousSaveModeHandler](SaveMode mode)
+        {
+            if (previousSaveModeHandler)
+            {
+                previousSaveModeHandler(mode);
+            }
+
+            if (m_pages)
+            {
+                m_pages->setSaveMode(mode);
+            }
+        };
+
+        m_actions.saveModeState->onChanged(
+            m_actions.saveModeState->current()
+            );
+    }
+
     ui->sidebarWidget->setOverflowTooltipsEnabled(
         m_actions.showSidebarTooltips->isChecked()
         );
@@ -201,6 +225,14 @@ void MainWindow::showEvent(QShowEvent* event)
     QMainWindow::showEvent(event);
 }
 
+bool MainWindow::confirmCurrentPageCanLeave(
+    bool exiting
+    ) const
+{
+    return !m_pages
+        || m_pages->confirmCurrentPageCanLeave(exiting);
+}
+
 void MainWindow::onSidebarItemSelected(
     const NavigationData& data)
 {
@@ -245,6 +277,12 @@ void MainWindow::restoreSplitter()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (!confirmCurrentPageCanLeave(true))
+    {
+        event->ignore();
+        return;
+    }
+
     QSettings settings;
 
     settings.setValue(

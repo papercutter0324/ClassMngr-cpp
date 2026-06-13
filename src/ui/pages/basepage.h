@@ -1,6 +1,9 @@
 #ifndef BASEPAGE_H
 #define BASEPAGE_H
 
+#include "ui/constants/options.h"
+
+#include <QString>
 #include <QWidget>
 
 class QVBoxLayout;
@@ -25,6 +28,20 @@ public:
     // =====================================================
 
     virtual void saveData();
+
+    virtual bool saveChanges();
+
+    virtual bool hasUnsavedChanges() const;
+
+    virtual void discardChanges();
+
+    virtual QString unsavedChangesTitle() const;
+
+    virtual QString unsavedChangesMessage() const;
+
+    virtual void setSaveMode(
+        SaveMode mode
+        );
 
 
 

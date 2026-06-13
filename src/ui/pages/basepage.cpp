@@ -86,6 +86,39 @@ void BasePage::saveData()
 {
 }
 
+bool BasePage::saveChanges()
+{
+    saveData();
+
+    return !hasUnsavedChanges();
+}
+
+bool BasePage::hasUnsavedChanges() const
+{
+    return false;
+}
+
+void BasePage::discardChanges()
+{
+}
+
+QString BasePage::unsavedChangesTitle() const
+{
+    return tr("Unsaved Changes");
+}
+
+QString BasePage::unsavedChangesMessage() const
+{
+    return tr("This page has unsaved changes.");
+}
+
+void BasePage::setSaveMode(
+    SaveMode mode
+    )
+{
+    Q_UNUSED(mode);
+}
+
 
 
 // =========================================================

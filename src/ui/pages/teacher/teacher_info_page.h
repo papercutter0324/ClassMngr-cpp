@@ -9,6 +9,7 @@ class QLineEdit;
 class QComboBox;
 class QTextEdit;
 class QPushButton;
+class QTimer;
 
 class ApplicationServices;
 
@@ -29,6 +30,15 @@ public:
 
     void saveData() override;
 
+    bool saveChanges() override;
+    bool hasUnsavedChanges() const override;
+    void discardChanges() override;
+    QString unsavedChangesTitle() const override;
+    QString unsavedChangesMessage() const override;
+    void setSaveMode(
+        SaveMode mode
+        ) override;
+
     void refresh() override;
 
     Teacher teacher() const;
@@ -43,6 +53,10 @@ private slots:
 
     void saveTeacher();
 
+    void handleFieldChanged();
+
+    void autosaveTeacher();
+
 private:
 
     void buildUi();
@@ -50,6 +64,16 @@ private:
     QLabel* createFieldLabel(
         const QString& text
         );
+
+    Teacher teacherFromForm() const;
+
+    bool formDiffersFromTeacher() const;
+
+    bool saveTeacherInternal();
+
+    void clearDirty();
+
+    void updateActions();
 
 private:
 
@@ -66,6 +90,9 @@ private:
     // =====================================================
 
     Teacher m_teacher;
+    bool m_loading = false;
+    bool m_dirty = false;
+    SaveMode m_saveMode = SaveMode::Automatic;
 
 
 
@@ -93,4 +120,5 @@ private:
     QTextEdit* m_notesEdit = nullptr;
 
     QPushButton* m_saveButton = nullptr;
+    QTimer* m_autosaveTimer = nullptr;
 };

@@ -77,6 +77,14 @@ public:
         PageType type
         );
 
+    bool confirmCurrentPageCanLeave(
+        bool exiting = false
+        );
+
+    void setSaveMode(
+        SaveMode mode
+        );
+
 
 
     // =====================================================

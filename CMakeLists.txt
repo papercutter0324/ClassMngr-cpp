@@ -126,6 +126,8 @@ qt_add_executable(ClassMngr
     src/ui/state/option_state_keys.h
 
     src/ui/utils/widget_sizing.h
+    src/ui/utils/unsaved_changes_dialog.cpp
+    src/ui/utils/unsaved_changes_dialog.h
 
     src/ui/widgets/clickable_color_preview.cpp
     src/ui/widgets/clickable_color_preview.h

@@ -41,6 +41,11 @@ void NavigationController::handleTeacher(
         return;
     }
 
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
     m_pages->teacherPage()
         ->loadTeacher(
             teacher
@@ -106,6 +111,11 @@ void NavigationController::handleNavigation(
                     return;
                 }
 
+                if (!m_pages->confirmCurrentPageCanLeave())
+                {
+                    return;
+                }
+
                 m_pages->rosterPage()
                     ->loadClass(classroom);
 
@@ -121,6 +131,11 @@ void NavigationController::handleNavigation(
                         ->getClassById(data.classId);
 
                 if (classroom.id < 0)
+                {
+                    return;
+                }
+
+                if (!m_pages->confirmCurrentPageCanLeave())
                 {
                     return;
                 }
@@ -143,6 +158,11 @@ void NavigationController::handleNavigation(
                         ->getClassById(data.classId);
 
                 if (classroom.id < 0)
+                {
+                    return;
+                }
+
+                if (!m_pages->confirmCurrentPageCanLeave())
                 {
                     return;
                 }
@@ -178,12 +198,22 @@ void NavigationController::handleMyInfo(
 
     if (pageName == tr("Schedule"))
     {
+        if (!m_pages->confirmCurrentPageCanLeave())
+        {
+            return;
+        }
+
         m_pages->showPage(PageType::Schedule);
         return;
     }
 
     if (pageName == tr("Sub Prep"))
     {
+        if (!m_pages->confirmCurrentPageCanLeave())
+        {
+            return;
+        }
+
         m_pages->showPage(PageType::SubPrep);
         return;
     }
@@ -194,6 +224,11 @@ void NavigationController::handleCampus(
     )
 {
     Q_UNUSED(data);
+
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
 
     m_pages->showPage(PageType::CampusDashboard);
 }
@@ -213,6 +248,11 @@ void NavigationController::handleClass(
             ->getClassById(data.classId);
 
     if (classroom.id < 0)
+    {
+        return;
+    }
+
+    if (!m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
