@@ -283,7 +283,10 @@ void ClassInfoPage::loadClass(
         info.readingBook,
         info.essayBook,
         info.classColor,
-        info.fontColor
+        info.fontColor,
+        dataService->getRosterStudentCount(
+            classroom.id
+            )
         );
 
     m_scheduleSection->loadSchedules(

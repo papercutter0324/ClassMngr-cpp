@@ -23,7 +23,8 @@ public:
         const QString& readingBook,
         const QString& essayBook,
         const QString& classColor,
-        const QString& fontColor
+        const QString& fontColor,
+        int studentCount
         );
 
     QString grade() const;

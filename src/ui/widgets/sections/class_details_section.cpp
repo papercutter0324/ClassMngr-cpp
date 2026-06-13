@@ -435,7 +435,8 @@ void ClassDetailsSection::loadInfo(
     const QString& readingBook,
     const QString& essayBook,
     const QString& classColor,
-    const QString& fontColor
+    const QString& fontColor,
+    int studentCount
     )
 {
     m_loadingInfo = true;
@@ -468,6 +469,12 @@ void ClassDetailsSection::loadInfo(
     rebuildBookOptions(readingBook, essayBook);
 
     updateColorPreview(m_pendingClassColor);
+
+    m_studentCountEdit->setText(
+        QString::number(
+            studentCount
+            )
+        );
 
     m_loadingInfo = false;
 }
