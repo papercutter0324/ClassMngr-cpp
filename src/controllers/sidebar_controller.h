@@ -76,9 +76,28 @@ private:
         int teacherId
         ) const;
 
+    int promptForClassToDelete() const;
+
+    int promptForTeacherToDelete() const;
+
+    QString classDisplayName(
+        const Classroom& classroom
+        ) const;
+
+    bool confirmDeleteClass(
+        const Classroom& classroom
+        ) const;
+
+    bool confirmDeleteTeacher(
+        const Teacher& teacher
+        ) const;
+
+    void updateActionStates();
+
 private:
 
     ApplicationServices* m_services{nullptr};
     Sidebar* m_sidebar{nullptr};
     PageManager* m_pages{nullptr};
+    ActionRegistry* m_actions{nullptr};
 };
