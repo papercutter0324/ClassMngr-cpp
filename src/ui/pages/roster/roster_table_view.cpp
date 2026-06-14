@@ -6,11 +6,11 @@
 #include <QClipboard>
 #include <QEvent>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QKeySequence>
 #include <QMap>
 #include <QPainter>
 #include <QPalette>
-#include <QShortcut>
 
 #include <algorithm>
 #include <iterator>
@@ -65,6 +65,18 @@ private:
     RosterTableView* m_table = nullptr;
 };
 
+bool isClipboardShortcut(
+    const QKeyEvent* event
+    )
+{
+    return event
+        && (
+            event->matches(QKeySequence::Copy)
+            || event->matches(QKeySequence::Cut)
+            || event->matches(QKeySequence::Paste)
+            );
+}
+
 } // namespace
 
 RosterTableView::RosterTableView(
@@ -91,7 +103,6 @@ RosterTableView::RosterTableView(
     verticalHeader()->setDefaultAlignment(Qt::AlignCenter);
     verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
-    setupShortcuts();
     updateVerticalHeaderTrailingBackground();
 }
 
@@ -224,6 +235,56 @@ void RosterTableView::paste()
     }
 }
 
+bool RosterTableView::event(
+    QEvent* event
+    )
+{
+    if (
+        event->type() == QEvent::ShortcutOverride
+        && state() != QAbstractItemView::EditingState
+        && isClipboardShortcut(
+            static_cast<QKeyEvent*>(event)
+            )
+        )
+    {
+        event->accept();
+        return true;
+    }
+
+    return QTableView::event(event);
+}
+
+void RosterTableView::keyPressEvent(
+    QKeyEvent* event
+    )
+{
+    if (state() != QAbstractItemView::EditingState)
+    {
+        if (event->matches(QKeySequence::Copy))
+        {
+            copy();
+            event->accept();
+            return;
+        }
+
+        if (event->matches(QKeySequence::Cut))
+        {
+            cut();
+            event->accept();
+            return;
+        }
+
+        if (event->matches(QKeySequence::Paste))
+        {
+            paste();
+            event->accept();
+            return;
+        }
+    }
+
+    QTableView::keyPressEvent(event);
+}
+
 void RosterTableView::changeEvent(
     QEvent* event
     )
@@ -312,34 +373,6 @@ int RosterTableView::contentBottomEdge() const
     return rowViewportPosition(lastRow)
         + rowHeight(lastRow)
         - 1;
-}
-
-void RosterTableView::setupShortcuts()
-{
-    const auto addShortcut =
-        [this](const QKeySequence& sequence, auto slot)
-        {
-            auto* shortcut =
-                new QShortcut(
-                    sequence,
-                    this
-                    );
-
-            shortcut->setContext(
-                Qt::WidgetWithChildrenShortcut
-                );
-
-            connect(
-                shortcut,
-                &QShortcut::activated,
-                this,
-                slot
-                );
-        };
-
-    addShortcut(QKeySequence::Copy, &RosterTableView::copy);
-    addShortcut(QKeySequence::Cut, &RosterTableView::cut);
-    addShortcut(QKeySequence::Paste, &RosterTableView::paste);
 }
 
 bool RosterTableView::isEditableIndex(

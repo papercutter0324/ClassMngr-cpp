@@ -3,6 +3,7 @@
 #include <QTableView>
 
 class QEvent;
+class QKeyEvent;
 class RosterColumnLayoutController;
 
 class RosterTableView : public QTableView
@@ -28,6 +29,14 @@ public slots:
     void paste();
 
 protected:
+    bool event(
+        QEvent* event
+        ) override;
+
+    void keyPressEvent(
+        QKeyEvent* event
+        ) override;
+
     void changeEvent(
         QEvent* event
         ) override;
@@ -37,8 +46,6 @@ protected:
         ) override;
 
 private:
-    void setupShortcuts();
-
     bool isEditableIndex(
         const QModelIndex& index
         ) const;

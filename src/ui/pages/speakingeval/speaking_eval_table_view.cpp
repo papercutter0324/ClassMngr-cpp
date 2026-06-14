@@ -6,6 +6,7 @@
 #include <QClipboard>
 #include <QEvent>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QKeySequence>
 #include <QMap>
 #include <QMouseEvent>
@@ -82,6 +83,18 @@ private:
     QList<SpeakingEvalCellEdit> m_changes;
 };
 
+bool isClipboardShortcut(
+    const QKeyEvent* event
+    )
+{
+    return event
+        && (
+            event->matches(QKeySequence::Copy)
+            || event->matches(QKeySequence::Cut)
+            || event->matches(QKeySequence::Paste)
+            );
+}
+
 } // namespace
 
 SpeakingEvalTableView::SpeakingEvalTableView(
@@ -105,6 +118,25 @@ SpeakingEvalTableView::SpeakingEvalTableView(
     verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
     setupShortcuts();
+}
+
+bool SpeakingEvalTableView::event(
+    QEvent* event
+    )
+{
+    if (
+        event->type() == QEvent::ShortcutOverride
+        && state() != QAbstractItemView::EditingState
+        && isClipboardShortcut(
+            static_cast<QKeyEvent*>(event)
+            )
+        )
+    {
+        event->accept();
+        return true;
+    }
+
+    return QTableView::event(event);
 }
 
 bool SpeakingEvalTableView::edit(
@@ -373,6 +405,37 @@ void SpeakingEvalTableView::redo()
     }
 }
 
+void SpeakingEvalTableView::keyPressEvent(
+    QKeyEvent* event
+    )
+{
+    if (state() != QAbstractItemView::EditingState)
+    {
+        if (event->matches(QKeySequence::Copy))
+        {
+            copy();
+            event->accept();
+            return;
+        }
+
+        if (event->matches(QKeySequence::Cut))
+        {
+            cut();
+            event->accept();
+            return;
+        }
+
+        if (event->matches(QKeySequence::Paste))
+        {
+            paste();
+            event->accept();
+            return;
+        }
+    }
+
+    QTableView::keyPressEvent(event);
+}
+
 void SpeakingEvalTableView::mousePressEvent(
     QMouseEvent* event
     )
@@ -505,9 +568,6 @@ void SpeakingEvalTableView::setupShortcuts()
                 );
         };
 
-    addShortcut(QKeySequence::Copy, &SpeakingEvalTableView::copy);
-    addShortcut(QKeySequence::Cut, &SpeakingEvalTableView::cut);
-    addShortcut(QKeySequence::Paste, &SpeakingEvalTableView::paste);
     addShortcut(QKeySequence::Delete, &SpeakingEvalTableView::clearSelectionValues);
     addShortcut(QKeySequence::Undo, &SpeakingEvalTableView::undo);
     addShortcut(QKeySequence::Redo, &SpeakingEvalTableView::redo);

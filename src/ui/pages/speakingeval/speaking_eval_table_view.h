@@ -7,6 +7,7 @@
 class QMouseEvent;
 class QPaintEvent;
 class QEvent;
+class QKeyEvent;
 class QUndoStack;
 
 struct SpeakingEvalCellEdit
@@ -51,10 +52,18 @@ public slots:
     void redo();
 
 protected:
+    bool event(
+        QEvent* event
+        ) override;
+
     bool edit(
         const QModelIndex& index,
         QAbstractItemView::EditTrigger trigger,
         QEvent* event
+        ) override;
+
+    void keyPressEvent(
+        QKeyEvent* event
         ) override;
 
     void mousePressEvent(
