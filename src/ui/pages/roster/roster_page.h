@@ -8,6 +8,7 @@ class ApplicationServices;
 class QLabel;
 class QModelIndex;
 class QPushButton;
+class QTimer;
 class RosterColumnLayoutController;
 class RosterHeaderView;
 class RosterItemDelegate;
@@ -30,12 +31,28 @@ public:
 
     void saveData() override;
 
+    bool saveChanges() override;
+
+    bool hasUnsavedChanges() const override;
+
+    void discardChanges() override;
+
+    QString unsavedChangesTitle() const override;
+
+    QString unsavedChangesMessage() const override;
+
+    void setSaveMode(
+        SaveMode mode
+        ) override;
+
 private slots:
     void addColumn();
 
     void removeColumn();
 
     void importScores();
+
+    void autosave();
 
     void updateActions();
 
@@ -44,7 +61,11 @@ private:
 
     void updateHeaderText();
 
-    bool hasUnsavedChanges() const;
+    bool saveRosterInternal(
+        bool showValidationMessages
+        );
+
+    void scheduleAutosave();
 
     void handleNameCellChanged(
         const QModelIndex& topLeft,
@@ -67,6 +88,7 @@ private:
     bool m_loadingRoster = false;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
+    SaveMode m_saveMode = SaveMode::Automatic;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
@@ -81,4 +103,5 @@ private:
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;
+    QTimer* m_autosaveTimer = nullptr;
 };

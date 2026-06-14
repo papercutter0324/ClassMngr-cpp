@@ -19,7 +19,15 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
+
+namespace
+{
+
+inline constexpr int AutosaveDelayMs = 750;
+
+} // namespace
 
 RosterPage::RosterPage(
     ApplicationServices* services,
@@ -29,12 +37,31 @@ RosterPage::RosterPage(
     , m_services(services)
 {
     buildUi();
+
+    m_autosaveTimer =
+        new QTimer(this);
+    m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setInterval(
+        AutosaveDelayMs
+        );
+
+    connect(
+        m_autosaveTimer,
+        &QTimer::timeout,
+        this,
+        &RosterPage::autosave
+        );
 }
 
 void RosterPage::loadClass(
     const Classroom& classroom
     )
 {
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
     m_classroom = classroom;
     updateHeaderText();
 
@@ -109,30 +136,108 @@ void RosterPage::loadClass(
 
 void RosterPage::saveData()
 {
+    saveRosterInternal(true);
+}
+
+bool RosterPage::saveChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    if (!hasUnsavedChanges())
+    {
+        return true;
+    }
+
+    return saveRosterInternal(true);
+}
+
+bool RosterPage::hasUnsavedChanges() const
+{
+    return m_widthsDirty
+        || (m_model && m_model->isDirty());
+}
+
+void RosterPage::discardChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    loadClass(m_classroom);
+}
+
+QString RosterPage::unsavedChangesTitle() const
+{
+    return tr("Unsaved Roster Changes");
+}
+
+QString RosterPage::unsavedChangesMessage() const
+{
+    return tr("This roster has unsaved changes.");
+}
+
+void RosterPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    if (m_saveMode == mode)
+    {
+        return;
+    }
+
+    m_saveMode = mode;
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (m_saveMode == SaveMode::Automatic && hasUnsavedChanges())
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+}
+
+bool RosterPage::saveRosterInternal(
+    bool showValidationMessages
+    )
+{
     if (
         !m_services
         || !m_services->dataService()
         || m_classroom.id <= 0
         )
     {
-        return;
+        return false;
     }
 
     if (m_model->hasDuplicateNameErrors())
     {
-        QMessageBox message(this);
-        message.setIcon(QMessageBox::Warning);
-        message.setWindowTitle(
-            tr("Duplicate Student Names")
-            );
-        message.setText(
-            tr("Resolve duplicate English/Korean student name pairs before saving.")
-            );
-        message.setDetailedText(
-            m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
-            );
-        message.exec();
-        return;
+        if (showValidationMessages)
+        {
+            QMessageBox message(this);
+            message.setIcon(QMessageBox::Warning);
+            message.setWindowTitle(
+                tr("Duplicate Student Names")
+                );
+            message.setText(
+                tr("Resolve duplicate English/Korean student name pairs before saving.")
+                );
+            message.setDetailedText(
+                m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
+                );
+            message.exec();
+        }
+
+        return false;
     }
 
     Roster roster =
@@ -151,6 +256,8 @@ void RosterPage::saveData()
     m_model->clearDirty();
     m_widthsDirty = false;
     updateActions();
+
+    return true;
 }
 
 void RosterPage::addColumn()
@@ -208,6 +315,7 @@ void RosterPage::addColumn()
     m_table->setCurrentIndex(firstCell);
     m_table->edit(firstCell);
 
+    scheduleAutosave();
     updateActions();
 }
 
@@ -259,6 +367,7 @@ void RosterPage::removeColumn()
     m_layoutController->handleCustomColumnRemoved(
         removedWidth
         );
+    scheduleAutosave();
     updateActions();
 }
 
@@ -434,12 +543,23 @@ void RosterPage::importScores()
     }
 
     updateActions();
+    scheduleAutosave();
 
     QMessageBox::information(
         this,
         tr("Import Scores"),
         tr("Scores imported successfully.")
-        );
+    );
+}
+
+void RosterPage::autosave()
+{
+    if (!hasUnsavedChanges())
+    {
+        return;
+    }
+
+    saveRosterInternal(false);
 }
 
 void RosterPage::updateActions()
@@ -628,7 +748,11 @@ void RosterPage::buildUi()
         m_model,
         &RosterModel::dirtyChanged,
         this,
-        &RosterPage::updateActions
+        [this](bool)
+        {
+            updateActions();
+            scheduleAutosave();
+        }
         );
 
     connect(
@@ -645,6 +769,8 @@ void RosterPage::buildUi()
                 topLeft,
                 bottomRight
                 );
+
+            scheduleAutosave();
         }
         );
 
@@ -671,6 +797,7 @@ void RosterPage::buildUi()
                 );
 
             m_widthsDirty = true;
+            scheduleAutosave();
             updateActions();
         }
         );
@@ -690,12 +817,6 @@ void RosterPage::updateHeaderText()
             : m_classroom.name.trimmed();
 
     m_subtitleLabel->setText(className);
-}
-
-bool RosterPage::hasUnsavedChanges() const
-{
-    return m_widthsDirty
-        || (m_model && m_model->isDirty());
 }
 
 void RosterPage::handleNameCellChanged(
@@ -730,6 +851,21 @@ void RosterPage::handleNameCellChanged(
             }
         }
     }
+}
+
+void RosterPage::scheduleAutosave()
+{
+    if (
+        m_loadingRoster
+        || m_saveMode != SaveMode::Automatic
+        || !m_autosaveTimer
+        || m_classroom.id <= 0
+        )
+    {
+        return;
+    }
+
+    m_autosaveTimer->start();
 }
 
 void RosterPage::resolveDuplicateName(

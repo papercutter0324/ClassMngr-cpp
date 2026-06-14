@@ -20,12 +20,15 @@
 #include <QSet>
 #include <QSizePolicy>
 #include <QTableView>
+#include <QTimer>
 #include <QUndoStack>
 #include <QUrl>
 #include <QVBoxLayout>
 
 namespace
 {
+
+inline constexpr int AutosaveDelayMs = 750;
 
 int findColumn(
     const QStringList& columns,
@@ -245,6 +248,20 @@ SpeakingEvalPage::SpeakingEvalPage(
     , m_services(services)
 {
     buildUi();
+
+    m_autosaveTimer =
+        new QTimer(this);
+    m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setInterval(
+        AutosaveDelayMs
+        );
+
+    connect(
+        m_autosaveTimer,
+        &QTimer::timeout,
+        this,
+        &SpeakingEvalPage::autosave
+        );
 }
 
 void SpeakingEvalPage::loadEvaluation(
@@ -252,6 +269,11 @@ void SpeakingEvalPage::loadEvaluation(
     const QString& evaluationName
     )
 {
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
     m_loadingEvaluation = true;
 
     m_classroom =
@@ -293,6 +315,83 @@ void SpeakingEvalPage::loadEvaluation(
 
 void SpeakingEvalPage::saveData()
 {
+    saveEvaluationInternal(true, true);
+}
+
+bool SpeakingEvalPage::saveChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    if (!hasUnsavedChanges())
+    {
+        return true;
+    }
+
+    return saveEvaluationInternal(true, false);
+}
+
+bool SpeakingEvalPage::hasUnsavedChanges() const
+{
+    return m_model && m_model->isDirty();
+}
+
+void SpeakingEvalPage::discardChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    loadEvaluation(
+        m_classroom,
+        m_evaluationName
+        );
+}
+
+QString SpeakingEvalPage::unsavedChangesTitle() const
+{
+    return tr("Unsaved Speaking Evaluation Changes");
+}
+
+QString SpeakingEvalPage::unsavedChangesMessage() const
+{
+    return tr("This speaking evaluation has unsaved changes.");
+}
+
+void SpeakingEvalPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    if (m_saveMode == mode)
+    {
+        return;
+    }
+
+    m_saveMode = mode;
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (m_saveMode == SaveMode::Automatic && hasUnsavedChanges())
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+}
+
+bool SpeakingEvalPage::saveEvaluationInternal(
+    bool showValidationMessages,
+    bool showSuccessMessage
+    )
+{
     if (
         !m_services
         || !m_services->dataService()
@@ -300,7 +399,7 @@ void SpeakingEvalPage::saveData()
         || m_evaluationName.trimmed().isEmpty()
         )
     {
-        return;
+        return false;
     }
 
     m_model->revalidateAll();
@@ -308,19 +407,23 @@ void SpeakingEvalPage::saveData()
 
     if (m_model->hasErrors())
     {
-        QMessageBox message(this);
-        message.setIcon(QMessageBox::Warning);
-        message.setWindowTitle(
-            tr("Validation Errors")
-            );
-        message.setText(
-            tr("Fix validation errors before saving.")
-            );
-        message.setDetailedText(
-            m_model->errorList().join(QLatin1Char('\n'))
-            );
-        message.exec();
-        return;
+        if (showValidationMessages)
+        {
+            QMessageBox message(this);
+            message.setIcon(QMessageBox::Warning);
+            message.setWindowTitle(
+                tr("Validation Errors")
+                );
+            message.setText(
+                tr("Fix validation errors before saving.")
+                );
+            message.setDetailedText(
+                m_model->errorList().join(QLatin1Char('\n'))
+                );
+            message.exec();
+        }
+
+        return false;
     }
 
     const bool saved =
@@ -335,22 +438,31 @@ void SpeakingEvalPage::saveData()
 
     if (!saved)
     {
-        QMessageBox::warning(
-            this,
-            tr("Save Failed"),
-            tr("The speaking evaluation could not be saved.")
-            );
-        return;
+        if (showValidationMessages)
+        {
+            QMessageBox::warning(
+                this,
+                tr("Save Failed"),
+                tr("The speaking evaluation could not be saved.")
+                );
+        }
+
+        return false;
     }
 
     m_model->markSaved();
     updateActions();
 
-    QMessageBox::information(
-        this,
-        tr("Saved"),
-        tr("Speaking evaluation saved.")
-        );
+    if (showSuccessMessage)
+    {
+        QMessageBox::information(
+            this,
+            tr("Saved"),
+            tr("Speaking evaluation saved.")
+            );
+    }
+
+    return true;
 }
 
 void SpeakingEvalPage::refresh()
@@ -448,6 +560,16 @@ void SpeakingEvalPage::importNames()
         tr("Import Names"),
         tr("Roster names imported successfully.")
         );
+}
+
+void SpeakingEvalPage::autosave()
+{
+    if (!hasUnsavedChanges())
+    {
+        return;
+    }
+
+    saveEvaluationInternal(false, false);
 }
 
 void SpeakingEvalPage::openKoreanKeyboard()
@@ -678,7 +800,11 @@ void SpeakingEvalPage::buildUi()
         m_model,
         &SpeakingEvalModel::dataModified,
         this,
-        &SpeakingEvalPage::updateActions
+        [this]()
+        {
+            updateActions();
+            scheduleAutosave();
+        }
         );
 
     connect(
@@ -699,6 +825,22 @@ void SpeakingEvalPage::buildUi()
         );
 
     updateActions();
+}
+
+void SpeakingEvalPage::scheduleAutosave()
+{
+    if (
+        m_loadingEvaluation
+        || m_saveMode != SaveMode::Automatic
+        || !m_autosaveTimer
+        || m_classroom.id <= 0
+        || m_evaluationName.trimmed().isEmpty()
+        )
+    {
+        return;
+    }
+
+    m_autosaveTimer->start();
 }
 
 void SpeakingEvalPage::setupTable()

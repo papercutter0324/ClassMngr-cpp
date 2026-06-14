@@ -14,6 +14,7 @@ class ApplicationServices;
 class QLabel;
 class QModelIndex;
 class QPushButton;
+class QTimer;
 class QUndoStack;
 class SpeakingEvalDelegate;
 class SpeakingEvalModel;
@@ -35,12 +36,28 @@ public:
 
     void saveData() override;
 
+    bool saveChanges() override;
+
+    bool hasUnsavedChanges() const override;
+
+    void discardChanges() override;
+
+    QString unsavedChangesTitle() const override;
+
+    QString unsavedChangesMessage() const override;
+
+    void setSaveMode(
+        SaveMode mode
+        ) override;
+
     void refresh() override;
 
 private slots:
     void importNames();
 
     void openKoreanKeyboard();
+
+    void autosave();
 
     void updateActions();
 
@@ -50,6 +67,13 @@ private:
     void setupTable();
 
     void updateHeaderText();
+
+    bool saveEvaluationInternal(
+        bool showValidationMessages,
+        bool showSuccessMessage
+        );
+
+    void scheduleAutosave();
 
     QList<SpeakingEvalCellEdit> nameImportChanges(
         const QStringList& rosterColumns,
@@ -80,6 +104,7 @@ private:
     bool m_loadingEvaluation = false;
     bool m_importingNames = false;
     bool m_resolvingDuplicateName = false;
+    SaveMode m_saveMode = SaveMode::Automatic;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
@@ -92,4 +117,5 @@ private:
     QPushButton* m_importNamesButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
     QPushButton* m_saveButton = nullptr;
+    QTimer* m_autosaveTimer = nullptr;
 };
