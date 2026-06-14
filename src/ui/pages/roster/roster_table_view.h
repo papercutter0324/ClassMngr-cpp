@@ -28,6 +28,8 @@ public slots:
 
     void paste();
 
+    void clearSelectionValues();
+
 protected:
     bool event(
         QEvent* event

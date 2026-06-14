@@ -235,6 +235,33 @@ void RosterTableView::paste()
     }
 }
 
+void RosterTableView::clearSelectionValues()
+{
+    QModelIndexList indexes =
+        selectedIndexes();
+
+    if (indexes.isEmpty() && currentIndex().isValid())
+    {
+        indexes.append(
+            currentIndex()
+            );
+    }
+
+    for (const QModelIndex& index : indexes)
+    {
+        if (!isEditableIndex(index))
+        {
+            continue;
+        }
+
+        model()->setData(
+            index,
+            QString(),
+            Qt::EditRole
+            );
+    }
+}
+
 bool RosterTableView::event(
     QEvent* event
     )
@@ -277,6 +304,13 @@ void RosterTableView::keyPressEvent(
         if (event->matches(QKeySequence::Paste))
         {
             paste();
+            event->accept();
+            return;
+        }
+
+        if (event->matches(QKeySequence::Delete))
+        {
+            clearSelectionValues();
             event->accept();
             return;
         }
