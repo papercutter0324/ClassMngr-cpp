@@ -21,11 +21,31 @@ const QList<TreeNodeSpec>
                     "",
                     QObject::tr("Schedule"),
                     NodeType::Page
+                }
+            }
+        },
+
+        {
+            "sub_prep",
+            QObject::tr("Sub Prep"),
+            NodeType::Root,
+
+            {
+                {
+                    "",
+                    QObject::tr("Important Information"),
+                    NodeType::Page
                 },
 
                 {
                     "",
-                    QObject::tr("Sub Prep"),
+                    QObject::tr("Class Information"),
+                    NodeType::Page
+                },
+
+                {
+                    "",
+                    QObject::tr("Sub Comments"),
                     NodeType::Page
                 }
             }

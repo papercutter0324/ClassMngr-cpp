@@ -68,6 +68,16 @@ public:
 
 
     // =====================================================
+    // Sub Prep
+    // =====================================================
+
+    void selectSubPrepSection(
+        const QString& sectionName
+        );
+
+
+
+    // =====================================================
     // Overflow Display
     // =====================================================
 
@@ -152,6 +162,11 @@ private:
 
     QTreeWidgetItem* classInfoChildForClass(
         QTreeWidgetItem* classItem
+        ) const;
+
+    QTreeWidgetItem* childWithText(
+        QTreeWidgetItem* item,
+        const QString& text
         ) const;
 
     void updateTreeColumnWidth();

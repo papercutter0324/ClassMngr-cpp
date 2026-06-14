@@ -1181,6 +1181,31 @@ void Sidebar::onItemClicked(
     // Expand / Collapse Groups
     // =====================================================
 
+    if (item == m_nodes.value("sub_prep"))
+    {
+        const bool expanded =
+            !item->isExpanded();
+
+        item->setExpanded(
+            expanded
+            );
+
+        if (!expanded)
+        {
+            m_tree->clearSelection();
+            return;
+        }
+
+        NavigationData data;
+        data.path =
+            getItemPath(item);
+        data.type =
+            type;
+
+        emit itemSelected(data);
+        return;
+    }
+
     if (
         type == NodeType::Root
         || type == NodeType::ClassSection
@@ -1322,6 +1347,35 @@ void Sidebar::onItemClicked(
     emit itemSelected(data);
 }
 
+void Sidebar::selectSubPrepSection(
+    const QString& sectionName
+    )
+{
+    auto* subPrepRoot =
+        m_nodes.value("sub_prep", nullptr);
+
+    if (!subPrepRoot)
+    {
+        return;
+    }
+
+    subPrepRoot->setExpanded(true);
+
+    auto* sectionItem =
+        childWithText(
+            subPrepRoot,
+            sectionName
+            );
+
+    if (!sectionItem)
+    {
+        return;
+    }
+
+    m_tree->setCurrentItem(sectionItem);
+    m_tree->scrollToItem(sectionItem);
+}
+
 
 
 // =========================================================
@@ -1425,6 +1479,30 @@ QTreeWidgetItem* Sidebar::classInfoChildForClass(
     }
 
     return fallbackPageItem;
+}
+
+QTreeWidgetItem* Sidebar::childWithText(
+    QTreeWidgetItem* item,
+    const QString& text
+    ) const
+{
+    if (!item)
+    {
+        return nullptr;
+    }
+
+    for (int index = 0; index < item->childCount(); ++index)
+    {
+        auto* child =
+            item->child(index);
+
+        if (child && child->text(0) == text)
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
 }
 
 

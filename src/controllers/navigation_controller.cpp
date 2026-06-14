@@ -10,6 +10,7 @@
 #include "ui/pages/pagemanager.h"
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
+#include "ui/pages/subprep/sub_prep_page.h"
 #include "ui/pages/teacher/teacher_info_page.h"
 
 NavigationController::NavigationController(
@@ -70,6 +71,15 @@ void NavigationController::handleNavigation(
         handleClass(data);
         return;
 
+    case NodeType::Root:
+        if (!data.path.isEmpty() && data.path.first() == tr("Sub Prep"))
+        {
+            handleSubPrep(data);
+            return;
+        }
+
+        return;
+
     case NodeType::Page:
         if (data.path.isEmpty())
         {
@@ -79,6 +89,12 @@ void NavigationController::handleNavigation(
         if (data.path.first() == tr("My Info"))
         {
             handleMyInfo(data);
+            return;
+        }
+
+        if (data.path.first() == tr("Sub Prep"))
+        {
+            handleSubPrep(data);
             return;
         }
 
@@ -187,6 +203,58 @@ void NavigationController::handleNavigation(
     }
 }
 
+void NavigationController::handleSubPrep(
+    const NavigationData& data
+    )
+{
+    const bool alreadyShowingSubPrep =
+        m_pages->currentWidget()
+        == m_pages->subPrepPage();
+
+    const QString sectionName =
+        data.path.size() >= 2
+            ? data.path.last()
+            : tr("Important Information");
+
+    SubPrepSection section =
+        SubPrepSection::ImportantInformation;
+
+    if (sectionName == tr("Class Information"))
+    {
+        section =
+            SubPrepSection::ClassInformation;
+    }
+    else if (sectionName == tr("Sub Comments"))
+    {
+        section =
+            SubPrepSection::SubComments;
+    }
+
+    const bool rootClick =
+        data.path.size() == 1;
+
+    if (rootClick && alreadyShowingSubPrep)
+    {
+        return;
+    }
+
+    if (!alreadyShowingSubPrep && !m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    if (rootClick)
+    {
+        m_sidebar->selectSubPrepSection(
+            tr("Important Information")
+            );
+    }
+
+    m_pages->showPage(PageType::SubPrep);
+    m_pages->subPrepPage()
+        ->scrollToSection(section);
+}
+
 void NavigationController::handleMyInfo(
     const NavigationData& data
     )
@@ -204,17 +272,6 @@ void NavigationController::handleMyInfo(
         }
 
         m_pages->showPage(PageType::Schedule);
-        return;
-    }
-
-    if (pageName == tr("Sub Prep"))
-    {
-        if (!m_pages->confirmCurrentPageCanLeave())
-        {
-            return;
-        }
-
-        m_pages->showPage(PageType::SubPrep);
         return;
     }
 }

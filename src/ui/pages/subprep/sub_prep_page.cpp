@@ -560,6 +560,59 @@ void SubPrepPage::refresh()
     }
 }
 
+void SubPrepPage::scrollToSection(
+    SubPrepSection section
+    )
+{
+    QLabel* target = nullptr;
+
+    switch (section)
+    {
+    case SubPrepSection::ImportantInformation:
+        target =
+            m_importantInformationHeading;
+        break;
+    case SubPrepSection::ClassInformation:
+        target =
+            m_classInformationHeading;
+        break;
+    case SubPrepSection::SubComments:
+        target =
+            m_subCommentsHeading;
+        break;
+    }
+
+    if (!m_scrollArea || !target)
+    {
+        return;
+    }
+
+    QTimer::singleShot(
+        0,
+        this,
+        [this, target]()
+        {
+            if (!m_scrollArea || !target)
+            {
+                return;
+            }
+
+            m_scrollArea->ensureWidgetVisible(
+                target,
+                0,
+                0
+                );
+
+            if (auto* scrollBar = m_scrollArea->verticalScrollBar())
+            {
+                scrollBar->setValue(
+                    target->y()
+                    );
+            }
+        }
+        );
+}
+
 void SubPrepPage::showEvent(
     QShowEvent* event
     )
@@ -755,11 +808,13 @@ void SubPrepPage::buildUi()
     headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
 
-    m_scrollContentLayout->addWidget(
+    m_importantInformationHeading =
         createTopLevelHeading(
             tr("Important Information"),
             m_scrollContent
-            )
+        );
+    m_scrollContentLayout->addWidget(
+        m_importantInformationHeading
         );
 
     auto* zoomCard =
@@ -986,11 +1041,13 @@ void SubPrepPage::buildUi()
         materialsCard
         );
 
-    m_scrollContentLayout->addWidget(
+    m_classInformationHeading =
         createTopLevelHeading(
             tr("Class Information"),
             m_scrollContent
-            )
+        );
+    m_scrollContentLayout->addWidget(
+        m_classInformationHeading
         );
 
     auto* classInfoSubtitle =
@@ -1020,11 +1077,13 @@ void SubPrepPage::buildUi()
         m_classInformationContent
         );
 
-    m_scrollContentLayout->addWidget(
+    m_subCommentsHeading =
         createTopLevelHeading(
             tr("Sub Comments"),
             m_scrollContent
-            )
+        );
+    m_scrollContentLayout->addWidget(
+        m_subCommentsHeading
         );
 
     auto* commentsCard =
