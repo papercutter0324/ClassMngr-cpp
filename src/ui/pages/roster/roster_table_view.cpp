@@ -2,10 +2,18 @@
 
 #include "ui/pages/roster/roster_column_layout_controller.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QEvent>
 #include <QHeaderView>
+#include <QKeySequence>
+#include <QMap>
 #include <QPainter>
 #include <QPalette>
+#include <QShortcut>
+
+#include <algorithm>
+#include <iterator>
 
 namespace
 {
@@ -83,6 +91,7 @@ RosterTableView::RosterTableView(
     verticalHeader()->setDefaultAlignment(Qt::AlignCenter);
     verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
+    setupShortcuts();
     updateVerticalHeaderTrailingBackground();
 }
 
@@ -92,6 +101,127 @@ void RosterTableView::setLayoutController(
 {
     m_controller = controller;
     viewport()->update();
+}
+
+void RosterTableView::copy()
+{
+    const QString text =
+        serializeSelection();
+
+    if (!text.isEmpty())
+    {
+        QApplication::clipboard()->setText(text);
+    }
+}
+
+void RosterTableView::cut()
+{
+    QModelIndexList indexes;
+
+    const QString text =
+        serializeSelection(&indexes);
+
+    if (text.isEmpty())
+    {
+        return;
+    }
+
+    const bool hasEditableIndex =
+        std::any_of(
+            indexes.constBegin(),
+            indexes.constEnd(),
+            [this](const QModelIndex& index)
+            {
+                return isEditableIndex(index);
+            }
+            );
+
+    if (!hasEditableIndex)
+    {
+        return;
+    }
+
+    QApplication::clipboard()->setText(text);
+
+    for (const QModelIndex& index : indexes)
+    {
+        if (!isEditableIndex(index))
+        {
+            continue;
+        }
+
+        model()->setData(
+            index,
+            QString(),
+            Qt::EditRole
+            );
+    }
+}
+
+void RosterTableView::paste()
+{
+    if (!model())
+    {
+        return;
+    }
+
+    QString text =
+        QApplication::clipboard()->text();
+
+    if (text.isEmpty())
+    {
+        return;
+    }
+
+    while (text.endsWith(QLatin1Char('\n')) || text.endsWith(QLatin1Char('\r')))
+    {
+        text.chop(1);
+    }
+
+    const QModelIndex start =
+        currentIndex();
+
+    if (!isEditableIndex(start))
+    {
+        return;
+    }
+
+    const QStringList rows =
+        text.split(QLatin1Char('\n'));
+
+    for (int rowOffset = 0; rowOffset < rows.size(); ++rowOffset)
+    {
+        QString rowText =
+            rows[rowOffset];
+
+        if (rowText.endsWith(QLatin1Char('\r')))
+        {
+            rowText.chop(1);
+        }
+
+        const QStringList values =
+            rowText.split(QLatin1Char('\t'));
+
+        for (int columnOffset = 0; columnOffset < values.size(); ++columnOffset)
+        {
+            const QModelIndex index =
+                model()->index(
+                    start.row() + rowOffset,
+                    start.column() + columnOffset
+                    );
+
+            if (!isEditableIndex(index))
+            {
+                continue;
+            }
+
+            model()->setData(
+                index,
+                values[columnOffset],
+                Qt::EditRole
+                );
+        }
+    }
 }
 
 void RosterTableView::changeEvent(
@@ -182,6 +312,125 @@ int RosterTableView::contentBottomEdge() const
     return rowViewportPosition(lastRow)
         + rowHeight(lastRow)
         - 1;
+}
+
+void RosterTableView::setupShortcuts()
+{
+    const auto addShortcut =
+        [this](const QKeySequence& sequence, auto slot)
+        {
+            auto* shortcut =
+                new QShortcut(
+                    sequence,
+                    this
+                    );
+
+            shortcut->setContext(
+                Qt::WidgetWithChildrenShortcut
+                );
+
+            connect(
+                shortcut,
+                &QShortcut::activated,
+                this,
+                slot
+                );
+        };
+
+    addShortcut(QKeySequence::Copy, &RosterTableView::copy);
+    addShortcut(QKeySequence::Cut, &RosterTableView::cut);
+    addShortcut(QKeySequence::Paste, &RosterTableView::paste);
+}
+
+bool RosterTableView::isEditableIndex(
+    const QModelIndex& index
+    ) const
+{
+    return index.isValid()
+        && model()
+        && index.model() == model()
+        && (model()->flags(index) & Qt::ItemIsEditable);
+}
+
+QString RosterTableView::serializeSelection(
+    QModelIndexList* sortedIndexes
+    ) const
+{
+    QModelIndexList indexes =
+        selectedIndexes();
+
+    if (indexes.isEmpty() && currentIndex().isValid())
+    {
+        indexes.append(
+            currentIndex()
+            );
+    }
+
+    std::sort(
+        indexes.begin(),
+        indexes.end(),
+        [](const QModelIndex& left, const QModelIndex& right)
+        {
+            if (left.row() == right.row())
+            {
+                return left.column() < right.column();
+            }
+
+            return left.row() < right.row();
+        }
+        );
+
+    if (sortedIndexes)
+    {
+        *sortedIndexes = indexes;
+    }
+
+    if (indexes.isEmpty())
+    {
+        return {};
+    }
+
+    QMap<int, QMap<int, QString>> rows;
+
+    for (const QModelIndex& index : indexes)
+    {
+        rows[index.row()][index.column()] =
+            index.data(Qt::DisplayRole).toString();
+    }
+
+    QStringList lines;
+
+    for (auto rowIt = rows.constBegin(); rowIt != rows.constEnd(); ++rowIt)
+    {
+        const auto& columns =
+            rowIt.value();
+
+        if (columns.isEmpty())
+        {
+            continue;
+        }
+
+        const int minColumn =
+            columns.constBegin().key();
+
+        const int maxColumn =
+            std::prev(columns.constEnd()).key();
+
+        QStringList values;
+
+        for (int column = minColumn; column <= maxColumn; ++column)
+        {
+            values.append(
+                columns.value(column)
+                );
+        }
+
+        lines.append(
+            values.join(QLatin1Char('\t'))
+            );
+    }
+
+    return lines.join(QLatin1Char('\n'));
 }
 
 void RosterTableView::updateVerticalHeaderTrailingBackground()

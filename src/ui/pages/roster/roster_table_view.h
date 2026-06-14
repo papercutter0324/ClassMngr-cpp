@@ -20,6 +20,13 @@ public:
 
     int contentBottomEdge() const;
 
+public slots:
+    void copy();
+
+    void cut();
+
+    void paste();
+
 protected:
     void changeEvent(
         QEvent* event
@@ -30,6 +37,16 @@ protected:
         ) override;
 
 private:
+    void setupShortcuts();
+
+    bool isEditableIndex(
+        const QModelIndex& index
+        ) const;
+
+    QString serializeSelection(
+        QModelIndexList* sortedIndexes = nullptr
+        ) const;
+
     void updateVerticalHeaderTrailingBackground();
 
 private:

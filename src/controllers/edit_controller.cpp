@@ -5,8 +5,57 @@
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QLineEdit>
 #include <QMetaObject>
+#include <QPlainTextEdit>
+#include <QTextEdit>
 #include <QWidget>
+
+namespace
+{
+
+bool isClipboardMutationMethod(
+    const char* method
+    )
+{
+    const QByteArray methodName(method);
+
+    return methodName == "cut"
+        || methodName == "paste";
+}
+
+bool isReadOnlyTextWidget(
+    QWidget* widget
+    )
+{
+    if (auto* lineEdit = qobject_cast<QLineEdit*>(widget))
+    {
+        return lineEdit->isReadOnly();
+    }
+
+    if (auto* textEdit = qobject_cast<QTextEdit*>(widget))
+    {
+        return textEdit->isReadOnly();
+    }
+
+    if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(widget))
+    {
+        return plainTextEdit->isReadOnly();
+    }
+
+    return false;
+}
+
+bool methodAllowed(
+    QWidget* widget,
+    const char* method
+    )
+{
+    return !isClipboardMutationMethod(method)
+        || !isReadOnlyTextWidget(widget);
+}
+
+} // namespace
 
 EditController::EditController(
     QObject* parent
@@ -117,15 +166,30 @@ bool EditController::dispatch(
 
     while (widget)
     {
+        const QByteArray signature =
+            QByteArray(method) + "()";
+
         if (
-            QMetaObject::invokeMethod(
-                widget,
-                method,
-                Qt::DirectConnection
-                )
+            widget->metaObject()->indexOfMethod(
+                signature.constData()
+                ) >= 0
             )
         {
-            return true;
+            if (!methodAllowed(widget, method))
+            {
+                return false;
+            }
+
+            if (
+                QMetaObject::invokeMethod(
+                    widget,
+                    method,
+                    Qt::DirectConnection
+                    )
+                )
+            {
+                return true;
+            }
         }
 
         widget =
@@ -153,7 +217,10 @@ bool EditController::hasMethod(
                 ) >= 0
             )
         {
-            return true;
+            return methodAllowed(
+                widget,
+                method
+                );
         }
 
         widget =
