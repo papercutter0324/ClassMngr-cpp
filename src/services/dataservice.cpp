@@ -697,12 +697,28 @@ void DataService::createTables()
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 
             title TEXT NOT NULL,
+            event_type TEXT DEFAULT 'Other',
+            all_day INTEGER DEFAULT 0,
             start_date TEXT,
             start_time TEXT,
             end_date TEXT,
             end_time TEXT
         )
     )");
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("calendar_events"),
+        QStringLiteral("event_type"),
+        QStringLiteral("TEXT DEFAULT 'Other'")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("calendar_events"),
+        QStringLiteral("all_day"),
+        QStringLiteral("INTEGER DEFAULT 0")
+        );
 }
 
 // =========================================================
@@ -1583,6 +1599,8 @@ QList<CalendarEvent> DataService::loadCalendarEventsForDate(
         SELECT
             id,
             title,
+            event_type,
+            all_day,
             start_date,
             start_time,
             end_date,
@@ -1616,6 +1634,12 @@ QList<CalendarEvent> DataService::loadCalendarEventsForDate(
             query.value("id").toInt();
         event.title =
             query.value("title").toString();
+        event.eventType =
+            query.value("event_type").toString().trimmed().isEmpty()
+                ? QStringLiteral("Other")
+                : query.value("event_type").toString().trimmed();
+        event.allDay =
+            query.value("all_day").toBool();
         event.startDate =
             QDate::fromString(
                 query.value("start_date").toString(),
@@ -1660,6 +1684,8 @@ CalendarEvent DataService::getCalendarEvent(
         SELECT
             id,
             title,
+            event_type,
+            all_day,
             start_date,
             start_time,
             end_date,
@@ -1688,6 +1714,12 @@ CalendarEvent DataService::getCalendarEvent(
         query.value("id").toInt();
     event.title =
         query.value("title").toString();
+    event.eventType =
+        query.value("event_type").toString().trimmed().isEmpty()
+            ? QStringLiteral("Other")
+            : query.value("event_type").toString().trimmed();
+    event.allDay =
+        query.value("all_day").toBool();
     event.startDate =
         QDate::fromString(
             query.value("start_date").toString(),
@@ -1717,6 +1749,10 @@ int DataService::saveCalendarEvent(
     )
 {
     QSqlQuery query(m_db);
+    const QString eventType =
+        event.eventType.trimmed().isEmpty()
+            ? QStringLiteral("Other")
+            : event.eventType.trimmed();
 
     if (event.id > 0)
     {
@@ -1724,6 +1760,8 @@ int DataService::saveCalendarEvent(
             UPDATE calendar_events
             SET
                 title=?,
+                event_type=?,
+                all_day=?,
                 start_date=?,
                 start_time=?,
                 end_date=?,
@@ -1732,6 +1770,8 @@ int DataService::saveCalendarEvent(
         )");
 
         query.addBindValue(event.title);
+        query.addBindValue(eventType);
+        query.addBindValue(event.allDay ? 1 : 0);
         query.addBindValue(event.startDate.toString(Qt::ISODate));
         query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
         query.addBindValue(event.endDate.toString(Qt::ISODate));
@@ -1753,15 +1793,19 @@ int DataService::saveCalendarEvent(
     query.prepare(R"(
         INSERT INTO calendar_events (
             title,
+            event_type,
+            all_day,
             start_date,
             start_time,
             end_date,
             end_time
         )
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(event.title);
+    query.addBindValue(eventType);
+    query.addBindValue(event.allDay ? 1 : 0);
     query.addBindValue(event.startDate.toString(Qt::ISODate));
     query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
     query.addBindValue(event.endDate.toString(Qt::ISODate));

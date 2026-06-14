@@ -62,6 +62,14 @@ QVariantList CalendarEventModel::eventsForDate(
             event.title
             );
         value.insert(
+            QStringLiteral("eventType"),
+            event.eventType
+            );
+        value.insert(
+            QStringLiteral("allDay"),
+            event.allDay
+            );
+        value.insert(
             QStringLiteral("start"),
             QDateTime(event.startDate, event.startTime)
             );

@@ -6,6 +6,8 @@
 
 class QDateEdit;
 class QDialogButtonBox;
+class QButtonGroup;
+class QCheckBox;
 class QLineEdit;
 class QPushButton;
 class QTimeEdit;
@@ -18,6 +20,7 @@ public:
     explicit CalendarEventDialog(
         const CalendarEvent& event,
         bool existingEvent,
+        bool use24h,
         QWidget* parent = nullptr
         );
 
@@ -31,10 +34,12 @@ private slots:
 private:
     void buildUi();
     void loadEvent();
+    void updateTimeFieldAvailability();
 
 private:
     CalendarEvent m_event;
     bool m_existingEvent = false;
+    bool m_use24h = false;
     bool m_deleteRequested = false;
 
     QLineEdit* m_titleEdit = nullptr;
@@ -42,6 +47,8 @@ private:
     QTimeEdit* m_startTimeEdit = nullptr;
     QDateEdit* m_endDateEdit = nullptr;
     QTimeEdit* m_endTimeEdit = nullptr;
+    QCheckBox* m_allDayCheck = nullptr;
+    QButtonGroup* m_eventTypeGroup = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_deleteButton = nullptr;
 };

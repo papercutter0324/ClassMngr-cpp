@@ -111,6 +111,32 @@ QVariant loadSettingWithLegacyFallback(
 
     return defaultValue;
 }
+
+bool settingToBool(
+    const QVariant& value,
+    bool defaultValue
+    )
+{
+    if (!value.isValid())
+    {
+        return defaultValue;
+    }
+
+    const QString text =
+        value.toString().trimmed().toLower();
+
+    if (text == QStringLiteral("true") || text == QStringLiteral("1"))
+    {
+        return true;
+    }
+
+    if (text == QStringLiteral("false") || text == QStringLiteral("0"))
+    {
+        return false;
+    }
+
+    return value.toBool();
+}
 }
 
 MyInfoPage::MyInfoPage(
@@ -972,6 +998,13 @@ void MyInfoPage::openCalendarDialog(
     CalendarEventDialog dialog(
         event,
         existingEvent,
+        settingToBool(
+            dataService->loadSetting(
+                QStringLiteral("schedule_use_24h"),
+                QStringLiteral("false")
+                ),
+            false
+            ),
         this
         );
 
