@@ -5,6 +5,7 @@
 #include "ui/pages/campus/campus_dashboard_page.h"
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/class/class_notes_page.h"
+#include "ui/pages/myinfo/my_info_page.h"
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/schedule/schedule_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
@@ -45,6 +46,12 @@ void PageManager::initialize(
 
     m_schedulePage =
         new SchedulePage(
+            m_services,
+            this
+            );
+
+    m_myInfoPage =
+        new MyInfoPage(
             m_services,
             this
             );
@@ -91,7 +98,7 @@ void PageManager::initialize(
     registerPages();
 
     showPage(
-        PageType::Schedule
+        PageType::MyInfo
         );
 }
 
@@ -103,6 +110,9 @@ void PageManager::initialize(
 
 void PageManager::registerPages()
 {
+    m_pages[PageType::MyInfo] =
+        m_myInfoPage;
+
     m_pages[PageType::Schedule] =
         m_schedulePage;
 
@@ -235,6 +245,11 @@ void PageManager::refreshAll()
 SchedulePage* PageManager::schedulePage() const
 {
     return m_schedulePage;
+}
+
+MyInfoPage* PageManager::myInfoPage() const
+{
+    return m_myInfoPage;
 }
 
 SubPrepPage* PageManager::subPrepPage() const

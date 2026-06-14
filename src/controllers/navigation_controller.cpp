@@ -7,6 +7,7 @@
 
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/class/class_notes_page.h"
+#include "ui/pages/myinfo/my_info_page.h"
 #include "ui/pages/pagemanager.h"
 #include "ui/pages/roster/roster_page.h"
 #include "ui/pages/speakingeval/speaking_eval_page.h"
@@ -72,6 +73,12 @@ void NavigationController::handleNavigation(
         return;
 
     case NodeType::Root:
+        if (!data.path.isEmpty() && data.path.first() == tr("My Info"))
+        {
+            handleMyInfo(data);
+            return;
+        }
+
         if (!data.path.isEmpty() && data.path.first() == tr("Sub Prep"))
         {
             handleSubPrep(data);
@@ -259,21 +266,52 @@ void NavigationController::handleMyInfo(
     const NavigationData& data
     )
 {
-    const QString pageName =
-        data.path.isEmpty()
-            ? QString()
-            : data.path.last();
+    const bool alreadyShowingMyInfo =
+        m_pages->currentWidget()
+        == m_pages->myInfoPage();
 
-    if (pageName == tr("Schedule"))
+    const QString sectionName =
+        data.path.size() >= 2
+            ? data.path.last()
+            : tr("My Information");
+
+    MyInfoSection section =
+        MyInfoSection::MyInformation;
+
+    if (sectionName == tr("Class Schedule"))
     {
-        if (!m_pages->confirmCurrentPageCanLeave())
-        {
-            return;
-        }
+        section =
+            MyInfoSection::ClassSchedule;
+    }
+    else if (sectionName == tr("Monthly Calendar"))
+    {
+        section =
+            MyInfoSection::MonthlyCalendar;
+    }
 
-        m_pages->showPage(PageType::Schedule);
+    const bool rootClick =
+        data.path.size() == 1;
+
+    if (rootClick && alreadyShowingMyInfo)
+    {
         return;
     }
+
+    if (!alreadyShowingMyInfo && !m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    if (rootClick)
+    {
+        m_sidebar->selectMyInfoSection(
+            tr("My Information")
+            );
+    }
+
+    m_pages->showPage(PageType::MyInfo);
+    m_pages->myInfoPage()
+        ->scrollToSection(section);
 }
 
 void NavigationController::handleCampus(

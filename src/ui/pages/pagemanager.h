@@ -15,6 +15,7 @@
 class ApplicationServices;
 
 class SchedulePage;
+class MyInfoPage;
 class ClassInfoPage;
 class ClassNotesPage;
 class TeacherInfoPage;
@@ -31,6 +32,7 @@ class SubPrepPage;
 
 enum class PageType
 {
+    MyInfo,
     Schedule,
     ClassInfo,
     TeacherInfo,
@@ -93,6 +95,8 @@ public:
 
     SchedulePage* schedulePage() const;
 
+    MyInfoPage* myInfoPage() const;
+
     SubPrepPage* subPrepPage() const;
 
     ClassInfoPage* classInfoPage() const;
@@ -146,6 +150,8 @@ private:
     // =====================================================
 
     SchedulePage* m_schedulePage = nullptr;
+
+    MyInfoPage* m_myInfoPage = nullptr;
 
     SubPrepPage* m_subPrepPage = nullptr;
 

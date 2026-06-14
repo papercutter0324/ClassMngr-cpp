@@ -71,6 +71,10 @@ public:
     // Sub Prep
     // =====================================================
 
+    void selectMyInfoSection(
+        const QString& sectionName
+        );
+
     void selectSubPrepSection(
         const QString& sectionName
         );

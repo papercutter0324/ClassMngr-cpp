@@ -8,6 +8,10 @@ project(ClassMngr
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
+    Qml
+    Quick
+    QuickControls2
+    QuickWidgets
     Sql
     Widgets
     Network
@@ -52,6 +56,7 @@ qt_add_executable(ClassMngr
     src/core/enums/schedule_type.h
 
     src/models/campus.h
+    src/models/calendar_event.h
     src/models/class_conflict.h
     src/models/class_info.h
     src/models/classroom.cpp
@@ -88,6 +93,12 @@ qt_add_executable(ClassMngr
     src/ui/pages/class/class_info_page.h
     src/ui/pages/class/class_notes_page.cpp
     src/ui/pages/class/class_notes_page.h
+    src/ui/pages/myinfo/calendar_event_dialog.cpp
+    src/ui/pages/myinfo/calendar_event_dialog.h
+    src/ui/pages/myinfo/calendar_event_model.cpp
+    src/ui/pages/myinfo/calendar_event_model.h
+    src/ui/pages/myinfo/my_info_page.cpp
+    src/ui/pages/myinfo/my_info_page.h
     src/ui/pages/pagemanager.cpp
     src/ui/pages/pagemanager.h
     src/ui/pages/roster/roster_column_layout_controller.cpp
@@ -145,6 +156,8 @@ qt_add_executable(ClassMngr
     src/ui/widgets/sections/class_details_section.h
     src/ui/widgets/sections/class_schedule_section.cpp
     src/ui/widgets/sections/class_schedule_section.h
+    src/ui/widgets/sections/schedule_section_widget.cpp
+    src/ui/widgets/sections/schedule_section_widget.h
     src/ui/widgets/sections/teacher_info_section.cpp
     src/ui/widgets/sections/teacher_info_section.h
 
@@ -177,6 +190,30 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/app_icon.ico
         resources/assets/icons/icon_256x256.png
         resources/assets/splash/splash.png
+)
+
+set_source_files_properties(
+    src/ui/pages/myinfo/qml/EventCalendar.qml
+    PROPERTIES
+        QT_RESOURCE_ALIAS EventCalendar.qml
+)
+
+set_source_files_properties(
+    src/ui/pages/myinfo/qml/MonthGridDelegate.qml
+    PROPERTIES
+        QT_RESOURCE_ALIAS MonthGridDelegate.qml
+)
+
+qt_add_qml_module(ClassMngr
+    URI ClassMngr.MyInfo
+    VERSION 1.0
+    OUTPUT_DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/qml/ClassMngr/MyInfo
+    RESOURCE_PREFIX
+        /qt/qml
+    QML_FILES
+        src/ui/pages/myinfo/qml/EventCalendar.qml
+        src/ui/pages/myinfo/qml/MonthGridDelegate.qml
 )
 
 qt_add_translations(
@@ -213,6 +250,10 @@ target_link_libraries(ClassMngr
         Qt6::Core
         Qt6::Gui
         Qt6::Network
+        Qt6::Qml
+        Qt6::Quick
+        Qt6::QuickControls2
+        Qt6::QuickWidgets
         Qt6::Sql
         Qt6::Widgets
 )

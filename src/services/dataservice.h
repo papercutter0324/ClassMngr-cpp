@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/enums/schedule_type.h"
+#include "models/calendar_event.h"
 #include "models/campus.h"
 #include "models/class_info.h"
 #include "models/class_conflict.h"
@@ -146,6 +147,28 @@ public:
         const QString& day,
         const QString& startTime,
         const QString& state
+        );
+
+
+
+    // =====================================================
+    // Calendar Events
+    // =====================================================
+
+    QList<CalendarEvent> loadCalendarEventsForDate(
+        const QDate& date
+        );
+
+    CalendarEvent getCalendarEvent(
+        int eventId
+        );
+
+    int saveCalendarEvent(
+        const CalendarEvent& event
+        );
+
+    void deleteCalendarEvent(
+        int eventId
         );
 
 

@@ -13,7 +13,6 @@
 
 #include <algorithm>
 
-#include <QCheckBox>
 #include <QComboBox>
 #include <QEvent>
 #include <QFont>
@@ -55,8 +54,10 @@ const QString PersonalZoomEmail =
     QStringLiteral("subPrep/personalZoomEmail");
 const QString PersonalZoomPassword =
     QStringLiteral("subPrep/personalZoomPassword");
-const QString PersonalZoomNotAvailable =
-    QStringLiteral("subPrep/personalZoomNotAvailable");
+const QString MyInfoZoomLoginId =
+    QStringLiteral("myInfo/zoomLoginId");
+const QString MyInfoZoomPassword =
+    QStringLiteral("myInfo/zoomPassword");
 const QString ClassMaterials =
     QStringLiteral("subPrep/classMaterials");
 const QString BookReportGrading =
@@ -436,6 +437,42 @@ QLabel* createValueLabel(
     return label;
 }
 
+QVariant loadSettingWithLegacyFallback(
+    DataService* dataService,
+    const QString& primaryKey,
+    const QString& legacyKey,
+    const QVariant& defaultValue
+    )
+{
+    QVariant value =
+        dataService->loadSetting(
+            primaryKey,
+            QVariant()
+            );
+
+    if (value.isValid())
+    {
+        return value;
+    }
+
+    value =
+        dataService->loadSetting(
+            legacyKey,
+            QVariant()
+            );
+
+    if (value.isValid())
+    {
+        dataService->saveSetting(
+            primaryKey,
+            value
+            );
+        return value;
+    }
+
+    return defaultValue;
+}
+
 QLineEdit* createReadOnlyValueEdit(
     const QString& value,
     QWidget* parent
@@ -710,24 +747,6 @@ void SubPrepPage::handleEditableChanged()
     }
 }
 
-void SubPrepPage::handleZoomNotAvailableChanged(
-    bool checked
-    )
-{
-    Q_UNUSED(checked);
-
-    normalizeLineEdit(
-        m_zoomEmailEdit,
-        NotAvailableText
-        );
-    normalizeLineEdit(
-        m_zoomPasswordEdit,
-        NotAvailableText
-        );
-    setZoomFieldsEnabled();
-    handleEditableChanged();
-}
-
 void SubPrepPage::handleCampusChanged(
     int index
     )
@@ -881,11 +900,9 @@ void SubPrepPage::buildUi()
         new QLineEdit(zoomCard);
     m_zoomPasswordEdit =
         new QLineEdit(zoomCard);
-    m_zoomNotAvailableCheck =
-        new QCheckBox(
-            tr("N/A"),
-            zoomCard
-            );
+
+    m_zoomEmailEdit->setReadOnly(true);
+    m_zoomPasswordEdit->setReadOnly(true);
 
     applyFieldWidth(m_zoomEmailEdit);
     applyFieldWidth(m_zoomPasswordEdit);
@@ -914,13 +931,7 @@ void SubPrepPage::buildUi()
         1,
         Qt::AlignLeft
         );
-    zoomGrid->addWidget(
-        m_zoomNotAvailableCheck,
-        1,
-        2,
-        Qt::AlignLeft | Qt::AlignVCenter
-        );
-    zoomGrid->setColumnStretch(3, 1);
+    zoomGrid->setColumnStretch(2, 1);
 
     zoomCard->contentLayout()->addLayout(
         zoomGrid
@@ -1162,18 +1173,6 @@ void SubPrepPage::buildUi()
         );
 
     connect(
-        m_zoomEmailEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-    connect(
-        m_zoomPasswordEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-    connect(
         m_officeNumberEdit,
         &QLineEdit::textChanged,
         this,
@@ -1199,8 +1198,6 @@ void SubPrepPage::buildUi()
         );
 
     for (auto* edit : {
-             m_zoomEmailEdit,
-             m_zoomPasswordEdit,
              m_photocopierCodeEdit
          })
     {
@@ -1218,12 +1215,6 @@ void SubPrepPage::buildUi()
             );
     }
 
-    connect(
-        m_zoomNotAvailableCheck,
-        &QCheckBox::toggled,
-        this,
-        &SubPrepPage::handleZoomNotAvailableChanged
-        );
     connect(
         m_campusCombo,
         &QComboBox::currentIndexChanged,
@@ -1281,24 +1272,25 @@ void SubPrepPage::loadStoredSettings()
 
     const QSignalBlocker emailBlocker(m_zoomEmailEdit);
     const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
-    const QSignalBlocker checkBlocker(m_zoomNotAvailableCheck);
     const QSignalBlocker materialsBlocker(m_classMaterialsEdit);
     const QSignalBlocker gradingBlocker(m_bookReportGradingEdit);
     const QSignalBlocker commentsBlocker(m_subCommentsEdit);
 
     const QString email =
-        dataService
-            ->loadSetting(
-                SettingsKeys::PersonalZoomEmail,
-                NotAvailableText
-                )
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomLoginId,
+            SettingsKeys::PersonalZoomEmail,
+            NotAvailableText
+            )
             .toString();
     const QString password =
-        dataService
-            ->loadSetting(
-                SettingsKeys::PersonalZoomPassword,
-                NotAvailableText
-                )
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomPassword,
+            SettingsKeys::PersonalZoomPassword,
+            NotAvailableText
+            )
             .toString();
 
     m_zoomEmailEdit->setText(
@@ -1310,14 +1302,6 @@ void SubPrepPage::loadStoredSettings()
         password.trimmed().isEmpty()
             ? NotAvailableText
             : password
-        );
-    m_zoomNotAvailableCheck->setChecked(
-        dataService
-            ->loadSetting(
-                SettingsKeys::PersonalZoomNotAvailable,
-                true
-                )
-            .toBool()
         );
     m_classMaterialsEdit->setPlainText(
         dataService
@@ -1350,8 +1334,6 @@ void SubPrepPage::loadStoredSettings()
                 )
             .toString()
         );
-
-    setZoomFieldsEnabled();
 }
 
 void SubPrepPage::loadCampuses()
@@ -1514,18 +1496,6 @@ bool SubPrepPage::saveSubPrepInternal()
 
     normalizeProtectedFields();
 
-    dataService->saveSetting(
-        SettingsKeys::PersonalZoomEmail,
-        m_zoomEmailEdit->text()
-        );
-    dataService->saveSetting(
-        SettingsKeys::PersonalZoomPassword,
-        m_zoomPasswordEdit->text()
-        );
-    dataService->saveSetting(
-        SettingsKeys::PersonalZoomNotAvailable,
-        m_zoomNotAvailableCheck->isChecked()
-        );
     dataService->saveSetting(
         SettingsKeys::ClassMaterials,
         m_classMaterialsEdit->toPlainText()
@@ -2136,43 +2106,10 @@ void SubPrepPage::rebuildClassInformation()
     }
 }
 
-void SubPrepPage::setZoomFieldsEnabled()
-{
-    const bool fieldsEnabled =
-        !m_zoomNotAvailableCheck
-        || !m_zoomNotAvailableCheck->isChecked();
-
-    if (m_zoomEmailEdit)
-    {
-        m_zoomEmailEdit->setEnabled(
-            fieldsEnabled
-            );
-    }
-
-    if (m_zoomPasswordEdit)
-    {
-        m_zoomPasswordEdit->setEnabled(
-            fieldsEnabled
-            );
-    }
-}
-
 bool SubPrepPage::normalizeProtectedFields()
 {
     bool changed = false;
 
-    changed =
-        normalizeLineEdit(
-            m_zoomEmailEdit,
-            NotAvailableText
-            )
-        || changed;
-    changed =
-        normalizeLineEdit(
-            m_zoomPasswordEdit,
-            NotAvailableText
-            )
-        || changed;
     changed =
         normalizeLineEdit(
             m_photocopierCodeEdit,

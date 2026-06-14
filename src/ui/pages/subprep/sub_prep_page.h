@@ -6,7 +6,6 @@
 #include <QList>
 
 class ApplicationServices;
-class QCheckBox;
 class QComboBox;
 class QEvent;
 class QLabel;
@@ -57,9 +56,6 @@ protected:
 
 private slots:
     void handleEditableChanged();
-    void handleZoomNotAvailableChanged(
-        bool checked
-        );
     void handleCampusChanged(
         int index
         );
@@ -82,7 +78,6 @@ private:
     void rebuildTimeFillerActivities();
     void rebuildClassInformation();
 
-    void setZoomFieldsEnabled();
     bool normalizeProtectedFields();
     bool normalizeLineEdit(
         QLineEdit* edit,
@@ -124,7 +119,6 @@ private:
 
     QLineEdit* m_zoomEmailEdit = nullptr;
     QLineEdit* m_zoomPasswordEdit = nullptr;
-    QCheckBox* m_zoomNotAvailableCheck = nullptr;
 
     QComboBox* m_campusCombo = nullptr;
     QLineEdit* m_officeNumberEdit = nullptr;

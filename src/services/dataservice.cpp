@@ -690,6 +690,19 @@ void DataService::createTables()
             UNIQUE(day, start_time)
         )
     )");
+
+    // Calendar Events
+    query.exec(R"(
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            title TEXT NOT NULL,
+            start_date TEXT,
+            start_time TEXT,
+            end_date TEXT,
+            end_time TEXT
+        )
+    )");
 }
 
 // =========================================================
@@ -1545,6 +1558,249 @@ void DataService::saveIntensiveSlotState(
     {
         qWarning()
             << "Failed to save intensive slot state:"
+            << query.lastError().text();
+    }
+}
+
+// =========================================================
+// Calendar Events
+// =========================================================
+
+QList<CalendarEvent> DataService::loadCalendarEventsForDate(
+    const QDate& date
+    )
+{
+    QList<CalendarEvent> events;
+
+    if (!date.isValid())
+    {
+        return events;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE ? >= start_date
+        AND ? <= end_date
+        ORDER BY start_time, title
+    )");
+
+    const QString isoDate =
+        date.toString(Qt::ISODate);
+
+    query.addBindValue(isoDate);
+    query.addBindValue(isoDate);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load calendar events:"
+            << query.lastError().text();
+
+        return events;
+    }
+
+    while (query.next())
+    {
+        CalendarEvent event;
+
+        event.id =
+            query.value("id").toInt();
+        event.title =
+            query.value("title").toString();
+        event.startDate =
+            QDate::fromString(
+                query.value("start_date").toString(),
+                Qt::ISODate
+                );
+        event.startTime =
+            QTime::fromString(
+                query.value("start_time").toString(),
+                QStringLiteral("HH:mm")
+                );
+        event.endDate =
+            QDate::fromString(
+                query.value("end_date").toString(),
+                Qt::ISODate
+                );
+        event.endTime =
+            QTime::fromString(
+                query.value("end_time").toString(),
+                QStringLiteral("HH:mm")
+                );
+
+        events.append(event);
+    }
+
+    return events;
+}
+
+CalendarEvent DataService::getCalendarEvent(
+    int eventId
+    )
+{
+    CalendarEvent event;
+
+    if (eventId <= 0)
+    {
+        return event;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE id=?
+    )");
+
+    query.addBindValue(eventId);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load calendar event:"
+            << query.lastError().text();
+
+        return event;
+    }
+
+    if (!query.next())
+    {
+        return event;
+    }
+
+    event.id =
+        query.value("id").toInt();
+    event.title =
+        query.value("title").toString();
+    event.startDate =
+        QDate::fromString(
+            query.value("start_date").toString(),
+            Qt::ISODate
+            );
+    event.startTime =
+        QTime::fromString(
+            query.value("start_time").toString(),
+            QStringLiteral("HH:mm")
+            );
+    event.endDate =
+        QDate::fromString(
+            query.value("end_date").toString(),
+            Qt::ISODate
+            );
+    event.endTime =
+        QTime::fromString(
+            query.value("end_time").toString(),
+            QStringLiteral("HH:mm")
+            );
+
+    return event;
+}
+
+int DataService::saveCalendarEvent(
+    const CalendarEvent& event
+    )
+{
+    QSqlQuery query(m_db);
+
+    if (event.id > 0)
+    {
+        query.prepare(R"(
+            UPDATE calendar_events
+            SET
+                title=?,
+                start_date=?,
+                start_time=?,
+                end_date=?,
+                end_time=?
+            WHERE id=?
+        )");
+
+        query.addBindValue(event.title);
+        query.addBindValue(event.startDate.toString(Qt::ISODate));
+        query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
+        query.addBindValue(event.endDate.toString(Qt::ISODate));
+        query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
+        query.addBindValue(event.id);
+
+        if (!query.exec())
+        {
+            qWarning()
+                << "Failed to update calendar event:"
+                << query.lastError().text();
+
+            return -1;
+        }
+
+        return event.id;
+    }
+
+    query.prepare(R"(
+        INSERT INTO calendar_events (
+            title,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        )
+        VALUES (?, ?, ?, ?, ?)
+    )");
+
+    query.addBindValue(event.title);
+    query.addBindValue(event.startDate.toString(Qt::ISODate));
+    query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
+    query.addBindValue(event.endDate.toString(Qt::ISODate));
+    query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to save calendar event:"
+            << query.lastError().text();
+
+        return -1;
+    }
+
+    return query.lastInsertId().toInt();
+}
+
+void DataService::deleteCalendarEvent(
+    int eventId
+    )
+{
+    if (eventId <= 0)
+    {
+        return;
+    }
+
+    QSqlQuery query(m_db);
+
+    query.prepare(R"(
+        DELETE FROM calendar_events
+        WHERE id=?
+    )");
+
+    query.addBindValue(eventId);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to delete calendar event:"
             << query.lastError().text();
     }
 }

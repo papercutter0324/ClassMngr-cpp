@@ -1181,7 +1181,10 @@ void Sidebar::onItemClicked(
     // Expand / Collapse Groups
     // =====================================================
 
-    if (item == m_nodes.value("sub_prep"))
+    if (
+        item == m_nodes.value("my_info")
+        || item == m_nodes.value("sub_prep")
+        )
     {
         const bool expanded =
             !item->isExpanded();
@@ -1345,6 +1348,35 @@ void Sidebar::onItemClicked(
     }
 
     emit itemSelected(data);
+}
+
+void Sidebar::selectMyInfoSection(
+    const QString& sectionName
+    )
+{
+    auto* myInfoRoot =
+        m_nodes.value("my_info", nullptr);
+
+    if (!myInfoRoot)
+    {
+        return;
+    }
+
+    myInfoRoot->setExpanded(true);
+
+    auto* sectionItem =
+        childWithText(
+            myInfoRoot,
+            sectionName
+            );
+
+    if (!sectionItem)
+    {
+        return;
+    }
+
+    m_tree->setCurrentItem(sectionItem);
+    m_tree->scrollToItem(sectionItem);
 }
 
 void Sidebar::selectSubPrepSection(

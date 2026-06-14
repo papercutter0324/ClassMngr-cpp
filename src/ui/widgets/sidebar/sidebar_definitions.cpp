@@ -19,7 +19,19 @@ const QList<TreeNodeSpec>
             {
                 {
                     "",
-                    QObject::tr("Schedule"),
+                    QObject::tr("My Information"),
+                    NodeType::Page
+                },
+
+                {
+                    "",
+                    QObject::tr("Class Schedule"),
+                    NodeType::Page
+                },
+
+                {
+                    "",
+                    QObject::tr("Monthly Calendar"),
                     NodeType::Page
                 }
             }
