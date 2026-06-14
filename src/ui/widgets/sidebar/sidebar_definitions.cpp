@@ -82,7 +82,15 @@ const QList<TreeNodeSpec>
                     QObject::tr("Vacation Calendar"),
                     NodeType::Url,
                     {},
-                    "https://docs.google.com"
+                    "https://docs.google.com/spreadsheets/d/14eL7sVctYRWXkyAFb7OePbHEdmZNTdxiv6dxd4Qo-fQ/"
+                },
+
+                {
+                    "",
+                    QObject::tr("Yearly Calendar"),
+                    NodeType::Url,
+                    {},
+                    "https://docs.google.com/spreadsheets/d/18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/edit"
                 },
 
                 {
@@ -90,7 +98,31 @@ const QList<TreeNodeSpec>
                     QObject::tr("Training Website"),
                     NodeType::Url,
                     {},
-                    "https://sites.google.com"
+                    "https://sites.google.com/view/dybtraining/home"
+                },
+
+                {
+                    "",
+                    QObject::tr("NET Website"),
+                    NodeType::Url,
+                    {},
+                    "https://sites.google.com/view/dybnet/home"
+                },
+
+                {
+                    "",
+                    QObject::tr("LMS Website"),
+                    NodeType::Url,
+                    {},
+                    "https://lms.choisun.co.kr/login/login.php"
+                },
+
+                {
+                    "",
+                    QObject::tr("Highlights Library"),
+                    NodeType::Url,
+                    {},
+                    "https://library.highlights.com/member/login/?sType=t"
                 }
             }
         },
