@@ -25,6 +25,9 @@
 namespace
 {
 
+constexpr int TeacherNameFieldWidth = 140;
+constexpr int TeacherRoomNumberFieldWidth = 115;
+
 void applyTeacherFieldWidth(
     QWidget* widget
     )
@@ -44,6 +47,30 @@ void applyTeacherFieldWidth(
 
     widget->setSizePolicy(
         QSizePolicy::Maximum,
+        QSizePolicy::Preferred
+        );
+}
+
+void applyFixedTeacherFieldWidth(
+    QWidget* widget,
+    int width
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    widget->setMinimumWidth(
+        width
+        );
+
+    widget->setMaximumWidth(
+        width
+        );
+
+    widget->setSizePolicy(
+        QSizePolicy::Fixed,
         QSizePolicy::Preferred
         );
 }
@@ -192,6 +219,19 @@ void TeacherInfoPage::buildUi()
     m_teacherKrEdit = new QLineEdit;
     m_teacherEnEdit = new QLineEdit;
     m_roomNumberEdit = new QLineEdit;
+
+    applyFixedTeacherFieldWidth(
+        m_teacherKrEdit,
+        TeacherNameFieldWidth
+        );
+    applyFixedTeacherFieldWidth(
+        m_teacherEnEdit,
+        TeacherNameFieldWidth
+        );
+    applyFixedTeacherFieldWidth(
+        m_roomNumberEdit,
+        TeacherRoomNumberFieldWidth
+        );
 
     detailsGrid->addWidget(
         createFieldLabel("Korean Name"), 0, 0);

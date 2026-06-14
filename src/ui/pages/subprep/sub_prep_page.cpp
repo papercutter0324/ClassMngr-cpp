@@ -39,9 +39,9 @@ namespace
 constexpr int AutosaveDelayMs = 750;
 constexpr int FieldMinimumWidth = 190;
 constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
-constexpr int CampusFieldWidth = FieldMinimumWidth * 4 / 5;
-constexpr int OfficeNumberFieldWidth = FieldMinimumWidth * 55 / 100;
-constexpr int CompactFieldWidth = FieldMinimumWidth * 9 / 10;
+constexpr int CampusFieldWidth = 150;
+constexpr int OfficeNumberFieldWidth = 115;
+constexpr int CompactFieldWidth = 170;
 constexpr int TextEditVerticalPadding = 24;
 
 const QString NotAvailableText =
