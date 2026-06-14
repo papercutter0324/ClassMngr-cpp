@@ -39,6 +39,9 @@ namespace
 constexpr int AutosaveDelayMs = 750;
 constexpr int FieldMinimumWidth = 190;
 constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
+constexpr int CampusFieldWidth = FieldMinimumWidth * 4 / 5;
+constexpr int OfficeNumberFieldWidth = FieldMinimumWidth * 55 / 100;
+constexpr int CompactFieldWidth = FieldMinimumWidth * 9 / 10;
 constexpr int TextEditVerticalPadding = 24;
 
 const QString NotAvailableText =
@@ -92,6 +95,28 @@ void applyFieldWidth(
         );
     widget->setMaximumWidth(
         FieldMaximumWidth
+        );
+}
+
+void applyFixedFieldWidth(
+    QWidget* widget,
+    int width
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    widget->setMinimumWidth(
+        width
+        );
+    widget->setMaximumWidth(
+        width
+        );
+    widget->setSizePolicy(
+        QSizePolicy::Fixed,
+        widget->sizePolicy().verticalPolicy()
         );
 }
 
@@ -411,6 +436,27 @@ QLabel* createValueLabel(
     return label;
 }
 
+QLineEdit* createReadOnlyValueEdit(
+    const QString& value,
+    QWidget* parent
+    )
+{
+    auto* edit =
+        new QLineEdit(
+            valueOrNa(value),
+            parent
+            );
+
+    edit->setReadOnly(true);
+    edit->setCursorPosition(0);
+    applyFixedFieldWidth(
+        edit,
+        CompactFieldWidth
+        );
+
+    return edit;
+}
+
 void addInfoRow(
     QGridLayout* grid,
     int row,
@@ -463,7 +509,7 @@ void addHorizontalInfoField(
         new QLabel(labelText, parent);
 
     label->setContentsMargins(
-        UiConstants::ClassInfo::Form::LabelIndent,
+        0,
         0,
         0,
         0
@@ -476,7 +522,7 @@ void addHorizontalInfoField(
         Qt::AlignLeft
         );
     grid->addWidget(
-        createValueLabel(value, parent),
+        createReadOnlyValueEdit(value, parent),
         valueRow,
         column,
         Qt::AlignLeft | Qt::AlignTop
@@ -908,21 +954,55 @@ void SubPrepPage::buildUi()
     m_photocopierCodeEdit =
         new QLineEdit(campusCard);
 
-    for (auto* widget : {
-             static_cast<QWidget*>(m_campusCombo),
-             static_cast<QWidget*>(m_officeNumberEdit),
-             static_cast<QWidget*>(m_officeWifiEdit),
-             static_cast<QWidget*>(m_officeWifiPasswordEdit),
-             static_cast<QWidget*>(m_photocopierCodeEdit)
-         })
-    {
-        applyFieldWidth(widget);
-    }
+    applyFixedFieldWidth(
+        m_campusCombo,
+        CampusFieldWidth
+        );
+    applyFixedFieldWidth(
+        m_officeNumberEdit,
+        OfficeNumberFieldWidth
+        );
+    applyFixedFieldWidth(
+        m_officeWifiEdit,
+        CompactFieldWidth
+        );
+    applyFixedFieldWidth(
+        m_officeWifiPasswordEdit,
+        CompactFieldWidth
+        );
+    applyFixedFieldWidth(
+        m_photocopierCodeEdit,
+        CompactFieldWidth
+        );
 
     campusGrid->addWidget(
         createFieldLabel(tr("Campus"), campusCard),
         0,
         0,
+        Qt::AlignLeft
+        );
+    campusGrid->addWidget(
+        createFieldLabel(tr("Office Number"), campusCard),
+        0,
+        1,
+        Qt::AlignLeft
+        );
+    campusGrid->addWidget(
+        createFieldLabel(tr("Office WiFi"), campusCard),
+        0,
+        2,
+        Qt::AlignLeft
+        );
+    campusGrid->addWidget(
+        createFieldLabel(tr("WiFi Password"), campusCard),
+        0,
+        3,
+        Qt::AlignLeft
+        );
+    campusGrid->addWidget(
+        createFieldLabel(tr("Photocopier Code"), campusCard),
+        0,
+        4,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
@@ -932,54 +1012,30 @@ void SubPrepPage::buildUi()
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        createFieldLabel(tr("Office Number"), campusCard),
-        2,
-        0,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        createFieldLabel(tr("Office WiFi"), campusCard),
-        2,
-        1,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        createFieldLabel(tr("WiFi Password"), campusCard),
-        2,
-        2,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        createFieldLabel(tr("Photocopier Code"), campusCard),
-        2,
-        3,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
         m_officeNumberEdit,
-        3,
-        0,
+        1,
+        1,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
         m_officeWifiEdit,
-        3,
         1,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        m_officeWifiPasswordEdit,
-        3,
         2,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        m_photocopierCodeEdit,
-        3,
+        m_officeWifiPasswordEdit,
+        1,
         3,
         Qt::AlignLeft
         );
-    campusGrid->setColumnStretch(4, 1);
+    campusGrid->addWidget(
+        m_photocopierCodeEdit,
+        1,
+        4,
+        Qt::AlignLeft
+        );
+    campusGrid->setColumnStretch(5, 1);
 
     campusCard->contentLayout()->addLayout(
         campusGrid
