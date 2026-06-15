@@ -207,6 +207,8 @@ private:
 
     bool m_overflowMarqueeEnabled = false;
 
+    QTreeWidgetItem* m_previousCurrentItem = nullptr;
+
 
 
     // =====================================================

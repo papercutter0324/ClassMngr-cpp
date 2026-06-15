@@ -43,6 +43,7 @@ public:
     void scrollToSection(
         SubPrepSection section
         );
+    QString currentSectionName() const;
 
 protected:
     void showEvent(
@@ -107,6 +108,7 @@ private:
 
     bool m_loading = false;
     bool m_dirty = false;
+    SubPrepSection m_currentSection = SubPrepSection::ImportantInformation;
     int m_currentCampusId = -1;
     QList<CampusRecord> m_campuses;
 

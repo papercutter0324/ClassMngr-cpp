@@ -46,6 +46,7 @@ public:
     void scrollToSection(
         MyInfoSection section
         );
+    QString currentSectionName() const;
 
 signals:
     void classInfoSaved(
@@ -111,6 +112,7 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     SaveMode m_saveMode = SaveMode::Automatic;
+    MyInfoSection m_currentSection = MyInfoSection::MyInformation;
 
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;

@@ -651,6 +651,9 @@ void SubPrepPage::scrollToSection(
     SubPrepSection section
     )
 {
+    m_currentSection =
+        section;
+
     QLabel* target = nullptr;
 
     switch (section)
@@ -698,6 +701,23 @@ void SubPrepPage::scrollToSection(
             }
         }
         );
+}
+
+QString SubPrepPage::currentSectionName() const
+{
+    switch (m_currentSection)
+    {
+    case SubPrepSection::ImportantInformation:
+        return tr("Important Information");
+
+    case SubPrepSection::ClassInformation:
+        return tr("Class Information");
+
+    case SubPrepSection::SubComments:
+        return tr("Sub Comments");
+    }
+
+    return QString();
 }
 
 void SubPrepPage::showEvent(

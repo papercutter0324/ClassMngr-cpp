@@ -247,6 +247,9 @@ void MyInfoPage::scrollToSection(
     MyInfoSection section
     )
 {
+    m_currentSection =
+        section;
+
     QWidget* target = nullptr;
 
     switch (section)
@@ -293,6 +296,23 @@ void MyInfoPage::scrollToSection(
             }
         }
         );
+}
+
+QString MyInfoPage::currentSectionName() const
+{
+    switch (m_currentSection)
+    {
+    case MyInfoSection::ClassSchedule:
+        return tr("Class Schedule");
+
+    case MyInfoSection::MyInformation:
+        return tr("My Information");
+
+    case MyInfoSection::MonthlyCalendar:
+        return tr("Monthly Calendar");
+    }
+
+    return QString();
 }
 
 void MyInfoPage::showEvent(

@@ -14,6 +14,30 @@
 
 
 
+namespace
+{
+bool itemContainsCurrentSelection(
+    QTreeWidgetItem* root,
+    QTreeWidgetItem* current
+    )
+{
+    while (current)
+    {
+        if (current == root)
+        {
+            return true;
+        }
+
+        current =
+            current->parent();
+    }
+
+    return false;
+}
+}
+
+
+
 // =========================================================
 // Constructor
 // =========================================================
@@ -161,6 +185,20 @@ void Sidebar::setupSignals()
         &Sidebar::onItemClicked
         );
 
+    connect(
+        m_tree,
+        &QTreeWidget::currentItemChanged,
+        this,
+        [this](
+            QTreeWidgetItem*,
+            QTreeWidgetItem* previous
+            )
+        {
+            m_previousCurrentItem =
+                previous;
+        }
+        );
+
     m_tree->setContextMenuPolicy(
         Qt::CustomContextMenu
         );
@@ -211,6 +249,9 @@ void Sidebar::setupSignals()
 
 void Sidebar::buildTree()
 {
+    m_previousCurrentItem =
+        nullptr;
+
     m_tree->clear();
 
     m_nodes.clear();
@@ -752,6 +793,12 @@ void Sidebar::onItemClicked(
         || item == m_nodes.value("campus_info")
         )
     {
+        const bool previousSelectionInsideGroup =
+            itemContainsCurrentSelection(
+                item,
+                m_previousCurrentItem
+                );
+
         const bool expanded =
             !item->isExpanded();
 
@@ -759,7 +806,7 @@ void Sidebar::onItemClicked(
             expanded
             );
 
-        if (!expanded)
+        if (!expanded && previousSelectionInsideGroup)
         {
             m_tree->clearSelection();
             return;

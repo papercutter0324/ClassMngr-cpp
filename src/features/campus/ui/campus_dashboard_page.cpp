@@ -393,6 +393,29 @@ QString CampusDashboardPage::currentSectionName() const
         return tr("Information");
     }
 
+    QWidget* currentTab =
+        m_tabs->currentWidget();
+
+    if (currentTab == m_informationTab)
+    {
+        return tr("Information");
+    }
+
+    if (currentTab == m_directionsTab)
+    {
+        return tr("Directions");
+    }
+
+    if (currentTab == m_housingTab)
+    {
+        return tr("Housing");
+    }
+
+    if (currentTab == m_mapTab)
+    {
+        return tr("Map");
+    }
+
     return m_tabs->tabText(
         m_tabs->currentIndex()
         );
@@ -2890,35 +2913,12 @@ void CampusDashboardPage::updateHousingCompleteAddresses()
 
 void CampusDashboardPage::emitCurrentSectionChanged()
 {
-    if (!m_tabs)
-    {
-        return;
-    }
+    const QString sectionName =
+        currentSectionName();
 
-    QWidget* currentTab =
-        m_tabs->currentWidget();
-
-    if (currentTab == m_informationTab)
+    if (!sectionName.isEmpty())
     {
-        emit sectionChanged(tr("Information"));
-        return;
-    }
-
-    if (currentTab == m_directionsTab)
-    {
-        emit sectionChanged(tr("Directions"));
-        return;
-    }
-
-    if (currentTab == m_housingTab)
-    {
-        emit sectionChanged(tr("Housing"));
-        return;
-    }
-
-    if (currentTab == m_mapTab)
-    {
-        emit sectionChanged(tr("Map"));
+        emit sectionChanged(sectionName);
     }
 }
 

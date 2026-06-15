@@ -107,6 +107,12 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (!data.path.isEmpty() && data.path.first() == tr("Campus Directory"))
+        {
+            handleCampus(data);
+            return;
+        }
+
         return;
 
     case NodeType::Page:
@@ -264,6 +270,9 @@ void NavigationController::handleSubPrep(
 
     if (rootClick && alreadyShowingSubPrep)
     {
+        m_sidebar->selectSubPrepSection(
+            m_pages->subPrepPage()->currentSectionName()
+            );
         return;
     }
 
@@ -316,6 +325,9 @@ void NavigationController::handleMyInfo(
 
     if (rootClick && alreadyShowingMyInfo)
     {
+        m_sidebar->selectMyInfoSection(
+            m_pages->myInfoPage()->currentSectionName()
+            );
         return;
     }
 
@@ -377,7 +389,7 @@ void NavigationController::handleCampus(
         return;
     }
 
-    if (!m_pages->confirmCurrentPageCanLeave())
+    if (!alreadyShowingCampus && !m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
@@ -385,7 +397,9 @@ void NavigationController::handleCampus(
     m_pages->showPage(PageType::CampusDashboard);
 
     const QString pageName =
-        data.path.last();
+        data.path.size() >= 2
+            ? data.path.last()
+            : tr("Information");
 
     if (pageName == tr("Directions"))
     {
