@@ -33,7 +33,8 @@ PageManager::PageManager(
 // =========================================================
 
 void PageManager::initialize(
-    ApplicationServices* services
+    ApplicationServices* services,
+    bool adminMode
     )
 {
     if (m_initialized)
@@ -43,6 +44,7 @@ void PageManager::initialize(
 
     m_initialized = true;
     m_services = services;
+    m_adminMode = adminMode;
 
     m_schedulePage =
         new SchedulePage(
@@ -75,7 +77,10 @@ void PageManager::initialize(
             );
 
     m_campusDashboard =
-        new CampusDashboardPage(this);
+        new CampusDashboardPage(
+            m_adminMode,
+            this
+            );
 
     m_rosterPage =
         new RosterPage(

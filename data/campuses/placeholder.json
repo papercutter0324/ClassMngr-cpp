@@ -1,0 +1,41 @@
+{
+    "address": "123 Example-ro, Sample District, Seoul",
+    "arrival_info": "Check in at the front desk and ask for the ClassMngr sample classroom.",
+    "building_name": "Sample Learning Center",
+    "campus_name": "Placeholder",
+    "housing_locations": [
+        {
+            "en": {
+                "addr_note": "Use the south entrance after 8 PM.",
+                "city_district": "Sample-gu",
+                "line1": "45 Sample Housing Road",
+                "line2": "Apt. 101",
+                "postal_code": "00000",
+                "province": "Seoul"
+            },
+            "kr": {
+                "addr_note": "Use the south entrance after 8 PM.",
+                "city_district": "Sample Korean District",
+                "line1": "45 Sample Korean Housing Road",
+                "line2": "Unit 101",
+                "postal_code": "00000",
+                "province": "Sample Korean Province"
+            },
+            "name": "Placeholder Housing"
+        }
+    ],
+    "id": "placeholder",
+    "image_main": "Sample map image path or URL",
+    "office_number": "Room 401",
+    "office_wifi": "Placeholder-Office-WiFi",
+    "office_wifi_password": "sample-password",
+    "phone_number": "02-0000-0000",
+    "photocopier_code": "0000",
+    "printer_name": "Placeholder Printer",
+    "printer_steps": "Open system printer settings.\nAdd a network printer.\nChoose Placeholder Printer.",
+    "transit_steps": [
+        "Take Line 2 to Sample Station.",
+        "Use Exit 3 and walk straight for two blocks.",
+        "Turn right at the coffee shop and enter the glass-front building."
+    ]
+}

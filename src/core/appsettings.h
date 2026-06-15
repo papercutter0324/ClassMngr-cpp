@@ -18,6 +18,9 @@ inline constexpr auto AdminModeArgument =
 inline constexpr auto DefaultDatabasePath =
     "data/app.db";
 
+inline constexpr auto DefaultCampusDirectory =
+    "data/campuses";
+
 inline constexpr int MinimumSplashDurationMs =
     2000;
 

@@ -77,7 +77,15 @@ void MainWindow::initializeServices()
 
 void MainWindow::initializeWindow()
 {
-    setWindowTitle(AppSettings::ApplicationName);
+    QString windowTitle =
+        QString::fromUtf8(AppSettings::ApplicationName);
+
+    if (m_isAdmin)
+    {
+        windowTitle += tr(" [ADMIN]");
+    }
+
+    setWindowTitle(windowTitle);
 
     ui->splitter->setChildrenCollapsible(false);
 
@@ -96,7 +104,8 @@ void MainWindow::initializePages()
     m_pages = ui->pagesWidget;
 
     m_pages->initialize(
-        m_services.get()
+        m_services.get(),
+        m_isAdmin
         );
 }
 
@@ -237,6 +246,24 @@ void MainWindow::connectSignals()
         m_sidebarController.get(),
         &SidebarController::handleTeacherSaved
         );
+
+    if (m_actions.manageCampuses)
+    {
+        connect(
+            m_actions.manageCampuses,
+            &QAction::triggered,
+            this,
+            [this]()
+            {
+                if (!m_pages || !m_pages->confirmCurrentPageCanLeave())
+                {
+                    return;
+                }
+
+                m_pages->showPage(PageType::CampusDashboard);
+            }
+            );
+    }
 }
 
 void MainWindow::showEvent(QShowEvent* event)

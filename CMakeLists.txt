@@ -58,6 +58,7 @@ qt_add_executable(ClassMngr
     src/core/enums/schedule_type.h
 
     src/models/campus.h
+    src/models/campus_info.h
     src/models/calendar_event.h
     src/models/class_conflict.h
     src/models/class_info.h
@@ -73,6 +74,8 @@ qt_add_executable(ClassMngr
 
     src/services/dataservice.cpp
     src/services/dataservice.h
+    src/services/campus_json_repository.cpp
+    src/services/campus_json_repository.h
     src/services/theme_service.cpp
     src/services/theme_service.h
 

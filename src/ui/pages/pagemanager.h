@@ -66,7 +66,8 @@ public:
     // =====================================================
 
     void initialize(
-        ApplicationServices* services
+        ApplicationServices* services,
+        bool adminMode
         );
 
 
@@ -128,6 +129,7 @@ private:
     // =====================================================
 
     bool m_initialized = false;
+    bool m_adminMode = false;
 
     // =====================================================
     // Services

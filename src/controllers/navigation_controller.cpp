@@ -7,6 +7,7 @@
 
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/class/class_notes_page.h"
+#include "ui/pages/campus/campus_dashboard_page.h"
 #include "ui/pages/myinfo/my_info_page.h"
 #include "ui/pages/pagemanager.h"
 #include "ui/pages/roster/roster_page.h"
@@ -318,14 +319,38 @@ void NavigationController::handleCampus(
     const NavigationData& data
     )
 {
-    Q_UNUSED(data);
-
     if (!m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
 
     m_pages->showPage(PageType::CampusDashboard);
+
+    if (data.path.isEmpty())
+    {
+        return;
+    }
+
+    const QString pageName =
+        data.path.last();
+
+    if (pageName == tr("Campus Directions"))
+    {
+        m_pages->campusDashboard()->showDirections();
+        return;
+    }
+
+    if (pageName == tr("Campus Information"))
+    {
+        m_pages->campusDashboard()->showInformation();
+        return;
+    }
+
+    if (pageName == tr("Campus Map"))
+    {
+        m_pages->campusDashboard()->showMap();
+        return;
+    }
 }
 
 void NavigationController::handleClass(
