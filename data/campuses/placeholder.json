@@ -1,25 +1,54 @@
 {
-    "address": "123 Example-ro, Sample District, Seoul",
+    "address": "[Recipient's Name]\n102-dong 304-ho\n23 Sajik-ro-3-gil\nJongno-gu, Seoul  30174",
     "arrival_info": "Check in at the front desk and ask for the ClassMngr sample classroom.",
     "building_name": "Sample Learning Center",
+    "campus_code": "PLH",
     "campus_name": "Placeholder",
+    "directions": {
+        "en": {
+            "addr_note": "Check in at the front desk.",
+            "building_name": "Sample Learning Center",
+            "city": "",
+            "city_district": "Jongno-gu",
+            "district": "Jongno-gu",
+            "line1": "23 Sajik-ro-3-gil",
+            "line2": "102-dong 304-ho",
+            "postal_code": "30174",
+            "province": "Seoul"
+        },
+        "kr": {
+            "addr_note": "프런트 데스크에서 체크인하세요.",
+            "building_name": "샘플 학습 센터",
+            "city": "",
+            "city_district": "종로구",
+            "district": "종로구",
+            "line1": "사직로3길 23",
+            "line2": "102동 304호",
+            "postal_code": "30174",
+            "province": "서울특별시"
+        }
+    },
     "housing_locations": [
         {
             "en": {
                 "addr_note": "Use the south entrance after 8 PM.",
-                "city_district": "Sample-gu",
-                "line1": "45 Sample Housing Road",
-                "line2": "Apt. 101",
-                "postal_code": "00000",
-                "province": "Seoul"
+                "city": "Seongnam-si",
+                "city_district": "Seongnam-si Bundang-gu",
+                "district": "Bundang-gu",
+                "line1": "Sajik-ro-3-gil 23",
+                "line2": "102-dong 304-ho",
+                "postal_code": "19535",
+                "province": "Gyeonggi-do"
             },
             "kr": {
-                "addr_note": "Use the south entrance after 8 PM.",
-                "city_district": "Sample Korean District",
-                "line1": "45 Sample Korean Housing Road",
-                "line2": "Unit 101",
-                "postal_code": "00000",
-                "province": "Sample Korean Province"
+                "addr_note": "오후 8시 이후에는 남문을 이용하세요.",
+                "city": "",
+                "city_district": "종로구",
+                "district": "종로구",
+                "line1": "사직로3길 23",
+                "line2": "102동 304호",
+                "postal_code": "30174",
+                "province": "서울특별시"
             },
             "name": "Placeholder Housing"
         }
@@ -31,6 +60,8 @@
     "office_wifi_password": "sample-password",
     "phone_number": "02-0000-0000",
     "photocopier_code": "0000",
+    "printer_driver_url": "",
+    "printer_driver_url_unavailable": true,
     "printer_name": "Placeholder Printer",
     "printer_steps": "Open system printer settings.\nAdd a network printer.\nChoose Placeholder Printer.",
     "transit_steps": [

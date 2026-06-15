@@ -141,25 +141,31 @@ const QList<TreeNodeSpec>
 
         {
             "campus_info",
-            QObject::tr("Campus Info"),
+            QObject::tr("Campus Directory"),
             NodeType::Root,
 
             {
                 {
                     "",
-                    QObject::tr("Campus Directions"),
+                    QObject::tr("Information"),
                     NodeType::Page
                 },
 
                 {
                     "",
-                    QObject::tr("Campus Information"),
+                    QObject::tr("Directions"),
                     NodeType::Page
                 },
 
                 {
                     "",
-                    QObject::tr("Campus Map"),
+                    QObject::tr("Housing"),
+                    NodeType::Page
+                },
+
+                {
+                    "",
+                    QObject::tr("Map"),
                     NodeType::Page
                 }
             }

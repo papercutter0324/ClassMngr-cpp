@@ -106,7 +106,7 @@ void NavigationController::handleNavigation(
             return;
         }
 
-        if (data.path.first() == tr("Campus Info"))
+        if (data.path.first() == tr("Campus Directory"))
         {
             handleCampus(data);
             return;
@@ -334,19 +334,25 @@ void NavigationController::handleCampus(
     const QString pageName =
         data.path.last();
 
-    if (pageName == tr("Campus Directions"))
+    if (pageName == tr("Directions"))
     {
         m_pages->campusDashboard()->showDirections();
         return;
     }
 
-    if (pageName == tr("Campus Information"))
+    if (pageName == tr("Information"))
     {
         m_pages->campusDashboard()->showInformation();
         return;
     }
 
-    if (pageName == tr("Campus Map"))
+    if (pageName == tr("Housing"))
+    {
+        m_pages->campusDashboard()->showHousing();
+        return;
+    }
+
+    if (pageName == tr("Map"))
     {
         m_pages->campusDashboard()->showMap();
         return;
