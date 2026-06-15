@@ -12,6 +12,7 @@
 #include "models/teacher.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 #include "utils/sidebar_node_naming.h"
 
 #include <QFont>
@@ -53,6 +54,8 @@ ClassInfoPage::ClassInfoPage(
     , m_services(services)
 {
     Q_ASSERT(m_services);
+
+    setProperty("role", UiRoles::ClassInfo);
 
     buildUi();
 

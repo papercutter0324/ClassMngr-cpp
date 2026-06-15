@@ -1,5 +1,8 @@
 #include "bottom_bar_builder.h"
 
+#include "ui/styles/role_style_registry.h"
+#include "ui/styles/roles.h"
+
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QSizePolicy>
@@ -70,7 +73,10 @@ QPushButton* BottomBarBuilder::addButton(
 {
     auto* button = new QPushButton(text);
 
-    button->setProperty("role", "button_footer");
+    RoleStyleRegistry::apply(
+        button,
+        UiRoles::ButtonFooter
+        );
 
     if (expand)
     {

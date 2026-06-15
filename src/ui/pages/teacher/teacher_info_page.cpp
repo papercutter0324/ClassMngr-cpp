@@ -5,6 +5,7 @@
 #include "models/teacher.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 #include "ui/widgets/sectioncards/teacher_section_card.h"
 #include "utils/sidebar_node_naming.h"
 
@@ -129,6 +130,8 @@ TeacherInfoPage::TeacherInfoPage(
     : BasePage(parent),
       m_services(services)
 {
+    setProperty("role", UiRoles::TeacherInfo);
+
     buildUi();
 
     m_autosaveTimer =

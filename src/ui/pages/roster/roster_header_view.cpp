@@ -3,6 +3,7 @@
 #include "core/fontmanager.h"
 #include "ui/pages/roster/roster_column_layout_controller.h"
 #include "ui/pages/roster/roster_constants.h"
+#include "ui/styles/roles.h"
 
 #include <QAbstractItemModel>
 #include <QPainter>
@@ -14,6 +15,13 @@ RosterHeaderView::RosterHeaderView(
     )
     : QHeaderView(orientation, parent)
 {
+    setProperty(
+        "role",
+        orientation == Qt::Horizontal
+            ? UiRoles::RosterHeader
+            : UiRoles::RosterVerticalHeader
+        );
+
     setFixedHeight(
         RosterUi::HeaderHeight
         );
@@ -73,7 +81,7 @@ void RosterHeaderView::paintEvent(
     }
 
     painter.setPen(
-        QColor(55, 65, 81)
+        palette().color(QPalette::Dark)
         );
 
     painter.drawLine(
@@ -156,7 +164,7 @@ void RosterHeaderView::paintGroupRow(
             );
 
         painter.setPen(
-            QPen(QColor(55, 65, 81), 2)
+            QPen(palette().color(QPalette::Dark), 2)
             );
 
         painter.drawLine(
@@ -234,7 +242,7 @@ void RosterHeaderView::paintColumnRow(
             );
 
         painter.setPen(
-            QColor(156, 163, 175)
+            palette().color(QPalette::Mid)
             );
 
         painter.drawLine(
@@ -247,7 +255,7 @@ void RosterHeaderView::paintColumnRow(
         if (m_controller->isGroupBoundaryAfter(column))
         {
             painter.setPen(
-                QPen(QColor(55, 65, 81), 2)
+                QPen(palette().color(QPalette::Dark), 2)
                 );
 
             painter.drawLine(
@@ -261,7 +269,7 @@ void RosterHeaderView::paintColumnRow(
         if (m_controller->isGroupBoundaryBefore(column))
         {
             painter.setPen(
-                QPen(QColor(55, 65, 81), 2)
+                QPen(palette().color(QPalette::Dark), 2)
                 );
 
             painter.drawLine(

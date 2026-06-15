@@ -43,6 +43,8 @@ qt_add_executable(ClassMngr
     src/controllers/file_controller.h
     src/controllers/navigation_controller.cpp
     src/controllers/navigation_controller.h
+    src/controllers/theme_controller.cpp
+    src/controllers/theme_controller.h
 
     src/core/appsettings.h
     src/core/application_services.cpp
@@ -136,6 +138,10 @@ qt_add_executable(ClassMngr
     src/ui/state/option_state.h
     src/ui/state/option_state_keys.h
 
+    src/ui/styles/role_style_registry.cpp
+    src/ui/styles/role_style_registry.h
+    src/ui/styles/roles.h
+
     src/ui/utils/widget_sizing.h
     src/ui/utils/unsaved_changes_dialog.cpp
     src/ui/utils/unsaved_changes_dialog.h
@@ -190,6 +196,8 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/app_icon.ico
         resources/assets/icons/icon_256x256.png
         resources/assets/splash/splash.png
+        resources/assets/styles/dark.qss
+        resources/assets/styles/light.qss
 )
 
 set_source_files_properties(

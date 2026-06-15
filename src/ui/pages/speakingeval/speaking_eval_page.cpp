@@ -7,6 +7,7 @@
 #include "services/dataservice.h"
 #include "ui/pages/speakingeval/speaking_eval_delegate.h"
 #include "ui/pages/speakingeval/speaking_eval_model.h"
+#include "ui/styles/roles.h"
 
 #include <QAbstractButton>
 #include <QDesktopServices>
@@ -247,6 +248,8 @@ SpeakingEvalPage::SpeakingEvalPage(
     : BasePage(parent)
     , m_services(services)
 {
+    setProperty("role", UiRoles::SpeakingEvals);
+
     buildUi();
 
     m_autosaveTimer =

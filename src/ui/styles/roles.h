@@ -1,0 +1,61 @@
+#pragma once
+
+namespace UiRoles
+{
+inline constexpr auto Card =
+    "card";
+
+inline constexpr auto ButtonFooter =
+    "button_footer";
+
+inline constexpr auto Primary =
+    "primary";
+
+inline constexpr auto Input =
+    "input";
+
+inline constexpr auto RosterPage =
+    "roster_page";
+
+inline constexpr auto ClassInfo =
+    "class_info";
+
+inline constexpr auto TeacherInfo =
+    "teacher_info";
+
+inline constexpr auto MyInfo =
+    "my_info";
+
+inline constexpr auto SpeakingEvals =
+    "speaking_evals";
+
+inline constexpr auto SubPrep =
+    "sub_prep";
+
+inline constexpr auto RosterTable =
+    "roster_table";
+
+inline constexpr auto RosterHeader =
+    "roster_header";
+
+inline constexpr auto RosterVerticalHeader =
+    "roster_vertical_header";
+
+inline constexpr auto Schedule =
+    "schedule";
+
+inline constexpr auto ScheduleTable =
+    "schedule_table";
+
+inline constexpr auto ScheduleCell =
+    "schedule_cell";
+
+inline constexpr auto ScheduleMulti =
+    "schedule_multi";
+
+inline constexpr auto ScheduleEmpty =
+    "schedule_empty";
+
+inline constexpr auto Separator =
+    "separator";
+}

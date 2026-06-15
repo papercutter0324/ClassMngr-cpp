@@ -1,5 +1,6 @@
 #include "roster_table_view.h"
 
+#include "ui/styles/roles.h"
 #include "ui/pages/roster/roster_column_layout_controller.h"
 
 #include <QApplication>
@@ -27,6 +28,10 @@ public:
         : QHeaderView(Qt::Vertical, table),
           m_table(table)
     {
+        setProperty(
+            "role",
+            UiRoles::RosterVerticalHeader
+            );
     }
 
 protected:
@@ -84,6 +89,11 @@ RosterTableView::RosterTableView(
     )
     : QTableView(parent)
 {
+    setProperty(
+        "role",
+        UiRoles::RosterTable
+        );
+
     setShowGrid(false);
     setAlternatingRowColors(false);
     setSelectionBehavior(QAbstractItemView::SelectItems);
@@ -357,7 +367,7 @@ void RosterTableView::paintEvent(
     QPainter painter(viewport());
     painter.setRenderHint(QPainter::Antialiasing, false);
     painter.setPen(
-        QPen(QColor(55, 65, 81), 2)
+        QPen(palette().color(QPalette::Dark), 2)
         );
 
     for (int column = 0; column < model()->columnCount(); ++column)

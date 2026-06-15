@@ -4,6 +4,7 @@
 #include "core/fontmanager.h"
 #include "services/dataservice.h"
 #include "ui/pages/schedule/schedule_editor_dialog.h"
+#include "ui/styles/roles.h"
 
 #include <algorithm>
 #include <QHeaderView>
@@ -111,6 +112,8 @@ SchedulePage::SchedulePage(
     : BasePage(parent)
     , m_services(services)
 {
+    setProperty("role", UiRoles::Schedule);
+
     loadSettings();
     buildUi();
     loadSchedule();
@@ -331,7 +334,7 @@ void SchedulePage::buildUi()
 
     m_table->setProperty(
         "role",
-        "schedule_table"
+        UiRoles::ScheduleTable
         );
 
     m_table->verticalHeader()->setVisible(false);
@@ -935,7 +938,7 @@ QWidget* SchedulePage::createScheduleLabel(
 
     label->setAlignment(Qt::AlignCenter);
     label->setWordWrap(true);
-    label->setProperty("role", "schedule_cell");
+    label->setProperty("role", UiRoles::ScheduleCell);
     label->setProperty("class_id", entry.classId);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setStyleSheet(
@@ -982,7 +985,7 @@ QWidget* SchedulePage::createMultiScheduleLabel(
 
     label->setAlignment(Qt::AlignCenter);
     label->setWordWrap(true);
-    label->setProperty("role", "schedule_multi");
+    label->setProperty("role", UiRoles::ScheduleMulti);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     if (!entries.isEmpty())
@@ -1049,7 +1052,7 @@ QWidget* SchedulePage::createSlotLabel(
         new QLabel(this);
 
     label->setAlignment(Qt::AlignCenter);
-    label->setProperty("role", "schedule_empty");
+    label->setProperty("role", UiRoles::ScheduleEmpty);
     label->setProperty("is_slot_cell", true);
     label->setProperty("day", day);
     label->setProperty("time_label", timeLabel);

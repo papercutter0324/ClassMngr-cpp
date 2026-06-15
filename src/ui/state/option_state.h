@@ -55,10 +55,17 @@ public:
         if (!m_actions.contains(value))
             return;
 
-        if (m_currentValue == value)
+        if (m_hasValue && m_currentValue == value)
+        {
+            if (!m_actions[value]->isChecked())
+            {
+                m_actions[value]->setChecked(true);
+            }
             return;
+        }
 
         m_currentValue = value;
+        m_hasValue = true;
 
         m_actions[value]->setChecked(true);
 
@@ -86,7 +93,14 @@ public:
                 );
 
         if (!m_actions.contains(value))
+        {
+            value = fallback;
+        }
+
+        if (!m_actions.contains(value))
+        {
             return;
+        }
 
         set(value);
     }
@@ -105,5 +119,6 @@ private:
     QActionGroup* m_group = nullptr;
     QHash<T, QAction*> m_actions;
     T m_currentValue{};
+    bool m_hasValue = false;
     QString m_settingsKey;
 };

@@ -1,0 +1,330 @@
+QWidget {
+    background-color: #f6f8fb;
+    color: #111827;
+    selection-background-color: #dbeafe;
+    selection-color: #0f172a;
+}
+
+QMainWindow,
+QDialog,
+QWidget[role="default"],
+QWidget[role="roster_page"],
+QWidget[role="schedule"],
+QWidget[role="speaking_evals"],
+QWidget[role="class_info"],
+QWidget[role="teacher_info"],
+QWidget[role="my_info"],
+QWidget[role="sub_prep"],
+QWidget[role="campus_info"] {
+    background-color: #f6f8fb;
+    color: #111827;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QLabel#pageTitle {
+    color: #101828;
+    font-size: 24pt;
+    font-weight: 700;
+}
+
+QLabel#pageSubtitle,
+QLabel#sectionSubtitle {
+    color: #667085;
+}
+
+QLabel#sectionTitle,
+QLabel[role="header"],
+QLabel[role="section_header"],
+QLabel[role="section_header_center"] {
+    color: #101828;
+    font-weight: 700;
+}
+
+QFrame[role="card"],
+QWidget[role="card"],
+QFrame#sectionCard,
+QWidget#sectionCard {
+    background-color: #ffffff;
+    border: 1px solid #e4e9f1;
+    border-radius: 8px;
+}
+
+QFrame[role="card"]:hover,
+QWidget[role="card"]:hover,
+QFrame#sectionCard:hover,
+QWidget#sectionCard:hover {
+    border-color: #b8c6da;
+}
+
+QFrame[role="separator"] {
+    color: #d0d7e2;
+    background-color: #d0d7e2;
+    max-height: 1px;
+    border: none;
+}
+
+QLineEdit,
+QPlainTextEdit,
+QTextEdit,
+QSpinBox,
+QDoubleSpinBox,
+QComboBox,
+QDateEdit,
+QTimeEdit,
+QDateTimeEdit,
+QWidget[role="input"] {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #d0d7e2;
+    border-radius: 6px;
+    padding: 5px 8px;
+}
+
+QLineEdit:focus,
+QPlainTextEdit:focus,
+QTextEdit:focus,
+QSpinBox:focus,
+QDoubleSpinBox:focus,
+QComboBox:focus,
+QDateEdit:focus,
+QTimeEdit:focus,
+QDateTimeEdit:focus {
+    border-color: #2563eb;
+}
+
+QLineEdit:disabled,
+QPlainTextEdit:disabled,
+QTextEdit:disabled,
+QSpinBox:disabled,
+QDoubleSpinBox:disabled,
+QComboBox:disabled,
+QDateEdit:disabled,
+QTimeEdit:disabled,
+QDateTimeEdit:disabled {
+    background-color: #eef2f7;
+    color: #98a2b3;
+    border-color: #e4e9f1;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #d0d7e2;
+    selection-background-color: #dbeafe;
+    selection-color: #0f172a;
+}
+
+QPushButton {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #d0d7e2;
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 24px;
+}
+
+QPushButton:hover {
+    background-color: #f2f5f9;
+    border-color: #b8c6da;
+}
+
+QPushButton:pressed {
+    background-color: #e8eef6;
+}
+
+QPushButton:disabled {
+    background-color: #eef2f7;
+    color: #98a2b3;
+    border-color: #e4e9f1;
+}
+
+QPushButton#primaryButton,
+QPushButton[role="primary"] {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: 1px solid #2563eb;
+    font-weight: 600;
+}
+
+QPushButton#primaryButton:hover,
+QPushButton[role="primary"]:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+QPushButton#primaryButton:pressed,
+QPushButton[role="primary"]:pressed {
+    background-color: #1e40af;
+    border-color: #1e40af;
+}
+
+QPushButton[role="button_footer"] {
+    background-color: #ffffff;
+    border: 1px solid #d0d7e2;
+    border-radius: 6px;
+    padding: 6px 12px;
+    min-height: 28px;
+}
+
+QPushButton[role="button_footer"]:hover {
+    background-color: #f2f5f9;
+}
+
+QMenuBar {
+    background-color: #ffffff;
+    color: #111827;
+    border-bottom: 1px solid #e4e9f1;
+}
+
+QMenuBar::item {
+    background: transparent;
+    padding: 4px 8px;
+}
+
+QMenuBar::item:selected {
+    background-color: #eef2f7;
+}
+
+QMenu {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #d0d7e2;
+}
+
+QMenu::item {
+    padding: 5px 24px;
+}
+
+QMenu::item:selected {
+    background-color: #dbeafe;
+    color: #0f172a;
+}
+
+QMenu::item:disabled {
+    color: #98a2b3;
+}
+
+QTableView,
+QTableWidget,
+QTableView[role="roster_table"],
+QTableWidget[role="schedule_table"] {
+    background-color: #ffffff;
+    alternate-background-color: #eef2f7;
+    color: #111827;
+    gridline-color: #e4e9f1;
+    border: 1px solid #d0d7e2;
+    selection-background-color: #dbeafe;
+    selection-color: #0f172a;
+}
+
+QTableView::item,
+QTableWidget::item {
+    padding: 4px;
+    border: none;
+}
+
+QHeaderView {
+    background-color: #f6f8fb;
+    color: #475467;
+}
+
+QHeaderView::section {
+    background-color: #eef2f7;
+    color: #475467;
+    border: none;
+    border-right: 1px solid #d0d7e2;
+    border-bottom: 1px solid #d0d7e2;
+    padding: 4px;
+}
+
+QHeaderView::section:hover {
+    background-color: #e4e9f1;
+}
+
+QTableCornerButton::section {
+    background-color: #eef2f7;
+    border: none;
+}
+
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background: transparent;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    border: none;
+    width: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #c2cad6;
+    border-radius: 5px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #98a2b3;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    border: none;
+    height: 10px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: #c2cad6;
+    border-radius: 5px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #98a2b3;
+}
+
+QScrollBar::add-line,
+QScrollBar::sub-line,
+QScrollBar::add-page,
+QScrollBar::sub-page {
+    background: transparent;
+    border: none;
+    width: 0;
+    height: 0;
+}
+
+QLabel[role="schedule_cell"],
+QLabel[role="schedule_multi"] {
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QLabel[role="schedule_empty"] {
+    border-radius: 6px;
+    padding: 6px;
+}
+
+QSplitter::handle {
+    background-color: #e4e9f1;
+}
+
+QToolTip {
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #d0d7e2;
+    padding: 4px;
+}

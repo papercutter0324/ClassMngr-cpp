@@ -5,8 +5,10 @@
 #include "controllers/edit_controller.h"
 #include "controllers/navigation_controller.h"
 #include "controllers/sidebar_controller.h"
+#include "controllers/theme_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
+#include "services/theme_service.h"
 #include "ui/constants/gui_constants.h"
 #include "ui/pages/class/class_info_page.h"
 #include "ui/pages/myinfo/my_info_page.h"
@@ -140,9 +142,12 @@ void MainWindow::connectControllers()
             );
     m_editController->connectActions(m_actions);
 
-    // future:
-    // m_sidebarController.connectActions(m_actions);
-    // m_themeController.connectActions(m_actions);
+    m_themeController =
+        std::make_unique<ThemeController>(
+            m_services->themeService(),
+            this
+            );
+    m_themeController->connectActions(m_actions);
 }
 
 void MainWindow::buildMenus()

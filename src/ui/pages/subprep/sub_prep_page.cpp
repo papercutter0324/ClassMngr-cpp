@@ -8,6 +8,7 @@
 #include "models/teacher.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 #include "ui/widgets/sectioncards/class_info_section_card.h"
 #include "utils/sidebar_node_naming.h"
 
@@ -576,6 +577,8 @@ SubPrepPage::SubPrepPage(
     , m_services(services)
 {
     Q_ASSERT(m_services);
+
+    setProperty("role", UiRoles::SubPrep);
 
     buildUi();
 
@@ -1885,7 +1888,7 @@ void SubPrepPage::rebuildClassInformation()
             new QFrame(m_classInformationContent);
         teacherCard->setProperty(
             "role",
-            "card"
+            UiRoles::Card
             );
         teacherCard->setObjectName(
             "sectionCard"

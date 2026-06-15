@@ -6,6 +6,7 @@
 #include "core/fontmanager.h"
 #include "services/dataservice.h"
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 #include "ui/widgets/sectioncards/class_info_section_card.h"
 #include "ui/widgets/sections/schedule_section_widget.h"
 
@@ -146,6 +147,8 @@ MyInfoPage::MyInfoPage(
     : BasePage(parent)
     , m_services(services)
 {
+    setProperty("role", UiRoles::MyInfo);
+
     buildUi();
 
     m_autosaveTimer =
@@ -545,7 +548,7 @@ void MyInfoPage::buildMyInformationSection()
         new QFrame(m_scrollContent);
     card->setProperty(
         "role",
-        "card"
+        UiRoles::Card
         );
     card->setObjectName(
         "sectionCard"
@@ -700,7 +703,7 @@ void MyInfoPage::buildMonthlyCalendarSection()
         new QFrame(m_scrollContent);
     card->setProperty(
         "role",
-        "card"
+        UiRoles::Card
         );
     card->setObjectName(
         "sectionCard"

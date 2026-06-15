@@ -1,6 +1,7 @@
 #include "class_info_section_card.h"
 
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 
 #include <QLabel>
 
@@ -10,7 +11,7 @@ SectionCard::SectionCard(
     )
     : QFrame(parent)
 {
-    setProperty("role", "card");
+    setProperty("role", UiRoles::Card);
     setObjectName("sectionCard");
 
     m_layout = new QVBoxLayout(this);

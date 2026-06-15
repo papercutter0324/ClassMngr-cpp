@@ -1,6 +1,7 @@
 #include "class_schedule_section.h"
 
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 #include "ui/utils/widget_sizing.h"
 #include "ui/widgets/sectioncards/class_info_section_card.h"
 #include "ui/widgets/sectioncards/class_time_row.h"
@@ -148,7 +149,7 @@ QFrame* createScheduleSeparator(
     auto* separator = new QFrame(parent);
     separator->setFrameShape(QFrame::HLine);
     separator->setFrameShadow(QFrame::Sunken);
-    separator->setProperty("role", "separator");
+    separator->setProperty("role", UiRoles::Separator);
 
     return separator;
 }

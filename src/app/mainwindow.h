@@ -37,6 +37,7 @@ class PageManager;
 class SidebarController;
 class NavigationController;
 class EditController;
+class ThemeController;
 
 // =========================================================
 // Main Window
@@ -128,6 +129,7 @@ private:
     std::unique_ptr<SidebarController> m_sidebarController;
     std::unique_ptr<NavigationController> m_navigationController;
     std::unique_ptr<EditController> m_editController;
+    std::unique_ptr<ThemeController> m_themeController;
 
     // =====================================================
     // State

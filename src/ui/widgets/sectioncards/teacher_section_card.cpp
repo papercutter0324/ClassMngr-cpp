@@ -1,6 +1,7 @@
 #include "teacher_section_card.h"
 
 #include "ui/constants/gui_constants.h"
+#include "ui/styles/roles.h"
 
 #include <QLabel>
 #include <QVBoxLayout>
@@ -8,7 +9,7 @@
 TeacherSectionCard::TeacherSectionCard(const QString& title, QWidget* parent)
     : QFrame(parent)
 {
-    setProperty("role", "card");
+    setProperty("role", UiRoles::Card);
     setObjectName("TeacherSectionCard");
 
     m_layout = new QVBoxLayout(this);

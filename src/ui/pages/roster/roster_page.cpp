@@ -9,6 +9,7 @@
 #include "ui/pages/roster/roster_item_delegate.h"
 #include "ui/pages/roster/roster_model.h"
 #include "ui/pages/roster/roster_table_view.h"
+#include "ui/styles/roles.h"
 
 #include <QAbstractButton>
 #include <QHeaderView>
@@ -36,6 +37,8 @@ RosterPage::RosterPage(
     : BasePage(parent)
     , m_services(services)
 {
+    setProperty("role", UiRoles::RosterPage);
+
     buildUi();
 
     m_autosaveTimer =
