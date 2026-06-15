@@ -26,6 +26,27 @@ NavigationController::NavigationController(
     , m_sidebar(sidebar)
     , m_pages(pages)
 {
+    if (m_pages && m_pages->campusDashboard() && m_sidebar)
+    {
+        connect(
+            m_pages->campusDashboard(),
+            &CampusDashboardPage::sectionChanged,
+            this,
+            [this](const QString& sectionName)
+            {
+                if (
+                    !m_pages
+                    || !m_sidebar
+                    || m_pages->currentWidget() != m_pages->campusDashboard()
+                    )
+                {
+                    return;
+                }
+
+                m_sidebar->selectCampusSection(sectionName);
+            }
+            );
+    }
 }
 
 void NavigationController::handleTeacher(

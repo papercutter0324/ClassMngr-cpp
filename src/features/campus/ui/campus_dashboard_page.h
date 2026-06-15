@@ -167,6 +167,7 @@ private:
     void updateMapPreview();
     void updateDirectionsCompleteAddresses();
     void updateHousingCompleteAddresses();
+    void emitCurrentSectionChanged();
     void setStatus(
         const QString& message
         );

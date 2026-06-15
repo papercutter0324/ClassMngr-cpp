@@ -29,6 +29,36 @@ namespace
 {
 constexpr int AutosaveDebounceMs = 800;
 
+void setStaticToggleButtonWidth(
+    QPushButton* button
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    const QFontMetrics metrics(button->font());
+
+    const int width =
+        qMax(
+            qMax(
+                metrics.horizontalAdvance(QStringLiteral("Show Modern")),
+                metrics.horizontalAdvance(QStringLiteral("Show Classic"))
+                ),
+            qMax(
+                metrics.horizontalAdvance(QStringLiteral("Show Korean")),
+                metrics.horizontalAdvance(QStringLiteral("Show English"))
+                )
+            ) + 32;
+
+    button->setFixedWidth(width);
+    button->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Fixed
+        );
+}
+
 QString jsonString(
     const QJsonObject& object,
     const QString& key
@@ -249,7 +279,10 @@ QWidget* createScrollContainer(
     scroll->setFrameShape(QFrame::NoFrame);
 
     auto* container =
-        new QWidget(scroll);
+        new QFrame(scroll);
+
+    container->setFrameShape(QFrame::StyledPanel);
+    container->setFrameShadow(QFrame::Plain);
 
     auto* containerLayout =
         new QVBoxLayout(container);
@@ -501,10 +534,14 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         new QScrollArea(tab);
 
     scroll->setWidgetResizable(true);
+    scroll->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     scroll->setFrameShape(QFrame::NoFrame);
 
     auto* container =
-        new QWidget(scroll);
+        new QFrame(scroll);
+
+    container->setFrameShape(QFrame::StyledPanel);
+    container->setFrameShadow(QFrame::Plain);
 
     auto* layout =
         new QVBoxLayout(container);
@@ -556,6 +593,8 @@ QWidget* CampusDashboardPage::createDirectionsTab()
             tr("Show Korean"),
             campusRow
             );
+
+    setStaticToggleButtonWidth(m_directionsToggleLanguageButton);
 
     m_lineEdits.append(m_nameEdit);
 
@@ -874,26 +913,33 @@ QWidget* CampusDashboardPage::createHousingTab()
     auto* root =
         new QVBoxLayout(tab);
 
-    root->setContentsMargins(
-        12,
-        12,
-        12,
-        12
-        );
-
-    root->setSpacing(10);
-
     auto* scroll =
         new QScrollArea(tab);
 
     scroll->setWidgetResizable(true);
+    scroll->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     scroll->setFrameShape(QFrame::NoFrame);
 
     auto* container =
-        new QWidget(scroll);
+        new QFrame(scroll);
+
+    container->setFrameShape(QFrame::NoFrame);
+    container->setFrameShadow(QFrame::Plain);
+
+    auto* containerLayout =
+        new QVBoxLayout(container);
+
+    containerLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    containerLayout->setSpacing(10);
 
     m_housingSectionsLayout =
-        new QVBoxLayout(container);
+        new QVBoxLayout;
 
     m_housingSectionsLayout->setContentsMargins(
         0,
@@ -913,13 +959,15 @@ QWidget* CampusDashboardPage::createHousingTab()
     m_housingSectionsLayout->addWidget(m_housingEmptyLabel);
     m_housingSectionsLayout->addStretch();
 
+    containerLayout->addLayout(m_housingSectionsLayout, 1);
+
     scroll->setWidget(container);
-    root->addWidget(scroll, 1);
+    root->addWidget(scroll);
 
     m_addHousingButton =
         new QPushButton(
             tr("Add Housing Location"),
-            tab
+            container
             );
 
     m_addHousingButton->setVisible(m_adminMode);
@@ -930,7 +978,7 @@ QWidget* CampusDashboardPage::createHousingTab()
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_addHousingButton);
 
-    root->addLayout(buttonLayout);
+    containerLayout->addLayout(buttonLayout);
 
     connect(
         m_addHousingButton,
@@ -1185,6 +1233,8 @@ CampusDashboardPage::createAddressSection(
             addressContainer
             );
 
+    setStaticToggleButtonWidth(section.toggleAddressSystemButton);
+
     auto* completeRow =
         new QWidget(addressContainer);
 
@@ -1261,28 +1311,31 @@ CampusDashboardPage::createAddressSection(
 
     sectionLayout->addWidget(addressContainer);
 
-    auto* noteForm =
-        new QFormLayout;
+    if (!koreanAddress)
+    {
+        auto* noteForm =
+            new QFormLayout;
 
-    noteForm->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    noteForm->setSpacing(8);
-    noteForm->setFieldGrowthPolicy(
-        QFormLayout::ExpandingFieldsGrow
-        );
-
-    section.note =
-        addLineField(
-            noteForm,
-            tr("Note:")
+        noteForm->setContentsMargins(
+            0,
+            0,
+            0,
+            0
             );
 
-    sectionLayout->addLayout(noteForm);
+        noteForm->setSpacing(8);
+        noteForm->setFieldGrowthPolicy(
+            QFormLayout::ExpandingFieldsGrow
+            );
+
+        section.note =
+            addLineField(
+                noteForm,
+                tr("Note:")
+                );
+
+        sectionLayout->addLayout(noteForm);
+    }
 
     return section;
 }
@@ -1412,23 +1465,6 @@ void CampusDashboardPage::buildUi()
         tr("Map")
         );
 
-    connect(
-        m_tabs,
-        &QTabWidget::currentChanged,
-        this,
-        [this](int index)
-        {
-            if (!m_tabs || index < 0)
-            {
-                return;
-            }
-
-            emit sectionChanged(
-                m_tabs->tabText(index)
-                );
-        }
-        );
-
     contentLayout()->addWidget(
         m_tabs,
         1
@@ -1449,6 +1485,16 @@ void CampusDashboardPage::buildUi()
         [this](int)
         {
             loadSelectedCampus();
+        }
+        );
+
+    connect(
+        m_tabs,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int)
+        {
+            emitCurrentSectionChanged();
         }
         );
 }
@@ -1758,6 +1804,8 @@ void CampusDashboardPage::addHousingSectionFromJson(
             tr("Show Korean"),
             nameRow
             );
+
+    setStaticToggleButtonWidth(section.toggleLanguageButton);
 
     section.removeButton =
         new QPushButton(
@@ -2097,12 +2145,15 @@ void CampusDashboardPage::loadAddressFields(
             )
         );
 
-    section->note->setText(
-        jsonString(
-            address,
-            QStringLiteral("addr_note")
-            )
-        );
+    if (section->note)
+    {
+        section->note->setText(
+            jsonString(
+                address,
+                QStringLiteral("addr_note")
+                )
+            );
+    }
 }
 
 QJsonObject CampusDashboardPage::addressSectionToJson(
@@ -2834,6 +2885,40 @@ void CampusDashboardPage::updateHousingCompleteAddresses()
     {
         updateCompleteAddress(&section.english);
         updateCompleteAddress(&section.korean);
+    }
+}
+
+void CampusDashboardPage::emitCurrentSectionChanged()
+{
+    if (!m_tabs)
+    {
+        return;
+    }
+
+    QWidget* currentTab =
+        m_tabs->currentWidget();
+
+    if (currentTab == m_informationTab)
+    {
+        emit sectionChanged(tr("Information"));
+        return;
+    }
+
+    if (currentTab == m_directionsTab)
+    {
+        emit sectionChanged(tr("Directions"));
+        return;
+    }
+
+    if (currentTab == m_housingTab)
+    {
+        emit sectionChanged(tr("Housing"));
+        return;
+    }
+
+    if (currentTab == m_mapTab)
+    {
+        emit sectionChanged(tr("Map"));
     }
 }
 
