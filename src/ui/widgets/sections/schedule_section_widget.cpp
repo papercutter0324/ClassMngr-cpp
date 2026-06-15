@@ -10,10 +10,12 @@
 
 #include <QAbstractItemView>
 #include <QFont>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTime>
@@ -300,6 +302,9 @@ void ScheduleSectionWidget::buildUi()
         );
 
     m_table->verticalHeader()->setVisible(false);
+    m_table->setFrameShape(QFrame::NoFrame);
+    m_table->setShowGrid(false);
+    m_table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionMode(QAbstractItemView::NoSelection);
     m_table->setWordWrap(true);
@@ -565,6 +570,8 @@ void ScheduleSectionWidget::loadSchedule()
             RowHeight
             );
     }
+
+    updateTableMinimumHeight();
 }
 
 void ScheduleSectionWidget::updateButtons()
@@ -657,6 +664,37 @@ void ScheduleSectionWidget::clearTableWidgets()
             widget->deleteLater();
         }
     }
+}
+
+void ScheduleSectionWidget::updateTableMinimumHeight()
+{
+    if (!m_table)
+    {
+        return;
+    }
+
+    int tableHeight =
+        m_table->horizontalHeader()->height()
+        + (m_table->frameWidth() * 2);
+
+    for (int row = 0; row < m_table->rowCount(); ++row)
+    {
+        tableHeight +=
+            m_table->rowHeight(row);
+    }
+
+    if (auto* scrollBar = m_table->horizontalScrollBar())
+    {
+        if (scrollBar->isVisible())
+        {
+            tableHeight +=
+                scrollBar->sizeHint().height();
+        }
+    }
+
+    m_table->setMinimumHeight(tableHeight);
+    m_table->setMaximumHeight(tableHeight);
+    updateGeometry();
 }
 
 QStringList ScheduleSectionWidget::visibleDays() const

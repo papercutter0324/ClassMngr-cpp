@@ -45,6 +45,7 @@ private:
         const QStringList& days
         );
     void clearTableWidgets();
+    void updateTableMinimumHeight();
     QStringList visibleDays() const;
     void reloadSlotStates();
     QString slotKey(

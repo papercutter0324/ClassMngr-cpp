@@ -230,6 +230,21 @@ QTableWidget::item {
     border: none;
 }
 
+QTableWidget[role="schedule_table"] {
+    border: none;
+    gridline-color: transparent;
+}
+
+QTableWidget[role="schedule_table"]::item {
+    border: none;
+}
+
+QTableWidget[role="schedule_table"] QHeaderView::section {
+    border: none;
+    border-right: 1px solid #454545;
+    border-bottom: 1px solid #454545;
+}
+
 QHeaderView {
     background-color: #2b2b2b;
     color: #c8c8c8;

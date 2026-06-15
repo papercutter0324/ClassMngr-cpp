@@ -37,7 +37,6 @@ constexpr int AutosaveDelayMs = 750;
 constexpr int FieldMinimumWidth = 190;
 constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
 constexpr int UntitledCardTopMargin = 4;
-constexpr int ScheduleToCalendarSpacing = 18;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
@@ -511,12 +510,34 @@ void MyInfoPage::buildClassScheduleSection()
         m_classScheduleHeading
         );
 
+    auto* card =
+        new QFrame(m_scrollContent);
+    card->setProperty(
+        "role",
+        UiRoles::Card
+        );
+    card->setObjectName(
+        "sectionCard"
+        );
+
+    auto* cardLayout =
+        new QVBoxLayout(card);
+    cardLayout->setAlignment(Qt::AlignTop);
+    cardLayout->setContentsMargins(
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UntitledCardTopMargin,
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin
+        );
+    cardLayout->setSpacing(
+        UiConstants::ClassInfo::SectionCard::Spacing
+        );
+
     m_scheduleWidget =
         new ScheduleSectionWidget(
             m_services,
-            m_scrollContent
+            card
             );
-    m_scheduleWidget->setMinimumHeight(560);
 
     connect(
         m_scheduleWidget,
@@ -525,11 +546,12 @@ void MyInfoPage::buildClassScheduleSection()
         &MyInfoPage::classInfoSaved
         );
 
-    m_scrollContentLayout->addWidget(
+    cardLayout->addWidget(
         m_scheduleWidget
         );
-    m_scrollContentLayout->addSpacing(
-        ScheduleToCalendarSpacing
+
+    m_scrollContentLayout->addWidget(
+        card
         );
 }
 

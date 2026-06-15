@@ -7,6 +7,7 @@
 #include "ui/styles/roles.h"
 
 #include <algorithm>
+#include <QFrame>
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
@@ -338,6 +339,8 @@ void SchedulePage::buildUi()
         );
 
     m_table->verticalHeader()->setVisible(false);
+    m_table->setFrameShape(QFrame::NoFrame);
+    m_table->setShowGrid(false);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionMode(QAbstractItemView::NoSelection);
     m_table->setWordWrap(true);

@@ -15,10 +15,10 @@ Item {
     property color textColor: "#111111"
     property color mutedTextColor: "#111111"
     property color inactiveTextColor: "transparent"
-    property color calendarBackground: "#d6d6d6"
-    property color headerBackground: "#d6d6d6"
+    property color calendarBackground: "#ffffff"
+    property color headerBackground: "#ffffff"
     property color cellBackground: calendarBackground
-    property color gridLineColor: "#adadad"
+    property color gridLineColor: "#d0d7e2"
     property color accentColor: toolbarColor
     property color accentTextColor: toolbarTextColor
 
