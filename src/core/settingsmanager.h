@@ -79,6 +79,9 @@ public:
 
         static constexpr auto LAST_FILE =
             "files/last";
+
+        static constexpr auto LAST_DATABASE_DIRECTORY =
+            "files/lastDirectory";
     };
 
     // =====================================================
@@ -174,6 +177,12 @@ public:
     QString getLastFile() const;
 
     void setLastFile(
+        const QString& path
+        );
+
+    QString getLastDatabaseDirectory() const;
+
+    void setLastDatabaseDirectory(
         const QString& path
         );
 

@@ -39,6 +39,11 @@ void MenuBuilder::buildFileMenu(MainWindow* window)
     fileMenu->addAction(actions.newFile);
     fileMenu->addAction(actions.openFile);
 
+    actions.recentFilesMenu =
+        fileMenu->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Recent Files")
+            );
+
     fileMenu->addSeparator();
 
     fileMenu->addAction(actions.saveFile);

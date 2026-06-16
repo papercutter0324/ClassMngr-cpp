@@ -53,6 +53,15 @@ void NavigationController::handleTeacher(
     const NavigationData& data
     )
 {
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        )
+    {
+        return;
+    }
+
     Teacher teacher =
         m_services
             ->dataService()
@@ -141,6 +150,15 @@ void NavigationController::handleNavigation(
 
         if (data.classId > 0)
         {
+            if (
+                !m_services
+                || !m_services->dataService()
+                || !m_services->dataService()->isOpen()
+                )
+            {
+                return;
+            }
+
             const QString pageName =
                 data.path.last();
 
@@ -242,6 +260,15 @@ void NavigationController::handleSubPrep(
     const NavigationData& data
     )
 {
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        )
+    {
+        return;
+    }
+
     const bool alreadyShowingSubPrep =
         m_pages->currentWidget()
         == m_pages->subPrepPage();
@@ -297,6 +324,15 @@ void NavigationController::handleMyInfo(
     const NavigationData& data
     )
 {
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        )
+    {
+        return;
+    }
+
     const bool alreadyShowingMyInfo =
         m_pages->currentWidget()
         == m_pages->myInfoPage();
@@ -430,6 +466,15 @@ void NavigationController::handleClass(
     const NavigationData& data
     )
 {
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        )
+    {
+        return;
+    }
+
     if (data.classId <= 0)
     {
         return;

@@ -37,7 +37,7 @@ class DataService
 public:
 
     explicit DataService(
-        const QString &dbPath = "data/app.db"
+        const QString &dbPath = QString()
         );
 
     ~DataService();
@@ -49,6 +49,16 @@ public:
     // =====================================================
 
     bool open();
+
+    bool openDatabase(
+        const QString& dbPath
+        );
+
+    void closeDatabase();
+
+    bool isOpen() const;
+
+    QString currentDatabasePath() const;
 
     void createTables();
 
@@ -268,11 +278,11 @@ public:
 
     void save();
 
-    void saveAs(
+    bool saveAs(
         const QString &destinationPath
         );
 
-    void exportAs(
+    bool exportAs(
         const QString &destinationPath
         );
 

@@ -28,6 +28,20 @@ constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
 
+DataService* openDataService(
+    ApplicationServices* services
+    )
+{
+    auto* dataService =
+        services
+            ? services->dataService()
+            : nullptr;
+
+    return dataService && dataService->isOpen()
+        ? dataService
+        : nullptr;
+}
+
 bool settingToBool(
     const QVariant& value,
     bool defaultValue
@@ -135,16 +149,14 @@ void ScheduleSectionWidget::toggleTimeFormat()
 {
     m_use24h = !m_use24h;
 
-    if (m_services && m_services->dataService())
+    if (auto* dataService = openDataService(m_services))
     {
-        m_services
-            ->dataService()
-            ->saveSetting(
-                QStringLiteral("schedule_use_24h"),
-                m_use24h
-                    ? QStringLiteral("true")
-                    : QStringLiteral("false")
-                );
+        dataService->saveSetting(
+            QStringLiteral("schedule_use_24h"),
+            m_use24h
+                ? QStringLiteral("true")
+                : QStringLiteral("false")
+            );
     }
 
     updateButtons();
@@ -162,16 +174,14 @@ void ScheduleSectionWidget::toggleWeekends()
 {
     m_showWeekends = !m_showWeekends;
 
-    if (m_services && m_services->dataService())
+    if (auto* dataService = openDataService(m_services))
     {
-        m_services
-            ->dataService()
-            ->saveSetting(
-                QStringLiteral("schedule_show_weekends"),
-                m_showWeekends
-                    ? QStringLiteral("true")
-                    : QStringLiteral("false")
-                );
+        dataService->saveSetting(
+            QStringLiteral("schedule_show_weekends"),
+            m_showWeekends
+                ? QStringLiteral("true")
+                : QStringLiteral("false")
+            );
     }
 
     updateButtons();
@@ -231,15 +241,13 @@ void ScheduleSectionWidget::onCellClicked(
             newState = QStringLiteral("essay");
         }
 
-        if (m_services && m_services->dataService())
+        if (auto* dataService = openDataService(m_services))
         {
-            m_services
-                ->dataService()
-                ->saveIntensiveSlotState(
-                    day,
-                    timeLabel,
-                    newState
-                    );
+            dataService->saveIntensiveSlotState(
+                day,
+                timeLabel,
+                newState
+                );
         }
 
         loadSchedule();
@@ -386,30 +394,29 @@ void ScheduleSectionWidget::buildUi()
 
 void ScheduleSectionWidget::loadSettings()
 {
-    if (!m_services || !m_services->dataService())
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
     {
         return;
     }
 
     m_use24h =
         settingToBool(
-            m_services
-                ->dataService()
-                ->loadSetting(
-                    QStringLiteral("schedule_use_24h"),
-                    QStringLiteral("false")
-                    ),
+            dataService->loadSetting(
+                QStringLiteral("schedule_use_24h"),
+                QStringLiteral("false")
+                ),
             false
             );
 
     m_showWeekends =
         settingToBool(
-            m_services
-                ->dataService()
-                ->loadSetting(
-                    QStringLiteral("schedule_show_weekends"),
-                    QStringLiteral("false")
-                    ),
+            dataService->loadSetting(
+                QStringLiteral("schedule_show_weekends"),
+                QStringLiteral("false")
+                ),
             false
             );
 }
@@ -429,9 +436,7 @@ void ScheduleSectionWidget::loadSchedule()
     configureColumns(days);
 
     ScheduleBuilder builder(
-        m_services
-            ? m_services->dataService()
-            : nullptr
+        openDataService(m_services)
         );
 
     const ScheduleBuildResult result =
@@ -725,15 +730,16 @@ void ScheduleSectionWidget::reloadSlotStates()
 {
     m_intensiveSlotStates.clear();
 
-    if (!m_services || !m_services->dataService())
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
     {
         return;
     }
 
     const QList<IntensiveSlotState> states =
-        m_services
-            ->dataService()
-            ->loadIntensiveSlotStates();
+        dataService->loadIntensiveSlotStates();
 
     for (const IntensiveSlotState& state : states)
     {

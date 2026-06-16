@@ -13,6 +13,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
@@ -91,25 +92,70 @@ DataService::DataService(
 
 DataService::~DataService()
 {
-    if (m_db.isOpen())
-    {
-        m_db.close();
-    }
+    closeDatabase();
 }
 
 bool DataService::open()
 {
-    QDir().mkpath("data");
+    if (m_dbPath.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    return openDatabase(m_dbPath);
+}
+
+bool DataService::openDatabase(
+    const QString& dbPath
+    )
+{
+    if (dbPath.trimmed().isEmpty())
+    {
+        closeDatabase();
+        return false;
+    }
+
+    const QFileInfo databaseInfo(dbPath);
+    const QString normalizedPath =
+        databaseInfo.absoluteFilePath();
+
+    closeDatabase();
+
+    if (normalizedPath.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    QDir().mkpath(
+        databaseInfo.absolutePath()
+        );
 
     m_db =
         QSqlDatabase::addDatabase("QSQLITE");
 
-    m_db.setDatabaseName(m_dbPath);
+    m_db.setDatabaseName(normalizedPath);
 
     if (!m_db.open())
     {
+        const QString connectionName =
+            m_db.connectionName();
+
+        m_db =
+            QSqlDatabase();
+
+        if (
+            !connectionName.isEmpty()
+            && QSqlDatabase::contains(connectionName)
+            )
+        {
+            QSqlDatabase::removeDatabase(connectionName);
+        }
+
         return false;
     }
+
+    m_dbPath =
+        normalizedPath;
 
     m_settingsRepository =
         std::make_unique<SettingsRepository>(
@@ -159,6 +205,57 @@ bool DataService::open()
     createTables();
 
     return true;
+}
+
+void DataService::closeDatabase()
+{
+    m_settingsRepository.reset();
+    m_campusRecordRepository.reset();
+    m_teacherRepository.reset();
+    m_classRepository.reset();
+    m_classInfoRepository.reset();
+    m_intensiveSlotStateRepository.reset();
+    m_calendarEventRepository.reset();
+    m_rosterRepository.reset();
+    m_speakingEvalRepository.reset();
+
+    if (!m_db.isValid())
+    {
+        m_dbPath.clear();
+        return;
+    }
+
+    const QString connectionName =
+        m_db.connectionName();
+
+    if (m_db.isOpen())
+    {
+        m_db.close();
+    }
+
+    m_db =
+        QSqlDatabase();
+
+    if (
+        !connectionName.isEmpty()
+        && QSqlDatabase::contains(connectionName)
+        )
+    {
+        QSqlDatabase::removeDatabase(connectionName);
+    }
+
+    m_dbPath.clear();
+}
+
+bool DataService::isOpen() const
+{
+    return m_db.isValid()
+        && m_db.isOpen();
+}
+
+QString DataService::currentDatabasePath() const
+{
+    return m_dbPath;
 }
 
 void DataService::createTables()
@@ -963,21 +1060,58 @@ void DataService::deleteCampus(
 
 void DataService::save()
 {
+    if (!isOpen())
+    {
+        return;
+    }
+
     m_db.commit();
 }
 
-void DataService::saveAs(
+bool DataService::saveAs(
     const QString &destinationPath
     )
 {
-    QFile::remove(destinationPath);
-    QFile::copy(m_dbPath, destinationPath);
+    if (!isOpen() || destinationPath.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    const QString sourcePath =
+        QFileInfo(m_dbPath).absoluteFilePath();
+
+    const QString targetPath =
+        QFileInfo(destinationPath).absoluteFilePath();
+
+    if (sourcePath == targetPath)
+    {
+        return true;
+    }
+
+    QFile::remove(targetPath);
+    return QFile::copy(sourcePath, targetPath);
 }
 
-void DataService::exportAs(
+bool DataService::exportAs(
     const QString &destinationPath
     )
 {
-    QFile::remove(destinationPath);
-    QFile::copy(m_dbPath, destinationPath);
+    if (!isOpen() || destinationPath.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    const QString sourcePath =
+        QFileInfo(m_dbPath).absoluteFilePath();
+
+    const QString targetPath =
+        QFileInfo(destinationPath).absoluteFilePath();
+
+    if (sourcePath == targetPath)
+    {
+        return true;
+    }
+
+    QFile::remove(targetPath);
+    return QFile::copy(sourcePath, targetPath);
 }

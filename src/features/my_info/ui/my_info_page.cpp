@@ -3,8 +3,11 @@
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
+#include "core/appsettings.h"
 #include "core/fontmanager.h"
+#include "core/resource_paths.h"
 #include "data/data_service.h"
+#include "features/campus/data/campus_json_repository.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -39,6 +42,70 @@ constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
 constexpr int UntitledCardTopMargin = 4;
 const QString NotAvailableText =
     QStringLiteral("N/A");
+
+DataService* openDataService(
+    ApplicationServices* services
+    )
+{
+    auto* dataService =
+        services
+            ? services->dataService()
+            : nullptr;
+
+    return dataService && dataService->isOpen()
+        ? dataService
+        : nullptr;
+}
+
+CampusJsonRepository campusRepository()
+{
+    return CampusJsonRepository(
+        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
+        ResourcePaths::Campuses::directory()
+        );
+}
+
+QString campusDisplayName(
+    const CampusInfo& campus
+    )
+{
+    return campus.campusName.trimmed().isEmpty()
+        ? campus.id.trimmed()
+        : campus.campusName.trimmed();
+}
+
+int findCampusIndex(
+    QComboBox* combo,
+    const QString& savedCampus
+    )
+{
+    if (!combo || savedCampus.trimmed().isEmpty())
+    {
+        return -1;
+    }
+
+    const QString normalized =
+        savedCampus.trimmed();
+
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (
+            combo->itemData(index).toString().compare(
+                normalized,
+                Qt::CaseInsensitive
+                ) == 0
+            || combo->itemText(index).compare(
+                normalized,
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            return index;
+        }
+    }
+
+    return -1;
+}
 
 namespace SettingsKeys
 {
@@ -321,6 +388,11 @@ void MyInfoPage::showEvent(
 {
     BasePage::showEvent(event);
 
+    if (!m_dirty)
+    {
+        loadPageData();
+    }
+
     if (m_scheduleWidget)
     {
         m_scheduleWidget->refreshSchedule();
@@ -337,17 +409,6 @@ bool MyInfoPage::eventFilter(
     QEvent* event
     )
 {
-    if (
-        (watched == m_zoomLoginIdEdit || watched == m_zoomPasswordEdit)
-        && event->type() == QEvent::FocusOut
-        )
-    {
-        if (normalizeZoomFields())
-        {
-            handleEditableChanged();
-        }
-    }
-
     return BasePage::eventFilter(
         watched,
         event
@@ -378,7 +439,6 @@ void MyInfoPage::handleZoomNotAvailableChanged(
 {
     Q_UNUSED(checked);
 
-    normalizeZoomFields();
     setZoomFieldsEnabled();
     handleEditableChanged();
 }
@@ -425,9 +485,7 @@ void MyInfoPage::handleCalendarEventActivated(
     )
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService || eventId <= 0)
     {
@@ -620,13 +678,6 @@ void MyInfoPage::buildMyInformationSection()
 
     m_campusCombo =
         new QComboBox(card);
-    m_campusCombo->addItems(
-        {
-            tr("Bundang"),
-            tr("Daechi"),
-            tr("Ilsan")
-        }
-        );
 
     m_zoomLoginIdEdit =
         new QLineEdit(card);
@@ -839,9 +890,7 @@ void MyInfoPage::loadPageData()
 void MyInfoPage::loadStoredSettings()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService)
     {
@@ -857,20 +906,56 @@ void MyInfoPage::loadStoredSettings()
         dataService
             ->loadSetting(
                 SettingsKeys::Campus,
-                QStringLiteral("Bundang")
+                QString()
                 )
             .toString();
 
-    const int campusIndex =
-        m_campusCombo->findText(
-            campus,
-            Qt::MatchFixedString
+    m_campusCombo->clear();
+
+    const QList<CampusInfo> campuses =
+        campusRepository().loadCampuses();
+
+    for (const CampusInfo& campusInfo : campuses)
+    {
+        const QString displayName =
+            campusDisplayName(campusInfo);
+
+        if (displayName.isEmpty())
+        {
+            continue;
+        }
+
+        m_campusCombo->addItem(
+            displayName,
+            campusInfo.id
             );
+    }
+
+    const int campusIndex =
+        findCampusIndex(
+            m_campusCombo,
+            campus
+            );
+
     m_campusCombo->setCurrentIndex(
         campusIndex >= 0
             ? campusIndex
             : 0
         );
+
+    if (
+        m_campusCombo->currentIndex() >= 0
+        && m_campusCombo->currentText().compare(
+            campus.trimmed(),
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        dataService->saveSetting(
+            SettingsKeys::Campus,
+            m_campusCombo->currentText()
+            );
+    }
 
     const QString loginId =
         loadSettingWithLegacyFallback(
@@ -915,9 +1000,7 @@ void MyInfoPage::loadStoredSettings()
 bool MyInfoPage::saveMyInfoInternal()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService)
     {
@@ -929,7 +1012,13 @@ bool MyInfoPage::saveMyInfoInternal()
         m_autosaveTimer->stop();
     }
 
-    normalizeZoomFields();
+    if (
+        !m_zoomNotAvailableCheck
+        || !m_zoomNotAvailableCheck->isChecked()
+        )
+    {
+        normalizeZoomFields();
+    }
 
     dataService->saveSetting(
         SettingsKeys::Campus,
@@ -1031,9 +1120,7 @@ void MyInfoPage::openCalendarDialog(
     )
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService)
     {

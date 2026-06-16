@@ -265,4 +265,26 @@ void SettingsManager::setLastFile(
         Keys::LAST_FILE,
         path
         );
+
+    sync();
+}
+
+QString SettingsManager::getLastDatabaseDirectory() const
+{
+    return get(
+               Keys::LAST_DATABASE_DIRECTORY,
+               ""
+               ).toString();
+}
+
+void SettingsManager::setLastDatabaseDirectory(
+    const QString& path
+    )
+{
+    set(
+        Keys::LAST_DATABASE_DIRECTORY,
+        path
+        );
+
+    sync();
 }

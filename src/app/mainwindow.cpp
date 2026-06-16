@@ -55,11 +55,13 @@ MainWindow::MainWindow(
 
     progressCallback(tr("Building menus..."));
     buildMenus();
+    m_fileController->populateRecentMenu();
 
     progressCallback(tr("Connecting signals..."));
     connectSignals();
 
-    m_sidebarController->refreshAllSidebars();
+    progressCallback(tr("Loading recent file..."));
+    m_fileController->loadMostRecentDatabase();
 
     QTimer::singleShot(
         0,
@@ -71,9 +73,7 @@ MainWindow::MainWindow(
 void MainWindow::initializeServices()
 {
     m_services =
-        std::make_unique<ApplicationServices>(
-            AppSettings::DefaultDatabasePath
-            );
+        std::make_unique<ApplicationServices>();
 }
 
 void MainWindow::initializeWindow()
@@ -288,6 +288,111 @@ bool MainWindow::confirmCurrentPageCanLeave(
 {
     return !m_pages
         || m_pages->confirmCurrentPageCanLeave(exiting);
+}
+
+void MainWindow::applyNoDatabaseState()
+{
+    if (m_sidebarController)
+    {
+        m_sidebarController->refreshAllSidebars();
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->setDatabaseSectionsVisible(false);
+    }
+
+    setDatabaseBackedActionsEnabled(false);
+
+    if (m_pages && m_pages->campusDashboard())
+    {
+        m_pages->showPage(PageType::CampusDashboard);
+        m_pages->campusDashboard()->showInformation();
+        m_pages->campusDashboard()->refresh();
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->selectCampusSection(
+            tr("Information")
+            );
+    }
+}
+
+void MainWindow::applyDatabaseLoadedState()
+{
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->setDatabaseSectionsVisible(true);
+    }
+
+    setDatabaseBackedActionsEnabled(true);
+
+    if (m_sidebarController)
+    {
+        m_sidebarController->refreshAllSidebars();
+    }
+
+    if (m_pages && m_pages->myInfoPage())
+    {
+        m_pages->showPage(PageType::MyInfo);
+        m_pages->refreshAll();
+        m_pages->myInfoPage()->scrollToSection(
+            MyInfoSection::MyInformation
+            );
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->selectMyInfoSection(
+            tr("My Information")
+            );
+    }
+}
+
+void MainWindow::setDatabaseBackedActionsEnabled(
+    bool enabled
+    )
+{
+    if (m_actions.saveFile)
+    {
+        m_actions.saveFile->setEnabled(enabled);
+    }
+
+    if (m_actions.saveAsFile)
+    {
+        m_actions.saveAsFile->setEnabled(enabled);
+    }
+
+    if (m_actions.exportAsFile)
+    {
+        m_actions.exportAsFile->setEnabled(enabled);
+    }
+
+    if (m_actions.closeFile)
+    {
+        m_actions.closeFile->setEnabled(enabled);
+    }
+
+    if (m_actions.newClass)
+    {
+        m_actions.newClass->setEnabled(enabled);
+    }
+
+    if (m_actions.deleteClass)
+    {
+        m_actions.deleteClass->setEnabled(enabled);
+    }
+
+    if (m_actions.newTeacher)
+    {
+        m_actions.newTeacher->setEnabled(enabled);
+    }
+
+    if (m_actions.deleteTeacher)
+    {
+        m_actions.deleteTeacher->setEnabled(enabled);
+    }
 }
 
 void MainWindow::onSidebarItemSelected(

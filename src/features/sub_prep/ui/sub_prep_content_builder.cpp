@@ -14,7 +14,10 @@ QString timeFillerActivitiesHtml(
     DataService* dataService
     )
 {
-    if (!dataService)
+    if (
+        !dataService
+        || !dataService->isOpen()
+        )
     {
         return QString();
     }

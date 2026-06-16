@@ -758,6 +758,57 @@ int Sidebar::getSelectedTeacherId() const
 
 
 // =========================================================
+// Database-Backed Sections
+// =========================================================
+
+void Sidebar::setDatabaseSectionsVisible(
+    bool visible
+    )
+{
+    const QStringList databaseNodeKeys{
+        QStringLiteral("my_info"),
+        QStringLiteral("sub_prep"),
+        QStringLiteral("classes"),
+        QStringLiteral("teachers")
+    };
+
+    bool currentSelectionHidden = false;
+
+    for (const QString& key : databaseNodeKeys)
+    {
+        auto* item =
+            m_nodes.value(key, nullptr);
+
+        if (!item)
+        {
+            continue;
+        }
+
+        if (
+            !visible
+            && itemContainsCurrentSelection(
+                item,
+                m_tree->currentItem()
+                )
+            )
+        {
+            currentSelectionHidden = true;
+        }
+
+        item->setHidden(!visible);
+    }
+
+    if (currentSelectionHidden)
+    {
+        m_tree->clearSelection();
+    }
+
+    updateTreeColumnWidth();
+}
+
+
+
+// =========================================================
 // Item Clicked
 // =========================================================
 

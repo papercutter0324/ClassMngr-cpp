@@ -71,6 +71,10 @@ public:
         bool exiting = false
         ) const;
 
+    void applyNoDatabaseState();
+
+    void applyDatabaseLoadedState();
+
 protected:
 
     void showEvent(QShowEvent* event) override;
@@ -95,6 +99,10 @@ private:
     void connectSignals();
 
     void restoreSplitter();
+
+    void setDatabaseBackedActionsEnabled(
+        bool enabled
+        );
 
     // =====================================================
     // UI

@@ -6,6 +6,8 @@
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/constants/options.h"
 
+class QMenu;
+
 class ActionRegistry : public QObject
 {
     Q_OBJECT
@@ -36,6 +38,7 @@ public:
     QAction* exportAsFile = nullptr;
     QAction* closeFile = nullptr;
     QAction* exitApp = nullptr;
+    QMenu* recentFilesMenu = nullptr;
 
     // =====================================================
     // Edit

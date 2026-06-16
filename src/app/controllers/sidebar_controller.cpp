@@ -25,6 +25,20 @@
 
 namespace
 {
+DataService* openDataService(
+    ApplicationServices* services
+    )
+{
+    auto* dataService =
+        services
+            ? services->dataService()
+            : nullptr;
+
+    return dataService && dataService->isOpen()
+        ? dataService
+        : nullptr;
+}
+
 int chooseRecord(
     QWidget* parent,
     const QString& title,
@@ -199,11 +213,25 @@ void SidebarController::connectActions(ActionRegistry& actions)
 
 void SidebarController::refreshClassSidebar()
 {
-    auto* ds = m_services->dataService();
-
-    const auto classes = ds->getClasses();
+    if (!m_sidebar)
+    {
+        return;
+    }
 
     m_sidebar->clearClasses();
+
+    auto* ds =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    if (!ds || !ds->isOpen())
+    {
+        updateActionStates();
+        return;
+    }
+
+    const auto classes = ds->getClasses();
 
     for (const Classroom& classroom : classes)
     {
@@ -239,12 +267,26 @@ void SidebarController::refreshClassSidebar()
 
 void SidebarController::refreshTeacherSidebar()
 {
-    auto* ds = m_services->dataService();
+    if (!m_sidebar)
+    {
+        return;
+    }
+
+    m_sidebar->clearTeachers();
+
+    auto* ds =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    if (!ds || !ds->isOpen())
+    {
+        updateActionStates();
+        return;
+    }
 
     const auto teachers =
         ds->getAllTeachers();
-
-    m_sidebar->clearTeachers();
 
     for (const auto& teacher : teachers)
     {
@@ -293,9 +335,12 @@ void SidebarController::handleTeacherSaved(
 
 Classroom SidebarController::getClassById(int classId) const
 {
-    return m_services
-        ->dataService()
-        ->getClassById(classId);
+    auto* ds =
+        openDataService(m_services);
+
+    return ds
+        ? ds->getClassById(classId)
+        : Classroom();
 }
 
 Classroom SidebarController::getSelectedClass() const
@@ -313,7 +358,13 @@ Classroom SidebarController::getSelectedClass() const
 
 void SidebarController::addClass()
 {
-    auto* ds = m_services->dataService();
+    auto* ds =
+        openDataService(m_services);
+
+    if (!ds)
+    {
+        return;
+    }
 
     int classId =
         ds->createClass("");
@@ -355,7 +406,13 @@ void SidebarController::deleteClass()
         }
     }
 
-    auto* ds = m_services->dataService();
+    auto* ds =
+        openDataService(m_services);
+
+    if (!ds)
+    {
+        return;
+    }
 
     const Classroom classroom =
         ds->getClassById(
@@ -376,14 +433,23 @@ void SidebarController::deleteClass()
 
 Teacher SidebarController::getTeacherById(int teacherId) const
 {
-    return m_services
-        ->dataService()
-        ->getTeacher(teacherId);
+    auto* ds =
+        openDataService(m_services);
+
+    return ds
+        ? ds->getTeacher(teacherId)
+        : Teacher();
 }
 
 void SidebarController::addTeacher()
 {
-    auto* ds = m_services->dataService();
+    auto* ds =
+        openDataService(m_services);
+
+    if (!ds)
+    {
+        return;
+    }
 
     Teacher newTeacher;
 
@@ -433,7 +499,13 @@ void SidebarController::deleteTeacher()
         }
     }
 
-    auto* ds = m_services->dataService();
+    auto* ds =
+        openDataService(m_services);
+
+    if (!ds)
+    {
+        return;
+    }
 
     const Teacher teacher =
         ds->getTeacher(
@@ -461,9 +533,7 @@ void SidebarController::deleteTeacher()
 int SidebarController::promptForClassToDelete() const
 {
     auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!ds)
     {
@@ -503,9 +573,7 @@ int SidebarController::promptForClassToDelete() const
 int SidebarController::promptForTeacherToDelete() const
 {
     auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!ds)
     {
@@ -549,9 +617,7 @@ QString SidebarController::classDisplayName(
     ) const
 {
     auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!ds)
     {
@@ -635,17 +701,30 @@ bool SidebarController::confirmDeleteTeacher(
 
 void SidebarController::updateActionStates()
 {
-    if (
-        !m_actions
-        || !m_services
-        || !m_services->dataService()
-        )
+    if (!m_actions)
     {
         return;
     }
 
     auto* ds =
-        m_services->dataService();
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    if (!ds || !ds->isOpen())
+    {
+        if (m_actions->deleteClass)
+        {
+            m_actions->deleteClass->setEnabled(false);
+        }
+
+        if (m_actions->deleteTeacher)
+        {
+            m_actions->deleteTeacher->setEnabled(false);
+        }
+
+        return;
+    }
 
     if (m_actions->deleteClass)
     {

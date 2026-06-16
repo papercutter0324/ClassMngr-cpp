@@ -49,7 +49,10 @@ ScheduleBuildResult ScheduleBuilder::build(
     ScheduleBuildResult result;
     result.days = visibleDays;
 
-    if (!m_dataService)
+    if (
+        !m_dataService
+        || !m_dataService->isOpen()
+        )
     {
         return result;
     }

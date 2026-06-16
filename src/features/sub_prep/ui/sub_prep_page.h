@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/models/campus.h"
+#include "domain/models/campus_info.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QList>
@@ -65,21 +65,19 @@ private slots:
 private:
     void buildUi();
     void loadPageData();
+    void loadPersonalZoomInformation();
     void loadStoredSettings();
     void loadCampuses();
     void loadCampusFields(
-        int campusId
+        const QString& campusId
         );
 
     bool saveSubPrepInternal();
-    bool saveCurrentCampus();
-    int ensureDefaultCampus();
 
     void refreshGeneratedContent();
     void rebuildTimeFillerActivities();
     void rebuildClassInformation();
 
-    bool normalizeProtectedFields();
     bool normalizeLineEdit(
         QLineEdit* edit,
         const QString& defaultText
@@ -109,8 +107,8 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     SubPrepSection m_currentSection = SubPrepSection::ImportantInformation;
-    int m_currentCampusId = -1;
-    QList<CampusRecord> m_campuses;
+    QString m_currentCampusId;
+    QList<CampusInfo> m_campuses;
 
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;

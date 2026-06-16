@@ -28,7 +28,10 @@ QVariantList CalendarEventModel::eventsForDate(
 {
     QVariantList values;
 
-    if (!m_dataService)
+    if (
+        !m_dataService
+        || !m_dataService->isOpen()
+        )
     {
         return values;
     }

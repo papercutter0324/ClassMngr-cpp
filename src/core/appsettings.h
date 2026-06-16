@@ -15,9 +15,6 @@ inline constexpr auto TranslationPrefix =
 inline constexpr auto AdminModeArgument =
     "--enable-admin";
 
-inline constexpr auto DefaultDatabasePath =
-    "data/app.db";
-
 inline constexpr auto DefaultCampusDirectory =
     "data/campuses";
 

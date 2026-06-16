@@ -26,6 +26,8 @@ public:
 
     void populateRecentMenu();
 
+    void loadMostRecentDatabase();
+
     void setSaveMode(
         SaveMode mode
         );
@@ -45,8 +47,9 @@ private:
         const QString& filePath
         );
 
-    void loadDatabase(
-        const QString& filePath
+    bool loadDatabase(
+        const QString& filePath,
+        bool showErrorMessage = true
         );
 
     void saveFile();
@@ -64,17 +67,34 @@ private:
 
     void saveDatabase();
 
-    void saveDatabaseAs(
+    bool saveDatabaseAs(
         const QString& filePath
         );
 
-    void exportDatabaseAs(
+    bool exportDatabaseAs(
+        const QString& filePath
+        );
+
+    void enterNoDatabaseState();
+
+    QString mostRecentDatabasePath() const;
+
+    void pruneRecentFile(
+        const QString& filePath
+        );
+
+    QString databaseDialogDirectory() const;
+
+    QString defaultDatabaseDirectory() const;
+
+    void rememberDatabaseDirectory(
         const QString& filePath
         );
 
     QString normalizeFilePath(
         const QString& filePath,
-        const QString& extension = ".db"
+        const QString& extension = ".db",
+        bool createDirectories = true
         ) const;
 
     void setLoadedFileState();

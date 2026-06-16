@@ -1,8 +1,10 @@
 #include "sub_prep_page.h"
 
 #include "core/application_services.h"
+#include "core/appsettings.h"
 #include "core/fontmanager.h"
-#include "core/settingsmanager.h"
+#include "core/resource_paths.h"
+#include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_content_builder.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -47,8 +49,70 @@ constexpr int TextEditVerticalPadding = 24;
 
 const QString NotAvailableText =
     QStringLiteral("N/A");
-const QString DefaultCampusName =
-    QStringLiteral("Default");
+
+DataService* openDataService(
+    ApplicationServices* services
+    )
+{
+    auto* dataService =
+        services
+            ? services->dataService()
+            : nullptr;
+
+    return dataService && dataService->isOpen()
+        ? dataService
+        : nullptr;
+}
+
+CampusJsonRepository campusRepository()
+{
+    return CampusJsonRepository(
+        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
+        ResourcePaths::Campuses::directory()
+        );
+}
+
+QString campusDisplayName(
+    const CampusInfo& campus
+    )
+{
+    return campus.campusName.trimmed().isEmpty()
+        ? campus.id.trimmed()
+        : campus.campusName.trimmed();
+}
+
+int findCampusIndex(
+    QComboBox* combo,
+    const QString& savedCampus
+    )
+{
+    if (!combo || savedCampus.trimmed().isEmpty())
+    {
+        return -1;
+    }
+
+    const QString normalized =
+        savedCampus.trimmed();
+
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (
+            combo->itemData(index).toString().compare(
+                normalized,
+                Qt::CaseInsensitive
+                ) == 0
+            || combo->itemText(index).compare(
+                normalized,
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            return index;
+        }
+    }
+
+    return -1;
+}
 
 namespace SettingsKeys
 {
@@ -60,6 +124,12 @@ const QString MyInfoZoomLoginId =
     QStringLiteral("myInfo/zoomLoginId");
 const QString MyInfoZoomPassword =
     QStringLiteral("myInfo/zoomPassword");
+const QString MyInfoZoomNotAvailable =
+    QStringLiteral("myInfo/zoomNotAvailable");
+const QString LegacyZoomNotAvailable =
+    QStringLiteral("subPrep/personalZoomNotAvailable");
+const QString MyInfoCampus =
+    QStringLiteral("myInfo/campus");
 const QString ClassMaterials =
     QStringLiteral("subPrep/classMaterials");
 const QString BookReportGrading =
@@ -640,9 +710,11 @@ void SubPrepPage::refresh()
     }
 
     refreshGeneratedContent();
+    loadPersonalZoomInformation();
 
     if (!m_dirty)
     {
+        loadStoredSettings();
         loadCampuses();
     }
 }
@@ -727,6 +799,7 @@ void SubPrepPage::showEvent(
     BasePage::showEvent(event);
 
     refreshGeneratedContent();
+    loadPersonalZoomInformation();
 
     if (!m_dirty)
     {
@@ -789,12 +862,12 @@ void SubPrepPage::handleCampusChanged(
         saveSubPrepInternal();
     }
 
-    const int campusId =
+    const QString campusId =
         m_campusCombo
             ->itemData(index)
-            .toInt();
+            .toString();
 
-    if (campusId <= 0)
+    if (campusId.trimmed().isEmpty())
     {
         return;
     }
@@ -802,10 +875,13 @@ void SubPrepPage::handleCampusChanged(
     m_currentCampusId =
         campusId;
 
-    SettingsManager::instance()
-        .setLastCampusId(
-            campusId
+    if (auto* dataService = openDataService(m_services))
+    {
+        dataService->saveSetting(
+            SettingsKeys::MyInfoCampus,
+            m_campusCombo->currentText()
             );
+    }
 
     loadCampusFields(
         campusId
@@ -988,6 +1064,11 @@ void SubPrepPage::buildUi()
         new QLineEdit(campusCard);
     m_photocopierCodeEdit =
         new QLineEdit(campusCard);
+
+    m_officeNumberEdit->setReadOnly(true);
+    m_officeWifiEdit->setReadOnly(true);
+    m_officeWifiPasswordEdit->setReadOnly(true);
+    m_photocopierCodeEdit->setReadOnly(true);
 
     applyFixedFieldWidth(
         m_campusCombo,
@@ -1197,49 +1278,6 @@ void SubPrepPage::buildUi()
         );
 
     connect(
-        m_officeNumberEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-    connect(
-        m_officeWifiEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-    connect(
-        m_officeWifiPasswordEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-    connect(
-        m_photocopierCodeEdit,
-        &QLineEdit::textChanged,
-        this,
-        &SubPrepPage::handleEditableChanged
-        );
-
-    for (auto* edit : {
-             m_photocopierCodeEdit
-         })
-    {
-        connect(
-            edit,
-            &QLineEdit::editingFinished,
-            this,
-            [this]
-            {
-                if (normalizeProtectedFields())
-                {
-                    handleEditableChanged();
-                }
-            }
-            );
-    }
-
-    connect(
         m_campusCombo,
         &QComboBox::currentIndexChanged,
         this,
@@ -1282,12 +1320,10 @@ void SubPrepPage::loadPageData()
     clearDirty();
 }
 
-void SubPrepPage::loadStoredSettings()
+void SubPrepPage::loadPersonalZoomInformation()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService)
     {
@@ -1296,9 +1332,6 @@ void SubPrepPage::loadStoredSettings()
 
     const QSignalBlocker emailBlocker(m_zoomEmailEdit);
     const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
-    const QSignalBlocker materialsBlocker(m_classMaterialsEdit);
-    const QSignalBlocker gradingBlocker(m_bookReportGradingEdit);
-    const QSignalBlocker commentsBlocker(m_subCommentsEdit);
 
     const QString email =
         loadSettingWithLegacyFallback(
@@ -1316,17 +1349,43 @@ void SubPrepPage::loadStoredSettings()
             NotAvailableText
             )
             .toString();
+    const bool zoomNotAvailable =
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomNotAvailable,
+            SettingsKeys::LegacyZoomNotAvailable,
+            true
+            )
+            .toBool();
 
     m_zoomEmailEdit->setText(
-        email.trimmed().isEmpty()
+        zoomNotAvailable || email.trimmed().isEmpty()
             ? NotAvailableText
             : email
         );
     m_zoomPasswordEdit->setText(
-        password.trimmed().isEmpty()
+        zoomNotAvailable || password.trimmed().isEmpty()
             ? NotAvailableText
             : password
         );
+}
+
+void SubPrepPage::loadStoredSettings()
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        return;
+    }
+
+    loadPersonalZoomInformation();
+
+    const QSignalBlocker materialsBlocker(m_classMaterialsEdit);
+    const QSignalBlocker gradingBlocker(m_bookReportGradingEdit);
+    const QSignalBlocker commentsBlocker(m_subCommentsEdit);
+
     m_classMaterialsEdit->setPlainText(
         dataService
             ->loadSetting(
@@ -1363,9 +1422,7 @@ void SubPrepPage::loadStoredSettings()
 void SubPrepPage::loadCampuses()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService || !m_campusCombo)
     {
@@ -1378,49 +1435,41 @@ void SubPrepPage::loadCampuses()
     m_loading = true;
 
     m_campuses =
-        dataService->getAllCampuses();
-
-    if (m_campuses.isEmpty())
-    {
-        ensureDefaultCampus();
-        m_campuses =
-            dataService->getAllCampuses();
-    }
+        campusRepository().loadCampuses();
 
     const QSignalBlocker comboBlocker(m_campusCombo);
 
     m_campusCombo->clear();
 
-    for (const CampusRecord& campus : m_campuses)
+    for (const CampusInfo& campus : m_campuses)
     {
+        const QString displayName =
+            campusDisplayName(campus);
+
+        if (displayName.isEmpty())
+        {
+            continue;
+        }
+
         m_campusCombo->addItem(
-            campus.name.trimmed().isEmpty()
-                ? DefaultCampusName
-                : campus.name.trimmed(),
+            displayName,
             campus.id
             );
     }
 
-    int campusIdToSelect =
-        m_currentCampusId;
-
-    if (campusIdToSelect <= 0)
-    {
-        const auto savedCampusId =
-            SettingsManager::instance()
-                .getLastCampusId();
-
-        if (savedCampusId.has_value())
-        {
-            campusIdToSelect =
-                savedCampusId.value();
-        }
-    }
+    const QString savedCampus =
+        dataService
+            ->loadSetting(
+                SettingsKeys::MyInfoCampus,
+                QString()
+                )
+            .toString();
 
     int index =
-        campusIdToSelect > 0
-            ? m_campusCombo->findData(campusIdToSelect)
-            : -1;
+        findCampusIndex(
+            m_campusCombo,
+            savedCampus
+            );
 
     if (
         index < 0
@@ -1437,12 +1486,20 @@ void SubPrepPage::loadCampuses()
         m_currentCampusId =
             m_campusCombo
                 ->itemData(index)
-                .toInt();
+                .toString();
 
-        SettingsManager::instance()
-            .setLastCampusId(
-                m_currentCampusId
+        if (
+            m_campusCombo->currentText().compare(
+                savedCampus.trimmed(),
+                Qt::CaseInsensitive
+                ) != 0
+            )
+        {
+            dataService->saveSetting(
+                SettingsKeys::MyInfoCampus,
+                m_campusCombo->currentText()
                 );
+        }
 
         loadCampusFields(
             m_currentCampusId
@@ -1454,15 +1511,10 @@ void SubPrepPage::loadCampuses()
 }
 
 void SubPrepPage::loadCampusFields(
-    int campusId
+    const QString& campusId
     )
 {
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-
-    if (!dataService || campusId <= 0)
+    if (campusId.trimmed().isEmpty())
     {
         return;
     }
@@ -1472,10 +1524,22 @@ void SubPrepPage::loadCampusFields(
 
     m_loading = true;
 
-    const CampusRecord campus =
-        dataService->getCampus(
-            campusId
-            );
+    CampusInfo campus;
+
+    for (const CampusInfo& campusInfo : m_campuses)
+    {
+        if (
+            campusInfo.id.compare(
+                campusId,
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            campus =
+                campusInfo;
+            break;
+        }
+    }
 
     const QSignalBlocker officeBlocker(m_officeNumberEdit);
     const QSignalBlocker wifiBlocker(m_officeWifiEdit);
@@ -1504,9 +1568,7 @@ void SubPrepPage::loadCampusFields(
 bool SubPrepPage::saveSubPrepInternal()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService)
     {
@@ -1518,7 +1580,7 @@ bool SubPrepPage::saveSubPrepInternal()
         m_autosaveTimer->stop();
     }
 
-    normalizeProtectedFields();
+    restoreBookReportDefaultIfNeeded();
 
     dataService->saveSetting(
         SettingsKeys::ClassMaterials,
@@ -1533,113 +1595,9 @@ bool SubPrepPage::saveSubPrepInternal()
         m_subCommentsEdit->toPlainText()
         );
 
-    const bool campusSaved =
-        saveCurrentCampus();
-
-    if (!campusSaved)
-    {
-        m_dirty = true;
-        return false;
-    }
-
     clearDirty();
 
     return true;
-}
-
-bool SubPrepPage::saveCurrentCampus()
-{
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-
-    if (!dataService)
-    {
-        return false;
-    }
-
-    if (m_currentCampusId <= 0)
-    {
-        m_currentCampusId =
-            ensureDefaultCampus();
-    }
-
-    CampusRecord campus =
-        dataService->getCampus(
-            m_currentCampusId
-            );
-
-    if (campus.id <= 0)
-    {
-        campus.name =
-            DefaultCampusName;
-    }
-
-    campus.officeNumber =
-        m_officeNumberEdit->text().trimmed();
-    campus.officeWifi =
-        m_officeWifiEdit->text().trimmed();
-    campus.officeWifiPassword =
-        m_officeWifiPasswordEdit->text().trimmed();
-    campus.photocopierCode =
-        m_photocopierCodeEdit->text().trimmed().isEmpty()
-            ? NotAvailableText
-            : m_photocopierCodeEdit->text().trimmed();
-
-    const int savedCampusId =
-        dataService->saveCampus(
-            campus
-            );
-
-    if (savedCampusId <= 0)
-    {
-        return false;
-    }
-
-    m_currentCampusId =
-        savedCampusId;
-
-    SettingsManager::instance()
-        .setLastCampusId(
-            savedCampusId
-            );
-
-    return true;
-}
-
-int SubPrepPage::ensureDefaultCampus()
-{
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-
-    if (!dataService)
-    {
-        return -1;
-    }
-
-    CampusRecord campus;
-    campus.name =
-        DefaultCampusName;
-    campus.photocopierCode =
-        NotAvailableText;
-
-    const int campusId =
-        dataService->saveCampus(
-            campus
-            );
-
-    if (campusId > 0)
-    {
-        SettingsManager::instance()
-            .setLastCampusId(
-                campusId
-                );
-    }
-
-    return campusId;
 }
 
 void SubPrepPage::refreshGeneratedContent()
@@ -1651,9 +1609,7 @@ void SubPrepPage::refreshGeneratedContent()
 void SubPrepPage::rebuildTimeFillerActivities()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService || !m_timeFillerActivitiesEdit)
     {
@@ -1672,9 +1628,7 @@ void SubPrepPage::rebuildTimeFillerActivities()
 void SubPrepPage::rebuildClassInformation()
 {
     auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+        openDataService(m_services);
 
     if (!dataService || !m_classInformationLayout)
     {
@@ -2063,23 +2017,6 @@ void SubPrepPage::rebuildClassInformation()
                 );
         }
     }
-}
-
-bool SubPrepPage::normalizeProtectedFields()
-{
-    bool changed = false;
-
-    changed =
-        normalizeLineEdit(
-            m_photocopierCodeEdit,
-            NotAvailableText
-            )
-        || changed;
-    changed =
-        restoreBookReportDefaultIfNeeded()
-        || changed;
-
-    return changed;
 }
 
 bool SubPrepPage::normalizeLineEdit(

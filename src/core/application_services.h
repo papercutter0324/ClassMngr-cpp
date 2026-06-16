@@ -10,11 +10,19 @@ class ThemeService;
 class ApplicationServices
 {
 public:
-    explicit ApplicationServices(
+    ApplicationServices();
+
+    ~ApplicationServices();
+
+    bool openDatabase(
         const QString& databasePath
         );
 
-    ~ApplicationServices();
+    void closeDatabase();
+
+    bool hasOpenDatabase() const;
+
+    QString currentDatabasePath() const;
 
     DataService* dataService() const;
     ThemeService* themeService() const;
