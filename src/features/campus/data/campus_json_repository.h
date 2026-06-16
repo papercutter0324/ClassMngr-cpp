@@ -17,8 +17,6 @@ public:
         QString bundledDirectoryPath = QString()
         );
 
-    void ensurePlaceholderCampus() const;
-
     [[nodiscard]] QList<CampusInfo> loadCampuses() const;
 
     [[nodiscard]] std::optional<CampusInfo> loadCampus(

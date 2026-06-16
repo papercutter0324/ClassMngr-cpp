@@ -1,7 +1,6 @@
 #include "campus_json_repository.h"
 
 #include <QDir>
-#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
@@ -107,7 +106,8 @@ QJsonObject normalizedAddressObject(
             );
 
     const bool hasStructuredAddress =
-        !valueString(object, QStringLiteral("province")).trimmed().isEmpty()
+        !valueString(object, QStringLiteral("building_name")).trimmed().isEmpty()
+        || !valueString(object, QStringLiteral("province")).trimmed().isEmpty()
         || !city.isEmpty()
         || !district.isEmpty()
         || !line1.trimmed().isEmpty()
@@ -122,6 +122,14 @@ QJsonObject normalizedAddressObject(
     }
 
     QJsonObject address;
+
+    address.insert(
+        QStringLiteral("building_name"),
+        valueString(
+            object,
+            QStringLiteral("building_name")
+            )
+        );
 
     address.insert(
         QStringLiteral("province"),
@@ -547,201 +555,6 @@ CampusInfo campusFromJson(
     return campus;
 }
 
-CampusInfo placeholderCampus()
-{
-    CampusInfo campus;
-
-    campus.id =
-        QStringLiteral("placeholder");
-    campus.campusName =
-        QStringLiteral("Placeholder");
-    campus.campusCode =
-        QStringLiteral("PLH");
-    campus.buildingName =
-        QStringLiteral("Sample Learning Center");
-    campus.buildingNameKr =
-        QStringLiteral("샘플 학습 센터");
-    campus.address =
-        QStringLiteral("123 Example-ro, Sample District, Seoul");
-    campus.phoneNumber =
-        QStringLiteral("02-0000-0000");
-    campus.officeNumber =
-        QStringLiteral("Room 401");
-    campus.transitSteps =
-        {
-            QStringLiteral("Take Line 2 to Sample Station."),
-            QStringLiteral("Use Exit 3 and walk straight for two blocks."),
-            QStringLiteral("Turn right at the coffee shop and enter the glass-front building.")
-        };
-    campus.arrivalInfo =
-        QStringLiteral("Check in at the front desk and ask for the ClassMngr sample classroom.");
-    campus.imageMain =
-        QStringLiteral("Sample map image path or URL");
-    campus.officeWifi =
-        QStringLiteral("Placeholder-Office-WiFi");
-    campus.officeWifiPassword =
-        QStringLiteral("sample-password");
-    campus.printerName =
-        QStringLiteral("Placeholder Printer");
-    campus.printerSteps =
-        QStringLiteral("Open system printer settings.\nAdd a network printer.\nChoose Placeholder Printer.");
-    campus.printerDriverUrlUnavailable =
-        true;
-    campus.photocopierCode =
-        QStringLiteral("0000");
-
-    campus.directionsAddressEn.insert(
-        QStringLiteral("province"),
-        QStringLiteral("Seoul")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("city"),
-        QString()
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("district"),
-        QStringLiteral("Jongno-gu")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("city_district"),
-        QStringLiteral("Jongno-gu")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("line1"),
-        QStringLiteral("23 Sajik-ro-3-gil")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("line2"),
-        QStringLiteral("102-dong 304-ho")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("postal_code"),
-        QStringLiteral("30174")
-        );
-    campus.directionsAddressEn.insert(
-        QStringLiteral("addr_note"),
-        QStringLiteral("Check in at the front desk.")
-        );
-
-    campus.directionsAddressKr.insert(
-        QStringLiteral("province"),
-        QStringLiteral("서울특별시")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("city"),
-        QString()
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("district"),
-        QStringLiteral("종로구")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("city_district"),
-        QStringLiteral("종로구")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("line1"),
-        QStringLiteral("사직로3길 23")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("line2"),
-        QStringLiteral("102동 304호")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("postal_code"),
-        QStringLiteral("30174")
-        );
-    campus.directionsAddressKr.insert(
-        QStringLiteral("addr_note"),
-        QStringLiteral("프런트 데스크에서 체크인하세요.")
-        );
-
-    QJsonObject englishAddress;
-    englishAddress.insert(
-        QStringLiteral("province"),
-        QStringLiteral("Seoul")
-        );
-    englishAddress.insert(
-        QStringLiteral("city_district"),
-        QStringLiteral("Sample-gu")
-        );
-    englishAddress.insert(
-        QStringLiteral("city"),
-        QString()
-        );
-    englishAddress.insert(
-        QStringLiteral("district"),
-        QStringLiteral("Sample-gu")
-        );
-    englishAddress.insert(
-        QStringLiteral("line1"),
-        QStringLiteral("45 Sample Housing Road")
-        );
-    englishAddress.insert(
-        QStringLiteral("line2"),
-        QStringLiteral("Apt. 101")
-        );
-    englishAddress.insert(
-        QStringLiteral("postal_code"),
-        QStringLiteral("00000")
-        );
-    englishAddress.insert(
-        QStringLiteral("addr_note"),
-        QStringLiteral("Use the south entrance after 8 PM.")
-        );
-
-    QJsonObject koreanAddress;
-    koreanAddress.insert(
-        QStringLiteral("province"),
-        QStringLiteral("서울특별시")
-        );
-    koreanAddress.insert(
-        QStringLiteral("city_district"),
-        QStringLiteral("종로구")
-        );
-    koreanAddress.insert(
-        QStringLiteral("city"),
-        QString()
-        );
-    koreanAddress.insert(
-        QStringLiteral("district"),
-        QStringLiteral("종로구")
-        );
-    koreanAddress.insert(
-        QStringLiteral("line1"),
-        QStringLiteral("사직로3길 23")
-        );
-    koreanAddress.insert(
-        QStringLiteral("line2"),
-        QStringLiteral("102동 304호")
-        );
-    koreanAddress.insert(
-        QStringLiteral("postal_code"),
-        QStringLiteral("30174")
-        );
-    koreanAddress.insert(
-        QStringLiteral("addr_note"),
-        QStringLiteral("오후 8시 이후에는 남문을 이용하세요.")
-        );
-
-    QJsonObject housing;
-    housing.insert(
-        QStringLiteral("name"),
-        QStringLiteral("Placeholder Housing")
-        );
-    housing.insert(
-        QStringLiteral("en"),
-        englishAddress
-        );
-    housing.insert(
-        QStringLiteral("kr"),
-        koreanAddress
-        );
-
-    campus.housingLocations.append(housing);
-
-    return campus;
-}
 } // namespace
 
 CampusJsonRepository::CampusJsonRepository(
@@ -751,40 +564,6 @@ CampusJsonRepository::CampusJsonRepository(
     : m_directoryPath(std::move(directoryPath))
     , m_bundledDirectoryPath(std::move(bundledDirectoryPath))
 {
-}
-
-void CampusJsonRepository::ensurePlaceholderCampus() const
-{
-    const QString placeholderPath =
-        filePathForCampusId(
-            QStringLiteral("placeholder")
-            );
-
-    if (QFile::exists(placeholderPath))
-    {
-        return;
-    }
-
-    const QString bundledPlaceholderPath =
-        bundledFilePathForCampusId(
-            QStringLiteral("placeholder")
-            );
-
-    if (QFile::exists(bundledPlaceholderPath))
-    {
-        return;
-    }
-
-    const Status saved =
-        saveCampus(
-            placeholderCampus()
-            );
-
-    if (!saved)
-    {
-        qWarning()
-            << saved.error();
-    }
 }
 
 QList<CampusInfo>
