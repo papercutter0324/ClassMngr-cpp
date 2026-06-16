@@ -1,0 +1,162 @@
+{
+    "address": "[Recipient's Name]\n4th Floor (XY Building)\nBaekhyun-ro 101beon-gil 30\nBundang-gu Seongnam-si Gyeonggi-do 13595",
+    "arrival_info": "Take one of the two elevators on the left up to the 4th floor. Please sign in at the front desk.\nIf you haven't been to Bundang before, you can ask one of the front desk staff to show your where the native teacher office is located.",
+    "building_name": "XY Building",
+    "campus_code": "BDG",
+    "campus_name": "Bundang",
+    "directions": {
+        "en": {
+            "addr_note": "The sole elevator on the right doesn’t go to the 4th floor.",
+            "address_system": "modern",
+            "building_name": "XY Building",
+            "city": "Seongnam-si",
+            "city_district": "Seongnam-si Bundang-gu",
+            "classic": {
+                "addr_note": "",
+                "building_name": "",
+                "city": "Seongnam-si",
+                "city_district": "Seongnam-si Bundang-gu",
+                "district": "Bundang-gu",
+                "line1": "Sunae-dong 17-1",
+                "line2": "4th Floor",
+                "postal_code": "",
+                "province": "Gyeonggi-do"
+            },
+            "district": "Bundang-gu",
+            "line1": "Baekhyun-ro 101beon-gil 30",
+            "line2": "4th Floor",
+            "modern": {
+                "addr_note": "",
+                "building_name": "",
+                "city": "Seongnam-si",
+                "city_district": "Seongnam-si Bundang-gu",
+                "district": "Bundang-gu",
+                "line1": "Baekhyun-ro 101beon-gil 30",
+                "line2": "4th Floor",
+                "postal_code": "13595",
+                "province": "Gyeonggi-do"
+            },
+            "postal_code": "13595",
+            "province": "Gyeonggi-do"
+        },
+        "kr": {
+            "addr_note": "",
+            "address_system": "modern",
+            "building_name": "XY빌딩",
+            "city": "성남시",
+            "city_district": "성남시 분당구",
+            "classic": {
+                "addr_note": "",
+                "building_name": "",
+                "city": "성남시",
+                "city_district": "성남시 분당구",
+                "district": "분당구",
+                "line1": "수내동 17-1",
+                "line2": "4층",
+                "postal_code": "",
+                "province": "경기도"
+            },
+            "district": "분당구",
+            "line1": "백현로101번길30",
+            "line2": "4층",
+            "modern": {
+                "addr_note": "",
+                "building_name": "",
+                "city": "성남시",
+                "city_district": "성남시 분당구",
+                "district": "분당구",
+                "line1": "백현로101번길30",
+                "line2": "4층",
+                "postal_code": "13595",
+                "province": "경기도"
+            },
+            "postal_code": "13595",
+            "province": "경기도"
+        }
+    },
+    "housing_locations": [
+        {
+            "en": {
+                "addr_note": "",
+                "address_system": "modern",
+                "building_name": "Cheonggu Blueville",
+                "city": "Seongnam-si",
+                "city_district": "Seongnam-si Bundang-gu",
+                "classic": {
+                    "building_name": "Cheonggu Blueville",
+                    "city": "Seongnam-si ",
+                    "city_district": "Seongnam-si Bundang-gu",
+                    "district": "Bundang-gu ",
+                    "line1": "",
+                    "line2": "###-ho ",
+                    "postal_code": "",
+                    "province": "Gyeonggi-do "
+                },
+                "district": "Bundang-gu",
+                "line1": "Hwangsaeul-ro 224",
+                "line2": "###-ho",
+                "modern": {
+                    "building_name": "Cheonggu Blueville",
+                    "city": "Seongnam-si",
+                    "city_district": "Seongnam-si Bundang-gu",
+                    "district": "Bundang-gu",
+                    "line1": "Hwangsaeul-ro 224",
+                    "line2": "###-ho",
+                    "postal_code": "13595",
+                    "province": "Gyeonggi-do"
+                },
+                "postal_code": "13595",
+                "province": "Gyeonggi-do"
+            },
+            "kr": {
+                "addr_note": "",
+                "address_system": "classic",
+                "building_name": "청구블루빌",
+                "city": "성남시",
+                "city_district": "성남시 분당구",
+                "classic": {
+                    "building_name": "청구블루빌",
+                    "city": "성남시",
+                    "city_district": "성남시 분당구",
+                    "district": "분당구",
+                    "line1": "",
+                    "line2": "###호 (청구블루빌)",
+                    "postal_code": "",
+                    "province": "경기도"
+                },
+                "district": "분당구",
+                "line1": "황새울로 224",
+                "line2": "###호 (청구블루빌)",
+                "modern": {
+                    "building_name": "청구블루빌",
+                    "city": "성남시",
+                    "city_district": "성남시 분당구",
+                    "district": "분당구",
+                    "line1": "황새울로 224",
+                    "line2": "###호 (청구블루빌)",
+                    "postal_code": "13595",
+                    "province": "경기도"
+                },
+                "postal_code": "13595",
+                "province": "경기도"
+            },
+            "name": "Cheonggu Blueville"
+        }
+    ],
+    "id": "bundang",
+    "image_main": "",
+    "office_number": "418",
+    "office_wifi": "Native Room_5G / Native Room_2G",
+    "office_wifi_password": "dyb418000",
+    "phone_number": "031-716-2945",
+    "photocopier_code": "N/A",
+    "printer_driver_url": "",
+    "printer_driver_url_unavailable": true,
+    "printer_name": "Bundang Office",
+    "printer_steps": "",
+    "transit_steps": [
+        "- Take the Suin-Bundang (the yellow) line to Sunae Station (수내역).",
+        "- Exit via exit 2.",
+        "- The building will be immediately on your left as you come out of the exit."
+    ]
+}
