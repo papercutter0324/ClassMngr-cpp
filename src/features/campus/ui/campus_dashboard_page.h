@@ -78,7 +78,8 @@ private:
 
     AddressSectionWidgets createAddressSection(
         QWidget* parent,
-        bool koreanAddress
+        bool koreanAddress,
+        bool includeBuildingName = false
         );
 
     void configureExpandingTextField(
@@ -142,11 +143,19 @@ private:
         ) const;
     void updateHousingRemoveButtonVisibility();
     void updatePrinterDriverUrlState();
+    void updatePhotocopierCodeState();
     void showDirectionsLanguage(
         bool showEnglish
         );
     void syncPhoneFields(
         QLineEdit* source
+        );
+    void handleAddressVariantFieldEdited(
+        QLineEdit* edit,
+        const QString& key
+        );
+    AddressSectionWidgets* addressSectionForField(
+        QLineEdit* edit
         );
     void normalizeCampusNameField();
     void handleNewCampus();
@@ -178,6 +187,7 @@ private:
         QFormLayout* form = nullptr;
         QPlainTextEdit* complete = nullptr;
         QPushButton* toggleAddressSystemButton = nullptr;
+        QLineEdit* buildingName = nullptr;
         QLineEdit* province = nullptr;
         QLineEdit* city = nullptr;
         QLineEdit* district = nullptr;
@@ -243,6 +253,7 @@ private:
     QLineEdit* m_printerDriverUrlEdit = nullptr;
     QCheckBox* m_printerDriverUrlUnavailableCheck = nullptr;
     QLineEdit* m_photocopierCodeEdit = nullptr;
+    QCheckBox* m_photocopierCodeUnavailableCheck = nullptr;
     QLineEdit* m_imagePathEdit = nullptr;
 
     QPlainTextEdit* m_transitStepsEdit = nullptr;

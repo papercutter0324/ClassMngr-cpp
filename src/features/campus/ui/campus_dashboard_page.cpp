@@ -28,6 +28,7 @@
 namespace
 {
 constexpr int AutosaveDebounceMs = 800;
+constexpr auto NotApplicableText = "N/A";
 
 void setStaticToggleButtonWidth(
     QPushButton* button
@@ -181,6 +182,14 @@ QJsonObject normalizedAddressForUi(
     QJsonObject normalized;
 
     normalized.insert(
+        QStringLiteral("building_name"),
+        jsonString(
+            address,
+            QStringLiteral("building_name")
+            )
+        );
+
+    normalized.insert(
         QStringLiteral("province"),
         jsonString(
             address,
@@ -236,6 +245,40 @@ QJsonObject normalizedAddressForUi(
         );
 
     return normalized;
+}
+
+QString sharedAddressNote(
+    const QJsonObject& address,
+    const QJsonObject& modernAddress,
+    const QJsonObject& classicAddress
+    )
+{
+    const QString topLevelNote =
+        jsonString(
+            address,
+            QStringLiteral("addr_note")
+            );
+
+    if (!topLevelNote.trimmed().isEmpty())
+    {
+        return topLevelNote;
+    }
+
+    const QString modernNote =
+        jsonString(
+            modernAddress,
+            QStringLiteral("addr_note")
+            );
+
+    if (!modernNote.trimmed().isEmpty())
+    {
+        return modernNote;
+    }
+
+    return jsonString(
+        classicAddress,
+        QStringLiteral("addr_note")
+        );
 }
 
 QJsonObject emptyHousingLocation()
@@ -919,11 +962,75 @@ QWidget* CampusDashboardPage::createInformationTab()
         }
         );
 
+    auto* photocopierRow =
+        new QWidget(tab);
+
+    photocopierRow->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+
+    auto* photocopierLayout =
+        new QHBoxLayout(photocopierRow);
+
+    photocopierLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    photocopierLayout->setAlignment(Qt::AlignTop);
+
     m_photocopierCodeEdit =
-        addLineField(
-            form,
-            tr("Photocopier Code:")
+        new QLineEdit(photocopierRow);
+
+    m_photocopierCodeEdit->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+
+    m_photocopierCodeUnavailableCheck =
+        new QCheckBox(
+            tr("N/A"),
+            photocopierRow
             );
+
+    m_photocopierCodeUnavailableCheck->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Fixed
+        );
+
+    m_lineEdits.append(m_photocopierCodeEdit);
+
+    photocopierLayout->addWidget(m_photocopierCodeEdit, 1);
+    photocopierLayout->addWidget(m_photocopierCodeUnavailableCheck);
+
+    form->addRow(
+        tr("Photocopier Code:"),
+        photocopierRow
+        );
+
+    connect(
+        m_photocopierCodeEdit,
+        &QLineEdit::textEdited,
+        this,
+        [this]()
+        {
+            handleFieldEdited();
+        }
+        );
+
+    connect(
+        m_photocopierCodeUnavailableCheck,
+        &QCheckBox::toggled,
+        this,
+        [this](bool)
+        {
+            updatePhotocopierCodeState();
+            handleFieldEdited();
+        }
+        );
 
     return tab;
 }
@@ -1195,7 +1302,8 @@ void CampusDashboardPage::updateTextFieldHeight(
 CampusDashboardPage::AddressSectionWidgets
 CampusDashboardPage::createAddressSection(
     QWidget* parent,
-    bool koreanAddress
+    bool koreanAddress,
+    bool includeBuildingName
     )
 {
     AddressSectionWidgets section;
@@ -1296,6 +1404,18 @@ CampusDashboardPage::createAddressSection(
         }
         );
 
+    if (includeBuildingName)
+    {
+        section.buildingName =
+            addLineField(
+                section.form,
+                tr("Building Name:")
+                );
+
+        section.line2Suffix =
+            section.buildingName;
+    }
+
     section.province =
         addLineField(
             section.form,
@@ -1332,33 +1452,60 @@ CampusDashboardPage::createAddressSection(
             tr("Postal Code:")
             );
 
+    section.note =
+        addLineField(
+            section.form,
+            tr("Note:")
+            );
+
     sectionLayout->addWidget(addressContainer);
 
-    if (!koreanAddress)
+    auto connectMirroredField =
+        [this](QLineEdit* edit, const QString& key)
     {
-        auto* noteForm =
-            new QFormLayout;
+        if (!edit)
+        {
+            return;
+        }
 
-        noteForm->setContentsMargins(
-            0,
-            0,
-            0,
-            0
+        connect(
+            edit,
+            &QLineEdit::textEdited,
+            this,
+            [this, edit, key](const QString&)
+            {
+                handleAddressVariantFieldEdited(
+                    edit,
+                    key
+                    );
+            }
             );
+    };
 
-        noteForm->setSpacing(8);
-        noteForm->setFieldGrowthPolicy(
-            QFormLayout::ExpandingFieldsGrow
-            );
+    connectMirroredField(
+        section.buildingName,
+        QStringLiteral("building_name")
+        );
 
-        section.note =
-            addLineField(
-                noteForm,
-                tr("Note:")
-                );
+    connectMirroredField(
+        section.province,
+        QStringLiteral("province")
+        );
 
-        sectionLayout->addLayout(noteForm);
-    }
+    connectMirroredField(
+        section.city,
+        QStringLiteral("city")
+        );
+
+    connectMirroredField(
+        section.district,
+        QStringLiteral("district")
+        );
+
+    connectMirroredField(
+        section.line2,
+        QStringLiteral("line2")
+        );
 
     return section;
 }
@@ -1559,13 +1706,18 @@ void CampusDashboardPage::applyAdminMode()
 
     updatePrinterDriverUrlState();
 
+    if (m_photocopierCodeUnavailableCheck)
+    {
+        m_photocopierCodeUnavailableCheck->setEnabled(m_adminMode);
+    }
+
+    updatePhotocopierCodeState();
+
     updateHousingRemoveButtonVisibility();
 }
 
 void CampusDashboardPage::loadCampuses()
 {
-    m_repository.ensurePlaceholderCampus();
-
     const QList<CampusInfo> campuses =
         m_repository.loadCampuses();
 
@@ -1666,7 +1818,28 @@ void CampusDashboardPage::populateFields(
 
     updatePrinterDriverUrlState();
 
-    m_photocopierCodeEdit->setText(campus.photocopierCode);
+    const bool photocopierUnavailable =
+        campus.photocopierCode
+            .trimmed()
+            .compare(
+                QString::fromLatin1(NotApplicableText),
+                Qt::CaseInsensitive
+                ) == 0;
+
+    if (m_photocopierCodeUnavailableCheck)
+    {
+        m_photocopierCodeUnavailableCheck->setChecked(
+            photocopierUnavailable
+            );
+    }
+
+    m_photocopierCodeEdit->setText(
+        photocopierUnavailable
+            ? QString::fromLatin1(NotApplicableText)
+            : campus.photocopierCode
+        );
+
+    updatePhotocopierCodeState();
 
     populateHousingSections(campus.housingLocations);
 
@@ -1744,6 +1917,7 @@ void CampusDashboardPage::clearHousingSections()
     {
         unregisterLineEdit(section.name);
         unregisterTextEdit(section.english.complete);
+        unregisterLineEdit(section.english.buildingName);
         unregisterLineEdit(section.english.province);
         unregisterLineEdit(section.english.city);
         unregisterLineEdit(section.english.district);
@@ -1752,6 +1926,7 @@ void CampusDashboardPage::clearHousingSections()
         unregisterLineEdit(section.english.postalCode);
         unregisterLineEdit(section.english.note);
         unregisterTextEdit(section.korean.complete);
+        unregisterLineEdit(section.korean.buildingName);
         unregisterLineEdit(section.korean.province);
         unregisterLineEdit(section.korean.city);
         unregisterLineEdit(section.korean.district);
@@ -1858,12 +2033,14 @@ void CampusDashboardPage::addHousingSectionFromJson(
     section.english =
         createAddressSection(
             container,
-            false
+            false,
+            true
             );
 
     section.korean =
         createAddressSection(
             container,
+            true,
             true
             );
 
@@ -1951,6 +2128,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
 
                 unregisterLineEdit(section.name);
                 unregisterTextEdit(section.english.complete);
+                unregisterLineEdit(section.english.buildingName);
                 unregisterLineEdit(section.english.province);
                 unregisterLineEdit(section.english.city);
                 unregisterLineEdit(section.english.district);
@@ -1959,6 +2137,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
                 unregisterLineEdit(section.english.postalCode);
                 unregisterLineEdit(section.english.note);
                 unregisterTextEdit(section.korean.complete);
+                unregisterLineEdit(section.korean.buildingName);
                 unregisterLineEdit(section.korean.province);
                 unregisterLineEdit(section.korean.city);
                 unregisterLineEdit(section.korean.district);
@@ -2099,6 +2278,13 @@ void CampusDashboardPage::populateAddressSection(
                 : classicAddress
             );
 
+    const QString note =
+        sharedAddressNote(
+            address,
+            modernAddress,
+            classicAddress
+            );
+
     section->showingModernAddress =
         jsonString(
             address,
@@ -2112,6 +2298,11 @@ void CampusDashboardPage::populateAddressSection(
             : section->classicAddress
         );
 
+    if (section->note)
+    {
+        section->note->setText(note);
+    }
+
     updateAddressSystemButton(section);
     updateCompleteAddress(section);
 }
@@ -2124,6 +2315,16 @@ void CampusDashboardPage::loadAddressFields(
     if (!section)
     {
         return;
+    }
+
+    if (section->buildingName)
+    {
+        section->buildingName->setText(
+            jsonString(
+                address,
+                QStringLiteral("building_name")
+                )
+            );
     }
 
     section->province->setText(
@@ -2167,16 +2368,6 @@ void CampusDashboardPage::loadAddressFields(
             QStringLiteral("postal_code")
             )
         );
-
-    if (section->note)
-    {
-        section->note->setText(
-            jsonString(
-                address,
-                QStringLiteral("addr_note")
-                )
-            );
-    }
 }
 
 QJsonObject CampusDashboardPage::addressSectionToJson(
@@ -2200,6 +2391,14 @@ QJsonObject CampusDashboardPage::addressSectionToJson(
             addressFieldsToJson(section);
     }
 
+    modernAddress.remove(
+        QStringLiteral("addr_note")
+        );
+
+    classicAddress.remove(
+        QStringLiteral("addr_note")
+        );
+
     QJsonObject address =
         modernAddress;
 
@@ -2220,6 +2419,13 @@ QJsonObject CampusDashboardPage::addressSectionToJson(
             : QStringLiteral("classic")
         );
 
+    address.insert(
+        QStringLiteral("addr_note"),
+        section.note
+            ? section.note->text()
+            : QString()
+        );
+
     return address;
 }
 
@@ -2228,6 +2434,14 @@ QJsonObject CampusDashboardPage::addressFieldsToJson(
     ) const
 {
     QJsonObject address;
+
+    if (section.buildingName)
+    {
+        address.insert(
+            QStringLiteral("building_name"),
+            section.buildingName->text()
+            );
+    }
 
     address.insert(
         QStringLiteral("province"),
@@ -2280,13 +2494,6 @@ QJsonObject CampusDashboardPage::addressFieldsToJson(
         QStringLiteral("postal_code"),
         section.postalCode
             ? section.postalCode->text()
-            : QString()
-        );
-
-    address.insert(
-        QStringLiteral("addr_note"),
-        section.note
-            ? section.note->text()
             : QString()
         );
 
@@ -2575,6 +2782,42 @@ void CampusDashboardPage::updatePrinterDriverUrlState()
         );
 }
 
+void CampusDashboardPage::updatePhotocopierCodeState()
+{
+    if (!m_photocopierCodeEdit || !m_photocopierCodeUnavailableCheck)
+    {
+        return;
+    }
+
+    const bool unavailable =
+        m_photocopierCodeUnavailableCheck->isChecked();
+
+    if (unavailable)
+    {
+        const QSignalBlocker blocker(m_photocopierCodeEdit);
+
+        m_photocopierCodeEdit->setText(
+            QString::fromLatin1(NotApplicableText)
+            );
+    }
+    else if (
+        m_photocopierCodeEdit
+            ->text()
+            .trimmed()
+            .compare(
+                QString::fromLatin1(NotApplicableText),
+                Qt::CaseInsensitive
+                ) == 0
+        )
+    {
+        const QSignalBlocker blocker(m_photocopierCodeEdit);
+
+        m_photocopierCodeEdit->clear();
+    }
+
+    m_photocopierCodeEdit->setEnabled(!unavailable);
+}
+
 void CampusDashboardPage::showDirectionsLanguage(
     bool showEnglish
     )
@@ -2621,6 +2864,103 @@ void CampusDashboardPage::syncPhoneFields(
     target->setText(source->text());
 }
 
+CampusDashboardPage::AddressSectionWidgets*
+CampusDashboardPage::addressSectionForField(
+    QLineEdit* edit
+    )
+{
+    if (!edit)
+    {
+        return nullptr;
+    }
+
+    auto containsField =
+        [edit](const AddressSectionWidgets& section)
+    {
+        return section.buildingName == edit
+            || section.province == edit
+            || section.city == edit
+            || section.district == edit
+            || section.line1 == edit
+            || section.line2 == edit
+            || section.postalCode == edit
+            || section.note == edit;
+    };
+
+    if (containsField(m_directionsEnglishAddress))
+    {
+        return &m_directionsEnglishAddress;
+    }
+
+    if (containsField(m_directionsKoreanAddress))
+    {
+        return &m_directionsKoreanAddress;
+    }
+
+    for (HousingSectionWidgets& housingSection : m_housingSections)
+    {
+        if (containsField(housingSection.english))
+        {
+            return &housingSection.english;
+        }
+
+        if (containsField(housingSection.korean))
+        {
+            return &housingSection.korean;
+        }
+    }
+
+    return nullptr;
+}
+
+void CampusDashboardPage::handleAddressVariantFieldEdited(
+    QLineEdit* edit,
+    const QString& key
+    )
+{
+    if (m_loading || !edit)
+    {
+        return;
+    }
+
+    AddressSectionWidgets* section =
+        addressSectionForField(edit);
+
+    if (!section)
+    {
+        return;
+    }
+
+    QJsonObject* targetAddress =
+        section->showingModernAddress
+            ? &section->classicAddress
+            : &section->modernAddress;
+
+    if (!jsonString(*targetAddress, key).trimmed().isEmpty())
+    {
+        return;
+    }
+
+    targetAddress->insert(
+        key,
+        edit->text()
+        );
+
+    if (
+        key == QStringLiteral("city")
+        || key == QStringLiteral("district")
+        )
+    {
+        targetAddress->insert(
+            QStringLiteral("city_district"),
+            combinedCityDistrict(
+                jsonString(*targetAddress, QStringLiteral("city")),
+                jsonString(*targetAddress, QStringLiteral("district"))
+                )
+            );
+    }
+}
+
 void CampusDashboardPage::normalizeCampusNameField()
 {
     if (!m_nameEdit || !m_nameEdit->text().trimmed().isEmpty())
@@ -2647,9 +2987,9 @@ void CampusDashboardPage::handleNewCampus()
     CampusInfo campus;
 
     campus.campusName =
-        tr("Placeholder");
+        tr("New Campus");
     campus.campusCode =
-        QStringLiteral("PLH");
+        QStringLiteral("NEW");
     campus.printerDriverUrlUnavailable =
         true;
     campus.housingLocations.append(
@@ -2753,7 +3093,10 @@ Status CampusDashboardPage::readFieldsIntoCampus(
             ? m_printerDriverUrlUnavailableCheck->isChecked()
             : updated.printerDriverUrlUnavailable;
     updated.photocopierCode =
-        m_photocopierCodeEdit->text();
+        m_photocopierCodeUnavailableCheck
+            && m_photocopierCodeUnavailableCheck->isChecked()
+                ? QString::fromLatin1(NotApplicableText)
+                : m_photocopierCodeEdit->text();
     updated.housingLocations =
         housingSectionsToJson();
 
