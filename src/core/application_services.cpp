@@ -1,7 +1,7 @@
 #include "application_services.h"
 
-#include "services/dataservice.h"
-#include "services/theme_service.h"
+#include "data/data_service.h"
+#include "core/theme_service.h"
 
 ApplicationServices::ApplicationServices(
     const QString& databasePath

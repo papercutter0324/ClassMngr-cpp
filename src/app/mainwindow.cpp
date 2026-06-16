@@ -2,21 +2,21 @@
 #include "ui_mainwindow.h"
 #include "menu_builder.h"
 
-#include "controllers/edit_controller.h"
-#include "controllers/navigation_controller.h"
-#include "controllers/sidebar_controller.h"
-#include "controllers/theme_controller.h"
+#include "app/controllers/edit_controller.h"
+#include "app/controllers/navigation_controller.h"
+#include "app/controllers/sidebar_controller.h"
+#include "app/controllers/theme_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
-#include "services/theme_service.h"
-#include "ui/constants/gui_constants.h"
-#include "ui/pages/class/class_info_page.h"
-#include "ui/pages/myinfo/my_info_page.h"
-#include "ui/pages/schedule/schedule_page.h"
-#include "ui/pages/teacher/teacher_info_page.h"
-#include "ui/pages/pagemanager.h"
+#include "core/settingsmanager.h"
+#include "core/theme_service.h"
+#include "ui/shared/constants/gui_constants.h"
+#include "features/classes/ui/class_info_page.h"
+#include "features/my_info/ui/my_info_page.h"
+#include "features/schedule/ui/schedule_page.h"
+#include "features/teacher/ui/teacher_info_page.h"
+#include "ui/shared/pages/pagemanager.h"
 
-#include <QSettings>
 #include <QTimer>
 
 
@@ -313,11 +313,9 @@ MainWindow::~MainWindow() = default;
 
 void MainWindow::restoreSplitter()
 {
-    QSettings settings;
-
     ui->splitter->restoreState(
-        settings.value("splitterState").toByteArray()
-    );
+        SettingsManager::instance().getSplitterState()
+        );
 }
 
 
@@ -329,12 +327,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 
-    QSettings settings;
-
-    settings.setValue(
-        "splitterState",
+    SettingsManager::instance().setSplitterState(
         ui->splitter->saveState()
-    );
+        );
 
     QMainWindow::closeEvent(event);
 }

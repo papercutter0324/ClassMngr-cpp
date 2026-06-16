@@ -1,9 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "controllers/file_controller.h"
-#include "ui/actions/action_registry.h"
-#include "ui/widgets/sidebar/sidebar_types.h"
+#include "app/controllers/file_controller.h"
+#include "ui/shared/actions/action_registry.h"
+#include "ui/shared/widgets/sidebar/sidebar_types.h"
 
 #include <QMainWindow>
 #include <QShowEvent>

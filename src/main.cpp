@@ -1,9 +1,9 @@
 #include "app/mainwindow.h"
 #include "core/appsettings.h"
 #include "core/fontmanager.h"
-#include "core/resources_paths.h"
-#include "ui/widgets/splash/splashscreen.h"
-#include "utils/platform.h"
+#include "core/resource_paths.h"
+#include "ui/shared/widgets/splash/splashscreen.h"
+#include "core/utils/platform.h"
 
 #include <QApplication>
 #include <QIcon>

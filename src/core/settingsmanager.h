@@ -59,8 +59,20 @@ public:
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
 
+        static constexpr auto SPLITTER_STATE =
+            "splitterState";
+
         static constexpr auto LAST_CAMPUS_ID =
             "campus/lastSelectedId";
+
+        static constexpr auto LAST_CAMPUS_JSON_ID =
+            "campus/lastSelectedJsonId";
+
+        static constexpr auto SIDEBAR_TOOLTIPS_ENABLED =
+            "options/sidebarTooltipsEnabled";
+
+        static constexpr auto SIDEBAR_MARQUEE_ENABLED =
+            "options/sidebarMarqueeEnabled";
 
         static constexpr auto RECENT_FILES =
             "files/recent";
@@ -114,6 +126,11 @@ public:
         const QByteArray& geometry
         );
 
+    QByteArray getSplitterState() const;
+    void setSplitterState(
+        const QByteArray& state
+        );
+
     // =====================================================
     // Campus
     // =====================================================
@@ -121,6 +138,25 @@ public:
     std::optional<int> getLastCampusId() const;
     void setLastCampusId(
         int campusId
+        );
+
+    QString getLastCampusJsonId() const;
+    void setLastCampusJsonId(
+        const QString& campusId
+        );
+
+    // =====================================================
+    // Sidebar
+    // =====================================================
+
+    bool sidebarTooltipsEnabled() const;
+    void setSidebarTooltipsEnabled(
+        bool enabled
+        );
+
+    bool sidebarMarqueeEnabled() const;
+    void setSidebarMarqueeEnabled(
+        bool enabled
         );
 
     // =====================================================

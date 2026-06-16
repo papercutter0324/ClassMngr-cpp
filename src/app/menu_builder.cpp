@@ -1,8 +1,8 @@
 #include "menu_builder.h"
 
 #include "mainwindow.h"
-#include "ui/actions/action_registry.h"
-#include "ui/menus/menu_utils.h"
+#include "ui/shared/actions/action_registry.h"
+#include "ui/shared/menus/menu_utils.h"
 
 #include <QMenu>
 #include <QMenuBar>

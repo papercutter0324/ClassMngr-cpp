@@ -116,6 +116,23 @@ void SettingsManager::setWindowGeometry(
         );
 }
 
+QByteArray SettingsManager::getSplitterState() const
+{
+    return get(
+        Keys::SPLITTER_STATE
+        ).toByteArray();
+}
+
+void SettingsManager::setSplitterState(
+    const QByteArray& state
+    )
+{
+    set(
+        Keys::SPLITTER_STATE,
+        state
+        );
+}
+
 // =========================================================
 // Campus
 // =========================================================
@@ -141,6 +158,64 @@ void SettingsManager::setLastCampusId(
     set(
         Keys::LAST_CAMPUS_ID,
         campusId
+        );
+}
+
+QString SettingsManager::getLastCampusJsonId() const
+{
+    return get(
+        Keys::LAST_CAMPUS_JSON_ID,
+        QString()
+        ).toString();
+}
+
+void SettingsManager::setLastCampusJsonId(
+    const QString& campusId
+    )
+{
+    set(
+        Keys::LAST_CAMPUS_JSON_ID,
+        campusId
+        );
+}
+
+// =========================================================
+// Sidebar
+// =========================================================
+
+bool SettingsManager::sidebarTooltipsEnabled() const
+{
+    return get(
+        Keys::SIDEBAR_TOOLTIPS_ENABLED,
+        true
+        ).toBool();
+}
+
+void SettingsManager::setSidebarTooltipsEnabled(
+    bool enabled
+    )
+{
+    set(
+        Keys::SIDEBAR_TOOLTIPS_ENABLED,
+        enabled
+        );
+}
+
+bool SettingsManager::sidebarMarqueeEnabled() const
+{
+    return get(
+        Keys::SIDEBAR_MARQUEE_ENABLED,
+        false
+        ).toBool();
+}
+
+void SettingsManager::setSidebarMarqueeEnabled(
+    bool enabled
+    )
+{
+    set(
+        Keys::SIDEBAR_MARQUEE_ENABLED,
+        enabled
         );
 }
 

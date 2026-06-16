@@ -143,13 +143,13 @@
   <customwidget>
    <class>PageManager</class>
    <extends>QStackedWidget</extends>
-   <header>ui/pages/pagemanager.h</header>
+   <header>ui/shared/pages/pagemanager.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Sidebar</class>
    <extends>QWidget</extends>
-   <header>ui/widgets/sidebar/sidebar.h</header>
+   <header>ui/shared/widgets/sidebar/sidebar.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

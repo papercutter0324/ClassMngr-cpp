@@ -1,6 +1,6 @@
 #include "fontmanager.h"
 
-#include "core/resources_paths.h"
+#include "core/resource_paths.h"
 
 #include <QDebug>
 #include <QFile>

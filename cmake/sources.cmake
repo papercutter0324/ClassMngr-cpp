@@ -1,0 +1,10 @@
+file(GLOB_RECURSE CLASSMNGR_SOURCE_FILES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/*.h"
+    "${PROJECT_SOURCE_DIR}/src/*.ui"
+)
+
+target_sources(ClassMngr
+    PRIVATE
+        ${CLASSMNGR_SOURCE_FILES}
+)
