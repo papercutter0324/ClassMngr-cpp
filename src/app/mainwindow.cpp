@@ -11,6 +11,7 @@
 #include "core/settingsmanager.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/class_info_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/schedule/ui/schedule_page.h"
@@ -247,6 +248,13 @@ void MainWindow::connectSignals()
         &SidebarController::handleTeacherSaved
         );
 
+    connect(
+        m_pages->campusDashboard(),
+        &CampusDashboardPage::sectionChanged,
+        ui->sidebarWidget,
+        &Sidebar::selectCampusSection
+        );
+
     if (m_actions.manageCampuses)
     {
         connect(
@@ -261,6 +269,9 @@ void MainWindow::connectSignals()
                 }
 
                 m_pages->showPage(PageType::CampusDashboard);
+                ui->sidebarWidget->selectCampusSection(
+                    tr("Information")
+                    );
             }
             );
     }

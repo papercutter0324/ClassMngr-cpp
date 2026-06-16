@@ -79,6 +79,10 @@ public:
         const QString& sectionName
         );
 
+    void selectCampusSection(
+        const QString& sectionName
+        );
+
 
 
     // =====================================================

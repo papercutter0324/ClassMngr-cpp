@@ -353,6 +353,18 @@ void CampusDashboardPage::showMap()
     }
 }
 
+QString CampusDashboardPage::currentSectionName() const
+{
+    if (!m_tabs || m_tabs->currentIndex() < 0)
+    {
+        return tr("Information");
+    }
+
+    return m_tabs->tabText(
+        m_tabs->currentIndex()
+        );
+}
+
 void CampusDashboardPage::refresh()
 {
     if (!isVisible())
@@ -1398,6 +1410,23 @@ void CampusDashboardPage::buildUi()
     m_tabs->addTab(
         m_mapTab,
         tr("Map")
+        );
+
+    connect(
+        m_tabs,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int index)
+        {
+            if (!m_tabs || index < 0)
+            {
+                return;
+            }
+
+            emit sectionChanged(
+                m_tabs->tabText(index)
+                );
+        }
         );
 
     contentLayout()->addWidget(

@@ -35,6 +35,7 @@ public:
     void showInformation();
     void showHousing();
     void showMap();
+    QString currentSectionName() const;
 
     void refresh() override;
 
@@ -42,6 +43,11 @@ public:
     bool saveChanges() override;
     bool hasUnsavedChanges() const override;
     void discardChanges() override;
+
+signals:
+    void sectionChanged(
+        const QString& sectionName
+        );
 
 private slots:
     void loadSelectedCampus();

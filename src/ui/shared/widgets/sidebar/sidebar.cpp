@@ -749,6 +749,7 @@ void Sidebar::onItemClicked(
     if (
         item == m_nodes.value("my_info")
         || item == m_nodes.value("sub_prep")
+        || item == m_nodes.value("campus_info")
         )
     {
         const bool expanded =
@@ -961,6 +962,35 @@ void Sidebar::selectSubPrepSection(
     auto* sectionItem =
         childWithText(
             subPrepRoot,
+            sectionName
+            );
+
+    if (!sectionItem)
+    {
+        return;
+    }
+
+    m_tree->setCurrentItem(sectionItem);
+    m_tree->scrollToItem(sectionItem);
+}
+
+void Sidebar::selectCampusSection(
+    const QString& sectionName
+    )
+{
+    auto* campusRoot =
+        m_nodes.value("campus_info", nullptr);
+
+    if (!campusRoot)
+    {
+        return;
+    }
+
+    campusRoot->setExpanded(true);
+
+    auto* sectionItem =
+        childWithText(
+            campusRoot,
             sectionName
             );
 

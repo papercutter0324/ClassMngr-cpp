@@ -319,17 +319,49 @@ void NavigationController::handleCampus(
     const NavigationData& data
     )
 {
+    if (data.path.isEmpty())
+    {
+        return;
+    }
+
+    const bool alreadyShowingCampus =
+        m_pages->currentWidget()
+        == m_pages->campusDashboard();
+
+    const bool rootClick =
+        data.path.size() == 1;
+
+    if (rootClick)
+    {
+        const QString sectionName =
+            alreadyShowingCampus
+                ? m_pages->campusDashboard()->currentSectionName()
+                : tr("Information");
+
+        if (!alreadyShowingCampus)
+        {
+            if (!m_pages->confirmCurrentPageCanLeave())
+            {
+                return;
+            }
+
+            m_pages->showPage(PageType::CampusDashboard);
+            m_pages->campusDashboard()->showInformation();
+        }
+
+        m_sidebar->selectCampusSection(
+            sectionName
+            );
+
+        return;
+    }
+
     if (!m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
 
     m_pages->showPage(PageType::CampusDashboard);
-
-    if (data.path.isEmpty())
-    {
-        return;
-    }
 
     const QString pageName =
         data.path.last();
