@@ -1,6 +1,8 @@
 #ifndef APPLICATIONSERVICES_H
 #define APPLICATIONSERVICES_H
 
+#include "core/result.h"
+
 #include <QString>
 #include <memory>
 
@@ -14,18 +16,18 @@ public:
 
     ~ApplicationServices();
 
-    bool openDatabase(
+    [[nodiscard]] Status openDatabase(
         const QString& databasePath
         );
 
     void closeDatabase();
 
-    bool hasOpenDatabase() const;
+    [[nodiscard]] bool hasOpenDatabase() const;
 
-    QString currentDatabasePath() const;
+    [[nodiscard]] QString currentDatabasePath() const;
 
-    DataService* dataService() const;
-    ThemeService* themeService() const;
+    [[nodiscard]] DataService* dataService() const;
+    [[nodiscard]] ThemeService* themeService() const;
 
 private:
     std::unique_ptr<DataService> m_dataService;

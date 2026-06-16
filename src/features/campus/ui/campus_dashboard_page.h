@@ -1,6 +1,7 @@
 #ifndef CAMPUS_DASHBOARD_PAGE_H
 #define CAMPUS_DASHBOARD_PAGE_H
 
+#include "core/result.h"
 #include "ui/shared/pages/basepage.h"
 #include "domain/models/campus_info.h"
 #include "features/campus/data/campus_json_repository.h"
@@ -151,9 +152,8 @@ private:
     void handleNewCampus();
     void handleManualCampusSave();
 
-    bool readFieldsIntoCampus(
-        CampusInfo* campus,
-        QString* errorMessage = nullptr
+    [[nodiscard]] Status readFieldsIntoCampus(
+        CampusInfo* campus
         ) const;
 
     void scheduleSave();

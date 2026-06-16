@@ -1,6 +1,7 @@
 #include "campus_json_repository.h"
 
 #include <QDir>
+#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
@@ -774,9 +775,16 @@ void CampusJsonRepository::ensurePlaceholderCampus() const
         return;
     }
 
-    saveCampus(
-        placeholderCampus()
-        );
+    const Status saved =
+        saveCampus(
+            placeholderCampus()
+            );
+
+    if (!saved)
+    {
+        qWarning()
+            << saved.error();
+    }
 }
 
 QList<CampusInfo>
@@ -844,14 +852,16 @@ CampusJsonRepository::loadCampus(
         );
 }
 
-bool CampusJsonRepository::saveCampus(
-    const CampusInfo& campus,
-    QString* errorMessage
+Status CampusJsonRepository::saveCampus(
+    const CampusInfo& campus
     ) const
 {
-    if (!ensureDirectory(errorMessage))
+    const Status directoryReady =
+        ensureDirectory();
+
+    if (!directoryReady)
     {
-        return false;
+        return directoryReady;
     }
 
     CampusInfo campusToSave = campus;
@@ -870,13 +880,10 @@ bool CampusJsonRepository::saveCampus(
 
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
-        if (errorMessage)
-        {
-            *errorMessage =
-                file.errorString();
-        }
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Unable to open campus file for writing:\n%1")
+                .arg(file.errorString())
+            );
     }
 
     const QJsonDocument document(
@@ -889,16 +896,13 @@ bool CampusJsonRepository::saveCampus(
 
     if (!file.commit())
     {
-        if (errorMessage)
-        {
-            *errorMessage =
-                file.errorString();
-        }
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Unable to save campus file:\n%1")
+                .arg(file.errorString())
+            );
     }
 
-    return true;
+    return {};
 }
 
 QString CampusJsonRepository::filePathForCampusId(
@@ -996,29 +1000,23 @@ QString CampusJsonRepository::idFromName(
     return id;
 }
 
-bool CampusJsonRepository::ensureDirectory(
-    QString* errorMessage
-    ) const
+Status CampusJsonRepository::ensureDirectory() const
 {
     QDir directory(m_directoryPath);
 
     if (directory.exists())
     {
-        return true;
+        return {};
     }
 
     if (directory.mkpath(QStringLiteral(".")))
     {
-        return true;
+        return {};
     }
 
-    if (errorMessage)
-    {
-        *errorMessage =
-            QObject::tr("Unable to create campus data directory.");
-    }
-
-    return false;
+    return std::unexpected(
+        QObject::tr("Unable to create campus data directory.")
+        );
 }
 
 std::optional<CampusInfo> CampusJsonRepository::readCampusFile(

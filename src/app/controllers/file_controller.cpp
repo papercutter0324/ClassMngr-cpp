@@ -2,6 +2,7 @@
 
 #include "app/mainwindow.h"
 #include "core/application_services.h"
+#include "core/result.h"
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
 
@@ -216,15 +217,17 @@ bool FileController::loadDatabase(
 
     m_services->closeDatabase();
 
-    if (!m_services->openDatabase(normalizedPath))
+    const Status opened =
+        m_services->openDatabase(normalizedPath);
+
+    if (!opened)
     {
         if (showErrorMessage)
         {
             QMessageBox::warning(
                 nullptr,
                 tr("Open Database"),
-                tr("Unable to open database:\n%1")
-                    .arg(normalizedPath)
+                opened.error()
                 );
         }
 
@@ -523,9 +526,24 @@ bool FileController::saveDatabaseAs(
     if (
         !m_services
         || !m_services->dataService()
-        || !m_services->dataService()->saveAs(normalized)
         )
     {
+        return false;
+    }
+
+    const Status saved =
+        m_services
+        ->dataService()
+        ->saveAs(normalized);
+
+    if (!saved)
+    {
+        QMessageBox::warning(
+            nullptr,
+            tr("Save Database"),
+            saved.error()
+            );
+
         return false;
     }
 
@@ -551,17 +569,28 @@ bool FileController::exportDatabaseAs(
         return false;
     }
 
-    const bool exported =
+    const Status exported =
         m_services
         ->dataService()
         ->exportAs(normalized);
+
+    if (!exported)
+    {
+        QMessageBox::warning(
+            nullptr,
+            tr("Export Database"),
+            exported.error()
+            );
+
+        return false;
+    }
 
     if (exported)
     {
         rememberDatabaseDirectory(normalized);
     }
 
-    return exported;
+    return true;
 }
 
 QString FileController::normalizeFilePath(

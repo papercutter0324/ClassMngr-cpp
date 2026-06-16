@@ -14,12 +14,18 @@ ApplicationServices::ApplicationServices()
 
 ApplicationServices::~ApplicationServices() = default;
 
-bool ApplicationServices::openDatabase(
+Status ApplicationServices::openDatabase(
     const QString& databasePath
     )
 {
-    return m_dataService
-        && m_dataService->openDatabase(databasePath);
+    if (!m_dataService)
+    {
+        return std::unexpected(
+            QStringLiteral("Data service is unavailable.")
+            );
+    }
+
+    return m_dataService->openDatabase(databasePath);
 }
 
 void ApplicationServices::closeDatabase()

@@ -2690,16 +2690,15 @@ void CampusDashboardPage::handleManualCampusSave()
     saveCurrentCampus();
 }
 
-bool CampusDashboardPage::readFieldsIntoCampus(
-    CampusInfo* campus,
-    QString* errorMessage
+Status CampusDashboardPage::readFieldsIntoCampus(
+    CampusInfo* campus
     ) const
 {
-    Q_UNUSED(errorMessage);
-
     if (!campus)
     {
-        return false;
+        return std::unexpected(
+            tr("Campus data could not be prepared.")
+            );
     }
 
     CampusInfo updated =
@@ -2769,7 +2768,7 @@ bool CampusDashboardPage::readFieldsIntoCampus(
     *campus =
         updated;
 
-    return true;
+    return {};
 }
 
 void CampusDashboardPage::scheduleSave()
@@ -2796,17 +2795,22 @@ bool CampusDashboardPage::saveCurrentCampus()
     }
 
     CampusInfo updated;
-    QString errorMessage;
 
-    if (!readFieldsIntoCampus(&updated, &errorMessage))
+    const Status fieldsRead =
+        readFieldsIntoCampus(&updated);
+
+    if (!fieldsRead)
     {
-        setStatus(errorMessage);
+        setStatus(fieldsRead.error());
         return false;
     }
 
-    if (!m_repository.saveCampus(updated, &errorMessage))
+    const Status saved =
+        m_repository.saveCampus(updated);
+
+    if (!saved)
     {
-        setStatus(errorMessage);
+        setStatus(saved.error());
         return false;
     }
 

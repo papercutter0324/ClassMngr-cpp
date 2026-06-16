@@ -5,6 +5,10 @@
 #include <QString>
 #include <QStringList>
 
+#include <algorithm>
+#include <array>
+#include <utility>
+
 enum class SpeakingEvalColumn
 {
     Index = 0,
@@ -48,7 +52,7 @@ inline int toInt(
     SpeakingEvalColumn column
     )
 {
-    return static_cast<int>(column);
+    return std::to_underlying(column);
 }
 
 inline SpeakingEvalColumn columnFromInt(
@@ -73,12 +77,22 @@ inline bool isScoringColumn(
     SpeakingEvalColumn column
     )
 {
-    return column == SpeakingEvalColumn::Grammar
-        || column == SpeakingEvalColumn::Pronunciation
-        || column == SpeakingEvalColumn::Fluency
-        || column == SpeakingEvalColumn::Manner
-        || column == SpeakingEvalColumn::Content
-        || column == SpeakingEvalColumn::OverallEffort;
+    constexpr std::array scoringColumns{
+        SpeakingEvalColumn::Grammar,
+        SpeakingEvalColumn::Pronunciation,
+        SpeakingEvalColumn::Fluency,
+        SpeakingEvalColumn::Manner,
+        SpeakingEvalColumn::Content,
+        SpeakingEvalColumn::OverallEffort
+    };
+
+    return std::ranges::any_of(
+        scoringColumns,
+        [column](SpeakingEvalColumn scoringColumn)
+        {
+            return scoringColumn == column;
+        }
+        );
 }
 
 inline bool isEditableColumn(

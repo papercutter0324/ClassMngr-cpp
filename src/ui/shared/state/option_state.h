@@ -7,6 +7,10 @@
 #include <QActionGroup>
 #include <QHash>
 
+#include <functional>
+#include <type_traits>
+#include <utility>
+
 template <typename T>
 class OptionState : public QObject
 {
@@ -87,7 +91,7 @@ public:
             static_cast<T>(
                 SettingsManager::instance().get(
                             m_settingsKey,
-                            static_cast<int>(fallback)
+                            toStorageValue(fallback)
                             ).toInt()
                 );
 
@@ -109,8 +113,20 @@ private:
     {
         SettingsManager::instance().set(
             m_settingsKey,
-            static_cast<int>(value)
+            toStorageValue(value)
             );
+    }
+
+    static int toStorageValue(T value)
+    {
+        if constexpr (std::is_enum_v<T>)
+        {
+            return std::to_underlying(value);
+        }
+        else
+        {
+            return static_cast<int>(value);
+        }
     }
 
 private:

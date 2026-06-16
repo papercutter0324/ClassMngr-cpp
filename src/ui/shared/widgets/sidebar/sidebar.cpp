@@ -12,6 +12,8 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
+#include <utility>
+
 
 
 namespace
@@ -353,7 +355,7 @@ QTreeWidgetItem* Sidebar::createItem(
     item->setData(
         0,
         Qt::UserRole,
-        static_cast<int>(type)
+        std::to_underlying(type)
         );
 
     if (!selectable)

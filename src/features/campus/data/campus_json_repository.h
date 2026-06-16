@@ -1,6 +1,7 @@
 #ifndef CAMPUS_JSON_REPOSITORY_H
 #define CAMPUS_JSON_REPOSITORY_H
 
+#include "core/result.h"
 #include "domain/models/campus_info.h"
 
 #include <QList>
@@ -18,18 +19,17 @@ public:
 
     void ensurePlaceholderCampus() const;
 
-    QList<CampusInfo> loadCampuses() const;
+    [[nodiscard]] QList<CampusInfo> loadCampuses() const;
 
-    std::optional<CampusInfo> loadCampus(
+    [[nodiscard]] std::optional<CampusInfo> loadCampus(
         const QString& campusId
         ) const;
 
-    bool saveCampus(
-        const CampusInfo& campus,
-        QString* errorMessage = nullptr
+    [[nodiscard]] Status saveCampus(
+        const CampusInfo& campus
         ) const;
 
-    QString filePathForCampusId(
+    [[nodiscard]] QString filePathForCampusId(
         const QString& campusId
         ) const;
 
@@ -38,19 +38,17 @@ public:
         );
 
 private:
-    bool ensureDirectory(
-        QString* errorMessage = nullptr
-        ) const;
+    [[nodiscard]] Status ensureDirectory() const;
 
-    std::optional<CampusInfo> readCampusFile(
+    [[nodiscard]] std::optional<CampusInfo> readCampusFile(
         const QString& filePath
         ) const;
 
-    QString bundledFilePathForCampusId(
+    [[nodiscard]] QString bundledFilePathForCampusId(
         const QString& campusId
         ) const;
 
-    QList<QString> campusFilePaths() const;
+    [[nodiscard]] QList<QString> campusFilePaths() const;
 
     QString m_directoryPath;
     QString m_bundledDirectoryPath;

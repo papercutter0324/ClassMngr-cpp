@@ -10,6 +10,7 @@
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "domain/models/teacher.h"
+#include "core/result.h"
 
 #include <QList>
 #include <QSqlDatabase>
@@ -48,17 +49,17 @@ public:
     // Setup
     // =====================================================
 
-    bool open();
+    [[nodiscard]] bool open();
 
-    bool openDatabase(
+    [[nodiscard]] Status openDatabase(
         const QString& dbPath
         );
 
     void closeDatabase();
 
-    bool isOpen() const;
+    [[nodiscard]] bool isOpen() const;
 
-    QString currentDatabasePath() const;
+    [[nodiscard]] QString currentDatabasePath() const;
 
     void createTables();
 
@@ -137,11 +138,11 @@ public:
     // Class Info
     // =====================================================
 
-    bool saveClassInfo(
+    [[nodiscard]] bool saveClassInfo(
         const ClassInfo& info
         );
 
-    bool saveClassNotes(
+    [[nodiscard]] bool saveClassNotes(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
@@ -233,7 +234,7 @@ public:
     // Speaking Evaluations
     // =====================================================
 
-    bool saveSpeakingEval(
+    [[nodiscard]] bool saveSpeakingEval(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,
@@ -278,11 +279,11 @@ public:
 
     void save();
 
-    bool saveAs(
+    [[nodiscard]] Status saveAs(
         const QString &destinationPath
         );
 
-    bool exportAs(
+    [[nodiscard]] Status exportAs(
         const QString &destinationPath
         );
 

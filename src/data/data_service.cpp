@@ -102,17 +102,19 @@ bool DataService::open()
         return false;
     }
 
-    return openDatabase(m_dbPath);
+    return openDatabase(m_dbPath).has_value();
 }
 
-bool DataService::openDatabase(
+Status DataService::openDatabase(
     const QString& dbPath
     )
 {
     if (dbPath.trimmed().isEmpty())
     {
         closeDatabase();
-        return false;
+        return std::unexpected(
+            QStringLiteral("No database path was provided.")
+            );
     }
 
     const QFileInfo databaseInfo(dbPath);
@@ -123,12 +125,21 @@ bool DataService::openDatabase(
 
     if (normalizedPath.trimmed().isEmpty())
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("Database path could not be resolved.")
+            );
     }
 
-    QDir().mkpath(
-        databaseInfo.absolutePath()
-        );
+    if (
+        !databaseInfo.absolutePath().isEmpty()
+        && !QDir().mkpath(databaseInfo.absolutePath())
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create database directory:\n%1")
+                .arg(databaseInfo.absolutePath())
+            );
+    }
 
     m_db =
         QSqlDatabase::addDatabase("QSQLITE");
@@ -137,6 +148,9 @@ bool DataService::openDatabase(
 
     if (!m_db.open())
     {
+        const QString openError =
+            m_db.lastError().text();
+
         const QString connectionName =
             m_db.connectionName();
 
@@ -151,7 +165,10 @@ bool DataService::openDatabase(
             QSqlDatabase::removeDatabase(connectionName);
         }
 
-        return false;
+        return std::unexpected(
+            QStringLiteral("Unable to open database:\n%1\n\n%2")
+                .arg(normalizedPath, openError)
+            );
     }
 
     m_dbPath =
@@ -204,7 +221,7 @@ bool DataService::openDatabase(
 
     createTables();
 
-    return true;
+    return {};
 }
 
 void DataService::closeDatabase()
@@ -1068,50 +1085,128 @@ void DataService::save()
     m_db.commit();
 }
 
-bool DataService::saveAs(
+Status DataService::saveAs(
     const QString &destinationPath
     )
 {
-    if (!isOpen() || destinationPath.trimmed().isEmpty())
+    if (!isOpen())
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    if (destinationPath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("No destination path was provided.")
+            );
     }
 
     const QString sourcePath =
         QFileInfo(m_dbPath).absoluteFilePath();
 
+    const QFileInfo targetInfo(destinationPath);
     const QString targetPath =
-        QFileInfo(destinationPath).absoluteFilePath();
+        targetInfo.absoluteFilePath();
 
     if (sourcePath == targetPath)
     {
-        return true;
+        return {};
     }
 
-    QFile::remove(targetPath);
-    return QFile::copy(sourcePath, targetPath);
+    if (
+        !targetInfo.absolutePath().isEmpty()
+        && !QDir().mkpath(targetInfo.absolutePath())
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create destination directory:\n%1")
+                .arg(targetInfo.absolutePath())
+            );
+    }
+
+    if (
+        QFile::exists(targetPath)
+        && !QFile::remove(targetPath)
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to replace existing database file:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (!QFile::copy(sourcePath, targetPath))
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to copy database to:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    return {};
 }
 
-bool DataService::exportAs(
+Status DataService::exportAs(
     const QString &destinationPath
     )
 {
-    if (!isOpen() || destinationPath.trimmed().isEmpty())
+    if (!isOpen())
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    if (destinationPath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("No destination path was provided.")
+            );
     }
 
     const QString sourcePath =
         QFileInfo(m_dbPath).absoluteFilePath();
 
+    const QFileInfo targetInfo(destinationPath);
     const QString targetPath =
-        QFileInfo(destinationPath).absoluteFilePath();
+        targetInfo.absoluteFilePath();
 
     if (sourcePath == targetPath)
     {
-        return true;
+        return {};
     }
 
-    QFile::remove(targetPath);
-    return QFile::copy(sourcePath, targetPath);
+    if (
+        !targetInfo.absolutePath().isEmpty()
+        && !QDir().mkpath(targetInfo.absolutePath())
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create destination directory:\n%1")
+                .arg(targetInfo.absolutePath())
+            );
+    }
+
+    if (
+        QFile::exists(targetPath)
+        && !QFile::remove(targetPath)
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to replace existing database file:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    if (!QFile::copy(sourcePath, targetPath))
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to copy database to:\n%1")
+                .arg(targetPath)
+            );
+    }
+
+    return {};
 }
