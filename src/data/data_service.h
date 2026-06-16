@@ -19,7 +19,14 @@
 #include <memory>
 
 class CampusRecordRepository;
+class CalendarEventRepository;
+class ClassInfoRepository;
+class ClassRepository;
+class IntensiveSlotStateRepository;
+class RosterRepository;
 class SettingsRepository;
+class SpeakingEvalRepository;
+class TeacherRepository;
 
 // =========================================================
 // Data Service
@@ -279,4 +286,11 @@ private:
 
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;
+    std::unique_ptr<TeacherRepository> m_teacherRepository;
+    std::unique_ptr<ClassRepository> m_classRepository;
+    std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
+    std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
+    std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;
+    std::unique_ptr<RosterRepository> m_rosterRepository;
+    std::unique_ptr<SpeakingEvalRepository> m_speakingEvalRepository;
 };
