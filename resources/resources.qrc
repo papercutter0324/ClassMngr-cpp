@@ -38,6 +38,11 @@
         <!-- future templates -->
     </qresource>
 
+    <!-- Campuses -->
+    <qresource prefix="/assets/campuses">
+        <file alias="placeholder.json">assets/campuses/placeholder.json</file>
+    </qresource>
+
     <!-- Translations -->
     <qresource prefix="/assets/translations">
         <file alias="ClassMngr_en_US.ts">assets/translations/ClassMngr_en_US.ts</file>

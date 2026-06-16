@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
+#include <QMap>
 #include <QObject>
 #include <QRegularExpression>
 #include <QSaveFile>
@@ -743,9 +744,11 @@ CampusInfo placeholderCampus()
 } // namespace
 
 CampusJsonRepository::CampusJsonRepository(
-    QString directoryPath
+    QString directoryPath,
+    QString bundledDirectoryPath
     )
     : m_directoryPath(std::move(directoryPath))
+    , m_bundledDirectoryPath(std::move(bundledDirectoryPath))
 {
 }
 
@@ -761,6 +764,16 @@ void CampusJsonRepository::ensurePlaceholderCampus() const
         return;
     }
 
+    const QString bundledPlaceholderPath =
+        bundledFilePathForCampusId(
+            QStringLiteral("placeholder")
+            );
+
+    if (QFile::exists(bundledPlaceholderPath))
+    {
+        return;
+    }
+
     saveCampus(
         placeholderCampus()
         );
@@ -771,20 +784,8 @@ CampusJsonRepository::loadCampuses() const
 {
     QList<CampusInfo> campuses;
 
-    const QDir directory(m_directoryPath);
-
-    const QStringList files =
-        directory.entryList(
-            {QStringLiteral("*.json")},
-            QDir::Files,
-            QDir::Name
-            );
-
-    for (const QString& file : files)
+    for (const QString& filePath : campusFilePaths())
     {
-        const QString filePath =
-            directory.filePath(file);
-
         if (isDefaultCampusFile(filePath))
         {
             continue;
@@ -828,8 +829,18 @@ CampusJsonRepository::loadCampus(
         return std::nullopt;
     }
 
+    const QString campusFilePath =
+        filePathForCampusId(campusId);
+
+    if (QFile::exists(campusFilePath))
+    {
+        return readCampusFile(
+            campusFilePath
+            );
+    }
+
     return readCampusFile(
-        filePathForCampusId(campusId)
+        bundledFilePathForCampusId(campusId)
         );
 }
 
@@ -898,6 +909,65 @@ QString CampusJsonRepository::filePathForCampusId(
         .filePath(
             idFromName(campusId) + QStringLiteral(".json")
             );
+}
+
+QString CampusJsonRepository::bundledFilePathForCampusId(
+    const QString& campusId
+    ) const
+{
+    if (m_bundledDirectoryPath.trimmed().isEmpty())
+    {
+        return QString();
+    }
+
+    return QDir(m_bundledDirectoryPath)
+        .filePath(
+            idFromName(campusId) + QStringLiteral(".json")
+            );
+}
+
+QList<QString> CampusJsonRepository::campusFilePaths() const
+{
+    QMap<QString, QString> filePathsById;
+
+    const auto appendCampusFiles =
+        [&filePathsById](const QString& directoryPath)
+    {
+        if (directoryPath.trimmed().isEmpty())
+        {
+            return;
+        }
+
+        const QDir directory(directoryPath);
+
+        const QStringList files =
+            directory.entryList(
+                {QStringLiteral("*.json")},
+                QDir::Files,
+                QDir::Name
+                );
+
+        for (const QString& file : files)
+        {
+            const QString filePath =
+                directory.filePath(file);
+
+            const QString id =
+                QFileInfo(filePath)
+                    .baseName()
+                    .toLower();
+
+            filePathsById.insert(
+                id,
+                filePath
+                );
+        }
+    };
+
+    appendCampusFiles(m_bundledDirectoryPath);
+    appendCampusFiles(m_directoryPath);
+
+    return filePathsById.values();
 }
 
 QString CampusJsonRepository::idFromName(

@@ -12,7 +12,8 @@ class CampusJsonRepository
 {
 public:
     explicit CampusJsonRepository(
-        QString directoryPath
+        QString directoryPath,
+        QString bundledDirectoryPath = QString()
         );
 
     void ensurePlaceholderCampus() const;
@@ -45,7 +46,14 @@ private:
         const QString& filePath
         ) const;
 
+    QString bundledFilePathForCampusId(
+        const QString& campusId
+        ) const;
+
+    QList<QString> campusFilePaths() const;
+
     QString m_directoryPath;
+    QString m_bundledDirectoryPath;
 };
 
 #endif // CAMPUS_JSON_REPOSITORY_H

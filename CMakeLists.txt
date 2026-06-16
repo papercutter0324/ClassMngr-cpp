@@ -198,6 +198,7 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
         resources/assets/icons/icon_256x256.png
+        resources/assets/campuses/placeholder.json
         resources/assets/splash/splash.png
         resources/assets/styles/dark.qss
         resources/assets/styles/light.qss

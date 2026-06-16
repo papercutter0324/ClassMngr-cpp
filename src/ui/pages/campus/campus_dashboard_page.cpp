@@ -1,6 +1,7 @@
 #include "campus_dashboard_page.h"
 
 #include "core/appsettings.h"
+#include "core/resources_paths.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -300,7 +301,10 @@ CampusDashboardPage::CampusDashboardPage(
     )
     : BasePage(parent)
     , m_adminMode(adminMode)
-    , m_repository(QString::fromUtf8(AppSettings::DefaultCampusDirectory))
+    , m_repository(
+        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
+        ResourcePaths::Campuses::directory()
+        )
 {
     buildUi();
     applyAdminMode();

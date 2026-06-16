@@ -171,6 +171,17 @@ inline QString certificate()
 }
 }
 
+namespace ResourcePaths::Campuses
+{
+inline constexpr auto Directory =
+    ":/assets/campuses";
+
+inline QString directory()
+{
+    return QString::fromUtf8(Directory);
+}
+}
+
 namespace ResourcePaths::Styles
 {
 inline constexpr auto Dark =
