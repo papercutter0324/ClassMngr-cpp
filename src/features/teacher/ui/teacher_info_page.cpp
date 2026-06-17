@@ -701,8 +701,20 @@ bool TeacherInfoPage::saveTeacherInternal()
 
     dataService->updateTeacher(updated);
 
-    m_teacher = dataService->getTeacher(m_teacher.id);
-    loadTeacher(m_teacher);
+    m_teacher =
+        dataService->getTeacher(
+            m_teacher.id
+            );
+
+    const QString displayName =
+        SidebarNodeNaming::formatTeacherDisplayName(m_teacher);
+
+    m_titleLabel->setText(
+        QString("Teacher Information for %1")
+            .arg(displayName)
+        );
+
+    clearDirty();
 
     emit teacherSaved(
         m_teacher.id
