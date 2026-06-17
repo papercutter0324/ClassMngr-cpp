@@ -15,8 +15,14 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtAssert>
+
+namespace
+{
+constexpr int AutosaveDelayMs = 750;
+}
 
 ClassNotesPage::ClassNotesPage(
     ApplicationServices* services,
@@ -28,6 +34,21 @@ ClassNotesPage::ClassNotesPage(
     Q_ASSERT(m_services);
 
     buildUi();
+
+    m_autosaveTimer =
+        new QTimer(this);
+
+    m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setInterval(
+        AutosaveDelayMs
+        );
+
+    connect(
+        m_autosaveTimer,
+        &QTimer::timeout,
+        this,
+        &ClassNotesPage::autosave
+        );
 }
 
 void ClassNotesPage::loadClass(
@@ -35,6 +56,12 @@ void ClassNotesPage::loadClass(
     )
 {
     m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
     m_classroom = classroom;
 
     auto* dataService =
@@ -92,13 +119,85 @@ void ClassNotesPage::loadClass(
 
 void ClassNotesPage::saveData()
 {
+    saveClassNotesInternal(true);
+}
+
+bool ClassNotesPage::saveChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    return saveClassNotesInternal(true);
+}
+
+bool ClassNotesPage::hasUnsavedChanges() const
+{
+    return m_dirty;
+}
+
+void ClassNotesPage::discardChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    loadClass(m_classroom);
+}
+
+void ClassNotesPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    m_saveMode =
+        mode;
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (
+        m_saveMode == SaveMode::Automatic
+        && hasUnsavedChanges()
+        )
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+}
+
+void ClassNotesPage::autosave()
+{
+    if (!hasUnsavedChanges())
+    {
+        return;
+    }
+
+    saveClassNotesInternal(false);
+}
+
+bool ClassNotesPage::saveClassNotesInternal(
+    bool showErrorMessage
+    )
+{
     if (
         !m_services
         || !m_services->dataService()
         || m_classroom.id <= 0
         )
     {
-        return;
+        return false;
+    }
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
     }
 
     const QString notes =
@@ -121,40 +220,26 @@ void ClassNotesPage::saveData()
                 )
         )
     {
-        QMessageBox::warning(
-            this,
-            tr("Save Class Notes"),
-            tr("Class notes could not be saved.")
-            );
+        if (showErrorMessage)
+        {
+            QMessageBox::warning(
+                this,
+                tr("Save Class Notes"),
+                tr("Class notes could not be saved.")
+                );
+        }
 
-        return;
+        return false;
     }
 
-    const ClassInfo info =
-        m_services
-            ->dataService()
-            ->loadClassInfo(
-                m_classroom.id
-                );
-
-    m_loading = true;
-
     m_savedNotes =
-        info.notes.trimmed();
+        notes;
 
     m_savedTimeFillerActivities =
-        info.timeFillerActivities.trimmed();
+        timeFillerActivities;
 
-    m_notesEdit->setPlainText(
-        m_savedNotes
-        );
-
-    m_timeFillerActivitiesEdit->setPlainText(
-        m_savedTimeFillerActivities
-        );
-
-    m_loading = false;
     clearDirty();
+    return true;
 }
 
 void ClassNotesPage::refresh()
@@ -179,6 +264,23 @@ void ClassNotesPage::markDirty()
             );
 
     updateActions();
+
+    if (!m_autosaveTimer)
+    {
+        return;
+    }
+
+    if (
+        m_dirty
+        && m_saveMode == SaveMode::Automatic
+        )
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
 }
 
 void ClassNotesPage::buildUi()
@@ -330,6 +432,12 @@ void ClassNotesPage::updateHeaderText()
 void ClassNotesPage::clearDirty()
 {
     m_dirty = false;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
     updateActions();
 }
 
