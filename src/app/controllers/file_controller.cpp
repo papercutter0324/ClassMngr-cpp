@@ -8,6 +8,7 @@
 
 #include <QAction>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMenu>
@@ -151,12 +152,76 @@ void FileController::newFile()
     if (!confirmUnsavedChanges())
         return;
 
-    if (m_services)
+    const QString filePath =
+        QFileDialog::getSaveFileName(
+            nullptr,
+            tr("New Database"),
+            databaseDialogDirectory(),
+            tr("Database Files (*.db)")
+            );
+
+    if (filePath.isEmpty())
+        return;
+
+    const QString normalizedPath =
+        normalizeFilePath(
+            filePath,
+            QStringLiteral(".db"),
+            true
+            );
+
+    if (!m_services)
     {
-        m_services->closeDatabase();
+        enterNoDatabaseState();
+        return;
     }
 
-    enterNoDatabaseState();
+    m_services->closeDatabase();
+
+    if (
+        QFile::exists(normalizedPath)
+        && !QFile::remove(normalizedPath)
+        )
+    {
+        QMessageBox::warning(
+            nullptr,
+            tr("New Database"),
+            tr("Unable to replace existing database file:\n%1")
+                .arg(normalizedPath)
+            );
+
+        enterNoDatabaseState();
+        return;
+    }
+
+    const Status opened =
+        m_services->openDatabase(normalizedPath);
+
+    if (!opened)
+    {
+        QMessageBox::warning(
+            nullptr,
+            tr("New Database"),
+            opened.error()
+            );
+
+        enterNoDatabaseState();
+        return;
+    }
+
+    m_currentFile =
+        m_services->currentDatabasePath();
+
+    updateRecentFiles(m_currentFile);
+
+    if (m_window)
+    {
+        m_window->applyDatabaseLoadedState();
+    }
+    else
+    {
+        setLoadedFileState();
+    }
 }
 
 void FileController::openFile()

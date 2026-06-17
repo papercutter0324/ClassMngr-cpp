@@ -77,8 +77,8 @@ void ActionRegistry::createFileActions()
         createAction(
             QApplication::style()->standardIcon(
                 QStyle::SP_FileIcon),
-            tr("New"),
-            tr("Create a new file")
+            tr("New Database..."),
+            tr("Create a new database")
             );
 
     openFile =
