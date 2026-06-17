@@ -715,10 +715,7 @@ void SpeakingEvalPage::buildUi()
 
     const QList<QString> disabledLabels{
         tr("Create Reports"),
-        tr("Print Reports"),
-        tr("Create Certificates"),
-        tr("Print Certificates"),
-        tr("Auto-Select Winners")
+        tr("Print Reports")
     };
 
     for (int index = 0; index < disabledLabels.size(); ++index)
@@ -741,7 +738,7 @@ void SpeakingEvalPage::buildUi()
 
         bottomLayout()->addWidget(button);
 
-        if (index == 1 || index == 3)
+        if (index == 1)
         {
             bottomLayout()->addSpacing(20);
         }
