@@ -7,6 +7,7 @@
 
 #include <QComboBox>
 #include <QLabel>
+#include <QPushButton>
 #include <QTabWidget>
 #include <QTimer>
 
@@ -108,6 +109,39 @@ QString CampusDashboardPage::currentSectionName() const
         );
 }
 
+QString CampusDashboardPage::currentSectionKey() const
+{
+    if (!m_tabs || m_tabs->currentIndex() < 0)
+    {
+        return QStringLiteral("campus_information");
+    }
+
+    QWidget* currentTab =
+        m_tabs->currentWidget();
+
+    if (currentTab == m_informationTab)
+    {
+        return QStringLiteral("campus_information");
+    }
+
+    if (currentTab == m_directionsTab)
+    {
+        return QStringLiteral("campus_directions");
+    }
+
+    if (currentTab == m_housingTab)
+    {
+        return QStringLiteral("campus_housing");
+    }
+
+    if (currentTab == m_mapTab)
+    {
+        return QStringLiteral("campus_map");
+    }
+
+    return QString();
+}
+
 void CampusDashboardPage::refresh()
 {
     if (!isVisible())
@@ -116,6 +150,139 @@ void CampusDashboardPage::refresh()
     }
 
     loadCampuses();
+}
+
+void CampusDashboardPage::retranslateUi()
+{
+    if (m_tabs)
+    {
+        if (m_informationTab)
+        {
+            const int index =
+                m_tabs->indexOf(m_informationTab);
+
+            if (index >= 0)
+            {
+                m_tabs->setTabText(
+                    index,
+                    tr("Information")
+                    );
+            }
+        }
+
+        if (m_directionsTab)
+        {
+            const int index =
+                m_tabs->indexOf(m_directionsTab);
+
+            if (index >= 0)
+            {
+                m_tabs->setTabText(
+                    index,
+                    tr("Directions")
+                    );
+            }
+        }
+
+        if (m_housingTab)
+        {
+            const int index =
+                m_tabs->indexOf(m_housingTab);
+
+            if (index >= 0)
+            {
+                m_tabs->setTabText(
+                    index,
+                    tr("Housing")
+                    );
+            }
+        }
+
+        if (m_mapTab)
+        {
+            const int index =
+                m_tabs->indexOf(m_mapTab);
+
+            if (index >= 0)
+            {
+                m_tabs->setTabText(
+                    index,
+                    tr("Map")
+                    );
+            }
+        }
+    }
+
+    if (m_newCampusButton)
+    {
+        m_newCampusButton->setText(
+            tr("New Campus")
+            );
+    }
+
+    if (m_saveCampusButton)
+    {
+        m_saveCampusButton->setText(
+            m_dirty
+                ? tr("Save Campus *")
+                : tr("Save Campus")
+            );
+    }
+
+    if (m_addHousingButton)
+    {
+        m_addHousingButton->setText(
+            tr("Add Housing Location")
+            );
+    }
+
+    if (m_housingEmptyLabel)
+    {
+        m_housingEmptyLabel->setText(
+            tr("No housing information available")
+            );
+    }
+
+    showDirectionsLanguage(
+        m_directionsShowingEnglish
+        );
+
+    updateAddressSystemButton(
+        &m_directionsEnglishAddress
+        );
+    updateAddressSystemButton(
+        &m_directionsKoreanAddress
+        );
+
+    for (HousingSectionWidgets& section : m_housingSections)
+    {
+        if (section.toggleLanguageButton)
+        {
+            section.toggleLanguageButton->setText(
+                section.showingEnglish
+                    ? tr("Show Korean")
+                    : tr("Show English")
+                );
+        }
+
+        if (section.removeButton)
+        {
+            section.removeButton->setText(
+                tr("Remove")
+                );
+        }
+
+        updateAddressSystemButton(
+            &section.english
+            );
+        updateAddressSystemButton(
+            &section.korean
+            );
+    }
+
+    updateDirectionsCompleteAddresses();
+    updateHousingCompleteAddresses();
+    updateCampusSaveButton();
 }
 
 void CampusDashboardPage::saveData()
@@ -277,12 +444,12 @@ void CampusDashboardPage::handleSaveTimeout()
 
 void CampusDashboardPage::emitCurrentSectionChanged()
 {
-    const QString sectionName =
-        currentSectionName();
+    const QString sectionKey =
+        currentSectionKey();
 
-    if (!sectionName.isEmpty())
+    if (!sectionKey.isEmpty())
     {
-        emit sectionChanged(sectionName);
+        emit sectionChanged(sectionKey);
     }
 }
 

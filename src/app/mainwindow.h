@@ -38,6 +38,8 @@ class SidebarController;
 class NavigationController;
 class EditController;
 class ThemeController;
+class LanguageController;
+class LanguageService;
 
 // =========================================================
 // Main Window
@@ -52,6 +54,7 @@ public:
     explicit MainWindow(
         std::function<void(const QString&)> progressCallback,
         bool isAdmin,
+        LanguageService* languageService,
         QWidget *parent = nullptr
         );
 
@@ -74,6 +77,7 @@ public:
     void applyNoDatabaseState();
 
     void applyDatabaseLoadedState();
+    void retranslateUi();
 
 protected:
 
@@ -138,12 +142,14 @@ private:
     std::unique_ptr<NavigationController> m_navigationController;
     std::unique_ptr<EditController> m_editController;
     std::unique_ptr<ThemeController> m_themeController;
+    std::unique_ptr<LanguageController> m_languageController;
 
     // =====================================================
     // State
     // =====================================================
 
     bool m_isAdmin = false;
+    LanguageService* m_languageService = nullptr;
 };
 
 #endif // MAINWINDOW_H

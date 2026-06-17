@@ -3,6 +3,7 @@
 #include "menu_builder.h"
 
 #include "app/controllers/edit_controller.h"
+#include "app/controllers/language_controller.h"
 #include "app/controllers/navigation_controller.h"
 #include "app/controllers/sidebar_controller.h"
 #include "app/controllers/theme_controller.h"
@@ -18,6 +19,7 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 
+#include <QMenuBar>
 #include <QTimer>
 
 
@@ -29,11 +31,13 @@
 MainWindow::MainWindow(
     std::function<void(const QString&)> progressCallback,
     bool isAdmin,
+    LanguageService* languageService,
     QWidget* parent
     )
     : QMainWindow(parent)
     , ui(new Ui::MainWindow())
     , m_isAdmin(isAdmin)
+    , m_languageService(languageService)
 {
     ui->setupUi(this);
 
@@ -158,11 +162,89 @@ void MainWindow::connectControllers()
             this
             );
     m_themeController->connectActions(m_actions);
+
+    m_languageController =
+        std::make_unique<LanguageController>(
+            m_languageService,
+            this,
+            this
+            );
+    m_languageController->connectActions(m_actions);
 }
 
 void MainWindow::buildMenus()
 {
     MenuBuilder::build(this);
+}
+
+void MainWindow::retranslateUi()
+{
+    const QStringList selectedKeys =
+        ui && ui->sidebarWidget
+            ? ui->sidebarWidget->selectedKeys()
+            : QStringList();
+
+    const int selectedClassId =
+        ui && ui->sidebarWidget
+            ? ui->sidebarWidget->getSelectedClassId()
+            : -1;
+
+    const int selectedTeacherId =
+        ui && ui->sidebarWidget
+            ? ui->sidebarWidget->getSelectedTeacherId()
+            : -1;
+
+    const QStringList expandedRootKeys =
+        ui && ui->sidebarWidget
+            ? ui->sidebarWidget->expandedRootKeys()
+            : QStringList();
+
+    initializeWindow();
+
+    m_actions.retranslate();
+
+    if (menuBar())
+    {
+        menuBar()->clear();
+        buildMenus();
+    }
+
+    if (m_fileController)
+    {
+        m_fileController->populateRecentMenu();
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->rebuildTree();
+    }
+
+    if (m_sidebarController)
+    {
+        m_sidebarController->refreshAllSidebars();
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->restoreExpandedRootKeys(
+            expandedRootKeys
+            );
+
+        ui->sidebarWidget->setDatabaseSectionsVisible(
+            m_services && m_services->hasOpenDatabase()
+            );
+
+        ui->sidebarWidget->selectByKeys(
+            selectedKeys,
+            selectedClassId,
+            selectedTeacherId
+            );
+    }
+
+    if (m_pages)
+    {
+        m_pages->retranslatePages();
+    }
 }
 
 void MainWindow::connectSignals()
@@ -270,7 +352,7 @@ void MainWindow::connectSignals()
 
                 m_pages->showPage(PageType::CampusDashboard);
                 ui->sidebarWidget->selectCampusSection(
-                    tr("Information")
+                    QStringLiteral("campus_information")
                     );
             }
             );
@@ -314,7 +396,7 @@ void MainWindow::applyNoDatabaseState()
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->selectCampusSection(
-            tr("Information")
+            QStringLiteral("campus_information")
             );
     }
 }
@@ -345,7 +427,7 @@ void MainWindow::applyDatabaseLoadedState()
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->selectMyInfoSection(
-            tr("My Information")
+            QStringLiteral("my_info_information")
             );
     }
 }

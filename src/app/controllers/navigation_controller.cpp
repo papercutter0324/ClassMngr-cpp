@@ -15,6 +15,36 @@
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 
+namespace
+{
+QString evaluationNameForKey(
+    const QString& key
+    )
+{
+    if (key == QStringLiteral("speaking_winter"))
+    {
+        return QStringLiteral("Winter");
+    }
+
+    if (key == QStringLiteral("speaking_speech_contest"))
+    {
+        return QStringLiteral("Speech Contest");
+    }
+
+    if (key == QStringLiteral("speaking_summer"))
+    {
+        return QStringLiteral("Summer");
+    }
+
+    if (key == QStringLiteral("speaking_fall"))
+    {
+        return QStringLiteral("Fall");
+    }
+
+    return QString();
+}
+}
+
 NavigationController::NavigationController(
     ApplicationServices* services,
     Sidebar* sidebar,
@@ -32,7 +62,7 @@ NavigationController::NavigationController(
             m_pages->campusDashboard(),
             &CampusDashboardPage::sectionChanged,
             this,
-            [this](const QString& sectionName)
+            [this](const QString& sectionKey)
             {
                 if (
                     !m_pages
@@ -43,7 +73,7 @@ NavigationController::NavigationController(
                     return;
                 }
 
-                m_sidebar->selectCampusSection(sectionName);
+                m_sidebar->selectCampusSection(sectionKey);
             }
             );
     }
@@ -104,19 +134,19 @@ void NavigationController::handleNavigation(
         return;
 
     case NodeType::Root:
-        if (!data.path.isEmpty() && data.path.first() == tr("My Info"))
+        if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("my_info"))
         {
             handleMyInfo(data);
             return;
         }
 
-        if (!data.path.isEmpty() && data.path.first() == tr("Sub Prep"))
+        if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("sub_prep"))
         {
             handleSubPrep(data);
             return;
         }
 
-        if (!data.path.isEmpty() && data.path.first() == tr("Campus Directory"))
+        if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("campus_info"))
         {
             handleCampus(data);
             return;
@@ -125,24 +155,24 @@ void NavigationController::handleNavigation(
         return;
 
     case NodeType::Page:
-        if (data.path.isEmpty())
+        if (data.path.isEmpty() || data.keys.isEmpty())
         {
             return;
         }
 
-        if (data.path.first() == tr("My Info"))
+        if (data.keys.first() == QStringLiteral("my_info"))
         {
             handleMyInfo(data);
             return;
         }
 
-        if (data.path.first() == tr("Sub Prep"))
+        if (data.keys.first() == QStringLiteral("sub_prep"))
         {
             handleSubPrep(data);
             return;
         }
 
-        if (data.path.first() == tr("Campus Directory"))
+        if (data.keys.first() == QStringLiteral("campus_info"))
         {
             handleCampus(data);
             return;
@@ -159,16 +189,13 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            const QString pageName =
-                data.path.last();
-
-            if (pageName == tr("Class Info"))
+            if (data.routeKey == QStringLiteral("class_info"))
             {
                 handleClass(data);
                 return;
             }
 
-            if (pageName == tr("Class Roster"))
+            if (data.routeKey == QStringLiteral("class_roster"))
             {
                 Classroom classroom =
                     m_services
@@ -192,7 +219,7 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            if (pageName == tr("Class Notes"))
+            if (data.routeKey == QStringLiteral("class_notes"))
             {
                 Classroom classroom =
                     m_services
@@ -217,10 +244,18 @@ void NavigationController::handleNavigation(
             }
 
             if (
-                data.path.contains(tr("Student Evaluations"))
-                && !pageName.trimmed().isEmpty()
+                data.keys.contains(QStringLiteral("student_evaluations"))
+                && !data.routeKey.trimmed().isEmpty()
                 )
             {
+                const QString evaluationName =
+                    evaluationNameForKey(data.routeKey);
+
+                if (evaluationName.trimmed().isEmpty())
+                {
+                    return;
+                }
+
                 Classroom classroom =
                     m_services
                         ->dataService()
@@ -239,7 +274,7 @@ void NavigationController::handleNavigation(
                 m_pages->speakingPage()
                     ->loadEvaluation(
                         classroom,
-                        pageName
+                        evaluationName
                         );
 
                 m_pages->showPage(PageType::SpeakingEval);
@@ -273,20 +308,20 @@ void NavigationController::handleSubPrep(
         m_pages->currentWidget()
         == m_pages->subPrepPage();
 
-    const QString sectionName =
-        data.path.size() >= 2
-            ? data.path.last()
-            : tr("Important Information");
+    const QString sectionKey =
+        data.keys.size() >= 2
+            ? data.routeKey
+            : QStringLiteral("sub_prep_important");
 
     SubPrepSection section =
         SubPrepSection::ImportantInformation;
 
-    if (sectionName == tr("Class Information"))
+    if (sectionKey == QStringLiteral("sub_prep_class_information"))
     {
         section =
             SubPrepSection::ClassInformation;
     }
-    else if (sectionName == tr("Sub Comments"))
+    else if (sectionKey == QStringLiteral("sub_prep_comments"))
     {
         section =
             SubPrepSection::SubComments;
@@ -298,7 +333,7 @@ void NavigationController::handleSubPrep(
     if (rootClick && alreadyShowingSubPrep)
     {
         m_sidebar->selectSubPrepSection(
-            m_pages->subPrepPage()->currentSectionName()
+            m_pages->subPrepPage()->currentSectionKey()
             );
         return;
     }
@@ -311,7 +346,7 @@ void NavigationController::handleSubPrep(
     if (rootClick)
     {
         m_sidebar->selectSubPrepSection(
-            tr("Important Information")
+            QStringLiteral("sub_prep_important")
             );
     }
 
@@ -337,20 +372,20 @@ void NavigationController::handleMyInfo(
         m_pages->currentWidget()
         == m_pages->myInfoPage();
 
-    const QString sectionName =
-        data.path.size() >= 2
-            ? data.path.last()
-            : tr("My Information");
+    const QString sectionKey =
+        data.keys.size() >= 2
+            ? data.routeKey
+            : QStringLiteral("my_info_information");
 
     MyInfoSection section =
         MyInfoSection::MyInformation;
 
-    if (sectionName == tr("Class Schedule"))
+    if (sectionKey == QStringLiteral("my_info_schedule"))
     {
         section =
             MyInfoSection::ClassSchedule;
     }
-    else if (sectionName == tr("Monthly Calendar"))
+    else if (sectionKey == QStringLiteral("my_info_calendar"))
     {
         section =
             MyInfoSection::MonthlyCalendar;
@@ -362,7 +397,7 @@ void NavigationController::handleMyInfo(
     if (rootClick && alreadyShowingMyInfo)
     {
         m_sidebar->selectMyInfoSection(
-            m_pages->myInfoPage()->currentSectionName()
+            m_pages->myInfoPage()->currentSectionKey()
             );
         return;
     }
@@ -375,7 +410,7 @@ void NavigationController::handleMyInfo(
     if (rootClick)
     {
         m_sidebar->selectMyInfoSection(
-            tr("My Information")
+            QStringLiteral("my_info_information")
             );
     }
 
@@ -388,7 +423,7 @@ void NavigationController::handleCampus(
     const NavigationData& data
     )
 {
-    if (data.path.isEmpty())
+    if (data.keys.isEmpty())
     {
         return;
     }
@@ -402,10 +437,10 @@ void NavigationController::handleCampus(
 
     if (rootClick)
     {
-        const QString sectionName =
+        const QString sectionKey =
             alreadyShowingCampus
-                ? m_pages->campusDashboard()->currentSectionName()
-                : tr("Information");
+                ? m_pages->campusDashboard()->currentSectionKey()
+                : QStringLiteral("campus_information");
 
         if (!alreadyShowingCampus)
         {
@@ -419,7 +454,7 @@ void NavigationController::handleCampus(
         }
 
         m_sidebar->selectCampusSection(
-            sectionName
+            sectionKey
             );
 
         return;
@@ -432,30 +467,30 @@ void NavigationController::handleCampus(
 
     m_pages->showPage(PageType::CampusDashboard);
 
-    const QString pageName =
-        data.path.size() >= 2
-            ? data.path.last()
-            : tr("Information");
+    const QString pageKey =
+        data.keys.size() >= 2
+            ? data.routeKey
+            : QStringLiteral("campus_information");
 
-    if (pageName == tr("Directions"))
+    if (pageKey == QStringLiteral("campus_directions"))
     {
         m_pages->campusDashboard()->showDirections();
         return;
     }
 
-    if (pageName == tr("Information"))
+    if (pageKey == QStringLiteral("campus_information"))
     {
         m_pages->campusDashboard()->showInformation();
         return;
     }
 
-    if (pageName == tr("Housing"))
+    if (pageKey == QStringLiteral("campus_housing"))
     {
         m_pages->campusDashboard()->showHousing();
         return;
     }
 
-    if (pageName == tr("Map"))
+    if (pageKey == QStringLiteral("campus_map"))
     {
         m_pages->campusDashboard()->showMap();
         return;

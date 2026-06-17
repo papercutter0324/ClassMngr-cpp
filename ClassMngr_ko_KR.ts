@@ -4,242 +4,362 @@
 <context>
     <name>ActionRegistry</name>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="80"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="92"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="268"/>
         <source>New Database...</source>
         <translation>새 데이터베이스...</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="81"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="93"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="269"/>
         <source>Create a new database</source>
         <translation>새 데이터베이스 만들기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="88"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="97"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="276"/>
         <source>Open...</source>
         <translation>열기...</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="89"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="98"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="277"/>
         <source>Open an existing file</source>
         <translation>기존 파일 열기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="96"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="102"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="284"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="97"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="103"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="285"/>
         <source>Save the current file</source>
         <translation>현재 파일 저장</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="104"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="107"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="292"/>
         <source>Save As...</source>
         <translation>다른 이름으로 저장...</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="105"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="108"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="293"/>
         <source>Save the file with a new name</source>
         <translation>새 이름으로 파일 저장</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="110"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="112"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="298"/>
         <source>Export As...</source>
         <translation>다른 이름으로 내보내기...</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="111"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="113"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="299"/>
         <source>Export the current file</source>
         <translation>현재 파일 내보내기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="118"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="117"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="306"/>
         <source>Close</source>
         <translation>닫기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="119"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="118"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="307"/>
         <source>Close the current file</source>
         <translation>현재 파일 닫기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="126"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="122"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="314"/>
         <source>Exit</source>
         <translation>종료</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="127"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="123"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="315"/>
         <source>Exit the application</source>
         <translation>애플리케이션 종료</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="145"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="128"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="333"/>
         <source>Undo</source>
         <translation>실행 취소</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="146"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="129"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="334"/>
         <source>Undo the last action</source>
         <translation>마지막 작업 실행 취소</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="152"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="133"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="340"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="153"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="134"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="341"/>
         <source>Redo the last undone action</source>
         <translation>마지막으로 취소한 작업 다시 실행</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="159"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="138"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="347"/>
         <source>Cut</source>
         <translation>잘라내기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="160"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="139"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="348"/>
         <source>Cut the selected content</source>
         <translation>선택한 내용 잘라내기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="166"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="143"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="354"/>
         <source>Copy</source>
         <translation>복사</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="167"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="144"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="355"/>
         <source>Copy the selected content</source>
         <translation>선택한 내용 복사</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="173"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="148"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="361"/>
         <source>Paste</source>
         <translation>붙여넣기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="174"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="149"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="362"/>
         <source>Paste content from the clipboard</source>
         <translation>클립보드 내용 붙여넣기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="193"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="154"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="381"/>
         <source>New Class</source>
         <translation>새 수업</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="194"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="155"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="382"/>
         <source>Create a new class</source>
         <translation>새 수업 만들기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="199"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="159"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="387"/>
         <source>Delete Class</source>
         <translation>수업 삭제</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="200"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="160"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="388"/>
         <source>Delete the selected class</source>
         <translation>선택한 수업 삭제</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="205"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="164"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="393"/>
         <source>New Teacher</source>
         <translation>새 교사</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="206"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="165"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="394"/>
         <source>Create a new teacher</source>
         <translation>새 교사 만들기</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="211"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="169"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="399"/>
         <source>Delete Teacher</source>
         <translation>교사 삭제</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="212"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="170"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="400"/>
         <source>Delete the selected teacher</source>
         <translation>선택한 교사 삭제</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="227"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="177"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="415"/>
         <source>Automatic</source>
         <translation>자동</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="228"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="178"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="416"/>
         <source>Automatically save changes</source>
         <translation>변경 사항을 자동으로 저장</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="233"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="182"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="421"/>
         <source>Manual</source>
         <translation>수동</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="234"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="183"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="422"/>
         <source>Save changes manually</source>
         <translation>변경 사항을 수동으로 저장</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="251"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="191"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="439"/>
         <source>Dark Theme</source>
         <translation>어두운 테마</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="252"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="192"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="440"/>
         <source>Use dark theme</source>
         <translation>어두운 테마 사용</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="257"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="196"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="445"/>
         <source>Light Theme</source>
         <translation>밝은 테마</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="197"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="446"/>
         <source>Use light theme</source>
         <translation>밝은 테마 사용</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="272"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="205"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="462"/>
+        <source>System Default</source>
+        <translation>시스템 기본값</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="206"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="463"/>
+        <source>Use the system language</source>
+        <translation>시스템 언어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="210"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="468"/>
+        <source>American English</source>
+        <translation>미국 영어</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="211"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="469"/>
+        <source>Use American English</source>
+        <translation>미국 영어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="215"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="474"/>
+        <source>British English</source>
+        <translation>영국 영어</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="216"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="475"/>
+        <source>Use British English</source>
+        <translation>영국 영어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="220"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="480"/>
+        <source>Canadian English</source>
+        <translation>캐나다 영어</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="221"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="481"/>
+        <source>Use Canadian English</source>
+        <translation>캐나다 영어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="225"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="486"/>
+        <source>Australian English</source>
+        <translation>호주 영어</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="226"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="487"/>
+        <source>Use Australian English</source>
+        <translation>호주 영어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="230"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="492"/>
+        <source>Korean</source>
+        <translation>한국어</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="231"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="493"/>
+        <source>Use Korean</source>
+        <translation>한국어 사용</translation>
+    </message>
+    <message>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="237"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="528"/>
         <source>Show Sidebar Tooltips</source>
         <translation>사이드바 툴팁 표시</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="273"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="238"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="529"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>사이드바 이름이 잘릴 때 전체 이름을 툴팁으로 표시</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="278"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="242"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="534"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>긴 사이드바 텍스트 애니메이션</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="279"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="243"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="535"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>마우스를 올리면 잘린 사이드바 이름을 움직여 표시</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="323"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="248"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="579"/>
         <source>About</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="324"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="249"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="580"/>
         <source>Show application information</source>
         <translation>애플리케이션 정보 표시</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="336"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="253"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="592"/>
         <source>Manage Campuses</source>
         <translation>캠퍼스 관리</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/actions/action_registry.cpp" line="337"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="254"/>
+        <location filename="src/ui/shared/actions/action_registry.cpp" line="593"/>
         <source>Manage campus settings</source>
         <translation>캠퍼스 설정 관리</translation>
     </message>
@@ -333,38 +453,47 @@
 <context>
     <name>CampusDashboardPage</name>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="80"/>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="88"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="81"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="89"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="168"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1057"/>
         <source>Information</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="93"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="94"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="182"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1062"/>
         <source>Directions</source>
         <translation>오시는 길</translation>
     </message>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="98"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="99"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="196"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1067"/>
         <source>Housing</source>
         <translation>숙소</translation>
     </message>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="103"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="104"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="210"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1072"/>
         <source>Map</source>
         <translation>지도</translation>
     </message>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="170"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="227"/>
+        <source>Save Campus *</source>
+        <translation>캠퍼스 저장 *</translation>
+    </message>
+    <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="337"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_data.cpp" line="374"/>
         <source>Saving...</source>
         <translation>저장 중...</translation>
     </message>
     <message>
-        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="182"/>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="349"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_data.cpp" line="370"/>
         <source>Unsaved changes</source>
         <translation>저장되지 않은 변경 사항</translation>
@@ -392,6 +521,7 @@
         <translation>%1 (%2)</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="263"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_address.cpp" line="542"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_housing.cpp" line="168"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_housing.cpp" line="367"/>
@@ -400,6 +530,7 @@
         <translation>한국어 표시</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="264"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_address.cpp" line="543"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_housing.cpp" line="368"/>
         <source>Show English</source>
@@ -412,6 +543,7 @@
         <translation>기본값</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="219"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_data.cpp" line="227"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1005"/>
         <source>New Campus</source>
@@ -433,6 +565,7 @@
         <translation>저장됨</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="271"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_housing.cpp" line="176"/>
         <source>Remove</source>
         <translation>제거</translation>
@@ -512,11 +645,13 @@
         <translation>복사기 코드:</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="242"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="517"/>
         <source>No housing information available</source>
         <translation>사용 가능한 숙소 정보가 없습니다</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="235"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="531"/>
         <source>Add Housing Location</source>
         <translation>숙소 위치 추가</translation>
@@ -582,6 +717,7 @@
         <translation>캠퍼스 코드:</translation>
     </message>
     <message>
+        <location filename="src/features/campus/ui/campus_dashboard_page.cpp" line="228"/>
         <location filename="src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1011"/>
         <source>Save Campus</source>
         <translation>캠퍼스 저장</translation>
@@ -635,11 +771,13 @@
     <message>
         <location filename="src/features/classes/ui/class_info_page.cpp" line="136"/>
         <location filename="src/features/classes/ui/class_info_page.cpp" line="360"/>
+        <location filename="src/features/classes/ui/class_info_page.cpp" line="633"/>
         <source>Class Information</source>
         <translation>수업 정보</translation>
     </message>
     <message>
         <location filename="src/features/classes/ui/class_info_page.cpp" line="150"/>
+        <location filename="src/features/classes/ui/class_info_page.cpp" line="637"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
@@ -690,17 +828,17 @@
         <translation>수업 정보를 저장할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_info_page.cpp" line="652"/>
+        <location filename="src/features/classes/ui/class_info_page.cpp" line="680"/>
         <source>another time in this class</source>
         <translation>이 수업의 다른 시간</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_info_page.cpp" line="656"/>
+        <location filename="src/features/classes/ui/class_info_page.cpp" line="684"/>
         <source>%1 %2-%3 conflicts with %4.</source>
         <translation>%1 %2-%3 시간이 %4와 충돌합니다.</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_info_page.cpp" line="667"/>
+        <location filename="src/features/classes/ui/class_info_page.cpp" line="695"/>
         <source>Please resolve these schedule conflicts before saving:
 
 %1</source>
@@ -727,29 +865,30 @@
         <translation>수업 노트를 저장할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="307"/>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="426"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="321"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="440"/>
         <source>Class Notes</source>
         <translation>수업 노트</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="321"/>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="431"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="335"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="445"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="337"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="351"/>
         <source>Notes</source>
         <translation>노트</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="358"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="372"/>
         <source>Time Filler Activities</source>
         <translation>자투리 시간 활동</translation>
     </message>
     <message>
-        <location filename="src/features/classes/ui/class_notes_page.cpp" line="389"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="259"/>
+        <location filename="src/features/classes/ui/class_notes_page.cpp" line="403"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
@@ -878,55 +1017,52 @@
         <translation>메인 창</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="44"/>
+        <location filename="src/app/mainwindow.cpp" line="48"/>
         <source>Loading pages...</source>
         <translation>페이지 로드 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="47"/>
+        <location filename="src/app/mainwindow.cpp" line="51"/>
         <source>Loading sidebar...</source>
         <translation>사이드바 로드 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="50"/>
+        <location filename="src/app/mainwindow.cpp" line="54"/>
         <source>Initializing actions...</source>
         <translation>작업 초기화 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="53"/>
+        <location filename="src/app/mainwindow.cpp" line="57"/>
         <source>Initializing controllers...</source>
         <translation>컨트롤러 초기화 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="56"/>
+        <location filename="src/app/mainwindow.cpp" line="60"/>
         <source>Building menus...</source>
         <translation>메뉴 구성 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="60"/>
+        <location filename="src/app/mainwindow.cpp" line="64"/>
         <source>Connecting signals...</source>
         <translation>신호 연결 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="63"/>
+        <location filename="src/app/mainwindow.cpp" line="67"/>
         <source>Loading recent file...</source>
         <translation>최근 파일 로드 중...</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="86"/>
+        <location filename="src/app/mainwindow.cpp" line="90"/>
         <source> [ADMIN]</source>
         <translation> [관리자]</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="273"/>
-        <location filename="src/app/mainwindow.cpp" line="317"/>
         <source>Information</source>
-        <translation>정보</translation>
+        <translation type="vanished">정보</translation>
     </message>
     <message>
-        <location filename="src/app/mainwindow.cpp" line="348"/>
         <source>My Information</source>
-        <translation>내 정보</translation>
+        <translation type="vanished">내 정보</translation>
     </message>
 </context>
 <context>
@@ -967,12 +1103,22 @@
         <translation>테마</translation>
     </message>
     <message>
-        <location filename="src/app/menu_builder.cpp" line="154"/>
+        <location filename="src/app/menu_builder.cpp" line="147"/>
+        <source>Language</source>
+        <translation>언어</translation>
+    </message>
+    <message>
+        <location filename="src/app/menu_builder.cpp" line="158"/>
+        <source>English</source>
+        <translation>영어</translation>
+    </message>
+    <message>
+        <location filename="src/app/menu_builder.cpp" line="191"/>
         <source>Help</source>
         <translation>도움말</translation>
     </message>
     <message>
-        <location filename="src/app/menu_builder.cpp" line="166"/>
+        <location filename="src/app/menu_builder.cpp" line="203"/>
         <source>Admin</source>
         <translation>관리자</translation>
     </message>
@@ -980,55 +1126,60 @@
 <context>
     <name>MyInfoPage</name>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="371"/>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="582"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="286"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="414"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="642"/>
         <source>Class Schedule</source>
         <translation>수업 일정</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="374"/>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="638"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="279"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="417"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="698"/>
         <source>My Information</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="377"/>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="786"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="293"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="420"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="846"/>
         <source>Monthly Calendar</source>
         <translation>월간 캘린더</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="543"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="265"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="603"/>
         <source>My Info</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="556"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="272"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="616"/>
         <source>Manage your schedule, personal details, and monthly events.</source>
         <translation>일정, 개인 정보, 월간 일정을 관리합니다.</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="686"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="746"/>
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="698"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="758"/>
         <source>My Campus</source>
         <translation>내 캠퍼스</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="704"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="764"/>
         <source>Zoom Login ID</source>
         <translation>Zoom 로그인 ID</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="710"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="770"/>
         <source>Zoom Password</source>
         <translation>Zoom 비밀번호</translation>
     </message>
     <message>
-        <location filename="src/features/my_info/ui/my_info_page.cpp" line="716"/>
+        <location filename="src/features/my_info/ui/my_info_page.cpp" line="776"/>
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>
@@ -1036,96 +1187,72 @@
 <context>
     <name>NavigationController</name>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="107"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="133"/>
         <source>My Info</source>
-        <translation>내 정보</translation>
+        <translation type="vanished">내 정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="113"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="139"/>
         <source>Sub Prep</source>
-        <translation>대체 수업 준비</translation>
+        <translation type="vanished">대체 수업 준비</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="119"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="145"/>
         <source>Campus Directory</source>
-        <translation>캠퍼스 디렉터리</translation>
+        <translation type="vanished">캠퍼스 디렉터리</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="165"/>
         <source>Class Info</source>
-        <translation>수업 정보</translation>
+        <translation type="vanished">수업 정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="171"/>
         <source>Class Roster</source>
-        <translation>수업 명단</translation>
+        <translation type="vanished">수업 명단</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="195"/>
         <source>Class Notes</source>
-        <translation>수업 노트</translation>
+        <translation type="vanished">수업 노트</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="220"/>
         <source>Student Evaluations</source>
-        <translation>학생 평가</translation>
+        <translation type="vanished">학생 평가</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="279"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="314"/>
         <source>Important Information</source>
-        <translation>중요 정보</translation>
+        <translation type="vanished">중요 정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="284"/>
         <source>Class Information</source>
-        <translation>수업 정보</translation>
+        <translation type="vanished">수업 정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="289"/>
         <source>Sub Comments</source>
-        <translation>대체 수업 댓글</translation>
+        <translation type="vanished">대체 수업 댓글</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="343"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="378"/>
         <source>My Information</source>
-        <translation>내 정보</translation>
+        <translation type="vanished">내 정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="348"/>
         <source>Class Schedule</source>
-        <translation>수업 일정</translation>
+        <translation type="vanished">수업 일정</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="353"/>
         <source>Monthly Calendar</source>
-        <translation>월간 캘린더</translation>
+        <translation type="vanished">월간 캘린더</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="408"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="438"/>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="446"/>
         <source>Information</source>
-        <translation>정보</translation>
+        <translation type="vanished">정보</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="440"/>
         <source>Directions</source>
-        <translation>오시는 길</translation>
+        <translation type="vanished">오시는 길</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="452"/>
         <source>Housing</source>
-        <translation>숙소</translation>
+        <translation type="vanished">숙소</translation>
     </message>
     <message>
-        <location filename="src/app/controllers/navigation_controller.cpp" line="458"/>
         <source>Map</source>
-        <translation>지도</translation>
+        <translation type="vanished">지도</translation>
     </message>
 </context>
 <context>
@@ -1217,157 +1344,157 @@
         <translation>종료 시간</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="16"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="17"/>
         <source>My Info</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="22"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="23"/>
         <source>My Information</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="28"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="29"/>
         <source>Class Schedule</source>
         <translation>수업 일정</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="34"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
         <source>Monthly Calendar</source>
         <translation>월간 캘린더</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="42"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="43"/>
         <source>Sub Prep</source>
         <translation>대체 수업 준비</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="48"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="49"/>
         <source>Important Information</source>
         <translation>중요 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="54"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="55"/>
         <source>Class Information</source>
         <translation>수업 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="60"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="61"/>
         <source>Sub Comments</source>
         <translation>대체 수업 댓글</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="68"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="69"/>
         <source>Classes</source>
         <translation>수업</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="74"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="75"/>
         <source>Co-Teachers</source>
         <translation>공동 교사</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="80"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="81"/>
         <source>Useful Links</source>
         <translation>유용한 링크</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="86"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="87"/>
         <source>Dropbox</source>
         <translation>Dropbox</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="94"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="95"/>
         <source>Vacation Calendar</source>
         <translation>방학 캘린더</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="102"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="103"/>
         <source>Yearly Calendar</source>
         <translation>연간 캘린더</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="110"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="111"/>
         <source>Training Website</source>
         <translation>교육 웹사이트</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="118"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="119"/>
         <source>NET Website</source>
         <translation>NET 웹사이트</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="126"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="127"/>
         <source>LMS Website</source>
         <translation>LMS 웹사이트</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="134"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="135"/>
         <source>Highlights Library</source>
         <translation>Highlights 라이브러리</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="144"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="145"/>
         <source>Campus Directory</source>
         <translation>캠퍼스 디렉터리</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="150"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="151"/>
         <source>Information</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="156"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="157"/>
         <source>Directions</source>
         <translation>오시는 길</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="162"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="163"/>
         <source>Housing</source>
         <translation>숙소</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="168"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="169"/>
         <source>Map</source>
         <translation>지도</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="186"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="189"/>
         <source>Class Info</source>
         <translation>수업 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="192"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="195"/>
         <source>Class Roster</source>
         <translation>수업 명단</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="198"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="201"/>
         <source>Class Notes</source>
         <translation>수업 노트</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="204"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="207"/>
         <source>Student Evaluations</source>
         <translation>학생 평가</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="210"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="213"/>
         <source>Winter</source>
         <translation>겨울</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="216"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="219"/>
         <source>Speech Contest</source>
         <translation>말하기 대회</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="222"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="225"/>
         <source>Summer</source>
         <translation>여름</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="228"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="231"/>
         <source>Fall</source>
         <translation>가을</translation>
     </message>
@@ -1454,133 +1581,138 @@
         <translation>이 명단에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="234"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="272"/>
         <source>Duplicate Student Names</source>
         <translation>중복 학생 이름</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="237"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="275"/>
         <source>Resolve duplicate English/Korean student name pairs before saving.</source>
         <translation>저장하기 전에 중복된 영어/한국어 학생 이름 조합을 해결하세요.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="275"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="708"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="203"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="313"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="746"/>
         <source>Add Column</source>
         <translation>열 추가</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="276"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="314"/>
         <source>Column name:</source>
         <translation>열 이름:</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="293"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="331"/>
         <source>Cannot Add Column</source>
         <translation>열을 추가할 수 없음</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="338"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="376"/>
         <source>Cannot Remove Column</source>
         <translation>열을 제거할 수 없음</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="353"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="714"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="210"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="391"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="752"/>
         <source>Remove Column</source>
         <translation>열 제거</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="354"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="392"/>
         <source>Remove the &quot;%1&quot; column?</source>
         <translation>&quot;%1&quot; 열을 제거할까요?</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="414"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="544"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="555"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="697"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="193"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="452"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="582"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="593"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="735"/>
         <source>Import Scores</source>
         <translation>점수 가져오기</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="415"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="453"/>
         <source>Roster must contain &apos;English&apos; and &apos;Korean&apos; columns.</source>
         <translation>명단에는 &apos;English&apos; 및 &apos;Korean&apos; 열이 있어야 합니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="545"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="583"/>
         <source>Scores are already up to date.</source>
         <translation>점수가 이미 최신 상태입니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="556"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="594"/>
         <source>Scores imported successfully.</source>
         <translation>점수를 성공적으로 가져왔습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="626"/>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="824"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="664"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="862"/>
         <source>Class Roster</source>
         <translation>수업 명단</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="640"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="678"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="703"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="196"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="741"/>
         <source>Import final grades from speaking evaluations.</source>
         <translation>말하기 평가에서 최종 성적을 가져옵니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="720"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="217"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="758"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="829"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="867"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="924"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="962"/>
         <source>Duplicate Student Name</source>
         <translation>중복 학생 이름</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="927"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="965"/>
         <source>This English/Korean name combination already exists.</source>
         <translation>이 영어/한국어 이름 조합은 이미 있습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="930"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="968"/>
         <source>Duplicate row(s): %1</source>
         <translation>중복 행: %1</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="938"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="976"/>
         <source>No Suffix Available</source>
         <translation>사용 가능한 접미사가 없음</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="939"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="977"/>
         <source>Use %1</source>
         <translation>%1 사용</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="949"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="987"/>
         <source>Clear Edited Cell</source>
         <translation>수정한 셀 지우기</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="955"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="993"/>
         <source>Locate Duplicate</source>
         <translation>중복 위치 찾기</translation>
     </message>
     <message>
-        <location filename="src/features/roster/ui/roster_page.cpp" line="961"/>
+        <location filename="src/features/roster/ui/roster_page.cpp" line="999"/>
         <source>Keep As-Is</source>
         <translation>그대로 유지</translation>
     </message>
@@ -1667,72 +1799,74 @@
 <context>
     <name>SchedulePage</name>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="315"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="153"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="335"/>
         <source>Weekly Class Schedule</source>
         <translation>주간 수업 일정</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="329"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="160"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="349"/>
         <source>Generated from registered classes and their meeting times.</source>
         <translation>등록된 수업과 수업 시간에서 생성됩니다.</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="640"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="660"/>
         <source>No registered class meeting times available.</source>
         <translation>등록된 수업 시간이 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="680"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="700"/>
         <source>12-Hour Time</source>
         <translation>12시간 형식</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="681"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="701"/>
         <source>24-Hour Time</source>
         <translation>24시간 형식</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="686"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="706"/>
         <source>Hide Weekends</source>
         <translation>주말 숨기기</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="687"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="707"/>
         <source>Show Weekends</source>
         <translation>주말 표시</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="692"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="712"/>
         <source>Show Empty Blocks/Rows</source>
         <translation>빈 블록/행 표시</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="693"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="713"/>
         <source>Hide Empty Blocks/Rows</source>
         <translation>빈 블록/행 숨기기</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="702"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="722"/>
         <source>Show Regular Schedule</source>
         <translation>정규 일정 표시</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="703"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="723"/>
         <source>Show Intensive Schedule</source>
         <translation>집중 일정 표시</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="712"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="732"/>
         <source>Time</source>
         <translation>시간</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="997"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="1017"/>
         <source>Essay</source>
         <translation>에세이</translation>
     </message>
     <message>
-        <location filename="src/features/schedule/ui/schedule_page.cpp" line="1022"/>
+        <location filename="src/features/schedule/ui/schedule_page.cpp" line="1042"/>
         <source>Lunch</source>
         <translation>점심</translation>
     </message>
@@ -1793,31 +1927,30 @@
 <context>
     <name>Sidebar</name>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1202"/>
         <source>Class Info</source>
-        <translation>수업 정보</translation>
+        <translation type="vanished">수업 정보</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1272"/>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1329"/>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1344"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1466"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1523"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1538"/>
         <source>Add Class</source>
         <translation>수업 추가</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1278"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1472"/>
         <source>Delete Class</source>
         <translation>수업 삭제</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1293"/>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1314"/>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1350"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1487"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1508"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1544"/>
         <source>Add Teacher</source>
         <translation>교사 추가</translation>
     </message>
     <message>
-        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1299"/>
+        <location filename="src/ui/shared/widgets/sidebar/sidebar.cpp" line="1493"/>
         <source>Delete Teacher</source>
         <translation>교사 삭제</translation>
     </message>
@@ -1983,159 +2116,166 @@
         <translation>말하기 평가가 저장되었습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="510"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="529"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="545"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="555"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="565"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="704"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="495"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="561"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="580"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="596"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="606"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="616"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="755"/>
         <source>Import Names</source>
         <translation>이름 가져오기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="511"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="562"/>
         <source>No roster data found.</source>
         <translation>명단 데이터를 찾을 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="530"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="581"/>
         <source>Roster must contain &apos;English&apos; and &apos;Korean&apos; columns.</source>
         <translation>명단에는 &apos;English&apos; 및 &apos;Korean&apos; 열이 있어야 합니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="546"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="597"/>
         <source>Names are already up to date.</source>
         <translation>이름이 이미 최신 상태입니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="566"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="617"/>
         <source>Roster names imported successfully.</source>
         <translation>명단 이름을 성공적으로 가져왔습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="633"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="893"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="684"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="947"/>
         <source>Speaking Evaluation</source>
         <translation>말하기 평가</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="647"/>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="902"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="698"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="956"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="717"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="500"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="768"/>
         <source>Create Reports</source>
         <translation>보고서 만들기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="718"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="501"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="769"/>
         <source>Print Reports</source>
         <translation>보고서 인쇄</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="736"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="515"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="789"/>
         <source>This action is not available yet.</source>
         <translation>이 작업은 아직 사용할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="751"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="522"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="805"/>
         <source>Korean Keyboard</source>
         <translation>한국어 키보드</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="756"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="525"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="810"/>
         <source>Open Korean typing website</source>
         <translation>한국어 입력 웹사이트 열기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="768"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="532"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="822"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="894"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="948"/>
         <source>%1 Speaking Evaluation</source>
         <translation>%1 말하기 평가</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="900"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="954"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1096"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1150"/>
         <source>Duplicate Student Name</source>
         <translation>중복 학생 이름</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1099"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1153"/>
         <source>This English/Korean name combination already exists.</source>
         <translation>이 영어/한국어 이름 조합은 이미 있습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1102"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1156"/>
         <source>Duplicate row(s): %1</source>
         <translation>중복 행: %1</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1110"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1164"/>
         <source>No Suffix Available</source>
         <translation>사용 가능한 접미사가 없음</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1111"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1165"/>
         <source>Use %1</source>
         <translation>%1 사용</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1121"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1175"/>
         <source>Clear Edited Cell</source>
         <translation>수정한 셀 지우기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1127"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1181"/>
         <source>Locate Duplicate</source>
         <translation>중복 위치 찾기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1137"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1191"/>
         <source>Use Roster Match...</source>
         <translation>명단 일치 항목 사용...</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1144"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1198"/>
         <source>Keep As-Is</source>
         <translation>그대로 유지</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1204"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1258"/>
         <source>Resolve Duplicate Name</source>
         <translation>중복 이름 해결</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1217"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1271"/>
         <source>Clear Duplicate Name</source>
         <translation>중복 이름 지우기</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1239"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1293"/>
         <source>%1 / %2</source>
         <translation>%1 / %2</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1250"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1304"/>
         <source>Match Roster Student</source>
         <translation>명단 학생과 연결</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1251"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1305"/>
         <source>Student:</source>
         <translation>학생:</translation>
     </message>
     <message>
-        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1313"/>
+        <location filename="src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1367"/>
         <source>Match Roster Name</source>
         <translation>명단 이름과 연결</translation>
     </message>
@@ -2180,171 +2320,176 @@
 <context>
     <name>SubPrepPage</name>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="781"/>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="976"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="739"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="821"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1033"/>
         <source>Important Information</source>
         <translation>중요 정보</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="784"/>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1216"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="746"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="824"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1273"/>
         <source>Class Information</source>
         <translation>수업 정보</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="787"/>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1252"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="753"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="827"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1309"/>
         <source>Sub Comments</source>
         <translation>대체 수업 댓글</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="949"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="725"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1006"/>
         <source>Sub Prep</source>
         <translation>대체 수업 준비</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="962"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="732"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1019"/>
         <source>Prepare substitute materials and class notes.</source>
         <translation>대체 수업 자료와 수업 노트를 준비합니다.</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="985"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1042"/>
         <source>Personal Zoom Information</source>
         <translation>개인 Zoom 정보</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1009"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1066"/>
         <source>Login Email</source>
         <translation>로그인 이메일</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1015"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1072"/>
         <source>Password</source>
         <translation>비밀번호</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1043"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1100"/>
         <source>Campus Information</source>
         <translation>캠퍼스 정보</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1093"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1150"/>
         <source>Campus</source>
         <translation>캠퍼스</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1099"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1156"/>
         <source>Office Number</source>
         <translation>사무실 번호</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1105"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1162"/>
         <source>Office WiFi</source>
         <translation>사무실 WiFi</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1111"/>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1854"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1168"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1911"/>
         <source>WiFi Password</source>
         <translation>WiFi 비밀번호</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1117"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1174"/>
         <source>Photocopier Code</source>
         <translation>복사기 코드</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1163"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1220"/>
         <source>Lesson Materials and Grading</source>
         <translation>수업 자료 및 채점</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1168"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1225"/>
         <source>Class Materials</source>
         <translation>수업 자료</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1182"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1239"/>
         <source>Time Filler Activities</source>
         <translation>자투리 시간 활동</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1196"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1253"/>
         <source>Book Report Grading</source>
         <translation>독후감 채점</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1225"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1282"/>
         <source>Sorted by Co-Teacher</source>
         <translation>공동 교사별 정렬</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1261"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1318"/>
         <source>Comments</source>
         <translation>댓글</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1754"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1811"/>
         <source>No classes available.</source>
         <translation>사용 가능한 수업이 없습니다.</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1836"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1893"/>
         <source>Internet Type</source>
         <translation>인터넷 유형</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1845"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1902"/>
         <source>WiFi Name</source>
         <translation>WiFi 이름</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1875"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1932"/>
         <source>Projection Type</source>
         <translation>프로젝션 유형</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1884"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1941"/>
         <source>Zoom ID</source>
         <translation>Zoom ID</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1893"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1950"/>
         <source>Zoom Password</source>
         <translation>Zoom 비밀번호</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1904"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1961"/>
         <source>Notes</source>
         <translation>노트</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1948"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2005"/>
         <source># of Students</source>
         <translation>학생 수</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1958"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2015"/>
         <source>Regular</source>
         <translation>정규</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1969"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2026"/>
         <source>Intensive</source>
         <translation>집중</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1983"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2040"/>
         <source>Schedule</source>
         <translation>일정</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="1995"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2052"/>
         <source>Class Notes</source>
         <translation>수업 노트</translation>
     </message>
     <message>
-        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2066"/>
+        <location filename="src/features/sub_prep/ui/sub_prep_page.cpp" line="2123"/>
         <source>Scoring: 0 / 20 / 40 / 60 / 80 / 100
 Comments: Please leave a comment about what the student did well and what they need to work on.
 Additional Rules: N/A</source>
@@ -2357,11 +2502,13 @@ Additional Rules: N/A</source>
     <name>TeacherInfoPage</name>
     <message>
         <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="186"/>
+        <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="789"/>
         <source>Teacher Information</source>
         <translation>교사 정보</translation>
     </message>
     <message>
         <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="197"/>
+        <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="797"/>
         <source>View and manage teacher details.</source>
         <translation>교사 세부 정보를 확인하고 관리합니다.</translation>
     </message>
@@ -2424,6 +2571,13 @@ Additional Rules: N/A</source>
         <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="382"/>
         <source>Notes</source>
         <translation>노트</translation>
+    </message>
+    <message>
+        <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="482"/>
+        <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="715"/>
+        <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="778"/>
+        <source>Teacher Information for %1</source>
+        <translation>%1 선생님 정보</translation>
     </message>
     <message>
         <location filename="src/features/teacher/ui/teacher_info_page.cpp" line="557"/>

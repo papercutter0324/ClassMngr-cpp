@@ -25,6 +25,7 @@ public:
         );
 
     void refresh() override;
+    void retranslateUi() override;
 
 signals:
     void classInfoSaved(

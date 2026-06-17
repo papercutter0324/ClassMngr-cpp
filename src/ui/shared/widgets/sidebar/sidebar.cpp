@@ -257,6 +257,8 @@ void Sidebar::buildTree()
     m_tree->clear();
 
     m_nodes.clear();
+    m_classItems.clear();
+    m_teacherItems.clear();
 
 
 
@@ -264,13 +266,14 @@ void Sidebar::buildTree()
     // Build Top Level Nodes
     // =====================================================
 
-    for (const auto &spec : TREE_STRUCTURE)
+    for (const auto &spec : treeStructure())
     {
         auto *item =
             createItem(
                 spec.label,
                 spec.type,
-                spec.children.isEmpty()
+                spec.children.isEmpty(),
+                spec.key
                 );
 
 
@@ -300,7 +303,8 @@ void Sidebar::buildTree()
                 createItem(
                     child.label,
                     child.type,
-                    child.children.isEmpty()
+                    child.children.isEmpty(),
+                    child.key
                     );
 
             if (!child.url.isEmpty())
@@ -332,6 +336,117 @@ void Sidebar::buildTree()
     updateTreeColumnWidth();
 }
 
+void Sidebar::rebuildTree()
+{
+    buildTree();
+}
+
+QStringList Sidebar::expandedRootKeys() const
+{
+    QStringList keys;
+
+    for (
+        auto it = m_nodes.cbegin();
+        it != m_nodes.cend();
+        ++it
+        )
+    {
+        if (it.value() && it.value()->isExpanded())
+        {
+            keys.append(
+                it.key()
+                );
+        }
+    }
+
+    return keys;
+}
+
+void Sidebar::restoreExpandedRootKeys(
+    const QStringList& keys
+    )
+{
+    for (
+        auto it = m_nodes.cbegin();
+        it != m_nodes.cend();
+        ++it
+        )
+    {
+        if (it.value())
+        {
+            it.value()->setExpanded(
+                keys.contains(it.key())
+                );
+        }
+    }
+}
+
+QStringList Sidebar::selectedKeys() const
+{
+    return getItemKeys(
+        m_tree ? m_tree->currentItem() : nullptr
+        );
+}
+
+void Sidebar::selectByKeys(
+    const QStringList& keys,
+    int classId,
+    int teacherId
+    )
+{
+    if (keys.isEmpty())
+    {
+        return;
+    }
+
+    if (teacherId > 0 && keys.contains(QStringLiteral("teacher")))
+    {
+        selectTeacher(teacherId);
+        return;
+    }
+
+    QTreeWidgetItem* item =
+        m_nodes.value(keys.first(), nullptr);
+
+    if (!item)
+    {
+        return;
+    }
+
+    for (int index = 1; index < keys.size(); ++index)
+    {
+        const QString key =
+            keys.at(index);
+
+        if (key == QStringLiteral("class"))
+        {
+            item =
+                m_classItems.value(classId, nullptr);
+        }
+        else
+        {
+            item =
+                childWithKey(
+                    item,
+                    key
+                    );
+        }
+
+        if (!item)
+        {
+            return;
+        }
+
+        if (item->parent())
+        {
+            item->parent()->setExpanded(true);
+        }
+    }
+
+    m_tree->setCurrentItem(item);
+    m_tree->scrollToItem(item);
+}
+
 
 
 // =========================================================
@@ -341,7 +456,8 @@ void Sidebar::buildTree()
 QTreeWidgetItem* Sidebar::createItem(
     const QString &label,
     NodeType type,
-    bool selectable
+    bool selectable,
+    const QString& key
     )
 {
     auto *item =
@@ -356,6 +472,12 @@ QTreeWidgetItem* Sidebar::createItem(
         0,
         Qt::UserRole,
         std::to_underlying(type)
+        );
+
+    item->setData(
+        0,
+        Qt::UserRole + 4,
+        key
         );
 
     if (!selectable)
@@ -383,7 +505,9 @@ void Sidebar::addClassNode(
     auto *item =
         createItem(
             displayName,
-            NodeType::Class
+            NodeType::Class,
+            true,
+            QStringLiteral("class")
             );
 
     item->setData(
@@ -398,13 +522,14 @@ void Sidebar::addClassNode(
     // Add Template Children
     // =====================================================
 
-    for (const auto &spec : CLASS_TEMPLATE)
+    for (const auto &spec : classTemplate())
     {
         auto *child =
             createItem(
                 spec.label,
                 spec.type,
-                spec.children.isEmpty()
+                spec.children.isEmpty(),
+                spec.key
                 );
 
         for (const auto &sub : spec.children)
@@ -412,7 +537,9 @@ void Sidebar::addClassNode(
             auto *subChild =
                 createItem(
                     sub.label,
-                    sub.type
+                    sub.type,
+                    true,
+                    sub.key
                     );
 
             child->addChild(subChild);
@@ -516,7 +643,9 @@ void Sidebar::addTeacherNode(
     auto *item =
         createItem(
             displayName,
-            NodeType::Teacher
+            NodeType::Teacher,
+            true,
+            QStringLiteral("teacher")
             );
 
     item->setData(
@@ -868,6 +997,12 @@ void Sidebar::onItemClicked(
         NavigationData data;
         data.path =
             getItemPath(item);
+        data.keys =
+            getItemKeys(item);
+        data.routeKey =
+            data.keys.isEmpty()
+                ? QString()
+                : data.keys.last();
         data.type =
             type;
 
@@ -950,6 +1085,12 @@ void Sidebar::onItemClicked(
 
     data.path =
         getItemPath(item);
+    data.keys =
+        getItemKeys(item);
+    data.routeKey =
+        data.keys.isEmpty()
+            ? QString()
+            : data.keys.last();
 
     data.type = type;
 
@@ -1017,7 +1158,7 @@ void Sidebar::onItemClicked(
 }
 
 void Sidebar::selectMyInfoSection(
-    const QString& sectionName
+    const QString& sectionKey
     )
 {
     auto* myInfoRoot =
@@ -1031,9 +1172,9 @@ void Sidebar::selectMyInfoSection(
     myInfoRoot->setExpanded(true);
 
     auto* sectionItem =
-        childWithText(
+        childWithKey(
             myInfoRoot,
-            sectionName
+            sectionKey
             );
 
     if (!sectionItem)
@@ -1046,7 +1187,7 @@ void Sidebar::selectMyInfoSection(
 }
 
 void Sidebar::selectSubPrepSection(
-    const QString& sectionName
+    const QString& sectionKey
     )
 {
     auto* subPrepRoot =
@@ -1060,9 +1201,9 @@ void Sidebar::selectSubPrepSection(
     subPrepRoot->setExpanded(true);
 
     auto* sectionItem =
-        childWithText(
+        childWithKey(
             subPrepRoot,
-            sectionName
+            sectionKey
             );
 
     if (!sectionItem)
@@ -1075,7 +1216,7 @@ void Sidebar::selectSubPrepSection(
 }
 
 void Sidebar::selectCampusSection(
-    const QString& sectionName
+    const QString& sectionKey
     )
 {
     auto* campusRoot =
@@ -1089,9 +1230,9 @@ void Sidebar::selectCampusSection(
     campusRoot->setExpanded(true);
 
     auto* sectionItem =
-        childWithText(
+        childWithKey(
             campusRoot,
-            sectionName
+            sectionKey
             );
 
     if (!sectionItem)
@@ -1125,6 +1266,31 @@ QStringList Sidebar::getItemPath(
     }
 
     return path;
+}
+
+QStringList Sidebar::getItemKeys(
+    QTreeWidgetItem* item
+    ) const
+{
+    QStringList keys;
+
+    while (item)
+    {
+        const QString key =
+            item->data(
+                    0,
+                    Qt::UserRole + 4
+                    ).toString();
+
+        if (!key.isEmpty())
+        {
+            keys.prepend(key);
+        }
+
+        item = item->parent();
+    }
+
+    return keys;
 }
 
 
@@ -1199,13 +1365,49 @@ QTreeWidgetItem* Sidebar::classInfoChildForClass(
                 child;
         }
 
-        if (child->text(0) == tr("Class Info"))
+        if (
+            child->data(
+                    0,
+                    Qt::UserRole + 4
+                    ).toString()
+            == QStringLiteral("class_info")
+            )
         {
             return child;
         }
     }
 
     return fallbackPageItem;
+}
+
+QTreeWidgetItem* Sidebar::childWithKey(
+    QTreeWidgetItem* item,
+    const QString& key
+    ) const
+{
+    if (!item)
+    {
+        return nullptr;
+    }
+
+    for (int index = 0; index < item->childCount(); ++index)
+    {
+        auto* child =
+            item->child(index);
+
+        if (
+            child
+            && child->data(
+                    0,
+                    Qt::UserRole + 4
+                    ).toString() == key
+            )
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
 }
 
 QTreeWidgetItem* Sidebar::childWithText(

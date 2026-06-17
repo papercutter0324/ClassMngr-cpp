@@ -119,6 +119,7 @@ public:
     // =====================================================
 
     void refreshAll();
+    void retranslatePages();
 
 
 

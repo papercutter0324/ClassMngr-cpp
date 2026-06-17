@@ -4,6 +4,7 @@ namespace OptionKeys
 {
     inline constexpr const char* SaveMode = "options/saveMode";
     inline constexpr const char* Theme    = "options/theme";
+    inline constexpr const char* Language = "options/language";
 
     inline constexpr const char* SidebarTooltipsEnabled =
         "options/sidebarTooltipsEnabled";

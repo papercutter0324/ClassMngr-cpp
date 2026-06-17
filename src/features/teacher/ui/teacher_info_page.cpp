@@ -479,7 +479,7 @@ void TeacherInfoPage::loadTeacher(
         SidebarNodeNaming::formatTeacherDisplayName(teacher);
 
     m_titleLabel->setText(
-        QString("Teacher Information for %1")
+        tr("Teacher Information for %1")
             .arg(displayName));
 
     m_teacherKrEdit->setText(
@@ -712,7 +712,7 @@ bool TeacherInfoPage::saveTeacherInternal()
         SidebarNodeNaming::formatTeacherDisplayName(m_teacher);
 
     m_titleLabel->setText(
-        QString("Teacher Information for %1")
+        tr("Teacher Information for %1")
             .arg(displayName)
         );
 
@@ -766,4 +766,37 @@ Teacher TeacherInfoPage::teacher() const
 void TeacherInfoPage::refresh()
 {
     BasePage::refresh();
+}
+
+void TeacherInfoPage::retranslateUi()
+{
+    if (m_titleLabel)
+    {
+        if (m_teacher.id > 0)
+        {
+            m_titleLabel->setText(
+                tr("Teacher Information for %1")
+                    .arg(
+                        SidebarNodeNaming::formatTeacherDisplayName(
+                            m_teacher
+                            )
+                        )
+                );
+        }
+        else
+        {
+            m_titleLabel->setText(
+                tr("Teacher Information")
+                );
+        }
+    }
+
+    if (m_subtitleLabel)
+    {
+        m_subtitleLabel->setText(
+            tr("View and manage teacher details.")
+            );
+    }
+
+    updateActions();
 }

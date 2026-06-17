@@ -33,6 +33,7 @@ public:
         SaveMode mode
         ) override;
     void refresh() override;
+    void retranslateUi() override;
 
 private slots:
     void markDirty();

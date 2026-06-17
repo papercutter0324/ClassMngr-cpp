@@ -10,6 +10,24 @@
 #include <QApplication>
 #include <QStyle>
 
+namespace
+{
+void updateActionText(
+    QAction* action,
+    const QString& text,
+    const QString& statusTip
+    )
+{
+    if (!action)
+    {
+        return;
+    }
+
+    action->setText(text);
+    action->setStatusTip(statusTip);
+}
+}
+
 // =========================================================
 // Constructor
 // =========================================================
@@ -65,6 +83,176 @@ void ActionRegistry::createActions()
     createOptionActions();
     createHelpActions();
     createAdminActions();
+}
+
+void ActionRegistry::retranslate()
+{
+    updateActionText(
+        newFile,
+        tr("New Database..."),
+        tr("Create a new database")
+        );
+    updateActionText(
+        openFile,
+        tr("Open..."),
+        tr("Open an existing file")
+        );
+    updateActionText(
+        saveFile,
+        tr("Save"),
+        tr("Save the current file")
+        );
+    updateActionText(
+        saveAsFile,
+        tr("Save As..."),
+        tr("Save the file with a new name")
+        );
+    updateActionText(
+        exportAsFile,
+        tr("Export As..."),
+        tr("Export the current file")
+        );
+    updateActionText(
+        closeFile,
+        tr("Close"),
+        tr("Close the current file")
+        );
+    updateActionText(
+        exitApp,
+        tr("Exit"),
+        tr("Exit the application")
+        );
+
+    updateActionText(
+        undo,
+        tr("Undo"),
+        tr("Undo the last action")
+        );
+    updateActionText(
+        redo,
+        tr("Redo"),
+        tr("Redo the last undone action")
+        );
+    updateActionText(
+        cut,
+        tr("Cut"),
+        tr("Cut the selected content")
+        );
+    updateActionText(
+        copy,
+        tr("Copy"),
+        tr("Copy the selected content")
+        );
+    updateActionText(
+        paste,
+        tr("Paste"),
+        tr("Paste content from the clipboard")
+        );
+
+    updateActionText(
+        newClass,
+        tr("New Class"),
+        tr("Create a new class")
+        );
+    updateActionText(
+        deleteClass,
+        tr("Delete Class"),
+        tr("Delete the selected class")
+        );
+    updateActionText(
+        newTeacher,
+        tr("New Teacher"),
+        tr("Create a new teacher")
+        );
+    updateActionText(
+        deleteTeacher,
+        tr("Delete Teacher"),
+        tr("Delete the selected teacher")
+        );
+
+    if (saveModeState)
+    {
+        updateActionText(
+            saveModeState->action(SaveMode::Automatic),
+            tr("Automatic"),
+            tr("Automatically save changes")
+            );
+        updateActionText(
+            saveModeState->action(SaveMode::Manual),
+            tr("Manual"),
+            tr("Save changes manually")
+            );
+    }
+
+    if (themeState)
+    {
+        updateActionText(
+            themeState->action(Theme::Dark),
+            tr("Dark Theme"),
+            tr("Use dark theme")
+            );
+        updateActionText(
+            themeState->action(Theme::Light),
+            tr("Light Theme"),
+            tr("Use light theme")
+            );
+    }
+
+    if (languageState)
+    {
+        updateActionText(
+            languageState->action(Language::SystemDefault),
+            tr("System Default"),
+            tr("Use the system language")
+            );
+        updateActionText(
+            languageState->action(Language::EnglishUS),
+            tr("American English"),
+            tr("Use American English")
+            );
+        updateActionText(
+            languageState->action(Language::EnglishGB),
+            tr("British English"),
+            tr("Use British English")
+            );
+        updateActionText(
+            languageState->action(Language::EnglishCA),
+            tr("Canadian English"),
+            tr("Use Canadian English")
+            );
+        updateActionText(
+            languageState->action(Language::EnglishAU),
+            tr("Australian English"),
+            tr("Use Australian English")
+            );
+        updateActionText(
+            languageState->action(Language::Korean),
+            tr("Korean"),
+            tr("Use Korean")
+            );
+    }
+
+    updateActionText(
+        showSidebarTooltips,
+        tr("Show Sidebar Tooltips"),
+        tr("Show full sidebar names in tooltips when they do not fit")
+        );
+    updateActionText(
+        animateSidebarText,
+        tr("Animate Overflowing Sidebar Text"),
+        tr("Animate overflowing sidebar names on hover")
+        );
+
+    updateActionText(
+        about,
+        tr("About"),
+        tr("Show application information")
+        );
+    updateActionText(
+        manageCampuses,
+        tr("Manage Campuses"),
+        tr("Manage campus settings")
+        );
 }
 
 // =========================================================
@@ -265,6 +453,74 @@ void ActionRegistry::createOptionActions()
     themeState->loadFromSettings(
         Theme::Dark
     );
+
+    languageState =
+        new OptionState<Language>(OptionKeys::Language, this);
+
+    auto systemDefaultLanguageAction =
+        createCheckableAction(
+            tr("System Default"),
+            tr("Use the system language")
+            );
+
+    auto americanEnglishAction =
+        createCheckableAction(
+            tr("American English"),
+            tr("Use American English")
+            );
+
+    auto britishEnglishAction =
+        createCheckableAction(
+            tr("British English"),
+            tr("Use British English")
+            );
+
+    auto canadianEnglishAction =
+        createCheckableAction(
+            tr("Canadian English"),
+            tr("Use Canadian English")
+            );
+
+    auto australianEnglishAction =
+        createCheckableAction(
+            tr("Australian English"),
+            tr("Use Australian English")
+            );
+
+    auto koreanLanguageAction =
+        createCheckableAction(
+            tr("Korean"),
+            tr("Use Korean")
+            );
+
+    languageState->addOption(
+        Language::SystemDefault,
+        systemDefaultLanguageAction
+        );
+    languageState->addOption(
+        Language::EnglishUS,
+        americanEnglishAction
+        );
+    languageState->addOption(
+        Language::EnglishGB,
+        britishEnglishAction
+        );
+    languageState->addOption(
+        Language::EnglishCA,
+        canadianEnglishAction
+        );
+    languageState->addOption(
+        Language::EnglishAU,
+        australianEnglishAction
+        );
+    languageState->addOption(
+        Language::Korean,
+        koreanLanguageAction
+        );
+
+    languageState->loadFromSettings(
+        Language::SystemDefault
+        );
 
 
     showSidebarTooltips =

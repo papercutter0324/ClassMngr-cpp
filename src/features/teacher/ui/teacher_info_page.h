@@ -40,6 +40,7 @@ public:
         ) override;
 
     void refresh() override;
+    void retranslateUi() override;
 
     Teacher teacher() const;
 

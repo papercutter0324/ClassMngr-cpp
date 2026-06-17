@@ -249,6 +249,20 @@ void ClassNotesPage::refresh()
     BasePage::refresh();
 }
 
+void ClassNotesPage::retranslateUi()
+{
+    updateHeaderText();
+
+    if (m_saveButton)
+    {
+        m_saveButton->setText(
+            tr("Save Changes")
+            );
+    }
+
+    updateActions();
+}
+
 void ClassNotesPage::markDirty()
 {
     if (m_loading)

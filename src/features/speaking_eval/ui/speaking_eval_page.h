@@ -51,6 +51,7 @@ public:
         ) override;
 
     void refresh() override;
+    void retranslateUi() override;
 
 private slots:
     void importNames();
@@ -115,6 +116,7 @@ private:
     QUndoStack* m_undoStack = nullptr;
 
     QPushButton* m_importNamesButton = nullptr;
+    QList<QPushButton*> m_reportButtons;
     QPushButton* m_koreanKeyboardButton = nullptr;
     QPushButton* m_saveButton = nullptr;
     QTimer* m_autosaveTimer = nullptr;

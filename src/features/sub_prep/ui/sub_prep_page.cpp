@@ -717,6 +717,46 @@ void SubPrepPage::refresh()
     }
 }
 
+void SubPrepPage::retranslateUi()
+{
+    if (m_titleLabel)
+    {
+        m_titleLabel->setText(
+            tr("Sub Prep")
+            );
+    }
+
+    if (m_subtitleLabel)
+    {
+        m_subtitleLabel->setText(
+            tr("Prepare substitute materials and class notes.")
+            );
+    }
+
+    if (m_importantInformationHeading)
+    {
+        m_importantInformationHeading->setText(
+            tr("Important Information")
+            );
+    }
+
+    if (m_classInformationHeading)
+    {
+        m_classInformationHeading->setText(
+            tr("Class Information")
+            );
+    }
+
+    if (m_subCommentsHeading)
+    {
+        m_subCommentsHeading->setText(
+            tr("Sub Comments")
+            );
+    }
+
+    refreshGeneratedContent();
+}
+
 void SubPrepPage::scrollToSection(
     SubPrepSection section
     )
@@ -785,6 +825,23 @@ QString SubPrepPage::currentSectionName() const
 
     case SubPrepSection::SubComments:
         return tr("Sub Comments");
+    }
+
+    return QString();
+}
+
+QString SubPrepPage::currentSectionKey() const
+{
+    switch (m_currentSection)
+    {
+    case SubPrepSection::ImportantInformation:
+        return QStringLiteral("sub_prep_important");
+
+    case SubPrepSection::ClassInformation:
+        return QStringLiteral("sub_prep_class_information");
+
+    case SubPrepSection::SubComments:
+        return QStringLiteral("sub_prep_comments");
     }
 
     return QString();

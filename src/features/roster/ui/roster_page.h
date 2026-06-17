@@ -44,6 +44,7 @@ public:
     void setSaveMode(
         SaveMode mode
         ) override;
+    void retranslateUi() override;
 
 private slots:
     void addColumn();

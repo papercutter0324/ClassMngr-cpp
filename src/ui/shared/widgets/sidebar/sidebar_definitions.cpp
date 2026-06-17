@@ -8,8 +8,9 @@
 // Tree Structure
 // =========================================================
 
-const QList<TreeNodeSpec>
-    TREE_STRUCTURE =
+QList<TreeNodeSpec> treeStructure()
+{
+    return
     {
         {
             "my_info",
@@ -18,19 +19,19 @@ const QList<TreeNodeSpec>
 
             {
                 {
-                    "",
+                    "my_info_information",
                     QObject::tr("My Information"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "my_info_schedule",
                     QObject::tr("Class Schedule"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "my_info_calendar",
                     QObject::tr("Monthly Calendar"),
                     NodeType::Page
                 }
@@ -44,19 +45,19 @@ const QList<TreeNodeSpec>
 
             {
                 {
-                    "",
+                    "sub_prep_important",
                     QObject::tr("Important Information"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "sub_prep_class_information",
                     QObject::tr("Class Information"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "sub_prep_comments",
                     QObject::tr("Sub Comments"),
                     NodeType::Page
                 }
@@ -82,7 +83,7 @@ const QList<TreeNodeSpec>
 
             {
                 {
-                    "",
+                    "useful_dropbox",
                     QObject::tr("Dropbox"),
                     NodeType::Url,
                     {},
@@ -90,7 +91,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_vacation_calendar",
                     QObject::tr("Vacation Calendar"),
                     NodeType::Url,
                     {},
@@ -98,7 +99,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_yearly_calendar",
                     QObject::tr("Yearly Calendar"),
                     NodeType::Url,
                     {},
@@ -106,7 +107,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_training_website",
                     QObject::tr("Training Website"),
                     NodeType::Url,
                     {},
@@ -114,7 +115,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_net_website",
                     QObject::tr("NET Website"),
                     NodeType::Url,
                     {},
@@ -122,7 +123,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_lms_website",
                     QObject::tr("LMS Website"),
                     NodeType::Url,
                     {},
@@ -130,7 +131,7 @@ const QList<TreeNodeSpec>
                 },
 
                 {
-                    "",
+                    "useful_highlights_library",
                     QObject::tr("Highlights Library"),
                     NodeType::Url,
                     {},
@@ -146,31 +147,32 @@ const QList<TreeNodeSpec>
 
             {
                 {
-                    "",
+                    "campus_information",
                     QObject::tr("Information"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "campus_directions",
                     QObject::tr("Directions"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "campus_housing",
                     QObject::tr("Housing"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "campus_map",
                     QObject::tr("Map"),
                     NodeType::Page
                 }
             }
         }
 };
+}
 
 
 
@@ -178,56 +180,58 @@ const QList<TreeNodeSpec>
 // Class Template
 // =========================================================
 
-const QList<TreeNodeSpec>
-    CLASS_TEMPLATE =
+QList<TreeNodeSpec> classTemplate()
+{
+    return
     {
         {
-            "",
+            "class_info",
             QObject::tr("Class Info"),
             NodeType::Page
         },
 
         {
-            "",
+            "class_roster",
             QObject::tr("Class Roster"),
             NodeType::Page
         },
 
         {
-            "",
+            "class_notes",
             QObject::tr("Class Notes"),
             NodeType::Page
         },
 
         {
-            "",
+            "student_evaluations",
             QObject::tr("Student Evaluations"),
             NodeType::ClassSection,
 
             {
                 {
-                    "",
+                    "speaking_winter",
                     QObject::tr("Winter"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "speaking_speech_contest",
                     QObject::tr("Speech Contest"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "speaking_summer",
                     QObject::tr("Summer"),
                     NodeType::Page
                 },
 
                 {
-                    "",
+                    "speaking_fall",
                     QObject::tr("Fall"),
                     NodeType::Page
                 }
             }
         }
 };
+}

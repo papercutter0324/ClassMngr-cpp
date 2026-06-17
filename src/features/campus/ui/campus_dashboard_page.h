@@ -37,8 +37,10 @@ public:
     void showHousing();
     void showMap();
     QString currentSectionName() const;
+    QString currentSectionKey() const;
 
     void refresh() override;
+    void retranslateUi() override;
 
     void saveData() override;
     bool saveChanges() override;
@@ -50,7 +52,7 @@ public:
 
 signals:
     void sectionChanged(
-        const QString& sectionName
+        const QString& sectionKey
         );
 
 private slots:

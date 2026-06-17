@@ -485,6 +485,57 @@ void SpeakingEvalPage::refresh()
     }
 }
 
+void SpeakingEvalPage::retranslateUi()
+{
+    updateHeaderText();
+
+    if (m_importNamesButton)
+    {
+        m_importNamesButton->setText(
+            tr("Import Names")
+            );
+    }
+
+    const QList<QString> reportLabels{
+        tr("Create Reports"),
+        tr("Print Reports")
+    };
+
+    for (
+        int index = 0;
+        index < m_reportButtons.size()
+            && index < reportLabels.size();
+        ++index
+        )
+    {
+        m_reportButtons[index]->setText(
+            reportLabels[index]
+            );
+        m_reportButtons[index]->setToolTip(
+            tr("This action is not available yet.")
+            );
+    }
+
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setText(
+            tr("Korean Keyboard")
+            );
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean typing website")
+            );
+    }
+
+    if (m_saveButton)
+    {
+        m_saveButton->setText(
+            tr("Save Changes")
+            );
+    }
+
+    updateActions();
+}
+
 void SpeakingEvalPage::importNames()
 {
     if (
@@ -718,6 +769,8 @@ void SpeakingEvalPage::buildUi()
         tr("Print Reports")
     };
 
+    m_reportButtons.clear();
+
     for (int index = 0; index < disabledLabels.size(); ++index)
     {
         auto* button =
@@ -737,6 +790,7 @@ void SpeakingEvalPage::buildUi()
             );
 
         bottomLayout()->addWidget(button);
+        m_reportButtons.append(button);
 
         if (index == 1)
         {

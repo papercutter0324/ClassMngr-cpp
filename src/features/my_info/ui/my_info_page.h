@@ -35,6 +35,7 @@ public:
         );
 
     void refresh() override;
+    void retranslateUi() override;
     void saveData() override;
     bool saveChanges() override;
     bool hasUnsavedChanges() const override;
@@ -47,6 +48,7 @@ public:
         MyInfoSection section
         );
     QString currentSectionName() const;
+    QString currentSectionKey() const;
 
 signals:
     void classInfoSaved(
@@ -118,6 +120,8 @@ private:
     QWidget* m_scrollContent = nullptr;
     QVBoxLayout* m_scrollContentLayout = nullptr;
 
+    QLabel* m_titleLabel = nullptr;
+    QLabel* m_subtitleLabel = nullptr;
     QLabel* m_classScheduleHeading = nullptr;
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;

@@ -145,6 +145,26 @@ void SchedulePage::refresh()
     loadSchedule();
 }
 
+void SchedulePage::retranslateUi()
+{
+    if (m_titleLabel)
+    {
+        m_titleLabel->setText(
+            tr("Weekly Class Schedule")
+            );
+    }
+
+    if (m_subtitleLabel)
+    {
+        m_subtitleLabel->setText(
+            tr("Generated from registered classes and their meeting times.")
+            );
+    }
+
+    updateButtons();
+    loadSchedule();
+}
+
 void SchedulePage::showEvent(
     QShowEvent* event
     )

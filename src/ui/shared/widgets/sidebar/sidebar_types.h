@@ -18,6 +18,8 @@ enum class NodeType
 struct NavigationData
 {
     QStringList path;
+    QStringList keys;
+    QString routeKey;
 
     NodeType type;
 

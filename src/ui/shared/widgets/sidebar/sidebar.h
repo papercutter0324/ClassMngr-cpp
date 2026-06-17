@@ -75,6 +75,22 @@ public:
         bool visible
         );
 
+    void rebuildTree();
+
+    QStringList expandedRootKeys() const;
+
+    void restoreExpandedRootKeys(
+        const QStringList& keys
+        );
+
+    QStringList selectedKeys() const;
+
+    void selectByKeys(
+        const QStringList& keys,
+        int classId = -1,
+        int teacherId = -1
+        );
+
 
 
     // =====================================================
@@ -167,11 +183,16 @@ private:
     QTreeWidgetItem* createItem(
         const QString &label,
         NodeType type,
-        bool selectable = true
+        bool selectable = true,
+        const QString& key = QString()
         );
 
     QStringList getItemPath(
         QTreeWidgetItem *item
+        ) const;
+
+    QStringList getItemKeys(
+        QTreeWidgetItem* item
         ) const;
 
     bool isClassItem(
@@ -185,6 +206,11 @@ private:
     QTreeWidgetItem* childWithText(
         QTreeWidgetItem* item,
         const QString& text
+        ) const;
+
+    QTreeWidgetItem* childWithKey(
+        QTreeWidgetItem* item,
+        const QString& key
         ) const;
 
     void updateTreeColumnWidth();

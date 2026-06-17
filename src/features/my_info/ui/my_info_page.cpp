@@ -257,6 +257,49 @@ void MyInfoPage::refresh()
     }
 }
 
+void MyInfoPage::retranslateUi()
+{
+    if (m_titleLabel)
+    {
+        m_titleLabel->setText(
+            tr("My Info")
+            );
+    }
+
+    if (m_subtitleLabel)
+    {
+        m_subtitleLabel->setText(
+            tr("Manage your schedule, personal details, and monthly events.")
+            );
+    }
+
+    if (m_myInformationHeading)
+    {
+        m_myInformationHeading->setText(
+            tr("My Information")
+            );
+    }
+
+    if (m_classScheduleHeading)
+    {
+        m_classScheduleHeading->setText(
+            tr("Class Schedule")
+            );
+    }
+
+    if (m_monthlyCalendarHeading)
+    {
+        m_monthlyCalendarHeading->setText(
+            tr("Monthly Calendar")
+            );
+    }
+
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->refreshSchedule();
+    }
+}
+
 void MyInfoPage::saveData()
 {
     saveMyInfoInternal();
@@ -375,6 +418,23 @@ QString MyInfoPage::currentSectionName() const
 
     case MyInfoSection::MonthlyCalendar:
         return tr("Monthly Calendar");
+    }
+
+    return QString();
+}
+
+QString MyInfoPage::currentSectionKey() const
+{
+    switch (m_currentSection)
+    {
+    case MyInfoSection::ClassSchedule:
+        return QStringLiteral("my_info_schedule");
+
+    case MyInfoSection::MyInformation:
+        return QStringLiteral("my_info_information");
+
+    case MyInfoSection::MonthlyCalendar:
+        return QStringLiteral("my_info_calendar");
     }
 
     return QString();
@@ -538,31 +598,31 @@ void MyInfoPage::buildUi()
     auto* headerLayout =
         new QVBoxLayout;
 
-    auto* titleLabel =
+    m_titleLabel =
         new QLabel(
             tr("My Info"),
             m_scrollContent
             );
-    titleLabel->setObjectName("pageTitle");
-    titleLabel->setFont(
+    m_titleLabel->setObjectName("pageTitle");
+    m_titleLabel->setFont(
         FontManager::getUiFont(
             24,
             QFont::Bold
             )
         );
 
-    auto* subtitleLabel =
+    m_subtitleLabel =
         new QLabel(
             tr("Manage your schedule, personal details, and monthly events."),
             m_scrollContent
             );
-    subtitleLabel->setObjectName("pageSubtitle");
-    subtitleLabel->setFont(
+    m_subtitleLabel->setObjectName("pageSubtitle");
+    m_subtitleLabel->setFont(
         FontManager::getUiFont(11)
         );
 
-    headerLayout->addWidget(titleLabel);
-    headerLayout->addWidget(subtitleLabel);
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
 
     buildMyInformationSection();

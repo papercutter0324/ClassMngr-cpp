@@ -39,11 +39,13 @@ public:
     bool hasUnsavedChanges() const override;
     void discardChanges() override;
     void refresh() override;
+    void retranslateUi() override;
 
     void scrollToSection(
         SubPrepSection section
         );
     QString currentSectionName() const;
+    QString currentSectionKey() const;
 
 protected:
     void showEvent(

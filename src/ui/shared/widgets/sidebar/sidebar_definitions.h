@@ -47,10 +47,8 @@ struct TreeNodeSpec
 // Tree Definitions
 // =========================================================
 
-extern const QList<TreeNodeSpec>
-    TREE_STRUCTURE;
+QList<TreeNodeSpec> treeStructure();
 
-extern const QList<TreeNodeSpec>
-    CLASS_TEMPLATE;
+QList<TreeNodeSpec> classTemplate();
 
 #endif // SIDEBAR_DEFINITIONS_H

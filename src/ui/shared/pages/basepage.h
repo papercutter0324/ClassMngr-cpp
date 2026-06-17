@@ -50,6 +50,7 @@ public:
     // =====================================================
 
     virtual void refresh();
+    virtual void retranslateUi();
 
 
 

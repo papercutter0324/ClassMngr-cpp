@@ -613,6 +613,34 @@ void ClassInfoPage::refresh()
     */
 }
 
+void ClassInfoPage::retranslateUi()
+{
+    if (
+        m_services
+        && m_services->dataService()
+        && m_classroom.id >= 0
+        )
+    {
+        updateTitle(
+            m_services
+                ->dataService()
+                ->loadClassInfo(m_classroom.id)
+            );
+    }
+    else
+    {
+        m_titleLabel->setText(
+            tr("Class Information")
+            );
+
+        m_subtitleLabel->setText(
+            tr("No class selected")
+            );
+    }
+
+    updateActions();
+}
+
 bool ClassInfoPage::showScheduleConflicts(
     const QList<ClassTime>& times,
     ScheduleType type,

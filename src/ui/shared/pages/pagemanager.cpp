@@ -241,6 +241,17 @@ void PageManager::refreshAll()
     }
 }
 
+void PageManager::retranslatePages()
+{
+    for (BasePage* page : m_pages)
+    {
+        if (page)
+        {
+            page->retranslateUi();
+        }
+    }
+}
+
 
 
 // =========================================================

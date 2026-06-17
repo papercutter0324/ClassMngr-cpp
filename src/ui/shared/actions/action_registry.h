@@ -16,6 +16,7 @@ public:
     explicit ActionRegistry(QObject* parent = nullptr);
 
     void createActions();
+    void retranslate();
 
     // =====================================================
     // Option States (NEW SYSTEM)
@@ -23,6 +24,7 @@ public:
 
     OptionState<SaveMode>* saveModeState = nullptr;
     OptionState<Theme>* themeState = nullptr;
+    OptionState<Language>* languageState = nullptr;
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;

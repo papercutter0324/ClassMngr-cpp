@@ -183,6 +183,44 @@ QString RosterPage::unsavedChangesMessage() const
     return tr("This roster has unsaved changes.");
 }
 
+void RosterPage::retranslateUi()
+{
+    updateHeaderText();
+
+    if (m_importButton)
+    {
+        m_importButton->setText(
+            tr("Import Scores")
+            );
+        m_importButton->setToolTip(
+            tr("Import final grades from speaking evaluations.")
+            );
+    }
+
+    if (m_addColumnButton)
+    {
+        m_addColumnButton->setText(
+            tr("Add Column")
+            );
+    }
+
+    if (m_removeColumnButton)
+    {
+        m_removeColumnButton->setText(
+            tr("Remove Column")
+            );
+    }
+
+    if (m_saveButton)
+    {
+        m_saveButton->setText(
+            tr("Save Changes")
+            );
+    }
+
+    updateActions();
+}
+
 void RosterPage::setSaveMode(
     SaveMode mode
     )

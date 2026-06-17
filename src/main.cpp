@@ -1,6 +1,7 @@
 #include "app/mainwindow.h"
 #include "core/appsettings.h"
 #include "core/fontmanager.h"
+#include "core/language_service.h"
 #include "core/resource_paths.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "core/utils/platform.h"
@@ -9,8 +10,6 @@
 #include <QIcon>
 #include <QTimer>
 #include <QElapsedTimer>
-#include <QLocale>
-#include <QTranslator>
 
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
@@ -56,24 +55,11 @@ int main(int argc, char *argv[])
     // Translation Support
     // =====================================================
 
-    QTranslator translator;
+    LanguageService languageService;
 
-    // Update this later to use: auto* translator = new QTranslator(&app);
-
-    const QStringList uiLanguages =
-        QLocale::system().uiLanguages();
-
-    for (const QString &locale : uiLanguages)
-    {
-        const QString baseName =
-            AppSettings::TranslationPrefix + QLocale(locale).name();
-
-        if (translator.load(":/i18n/" + baseName))
-        {
-            app.installTranslator(&translator);
-            break;
-        }
-    }
+    languageService.setLanguage(
+        LanguageService::savedLanguage()
+        );
 
 
 
@@ -139,7 +125,8 @@ int main(int argc, char *argv[])
 
     MainWindow window(
         updateProgress,
-        isAdminMode(app.arguments())
+        isAdminMode(app.arguments()),
+        &languageService
         );
 
 

@@ -41,6 +41,7 @@ public:
     void setSaveMode(
         SaveMode mode
         ) override;
+    void retranslateUi() override;
 
 signals:
     void classInfoSaved(int classId);

@@ -135,6 +135,10 @@ void BasePage::refresh()
     update();
 }
 
+void BasePage::retranslateUi()
+{
+}
+
 
 
 // =========================================================
