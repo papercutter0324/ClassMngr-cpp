@@ -34,6 +34,8 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/Inter.ttc
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
+        resources/assets/icons/combo_arrow_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
         resources/assets/icons/icon_256x256.png
         resources/assets/campuses/bundang.json
         resources/assets/splash/splash.png

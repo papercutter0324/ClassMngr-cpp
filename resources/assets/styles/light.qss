@@ -110,8 +110,36 @@ QDateTimeEdit:disabled {
 }
 
 QComboBox::drop-down {
-    border: none;
-    width: 24px;
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    background-color: #f8fafc;
+    border-left: 1px solid #d0d7e2;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    width: 28px;
+}
+
+QComboBox {
+    padding-right: 34px;
+}
+
+QComboBox::drop-down:hover {
+    background-color: #eef2f7;
+}
+
+QComboBox::drop-down:pressed {
+    background-color: #e4e9f1;
+}
+
+QComboBox::down-arrow {
+    image: url(:/assets/icons/combo_arrow_light.svg);
+    width: 10px;
+    height: 6px;
+}
+
+QComboBox:disabled::drop-down {
+    background-color: #eef2f7;
+    border-left-color: #e4e9f1;
 }
 
 QComboBox QAbstractItemView {
