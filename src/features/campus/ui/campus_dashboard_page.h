@@ -44,6 +44,9 @@ public:
     bool saveChanges() override;
     bool hasUnsavedChanges() const override;
     void discardChanges() override;
+    void setSaveMode(
+        SaveMode mode
+        ) override;
 
 signals:
     void sectionChanged(
@@ -167,6 +170,7 @@ private:
 
     void scheduleSave();
     bool saveCurrentCampus();
+    void updateCampusSaveButton();
     void updateCampusSelectorItem(
         int index
         );
@@ -217,6 +221,7 @@ private:
     bool m_adminMode = false;
     bool m_loading = false;
     bool m_dirty = false;
+    SaveMode m_saveMode = SaveMode::Automatic;
     int m_currentCampusComboIndex = -1;
 
     CampusJsonRepository m_repository;

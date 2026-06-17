@@ -15,6 +15,7 @@ class ClassScheduleSection;
 class QLabel;
 class QPushButton;
 class QScrollArea;
+class QTimer;
 class QVBoxLayout;
 class QWidget;
 
@@ -34,6 +35,12 @@ public:
 
     void refresh() override;
     void saveData() override;
+    bool saveChanges() override;
+    bool hasUnsavedChanges() const override;
+    void discardChanges() override;
+    void setSaveMode(
+        SaveMode mode
+        ) override;
 
 signals:
     void classInfoSaved(int classId);
@@ -46,12 +53,18 @@ private:
         );
 
     void markDirty();
+    void autosave();
     void clearDirty();
+    void updateActions();
+    bool saveClassInfoInternal(
+        bool showMessages
+        );
 
     bool showScheduleConflicts(
         const QList<ClassTime>& times,
         ScheduleType type,
-        const QString& title
+        const QString& title,
+        bool showMessage
         );
 
 private:
@@ -61,6 +74,7 @@ private:
 
     bool m_loading{false};
     bool m_dirty{false};
+    SaveMode m_saveMode{SaveMode::Automatic};
 
     TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};
@@ -74,4 +88,5 @@ private:
     QLabel* m_subtitleLabel{nullptr};
 
     QPushButton* m_saveButton{nullptr};
+    QTimer* m_autosaveTimer{nullptr};
 };

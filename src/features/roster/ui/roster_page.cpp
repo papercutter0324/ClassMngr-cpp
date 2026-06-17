@@ -194,6 +194,8 @@ void RosterPage::setSaveMode(
 
     m_saveMode = mode;
 
+    updateActions();
+
     if (!m_autosaveTimer)
     {
         return;
@@ -572,8 +574,16 @@ void RosterPage::updateActions()
         return;
     }
 
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveButton->setVisible(
+        showSaveButton
+        );
+
     m_saveButton->setEnabled(
-        hasUnsavedChanges()
+        showSaveButton
+        && hasUnsavedChanges()
         && m_classroom.id > 0
         );
 

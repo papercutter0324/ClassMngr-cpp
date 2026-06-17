@@ -154,6 +154,8 @@ void ClassNotesPage::setSaveMode(
     m_saveMode =
         mode;
 
+    updateActions();
+
     if (!m_autosaveTimer)
     {
         return;
@@ -414,6 +416,8 @@ void ClassNotesPage::buildUi()
         this,
         &ClassNotesPage::saveData
         );
+
+    updateActions();
 }
 
 void ClassNotesPage::updateHeaderText()
@@ -448,8 +452,16 @@ void ClassNotesPage::updateActions()
         return;
     }
 
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveButton->setVisible(
+        showSaveButton
+        );
+
     m_saveButton->setEnabled(
-        m_dirty
+        showSaveButton
+        && m_dirty
         && m_classroom.id > 0
         );
 }

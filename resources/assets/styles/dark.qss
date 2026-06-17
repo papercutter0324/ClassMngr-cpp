@@ -194,6 +194,13 @@ QPushButton[role="primary"]:pressed {
     border-color: #0067cc;
 }
 
+QPushButton#primaryButton:disabled,
+QPushButton[role="primary"]:disabled {
+    background-color: #2f2f2f;
+    color: #777777;
+    border-color: #3d3d3d;
+}
+
 QPushButton[role="button_footer"] {
     background-color: #2f2f2f;
     border: 1px solid #555555;

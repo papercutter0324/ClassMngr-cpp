@@ -143,6 +143,47 @@ bool CampusDashboardPage::hasUnsavedChanges() const
     return m_adminMode && m_dirty;
 }
 
+void CampusDashboardPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    if (m_saveMode == mode)
+    {
+        return;
+    }
+
+    m_saveMode =
+        mode;
+
+    updateCampusSaveButton();
+
+    if (!m_saveTimer)
+    {
+        return;
+    }
+
+    if (
+        m_saveMode == SaveMode::Automatic
+        && m_dirty
+        )
+    {
+        setStatus(tr("Saving..."));
+        m_saveTimer->start();
+    }
+    else
+    {
+        m_saveTimer->stop();
+
+        if (
+            m_saveMode == SaveMode::Manual
+            && m_dirty
+            )
+        {
+            setStatus(tr("Unsaved changes"));
+        }
+    }
+}
+
 void CampusDashboardPage::discardChanges()
 {
     if (m_saveTimer)
@@ -153,6 +194,7 @@ void CampusDashboardPage::discardChanges()
     m_dirty = false;
 
     populateFields(m_currentCampus);
+    updateCampusSaveButton();
     setStatus(QString());
 }
 
@@ -204,6 +246,7 @@ void CampusDashboardPage::loadSelectedCampus()
         m_saveTimer->stop();
     }
 
+    updateCampusSaveButton();
     setStatus(QString());
 }
 

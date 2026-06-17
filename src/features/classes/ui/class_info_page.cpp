@@ -22,12 +22,15 @@
 #include <QFrame>
 #include <QScrollArea>
 #include <QStringList>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtAssert>
 
 namespace
 {
+constexpr int AutosaveDelayMs = 750;
+
 SectionCard* addSectionCard(
     QVBoxLayout* layout,
     const QString& title,
@@ -58,6 +61,21 @@ ClassInfoPage::ClassInfoPage(
     setProperty("role", UiRoles::ClassInfo);
 
     buildUi();
+
+    m_autosaveTimer =
+        new QTimer(this);
+
+    m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setInterval(
+        AutosaveDelayMs
+        );
+
+    connect(
+        m_autosaveTimer,
+        &QTimer::timeout,
+        this,
+        &ClassInfoPage::autosave
+        );
 
     connect(
         m_saveButton,
@@ -91,15 +109,57 @@ ClassInfoPage::ClassInfoPage(
 void ClassInfoPage::buildUi()
 {
     contentLayout()->setContentsMargins(
+        UiConstants::Pages::Margin,
+        18,
+        UiConstants::Pages::Margin,
+        0
+        );
+
+    contentLayout()->setSpacing(
+        12
+        );
+
+    auto* headerLayout =
+        new QVBoxLayout;
+
+    headerLayout->setContentsMargins(
         0,
         0,
         0,
         0
         );
 
-    contentLayout()->setSpacing(
-        0
+    headerLayout->setSpacing(2);
+
+    m_titleLabel =
+        new QLabel(
+            tr("Class Information"),
+            this
+            );
+
+    m_titleLabel->setObjectName("pageTitle");
+    m_titleLabel->setFont(
+        FontManager::getUiFont(
+            20,
+            QFont::DemiBold
+            )
         );
+
+    m_subtitleLabel =
+        new QLabel(
+            tr("No class selected"),
+            this
+            );
+
+    m_subtitleLabel->setObjectName("pageSubtitle");
+    m_subtitleLabel->setFont(
+        FontManager::getUiFont(11)
+        );
+
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addWidget(m_subtitleLabel);
+
+    contentLayout()->addLayout(headerLayout);
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
@@ -114,10 +174,10 @@ void ClassInfoPage::buildUi()
     m_scrollContent = new QWidget(m_scrollArea);
     m_scrollContentLayout = new QVBoxLayout(m_scrollContent);
     m_scrollContentLayout->setContentsMargins(
-        UiConstants::ClassInfo::Page::ContentMargin,
-        UiConstants::ClassInfo::Page::ContentMargin,
-        UiConstants::ClassInfo::Page::ContentMargin,
-        UiConstants::ClassInfo::Page::ContentMargin
+        0,
+        0,
+        0,
+        0
         );
     m_scrollContentLayout->setSpacing(
         UiConstants::ClassInfo::Page::ContentSpacing
@@ -133,28 +193,6 @@ void ClassInfoPage::buildUi()
     contentLayout()->addWidget(
         m_scrollArea
         );
-
-    m_titleLabel = new QLabel(
-        tr("Class Information")
-        );
-    m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            24,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel = new QLabel(
-        tr("View and manage details for this class.")
-        );
-    m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
-        );
-
-    m_scrollContentLayout->addWidget(m_titleLabel);
-    m_scrollContentLayout->addWidget(m_subtitleLabel);
 
     auto* teacherCard =
         addSectionCard(
@@ -201,12 +239,15 @@ void ClassInfoPage::buildUi()
             tr("Save Changes")
             );
 
+    m_saveButton->setObjectName("primaryButton");
     m_saveButton->setEnabled(false);
 
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(
         m_saveButton
         );
+
+    updateActions();
 }
 
 void ClassInfoPage::updateScrollContentMinimumWidth()
@@ -235,20 +276,27 @@ void ClassInfoPage::markDirty()
 
     m_dirty = true;
 
-    m_saveButton->setEnabled(true);
-    m_saveButton->setText(
-        tr("Save Changes *")
-        );
+    updateActions();
+
+    if (
+        m_autosaveTimer
+        && m_saveMode == SaveMode::Automatic
+        )
+    {
+        m_autosaveTimer->start();
+    }
 }
 
 void ClassInfoPage::clearDirty()
 {
     m_dirty = false;
 
-    m_saveButton->setEnabled(false);
-    m_saveButton->setText(
-        tr("Save Changes")
-        );
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    updateActions();
 }
 
 void ClassInfoPage::loadClass(
@@ -308,6 +356,10 @@ void ClassInfoPage::updateTitle(
     const ClassInfo& info
     )
 {
+    m_titleLabel->setText(
+        tr("Class Information")
+        );
+
     Teacher teacher;
 
     if (info.teacherId > 0)
@@ -326,17 +378,124 @@ void ClassInfoPage::updateTitle(
             teacher
             );
 
-    m_titleLabel->setText(
-        tr("Class Information for %1")
-            .arg(displayName)
+    const QString fallbackName =
+        m_classroom.name.trimmed().isEmpty()
+            ? tr("Class %1").arg(m_classroom.id)
+            : m_classroom.name.trimmed();
+
+    m_subtitleLabel->setText(
+        displayName.trimmed().isEmpty()
+            ? fallbackName
+            : displayName
         );
 }
 
 void ClassInfoPage::saveData()
 {
-    if (m_classroom.id < 0)
+    saveClassInfoInternal(true);
+}
+
+bool ClassInfoPage::saveChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    if (!hasUnsavedChanges())
+    {
+        return true;
+    }
+
+    return saveClassInfoInternal(true);
+}
+
+bool ClassInfoPage::hasUnsavedChanges() const
+{
+    return m_dirty;
+}
+
+void ClassInfoPage::discardChanges()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    loadClass(m_classroom);
+}
+
+void ClassInfoPage::setSaveMode(
+    SaveMode mode
+    )
+{
+    m_saveMode =
+        mode;
+
+    updateActions();
+
+    if (!m_autosaveTimer)
     {
         return;
+    }
+
+    if (
+        m_saveMode == SaveMode::Automatic
+        && hasUnsavedChanges()
+        )
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+}
+
+void ClassInfoPage::autosave()
+{
+    if (!hasUnsavedChanges())
+    {
+        return;
+    }
+
+    saveClassInfoInternal(false);
+}
+
+void ClassInfoPage::updateActions()
+{
+    if (!m_saveButton)
+    {
+        return;
+    }
+
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveButton->setVisible(
+        showSaveButton
+        );
+
+    m_saveButton->setEnabled(
+        showSaveButton
+        && m_dirty
+        && m_classroom.id >= 0
+        );
+
+    m_saveButton->setText(
+        m_dirty
+            ? tr("Save Changes *")
+            : tr("Save Changes")
+        );
+}
+
+bool ClassInfoPage::saveClassInfoInternal(
+    bool showMessages
+    )
+{
+    if (m_classroom.id < 0)
+    {
+        return true;
     }
 
     auto* dataService =
@@ -390,22 +549,24 @@ void ClassInfoPage::saveData()
         showScheduleConflicts(
             info.classTimes,
             ScheduleType::Regular,
-            tr("Regular Schedule Conflicts")
+            tr("Regular Schedule Conflicts"),
+            showMessages
             )
         )
     {
-        return;
+        return false;
     }
 
     if (
         showScheduleConflicts(
             info.intensiveTimes,
             ScheduleType::Intensive,
-            tr("Intensive Schedule Conflicts")
+            tr("Intensive Schedule Conflicts"),
+            showMessages
             )
         )
     {
-        return;
+        return false;
     }
 
     const bool saved =
@@ -415,18 +576,18 @@ void ClassInfoPage::saveData()
     {
         m_dirty = true;
 
-        m_saveButton->setEnabled(true);
-        m_saveButton->setText(
-            tr("Save Changes *")
-            );
+        updateActions();
 
-        QMessageBox::warning(
-            this,
-            tr("Save Class Information"),
-            tr("Class information could not be saved.")
-            );
+        if (showMessages)
+        {
+            QMessageBox::warning(
+                this,
+                tr("Save Class Information"),
+                tr("Class information could not be saved.")
+                );
+        }
 
-        return;
+        return false;
     }
 
     clearDirty();
@@ -436,6 +597,8 @@ void ClassInfoPage::saveData()
     emit classInfoSaved(
         m_classroom.id
         );
+
+    return true;
 }
 
 void ClassInfoPage::refresh()
@@ -453,7 +616,8 @@ void ClassInfoPage::refresh()
 bool ClassInfoPage::showScheduleConflicts(
     const QList<ClassTime>& times,
     ScheduleType type,
-    const QString& title
+    const QString& title,
+    bool showMessage
     )
 {
     const QList<ClassConflict> conflicts =
@@ -468,6 +632,11 @@ bool ClassInfoPage::showScheduleConflicts(
     if (conflicts.isEmpty())
     {
         return false;
+    }
+
+    if (!showMessage)
+    {
+        return true;
     }
 
     QStringList details;

@@ -573,6 +573,8 @@ void TeacherInfoPage::setSaveMode(
 
     m_saveMode = mode;
 
+    updateActions();
+
     if (!m_autosaveTimer)
     {
         return;
@@ -736,8 +738,16 @@ void TeacherInfoPage::updateActions()
         return;
     }
 
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveButton->setVisible(
+        showSaveButton
+        );
+
     m_saveButton->setEnabled(
-        m_dirty
+        showSaveButton
+        && m_dirty
         && m_teacher.id > 0
         );
 

@@ -375,6 +375,8 @@ void SpeakingEvalPage::setSaveMode(
 
     m_saveMode = mode;
 
+    updateActions();
+
     if (!m_autosaveTimer)
     {
         return;
@@ -589,8 +591,16 @@ void SpeakingEvalPage::updateActions()
         return;
     }
 
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveButton->setVisible(
+        showSaveButton
+        );
+
     m_saveButton->setEnabled(
-        m_classroom.id > 0
+        showSaveButton
+        && m_classroom.id > 0
         && !m_model->changedCells().isEmpty()
         );
 }

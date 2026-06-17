@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QPushButton>
 #include <QSignalBlocker>
 #include <QTimer>
 
@@ -252,6 +253,7 @@ void CampusDashboardPage::handleNewCampus()
 
     populateFields(m_currentCampus);
     m_dirty = true;
+    updateCampusSaveButton();
     setStatus(tr("New campus"));
 }
 
@@ -263,6 +265,7 @@ void CampusDashboardPage::handleManualCampusSave()
     }
 
     m_dirty = true;
+    updateCampusSaveButton();
     saveCurrentCampus();
 }
 
@@ -352,8 +355,19 @@ Status CampusDashboardPage::readFieldsIntoCampus(
 
 void CampusDashboardPage::scheduleSave()
 {
-    if (!m_adminMode || !m_saveTimer)
+    if (!m_adminMode)
     {
+        return;
+    }
+
+    updateCampusSaveButton();
+
+    if (
+        m_saveMode != SaveMode::Automatic
+        || !m_saveTimer
+        )
+    {
+        setStatus(tr("Unsaved changes"));
         return;
     }
 
@@ -403,6 +417,8 @@ bool CampusDashboardPage::saveCurrentCampus()
         m_saveTimer->stop();
     }
 
+    updateCampusSaveButton();
+
     int indexToUpdate =
         m_currentCampusComboIndex;
 
@@ -423,6 +439,27 @@ bool CampusDashboardPage::saveCurrentCampus()
     setStatus(tr("Saved"));
 
     return true;
+}
+
+void CampusDashboardPage::updateCampusSaveButton()
+{
+    if (!m_saveCampusButton)
+    {
+        return;
+    }
+
+    const bool showSaveButton =
+        m_saveMode != SaveMode::Automatic;
+
+    m_saveCampusButton->setVisible(
+        showSaveButton
+        );
+
+    m_saveCampusButton->setEnabled(
+        showSaveButton
+        && m_adminMode
+        && m_dirty
+        );
 }
 
 void CampusDashboardPage::updateCampusSelectorItem(
