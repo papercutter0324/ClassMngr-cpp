@@ -183,7 +183,7 @@ void TeacherInfoPage::buildUi()
 
     auto* headerLayout = new QVBoxLayout;
 
-    m_titleLabel = new QLabel("Teacher Information");
+    m_titleLabel = new QLabel(tr("Teacher Information"));
     m_titleLabel->setObjectName("pageTitle");
 
     m_titleLabel->setFont(
@@ -194,7 +194,7 @@ void TeacherInfoPage::buildUi()
         );
 
     m_subtitleLabel =
-        new QLabel("View and manage teacher details.");
+        new QLabel(tr("View and manage teacher details."));
 
     m_subtitleLabel->setObjectName("pageSubtitle");
 
@@ -212,7 +212,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* detailsCard =
-        new TeacherSectionCard("Teacher Details");
+        new TeacherSectionCard(tr("Teacher Details"));
 
     auto* detailsGrid = new QGridLayout;
 
@@ -237,13 +237,13 @@ void TeacherInfoPage::buildUi()
         );
 
     detailsGrid->addWidget(
-        createFieldLabel("Korean Name"), 0, 0);
+        createFieldLabel(tr("Korean Name")), 0, 0);
 
     detailsGrid->addWidget(
-        createFieldLabel("English Name"), 0, 1);
+        createFieldLabel(tr("English Name")), 0, 1);
 
     detailsGrid->addWidget(
-        createFieldLabel("Room Number"), 0, 2);
+        createFieldLabel(tr("Room Number")), 0, 2);
 
     detailsGrid->addWidget(m_teacherKrEdit, 1, 0);
     detailsGrid->addWidget(m_teacherEnEdit, 1, 1);
@@ -258,7 +258,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* connectivityCard =
-        new TeacherSectionCard("Connectivity");
+        new TeacherSectionCard(tr("Connectivity"));
 
     auto* connectivityGrid = new QGridLayout;
 
@@ -293,13 +293,13 @@ void TeacherInfoPage::buildUi()
         });
 
     connectivityGrid->addWidget(
-        createFieldLabel("Internet Type"), 0, 0, Qt::AlignLeft);
+        createFieldLabel(tr("Internet Type")), 0, 0, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("WiFi Name"), 0, 1, Qt::AlignLeft);
+        createFieldLabel(tr("WiFi Name")), 0, 1, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("WiFi Password"), 0, 2, Qt::AlignLeft);
+        createFieldLabel(tr("WiFi Password")), 0, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
         m_internetTypeCombo, 1, 0, Qt::AlignLeft);
@@ -322,13 +322,13 @@ void TeacherInfoPage::buildUi()
         );
 
     connectivityGrid->addWidget(
-        createFieldLabel("Projection Type"), 3, 0, Qt::AlignLeft);
+        createFieldLabel(tr("Projection Type")), 3, 0, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("Zoom ID"), 3, 1, Qt::AlignLeft);
+        createFieldLabel(tr("Zoom ID")), 3, 1, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        createFieldLabel("Zoom Password"), 3, 2, Qt::AlignLeft);
+        createFieldLabel(tr("Zoom Password")), 3, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
         m_projectionTypeCombo, 4, 0, Qt::AlignLeft);
@@ -379,7 +379,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     auto* notesCard =
-        new TeacherSectionCard("Notes");
+        new TeacherSectionCard(tr("Notes"));
 
     m_notesEdit = new QTextEdit;
     m_notesEdit->setMinimumHeight(180);
@@ -393,7 +393,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     m_saveButton =
-        new QPushButton("Save Changes");
+        new QPushButton(tr("Save Changes"));
 
     m_saveButton->setObjectName(
         "primaryButton");
