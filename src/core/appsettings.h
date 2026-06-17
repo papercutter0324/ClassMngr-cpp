@@ -15,9 +15,6 @@ inline constexpr auto TranslationPrefix =
 inline constexpr auto AdminModeArgument =
     "--enable-admin";
 
-inline constexpr auto DefaultCampusDirectory =
-    "data/campuses";
-
 inline constexpr int MinimumSplashDurationMs =
     2000;
 

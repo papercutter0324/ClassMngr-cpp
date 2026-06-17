@@ -1,7 +1,6 @@
 #include "sub_prep_page.h"
 
 #include "core/application_services.h"
-#include "core/appsettings.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
@@ -67,7 +66,6 @@ DataService* openDataService(
 CampusJsonRepository campusRepository()
 {
     return CampusJsonRepository(
-        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
         ResourcePaths::Campuses::directory()
         );
 }

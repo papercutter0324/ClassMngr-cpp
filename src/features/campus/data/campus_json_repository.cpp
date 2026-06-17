@@ -6,7 +6,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonParseError>
-#include <QMap>
 #include <QObject>
 #include <QRegularExpression>
 #include <QSaveFile>
@@ -558,11 +557,9 @@ CampusInfo campusFromJson(
 } // namespace
 
 CampusJsonRepository::CampusJsonRepository(
-    QString directoryPath,
-    QString bundledDirectoryPath
+    QString directoryPath
     )
     : m_directoryPath(std::move(directoryPath))
-    , m_bundledDirectoryPath(std::move(bundledDirectoryPath))
 {
 }
 
@@ -619,15 +616,8 @@ CampusJsonRepository::loadCampus(
     const QString campusFilePath =
         filePathForCampusId(campusId);
 
-    if (QFile::exists(campusFilePath))
-    {
-        return readCampusFile(
-            campusFilePath
-            );
-    }
-
     return readCampusFile(
-        bundledFilePathForCampusId(campusId)
+        campusFilePath
         );
 }
 
@@ -694,63 +684,32 @@ QString CampusJsonRepository::filePathForCampusId(
             );
 }
 
-QString CampusJsonRepository::bundledFilePathForCampusId(
-    const QString& campusId
-    ) const
-{
-    if (m_bundledDirectoryPath.trimmed().isEmpty())
-    {
-        return QString();
-    }
-
-    return QDir(m_bundledDirectoryPath)
-        .filePath(
-            idFromName(campusId) + QStringLiteral(".json")
-            );
-}
-
 QList<QString> CampusJsonRepository::campusFilePaths() const
 {
-    QMap<QString, QString> filePathsById;
+    QList<QString> filePaths;
 
-    const auto appendCampusFiles =
-        [&filePathsById](const QString& directoryPath)
+    if (m_directoryPath.trimmed().isEmpty())
     {
-        if (directoryPath.trimmed().isEmpty())
-        {
-            return;
-        }
+        return filePaths;
+    }
 
-        const QDir directory(directoryPath);
+    const QDir directory(m_directoryPath);
 
-        const QStringList files =
-            directory.entryList(
-                {QStringLiteral("*.json")},
-                QDir::Files,
-                QDir::Name
-                );
+    const QStringList files =
+        directory.entryList(
+            {QStringLiteral("*.json")},
+            QDir::Files,
+            QDir::Name
+            );
 
-        for (const QString& file : files)
-        {
-            const QString filePath =
-                directory.filePath(file);
+    for (const QString& file : files)
+    {
+        filePaths.append(
+            directory.filePath(file)
+            );
+    }
 
-            const QString id =
-                QFileInfo(filePath)
-                    .baseName()
-                    .toLower();
-
-            filePathsById.insert(
-                id,
-                filePath
-                );
-        }
-    };
-
-    appendCampusFiles(m_bundledDirectoryPath);
-    appendCampusFiles(m_directoryPath);
-
-    return filePathsById.values();
+    return filePaths;
 }
 
 QString CampusJsonRepository::idFromName(

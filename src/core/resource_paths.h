@@ -178,6 +178,61 @@ inline constexpr auto Directory =
 
 inline QString directory()
 {
+    const QString relativePath =
+        QStringLiteral("assets/campuses");
+
+    QStringList candidates;
+
+    const QString sourceDir =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR);
+
+    if (!sourceDir.isEmpty())
+    {
+        candidates.append(
+            QDir::cleanPath(
+                sourceDir + "/resources/" + relativePath
+                )
+            );
+    }
+
+    candidates.append(
+        QDir::cleanPath(
+            QDir::currentPath() + "/resources/" + relativePath
+            )
+        );
+
+    const QString appDir =
+        QCoreApplication::applicationDirPath();
+
+    if (!appDir.isEmpty())
+    {
+        candidates.append(
+            QDir::cleanPath(
+                appDir + "/resources/" + relativePath
+                )
+            );
+
+        candidates.append(
+            QDir::cleanPath(
+                appDir + "/../resources/" + relativePath
+                )
+            );
+
+        candidates.append(
+            QDir::cleanPath(
+                appDir + "/../../resources/" + relativePath
+                )
+            );
+    }
+
+    for (const QString& candidate : candidates)
+    {
+        if (QDir(candidate).exists())
+        {
+            return candidate;
+        }
+    }
+
     return QString::fromUtf8(Directory);
 }
 }

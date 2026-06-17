@@ -3,7 +3,6 @@
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
-#include "core/appsettings.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
 #include "data/data_service.h"
@@ -60,7 +59,6 @@ DataService* openDataService(
 CampusJsonRepository campusRepository()
 {
     return CampusJsonRepository(
-        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
         ResourcePaths::Campuses::directory()
         );
 }

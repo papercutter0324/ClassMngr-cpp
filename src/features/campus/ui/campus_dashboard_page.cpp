@@ -1,6 +1,5 @@
 #include "campus_dashboard_page.h"
 
-#include "core/appsettings.h"
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
 #include "features/campus/ui/campus_map_preview.h"
@@ -374,7 +373,6 @@ CampusDashboardPage::CampusDashboardPage(
     : BasePage(parent)
     , m_adminMode(adminMode)
     , m_repository(
-        QString::fromUtf8(AppSettings::DefaultCampusDirectory),
         ResourcePaths::Campuses::directory()
         )
 {
