@@ -19,6 +19,7 @@
 #include "features/schedule/ui/schedule_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/dialogs/about_dialog.h"
 
 #include <QMenuBar>
 #include <QTimer>
@@ -362,6 +363,20 @@ void MainWindow::connectSignals()
                 ui->sidebarWidget->selectCampusSection(
                     QStringLiteral("campus_information")
                     );
+            }
+            );
+    }
+
+    if (m_actions.about)
+    {
+        connect(
+            m_actions.about,
+            &QAction::triggered,
+            this,
+            [this]()
+            {
+                AboutDialog dialog(this);
+                dialog.exec();
             }
             );
     }

@@ -166,6 +166,16 @@ install(TARGETS ClassMngr
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+install(FILES
+    licenses/fonts/inter/LICENSE.txt
+    DESTINATION licenses/fonts/inter
+)
+
+install(FILES
+    licenses/fonts/pretendard/LICENSE.txt
+    DESTINATION licenses/fonts/pretendard
+)
+
 qt_generate_deploy_app_script(
     TARGET ClassMngr
     OUTPUT_SCRIPT deploy_script
