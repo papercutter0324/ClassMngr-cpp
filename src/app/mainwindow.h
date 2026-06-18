@@ -38,6 +38,7 @@ class SidebarController;
 class NavigationController;
 class EditController;
 class ThemeController;
+class UpdateController;
 class LanguageController;
 class LanguageService;
 
@@ -142,6 +143,7 @@ private:
     std::unique_ptr<NavigationController> m_navigationController;
     std::unique_ptr<EditController> m_editController;
     std::unique_ptr<ThemeController> m_themeController;
+    std::unique_ptr<UpdateController> m_updateController;
     std::unique_ptr<LanguageController> m_languageController;
 
     // =====================================================
@@ -149,6 +151,7 @@ private:
     // =====================================================
 
     bool m_isAdmin = false;
+    bool m_startupUpdateCheckQueued = false;
     LanguageService* m_languageService = nullptr;
 };
 

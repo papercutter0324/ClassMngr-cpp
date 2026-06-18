@@ -1,0 +1,22 @@
+#pragma once
+
+namespace BuildInfo
+{
+inline constexpr auto Version =
+    "@PROJECT_VERSION@";
+
+inline constexpr auto UpdateManifestUrl =
+    R"CLASSMNGR(@CLASSMNGR_UPDATE_MANIFEST_URL@)CLASSMNGR";
+
+inline constexpr auto UpdateSignatureUrl =
+    R"CLASSMNGR(@CLASSMNGR_UPDATE_SIGNATURE_URL@)CLASSMNGR";
+
+inline constexpr auto UpdatePublicKeyPem =
+    R"CLASSMNGR(@CLASSMNGR_UPDATE_PUBLIC_KEY_PEM@)CLASSMNGR";
+
+inline constexpr bool UpdateRequireSignature =
+    @CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP@;
+
+inline constexpr bool UpdateCheckOnStartup =
+    @CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP@;
+}

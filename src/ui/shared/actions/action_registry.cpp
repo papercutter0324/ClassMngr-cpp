@@ -244,6 +244,11 @@ void ActionRegistry::retranslate()
         );
 
     updateActionText(
+        checkForUpdates,
+        tr("Check for Updates..."),
+        tr("Check for a newer version of ClassMngr")
+        );
+    updateActionText(
         about,
         tr("About"),
         tr("Show application information")
@@ -574,6 +579,12 @@ void ActionRegistry::createOptionActions()
 
 void ActionRegistry::createHelpActions()
 {
+    checkForUpdates =
+        createAction(
+            tr("Check for Updates..."),
+            tr("Check for a newer version of ClassMngr")
+            );
+
     about =
         createAction(
             tr("About"),

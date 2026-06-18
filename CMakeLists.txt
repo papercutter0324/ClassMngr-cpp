@@ -5,6 +5,8 @@ project(ClassMngr
     LANGUAGES CXX
 )
 
+include(CTest)
+
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
@@ -16,6 +18,40 @@ find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Widgets
     Network
     LinguistTools
+)
+
+set(CLASSMNGR_UPDATE_MANIFEST_URL "" CACHE STRING
+    "HTTPS URL for the stable auto-update manifest"
+)
+set(CLASSMNGR_UPDATE_SIGNATURE_URL "" CACHE STRING
+    "HTTPS URL for the detached signature for the stable auto-update manifest"
+)
+set(CLASSMNGR_UPDATE_PUBLIC_KEY_PEM "" CACHE STRING
+    "PEM encoded public key used to verify the auto-update manifest"
+)
+option(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE
+    "Require detached manifest signature verification before parsing update URLs"
+    ON
+)
+option(CLASSMNGR_UPDATE_CHECK_ON_STARTUP
+    "Check for updates after the main window is shown"
+    OFF
+)
+
+set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP false)
+if(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE)
+    set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP true)
+endif()
+
+set(CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP false)
+if(CLASSMNGR_UPDATE_CHECK_ON_STARTUP)
+    set(CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP true)
+endif()
+
+configure_file(
+    src/core/build_info.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/core/build_info.h
+    @ONLY
 )
 
 qt_standard_project_setup()
@@ -94,6 +130,7 @@ target_compile_options(ClassMngr
 target_include_directories(ClassMngr
     PRIVATE
         ${PROJECT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
 target_compile_definitions(ClassMngr
@@ -135,3 +172,39 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+if(BUILD_TESTING)
+    find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+        Test
+    )
+
+    qt_add_executable(ClassMngrUpdaterTests
+        tests/updater_tests.cpp
+        src/core/updater/update_downloader.cpp
+        src/core/updater/update_manifest.cpp
+        src/core/updater/version.cpp
+    )
+
+    target_compile_features(ClassMngrUpdaterTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrUpdaterTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+            ${CMAKE_CURRENT_BINARY_DIR}/generated
+    )
+
+    target_link_libraries(ClassMngrUpdaterTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Network
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrUpdaterTests
+        COMMAND ClassMngrUpdaterTests
+    )
+endif()

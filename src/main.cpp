@@ -1,5 +1,6 @@
 #include "app/mainwindow.h"
 #include "core/appsettings.h"
+#include "core/build_info.h"
 #include "core/fontmanager.h"
 #include "core/language_service.h"
 #include "core/resource_paths.h"
@@ -47,6 +48,9 @@ int main(int argc, char *argv[])
 
     app.setApplicationName(AppSettings::ApplicationName);
     app.setOrganizationName(AppSettings::OrganizationName);
+    app.setApplicationVersion(
+        QString::fromUtf8(BuildInfo::Version)
+        );
     app.setWindowIcon(getAppIcon());
 
 

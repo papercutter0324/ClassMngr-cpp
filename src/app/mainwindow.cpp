@@ -7,6 +7,7 @@
 #include "app/controllers/navigation_controller.h"
 #include "app/controllers/sidebar_controller.h"
 #include "app/controllers/theme_controller.h"
+#include "app/controllers/update_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "core/settingsmanager.h"
@@ -162,6 +163,13 @@ void MainWindow::connectControllers()
             this
             );
     m_themeController->connectActions(m_actions);
+
+    m_updateController =
+        std::make_unique<UpdateController>(
+            this,
+            this
+            );
+    m_updateController->connectActions(m_actions);
 
     m_languageController =
         std::make_unique<LanguageController>(
@@ -362,6 +370,21 @@ void MainWindow::connectSignals()
 void MainWindow::showEvent(QShowEvent* event)
 {
     QMainWindow::showEvent(event);
+
+    if (
+        !m_startupUpdateCheckQueued
+        && m_updateController
+        )
+    {
+        m_startupUpdateCheckQueued =
+            true;
+
+        QTimer::singleShot(
+            0,
+            m_updateController.get(),
+            &UpdateController::maybeCheckOnStartup
+            );
+    }
 }
 
 bool MainWindow::confirmCurrentPageCanLeave(

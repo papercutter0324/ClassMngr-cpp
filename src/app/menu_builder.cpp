@@ -191,6 +191,8 @@ void MenuBuilder::buildHelpMenu(MainWindow* window)
         QCoreApplication::translate("MenuBuilder", "Help")
     );
 
+    menu->addAction(a.checkForUpdates);
+    menu->addSeparator();
     menu->addAction(a.about);
 }
 
