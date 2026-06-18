@@ -2,7 +2,7 @@
   "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 21,
+    "minor": 25,
     "patch": 0
   },
   "configurePresets": [
@@ -31,7 +31,7 @@
       "generator": "Visual Studio 18 2026",
       "architecture": {
         "value": "x64",
-        "strategy": "external"
+        "strategy": "set"
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
@@ -40,10 +40,30 @@
     },
     {
       "name": "windows-msvc-release",
-      "displayName": "Windows MSVC Release",
+      "displayName": "Windows MSVC x64 Release",
       "inherits": "windows-msvc-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-msvc-x86-release",
+      "displayName": "Windows MSVC x86 Release",
+      "description": "Requires QT_MSVC_X86_PREFIX to point at a 32-bit Qt MSVC installation.",
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "Win32",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X86_PREFIX}"
       }
     },
 
@@ -102,7 +122,13 @@
     },
     {
       "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release"
+      "configurePreset": "windows-msvc-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-msvc-x86-release",
+      "configurePreset": "windows-msvc-x86-release",
+      "configuration": "Release"
     },
     {
       "name": "linux-gcc-debug",
@@ -119,6 +145,39 @@
     {
       "name": "macos-clang-release",
       "configurePreset": "macos-clang-release"
+    }
+  ],
+
+  "workflowPresets": [
+    {
+      "name": "linux-gcc-release-artifacts",
+      "displayName": "Linux GCC Release Artifacts",
+      "description": "Configure and build the Linux release artifact.",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "linux-gcc-release"
+        },
+        {
+          "type": "build",
+          "name": "linux-gcc-release"
+        }
+      ]
+    },
+    {
+      "name": "macos-clang-universal-release-artifacts",
+      "displayName": "macOS Clang Universal Release Artifacts",
+      "description": "Configure and build the macOS arm64/x86_64 universal release artifact.",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "macos-clang-release"
+        },
+        {
+          "type": "build",
+          "name": "macos-clang-release"
+        }
+      ]
     }
   ]
 }

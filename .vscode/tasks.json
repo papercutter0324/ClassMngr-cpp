@@ -48,30 +48,30 @@
     {
       "label": "CMake: build release",
       "type": "shell",
-      "command": "cmake",
+      "command": "powershell",
       "args": [
-        "--build",
-        "--preset",
-        "windows-msvc-release",
-        "--config",
-        "Release"
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/build_release_windows.ps1"
       ],
       "linux": {
+        "command": "cmake",
         "args": [
-          "--build",
+          "--workflow",
           "--preset",
-          "linux-gcc-release"
+          "linux-gcc-release-artifacts"
         ]
       },
       "osx": {
+        "command": "cmake",
         "args": [
-          "--build",
+          "--workflow",
           "--preset",
-          "macos-clang-release"
+          "macos-clang-universal-release-artifacts"
         ]
       },
-      "dependsOn": "CMake: configure release",
-      "dependsOrder": "sequence",
       "group": "build",
       "problemMatcher": [
         "$gcc",
