@@ -21,6 +21,7 @@ public:
         );
 
     void refreshSchedule();
+    void retranslateUi();
 
 signals:
     void classInfoSaved(

@@ -294,9 +294,44 @@ void MyInfoPage::retranslateUi()
             );
     }
 
+    if (m_campusLabel)
+    {
+        m_campusLabel->setText(
+            tr("My Campus")
+            );
+    }
+
+    if (m_zoomLoginIdLabel)
+    {
+        m_zoomLoginIdLabel->setText(
+            tr("Zoom Login ID")
+            );
+    }
+
+    if (m_zoomPasswordLabel)
+    {
+        m_zoomPasswordLabel->setText(
+            tr("Zoom Password")
+            );
+    }
+
+    if (m_zoomLabel)
+    {
+        m_zoomLabel->setText(
+            tr("Zoom")
+            );
+    }
+
+    if (m_zoomNotAvailableCheck)
+    {
+        m_zoomNotAvailableCheck->setText(
+            tr("N/A")
+            );
+    }
+
     if (m_scheduleWidget)
     {
-        m_scheduleWidget->refreshSchedule();
+        m_scheduleWidget->retranslateUi();
     }
 }
 
@@ -754,26 +789,35 @@ void MyInfoPage::buildMyInformationSection()
     m_zoomLoginIdEdit->installEventFilter(this);
     m_zoomPasswordEdit->installEventFilter(this);
 
+    m_campusLabel =
+        createFieldLabel(tr("My Campus"), card);
+    m_zoomLoginIdLabel =
+        createFieldLabel(tr("Zoom Login ID"), card);
+    m_zoomPasswordLabel =
+        createFieldLabel(tr("Zoom Password"), card);
+    m_zoomLabel =
+        createFieldLabel(tr("Zoom"), card);
+
     grid->addWidget(
-        createFieldLabel(tr("My Campus"), card),
+        m_campusLabel,
         0,
         0,
         Qt::AlignLeft
         );
     grid->addWidget(
-        createFieldLabel(tr("Zoom Login ID"), card),
+        m_zoomLoginIdLabel,
         0,
         1,
         Qt::AlignLeft
         );
     grid->addWidget(
-        createFieldLabel(tr("Zoom Password"), card),
+        m_zoomPasswordLabel,
         0,
         2,
         Qt::AlignLeft
         );
     grid->addWidget(
-        createFieldLabel(tr("Zoom"), card),
+        m_zoomLabel,
         0,
         3,
         Qt::AlignLeft

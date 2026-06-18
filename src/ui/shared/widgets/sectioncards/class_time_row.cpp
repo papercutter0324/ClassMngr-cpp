@@ -351,6 +351,22 @@ void ClassTimeRow::setEndTime(
         m_endCombo->setCurrentText(value);
 }
 
+void ClassTimeRow::retranslateUi()
+{
+    if (!m_removeButton)
+    {
+        return;
+    }
+
+    m_removeButton->setText(
+        tr("Remove")
+        );
+    applyButtonWidth(
+        m_removeButton,
+        UiConstants::ClassInfo::TimeRow::RemoveButtonWidth
+        );
+}
+
 void ClassTimeRow::onRemoveClicked()
 {
     emit removeRequested(this);

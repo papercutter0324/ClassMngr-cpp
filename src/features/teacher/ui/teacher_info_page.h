@@ -10,6 +10,7 @@ class QComboBox;
 class QTextEdit;
 class QPushButton;
 class QTimer;
+class TeacherSectionCard;
 
 class ApplicationServices;
 
@@ -105,6 +106,20 @@ private:
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+
+    TeacherSectionCard* m_detailsCard = nullptr;
+    TeacherSectionCard* m_connectivityCard = nullptr;
+    TeacherSectionCard* m_notesCard = nullptr;
+
+    QLabel* m_teacherKrLabel = nullptr;
+    QLabel* m_teacherEnLabel = nullptr;
+    QLabel* m_roomNumberLabel = nullptr;
+    QLabel* m_internetTypeLabel = nullptr;
+    QLabel* m_wifiNameLabel = nullptr;
+    QLabel* m_wifiPasswordLabel = nullptr;
+    QLabel* m_projectionTypeLabel = nullptr;
+    QLabel* m_zoomIdLabel = nullptr;
+    QLabel* m_zoomPasswordLabel = nullptr;
 
     QLineEdit* m_teacherKrEdit = nullptr;
     QLineEdit* m_teacherEnEdit = nullptr;

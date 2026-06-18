@@ -194,7 +194,7 @@ void ClassInfoPage::buildUi()
         m_scrollArea
         );
 
-    auto* teacherCard =
+    m_teacherCard =
         addSectionCard(
             m_scrollContentLayout,
             tr("Korean Teacher"),
@@ -202,13 +202,13 @@ void ClassInfoPage::buildUi()
             );
 
     m_teacherSection =
-        new TeacherInfoSection(teacherCard);
+        new TeacherInfoSection(m_teacherCard);
 
-    teacherCard->contentLayout()->addWidget(
+    m_teacherCard->contentLayout()->addWidget(
         m_teacherSection
         );
 
-    auto* detailsCard =
+    m_detailsCard =
         addSectionCard(
             m_scrollContentLayout,
             tr("Class Details"),
@@ -218,10 +218,10 @@ void ClassInfoPage::buildUi()
     m_detailsSection =
         new ClassDetailsSection(
             m_services,
-            detailsCard
+            m_detailsCard
             );
 
-    detailsCard->contentLayout()->addWidget(
+    m_detailsCard->contentLayout()->addWidget(
         m_detailsSection
         );
 
@@ -295,7 +295,6 @@ void ClassInfoPage::clearDirty()
     {
         m_autosaveTimer->stop();
     }
-
     updateActions();
 }
 
@@ -638,6 +637,36 @@ void ClassInfoPage::retranslateUi()
             );
     }
 
+    if (m_teacherCard)
+    {
+        m_teacherCard->setTitle(
+            tr("Korean Teacher")
+            );
+    }
+
+    if (m_detailsCard)
+    {
+        m_detailsCard->setTitle(
+            tr("Class Details")
+            );
+    }
+
+    if (m_teacherSection)
+    {
+        m_teacherSection->retranslateUi();
+    }
+
+    if (m_detailsSection)
+    {
+        m_detailsSection->retranslateUi();
+    }
+
+    if (m_scheduleSection)
+    {
+        m_scheduleSection->retranslateUi();
+    }
+
+    updateScrollContentMinimumWidth();
     updateActions();
 }
 

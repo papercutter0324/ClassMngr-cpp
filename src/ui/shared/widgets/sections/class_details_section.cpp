@@ -175,20 +175,13 @@ ClassDetailsSection::ClassDetailsSection(
     m_readingBookCombo = new QComboBox(this);
     m_essayBookCombo = new QComboBox(this);
 
-    auto* colorButton =
-        new QPushButton(tr("Choose Color"), this);
+    m_colorButton =
+        new QPushButton(this);
 
-    colorButton->setMinimumWidth(
-        std::max(
-            colorButton->minimumSizeHint().width(),
-            WidgetSizing::textWidth(
-                colorButton,
-                colorButton->text()
-                )
-            + UiConstants::ClassInfo::TextWidthPadding
-            )
-        + UiConstants::ClassInfo::Details::ColorButtonExtraWidth
+    m_colorButton->setText(
+        tr("Choose Color")
         );
+    updateColorButtonWidth();
 
     auto* colorLayout =
         new QHBoxLayout;
@@ -198,7 +191,7 @@ ClassDetailsSection::ClassDetailsSection(
         );
 
     colorLayout->addWidget(m_colorPreview);
-    colorLayout->addWidget(colorButton);
+    colorLayout->addWidget(m_colorButton);
     colorLayout->addStretch();
 
     auto* grid =
@@ -238,24 +231,14 @@ ClassDetailsSection::ClassDetailsSection(
             return label;
         };
 
-    auto* colorLabel = fieldLabel(tr("Color"));
-    auto* gradeLabel = fieldLabel(tr("Grade"));
-    auto* levelLabel = fieldLabel(tr("Level"));
-    auto* studentCountLabel = fieldLabel(tr("# of Students"));
-    auto* readingBookLabel = fieldLabel(tr("Reading Book"));
-    auto* essayBookLabel = fieldLabel(tr("Essay Book"));
+    m_colorLabel = fieldLabel(tr("Color"));
+    m_gradeLabel = fieldLabel(tr("Grade"));
+    m_levelLabel = fieldLabel(tr("Level"));
+    m_studentCountLabel = fieldLabel(tr("# of Students"));
+    m_readingBookLabel = fieldLabel(tr("Reading Book"));
+    m_essayBookLabel = fieldLabel(tr("Essay Book"));
 
-    for (auto* label : {
-             colorLabel,
-             gradeLabel,
-             levelLabel,
-             studentCountLabel,
-             readingBookLabel,
-             essayBookLabel
-         })
-    {
-        setLabelMinimumWidth(label);
-    }
+    updateLabelMinimumWidths();
 
     setComboMinimumWidthForTexts(
         m_gradeCombo,
@@ -314,18 +297,18 @@ ClassDetailsSection::ClassDetailsSection(
             )
         );
 
-    grid->addWidget(colorLabel, 0, 0);
-    grid->addWidget(gradeLabel, 0, 1);
-    grid->addWidget(levelLabel, 0, 2);
-    grid->addWidget(studentCountLabel, 0, 3);
+    grid->addWidget(m_colorLabel, 0, 0);
+    grid->addWidget(m_gradeLabel, 0, 1);
+    grid->addWidget(m_levelLabel, 0, 2);
+    grid->addWidget(m_studentCountLabel, 0, 3);
 
     grid->addLayout(colorLayout, 1, 0);
     grid->addWidget(m_gradeCombo, 1, 1);
     grid->addWidget(m_levelCombo, 1, 2);
     grid->addWidget(m_studentCountEdit, 1, 3);
 
-    booksGrid->addWidget(readingBookLabel, 0, 0);
-    booksGrid->addWidget(essayBookLabel, 0, 1);
+    booksGrid->addWidget(m_readingBookLabel, 0, 0);
+    booksGrid->addWidget(m_essayBookLabel, 0, 1);
 
     booksGrid->addWidget(m_readingBookCombo, 1, 0);
     booksGrid->addWidget(m_essayBookCombo, 1, 1);
@@ -415,7 +398,7 @@ ClassDetailsSection::ClassDetailsSection(
         );
 
     connect(
-        colorButton,
+        m_colorButton,
         &QPushButton::clicked,
         this,
         &ClassDetailsSection::openColorPicker
@@ -507,6 +490,61 @@ QString ClassDetailsSection::classColor() const
 QString ClassDetailsSection::fontColor() const
 {
     return m_pendingFontColor;
+}
+
+void ClassDetailsSection::retranslateUi()
+{
+    if (m_colorButton)
+    {
+        m_colorButton->setText(
+            tr("Choose Color")
+            );
+    }
+
+    if (m_colorLabel)
+    {
+        m_colorLabel->setText(
+            tr("Color")
+            );
+    }
+
+    if (m_gradeLabel)
+    {
+        m_gradeLabel->setText(
+            tr("Grade")
+            );
+    }
+
+    if (m_levelLabel)
+    {
+        m_levelLabel->setText(
+            tr("Level")
+            );
+    }
+
+    if (m_studentCountLabel)
+    {
+        m_studentCountLabel->setText(
+            tr("# of Students")
+            );
+    }
+
+    if (m_readingBookLabel)
+    {
+        m_readingBookLabel->setText(
+            tr("Reading Book")
+            );
+    }
+
+    if (m_essayBookLabel)
+    {
+        m_essayBookLabel->setText(
+            tr("Essay Book")
+            );
+    }
+
+    updateColorButtonWidth();
+    updateLabelMinimumWidths();
 }
 
 void ClassDetailsSection::updateLevelOptions()
@@ -673,5 +711,40 @@ void ClassDetailsSection::updateColorPreview(
             "border:1px solid gray;"
             "border-radius:4px;"
             ).arg(color)
+        );
+}
+
+void ClassDetailsSection::updateLabelMinimumWidths()
+{
+    for (auto* label : {
+             m_colorLabel,
+             m_gradeLabel,
+             m_levelLabel,
+             m_studentCountLabel,
+             m_readingBookLabel,
+             m_essayBookLabel
+         })
+    {
+        setLabelMinimumWidth(label);
+    }
+}
+
+void ClassDetailsSection::updateColorButtonWidth()
+{
+    if (!m_colorButton)
+    {
+        return;
+    }
+
+    m_colorButton->setMinimumWidth(
+        std::max(
+            m_colorButton->minimumSizeHint().width(),
+            WidgetSizing::textWidth(
+                m_colorButton,
+                m_colorButton->text()
+                )
+            + UiConstants::ClassInfo::TextWidthPadding
+            )
+        + UiConstants::ClassInfo::Details::ColorButtonExtraWidth
         );
 }

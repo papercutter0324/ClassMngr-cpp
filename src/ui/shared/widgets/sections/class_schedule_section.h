@@ -8,8 +8,10 @@
 #include <QVariantList>
 
 class QGridLayout;
+class QLabel;
 class QPushButton;
 class ClassTimeRow;
+class SectionCard;
 
 class ClassScheduleSection : public QWidget
 {
@@ -34,6 +36,8 @@ public:
     QList<ClassTime> regularTimes() const;
     QList<ClassTime> intensiveTimes() const;
 
+    void retranslateUi();
+
 signals:
     void dataChanged();
 
@@ -55,6 +59,10 @@ private:
         );
 
     void connectRowSignals(ClassTimeRow* row);
+    QWidget* createScheduleHeader(
+        QWidget* parent
+        );
+    void retranslateScheduleHeaders();
 
 private:
     // CORE FACTORY (internal only)
@@ -66,11 +74,19 @@ private:
         );
 
 private:
+    SectionCard* m_timesCard = nullptr;
+    QLabel* m_regularSubtitle = nullptr;
+    QLabel* m_intensiveSubtitle = nullptr;
+
     QGridLayout* m_regularGrid = nullptr;
     QGridLayout* m_intensiveGrid = nullptr;
 
     QPushButton* m_addRegularButton = nullptr;
     QPushButton* m_addIntensiveButton = nullptr;
+
+    QList<QLabel*> m_dayHeaderLabels;
+    QList<QLabel*> m_startHeaderLabels;
+    QList<QLabel*> m_endHeaderLabels;
 
     QList<ClassTimeRow*> m_regularRows;
     QList<ClassTimeRow*> m_intensiveRows;

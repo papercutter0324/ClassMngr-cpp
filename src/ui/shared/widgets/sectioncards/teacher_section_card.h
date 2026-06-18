@@ -2,6 +2,7 @@
 
 #include <QFrame>
 
+class QLabel;
 class QVBoxLayout;
 
 class TeacherSectionCard : public QFrame
@@ -11,8 +12,13 @@ class TeacherSectionCard : public QFrame
 public:
     explicit TeacherSectionCard(const QString& title, QWidget* parent = nullptr);
 
+    void setTitle(
+        const QString& title
+        );
+
     QVBoxLayout* contentLayout() const;
 
 private:
-    QVBoxLayout* m_layout;
+    QLabel* m_titleLabel = nullptr;
+    QVBoxLayout* m_layout = nullptr;
 };

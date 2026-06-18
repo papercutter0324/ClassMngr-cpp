@@ -7,6 +7,7 @@
 
 class QComboBox;
 class QGridLayout;
+class QLabel;
 class QLineEdit;
 class TeacherModel;
 
@@ -23,6 +24,8 @@ public:
 
     int teacherId() const;
 
+    void retranslateUi();
+
 signals:
     void dataChanged();
 
@@ -37,6 +40,16 @@ private:
 
 private:
     QGridLayout* m_grid = nullptr;
+
+    QLabel* m_teacherKrLabel = nullptr;
+    QLabel* m_teacherEnLabel = nullptr;
+    QLabel* m_roomLabel = nullptr;
+    QLabel* m_internetTypeLabel = nullptr;
+    QLabel* m_wifiNameLabel = nullptr;
+    QLabel* m_wifiPasswordLabel = nullptr;
+    QLabel* m_projectionTypeLabel = nullptr;
+    QLabel* m_zoomIdLabel = nullptr;
+    QLabel* m_zoomPasswordLabel = nullptr;
 
     QComboBox* m_teacherKrCombo = nullptr;
     QComboBox* m_teacherEnCombo = nullptr;

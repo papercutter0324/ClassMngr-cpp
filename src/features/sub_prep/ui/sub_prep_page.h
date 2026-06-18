@@ -16,6 +16,7 @@ class QTextEdit;
 class QTimer;
 class QVBoxLayout;
 class QWidget;
+class SectionCard;
 
 enum class SubPrepSection
 {
@@ -136,6 +137,23 @@ private:
     QLabel* m_importantInformationHeading = nullptr;
     QLabel* m_classInformationHeading = nullptr;
     QLabel* m_subCommentsHeading = nullptr;
+    QLabel* m_classInfoSubtitle = nullptr;
+
+    SectionCard* m_zoomCard = nullptr;
+    SectionCard* m_campusCard = nullptr;
+    SectionCard* m_materialsCard = nullptr;
+    SectionCard* m_commentsCard = nullptr;
+
+    QLabel* m_zoomEmailLabel = nullptr;
+    QLabel* m_zoomPasswordLabel = nullptr;
+    QLabel* m_campusLabel = nullptr;
+    QLabel* m_officeNumberLabel = nullptr;
+    QLabel* m_officeWifiLabel = nullptr;
+    QLabel* m_officeWifiPasswordLabel = nullptr;
+    QLabel* m_photocopierCodeLabel = nullptr;
+    QLabel* m_classMaterialsLabel = nullptr;
+    QLabel* m_timeFillerActivitiesLabel = nullptr;
+    QLabel* m_bookReportGradingLabel = nullptr;
 
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;

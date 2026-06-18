@@ -27,15 +27,27 @@ SectionCard::SectionCard(
         UiConstants::ClassInfo::SectionCard::Spacing
         );
 
-    auto* titleLabel = new QLabel(title);
+    m_titleLabel = new QLabel(title, this);
 
-    titleLabel->setObjectName("sectionTitle");
+    m_titleLabel->setObjectName("sectionTitle");
 
     m_layout->addWidget(
-        titleLabel,
+        m_titleLabel,
         0,
         Qt::AlignLeft | Qt::AlignTop
         );
+}
+
+void SectionCard::setTitle(
+    const QString& title
+    )
+{
+    if (!m_titleLabel)
+    {
+        return;
+    }
+
+    m_titleLabel->setText(title);
 }
 
 QVBoxLayout* SectionCard::contentLayout() const

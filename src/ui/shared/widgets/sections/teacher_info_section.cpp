@@ -67,9 +67,13 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         w->setReadOnly(true);
     }
 
-    m_grid->addWidget(fieldLabel(tr("Korean")), 0, 0, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("English")), 0, 1, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("Room")), 0, 2, Qt::AlignLeft);
+    m_teacherKrLabel = fieldLabel(tr("Korean"));
+    m_teacherEnLabel = fieldLabel(tr("English"));
+    m_roomLabel = fieldLabel(tr("Room"));
+
+    m_grid->addWidget(m_teacherKrLabel, 0, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_teacherEnLabel, 0, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_roomLabel, 0, 2, Qt::AlignLeft);
 
     m_grid->addWidget(m_teacherKrCombo, 1, 0, Qt::AlignLeft);
     m_grid->addWidget(m_teacherEnCombo, 1, 1, Qt::AlignLeft);
@@ -89,9 +93,13 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         4
         );
 
-    m_grid->addWidget(fieldLabel(tr("Internet Type")), 3, 0, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("WiFi Name")), 3, 1, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("WiFi Password")), 3, 2, Qt::AlignLeft);
+    m_internetTypeLabel = fieldLabel(tr("Internet Type"));
+    m_wifiNameLabel = fieldLabel(tr("WiFi Name"));
+    m_wifiPasswordLabel = fieldLabel(tr("WiFi Password"));
+
+    m_grid->addWidget(m_internetTypeLabel, 3, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiNameLabel, 3, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_wifiPasswordLabel, 3, 2, Qt::AlignLeft);
     m_grid->addWidget(m_internetTypeEdit, 4, 0, Qt::AlignLeft);
     m_grid->addWidget(m_wifiNameEdit, 4, 1, Qt::AlignLeft);
     m_grid->addWidget(m_wifiPasswordEdit, 4, 2, Qt::AlignLeft);
@@ -109,9 +117,13 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         4
         );
 
-    m_grid->addWidget(fieldLabel(tr("Projection Type")), 6, 0, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("Zoom ID")), 6, 1, Qt::AlignLeft);
-    m_grid->addWidget(fieldLabel(tr("Zoom Password")), 6, 2, Qt::AlignLeft);
+    m_projectionTypeLabel = fieldLabel(tr("Projection Type"));
+    m_zoomIdLabel = fieldLabel(tr("Zoom ID"));
+    m_zoomPasswordLabel = fieldLabel(tr("Zoom Password"));
+
+    m_grid->addWidget(m_projectionTypeLabel, 6, 0, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomIdLabel, 6, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_zoomPasswordLabel, 6, 2, Qt::AlignLeft);
     m_grid->addWidget(m_projectionTypeEdit, 7, 0, Qt::AlignLeft);
     m_grid->addWidget(m_zoomIdEdit, 7, 1, Qt::AlignLeft);
     m_grid->addWidget(m_zoomPasswordEdit, 7, 2, Qt::AlignLeft);
@@ -187,6 +199,72 @@ void TeacherInfoSection::selectTeacher(int teacherId)
 int TeacherInfoSection::teacherId() const
 {
     return m_selectedTeacherId;
+}
+
+void TeacherInfoSection::retranslateUi()
+{
+    if (m_teacherKrLabel)
+    {
+        m_teacherKrLabel->setText(
+            tr("Korean")
+            );
+    }
+
+    if (m_teacherEnLabel)
+    {
+        m_teacherEnLabel->setText(
+            tr("English")
+            );
+    }
+
+    if (m_roomLabel)
+    {
+        m_roomLabel->setText(
+            tr("Room")
+            );
+    }
+
+    if (m_internetTypeLabel)
+    {
+        m_internetTypeLabel->setText(
+            tr("Internet Type")
+            );
+    }
+
+    if (m_wifiNameLabel)
+    {
+        m_wifiNameLabel->setText(
+            tr("WiFi Name")
+            );
+    }
+
+    if (m_wifiPasswordLabel)
+    {
+        m_wifiPasswordLabel->setText(
+            tr("WiFi Password")
+            );
+    }
+
+    if (m_projectionTypeLabel)
+    {
+        m_projectionTypeLabel->setText(
+            tr("Projection Type")
+            );
+    }
+
+    if (m_zoomIdLabel)
+    {
+        m_zoomIdLabel->setText(
+            tr("Zoom ID")
+            );
+    }
+
+    if (m_zoomPasswordLabel)
+    {
+        m_zoomPasswordLabel->setText(
+            tr("Zoom Password")
+            );
+    }
 }
 
 void TeacherInfoSection::onTeacherIndexChanged(int index)

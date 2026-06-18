@@ -24,14 +24,26 @@ TeacherSectionCard::TeacherSectionCard(const QString& title, QWidget* parent)
     m_layout->setSpacing(
         UiConstants::Cards::Spacing);
 
-    auto* titleLabel = new QLabel(title);
-    titleLabel->setObjectName("sectionTitle");
+    m_titleLabel = new QLabel(title, this);
+    m_titleLabel->setObjectName("sectionTitle");
 
     m_layout->addWidget(
-        titleLabel,
+        m_titleLabel,
         0,
         Qt::AlignLeft | Qt::AlignTop
         );
+}
+
+void TeacherSectionCard::setTitle(
+    const QString& title
+    )
+{
+    if (!m_titleLabel)
+    {
+        return;
+    }
+
+    m_titleLabel->setText(title);
 }
 
 QVBoxLayout* TeacherSectionCard::contentLayout() const

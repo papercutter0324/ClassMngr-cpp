@@ -3,7 +3,9 @@
 #include <QWidget>
 
 class QComboBox;
+class QLabel;
 class QLineEdit;
+class QPushButton;
 class ClickableColorPreview;
 class ApplicationServices;
 
@@ -35,6 +37,8 @@ public:
     QString classColor() const;
     QString fontColor() const;
 
+    void retranslateUi();
+
 signals:
     void dataChanged();
 
@@ -50,6 +54,8 @@ private:
         const QString& preferredEssayBook = {}
         );
     void updateColorPreview(const QString& color);
+    void updateLabelMinimumWidths();
+    void updateColorButtonWidth();
 
 private:
     // =====================================================
@@ -65,6 +71,14 @@ private:
     QString m_pendingFontColor;
 
     ClickableColorPreview* m_colorPreview{nullptr};
+    QPushButton* m_colorButton{nullptr};
+
+    QLabel* m_colorLabel{nullptr};
+    QLabel* m_gradeLabel{nullptr};
+    QLabel* m_levelLabel{nullptr};
+    QLabel* m_studentCountLabel{nullptr};
+    QLabel* m_readingBookLabel{nullptr};
+    QLabel* m_essayBookLabel{nullptr};
 
     QComboBox* m_gradeCombo{nullptr};
     QComboBox* m_levelCombo{nullptr};

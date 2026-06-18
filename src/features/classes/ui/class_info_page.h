@@ -15,6 +15,7 @@ class ClassScheduleSection;
 class QLabel;
 class QPushButton;
 class QScrollArea;
+class SectionCard;
 class QTimer;
 class QVBoxLayout;
 class QWidget;
@@ -76,6 +77,9 @@ private:
     bool m_loading{false};
     bool m_dirty{false};
     SaveMode m_saveMode{SaveMode::Automatic};
+
+    SectionCard* m_teacherCard{nullptr};
+    SectionCard* m_detailsCard{nullptr};
 
     TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};

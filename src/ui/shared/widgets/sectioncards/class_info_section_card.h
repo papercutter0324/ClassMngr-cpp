@@ -3,6 +3,8 @@
 #include <QFrame>
 #include <QVBoxLayout>
 
+class QLabel;
+
 class SectionCard : public QFrame
 {
     Q_OBJECT
@@ -13,8 +15,13 @@ public:
         QWidget* parent = nullptr
         );
 
+    void setTitle(
+        const QString& title
+        );
+
     QVBoxLayout* contentLayout() const;
 
 private:
+    QLabel* m_titleLabel{};
     QVBoxLayout* m_layout{};
 };

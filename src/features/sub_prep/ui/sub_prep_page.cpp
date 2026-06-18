@@ -754,6 +754,111 @@ void SubPrepPage::retranslateUi()
             );
     }
 
+    if (m_classInfoSubtitle)
+    {
+        m_classInfoSubtitle->setText(
+            tr("Sorted by Co-Teacher")
+            );
+    }
+
+    if (m_zoomCard)
+    {
+        m_zoomCard->setTitle(
+            tr("Personal Zoom Information")
+            );
+    }
+
+    if (m_campusCard)
+    {
+        m_campusCard->setTitle(
+            tr("Campus Information")
+            );
+    }
+
+    if (m_materialsCard)
+    {
+        m_materialsCard->setTitle(
+            tr("Lesson Materials and Grading")
+            );
+    }
+
+    if (m_commentsCard)
+    {
+        m_commentsCard->setTitle(
+            tr("Comments")
+            );
+    }
+
+    if (m_zoomEmailLabel)
+    {
+        m_zoomEmailLabel->setText(
+            tr("Login Email")
+            );
+    }
+
+    if (m_zoomPasswordLabel)
+    {
+        m_zoomPasswordLabel->setText(
+            tr("Password")
+            );
+    }
+
+    if (m_campusLabel)
+    {
+        m_campusLabel->setText(
+            tr("Campus")
+            );
+    }
+
+    if (m_officeNumberLabel)
+    {
+        m_officeNumberLabel->setText(
+            tr("Office Number")
+            );
+    }
+
+    if (m_officeWifiLabel)
+    {
+        m_officeWifiLabel->setText(
+            tr("Office WiFi")
+            );
+    }
+
+    if (m_officeWifiPasswordLabel)
+    {
+        m_officeWifiPasswordLabel->setText(
+            tr("WiFi Password")
+            );
+    }
+
+    if (m_photocopierCodeLabel)
+    {
+        m_photocopierCodeLabel->setText(
+            tr("Photocopier Code")
+            );
+    }
+
+    if (m_classMaterialsLabel)
+    {
+        m_classMaterialsLabel->setText(
+            tr("Class Materials")
+            );
+    }
+
+    if (m_timeFillerActivitiesLabel)
+    {
+        m_timeFillerActivitiesLabel->setText(
+            tr("Time Filler Activities")
+            );
+    }
+
+    if (m_bookReportGradingLabel)
+    {
+        m_bookReportGradingLabel->setText(
+            tr("Book Report Grading")
+            );
+    }
+
     refreshGeneratedContent();
 }
 
@@ -1037,7 +1142,7 @@ void SubPrepPage::buildUi()
         m_importantInformationHeading
         );
 
-    auto* zoomCard =
+    m_zoomCard =
         new SectionCard(
             tr("Personal Zoom Information"),
             m_scrollContent
@@ -1052,9 +1157,9 @@ void SubPrepPage::buildUi()
         );
 
     m_zoomEmailEdit =
-        new QLineEdit(zoomCard);
+        new QLineEdit(m_zoomCard);
     m_zoomPasswordEdit =
-        new QLineEdit(zoomCard);
+        new QLineEdit(m_zoomCard);
 
     m_zoomEmailEdit->setReadOnly(true);
     m_zoomPasswordEdit->setReadOnly(true);
@@ -1062,14 +1167,19 @@ void SubPrepPage::buildUi()
     applyFieldWidth(m_zoomEmailEdit);
     applyFieldWidth(m_zoomPasswordEdit);
 
+    m_zoomEmailLabel =
+        createFieldLabel(tr("Login Email"), m_zoomCard);
+    m_zoomPasswordLabel =
+        createFieldLabel(tr("Password"), m_zoomCard);
+
     zoomGrid->addWidget(
-        createFieldLabel(tr("Login Email"), zoomCard),
+        m_zoomEmailLabel,
         0,
         0,
         Qt::AlignLeft
         );
     zoomGrid->addWidget(
-        createFieldLabel(tr("Password"), zoomCard),
+        m_zoomPasswordLabel,
         0,
         1,
         Qt::AlignLeft
@@ -1088,14 +1198,14 @@ void SubPrepPage::buildUi()
         );
     zoomGrid->setColumnStretch(2, 1);
 
-    zoomCard->contentLayout()->addLayout(
+    m_zoomCard->contentLayout()->addLayout(
         zoomGrid
         );
     m_scrollContentLayout->addWidget(
-        zoomCard
+        m_zoomCard
         );
 
-    auto* campusCard =
+    m_campusCard =
         new SectionCard(
             tr("Campus Information"),
             m_scrollContent
@@ -1110,15 +1220,15 @@ void SubPrepPage::buildUi()
         );
 
     m_campusCombo =
-        new QComboBox(campusCard);
+        new QComboBox(m_campusCard);
     m_officeNumberEdit =
-        new QLineEdit(campusCard);
+        new QLineEdit(m_campusCard);
     m_officeWifiEdit =
-        new QLineEdit(campusCard);
+        new QLineEdit(m_campusCard);
     m_officeWifiPasswordEdit =
-        new QLineEdit(campusCard);
+        new QLineEdit(m_campusCard);
     m_photocopierCodeEdit =
-        new QLineEdit(campusCard);
+        new QLineEdit(m_campusCard);
 
     m_officeNumberEdit->setReadOnly(true);
     m_officeWifiEdit->setReadOnly(true);
@@ -1146,32 +1256,43 @@ void SubPrepPage::buildUi()
         CompactFieldWidth
         );
 
+    m_campusLabel =
+        createFieldLabel(tr("Campus"), m_campusCard);
+    m_officeNumberLabel =
+        createFieldLabel(tr("Office Number"), m_campusCard);
+    m_officeWifiLabel =
+        createFieldLabel(tr("Office WiFi"), m_campusCard);
+    m_officeWifiPasswordLabel =
+        createFieldLabel(tr("WiFi Password"), m_campusCard);
+    m_photocopierCodeLabel =
+        createFieldLabel(tr("Photocopier Code"), m_campusCard);
+
     campusGrid->addWidget(
-        createFieldLabel(tr("Campus"), campusCard),
+        m_campusLabel,
         0,
         0,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        createFieldLabel(tr("Office Number"), campusCard),
+        m_officeNumberLabel,
         0,
         1,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        createFieldLabel(tr("Office WiFi"), campusCard),
+        m_officeWifiLabel,
         0,
         2,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        createFieldLabel(tr("WiFi Password"), campusCard),
+        m_officeWifiPasswordLabel,
         0,
         3,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
-        createFieldLabel(tr("Photocopier Code"), campusCard),
+        m_photocopierCodeLabel,
         0,
         4,
         Qt::AlignLeft
@@ -1208,64 +1329,70 @@ void SubPrepPage::buildUi()
         );
     campusGrid->setColumnStretch(5, 1);
 
-    campusCard->contentLayout()->addLayout(
+    m_campusCard->contentLayout()->addLayout(
         campusGrid
         );
     m_scrollContentLayout->addWidget(
-        campusCard
+        m_campusCard
         );
 
-    auto* materialsCard =
+    m_materialsCard =
         new SectionCard(
             tr("Lesson Materials and Grading"),
             m_scrollContent
             );
 
-    materialsCard->contentLayout()->addWidget(
-        createFieldLabel(tr("Class Materials"), materialsCard)
+    m_classMaterialsLabel =
+        createFieldLabel(tr("Class Materials"), m_materialsCard);
+    m_materialsCard->contentLayout()->addWidget(
+        m_classMaterialsLabel
         );
 
     m_classMaterialsEdit =
         createTextEdit(
             6,
             false,
-            materialsCard
+            m_materialsCard
             );
-    materialsCard->contentLayout()->addWidget(
+    m_materialsCard->contentLayout()->addWidget(
         m_classMaterialsEdit
         );
 
-    materialsCard->contentLayout()->addWidget(
-        createFieldLabel(tr("Time Filler Activities"), materialsCard)
+    m_timeFillerActivitiesLabel =
+        createFieldLabel(tr("Time Filler Activities"), m_materialsCard);
+    m_materialsCard->contentLayout()->addWidget(
+        m_timeFillerActivitiesLabel
         );
 
     m_timeFillerActivitiesEdit =
         createTextEdit(
             8,
             true,
-            materialsCard
+            m_materialsCard
             );
-    materialsCard->contentLayout()->addWidget(
+    m_materialsCard->contentLayout()->addWidget(
         m_timeFillerActivitiesEdit
         );
 
-    materialsCard->contentLayout()->addWidget(
-        createFieldLabel(tr("Book Report Grading"), materialsCard)
+    m_bookReportGradingLabel =
+        createFieldLabel(tr("Book Report Grading"), m_materialsCard);
+    m_materialsCard->contentLayout()->addWidget(
+        m_bookReportGradingLabel
         );
 
     m_bookReportGradingEdit =
         createTextEdit(
             5,
             false,
-            materialsCard
+            m_materialsCard
             );
     m_bookReportGradingEdit->installEventFilter(this);
-    materialsCard->contentLayout()->addWidget(
+    m_materialsCard->contentLayout()->addWidget(
         m_bookReportGradingEdit
         );
 
     m_scrollContentLayout->addWidget(
-        materialsCard
+        m_materialsCard
         );
 
     m_classInformationHeading =
@@ -1277,18 +1404,18 @@ void SubPrepPage::buildUi()
         m_classInformationHeading
         );
 
-    auto* classInfoSubtitle =
+    m_classInfoSubtitle =
         new QLabel(
             tr("Sorted by Co-Teacher"),
             m_scrollContent
             );
-    classInfoSubtitle->setObjectName("pageSubtitle");
-    classInfoSubtitle->setAlignment(Qt::AlignCenter);
-    classInfoSubtitle->setFont(
+    m_classInfoSubtitle->setObjectName("pageSubtitle");
+    m_classInfoSubtitle->setAlignment(Qt::AlignCenter);
+    m_classInfoSubtitle->setFont(
         FontManager::getUiFont(11)
         );
     m_scrollContentLayout->addWidget(
-        classInfoSubtitle
+        m_classInfoSubtitle
         );
 
     m_classInformationContent =
@@ -1313,7 +1440,7 @@ void SubPrepPage::buildUi()
         m_subCommentsHeading
         );
 
-    auto* commentsCard =
+    m_commentsCard =
         new SectionCard(
             tr("Comments"),
             m_scrollContent
@@ -1323,13 +1450,13 @@ void SubPrepPage::buildUi()
         createTextEdit(
             10,
             false,
-            commentsCard
+            m_commentsCard
             );
-    commentsCard->contentLayout()->addWidget(
+    m_commentsCard->contentLayout()->addWidget(
         m_subCommentsEdit
         );
     m_scrollContentLayout->addWidget(
-        commentsCard
+        m_commentsCard
         );
 
     connect(

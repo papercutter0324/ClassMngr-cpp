@@ -145,6 +145,12 @@ void ScheduleSectionWidget::refreshSchedule()
     loadSchedule();
 }
 
+void ScheduleSectionWidget::retranslateUi()
+{
+    updateButtons();
+    loadSchedule();
+}
+
 void ScheduleSectionWidget::toggleTimeFormat()
 {
     m_use24h = !m_use24h;

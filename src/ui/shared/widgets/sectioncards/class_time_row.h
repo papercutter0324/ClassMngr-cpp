@@ -29,6 +29,8 @@ public:
     void setStartTime(const QString& value);
     void setEndTime(const QString& value);
 
+    void retranslateUi();
+
     // =========================================================
     // Widget access (IMPORTANT for layout ownership)
     // =========================================================
