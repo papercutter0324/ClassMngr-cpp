@@ -3,8 +3,11 @@
 ClassMngr uses a single channel manifest as the source of truth. Versioned
 folders are for humans, rollback, and audit history.
 
+Canonical updater base folder (`ClassMngr/`):
+https://drive.google.com/drive/folders/14EtU_WYBcN-d-vMi3ItjsiGfQ3POH8sB?usp=sharing
+
 ```text
-ClassMngr Updates/
+ClassMngr/
   channels/
     stable/
       latest.json
@@ -26,8 +29,10 @@ ClassMngr Updates/
         ClassMngr-0.1.1-linux-x86_64.AppImage
 ```
 
-The app fetches only `channels/stable/latest.json`. Upload release artifacts
-first, then publish `latest.json` and `latest.sig` last.
+The app fetches only the direct URL for `channels/stable/latest.json`. Upload
+release artifacts first, then publish `latest.json` and `latest.sig` last. A
+shared folder URL is useful for humans, but release builds still need direct
+HTTPS URLs for `latest.json` and `latest.sig`.
 
 ## Build Configuration
 
@@ -90,4 +95,11 @@ embedded public key:
 
 ```sh
 openssl dgst -sha256 -sign private.pem -out latest.sig latest.json
+```
+
+On Windows, if `openssl` is not on `PATH`, Git for Windows commonly includes
+it. In PowerShell, call it with the full path:
+
+```powershell
+& "C:\Program Files\Git\usr\bin\openssl.exe" dgst -sha256 -sign private.pem -out latest.sig latest.json
 ```
