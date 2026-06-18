@@ -154,6 +154,7 @@ target_link_libraries(ClassMngr
 if(WIN32)
     add_custom_command(TARGET ClassMngr POST_BUILD
         COMMAND Qt6::windeployqt
+            --qmldir "${PROJECT_SOURCE_DIR}/src/features/my_info/ui/qml"
             --dir "$<TARGET_FILE_DIR:ClassMngr>"
             "$<TARGET_FILE:ClassMngr>"
         COMMENT "Deploying Qt runtime dependencies"
