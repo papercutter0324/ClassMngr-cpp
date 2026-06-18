@@ -106,11 +106,11 @@ qt_add_qml_module(ClassMngr
 qt_add_translations(
     TARGETS ClassMngr
     TS_FILES
-        ClassMngr_en_AU.ts
-        ClassMngr_en_CA.ts
-        ClassMngr_en_GB.ts
-        ClassMngr_en_US.ts
-        ClassMngr_ko_KR.ts
+        resources/assets/translations/ClassMngr_en_AU.ts
+        resources/assets/translations/ClassMngr_en_CA.ts
+        resources/assets/translations/ClassMngr_en_GB.ts
+        resources/assets/translations/ClassMngr_en_US.ts
+        resources/assets/translations/ClassMngr_ko_KR.ts
 )
 
 target_compile_features(ClassMngr
