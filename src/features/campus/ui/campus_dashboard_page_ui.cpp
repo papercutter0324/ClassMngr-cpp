@@ -18,6 +18,8 @@
 #include <QTextDocument>
 #include <QVBoxLayout>
 
+#include <utility>
+
 namespace Detail = CampusDashboardPageDetail;
 
 QWidget* CampusDashboardPage::createDirectionsTab()
@@ -99,8 +101,9 @@ QWidget* CampusDashboardPage::createDirectionsTab()
     campusRowLayout->addWidget(m_nameEdit, 1);
     campusRowLayout->addWidget(m_directionsToggleLanguageButton);
 
-    campusForm->addRow(
-        tr("Campus Name:"),
+    addFormRow(
+        campusForm,
+        QT_TR_NOOP("Campus Name:"),
         campusRow
         );
 
@@ -121,15 +124,17 @@ QWidget* CampusDashboardPage::createDirectionsTab()
     m_lineEdits.append(m_buildingEdit);
     m_lineEdits.append(m_phoneEdit);
 
-    m_directionsEnglishAddress.form->insertRow(
+    insertFormRow(
+        m_directionsEnglishAddress.form,
         1,
-        tr("Building Name:"),
+        QT_TR_NOOP("Building Name:"),
         m_buildingEdit
         );
 
-    m_directionsEnglishAddress.form->insertRow(
+    insertFormRow(
+        m_directionsEnglishAddress.form,
         2,
-        tr("Phone Number:"),
+        QT_TR_NOOP("Phone Number:"),
         m_phoneEdit
         );
 
@@ -151,15 +156,17 @@ QWidget* CampusDashboardPage::createDirectionsTab()
     m_lineEdits.append(m_buildingKrEdit);
     m_lineEdits.append(m_phoneKrEdit);
 
-    m_directionsKoreanAddress.form->insertRow(
+    insertFormRow(
+        m_directionsKoreanAddress.form,
         1,
-        tr("Building Name:"),
+        QT_TR_NOOP("Building Name:"),
         m_buildingKrEdit
         );
 
-    m_directionsKoreanAddress.form->insertRow(
+    insertFormRow(
+        m_directionsKoreanAddress.form,
         2,
-        tr("Phone Number:"),
+        QT_TR_NOOP("Phone Number:"),
         m_phoneKrEdit
         );
 
@@ -187,7 +194,7 @@ QWidget* CampusDashboardPage::createDirectionsTab()
     m_transitStepsEdit =
         addTextField(
             transitForm,
-            tr("Transit Steps:"),
+            QT_TR_NOOP("Transit Steps:"),
             5,
             10
             );
@@ -195,7 +202,7 @@ QWidget* CampusDashboardPage::createDirectionsTab()
     m_arrivalInfoEdit =
         addTextField(
             transitForm,
-            tr("Upon Arriving:"),
+            QT_TR_NOOP("Upon Arriving:"),
             5,
             10
             );
@@ -293,31 +300,31 @@ QWidget* CampusDashboardPage::createInformationTab()
     m_officeNumberEdit =
         addLineField(
             form,
-            tr("Office Number:")
+            QT_TR_NOOP("Office Number:")
             );
 
     m_officeWifiEdit =
         addLineField(
             form,
-            tr("Office WiFi:")
+            QT_TR_NOOP("Office WiFi:")
             );
 
     m_officeWifiPasswordEdit =
         addLineField(
             form,
-            tr("WiFi Password:")
+            QT_TR_NOOP("WiFi Password:")
             );
 
     m_printerNameEdit =
         addLineField(
             form,
-            tr("Printer Name:")
+            QT_TR_NOOP("Printer Name:")
             );
 
     m_printerStepsEdit =
         addTextField(
             form,
-            tr("Printer Installation Steps:"),
+            QT_TR_NOOP("Printer Installation Steps:"),
             5,
             10
             );
@@ -368,8 +375,9 @@ QWidget* CampusDashboardPage::createInformationTab()
     driverLayout->addWidget(m_printerDriverUrlEdit, 1);
     driverLayout->addWidget(m_printerDriverUrlUnavailableCheck);
 
-    form->addRow(
-        tr("Printer Driver URL:"),
+    addFormRow(
+        form,
+        QT_TR_NOOP("Printer Driver URL:"),
         driverRow
         );
 
@@ -438,8 +446,9 @@ QWidget* CampusDashboardPage::createInformationTab()
     photocopierLayout->addWidget(m_photocopierCodeEdit, 1);
     photocopierLayout->addWidget(m_photocopierCodeUnavailableCheck);
 
-    form->addRow(
-        tr("Photocopier Code:"),
+    addFormRow(
+        form,
+        QT_TR_NOOP("Photocopier Code:"),
         photocopierRow
         );
 
@@ -571,7 +580,7 @@ QWidget* CampusDashboardPage::createMapTab()
     m_imagePathEdit =
         addLineField(
             form,
-            tr("Image Path:")
+            QT_TR_NOOP("Image Path:")
             );
 
     m_mapPreviewLabel =
@@ -587,17 +596,95 @@ QWidget* CampusDashboardPage::createMapTab()
         QSizePolicy::Expanding
         );
 
-    form->addRow(
-        tr("Preview:"),
+    addFormRow(
+        form,
+        QT_TR_NOOP("Preview:"),
         m_mapPreviewLabel
         );
 
     return tab;
 }
 
+QLabel* CampusDashboardPage::createTranslatableLabel(
+    const char* sourceText,
+    QWidget* parent
+    )
+{
+    auto* label =
+        new QLabel(
+            tr(sourceText),
+            parent
+            );
+
+    TranslatableLabel entry;
+    entry.label = label;
+    entry.sourceText = sourceText;
+    m_translatableLabels.append(entry);
+
+    return label;
+}
+
+void CampusDashboardPage::addFormRow(
+    QFormLayout* form,
+    const char* labelText,
+    QWidget* field
+    )
+{
+    if (!form)
+    {
+        return;
+    }
+
+    form->addRow(
+        createTranslatableLabel(
+            labelText,
+            form->parentWidget()
+            ),
+        field
+        );
+}
+
+void CampusDashboardPage::insertFormRow(
+    QFormLayout* form,
+    int row,
+    const char* labelText,
+    QWidget* field
+    )
+{
+    if (!form)
+    {
+        return;
+    }
+
+    form->insertRow(
+        row,
+        createTranslatableLabel(
+            labelText,
+            form->parentWidget()
+            ),
+        field
+        );
+}
+
+void CampusDashboardPage::retranslateRegisteredLabels()
+{
+    for (const TranslatableLabel& entry : std::as_const(m_translatableLabels))
+    {
+        if (
+            entry.label
+            && entry.sourceText
+            )
+        {
+            entry.label->setText(
+                tr(entry.sourceText)
+                );
+        }
+    }
+}
+
 QLineEdit* CampusDashboardPage::addLineField(
     QFormLayout* form,
-    const QString& labelText
+    const char* labelText
     )
 {
     auto* edit =
@@ -605,7 +692,8 @@ QLineEdit* CampusDashboardPage::addLineField(
 
     edit->setMinimumWidth(280);
 
-    form->addRow(
+    addFormRow(
+        form,
         labelText,
         edit
         );
@@ -627,7 +715,7 @@ QLineEdit* CampusDashboardPage::addLineField(
 
 QPlainTextEdit* CampusDashboardPage::addTextField(
     QFormLayout* form,
-    const QString& labelText,
+    const char* labelText,
     int minimumLines,
     int maximumLines
     )
@@ -645,7 +733,8 @@ QPlainTextEdit* CampusDashboardPage::addTextField(
         maximumLines
         );
 
-    form->addRow(
+    addFormRow(
+        form,
         labelText,
         edit
         );
@@ -819,8 +908,9 @@ CampusDashboardPage::createAddressSection(
         Qt::AlignTop
         );
 
-    section.form->addRow(
-        tr("Complete Address:"),
+    addFormRow(
+        section.form,
+        QT_TR_NOOP("Complete Address:"),
         completeRow
         );
 
@@ -841,7 +931,7 @@ CampusDashboardPage::createAddressSection(
         section.buildingName =
             addLineField(
                 section.form,
-                tr("Building Name:")
+                QT_TR_NOOP("Building Name:")
                 );
 
         section.line2Suffix =
@@ -851,43 +941,43 @@ CampusDashboardPage::createAddressSection(
     section.province =
         addLineField(
             section.form,
-            tr("Province:")
+            QT_TR_NOOP("Province:")
             );
 
     section.city =
         addLineField(
             section.form,
-            tr("City:")
+            QT_TR_NOOP("City:")
             );
 
     section.district =
         addLineField(
             section.form,
-            tr("District:")
+            QT_TR_NOOP("District:")
             );
 
     section.line1 =
         addLineField(
             section.form,
-            tr("Address Line 1:")
+            QT_TR_NOOP("Address Line 1:")
             );
 
     section.line2 =
         addLineField(
             section.form,
-            tr("Address Line 2:")
+            QT_TR_NOOP("Address Line 2:")
             );
 
     section.postalCode =
         addLineField(
             section.form,
-            tr("Postal Code:")
+            QT_TR_NOOP("Postal Code:")
             );
 
     section.note =
         addLineField(
             section.form,
-            tr("Note:")
+            QT_TR_NOOP("Note:")
             );
 
     sectionLayout->addWidget(addressContainer);
@@ -957,8 +1047,8 @@ void CampusDashboardPage::buildUi()
     selectorLayout->setSpacing(8);
 
     auto* selectorLabel =
-        new QLabel(
-            tr("Campus:"),
+        createTranslatableLabel(
+            QT_TR_NOOP("Campus:"),
             this
             );
 
@@ -971,8 +1061,8 @@ void CampusDashboardPage::buildUi()
     if (m_adminMode)
     {
         auto* campusCodeLabel =
-            new QLabel(
-                tr("Campus Code:"),
+            createTranslatableLabel(
+                QT_TR_NOOP("Campus Code:"),
                 this
                 );
 

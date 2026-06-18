@@ -7,6 +7,7 @@
 #include "features/campus/data/campus_json_repository.h"
 
 #include <QList>
+#include <QPointer>
 
 class QComboBox;
 class QCheckBox;
@@ -71,15 +72,32 @@ private:
 
     QLineEdit* addLineField(
         QFormLayout* form,
-        const QString& labelText
+        const char* labelText
         );
 
     QPlainTextEdit* addTextField(
         QFormLayout* form,
-        const QString& labelText,
+        const char* labelText,
         int minimumLines,
         int maximumLines
         );
+
+    QLabel* createTranslatableLabel(
+        const char* sourceText,
+        QWidget* parent = nullptr
+        );
+    void addFormRow(
+        QFormLayout* form,
+        const char* labelText,
+        QWidget* field
+        );
+    void insertFormRow(
+        QFormLayout* form,
+        int row,
+        const char* labelText,
+        QWidget* field
+        );
+    void retranslateRegisteredLabels();
 
     AddressSectionWidgets createAddressSection(
         QWidget* parent,
@@ -219,6 +237,12 @@ private:
         bool showingEnglish = true;
     };
 
+    struct TranslatableLabel
+    {
+        QPointer<QLabel> label;
+        const char* sourceText = nullptr;
+    };
+
 private:
     bool m_adminMode = false;
     bool m_loading = false;
@@ -277,6 +301,7 @@ private:
     QList<QPlainTextEdit*> m_textEdits;
     QList<QPlainTextEdit*> m_alwaysReadOnlyTextEdits;
     QList<HousingSectionWidgets> m_housingSections;
+    QList<TranslatableLabel> m_translatableLabels;
 };
 
 #endif // CAMPUS_DASHBOARD_PAGE_H

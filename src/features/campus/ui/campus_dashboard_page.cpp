@@ -5,6 +5,7 @@
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
@@ -213,6 +214,8 @@ void CampusDashboardPage::retranslateUi()
         }
     }
 
+    retranslateRegisteredLabels();
+
     if (m_newCampusButton)
     {
         m_newCampusButton->setText(
@@ -240,6 +243,20 @@ void CampusDashboardPage::retranslateUi()
     {
         m_housingEmptyLabel->setText(
             tr("No housing information available")
+            );
+    }
+
+    if (m_printerDriverUrlUnavailableCheck)
+    {
+        m_printerDriverUrlUnavailableCheck->setText(
+            tr("N/A")
+            );
+    }
+
+    if (m_photocopierCodeUnavailableCheck)
+    {
+        m_photocopierCodeUnavailableCheck->setText(
+            tr("N/A")
             );
     }
 
@@ -282,6 +299,7 @@ void CampusDashboardPage::retranslateUi()
 
     updateDirectionsCompleteAddresses();
     updateHousingCompleteAddresses();
+    updateMapPreview();
     updateCampusSaveButton();
 }
 

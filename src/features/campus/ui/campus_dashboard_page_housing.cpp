@@ -189,8 +189,9 @@ void CampusDashboardPage::addHousingSectionFromJson(
         QFormLayout::ExpandingFieldsGrow
         );
 
-    nameForm->addRow(
-        tr("Housing Name:"),
+    addFormRow(
+        nameForm,
+        QT_TR_NOOP("Housing Name:"),
         nameRow
         );
 

@@ -8,6 +8,7 @@
 class ApplicationServices;
 class QLabel;
 class QPushButton;
+class SectionCard;
 class QTextEdit;
 class QTimer;
 
@@ -60,6 +61,8 @@ private:
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    SectionCard* m_notesCard = nullptr;
+    QLabel* m_timeFillerActivitiesLabel = nullptr;
     QTextEdit* m_notesEdit = nullptr;
     QTextEdit* m_timeFillerActivitiesEdit = nullptr;
     QPushButton* m_saveButton = nullptr;

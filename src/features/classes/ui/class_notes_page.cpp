@@ -260,6 +260,20 @@ void ClassNotesPage::retranslateUi()
             );
     }
 
+    if (m_notesCard)
+    {
+        m_notesCard->setTitle(
+            tr("Notes")
+            );
+    }
+
+    if (m_timeFillerActivitiesLabel)
+    {
+        m_timeFillerActivitiesLabel->setText(
+            tr("Time Filler Activities")
+            );
+    }
+
     updateActions();
 }
 
@@ -346,56 +360,56 @@ void ClassNotesPage::buildUi()
 
     contentLayout()->addLayout(headerLayout);
 
-    auto* notesCard =
+    m_notesCard =
         new SectionCard(
             tr("Notes"),
             this
             );
 
     m_notesEdit =
-        new QTextEdit(notesCard);
+        new QTextEdit(m_notesCard);
 
     m_notesEdit->setMinimumHeight(
         UiConstants::Editors::NotesMinimumHeight
         );
 
-    notesCard->contentLayout()->addWidget(
+    m_notesCard->contentLayout()->addWidget(
         m_notesEdit
         );
 
-    notesCard->contentLayout()->addSpacing(
+    m_notesCard->contentLayout()->addSpacing(
         UiConstants::Cards::Spacing
         );
 
-    auto* timeFillerActivitiesLabel =
+    m_timeFillerActivitiesLabel =
         new QLabel(
             tr("Time Filler Activities"),
-            notesCard
+            m_notesCard
             );
 
-    timeFillerActivitiesLabel->setContentsMargins(
+    m_timeFillerActivitiesLabel->setContentsMargins(
         UiConstants::Forms::LabelIndent,
         0,
         0,
         0
         );
 
-    notesCard->contentLayout()->addWidget(
-        timeFillerActivitiesLabel
+    m_notesCard->contentLayout()->addWidget(
+        m_timeFillerActivitiesLabel
         );
 
     m_timeFillerActivitiesEdit =
-        new QTextEdit(notesCard);
+        new QTextEdit(m_notesCard);
 
     m_timeFillerActivitiesEdit->setMinimumHeight(
         UiConstants::Editors::NotesMinimumHeight
         );
 
-    notesCard->contentLayout()->addWidget(
+    m_notesCard->contentLayout()->addWidget(
         m_timeFillerActivitiesEdit
         );
 
-    contentLayout()->addWidget(notesCard);
+    contentLayout()->addWidget(m_notesCard);
     contentLayout()->addStretch();
 
     m_saveButton =
