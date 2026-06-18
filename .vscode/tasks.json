@@ -22,6 +22,61 @@
       ],
       "group": "build",
       "problemMatcher": "$gcc"
+    },
+    {
+      "label": "CMake: configure release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--preset",
+        "windows-msvc-release"
+      ],
+      "linux": {
+        "args": [
+          "--preset",
+          "linux-gcc-release"
+        ]
+      },
+      "osx": {
+        "args": [
+          "--preset",
+          "macos-clang-release"
+        ]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: build release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "--preset",
+        "windows-msvc-release",
+        "--config",
+        "Release"
+      ],
+      "linux": {
+        "args": [
+          "--build",
+          "--preset",
+          "linux-gcc-release"
+        ]
+      },
+      "osx": {
+        "args": [
+          "--build",
+          "--preset",
+          "macos-clang-release"
+        ]
+      },
+      "dependsOn": "CMake: configure release",
+      "dependsOrder": "sequence",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc",
+        "$msCompile"
+      ]
     }
   ]
 }
