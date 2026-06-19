@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
 project(ClassMngr
     VERSION 0.4.0
@@ -218,4 +218,11 @@ if(BUILD_TESTING)
         NAME ClassMngrUpdaterTests
         COMMAND ClassMngrUpdaterTests
     )
+
+    if(WIN32)
+        set_tests_properties(ClassMngrUpdaterTests PROPERTIES
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
 endif()

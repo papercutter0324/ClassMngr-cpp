@@ -2,6 +2,11 @@
   "cmake.useCMakePresets": "always",
   "cmake.configureOnOpen": true,
 
+  "cmake.environment": {
+    "QT_MSVC_X64_PREFIX": "D:/Development/Qt/6.11.1/msvc2022_64",
+    "QT_MSVC_ARM64_PREFIX": "D:/Development/Qt/6.11.1/msvc2022_arm64"
+  },
+
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
   "C_Cpp.default.cppStandard": "c++23",
 

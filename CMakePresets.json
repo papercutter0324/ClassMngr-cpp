@@ -28,7 +28,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Visual Studio 17 2022"
+      "generator": "Visual Studio 18 2026"
     },
     {
       "name": "windows-msvc-x64-base",
@@ -89,7 +89,7 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/6.11.1/gcc_64"
+        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/gcc_64"
       }
     },
     {
@@ -112,7 +112,7 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/6.11.1/macos",
+        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/macos",
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64"
       }
     },

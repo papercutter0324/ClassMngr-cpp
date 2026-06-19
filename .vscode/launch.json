@@ -39,7 +39,7 @@
       "environment": [
         {
           "name": "PATH",
-          "value": "C:\\Qt\\6.11.1\\msvc2022_64\\bin;${env:PATH}"
+          "value": "D:\\Development\\Qt\\6.11.1\\msvc2022_64\\bin;${env:PATH}"
         }
       ],
       "console": "integratedTerminal",
@@ -49,14 +49,14 @@
       "name": "Run ClassMngr Windows MSVC Release",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/windows-msvc-release/Release/ClassMngr.exe",
+      "program": "${workspaceFolder}/build/windows-msvc-x64-release/Release/ClassMngr.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [
         {
           "name": "PATH",
-          "value": "C:\\Qt\\6.11.1\\msvc2022_64\\bin;${env:PATH}"
+          "value": "D:\\Development\\Qt\\6.11.1\\msvc2022_64\\bin;${env:PATH}"
         }
       ],
       "console": "integratedTerminal",

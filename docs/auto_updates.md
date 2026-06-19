@@ -48,12 +48,17 @@ cmake --preset macos-clang-release \
 ```
 
 The Windows release presets are intended to run on a Windows MSVC runner or VM.
-Set these Qt prefixes before running `scripts/build_release_windows.ps1`:
+For local Windows builds, Qt 6.11.1 is installed at `D:\Development\Qt\6.11.1`:
 
 ```powershell
-$env:QT_MSVC_X64_PREFIX="C:\Qt\6.11.1\win64_msvc2022_64"
-$env:QT_MSVC_ARM64_PREFIX="C:\Qt\6.11.1\win64_msvc2022_arm64_cross_compiled"
+$env:QT_MSVC_X64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_64"
+$env:QT_MSVC_ARM64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_arm64"
 ```
+
+VS Code supplies these values automatically, and
+`scripts/build_release_windows.ps1` uses them as defaults. Explicit environment
+variables still take precedence, which allows CI to use its runner-specific Qt
+installation under `C:\Qt`.
 
 `QT_MSVC_X86_PREFIX` is optional and should only be set when a compatible
 32-bit Qt MSVC kit is available.

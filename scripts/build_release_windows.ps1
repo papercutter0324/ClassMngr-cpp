@@ -1,6 +1,23 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+$defaultQtRoot = "D:\Development\Qt\6.11.1"
+
+function Set-QtPrefixDefault {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $value = [Environment]::GetEnvironmentVariable($Name)
+
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        [Environment]::SetEnvironmentVariable($Name, $Path)
+    }
+}
+
 function Require-QtPrefix {
     param(
         [Parameter(Mandatory = $true)]
@@ -17,6 +34,13 @@ function Require-QtPrefix {
         throw "$Name points to '$value', but that path does not exist."
     }
 }
+
+Set-QtPrefixDefault `
+    -Name "QT_MSVC_X64_PREFIX" `
+    -Path (Join-Path $defaultQtRoot "msvc2022_64")
+Set-QtPrefixDefault `
+    -Name "QT_MSVC_ARM64_PREFIX" `
+    -Path (Join-Path $defaultQtRoot "msvc2022_arm64")
 
 Require-QtPrefix -Name "QT_MSVC_X64_PREFIX"
 Require-QtPrefix -Name "QT_MSVC_ARM64_PREFIX"
