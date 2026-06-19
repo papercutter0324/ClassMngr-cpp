@@ -912,8 +912,8 @@ QWidget* SchedulePage::createScheduleLabel(
     label->setText(
         QStringLiteral(
             "<div style=\"text-align:center; line-height:1.25;\">"
-            "<div style=\"color:%1; font-size:12pt; font-weight:600;\">%2</div>"
-            "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%3</div>"
+            "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
+            "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%5</div>"
             "</div>"
             )
             .arg(
@@ -921,6 +921,12 @@ QWidget* SchedulePage::createScheduleLabel(
                     ? QStringLiteral("#000000")
                     : entry.fontColor
                 )
+            .arg(
+                FontManager::getKoreanFont()
+                    .family()
+                    .toHtmlEscaped()
+                )
+            .arg(FontManager::stdKoreanFont)
             .arg(escaped(koreanLine))
             .arg(escaped(englishLine))
         );
@@ -976,11 +982,17 @@ QWidget* SchedulePage::createMultiScheduleLabel(
         html +=
             QStringLiteral(
                 "<div style=\"margin-bottom:8px; text-align:center; line-height:1.2;\">"
-                "<div style=\"color:%1; font-size:12pt; font-weight:600;\">%2</div>"
-                "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%3</div>"
+                "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
+                "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%5</div>"
                 "</div>"
                 )
                 .arg(fontColor)
+                .arg(
+                    FontManager::getKoreanFont()
+                        .family()
+                        .toHtmlEscaped()
+                    )
+                .arg(FontManager::stdKoreanFont)
                 .arg(escaped(koreanLine))
                 .arg(escaped(englishLine));
     }

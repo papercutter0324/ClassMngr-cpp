@@ -8,9 +8,9 @@ namespace UiConstants
 
 namespace MainWindow
 {
-inline constexpr int SidebarMinWidth = 200;
+inline constexpr int SidebarMinWidth = 150;
 inline constexpr int SidebarMaxWidth = 400;
-inline constexpr int PagesMinWidth   = 600;
+inline constexpr int PagesMinWidth   = 800;
 }
 
 
@@ -101,7 +101,7 @@ inline constexpr int ColorButtonExtraWidth     = 10;
 inline constexpr int GradeMaxWidth            = 95;
 inline constexpr int StudentCountMaxWidth     = 110;
 inline constexpr int LevelComboExtraWidth     = 10;
-inline constexpr int EssayBookWidthReduction = 30;
+inline constexpr int EssayBookWidthReduction  = 30;
 
 inline constexpr int ColorColumnStretch        = 1;
 inline constexpr int GradeColumnStretch        = 1;

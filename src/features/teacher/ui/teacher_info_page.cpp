@@ -221,6 +221,9 @@ void TeacherInfoPage::buildUi()
     detailsGrid->setVerticalSpacing(4);
 
     m_teacherKrEdit = new QLineEdit;
+    m_teacherKrEdit->setFont(
+        FontManager::getKoreanFont()
+        );
     m_teacherEnEdit = new QLineEdit;
     m_roomNumberEdit = new QLineEdit;
 

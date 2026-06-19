@@ -1,4 +1,5 @@
 #include "teacher_info_section.h"
+#include "core/fontmanager.h"
 #include "features/teacher/ui/teacher_model.h"
 #include "ui/shared/constants/gui_constants.h"
 
@@ -45,6 +46,9 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         };
 
     m_teacherKrCombo = new NoWheelComboBox(this);
+    m_teacherKrCombo->setFont(
+        FontManager::getKoreanFont()
+        );
     m_teacherEnCombo = new NoWheelComboBox(this);
     m_model = new TeacherModel(this);
 

@@ -200,6 +200,10 @@ void ScheduleEditorDialog::buildUi()
     m_teacherKrEdit =
         new QLineEdit(this);
 
+    m_teacherKrEdit->setFont(
+        FontManager::getKoreanFont()
+        );
+
     m_teacherKrEdit->setReadOnly(true);
 
     m_roomNumberEdit =

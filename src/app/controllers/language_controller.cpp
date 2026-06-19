@@ -1,8 +1,11 @@
 #include "language_controller.h"
 
 #include "app/mainwindow.h"
+#include "core/fontmanager.h"
 #include "core/language_service.h"
 #include "ui/shared/actions/action_registry.h"
+
+#include <QApplication>
 
 LanguageController::LanguageController(
     LanguageService* languageService,
@@ -51,6 +54,14 @@ void LanguageController::changeLanguage(
     m_languageService->setLanguage(
         language
         );
+
+    if (qApp)
+    {
+        FontManager::applyGlobalFont(
+            *qApp,
+            m_languageService->loadedLocaleName()
+            );
+    }
 
     if (m_window)
     {

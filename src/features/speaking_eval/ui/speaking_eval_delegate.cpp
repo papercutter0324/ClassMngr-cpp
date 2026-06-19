@@ -251,6 +251,13 @@ QWidget* SpeakingEvalDelegate::createEditor(
     if (auto* lineEdit = qobject_cast<QLineEdit*>(editor))
     {
         lineEdit->setAlignment(Qt::AlignCenter);
+
+        if (column == SpeakingEvalColumn::KoreanName)
+        {
+            lineEdit->setFont(
+                FontManager::getKoreanFont()
+                );
+        }
     }
 
     return editor;
@@ -454,7 +461,9 @@ void SpeakingEvalDelegate::paint(
     }
 
     painter->setFont(
-        FontManager::getUiFont(12)
+        column == SpeakingEvalColumn::KoreanName
+            ? FontManager::getKoreanFont()
+            : FontManager::getUiFont(12)
         );
 
     QColor textColor =

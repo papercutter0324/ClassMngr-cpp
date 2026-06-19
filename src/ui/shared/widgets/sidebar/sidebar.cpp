@@ -2,6 +2,7 @@
 #include "sidebar_definitions.h"
 #include "sidebar_marquee_delegate.h"
 #include "sidebar_types.h"
+#include "core/fontmanager.h"
 
 #include <QDesktopServices>
 #include <QFontMetrics>
@@ -128,6 +129,12 @@ void Sidebar::setupUi()
 
     m_tree =
         new QTreeWidget(this);
+
+    m_tree->setFont(
+        FontManager::getUiFont(
+            FontManager::stdEnglishFont
+            )
+        );
 
     m_tree->setHeaderHidden(true);
 
@@ -779,14 +786,16 @@ bool Sidebar::isItemTextOverflowing(
         return false;
     }
 
-    const QFontMetrics metrics(
-        m_tree->font()
-        );
-
     const int textWidth =
-        metrics.horizontalAdvance(
-            item->text(0)
-            );
+        m_marqueeDelegate
+            ? m_marqueeDelegate->textWidth(
+                  item->text(0)
+                  )
+            : QFontMetrics(
+                  m_tree->font()
+                  ).horizontalAdvance(
+                      item->text(0)
+                      );
 
     const QRect itemRect =
         m_tree->visualItemRect(item);

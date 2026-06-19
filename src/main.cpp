@@ -71,7 +71,10 @@ int main(int argc, char *argv[])
     // Fonts
     // =====================================================
 
-    FontManager::applyGlobalFont(app);
+    FontManager::applyGlobalFont(
+        app,
+        languageService.loadedLocaleName()
+        );
     // FontManager::debugDump();
 
 

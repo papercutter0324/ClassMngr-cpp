@@ -1,6 +1,7 @@
 #include "campus_dashboard_page.h"
 
 #include "campus_dashboard_page_detail.h"
+#include "core/fontmanager.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -153,6 +154,12 @@ QWidget* CampusDashboardPage::createDirectionsTab()
 
     m_phoneKrEdit =
         new QLineEdit(m_directionsKoreanAddress.container);
+
+    const QFont koreanFont =
+        FontManager::getKoreanFont();
+
+    m_buildingKrEdit->setFont(koreanFont);
+    m_phoneKrEdit->setFont(koreanFont);
 
     m_lineEdits.append(m_buildingKrEdit);
     m_lineEdits.append(m_phoneKrEdit);
@@ -869,6 +876,13 @@ CampusDashboardPage::createAddressSection(
     section.complete =
         new QPlainTextEdit(section.container);
 
+    if (koreanAddress)
+    {
+        section.complete->setFont(
+            FontManager::getKoreanFont()
+            );
+    }
+
     section.complete->setReadOnly(true);
     section.complete->setMinimumWidth(280);
     section.complete->setLineWrapMode(QPlainTextEdit::WidgetWidth);
@@ -1029,6 +1043,29 @@ CampusDashboardPage::createAddressSection(
         section.line2,
         QStringLiteral("line2")
         );
+
+    if (koreanAddress)
+    {
+        const QFont koreanFont =
+            FontManager::getKoreanFont();
+
+        for (QLineEdit* edit : {
+                 section.buildingName,
+                 section.province,
+                 section.city,
+                 section.district,
+                 section.line1,
+                 section.line2,
+                 section.postalCode,
+                 section.note
+             })
+        {
+            if (edit)
+            {
+                edit->setFont(koreanFont);
+            }
+        }
+    }
 
     return section;
 }

@@ -34,6 +34,21 @@ QWidget* RosterItemDelegate::createEditor(
     if (auto* lineEdit = qobject_cast<QLineEdit*>(editor))
     {
         lineEdit->setAlignment(Qt::AlignCenter);
+
+        const auto* rosterModel =
+            qobject_cast<const RosterModel*>(
+                index.model()
+                );
+
+        if (
+            rosterModel
+            && index.column() == rosterModel->koreanNameColumn()
+            )
+        {
+            lineEdit->setFont(
+                FontManager::getKoreanFont()
+                );
+        }
     }
 
     return editor;
@@ -84,8 +99,19 @@ void RosterItemDelegate::paint(
             );
     }
 
+    const auto* rosterModel =
+        qobject_cast<const RosterModel*>(
+            index.model()
+            );
+
+    const bool koreanNameCell =
+        rosterModel
+        && index.column() == rosterModel->koreanNameColumn();
+
     painter->setFont(
-        FontManager::getUiFont(11)
+        koreanNameCell
+            ? FontManager::getKoreanFont()
+            : FontManager::getUiFont(11)
         );
 
     const QString text =
@@ -113,11 +139,6 @@ void RosterItemDelegate::paint(
         Qt::AlignCenter,
         elidedText
         );
-
-    const auto* rosterModel =
-        qobject_cast<const RosterModel*>(
-            index.model()
-            );
 
     if (
         rosterModel

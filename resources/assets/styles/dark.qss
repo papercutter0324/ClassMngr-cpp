@@ -54,7 +54,7 @@ QWidget[role="card"],
 QFrame#sectionCard,
 QWidget#sectionCard {
     background-color: #303030;
-    border: 1px solid #454545;
+    border: 2px solid #454545;
     border-radius: 8px;
 }
 
@@ -84,7 +84,7 @@ QDateTimeEdit,
 QWidget[role="input"] {
     background-color: #1e1e1e;
     color: #f0f0f0;
-    border: 1px solid #4b5563;
+    border: 2px solid #4b5563;
     border-radius: 6px;
     padding: 5px 8px;
 }
@@ -119,14 +119,13 @@ QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     background-color: #303030;
-    border-left: 1px solid #4b5563;
+    border-left: 2px solid #4b5563;
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
     width: 28px;
 }
 
 QComboBox {
-    margin-left: 1px;
     padding-right: 34px;
 }
 
@@ -152,7 +151,7 @@ QComboBox:disabled::drop-down {
 QComboBox QAbstractItemView {
     background-color: #252525;
     color: #f0f0f0;
-    border: 1px solid #4b5563;
+    border: 2px solid #4b5563;
     selection-background-color: #0a84ff;
     selection-color: #ffffff;
 }
@@ -160,7 +159,7 @@ QComboBox QAbstractItemView {
 QPushButton {
     background-color: #3a3a3a;
     color: #f0f0f0;
-    border: 1px solid #555555;
+    border: 2px solid #555555;
     border-radius: 6px;
     padding: 6px 12px;
     min-height: 24px;
@@ -185,7 +184,7 @@ QPushButton#primaryButton,
 QPushButton[role="primary"] {
     background-color: #0a84ff;
     color: #ffffff;
-    border: 1px solid #0a84ff;
+    border: 2px solid #0a84ff;
     font-weight: 600;
 }
 
@@ -210,7 +209,7 @@ QPushButton[role="primary"]:disabled {
 
 QPushButton[role="button_footer"] {
     background-color: #2f2f2f;
-    border: 1px solid #555555;
+    border: 2px solid #555555;
     border-radius: 6px;
     padding: 6px 12px;
     min-height: 28px;

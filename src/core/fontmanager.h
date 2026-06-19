@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 
+class FontManagerTests;
 
 
 // =========================================================
@@ -16,6 +17,8 @@
 class FontManager
 {
 public:
+    static constexpr int stdEnglishFont = 12;
+    static constexpr int stdKoreanFont = 13;
 
     // =====================================================
     // Setup
@@ -24,7 +27,8 @@ public:
     static void loadFonts();
 
     static void applyGlobalFont(
-        QApplication& app
+        QApplication& app,
+        const QString& localeName = QString()
         );
 
 
@@ -35,6 +39,12 @@ public:
 
     static QFont getUiFont(
         int size = -1,
+        int weight = QFont::Normal,
+        bool italic = false
+        );
+
+    static QFont getKoreanFont(
+        int size = stdKoreanFont,
         int weight = QFont::Normal,
         bool italic = false
         );
@@ -64,12 +74,21 @@ public:
 
 
 private:
+    friend class FontManagerTests;
 
     // =====================================================
     // Internal Helpers
     // =====================================================
 
     static void resolveCoreFamilies();
+
+    static QFont buildFont(
+        const QString& primaryFamily,
+        const QString& fallbackFamily,
+        int size,
+        int weight,
+        bool italic
+        );
 
 
 
@@ -87,13 +106,6 @@ private:
 
     static QStringList s_fontPaths;
 
-
-
-    // =====================================================
-    // Constants
-    // =====================================================
-
-    static constexpr int DEFAULT_SIZE = 12;
 };
 
 #endif // FONTMANAGER_H

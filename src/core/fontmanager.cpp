@@ -173,9 +173,9 @@ void FontManager::resolveCoreFamilies()
 int FontManager::getPlatformFontSize()
 {
 #ifdef Q_OS_MACOS
-    return DEFAULT_SIZE + 1;
+    return stdEnglishFont + 1;
 #else
-    return DEFAULT_SIZE;
+    return stdEnglishFont;
 #endif
 }
 
@@ -196,21 +196,80 @@ QFont FontManager::getUiFont(
         loadFonts();
     }
 
-    if (s_interFamily.isEmpty())
-    {
-        return QFont();
-    }
-
     if (size < 0)
     {
         size =
             getPlatformFontSize();
     }
 
-    QFont font(
+    return buildFont(
         s_interFamily,
-        size
+        s_pretendardFamily,
+        size,
+        weight,
+        italic
         );
+}
+
+
+
+// =========================================================
+// Korean UI Font
+// =========================================================
+
+QFont FontManager::getKoreanFont(
+    int size,
+    int weight,
+    bool italic
+    )
+{
+    if (!s_loaded)
+    {
+        loadFonts();
+    }
+
+    if (size < 0)
+    {
+        size = stdKoreanFont;
+    }
+
+    return buildFont(
+        s_pretendardFamily,
+        s_interFamily,
+        size,
+        weight,
+        italic
+        );
+}
+
+
+
+QFont FontManager::buildFont(
+    const QString& primaryFamily,
+    const QString& fallbackFamily,
+    int size,
+    int weight,
+    bool italic
+    )
+{
+    const QString resolvedPrimary =
+        !primaryFamily.isEmpty()
+            ? primaryFamily
+            : fallbackFamily;
+
+    QFont font;
+
+    if (!resolvedPrimary.isEmpty())
+    {
+        font = QFont(
+            resolvedPrimary,
+            size
+            );
+    }
+    else
+    {
+        font.setPointSize(size);
+    }
 
     font.setWeight(
         static_cast<QFont::Weight>(
@@ -225,15 +284,18 @@ QFont FontManager::getUiFont(
 
 
     // =====================================================
-    // Korean Fallback
+    // Fallback
     // =====================================================
 
-    if (!s_pretendardFamily.isEmpty())
+    if (
+        !fallbackFamily.isEmpty()
+        && fallbackFamily != resolvedPrimary
+        )
     {
         font.setFamilies(
             {
-                s_interFamily,
-                s_pretendardFamily
+                resolvedPrimary,
+                fallbackFamily
             });
     }
 
@@ -276,11 +338,20 @@ QFontMetrics FontManager::getFontMetrics(
 // =========================================================
 
 void FontManager::applyGlobalFont(
-    QApplication& app
+    QApplication& app,
+    const QString& localeName
     )
 {
+    const bool koreanLocale =
+        localeName.startsWith(
+            QStringLiteral("ko"),
+            Qt::CaseInsensitive
+            );
+
     const QFont font =
-        getUiFont();
+        koreanLocale
+            ? getKoreanFont()
+            : getUiFont();
 
     app.setFont(
         font
@@ -288,7 +359,8 @@ void FontManager::applyGlobalFont(
 
     qDebug()
         << "[FontManager] Global font applied:"
-        << font.family();
+        << font.family()
+        << font.pointSize();
 }
 
 

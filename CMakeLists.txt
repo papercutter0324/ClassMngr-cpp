@@ -219,8 +219,44 @@ if(BUILD_TESTING)
         COMMAND ClassMngrUpdaterTests
     )
 
+    qt_add_executable(ClassMngrFontManagerTests
+        tests/fontmanager_tests.cpp
+        src/core/fontmanager.cpp
+    )
+
+    target_compile_features(ClassMngrFontManagerTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrFontManagerTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrFontManagerTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrFontManagerTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrFontManagerTests
+        COMMAND ClassMngrFontManagerTests
+    )
+
     if(WIN32)
-        set_tests_properties(ClassMngrUpdaterTests PROPERTIES
+        set_tests_properties(
+            ClassMngrUpdaterTests
+            ClassMngrFontManagerTests
+            PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
         )

@@ -1,11 +1,159 @@
 #include "sidebar_marquee_delegate.h"
 
+#include "core/fontmanager.h"
+
 #include <QApplication>
 #include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyle>
+#include <QTextCharFormat>
+#include <QTextLayout>
 #include <QTreeWidget>
+#include <QtMath>
+
+#include <algorithm>
+
+namespace
+{
+bool isHangul(QChar character)
+{
+    const ushort value = character.unicode();
+
+    return (value >= 0x1100 && value <= 0x11ff)
+        || (value >= 0x3130 && value <= 0x318f)
+        || (value >= 0xa960 && value <= 0xa97f)
+        || (value >= 0xac00 && value <= 0xd7a3)
+        || (value >= 0xd7b0 && value <= 0xd7ff);
+}
+
+bool containsHangul(const QString& text)
+{
+    return std::ranges::any_of(
+        text,
+        [](QChar character)
+        {
+            return isHangul(character);
+        }
+        );
+}
+
+QList<QTextLayout::FormatRange> textFormats(
+    const QString& text,
+    const QColor& color
+    )
+{
+    QList<QTextLayout::FormatRange> formats;
+
+    QTextLayout::FormatRange baseRange;
+    baseRange.start = 0;
+    baseRange.length = text.size();
+    baseRange.format.setForeground(color);
+    formats.append(baseRange);
+
+    int start = -1;
+
+    const auto appendKoreanRange =
+        [&formats, &color](int rangeStart, int rangeEnd)
+    {
+        if (rangeStart < 0 || rangeEnd <= rangeStart)
+        {
+            return;
+        }
+
+        QTextLayout::FormatRange range;
+        range.start = rangeStart;
+        range.length = rangeEnd - rangeStart;
+        range.format.setFont(
+            FontManager::getKoreanFont()
+            );
+        range.format.setForeground(color);
+        formats.append(range);
+    };
+
+    for (int index = 0; index < text.size(); ++index)
+    {
+        if (isHangul(text.at(index)))
+        {
+            if (start < 0)
+            {
+                start = index;
+            }
+        }
+        else if (start >= 0)
+        {
+            appendKoreanRange(start, index);
+            start = -1;
+        }
+    }
+
+    appendKoreanRange(start, text.size());
+
+    return formats;
+}
+
+qreal formattedTextWidth(
+    const QString& text,
+    const QFont& baseFont
+    )
+{
+    QTextLayout layout(text, baseFont);
+    layout.setFormats(
+        textFormats(text, QColor(Qt::black))
+        );
+    layout.beginLayout();
+    QTextLine line = layout.createLine();
+
+    if (line.isValid())
+    {
+        line.setLineWidth(1000000.0);
+    }
+
+    layout.endLayout();
+
+    return line.isValid()
+        ? line.naturalTextWidth()
+        : 0.0;
+}
+
+void drawFormattedText(
+    QPainter* painter,
+    const QString& text,
+    const QFont& baseFont,
+    const QColor& color,
+    const QRect& textRect,
+    int x
+    )
+{
+    QTextLayout layout(text, baseFont);
+    layout.setFormats(
+        textFormats(text, color)
+        );
+    layout.beginLayout();
+    QTextLine line = layout.createLine();
+
+    if (line.isValid())
+    {
+        line.setLineWidth(1000000.0);
+    }
+
+    layout.endLayout();
+
+    if (!line.isValid())
+    {
+        return;
+    }
+
+    const qreal y =
+        textRect.top()
+        + (textRect.height() - line.height()) / 2.0;
+
+    layout.draw(
+        painter,
+        QPointF(x, y)
+        );
+}
+}
 
 SidebarMarqueeDelegate::SidebarMarqueeDelegate(
     QTreeWidget* tree,
@@ -55,6 +203,22 @@ void SidebarMarqueeDelegate::resetMarquee()
     updateIndex(oldIndex);
 }
 
+int SidebarMarqueeDelegate::textWidth(
+    const QString& text
+    ) const
+{
+    const QFont baseFont =
+        m_tree
+            ? m_tree->font()
+            : FontManager::getUiFont(
+                  FontManager::stdEnglishFont
+                  );
+
+    return qCeil(
+        formattedTextWidth(text, baseFont)
+        );
+}
+
 void SidebarMarqueeDelegate::paint(
     QPainter* painter,
     const QStyleOptionViewItem& option,
@@ -67,11 +231,12 @@ void SidebarMarqueeDelegate::paint(
     const QModelIndex hoveredIndex =
         m_hoveredIndex;
 
-    if (
-        !m_enabled
-        || hoveredIndex != index
-        || !isOverflowing(opt)
-        )
+    const bool scrolling =
+        m_enabled
+        && hoveredIndex == index
+        && isOverflowing(opt);
+
+    if (!scrolling && !containsHangul(opt.text))
     {
         QStyledItemDelegate::paint(
             painter,
@@ -116,10 +281,14 @@ void SidebarMarqueeDelegate::paint(
         return;
     }
 
-    const int textWidth =
-        opt.fontMetrics.horizontalAdvance(opt.text);
+    const int textWidth = qCeil(
+        formattedTextWidth(
+            opt.text,
+            opt.font
+            )
+        );
 
-    if (textWidth <= visibleTextRect.width())
+    if (scrolling && textWidth <= visibleTextRect.width())
     {
         return;
     }
@@ -128,10 +297,6 @@ void SidebarMarqueeDelegate::paint(
 
     painter->setClipRect(
         visibleTextRect
-        );
-
-    painter->setFont(
-        opt.font
         );
 
     const QPalette::ColorGroup colorGroup =
@@ -153,47 +318,56 @@ void SidebarMarqueeDelegate::paint(
             )
         );
 
-    Qt::Alignment alignment =
-        opt.displayAlignment;
-
-    if (!(alignment & Qt::AlignHorizontal_Mask))
-    {
-        alignment |= Qt::AlignLeft;
-    }
-
-    if (!(alignment & Qt::AlignVertical_Mask))
-    {
-        alignment |= Qt::AlignVCenter;
-    }
-
-    const int cycleWidth =
-        textWidth + ScrollGap;
-
+    const int cycleWidth = textWidth + ScrollGap;
     const int offset =
-        cycleWidth > 0
+        scrolling && cycleWidth > 0
             ? m_offset % cycleWidth
             : 0;
 
-    int x =
-        textRect.left() - offset;
+    int x = textRect.left() - offset;
 
-    while (x < visibleTextRect.right())
+    do
     {
-        painter->drawText(
-            QRect(
-                x,
-                textRect.top(),
-                textWidth,
-                textRect.height()
-                ),
-            alignment,
-            opt.text
+        drawFormattedText(
+            painter,
+            opt.text,
+            opt.font,
+            painter->pen().color(),
+            textRect,
+            x
             );
 
         x += cycleWidth;
     }
+    while (scrolling && x < visibleTextRect.right());
 
     painter->restore();
+}
+
+QSize SidebarMarqueeDelegate::sizeHint(
+    const QStyleOptionViewItem& option,
+    const QModelIndex& index
+    ) const
+{
+    QSize size =
+        QStyledItemDelegate::sizeHint(
+            option,
+            index
+            );
+
+    const int koreanTextHeight =
+        QFontMetrics(
+            FontManager::getKoreanFont()
+            ).height();
+
+    size.setHeight(
+        std::max(
+            size.height(),
+            koreanTextHeight + 6
+            )
+        );
+
+    return size;
 }
 
 bool SidebarMarqueeDelegate::eventFilter(
@@ -388,10 +562,10 @@ bool SidebarMarqueeDelegate::isOverflowing(
         return false;
     }
 
-    return option.fontMetrics.horizontalAdvance(
-               option.text
-               )
-           > visibleTextRect.width();
+    return formattedTextWidth(
+               option.text,
+               option.font
+               ) > visibleTextRect.width();
 }
 
 QRect SidebarMarqueeDelegate::clippedTextRect(
