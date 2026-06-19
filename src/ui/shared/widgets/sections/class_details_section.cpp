@@ -2,6 +2,7 @@
 
 #include <QSignalBlocker>
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -158,22 +159,22 @@ ClassDetailsSection::ClassDetailsSection(
     m_pendingClassColor = "#FFFFFF";
     m_pendingFontColor = "#000000";
 
-    m_gradeCombo = new QComboBox(this);
+    m_gradeCombo = new NoWheelComboBox(this);
     m_gradeCombo->setMaximumWidth(
         UiConstants::ClassInfo::Details::GradeMaxWidth
         );
     m_gradeCombo->addItem(QString());
     m_gradeCombo->addItems(ClassInfoConfig::Grades);
 
-    m_levelCombo = new QComboBox(this);
+    m_levelCombo = new NoWheelComboBox(this);
     m_studentCountEdit = new QLineEdit(this);
     m_studentCountEdit->setReadOnly(true);
     m_studentCountEdit->setMaximumWidth(
         UiConstants::ClassInfo::Details::StudentCountMaxWidth
         );
 
-    m_readingBookCombo = new QComboBox(this);
-    m_essayBookCombo = new QComboBox(this);
+    m_readingBookCombo = new NoWheelComboBox(this);
+    m_essayBookCombo = new NoWheelComboBox(this);
 
     m_colorButton =
         new QPushButton(this);

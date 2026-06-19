@@ -6,6 +6,7 @@
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -224,7 +225,7 @@ QWidget* SpeakingEvalDelegate::createEditor(
     if (SpeakingEval::isScoringColumn(column))
     {
         auto* editor =
-            new QComboBox(parent);
+            new NoWheelComboBox(parent);
 
         editor->setEditable(true);
         editor->addItems(

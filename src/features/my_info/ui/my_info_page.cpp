@@ -14,6 +14,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
 #include <QEvent>
 #include <QFont>
@@ -770,7 +771,7 @@ void MyInfoPage::buildMyInformationSection()
         );
 
     m_campusCombo =
-        new QComboBox(card);
+        new NoWheelComboBox(card);
 
     m_zoomLoginIdEdit =
         new QLineEdit(card);

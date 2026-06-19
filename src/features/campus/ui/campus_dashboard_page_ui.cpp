@@ -4,6 +4,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QFontMetrics>
 #include <QFormLayout>
 #include <QFrame>
@@ -1053,7 +1054,7 @@ void CampusDashboardPage::buildUi()
             );
 
     m_campusCombo =
-        new QComboBox(this);
+        new NoWheelComboBox(this);
 
     selectorLayout->addWidget(selectorLabel);
     selectorLayout->addWidget(m_campusCombo);

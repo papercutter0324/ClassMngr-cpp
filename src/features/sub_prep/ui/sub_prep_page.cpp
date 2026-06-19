@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QEvent>
 #include <QFont>
 #include <QFontMetrics>
@@ -1220,7 +1221,7 @@ void SubPrepPage::buildUi()
         );
 
     m_campusCombo =
-        new QComboBox(m_campusCard);
+        new NoWheelComboBox(m_campusCard);
     m_officeNumberEdit =
         new QLineEdit(m_campusCard);
     m_officeWifiEdit =

@@ -16,6 +16,7 @@
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -59,7 +60,7 @@ int chooseRecord(
             );
 
     auto* combo =
-        new QComboBox(&dialog);
+        new NoWheelComboBox(&dialog);
 
     combo->addItem(
         QString(),

@@ -8,6 +8,7 @@
 #include "core/utils/colorutils.h"
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -207,13 +208,13 @@ void ScheduleEditorDialog::buildUi()
     m_roomNumberEdit->setReadOnly(true);
 
     m_gradeCombo =
-        new QComboBox(this);
+        new NoWheelComboBox(this);
 
     m_gradeCombo->addItem(QString());
     m_gradeCombo->addItems(ClassInfoConfig::Grades);
 
     m_levelCombo =
-        new QComboBox(this);
+        new NoWheelComboBox(this);
 
     m_classColorPreview =
         new ClickableColorPreview(this);

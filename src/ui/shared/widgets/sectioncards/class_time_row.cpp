@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -138,7 +139,7 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     // Day
     // -------------------------
-    m_dayCombo = new QComboBox(this);
+    m_dayCombo = new NoWheelComboBox(this);
     m_dayCombo->addItems(ClassInfoConfig::Days);
     applyComboWidth(
         m_dayCombo,
@@ -162,7 +163,7 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     // Start time controls
     // -------------------------
-    m_startHourCombo = new QComboBox(this);
+    m_startHourCombo = new NoWheelComboBox(this);
     m_startHourCombo->addItems(
         type == ScheduleType::Regular
             ? ClassInfoConfig::RegularHours
@@ -179,7 +180,7 @@ ClassTimeRow::ClassTimeRow(
     if (m_startHourCombo->findText("4") >= 0)
         m_startHourCombo->setCurrentText("4");
 
-    m_startMinuteCombo = new QComboBox(this);
+    m_startMinuteCombo = new NoWheelComboBox(this);
     m_startMinuteCombo->addItems(ClassInfoConfig::StartMinutes);
     applyComboWidth(
         m_startMinuteCombo,
@@ -189,7 +190,7 @@ ClassTimeRow::ClassTimeRow(
         );
     m_startMinuteCombo->setCurrentText(":00");
 
-    m_startPeriodCombo = new QComboBox(this);
+    m_startPeriodCombo = new NoWheelComboBox(this);
     m_startPeriodCombo->addItems(periodOptions());
     applyComboWidth(
         m_startPeriodCombo,
@@ -205,7 +206,7 @@ ClassTimeRow::ClassTimeRow(
     // -------------------------
     // End + remove
     // -------------------------
-    m_endCombo = new QComboBox(this);
+    m_endCombo = new NoWheelComboBox(this);
     applyComboWidth(
         m_endCombo,
         endTimeWidthOptions(),

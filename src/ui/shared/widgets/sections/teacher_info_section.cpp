@@ -3,6 +3,7 @@
 #include "ui/shared/constants/gui_constants.h"
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -43,8 +44,8 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
             return label;
         };
 
-    m_teacherKrCombo = new QComboBox(this);
-    m_teacherEnCombo = new QComboBox(this);
+    m_teacherKrCombo = new NoWheelComboBox(this);
+    m_teacherEnCombo = new NoWheelComboBox(this);
     m_model = new TeacherModel(this);
 
     m_roomNumberEdit = new QLineEdit(this);

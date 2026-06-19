@@ -10,6 +10,7 @@
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QComboBox>
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
@@ -281,7 +282,7 @@ void TeacherInfoPage::buildUi()
 
     m_wifiNameEdit = new QLineEdit;
     m_wifiPasswordEdit = new QLineEdit;
-    m_internetTypeCombo = new QComboBox;
+    m_internetTypeCombo = new NoWheelComboBox;
     m_internetTypeCombo->addItems(
         {
             QStringLiteral("WiFi"),
@@ -292,7 +293,7 @@ void TeacherInfoPage::buildUi()
 
     m_zoomIdEdit = new QLineEdit;
     m_zoomPasswordEdit = new QLineEdit;
-    m_projectionTypeCombo = new QComboBox;
+    m_projectionTypeCombo = new NoWheelComboBox;
     m_projectionTypeCombo->addItems(
         {
             QStringLiteral("HDMI"),
