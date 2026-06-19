@@ -23,6 +23,8 @@ ClassMngr/
       checksums.txt
       windows/
         ClassMngr-0.1.1-win-x64.exe
+        ClassMngr-0.1.1-win-arm64.exe
+        ClassMngr-0.1.1-win-x86.exe  # optional
       macos/
         ClassMngr-0.1.1-macos-universal.dmg
       linux/
@@ -45,6 +47,17 @@ cmake --preset macos-clang-release \
   -DCLASSMNGR_UPDATE_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----"
 ```
 
+The Windows release presets are intended to run on a Windows MSVC runner or VM.
+Set these Qt prefixes before running `scripts/build_release_windows.ps1`:
+
+```powershell
+$env:QT_MSVC_X64_PREFIX="C:\Qt\6.11.1\win64_msvc2022_64"
+$env:QT_MSVC_ARM64_PREFIX="C:\Qt\6.11.1\win64_msvc2022_arm64_cross_compiled"
+```
+
+`QT_MSVC_X86_PREFIX` is optional and should only be set when a compatible
+32-bit Qt MSVC kit is available.
+
 `CLASSMNGR_UPDATE_REQUIRE_SIGNATURE` defaults to `ON`. With that default,
 ClassMngr refuses to parse update URLs unless the manifest signature verifies
 with the embedded public key.
@@ -65,6 +78,12 @@ Use strict `x.x.x` versions.
     "windows-x64": {
       "url": "https://example.com/ClassMngr-0.1.1-win-x64.exe",
       "fileName": "ClassMngr-0.1.1-win-x64.exe",
+      "sha256": "64 lowercase hex characters",
+      "sizeBytes": 12345678
+    },
+    "windows-arm64": {
+      "url": "https://example.com/ClassMngr-0.1.1-win-arm64.exe",
+      "fileName": "ClassMngr-0.1.1-win-arm64.exe",
       "sha256": "64 lowercase hex characters",
       "sizeBytes": 12345678
     },

@@ -20,49 +20,60 @@
     },
 
     {
-      "name": "windows-msvc-debug",
-      "displayName": "Windows MSVC Debug",
+      "name": "windows-msvc-base",
+      "hidden": true,
       "inherits": "base",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Visual Studio 18 2026",
+      "generator": "Visual Studio 17 2022"
+    },
+    {
+      "name": "windows-msvc-x64-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
       "architecture": {
         "value": "x64",
         "strategy": "set"
       },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "C:/Qt/6.11.1/msvc2022_64"
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X64_PREFIX}"
       }
     },
     {
-      "name": "windows-msvc-release",
+      "name": "windows-msvc-x64-debug",
+      "displayName": "Windows MSVC x64 Debug",
+      "inherits": "windows-msvc-x64-base"
+    },
+    {
+      "name": "windows-msvc-x64-release",
       "displayName": "Windows MSVC x64 Release",
-      "inherits": "windows-msvc-debug",
+      "inherits": "windows-msvc-x64-base"
+    },
+    {
+      "name": "windows-msvc-arm64-release",
+      "displayName": "Windows MSVC ARM64 Release",
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "ARM64",
+        "strategy": "set"
+      },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_ARM64_PREFIX}"
       }
     },
     {
-      "name": "windows-msvc-x86-release",
-      "displayName": "Windows MSVC x86 Release",
-      "description": "Requires QT_MSVC_X86_PREFIX to point at a 32-bit Qt MSVC installation.",
-      "inherits": "base",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      },
-      "generator": "Visual Studio 18 2026",
+      "name": "windows-msvc-x86-release-optional",
+      "displayName": "Windows MSVC x86 Release Optional",
+      "description": "Optional best-effort target. Requires QT_MSVC_X86_PREFIX to point at a compatible 32-bit Qt MSVC installation.",
+      "inherits": "windows-msvc-base",
       "architecture": {
         "value": "Win32",
         "strategy": "set"
       },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X86_PREFIX}"
       }
     },
@@ -117,17 +128,23 @@
 
   "buildPresets": [
     {
-      "name": "windows-msvc-debug",
-      "configurePreset": "windows-msvc-debug"
+      "name": "windows-msvc-x64-debug",
+      "configurePreset": "windows-msvc-x64-debug",
+      "configuration": "Debug"
     },
     {
-      "name": "windows-msvc-release",
-      "configurePreset": "windows-msvc-release",
+      "name": "windows-msvc-x64-release",
+      "configurePreset": "windows-msvc-x64-release",
       "configuration": "Release"
     },
     {
-      "name": "windows-msvc-x86-release",
-      "configurePreset": "windows-msvc-x86-release",
+      "name": "windows-msvc-arm64-release",
+      "configurePreset": "windows-msvc-arm64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-msvc-x86-release-optional",
+      "configurePreset": "windows-msvc-x86-release-optional",
       "configuration": "Release"
     },
     {
@@ -176,6 +193,51 @@
         {
           "type": "build",
           "name": "macos-clang-release"
+        }
+      ]
+    },
+    {
+      "name": "windows-msvc-x64-release-artifacts",
+      "displayName": "Windows MSVC x64 Release Artifacts",
+      "description": "Configure and build the Windows x64 release artifact.",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-msvc-x64-release"
+        },
+        {
+          "type": "build",
+          "name": "windows-msvc-x64-release"
+        }
+      ]
+    },
+    {
+      "name": "windows-msvc-arm64-release-artifacts",
+      "displayName": "Windows MSVC ARM64 Release Artifacts",
+      "description": "Configure and build the Windows ARM64 release artifact.",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-msvc-arm64-release"
+        },
+        {
+          "type": "build",
+          "name": "windows-msvc-arm64-release"
+        }
+      ]
+    },
+    {
+      "name": "windows-msvc-x86-release-artifacts",
+      "displayName": "Windows MSVC x86 Release Artifacts",
+      "description": "Optionally configure and build the Windows x86 release artifact when a compatible Qt kit is available.",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "windows-msvc-x86-release-optional"
+        },
+        {
+          "type": "build",
+          "name": "windows-msvc-x86-release-optional"
         }
       ]
     }

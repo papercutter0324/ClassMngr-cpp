@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>
+#include <QStringList>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTest>
@@ -88,6 +89,54 @@ QByteArray manifestJson(
         );
 
     return QJsonDocument(manifest).toJson(
+        QJsonDocument::Compact
+        );
+}
+
+QByteArray manifestJsonForPlatforms(
+    const QStringList& platformKeys
+    )
+{
+    QJsonObject platforms;
+
+    for (const QString& platformKey : platformKeys)
+    {
+        QJsonObject artifact;
+        artifact.insert(
+            QStringLiteral("url"),
+            QStringLiteral("https://example.com/%1/ClassMngr.exe")
+                .arg(platformKey)
+            );
+        artifact.insert(
+            QStringLiteral("fileName"),
+            QStringLiteral("ClassMngr-%1.exe")
+                .arg(platformKey)
+            );
+        artifact.insert(
+            QStringLiteral("sha256"),
+            QString(64, QLatin1Char('a'))
+            );
+        artifact.insert(
+            QStringLiteral("sizeBytes"),
+            123
+            );
+
+        platforms.insert(
+            platformKey,
+            artifact
+            );
+    }
+
+    QJsonObject root =
+        QJsonDocument::fromJson(
+            manifestJson()
+            ).object();
+    root.insert(
+        QStringLiteral("platforms"),
+        platforms
+        );
+
+    return QJsonDocument(root).toJson(
         QJsonDocument::Compact
         );
 }
@@ -189,6 +238,7 @@ private slots:
     void manifestRejectsInvalidFields();
     void manifestRequiresCurrentPlatform();
     void manifestSelectsPlatformArtifact();
+    void manifestSelectsWindowsArm64BeforeX64Fallback();
     void downloaderRejectsChecksumMismatch();
 };
 
@@ -296,6 +346,59 @@ void UpdaterTests::manifestSelectsPlatformArtifact()
     QVERIFY(artifact.has_value());
     QCOMPARE(
         artifact->platformKey,
+        QStringLiteral("windows-x64")
+        );
+}
+
+void UpdaterTests::manifestSelectsWindowsArm64BeforeX64Fallback()
+{
+    const QStringList windowsArm64Keys = {
+        QStringLiteral("windows-arm64"),
+        QStringLiteral("windows-x64")
+    };
+
+    const auto nativeManifest =
+        UpdateManifest::fromJson(
+            manifestJsonForPlatforms(
+                {
+                    QStringLiteral("windows-x64"),
+                    QStringLiteral("windows-arm64")
+                }
+                ),
+            windowsArm64Keys
+            );
+
+    QVERIFY(nativeManifest.has_value());
+
+    const auto nativeArtifact =
+        nativeManifest->artifactForAny(
+            windowsArm64Keys
+            );
+
+    QVERIFY(nativeArtifact.has_value());
+    QCOMPARE(
+        nativeArtifact->platformKey,
+        QStringLiteral("windows-arm64")
+        );
+
+    const auto fallbackManifest =
+        UpdateManifest::fromJson(
+            manifestJsonForPlatforms(
+                {QStringLiteral("windows-x64")}
+                ),
+            windowsArm64Keys
+            );
+
+    QVERIFY(fallbackManifest.has_value());
+
+    const auto fallbackArtifact =
+        fallbackManifest->artifactForAny(
+            windowsArm64Keys
+            );
+
+    QVERIFY(fallbackArtifact.has_value());
+    QCOMPARE(
+        fallbackArtifact->platformKey,
         QStringLiteral("windows-x64")
         );
 }

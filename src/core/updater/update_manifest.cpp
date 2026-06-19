@@ -60,6 +60,15 @@ QString architectureKey()
         return QStringLiteral("arm64");
     }
 
+    if (
+        arch == QStringLiteral("i386")
+        || arch == QStringLiteral("i686")
+        || arch == QStringLiteral("x86")
+        )
+    {
+        return QStringLiteral("x86");
+    }
+
     return arch;
 }
 
@@ -329,10 +338,18 @@ QStringList UpdateManifest::currentPlatformKeys()
         architectureKey();
 
 #if defined(Q_OS_WIN)
-    return {
-        QStringLiteral("windows-%1").arg(arch),
-        QStringLiteral("windows-x64")
+    QStringList keys = {
+        QStringLiteral("windows-%1").arg(arch)
     };
+
+    if (arch == QStringLiteral("arm64"))
+    {
+        keys.append(
+            QStringLiteral("windows-x64")
+            );
+    }
+
+    return keys;
 #elif defined(Q_OS_MACOS)
     return {
         QStringLiteral("macos-universal"),
