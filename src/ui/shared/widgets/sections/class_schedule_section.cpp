@@ -3,7 +3,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
-#include "ui/shared/widgets/sectioncards/class_info_section_card.h"
+#include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
 #include "features/classes/config/class_info_config.h"
 
@@ -17,6 +17,7 @@
 #include <QVBoxLayout>
 #include <QVariantList>
 
+#include <algorithm>
 #include <utility>
 
 namespace
@@ -58,26 +59,58 @@ QLabel* createScheduleSubtitle(
     return label;
 }
 
-int dayHeaderWidth()
+int comboWidthForTexts(
+    const QStringList& texts,
+    int preferredWidth = 0
+    )
 {
-    QComboBox probe;
-    probe.addItems(ClassInfoConfig::Days);
+    NoWheelComboBox probe;
+    probe.addItems(texts);
 
-    return WidgetSizing::comboMinimumWidthForTexts(
+    const int minimumWidth = WidgetSizing::comboMinimumWidthForTexts(
         &probe,
-        ClassInfoConfig::Days,
+        texts,
         UiConstants::ClassInfo::TextWidthPadding
         );
+
+    return std::max(preferredWidth, minimumWidth);
 }
 
-int startTimeHeaderWidth()
+int dayHeaderWidth()
 {
-    return UiConstants::ClassInfo::TimeRow::StartComboWidth
+    return comboWidthForTexts(ClassInfoConfig::Days);
+}
+
+QStringList periodOptions()
+{
+    return {
+        QStringLiteral("PM"),
+        QStringLiteral("AM")
+    };
+}
+
+int startTimeHeaderWidth(ScheduleType type)
+{
+    const QStringList hours =
+        type == ScheduleType::Regular
+            ? ClassInfoConfig::RegularHours
+            : ClassInfoConfig::IntensiveHours;
+
+    return comboWidthForTexts(
+            hours,
+            UiConstants::ClassInfo::TimeRow::StartComboWidth
+            )
         + UiConstants::ClassInfo::TimeRow::StartLayoutSpacing
-        + UiConstants::ClassInfo::TimeRow::StartComboWidth
-        + UiConstants::ClassInfo::TimeRow::MinuteComboExtraWidth
+        + comboWidthForTexts(
+            ClassInfoConfig::StartMinutes,
+            UiConstants::ClassInfo::TimeRow::StartComboWidth
+                + UiConstants::ClassInfo::TimeRow::MinuteComboExtraWidth
+            )
         + UiConstants::ClassInfo::TimeRow::StartLayoutSpacing
-        + UiConstants::ClassInfo::TimeRow::StartComboWidth;
+        + comboWidthForTexts(
+            periodOptions(),
+            UiConstants::ClassInfo::TimeRow::StartComboWidth
+            );
 }
 
 QFrame* createScheduleSeparator(
@@ -139,18 +172,11 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
     : QWidget(parent)
 {
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(
-        UiConstants::ClassInfo::Schedule::OuterMargin,
-        UiConstants::ClassInfo::Schedule::OuterMargin,
-        UiConstants::ClassInfo::Schedule::OuterMargin,
-        UiConstants::ClassInfo::Schedule::OuterMargin
-        );
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(
-        UiConstants::ClassInfo::Schedule::OuterMargin
+        UiConstants::ClassInfo::SectionCard::Spacing
         );
-
-    m_timesCard = new SectionCard(tr("Class Times"), this);
-    auto* cardLayout = m_timesCard->contentLayout();
+    layout->setSizeConstraint(QLayout::SetMinimumSize);
 
     m_regularGrid = new QGridLayout();
     m_intensiveGrid = new QGridLayout();
@@ -159,7 +185,7 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
     configureScheduleGrid(m_intensiveGrid);
 
     m_regularGrid->addWidget(
-        createScheduleHeader(m_timesCard),
+        createScheduleHeader(this, ScheduleType::Regular),
         0,
         0,
         1,
@@ -167,15 +193,15 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
         );
 
     m_intensiveGrid->addWidget(
-        createScheduleHeader(m_timesCard),
+        createScheduleHeader(this, ScheduleType::Intensive),
         0,
         0,
         1,
         UiConstants::ClassInfo::Schedule::RowColumnSpan
         );
 
-    m_addRegularButton = new QPushButton(tr("+ Add Time"), m_timesCard);
-    m_addIntensiveButton = new QPushButton(tr("+ Add Intensive Time"), m_timesCard);
+    m_addRegularButton = new QPushButton(tr("+ Add Time"), this);
+    m_addIntensiveButton = new QPushButton(tr("+ Add Intensive Time"), this);
 
     m_addRegularButton->setFixedWidth(
         UiConstants::ClassInfo::Schedule::AddButtonFixedWidth
@@ -192,44 +218,44 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
         addRow(m_intensiveGrid, m_intensiveRows, ScheduleType::Intensive);
     });
 
-    cardLayout->addWidget(
+    layout->addWidget(
         m_regularSubtitle =
             createScheduleSubtitle(
-                m_timesCard,
+                this,
                 tr("Regular Schedule")
                 )
         );
-    cardLayout->addLayout(m_regularGrid);
-    cardLayout->addWidget(
+    layout->addLayout(m_regularGrid);
+    layout->addWidget(
         m_addRegularButton,
         0,
         Qt::AlignLeft
         );
-    cardLayout->addWidget(
-        createScheduleSeparator(m_timesCard)
+    layout->addWidget(
+        createScheduleSeparator(this)
         );
-    cardLayout->addWidget(
+    layout->addWidget(
         m_intensiveSubtitle =
             createScheduleSubtitle(
-                m_timesCard,
+                this,
                 tr("Intensive Schedule")
                 )
         );
-    cardLayout->addLayout(m_intensiveGrid);
-    cardLayout->addWidget(
+    layout->addLayout(m_intensiveGrid);
+    layout->addWidget(
         m_addIntensiveButton,
         0,
         Qt::AlignLeft
         );
-
-    layout->addWidget(m_timesCard);
 }
 
 QWidget* ClassScheduleSection::createScheduleHeader(
-    QWidget* parent
+    QWidget* parent,
+    ScheduleType type
     )
 {
     auto* header = new QWidget(parent);
+    header->setObjectName("scheduleHeader");
 
     auto* layout = new QGridLayout(header);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -254,7 +280,7 @@ QWidget* ClassScheduleSection::createScheduleHeader(
         dayHeaderWidth()
         );
     startLabel->setMinimumWidth(
-        startTimeHeaderWidth()
+        startTimeHeaderWidth(type)
         );
     endLabel->setMinimumWidth(
         UiConstants::ClassInfo::TimeRow::EndComboWidth
@@ -295,13 +321,6 @@ QWidget* ClassScheduleSection::createScheduleHeader(
 
 void ClassScheduleSection::retranslateUi()
 {
-    if (m_timesCard)
-    {
-        m_timesCard->setTitle(
-            tr("Class Times")
-            );
-    }
-
     if (m_regularSubtitle)
     {
         m_regularSubtitle->setText(

@@ -117,7 +117,6 @@ namespace Schedule
 {
 inline constexpr int HorizontalSpacing = MinimumInterItemSpacing;
 inline constexpr int VerticalSpacing   = 4;
-inline constexpr int OuterMargin       = 0;
 inline constexpr int SubtitleFontSize  = 12;
 
 inline constexpr int DayColumnStretch       = 1;
@@ -139,7 +138,7 @@ inline constexpr int MinuteComboExtraWidth = 10;
 inline constexpr int EndComboWidth         = 120;
 inline constexpr int RemoveButtonWidth     = 90;
 
-inline constexpr int StartLayoutSpacing = 4;
+inline constexpr int StartLayoutSpacing = 8;
 inline constexpr int HorizontalSpacing  = MinimumInterItemSpacing;
 inline constexpr int VerticalSpacing    = 0;
 

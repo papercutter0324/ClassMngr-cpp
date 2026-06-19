@@ -24,6 +24,12 @@ QLabel {
     background: transparent;
 }
 
+QWidget#scheduleHeader,
+QWidget#classTimeRow,
+QWidget#startTimeControls {
+    background: transparent;
+}
+
 QLabel#pageTitle {
     color: #101828;
     font-size: 24pt;
@@ -120,6 +126,7 @@ QComboBox::drop-down {
 }
 
 QComboBox {
+    margin-left: 1px;
     padding-right: 34px;
 }
 

@@ -11,7 +11,6 @@ class QGridLayout;
 class QLabel;
 class QPushButton;
 class ClassTimeRow;
-class SectionCard;
 
 class ClassScheduleSection : public QWidget
 {
@@ -60,7 +59,8 @@ private:
 
     void connectRowSignals(ClassTimeRow* row);
     QWidget* createScheduleHeader(
-        QWidget* parent
+        QWidget* parent,
+        ScheduleType type
         );
     void retranslateScheduleHeaders();
 
@@ -74,7 +74,6 @@ private:
         );
 
 private:
-    SectionCard* m_timesCard = nullptr;
     QLabel* m_regularSubtitle = nullptr;
     QLabel* m_intensiveSubtitle = nullptr;
 

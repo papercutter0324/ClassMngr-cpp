@@ -225,10 +225,17 @@ void ClassInfoPage::buildUi()
         m_detailsSection
         );
 
-    m_scheduleSection =
-        new ClassScheduleSection(this);
+    m_scheduleCard =
+        addSectionCard(
+            m_scrollContentLayout,
+            tr("Class Times"),
+            m_scrollContent
+            );
 
-    m_scrollContentLayout->addWidget(
+    m_scheduleSection =
+        new ClassScheduleSection(m_scheduleCard);
+
+    m_scheduleCard->contentLayout()->addWidget(
         m_scheduleSection
         );
 
@@ -648,6 +655,13 @@ void ClassInfoPage::retranslateUi()
     {
         m_detailsCard->setTitle(
             tr("Class Details")
+            );
+    }
+
+    if (m_scheduleCard)
+    {
+        m_scheduleCard->setTitle(
+            tr("Class Times")
             );
     }
 

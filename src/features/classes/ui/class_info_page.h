@@ -80,6 +80,7 @@ private:
 
     SectionCard* m_teacherCard{nullptr};
     SectionCard* m_detailsCard{nullptr};
+    SectionCard* m_scheduleCard{nullptr};
 
     TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};

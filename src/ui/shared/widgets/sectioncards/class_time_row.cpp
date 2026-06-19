@@ -136,6 +136,8 @@ ClassTimeRow::ClassTimeRow(
     : QWidget(parent)
     , m_type(type)
 {
+    setObjectName("classTimeRow");
+
     // -------------------------
     // Day
     // -------------------------
@@ -152,6 +154,7 @@ ClassTimeRow::ClassTimeRow(
     // Start widget container
     // -------------------------
     m_startWidget = new QWidget(this);
+    m_startWidget->setObjectName("startTimeControls");
     m_startWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
 
     auto* startLayout = new QHBoxLayout(m_startWidget);
@@ -202,6 +205,7 @@ ClassTimeRow::ClassTimeRow(
     startLayout->addWidget(m_startHourCombo);
     startLayout->addWidget(m_startMinuteCombo);
     startLayout->addWidget(m_startPeriodCombo);
+    startLayout->setSizeConstraint(QLayout::SetMinimumSize);
 
     // -------------------------
     // End + remove
@@ -277,6 +281,7 @@ ClassTimeRow::ClassTimeRow(
         4,
         UiConstants::ClassInfo::TimeRow::FillerColumnStretch
         );
+    layout->setSizeConstraint(QLayout::SetMinimumSize);
 
     updateEndTimes();
 }
