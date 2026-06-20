@@ -788,54 +788,64 @@
 <context>
     <name>CampusDashboardPage</name>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="82"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="90"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="169"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1185"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="83"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="91"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="170"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1189"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="95"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="183"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1190"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="96"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="184"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1194"/>
         <source>Directions</source>
         <translation>Directions</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="100"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="197"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1195"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="101"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="198"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1199"/>
         <source>Housing</source>
         <translation>Housing</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="105"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="211"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1200"/>
-        <source>Map</source>
-        <translation>Map</translation>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="106"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="212"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1204"/>
+        <source>Maps</source>
+        <translation>Maps</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="230"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="231"/>
         <source>Save Campus *</source>
         <translation>Save Campus *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="355"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="374"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="649"/>
+        <source>Open in Naver Maps</source>
+        <translation>Open in Naver Maps</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="670"/>
+        <source>Open in Kakao Map</source>
+        <translation>Open in Kakao Map</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="356"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="419"/>
         <source>Saving...</source>
         <translation>Saving...</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="367"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="370"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="368"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="415"/>
         <source>Unsaved changes</source>
         <translation>Unsaved changes</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="363"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="899"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="903"/>
         <source>Show Classic</source>
         <translation>Show Classic</translation>
     </message>
@@ -851,56 +861,76 @@
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="410"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="499"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="544"/>
         <source>%1 (%2)</source>
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="280"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="281"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="542"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="168"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="368"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="95"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="376"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="96"/>
         <source>Show Korean</source>
         <translation>Show Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="281"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="282"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="543"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="369"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="377"/>
         <source>Show English</source>
         <translation>Show English</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="208"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="288"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="255"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="335"/>
         <source>Default</source>
         <translation>Default</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="222"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="227"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1133"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="223"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="274"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1137"/>
         <source>New Campus</source>
         <translation>New Campus</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="257"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="304"/>
         <source>New campus</source>
         <translation>New campus</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="279"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="326"/>
         <source>Campus data could not be prepared.</source>
         <translation>Campus data could not be prepared.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="439"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="484"/>
         <source>Saved</source>
         <translation>Saved</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="288"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="561"/>
+        <source>Campus</source>
+        <translation>Campus</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="585"/>
+        <source>Housing %1</source>
+        <translation>Housing %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="739"/>
+        <source>Unable to Open Map</source>
+        <translation>Unable to Open Map</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="740"/>
+        <source>The map link could not be opened.</source>
+        <translation>The map link could not be opened.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="289"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="176"/>
         <source>Remove</source>
         <translation>Remove</translation>
@@ -911,153 +941,170 @@
         <translation>Housing Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="108"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="109"/>
         <source>Campus Name:</source>
         <translation>Campus Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="132"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="170"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="949"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="133"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="171"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="953"/>
         <source>Building Name:</source>
         <translation>Building Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="139"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="177"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="140"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="178"/>
         <source>Phone Number:</source>
         <translation>Phone Number:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="205"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="206"/>
         <source>Transit Steps:</source>
         <translation>Transit Steps:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="213"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="214"/>
         <source>Upon Arriving:</source>
         <translation>Upon Arriving:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="311"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="312"/>
         <source>Office Number:</source>
         <translation>Office Number:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="317"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="318"/>
         <source>Office WiFi:</source>
         <translation>Office WiFi:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="323"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="324"/>
         <source>WiFi Password:</source>
         <translation>WiFi Password:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="329"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="330"/>
         <source>Printer Name:</source>
         <translation>Printer Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="335"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="336"/>
         <source>Printer Installation Steps:</source>
         <translation>Printer Installation Steps:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="252"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="259"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="370"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="443"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="253"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="260"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="371"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="444"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="388"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="389"/>
         <source>Printer Driver URL:</source>
         <translation>Printer Driver URL:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="459"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="460"/>
         <source>Photocopier Code:</source>
         <translation>Photocopier Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="245"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="534"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="246"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="535"/>
         <source>No housing information available</source>
         <translation>No housing information available</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="238"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="548"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="239"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="549"/>
         <source>Add Housing Location</source>
         <translation>Add Housing Location</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="591"/>
         <source>Image Path:</source>
-        <translation>Image Path:</translation>
+        <translation type="vanished">Image Path:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="609"/>
         <source>Preview:</source>
-        <translation>Preview:</translation>
+        <translation type="vanished">Preview:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="928"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="932"/>
         <source>Complete Address:</source>
         <translation>Complete Address:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="959"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="963"/>
         <source>Province:</source>
         <translation>Province:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="965"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="969"/>
         <source>City:</source>
         <translation>City:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="971"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="975"/>
         <source>District:</source>
         <translation>District:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="977"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="981"/>
         <source>Address Line 1:</source>
         <translation>Address Line 1:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="983"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="987"/>
         <source>Address Line 2:</source>
         <translation>Address Line 2:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="989"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="993"/>
         <source>Postal Code:</source>
         <translation>Postal Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="995"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="999"/>
         <source>Note:</source>
         <translation>Note:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1089"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1093"/>
         <source>Campus:</source>
         <translation>Campus:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1103"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1107"/>
         <source>Campus Code:</source>
         <translation>Campus Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="231"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1139"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="232"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1143"/>
         <source>Save Campus</source>
         <translation>Save Campus</translation>
+    </message>
+</context>
+<context>
+    <name>CampusMapPreview</name>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
+        <source>Map View</source>
+        <translation>Map View</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
+        <source>Building View</source>
+        <translation>Building View</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="225"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="332"/>
+        <source>No map images available</source>
+        <translation>No map images available</translation>
     </message>
 </context>
 <context>
@@ -1646,37 +1693,31 @@
         <source>Housing</source>
         <translation type="vanished">Housing</translation>
     </message>
-    <message>
-        <source>Map</source>
-        <translation type="vanished">Map</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="653"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="739"/>
         <source>Unable to open campus file for writing:
 %1</source>
         <translation>Unable to open campus file for writing:
 %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="669"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="755"/>
         <source>Unable to save campus file:
 %1</source>
         <translation>Unable to save campus file:
 %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="756"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="842"/>
         <source>Unable to create campus data directory.</source>
         <translation>Unable to create campus data directory.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="27"/>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
         <source>No map available</source>
-        <translation>No map available</translation>
+        <translation type="vanished">No map available</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="179"/>
@@ -1854,8 +1895,8 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="169"/>
-        <source>Map</source>
-        <translation>Map</translation>
+        <source>Maps</source>
+        <translation>Maps</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="189"/>

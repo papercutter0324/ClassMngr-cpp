@@ -23,6 +23,9 @@ struct CampusInfo
     QStringList transitSteps;
     QString arrivalInfo;
     QString imageMain;
+    QStringList mapImagePaths;
+    QString naverMapUrl;
+    QString kakaoMapUrl;
 
     QString officeWifi;
     QString officeWifiPassword;

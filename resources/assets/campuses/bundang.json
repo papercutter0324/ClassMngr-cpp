@@ -140,11 +140,31 @@
                 "postal_code": "13595",
                 "province": "경기도"
             },
+            "map": {
+                "images": [
+                    ":/assets/campuses/bundang/cheonggu_map.png",
+                    ":/assets/campuses/bundang/cheonggu_building.png"
+                ],
+                "links": {
+                    "kakao": "https://map.kakao.com/?map_type=TYPE_MAP&itemId=7993902",
+                    "naver": "https://map.naver.com/p/entry/place/19224316"
+                }
+            },
             "name": "Cheonggu Blueville"
         }
     ],
     "id": "bundang",
     "image_main": "",
+    "map": {
+        "images": [
+            ":/assets/campuses/bundang/bundang_map.png",
+            ":/assets/campuses/bundang/bundang_building.png"
+        ],
+        "links": {
+            "kakao": "https://place.map.kakao.com/12327306",
+            "naver": "https://map.naver.com/p/entry/place/37093029"
+        }
+    },
     "office_number": "418",
     "office_wifi": "Native Room_5G",
     "office_wifi_password": "dyb418000",

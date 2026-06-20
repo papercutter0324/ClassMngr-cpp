@@ -63,6 +63,12 @@ qt_add_executable(ClassMngr
 
 include(cmake/sources.cmake)
 
+file(GLOB_RECURSE CLASSMNGR_CAMPUS_MAP_IMAGES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.png"
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.jpg"
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.jpeg"
+)
+
 qt_add_resources(ClassMngr app_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
@@ -79,6 +85,7 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/splash/splash.png
         resources/assets/styles/dark.qss
         resources/assets/styles/light.qss
+        ${CLASSMNGR_CAMPUS_MAP_IMAGES}
 )
 
 set_source_files_properties(
@@ -311,12 +318,49 @@ if(BUILD_TESTING)
         COMMAND ClassMngrAcademicCalendarTests
     )
 
+    qt_add_executable(ClassMngrCampusMapTests
+        tests/campus_map_tests.cpp
+        src/features/campus/data/campus_json_repository.cpp
+        src/features/campus/ui/campus_map_preview.cpp
+    )
+
+    qt_add_resources(ClassMngrCampusMapTests campus_map_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            ${CLASSMNGR_CAMPUS_MAP_IMAGES}
+    )
+
+    target_compile_features(ClassMngrCampusMapTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrCampusMapTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrCampusMapTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrCampusMapTests
+        COMMAND ClassMngrCampusMapTests
+    )
+
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests
             ClassMngrFontManagerTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
+            ClassMngrCampusMapTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"

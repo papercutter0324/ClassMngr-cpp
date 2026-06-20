@@ -21,6 +21,8 @@ class QTabWidget;
 class QTimer;
 class QVBoxLayout;
 class QWidget;
+class CampusMapPreview;
+class SectionCard;
 
 class CampusDashboardPage : public BasePage
 {
@@ -198,6 +200,19 @@ private:
         const CampusInfo& campus
         ) const;
     void updateMapPreview();
+    void clearMapSections();
+    void addMapSection(
+        const QString& title,
+        const QStringList& imagePaths,
+        const QString& naverUrl,
+        const QString& kakaoUrl
+        );
+    [[nodiscard]] bool housingSectionHasContent(
+        const HousingSectionWidgets& section
+        ) const;
+    void openMapUrl(
+        const QString& url
+        );
     void updateDirectionsCompleteAddresses();
     void updateHousingCompleteAddresses();
     void emitCurrentSectionChanged();
@@ -234,7 +249,16 @@ private:
         AddressSectionWidgets korean;
         QPushButton* toggleLanguageButton = nullptr;
         QPushButton* removeButton = nullptr;
+        QJsonObject map;
         bool showingEnglish = true;
+    };
+
+    struct MapSectionWidgets
+    {
+        SectionCard* card = nullptr;
+        QPushButton* naverButton = nullptr;
+        QPushButton* kakaoButton = nullptr;
+        CampusMapPreview* preview = nullptr;
     };
 
     struct TranslatableLabel
@@ -264,12 +288,12 @@ private:
     QWidget* m_mapTab = nullptr;
 
     QLabel* m_statusLabel = nullptr;
-    QLabel* m_mapPreviewLabel = nullptr;
     QLabel* m_housingEmptyLabel = nullptr;
     QPushButton* m_addHousingButton = nullptr;
     QPushButton* m_newCampusButton = nullptr;
     QPushButton* m_saveCampusButton = nullptr;
     QVBoxLayout* m_housingSectionsLayout = nullptr;
+    QVBoxLayout* m_mapSectionsLayout = nullptr;
 
     QLineEdit* m_nameEdit = nullptr;
     QLineEdit* m_campusCodeEdit = nullptr;
@@ -285,7 +309,6 @@ private:
     QCheckBox* m_printerDriverUrlUnavailableCheck = nullptr;
     QLineEdit* m_photocopierCodeEdit = nullptr;
     QCheckBox* m_photocopierCodeUnavailableCheck = nullptr;
-    QLineEdit* m_imagePathEdit = nullptr;
 
     QPlainTextEdit* m_transitStepsEdit = nullptr;
     QPlainTextEdit* m_arrivalInfoEdit = nullptr;
@@ -301,6 +324,7 @@ private:
     QList<QPlainTextEdit*> m_textEdits;
     QList<QPlainTextEdit*> m_alwaysReadOnlyTextEdits;
     QList<HousingSectionWidgets> m_housingSections;
+    QList<MapSectionWidgets> m_mapSections;
     QList<TranslatableLabel> m_translatableLabels;
 };
 

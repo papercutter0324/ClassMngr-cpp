@@ -812,54 +812,64 @@
 <context>
     <name>CampusDashboardPage</name>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="82"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="90"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="169"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1185"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="83"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="91"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="170"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1189"/>
         <source>Information</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="95"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="183"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1190"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="96"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="184"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1194"/>
         <source>Directions</source>
         <translation>오시는 길</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="100"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="197"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1195"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="101"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="198"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1199"/>
         <source>Housing</source>
         <translation>숙소</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="105"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="211"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1200"/>
-        <source>Map</source>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="106"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="212"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1204"/>
+        <source>Maps</source>
         <translation>지도</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="230"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="231"/>
         <source>Save Campus *</source>
         <translation>캠퍼스 저장 *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="355"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="374"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="649"/>
+        <source>Open in Naver Maps</source>
+        <translation>네이버 지도에서 열기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="670"/>
+        <source>Open in Kakao Map</source>
+        <translation>카카오맵에서 열기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="356"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="419"/>
         <source>Saving...</source>
         <translation>저장 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="367"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="370"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="368"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="415"/>
         <source>Unsaved changes</source>
         <translation>저장되지 않은 변경 사항</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="363"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="899"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="903"/>
         <source>Show Classic</source>
         <translation>지번 주소 표시</translation>
     </message>
@@ -875,56 +885,76 @@
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="410"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="499"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="544"/>
         <source>%1 (%2)</source>
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="280"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="281"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="542"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="168"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="368"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="95"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="376"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="96"/>
         <source>Show Korean</source>
         <translation>한국어 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="281"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="282"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="543"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="369"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="377"/>
         <source>Show English</source>
         <translation>영어 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="208"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="288"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="255"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="335"/>
         <source>Default</source>
         <translation>기본값</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="222"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="227"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1133"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="223"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="274"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1137"/>
         <source>New Campus</source>
         <translation>새 캠퍼스</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="257"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="304"/>
         <source>New campus</source>
         <translation>새 캠퍼스</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="279"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="326"/>
         <source>Campus data could not be prepared.</source>
         <translation>캠퍼스 데이터를 준비할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="439"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="484"/>
         <source>Saved</source>
         <translation>저장됨</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="288"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="561"/>
+        <source>Campus</source>
+        <translation>캠퍼스</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="585"/>
+        <source>Housing %1</source>
+        <translation>숙소 %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="739"/>
+        <source>Unable to Open Map</source>
+        <translation>지도를 열 수 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="740"/>
+        <source>The map link could not be opened.</source>
+        <translation>지도 링크를 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="289"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="176"/>
         <source>Remove</source>
         <translation>제거</translation>
@@ -935,153 +965,170 @@
         <translation>숙소명:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="108"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="109"/>
         <source>Campus Name:</source>
         <translation>캠퍼스명:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="132"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="170"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="949"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="133"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="171"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="953"/>
         <source>Building Name:</source>
         <translation>건물명:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="139"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="177"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="140"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="178"/>
         <source>Phone Number:</source>
         <translation>전화번호:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="205"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="206"/>
         <source>Transit Steps:</source>
         <translation>이동 경로:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="213"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="214"/>
         <source>Upon Arriving:</source>
         <translation>도착 후:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="311"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="312"/>
         <source>Office Number:</source>
         <translation>사무실 번호:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="317"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="318"/>
         <source>Office WiFi:</source>
         <translation>사무실 WiFi:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="323"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="324"/>
         <source>WiFi Password:</source>
         <translation>WiFi 비밀번호:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="329"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="330"/>
         <source>Printer Name:</source>
         <translation>프린터 이름:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="335"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="336"/>
         <source>Printer Installation Steps:</source>
         <translation>프린터 설치 단계:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="252"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="259"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="370"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="443"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="253"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="260"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="371"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="444"/>
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="388"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="389"/>
         <source>Printer Driver URL:</source>
         <translation>프린터 드라이버 URL:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="459"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="460"/>
         <source>Photocopier Code:</source>
         <translation>복사기 코드:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="245"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="534"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="246"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="535"/>
         <source>No housing information available</source>
         <translation>사용 가능한 숙소 정보가 없습니다</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="238"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="548"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="239"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="549"/>
         <source>Add Housing Location</source>
         <translation>숙소 위치 추가</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="591"/>
         <source>Image Path:</source>
-        <translation>이미지 경로:</translation>
+        <translation type="vanished">이미지 경로:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="609"/>
         <source>Preview:</source>
-        <translation>미리보기:</translation>
+        <translation type="vanished">미리보기:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="928"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="932"/>
         <source>Complete Address:</source>
         <translation>전체 주소:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="959"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="963"/>
         <source>Province:</source>
         <translation>시/도:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="965"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="969"/>
         <source>City:</source>
         <translation>시/군/구:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="971"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="975"/>
         <source>District:</source>
         <translation>동/읍/면:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="977"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="981"/>
         <source>Address Line 1:</source>
         <translation>주소 1:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="983"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="987"/>
         <source>Address Line 2:</source>
         <translation>주소 2:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="989"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="993"/>
         <source>Postal Code:</source>
         <translation>우편번호:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="995"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="999"/>
         <source>Note:</source>
         <translation>참고:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1089"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1093"/>
         <source>Campus:</source>
         <translation>캠퍼스:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1103"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1107"/>
         <source>Campus Code:</source>
         <translation>캠퍼스 코드:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="231"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1139"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="232"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1143"/>
         <source>Save Campus</source>
         <translation>캠퍼스 저장</translation>
+    </message>
+</context>
+<context>
+    <name>CampusMapPreview</name>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
+        <source>Map View</source>
+        <translation>지도 보기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
+        <source>Building View</source>
+        <translation>건물 보기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="225"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="332"/>
+        <source>No map images available</source>
+        <translation>사용 가능한 지도 이미지가 없습니다</translation>
     </message>
 </context>
 <context>
@@ -1682,37 +1729,31 @@
         <source>Housing</source>
         <translation type="vanished">숙소</translation>
     </message>
-    <message>
-        <source>Map</source>
-        <translation type="vanished">지도</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="653"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="739"/>
         <source>Unable to open campus file for writing:
 %1</source>
         <translation>캠퍼스 파일을 쓰기 위해 열 수 없습니다:
 %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="669"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="755"/>
         <source>Unable to save campus file:
 %1</source>
         <translation>캠퍼스 파일을 저장할 수 없습니다:
 %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="756"/>
+        <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="842"/>
         <source>Unable to create campus data directory.</source>
         <translation>캠퍼스 데이터 디렉터리를 만들 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="27"/>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
         <source>No map available</source>
-        <translation>사용 가능한 지도가 없습니다</translation>
+        <translation type="vanished">사용 가능한 지도가 없습니다</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="179"/>
@@ -1890,7 +1931,7 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="169"/>
-        <source>Map</source>
+        <source>Maps</source>
         <translation>지도</translation>
     </message>
     <message>

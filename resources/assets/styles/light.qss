@@ -71,6 +71,12 @@ QFrame[role="separator"] {
     border: none;
 }
 
+QFrame#campusMapDivider {
+    color: #98a2b3;
+    background-color: #98a2b3;
+    border: none;
+}
+
 QLineEdit,
 QPlainTextEdit,
 QTextEdit,

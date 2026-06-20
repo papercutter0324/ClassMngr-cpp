@@ -2,6 +2,7 @@
 
 #include "campus_dashboard_page_detail.h"
 #include "core/fontmanager.h"
+#include "features/campus/ui/campus_map_preview.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -577,38 +578,41 @@ QWidget* CampusDashboardPage::createHousingTab()
 
 QWidget* CampusDashboardPage::createMapTab()
 {
-    QFormLayout* form = nullptr;
+    auto* tab =
+        new QWidget(this);
 
-    QWidget* tab =
-        Detail::createScrollContainer(
-            this,
-            &form
-            );
+    auto* root =
+        new QVBoxLayout(tab);
 
-    m_imagePathEdit =
-        addLineField(
-            form,
-            QT_TR_NOOP("Image Path:")
-            );
+    auto* scroll =
+        new QScrollArea(tab);
 
-    m_mapPreviewLabel =
-        new QLabel(tab);
+    scroll->setWidgetResizable(true);
+    scroll->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    scroll->setFrameShape(QFrame::NoFrame);
 
-    m_mapPreviewLabel->setAlignment(
-        Qt::AlignCenter
+    auto* container =
+        new QFrame(scroll);
+
+    container->setFrameShape(QFrame::StyledPanel);
+    container->setFrameShadow(QFrame::Plain);
+
+    auto* layout =
+        new QVBoxLayout(container);
+
+    layout->setContentsMargins(
+        12,
+        12,
+        12,
+        12
         );
+    layout->setSpacing(16);
+    layout->setAlignment(Qt::AlignTop);
 
-    m_mapPreviewLabel->setMinimumHeight(260);
-    m_mapPreviewLabel->setSizePolicy(
-        QSizePolicy::Expanding,
-        QSizePolicy::Expanding
-        );
+    m_mapSectionsLayout = layout;
 
-    addFormRow(
-        form,
-        QT_TR_NOOP("Preview:"),
-        m_mapPreviewLabel
-        );
+    scroll->setWidget(container);
+    root->addWidget(scroll);
 
     return tab;
 }
@@ -1197,7 +1201,7 @@ void CampusDashboardPage::buildUi()
 
     m_tabs->addTab(
         m_mapTab,
-        tr("Map")
+        tr("Maps")
         );
 
     contentLayout()->addWidget(

@@ -237,6 +237,12 @@ void CampusDashboardPage::addHousingSectionFromJson(
             )
         );
 
+    section.map =
+        Detail::jsonObject(
+            housing,
+            QStringLiteral("map")
+            );
+
     populateAddressSection(
         &section.english,
         Detail::jsonObject(
@@ -259,6 +265,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
         this,
         [this]()
         {
+            updateMapPreview();
             handleFieldEdited();
         }
         );
@@ -328,6 +335,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
 
             updateHousingCompleteAddresses();
             updateHousingRemoveButtonVisibility();
+            updateMapPreview();
 
             if (m_adminMode && !m_loading)
             {
@@ -403,6 +411,11 @@ QJsonArray CampusDashboardPage::housingSectionsToJson() const
         housing.insert(
             QStringLiteral("kr"),
             addressSectionToJson(section.korean)
+            );
+
+        housing.insert(
+            QStringLiteral("map"),
+            section.map
             );
 
         housingLocations.append(housing);

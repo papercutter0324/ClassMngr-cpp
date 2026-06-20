@@ -1,6 +1,7 @@
 #include "campus_dashboard_page.h"
 
 #include "campus_dashboard_page_detail.h"
+#include "features/campus/ui/campus_map_preview.h"
 
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
@@ -102,7 +103,7 @@ QString CampusDashboardPage::currentSectionName() const
 
     if (currentTab == m_mapTab)
     {
-        return tr("Map");
+        return tr("Maps");
     }
 
     return m_tabs->tabText(
@@ -208,7 +209,7 @@ void CampusDashboardPage::retranslateUi()
             {
                 m_tabs->setTabText(
                     index,
-                    tr("Map")
+                    tr("Maps")
                     );
             }
         }
@@ -442,7 +443,6 @@ void CampusDashboardPage::handleFieldEdited()
         return;
     }
 
-    updateMapPreview();
     updateDirectionsCompleteAddresses();
     updateHousingCompleteAddresses();
 

@@ -3,18 +3,66 @@
 #include "campus_dashboard_page_detail.h"
 #include "features/campus/ui/campus_map_preview.h"
 #include "core/settingsmanager.h"
+#include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDesktopServices>
+#include <QHBoxLayout>
 #include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QTimer>
+#include <QUrl>
+
+#include <utility>
 
 namespace Detail = CampusDashboardPageDetail;
+
+namespace
+{
+QStringList mapImagePaths(
+    const QJsonObject& map
+    )
+{
+    QStringList imagePaths;
+
+    const QJsonArray images =
+        map
+            .value(QStringLiteral("images"))
+            .toArray();
+
+    for (const QJsonValue& image : images)
+    {
+        const QString imagePath =
+            image.toString().trimmed();
+
+        if (!imagePath.isEmpty())
+        {
+            imagePaths.append(imagePath);
+        }
+    }
+
+    return imagePaths;
+}
+
+QString mapLink(
+    const QJsonObject& map,
+    const QString& provider
+    )
+{
+    return map
+        .value(QStringLiteral("links"))
+        .toObject()
+        .value(provider)
+        .toString();
+}
+}
 
 void CampusDashboardPage::loadCampuses()
 {
@@ -98,7 +146,6 @@ void CampusDashboardPage::populateFields(
         campus.transitSteps.join(u'\n')
         );
     m_arrivalInfoEdit->setPlainText(campus.arrivalInfo);
-    m_imagePathEdit->setText(campus.imageMain);
     m_officeWifiEdit->setText(campus.officeWifi);
     m_officeWifiPasswordEdit->setText(campus.officeWifiPassword);
     m_printerNameEdit->setText(campus.printerName);
@@ -313,8 +360,6 @@ Status CampusDashboardPage::readFieldsIntoCampus(
             );
     updated.arrivalInfo =
         m_arrivalInfoEdit->toPlainText();
-    updated.imageMain =
-        m_imagePathEdit->text();
     updated.officeWifi =
         m_officeWifiEdit->text();
     updated.officeWifiPassword =
@@ -505,13 +550,194 @@ QString CampusDashboardPage::campusDisplayName(
 
 void CampusDashboardPage::updateMapPreview()
 {
-    if (!m_mapPreviewLabel || !m_imagePathEdit)
+    if (!m_mapSectionsLayout)
     {
         return;
     }
 
-    CampusMapPreview::update(
-        m_mapPreviewLabel,
-        m_imagePathEdit->text()
+    clearMapSections();
+
+    addMapSection(
+        tr("Campus"),
+        m_currentCampus.mapImagePaths,
+        m_currentCampus.naverMapUrl,
+        m_currentCampus.kakaoMapUrl
         );
+
+    int housingNumber = 0;
+
+    for (const HousingSectionWidgets& housing : m_housingSections)
+    {
+        if (!housingSectionHasContent(housing))
+        {
+            continue;
+        }
+
+        ++housingNumber;
+
+        const QString housingName =
+            housing.name
+                ? housing.name->text().trimmed()
+                : QString();
+
+        addMapSection(
+            housingName.isEmpty()
+                ? tr("Housing %1").arg(housingNumber)
+                : housingName,
+            mapImagePaths(housing.map),
+            mapLink(housing.map, QStringLiteral("naver")),
+            mapLink(housing.map, QStringLiteral("kakao"))
+            );
+    }
+}
+
+void CampusDashboardPage::clearMapSections()
+{
+    for (const MapSectionWidgets& section : std::as_const(m_mapSections))
+    {
+        if (section.card)
+        {
+            m_mapSectionsLayout->removeWidget(section.card);
+            delete section.card;
+        }
+    }
+
+    m_mapSections.clear();
+}
+
+void CampusDashboardPage::addMapSection(
+    const QString& title,
+    const QStringList& imagePaths,
+    const QString& naverUrl,
+    const QString& kakaoUrl
+    )
+{
+    if (!m_mapSectionsLayout)
+    {
+        return;
+    }
+
+    MapSectionWidgets section;
+
+    section.card =
+        new SectionCard(
+            title,
+            m_mapTab
+            );
+
+    section.preview =
+        new CampusMapPreview(section.card);
+
+    auto* controls =
+        new QWidget(section.preview);
+    auto* linkLayout =
+        new QHBoxLayout(controls);
+
+    linkLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+    linkLayout->setSpacing(8);
+    linkLayout->addStretch();
+
+    if (CampusMapPreview::isValidMapUrl(naverUrl))
+    {
+        section.naverButton =
+            new QPushButton(
+                tr("Open in Naver Maps"),
+                controls
+                );
+
+        linkLayout->addWidget(section.naverButton);
+
+        connect(
+            section.naverButton,
+            &QPushButton::clicked,
+            this,
+            [this, naverUrl]()
+            {
+                openMapUrl(naverUrl);
+            }
+            );
+    }
+
+    if (CampusMapPreview::isValidMapUrl(kakaoUrl))
+    {
+        section.kakaoButton =
+            new QPushButton(
+                tr("Open in Kakao Map"),
+                controls
+                );
+
+        linkLayout->addWidget(section.kakaoButton);
+
+        connect(
+            section.kakaoButton,
+            &QPushButton::clicked,
+            this,
+            [this, kakaoUrl]()
+            {
+                openMapUrl(kakaoUrl);
+            }
+            );
+    }
+
+    linkLayout->addStretch();
+
+    if (
+        section.naverButton
+        || section.kakaoButton
+        )
+    {
+        section.preview->setMapControls(controls);
+    }
+    else
+    {
+        delete controls;
+    }
+
+    section.preview->setImagePaths(imagePaths);
+
+    section.card
+        ->contentLayout()
+        ->addWidget(section.preview);
+
+    m_mapSectionsLayout->addWidget(section.card);
+    m_mapSections.append(section);
+}
+
+bool CampusDashboardPage::housingSectionHasContent(
+    const HousingSectionWidgets& section
+    ) const
+{
+    return (
+        section.name
+        && !section.name->text().trimmed().isEmpty()
+        )
+        || !section.map.isEmpty();
+}
+
+void CampusDashboardPage::openMapUrl(
+    const QString& url
+    )
+{
+    if (!CampusMapPreview::isValidMapUrl(url))
+    {
+        return;
+    }
+
+    if (
+        !QDesktopServices::openUrl(
+            QUrl::fromUserInput(url.trimmed())
+            )
+        )
+    {
+        QMessageBox::warning(
+            this,
+            tr("Unable to Open Map"),
+            tr("The map link could not be opened.")
+            );
+    }
 }

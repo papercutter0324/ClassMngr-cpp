@@ -339,9 +339,45 @@ QJsonObject campusToJson(
         campus.arrivalInfo
         );
 
+    QJsonArray mapImages;
+
+    for (const QString& imagePath : campus.mapImagePaths)
+    {
+        mapImages.append(imagePath);
+    }
+
+    QJsonObject mapLinks;
+
+    mapLinks.insert(
+        QStringLiteral("naver"),
+        campus.naverMapUrl
+        );
+    mapLinks.insert(
+        QStringLiteral("kakao"),
+        campus.kakaoMapUrl
+        );
+
+    QJsonObject map;
+
+    map.insert(
+        QStringLiteral("images"),
+        mapImages
+        );
+    map.insert(
+        QStringLiteral("links"),
+        mapLinks
+        );
+
+    object.insert(
+        QStringLiteral("map"),
+        map
+        );
+
     object.insert(
         QStringLiteral("image_main"),
-        campus.imageMain
+        campus.mapImagePaths.isEmpty()
+            ? campus.imageMain
+            : campus.mapImagePaths.constFirst()
         );
 
     object.insert(
@@ -493,6 +529,56 @@ CampusInfo campusFromJson(
         valueString(
             object,
             QStringLiteral("image_main")
+            );
+
+    const QJsonValue mapValue =
+        object.value(QStringLiteral("map"));
+
+    const bool hasMapConfiguration =
+        mapValue.isObject();
+
+    const QJsonObject map =
+        mapValue.toObject();
+
+    const QJsonArray mapImages =
+        map
+            .value(QStringLiteral("images"))
+            .toArray();
+
+    for (const QJsonValue& image : mapImages)
+    {
+        const QString imagePath =
+            image.toString().trimmed();
+
+        if (!imagePath.isEmpty())
+        {
+            campus.mapImagePaths.append(imagePath);
+        }
+    }
+
+    if (
+        campus.mapImagePaths.isEmpty()
+        && !hasMapConfiguration
+        && !campus.imageMain.trimmed().isEmpty()
+        )
+    {
+        campus.mapImagePaths.append(campus.imageMain);
+    }
+
+    const QJsonObject mapLinks =
+        map
+            .value(QStringLiteral("links"))
+            .toObject();
+
+    campus.naverMapUrl =
+        valueString(
+            mapLinks,
+            QStringLiteral("naver")
+            );
+    campus.kakaoMapUrl =
+        valueString(
+            mapLinks,
+            QStringLiteral("kakao")
             );
 
     campus.officeWifi =

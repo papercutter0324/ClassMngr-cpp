@@ -166,7 +166,7 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "campus_map",
-                    QObject::tr("Map"),
+                    QObject::tr("Maps"),
                     NodeType::Page
                 }
             }
