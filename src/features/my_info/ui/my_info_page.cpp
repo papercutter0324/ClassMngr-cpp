@@ -1,5 +1,7 @@
 #include "my_info_page.h"
 
+#include "academic_calendar_dialog.h"
+#include "academic_calendar_provider.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
@@ -23,6 +25,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QQmlContext>
+#include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWidget>
 #include <QScrollArea>
@@ -252,6 +255,11 @@ void MyInfoPage::refresh()
         m_calendarModel->reload();
     }
 
+    if (m_academicCalendarProvider)
+    {
+        m_academicCalendarProvider->reload();
+    }
+
     if (!m_dirty)
     {
         loadPageData();
@@ -333,6 +341,16 @@ void MyInfoPage::retranslateUi()
     if (m_scheduleWidget)
     {
         m_scheduleWidget->retranslateUi();
+    }
+
+    if (m_calendarView && m_calendarView->engine())
+    {
+        m_calendarView->engine()->retranslate();
+    }
+
+    if (m_academicCalendarProvider)
+    {
+        m_academicCalendarProvider->reload();
     }
 }
 
@@ -496,6 +514,11 @@ void MyInfoPage::showEvent(
     {
         m_calendarModel->reload();
     }
+
+    if (m_academicCalendarProvider)
+    {
+        m_academicCalendarProvider->reload();
+    }
 }
 
 bool MyInfoPage::eventFilter(
@@ -600,6 +623,37 @@ void MyInfoPage::handleCalendarEventActivated(
         event,
         true
         );
+}
+
+void MyInfoPage::handleCalendarConfigureRequested(
+    int year,
+    int month
+    )
+{
+    if (!m_academicCalendarProvider)
+    {
+        return;
+    }
+
+    const QDate firstOfMonth(year, month, 1);
+    if (!firstOfMonth.isValid())
+    {
+        return;
+    }
+
+    const QDate firstMonday =
+        firstOfMonth.addDays(
+            (Qt::Monday - firstOfMonth.dayOfWeek() + 7) % 7
+            );
+    const int termYear =
+        m_academicCalendarProvider->termYearForDate(firstMonday);
+
+    AcademicCalendarDialog dialog(
+        m_academicCalendarProvider,
+        termYear,
+        this
+        );
+    dialog.exec();
 }
 
 void MyInfoPage::buildUi()
@@ -926,6 +980,14 @@ void MyInfoPage::buildMonthlyCalendarSection()
             this
             );
 
+    m_academicCalendarProvider =
+        new AcademicCalendarProvider(
+            m_services
+                ? m_services->dataService()
+                : nullptr,
+            this
+            );
+
     m_calendarView =
         new QQuickWidget(card);
     m_calendarView->setResizeMode(
@@ -941,6 +1003,12 @@ void MyInfoPage::buildMonthlyCalendarSection()
         ->setContextProperty(
             QStringLiteral("calendarEventProvider"),
             m_calendarModel
+            );
+    m_calendarView
+        ->rootContext()
+        ->setContextProperty(
+            QStringLiteral("academicCalendarProvider"),
+            m_academicCalendarProvider
             );
     m_calendarView->setSource(
         QUrl(
@@ -963,6 +1031,12 @@ void MyInfoPage::buildMonthlyCalendarSection()
             SIGNAL(eventActivated(int)),
             this,
             SLOT(handleCalendarEventActivated(int))
+            );
+        connect(
+            root,
+            SIGNAL(configureRequested(int,int)),
+            this,
+            SLOT(handleCalendarConfigureRequested(int,int))
             );
     }
 

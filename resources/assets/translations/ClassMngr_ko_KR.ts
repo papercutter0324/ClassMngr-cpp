@@ -103,6 +103,208 @@
     </message>
 </context>
 <context>
+    <name>AcademicCalendarDialog</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="69"/>
+        <source>Invalid Academic Schedule</source>
+        <translation>잘못된 학기 일정</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="70"/>
+        <source>Every term must start on a Monday and last between 1 and 53 weeks.</source>
+        <translation>모든 학기는 월요일에 시작해야 하며 1주에서 53주 사이여야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="98"/>
+        <source>Invalid Winter Start</source>
+        <translation>잘못된 겨울 학기 시작일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="99"/>
+        <source>Winter must begin 1 to 53 complete weeks after the preceding Fall term starts.</source>
+        <translation>겨울 학기는 이전 가을 학기 시작일로부터 1주에서 53주 뒤에 시작해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="111"/>
+        <source>Recalculate Later Years?</source>
+        <translation>이후 연도를 다시 계산할까요?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="112"/>
+        <source>Saving term year %1 will replace later custom schedules with predictions based on the default term durations.</source>
+        <translation>학기 연도 %1을 저장하면 이후의 사용자 지정 일정이 기본 학기 기간을 기준으로 한 예상 일정으로 대체됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="173"/>
+        <source>Academic Calendar Settings</source>
+        <translation>학기 달력 설정</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="183"/>
+        <source>Academic Term Schedule — %1</source>
+        <translation>학기 일정 — %1</translation>
+    </message>
+    <message>
+        <source>Winter %1 begins in the preceding calendar year. Changing a field keeps every later term continuous.</source>
+        <translation type="vanished">%1년 겨울 학기는 이전 연도에 시작합니다. 필드를 변경하면 이후 모든 학기가 연속되도록 조정됩니다.</translation>
+    </message>
+    <message>
+        <source>Use Elementary values for Middle Winter and Spring</source>
+        <translation type="vanished">중등부 겨울 및 봄 학기에 초등부 값 사용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="199"/>
+        <source>Elementary</source>
+        <translation>초등부</translation>
+    </message>
+    <message>
+        <source>Middle</source>
+        <translation type="vanished">중등부</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="207"/>
+        <source>Middle School</source>
+        <translation>중등부</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="222"/>
+        <source>Term</source>
+        <translation>학기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="223"/>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="225"/>
+        <source>Start</source>
+        <translation>시작일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="224"/>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="226"/>
+        <source>Weeks</source>
+        <translation>주</translation>
+    </message>
+    <message>
+        <source>Calculate this start date</source>
+        <translation type="vanished">이 시작일 자동 계산</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="290"/>
+        <source>Elementary and Middle School follow the same Winter and Spring term schedules.</source>
+        <translation>초등부와 중등부의 겨울 및 봄 학기 일정이 같습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="306"/>
+        <source>Restore Defaults</source>
+        <translation>기본값 복원</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="415"/>
+        <source>Monday Required</source>
+        <translation>월요일만 가능</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="416"/>
+        <source>Academic terms must start on a Monday.</source>
+        <translation>학기는 월요일에 시작해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="444"/>
+        <source>Invalid Term Start</source>
+        <translation>잘못된 학기 시작일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="445"/>
+        <source>The start must be 1 to 53 complete weeks after the preceding term starts.</source>
+        <translation>시작일은 이전 학기 시작일로부터 1주에서 53주 뒤의 월요일이어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="561"/>
+        <source>Winter</source>
+        <translation>겨울</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="564"/>
+        <source>Spring</source>
+        <translation>봄</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="567"/>
+        <source>Summer</source>
+        <translation>여름</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="570"/>
+        <source>Fall</source>
+        <translation>가을</translation>
+    </message>
+</context>
+<context>
+    <name>AcademicCalendarProvider</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="89"/>
+        <source>%1 — %2</source>
+        <translation>%1 — %2</translation>
+    </message>
+    <message>
+        <source>%1 — E: %2 · M: %3</source>
+        <translation type="vanished">%1 — 초: %2 · 중: %3</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="93"/>
+        <source>%1 — Elem: %2 · MS: %3</source>
+        <translation>%1 — 초등: %2 · 중등: %3</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="232"/>
+        <source>Winter</source>
+        <translation>겨울</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="235"/>
+        <source>Spring</source>
+        <translation>봄</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="238"/>
+        <source>Summer</source>
+        <translation>여름</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="241"/>
+        <source>Fall</source>
+        <translation>가을</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="256"/>
+        <source>%1 Wk %2</source>
+        <translation>%1 %2주차</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="268"/>
+        <source>No academic term</source>
+        <translation>학기 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="273"/>
+        <source>Elementary</source>
+        <translation>초등부</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="274"/>
+        <source>Middle School</source>
+        <translation>중등부</translation>
+    </message>
+    <message>
+        <source>Middle</source>
+        <translation type="vanished">중등부</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="284"/>
+        <source>%1 — %2, Week %3 (%4–%5)</source>
+        <translation>%1 — %2, %3주차 (%4~%5)</translation>
+    </message>
+</context>
+<context>
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
@@ -1110,6 +1312,47 @@
     </message>
 </context>
 <context>
+    <name>EventCalendar</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="128"/>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="129"/>
+        <source>Configure academic terms</source>
+        <translation>학기 설정</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="166"/>
+        <source>Elem</source>
+        <translation>초등</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="215"/>
+        <source>MS</source>
+        <translation>중등</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="219"/>
+        <source>Middle School academic week</source>
+        <translation>중등부 학기 주차</translation>
+    </message>
+    <message>
+        <source>E</source>
+        <translation type="vanished">초</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="170"/>
+        <source>Elementary academic week</source>
+        <translation>초등부 학기 주차</translation>
+    </message>
+    <message>
+        <source>M</source>
+        <translation type="vanished">중</translation>
+    </message>
+    <message>
+        <source>Middle-school academic week</source>
+        <translation type="vanished">중등부 학기 주차</translation>
+    </message>
+</context>
+<context>
     <name>FileController</name>
     <message>
         <location filename="../../../src/app/controllers/file_controller.cpp" line="158"/>
@@ -1310,65 +1553,65 @@
 <context>
     <name>MyInfoPage</name>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="287"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="450"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="678"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="295"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="468"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="732"/>
         <source>Class Schedule</source>
         <translation>수업 일정</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="280"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="453"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="734"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="288"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="471"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="788"/>
         <source>My Information</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="294"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="456"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="891"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="302"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="474"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="945"/>
         <source>Monthly Calendar</source>
         <translation>월간 캘린더</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="266"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="639"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="274"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="693"/>
         <source>My Info</source>
         <translation>내 정보</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="273"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="652"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="281"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="706"/>
         <source>Manage your schedule, personal details, and monthly events.</source>
         <translation>일정, 개인 정보, 월간 일정을 관리합니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="329"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="782"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="337"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="836"/>
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="301"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="794"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="309"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="848"/>
         <source>My Campus</source>
         <translation>내 캠퍼스</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="308"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="796"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="316"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="850"/>
         <source>Zoom Login ID</source>
         <translation>Zoom 로그인 ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="315"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="798"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="323"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="852"/>
         <source>Zoom Password</source>
         <translation>Zoom 비밀번호</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="322"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="800"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="330"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="854"/>
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>

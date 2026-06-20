@@ -103,6 +103,184 @@
     </message>
 </context>
 <context>
+    <name>AcademicCalendarDialog</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="69"/>
+        <source>Invalid Academic Schedule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="70"/>
+        <source>Every term must start on a Monday and last between 1 and 53 weeks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="98"/>
+        <source>Invalid Winter Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="99"/>
+        <source>Winter must begin 1 to 53 complete weeks after the preceding Fall term starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="111"/>
+        <source>Recalculate Later Years?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="112"/>
+        <source>Saving term year %1 will replace later custom schedules with predictions based on the default term durations.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="173"/>
+        <source>Academic Calendar Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="183"/>
+        <source>Academic Term Schedule — %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="199"/>
+        <source>Elementary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="207"/>
+        <source>Middle School</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="222"/>
+        <source>Term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="223"/>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="225"/>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="224"/>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="226"/>
+        <source>Weeks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="290"/>
+        <source>Elementary and Middle School follow the same Winter and Spring term schedules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="306"/>
+        <source>Restore Defaults</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="415"/>
+        <source>Monday Required</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="416"/>
+        <source>Academic terms must start on a Monday.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="444"/>
+        <source>Invalid Term Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="445"/>
+        <source>The start must be 1 to 53 complete weeks after the preceding term starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="561"/>
+        <source>Winter</source>
+        <translation type="unfinished">Winter</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="564"/>
+        <source>Spring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="567"/>
+        <source>Summer</source>
+        <translation type="unfinished">Summer</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="570"/>
+        <source>Fall</source>
+        <translation type="unfinished">Fall</translation>
+    </message>
+</context>
+<context>
+    <name>AcademicCalendarProvider</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="89"/>
+        <source>%1 — %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="93"/>
+        <source>%1 — Elem: %2 · MS: %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="232"/>
+        <source>Winter</source>
+        <translation type="unfinished">Winter</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="235"/>
+        <source>Spring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="238"/>
+        <source>Summer</source>
+        <translation type="unfinished">Summer</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="241"/>
+        <source>Fall</source>
+        <translation type="unfinished">Fall</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="256"/>
+        <source>%1 Wk %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="268"/>
+        <source>No academic term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="273"/>
+        <source>Elementary</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="274"/>
+        <source>Middle School</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_provider.cpp" line="284"/>
+        <source>%1 — %2, Week %3 (%4–%5)</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
@@ -1110,6 +1288,35 @@
     </message>
 </context>
 <context>
+    <name>EventCalendar</name>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="128"/>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="129"/>
+        <source>Configure academic terms</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="166"/>
+        <source>Elem</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="215"/>
+        <source>MS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="219"/>
+        <source>Middle School academic week</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/qml/EventCalendar.qml" line="170"/>
+        <source>Elementary academic week</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>FileController</name>
     <message>
         <location filename="../../../src/app/controllers/file_controller.cpp" line="158"/>
@@ -1310,65 +1517,65 @@
 <context>
     <name>MyInfoPage</name>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="287"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="450"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="678"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="295"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="468"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="732"/>
         <source>Class Schedule</source>
         <translation>Class Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="280"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="453"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="734"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="288"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="471"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="788"/>
         <source>My Information</source>
         <translation>My Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="294"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="456"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="891"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="302"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="474"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="945"/>
         <source>Monthly Calendar</source>
         <translation>Monthly Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="266"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="639"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="274"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="693"/>
         <source>My Info</source>
         <translation>My Info</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="273"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="652"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="281"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="706"/>
         <source>Manage your schedule, personal details, and monthly events.</source>
         <translation>Manage your schedule, personal details, and monthly events.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="329"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="782"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="337"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="836"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="301"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="794"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="309"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="848"/>
         <source>My Campus</source>
         <translation>My Campus</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="308"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="796"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="316"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="850"/>
         <source>Zoom Login ID</source>
         <translation>Zoom Login ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="315"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="798"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="323"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="852"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="322"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="800"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="330"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="854"/>
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>

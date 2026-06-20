@@ -72,6 +72,8 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/app_icon.ico
         resources/assets/icons/combo_arrow_dark.svg
         resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/spin_up_dark.svg
+        resources/assets/icons/spin_up_light.svg
         resources/assets/icons/icon_256x256.png
         resources/assets/campuses/bundang.json
         resources/assets/splash/splash.png
@@ -280,11 +282,41 @@ if(BUILD_TESTING)
         COMMAND ClassMngrLanguageServiceTests
     )
 
+    qt_add_executable(ClassMngrAcademicCalendarTests
+        tests/academic_calendar_tests.cpp
+        src/features/my_info/academic_calendar_schedule.cpp
+        src/features/my_info/ui/academic_calendar_provider.cpp
+    )
+
+    target_compile_features(ClassMngrAcademicCalendarTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrAcademicCalendarTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrAcademicCalendarTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrAcademicCalendarTests
+        COMMAND ClassMngrAcademicCalendarTests
+    )
+
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests
             ClassMngrFontManagerTests
             ClassMngrLanguageServiceTests
+            ClassMngrAcademicCalendarTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"

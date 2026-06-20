@@ -4,6 +4,7 @@
 #include "ui/shared/pages/basepage.h"
 
 class ApplicationServices;
+class AcademicCalendarProvider;
 class CalendarEventModel;
 class QLabel;
 class QCheckBox;
@@ -79,6 +80,10 @@ private slots:
     void handleCalendarEventActivated(
         int eventId
         );
+    void handleCalendarConfigureRequested(
+        int year,
+        int month
+        );
 
 private:
     void buildUi();
@@ -139,6 +144,7 @@ private:
     QCheckBox* m_zoomNotAvailableCheck = nullptr;
 
     CalendarEventModel* m_calendarModel = nullptr;
+    AcademicCalendarProvider* m_academicCalendarProvider = nullptr;
     QQuickWidget* m_calendarView = nullptr;
 
     QTimer* m_autosaveTimer = nullptr;

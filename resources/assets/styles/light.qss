@@ -147,6 +147,45 @@ QComboBox:disabled::drop-down {
     border-left-color: #e4e9f1;
 }
 
+QSpinBox {
+    padding-right: 30px;
+}
+
+QSpinBox::up-button,
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 24px;
+    background-color: #f8fafc;
+    border-left: 1px solid #d0d7e2;
+}
+
+QSpinBox::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 6px;
+}
+
+QSpinBox::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 6px;
+}
+
+QSpinBox::up-button:hover,
+QSpinBox::down-button:hover {
+    background-color: #eef2f7;
+}
+
+QSpinBox::up-arrow {
+    image: url(:/assets/icons/spin_up_light.svg);
+    width: 10px;
+    height: 6px;
+}
+
+QSpinBox::down-arrow {
+    image: url(:/assets/icons/combo_arrow_light.svg);
+    width: 10px;
+    height: 6px;
+}
+
 QComboBox QAbstractItemView {
     background-color: #ffffff;
     color: #111827;
