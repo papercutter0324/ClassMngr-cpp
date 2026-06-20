@@ -252,10 +252,39 @@ if(BUILD_TESTING)
         COMMAND ClassMngrFontManagerTests
     )
 
+    qt_add_executable(ClassMngrLanguageServiceTests
+        tests/language_service_tests.cpp
+        src/core/language_service.cpp
+        src/core/settingsmanager.cpp
+    )
+
+    target_compile_features(ClassMngrLanguageServiceTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrLanguageServiceTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrLanguageServiceTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrLanguageServiceTests
+        COMMAND ClassMngrLanguageServiceTests
+    )
+
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests
             ClassMngrFontManagerTests
+            ClassMngrLanguageServiceTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"

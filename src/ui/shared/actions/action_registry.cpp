@@ -206,24 +206,9 @@ void ActionRegistry::retranslate()
             tr("Use the system language")
             );
         updateActionText(
-            languageState->action(Language::EnglishUS),
-            tr("American English"),
-            tr("Use American English")
-            );
-        updateActionText(
-            languageState->action(Language::EnglishGB),
-            tr("British English"),
-            tr("Use British English")
-            );
-        updateActionText(
-            languageState->action(Language::EnglishCA),
-            tr("Canadian English"),
-            tr("Use Canadian English")
-            );
-        updateActionText(
-            languageState->action(Language::EnglishAU),
-            tr("Australian English"),
-            tr("Use Australian English")
+            languageState->action(Language::English),
+            tr("English"),
+            tr("Use English")
             );
         updateActionText(
             languageState->action(Language::Korean),
@@ -468,29 +453,11 @@ void ActionRegistry::createOptionActions()
             tr("Use the system language")
             );
 
-    auto americanEnglishAction =
+    auto englishAction =
         createCheckableAction(
-            tr("American English"),
-            tr("Use American English")
-            );
-
-    auto britishEnglishAction =
-        createCheckableAction(
-            tr("British English"),
-            tr("Use British English")
-            );
-
-    auto canadianEnglishAction =
-        createCheckableAction(
-            tr("Canadian English"),
-            tr("Use Canadian English")
-            );
-
-    auto australianEnglishAction =
-        createCheckableAction(
-            tr("Australian English"),
-            tr("Use Australian English")
-            );
+            tr("English"),
+            tr("Use English")
+        );
 
     auto koreanLanguageAction =
         createCheckableAction(
@@ -503,20 +470,8 @@ void ActionRegistry::createOptionActions()
         systemDefaultLanguageAction
         );
     languageState->addOption(
-        Language::EnglishUS,
-        americanEnglishAction
-        );
-    languageState->addOption(
-        Language::EnglishGB,
-        britishEnglishAction
-        );
-    languageState->addOption(
-        Language::EnglishCA,
-        canadianEnglishAction
-        );
-    languageState->addOption(
-        Language::EnglishAU,
-        australianEnglishAction
+        Language::English,
+        englishAction
         );
     languageState->addOption(
         Language::Korean,

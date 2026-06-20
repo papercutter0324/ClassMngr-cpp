@@ -27,6 +27,9 @@ public:
     [[nodiscard]] static QString localeNameFor(
         Language language
         );
+    [[nodiscard]] static QString englishLocaleFor(
+        const QStringList& uiLanguages
+        );
 
 private:
     [[nodiscard]] QStringList candidateLocalesFor(

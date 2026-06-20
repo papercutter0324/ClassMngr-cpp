@@ -153,22 +153,8 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
             actions.languageState->action(Language::SystemDefault)
             );
 
-        QMenu* englishMenu =
-            languageMenu->addMenu(
-            QCoreApplication::translate("MenuBuilder", "English")
-        );
-
-        englishMenu->addAction(
-            actions.languageState->action(Language::EnglishUS)
-            );
-        englishMenu->addAction(
-            actions.languageState->action(Language::EnglishGB)
-            );
-        englishMenu->addAction(
-            actions.languageState->action(Language::EnglishCA)
-            );
-        englishMenu->addAction(
-            actions.languageState->action(Language::EnglishAU)
+        languageMenu->addAction(
+            actions.languageState->action(Language::English)
             );
 
         languageMenu->addAction(

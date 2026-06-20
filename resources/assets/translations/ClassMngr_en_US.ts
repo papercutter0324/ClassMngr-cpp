@@ -106,373 +106,369 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="273"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
         <source>New Database...</source>
         <translation>New Database...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="93"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
         <source>Create a new database</source>
         <translation>Create a new database</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="281"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="266"/>
         <source>Open...</source>
         <translation>Open...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="267"/>
         <source>Open an existing file</source>
         <translation>Open an existing file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="102"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="289"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="103"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="290"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="275"/>
         <source>Save the current file</source>
         <translation>Save the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="107"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="297"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
         <source>Save As...</source>
         <translation>Save As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="108"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="298"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
         <source>Save the file with a new name</source>
         <translation>Save the file with a new name</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="112"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="303"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
         <source>Export As...</source>
         <translation>Export As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="113"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="289"/>
         <source>Export the current file</source>
         <translation>Export the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="117"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="311"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="296"/>
         <source>Close</source>
         <translation>Close</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="118"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="312"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="297"/>
         <source>Close the current file</source>
         <translation>Close the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="319"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
         <source>Exit</source>
         <translation>Exit</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="123"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
         <source>Exit the application</source>
         <translation>Exit the application</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="128"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="338"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="323"/>
         <source>Undo</source>
         <translation>Undo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="129"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="339"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="324"/>
         <source>Undo the last action</source>
         <translation>Undo the last action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="133"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="345"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="330"/>
         <source>Redo</source>
         <translation>Redo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="134"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="346"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="331"/>
         <source>Redo the last undone action</source>
         <translation>Redo the last undone action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="138"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="352"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="337"/>
         <source>Cut</source>
         <translation>Cut</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="139"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="353"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="338"/>
         <source>Cut the selected content</source>
         <translation>Cut the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="143"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="359"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="344"/>
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="144"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="360"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="345"/>
         <source>Copy the selected content</source>
         <translation>Copy the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="148"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="366"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="351"/>
         <source>Paste</source>
         <translation>Paste</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="149"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="367"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="352"/>
         <source>Paste content from the clipboard</source>
         <translation>Paste content from the clipboard</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="154"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="386"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="371"/>
         <source>New Class</source>
         <translation>New Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="155"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="387"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="372"/>
         <source>Create a new class</source>
         <translation>Create a new class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="159"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="392"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="377"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="160"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="393"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
         <source>Delete the selected class</source>
         <translation>Delete the selected class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="164"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="398"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="383"/>
         <source>New Teacher</source>
         <translation>New Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="399"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="384"/>
         <source>Create a new teacher</source>
         <translation>Create a new teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="404"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="389"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="390"/>
         <source>Delete the selected teacher</source>
         <translation>Delete the selected teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="177"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="420"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
         <source>Automatic</source>
         <translation>Automatic</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="178"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="421"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="406"/>
         <source>Automatically save changes</source>
         <translation>Automatically save changes</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="182"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="426"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="411"/>
         <source>Manual</source>
         <translation>Manual</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="183"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="427"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
         <source>Save changes manually</source>
         <translation>Save changes manually</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="191"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="444"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="429"/>
         <source>Dark Theme</source>
         <translation>Dark Theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="445"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="430"/>
         <source>Use dark theme</source>
         <translation>Use dark theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="196"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="450"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="435"/>
         <source>Light Theme</source>
         <translation>Light Theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="197"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="451"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="436"/>
         <source>Use light theme</source>
         <translation>Use light theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="205"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="467"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="452"/>
         <source>System Default</source>
         <translation>System Default</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="468"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
         <source>Use the system language</source>
         <translation>Use the system language</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="210"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="473"/>
-        <source>American English</source>
-        <translation>American English</translation>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="458"/>
+        <source>English</source>
+        <translation>English</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="211"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="474"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
+        <source>Use English</source>
+        <translation>Use English</translation>
+    </message>
+    <message>
+        <source>American English</source>
+        <translation type="vanished">American English</translation>
+    </message>
+    <message>
         <source>Use American English</source>
-        <translation>Use American English</translation>
+        <translation type="vanished">Use American English</translation>
+    </message>
+    <message>
+        <source>British English</source>
+        <translation type="vanished">British English</translation>
+    </message>
+    <message>
+        <source>Use British English</source>
+        <translation type="vanished">Use British English</translation>
+    </message>
+    <message>
+        <source>Canadian English</source>
+        <translation type="vanished">Canadian English</translation>
+    </message>
+    <message>
+        <source>Use Canadian English</source>
+        <translation type="vanished">Use Canadian English</translation>
+    </message>
+    <message>
+        <source>Australian English</source>
+        <translation type="vanished">Australian English</translation>
+    </message>
+    <message>
+        <source>Use Australian English</source>
+        <translation type="vanished">Use Australian English</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="479"/>
-        <source>British English</source>
-        <translation>British English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="480"/>
-        <source>Use British English</source>
-        <translation>Use British English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="220"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="485"/>
-        <source>Canadian English</source>
-        <translation>Canadian English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="221"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="486"/>
-        <source>Use Canadian English</source>
-        <translation>Use Canadian English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="491"/>
-        <source>Australian English</source>
-        <translation>Australian English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="226"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="492"/>
-        <source>Use Australian English</source>
-        <translation>Use Australian English</translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="230"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="497"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="464"/>
         <source>Korean</source>
         <translation>Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="231"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="498"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
         <source>Use Korean</source>
         <translation>Use Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="237"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="533"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="222"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
         <source>Show Sidebar Tooltips</source>
         <translation>Show Sidebar Tooltips</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="238"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="534"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="223"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>Show full sidebar names in tooltips when they do not fit</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="242"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="539"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="227"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="494"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>Animate Overflowing Sidebar Text</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="243"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="540"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="228"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="495"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>Animate overflowing sidebar names on hover</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="248"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="584"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="233"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="539"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="249"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="585"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="540"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="253"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="590"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="238"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="545"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="254"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="591"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="546"/>
         <source>Show application information</source>
         <translation>Show application information</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="603"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="243"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
         <source>Manage Campuses</source>
         <translation>Manage Campuses</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="604"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="559"/>
         <source>Manage campus settings</source>
         <translation>Manage campus settings</translation>
     </message>
@@ -566,54 +562,54 @@
 <context>
     <name>CampusDashboardPage</name>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="81"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="89"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="168"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1057"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="82"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="90"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="169"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1185"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="94"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="182"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1062"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="95"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="183"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1190"/>
         <source>Directions</source>
         <translation>Directions</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="99"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="196"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1067"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="100"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="197"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1195"/>
         <source>Housing</source>
         <translation>Housing</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="104"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="210"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1072"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="105"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="211"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1200"/>
         <source>Map</source>
         <translation>Map</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="227"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="230"/>
         <source>Save Campus *</source>
         <translation>Save Campus *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="337"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="355"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="374"/>
         <source>Saving...</source>
         <translation>Saving...</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="349"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="367"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="370"/>
         <source>Unsaved changes</source>
         <translation>Unsaved changes</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="363"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="795"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="899"/>
         <source>Show Classic</source>
         <translation>Show Classic</translation>
     </message>
@@ -634,18 +630,18 @@
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="263"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="280"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="542"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="168"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="367"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="91"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="368"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="95"/>
         <source>Show Korean</source>
         <translation>Show Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="264"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="281"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="543"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="368"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="369"/>
         <source>Show English</source>
         <translation>Show English</translation>
     </message>
@@ -656,9 +652,9 @@
         <translation>Default</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="219"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="222"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="227"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1005"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1133"/>
         <source>New Campus</source>
         <translation>New Campus</translation>
     </message>
@@ -678,160 +674,162 @@
         <translation>Saved</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="271"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="288"/>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="176"/>
         <source>Remove</source>
         <translation>Remove</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="193"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_housing.cpp" line="194"/>
         <source>Housing Name:</source>
         <translation>Housing Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="103"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="108"/>
         <source>Campus Name:</source>
         <translation>Campus Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="126"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="156"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="844"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="132"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="170"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="949"/>
         <source>Building Name:</source>
         <translation>Building Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="132"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="162"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="139"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="177"/>
         <source>Phone Number:</source>
         <translation>Phone Number:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="190"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="205"/>
         <source>Transit Steps:</source>
         <translation>Transit Steps:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="198"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="213"/>
         <source>Upon Arriving:</source>
         <translation>Upon Arriving:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="296"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="311"/>
         <source>Office Number:</source>
         <translation>Office Number:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="302"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="317"/>
         <source>Office WiFi:</source>
         <translation>Office WiFi:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="308"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="323"/>
         <source>WiFi Password:</source>
         <translation>WiFi Password:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="314"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="329"/>
         <source>Printer Name:</source>
         <translation>Printer Name:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="320"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="335"/>
         <source>Printer Installation Steps:</source>
         <translation>Printer Installation Steps:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="355"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="427"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="252"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="259"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="370"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="443"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="372"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="388"/>
         <source>Printer Driver URL:</source>
         <translation>Printer Driver URL:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="442"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="459"/>
         <source>Photocopier Code:</source>
         <translation>Photocopier Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="242"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="517"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="245"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="534"/>
         <source>No housing information available</source>
         <translation>No housing information available</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="235"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="531"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="238"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="548"/>
         <source>Add Housing Location</source>
         <translation>Add Housing Location</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="574"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="591"/>
         <source>Image Path:</source>
         <translation>Image Path:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="591"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="609"/>
         <source>Preview:</source>
         <translation>Preview:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="823"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="928"/>
         <source>Complete Address:</source>
         <translation>Complete Address:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="854"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="959"/>
         <source>Province:</source>
         <translation>Province:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="860"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="965"/>
         <source>City:</source>
         <translation>City:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="866"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="971"/>
         <source>District:</source>
         <translation>District:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="872"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="977"/>
         <source>Address Line 1:</source>
         <translation>Address Line 1:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="878"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="983"/>
         <source>Address Line 2:</source>
         <translation>Address Line 2:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="884"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="989"/>
         <source>Postal Code:</source>
         <translation>Postal Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="890"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="995"/>
         <source>Note:</source>
         <translation>Note:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="961"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1089"/>
         <source>Campus:</source>
         <translation>Campus:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="975"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1103"/>
         <source>Campus Code:</source>
         <translation>Campus Code:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="228"/>
-        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1011"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="231"/>
+        <location filename="../../../src/features/campus/ui/campus_dashboard_page_ui.cpp" line="1139"/>
         <source>Save Campus</source>
         <translation>Save Campus</translation>
     </message>
@@ -839,49 +837,49 @@
 <context>
     <name>ClassDetailsSection</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="182"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="500"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="183"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="501"/>
         <source>Choose Color</source>
         <translation>Choose Color</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="234"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="507"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="235"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="508"/>
         <source>Color</source>
         <translation>Color</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="235"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="514"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="236"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="515"/>
         <source>Grade</source>
         <translation>Grade</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="236"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="521"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="237"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="522"/>
         <source>Level</source>
         <translation>Level</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="237"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="528"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="238"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="529"/>
         <source># of Students</source>
         <translation># of Students</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="238"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="535"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="536"/>
         <source>Reading Book</source>
         <translation>Reading Book</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="239"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="542"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="240"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="543"/>
         <source>Essay Book</source>
         <translation>Essay Book</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="680"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="681"/>
         <source>Select Class Color</source>
         <translation>Select Class Color</translation>
     </message>
@@ -890,77 +888,83 @@
     <name>ClassInfoPage</name>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="136"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="359"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="632"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="366"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="639"/>
         <source>Class Information</source>
         <translation>Class Information</translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="150"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="636"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="643"/>
         <source>No class selected</source>
         <translation>No class selected</translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="200"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="643"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="650"/>
         <source>Korean Teacher</source>
         <translation>Korean Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="214"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="650"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="657"/>
         <source>Class Details</source>
         <translation>Class Details</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="239"/>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="487"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="231"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="664"/>
+        <source>Class Times</source>
+        <translation type="unfinished">Class Times</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="246"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="494"/>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="382"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="389"/>
         <source>Class %1</source>
         <translation>Class %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="486"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="493"/>
         <source>Save Changes *</source>
         <translation>Save Changes *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="551"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="558"/>
         <source>Regular Schedule Conflicts</source>
         <translation>Regular Schedule Conflicts</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="563"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="570"/>
         <source>Intensive Schedule Conflicts</source>
         <translation>Intensive Schedule Conflicts</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="584"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="591"/>
         <source>Save Class Information</source>
         <translation>Save Class Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="585"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="592"/>
         <source>Class information could not be saved.</source>
         <translation>Class information could not be saved.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="709"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="723"/>
         <source>another time in this class</source>
         <translation>another time in this class</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="713"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="727"/>
         <source>%1 %2-%3 conflicts with %4.</source>
         <translation>%1 %2-%3 conflicts with %4.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="724"/>
+        <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="738"/>
         <source>Please resolve these schedule conflicts before saving:
 
 %1</source>
@@ -987,30 +991,32 @@
         <translation>Class notes could not be saved.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="321"/>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="440"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="335"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="454"/>
         <source>Class Notes</source>
         <translation>Class Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="335"/>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="445"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="349"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="459"/>
         <source>No class selected</source>
         <translation>No class selected</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="351"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="266"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="365"/>
         <source>Notes</source>
         <translation>Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="372"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="273"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="386"/>
         <source>Time Filler Activities</source>
         <translation>Time Filler Activities</translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="259"/>
-        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="403"/>
+        <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="417"/>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
@@ -1018,32 +1024,30 @@
 <context>
     <name>ClassScheduleSection</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="152"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="301"/>
         <source>Class Times</source>
-        <translation>Class Times</translation>
+        <translation type="vanished">Class Times</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="177"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="322"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="203"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="341"/>
         <source>+ Add Time</source>
         <translation>+ Add Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="178"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="329"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="204"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="348"/>
         <source>+ Add Intensive Time</source>
         <translation>+ Add Intensive Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="199"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="308"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="327"/>
         <source>Regular Schedule</source>
         <translation>Regular Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="315"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="241"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="334"/>
         <source>Intensive Schedule</source>
         <translation>Intensive Schedule</translation>
     </message>
@@ -1051,8 +1055,8 @@
 <context>
     <name>ClassTimeRow</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="362"/>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="220"/>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="368"/>
         <source>Remove</source>
         <translation>Remove</translation>
     </message>
@@ -1236,17 +1240,16 @@
         <translation>Language</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="158"/>
         <source>English</source>
-        <translation>English</translation>
+        <translation type="vanished">English</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="191"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="177"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="205"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="191"/>
         <source>Admin</source>
         <translation>Admin</translation>
     </message>
@@ -1254,65 +1257,65 @@
 <context>
     <name>MyInfoPage</name>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="286"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="449"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="677"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="287"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="450"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="678"/>
         <source>Class Schedule</source>
         <translation>Class Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="279"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="452"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="733"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="280"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="453"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="734"/>
         <source>My Information</source>
         <translation>My Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="293"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="455"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="890"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="294"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="456"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="891"/>
         <source>Monthly Calendar</source>
         <translation>Monthly Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="265"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="638"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="266"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="639"/>
         <source>My Info</source>
         <translation>My Info</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="272"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="651"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="273"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="652"/>
         <source>Manage your schedule, personal details, and monthly events.</source>
         <translation>Manage your schedule, personal details, and monthly events.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="328"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="781"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="329"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="782"/>
         <source>N/A</source>
         <translation>N/A</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="300"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="793"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="301"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="794"/>
         <source>My Campus</source>
         <translation>My Campus</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="307"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="795"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="308"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="796"/>
         <source>Zoom Login ID</source>
         <translation>Zoom Login ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="314"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="797"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="315"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="798"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="321"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="799"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="322"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="800"/>
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>
@@ -1416,17 +1419,17 @@
         <translation>No map available</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="178"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="179"/>
         <source>Characters: %1/%2</source>
         <translation>Characters: %1/%2</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="637"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="647"/>
         <source>Clear text?</source>
         <translation>Clear text?</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="638"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="648"/>
         <source>Are you sure you want to clear the comment?</source>
         <translation>Are you sure you want to clear the comment?</translation>
     </message>
@@ -1436,8 +1439,8 @@
         <translation>Class %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="417"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="428"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="418"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="429"/>
         <source>Unassigned</source>
         <translation>Unassigned</translation>
     </message>
@@ -1462,20 +1465,20 @@
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="243"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="359"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="269"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="378"/>
         <source>Days</source>
         <translation>Days</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="244"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="369"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="270"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="388"/>
         <source>Start Time</source>
         <translation>Start Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="245"/>
-        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="379"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="271"/>
+        <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="398"/>
         <source>End Time</source>
         <translation>End Time</translation>
     </message>
@@ -1871,78 +1874,78 @@
 <context>
     <name>ScheduleEditorDialog</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="31"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="32"/>
         <source>Edit Schedule Cell</source>
         <translation>Edit Schedule Cell</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="85"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="86"/>
         <source>Choose Class Color</source>
         <translation>Choose Class Color</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="104"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="105"/>
         <source>Choose Font Color</source>
         <translation>Choose Font Color</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="152"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="153"/>
         <source>Could Not Save</source>
         <translation>Could Not Save</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="153"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="154"/>
         <source>The class information could not be saved.</source>
         <translation>The class information could not be saved.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="179"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="180"/>
         <source>Edit Class Information</source>
         <translation>Edit Class Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="225"/>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="245"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="230"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="250"/>
         <source>Choose Color</source>
         <translation>Choose Color</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="258"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="263"/>
         <source>Korean Teacher</source>
         <translation>Korean Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="260"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="265"/>
         <source>Room Number</source>
         <translation>Room Number</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="262"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="267"/>
         <source>Class Grade</source>
         <translation>Class Grade</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="264"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="269"/>
         <source>Class Level</source>
         <translation>Class Level</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="266"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="271"/>
         <source>Class Color</source>
         <translation>Class Color</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="268"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="273"/>
         <source>Font Color</source>
         <translation>Font Color</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="281"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="286"/>
         <source>Cancel</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="287"/>
+        <location filename="../../../src/features/schedule/ui/schedule_editor_dialog.cpp" line="292"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
@@ -2012,12 +2015,12 @@
         <translation>Time</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1017"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1029"/>
         <source>Essay</source>
         <translation>Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1042"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1054"/>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>
@@ -2065,12 +2068,12 @@
         <translation>Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="941"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="953"/>
         <source>Essay</source>
         <translation>Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="966"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="978"/>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>
@@ -2082,26 +2085,26 @@
         <translation type="vanished">Class Info</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1474"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1531"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1546"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1483"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1540"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1555"/>
         <source>Add Class</source>
         <translation>Add Class</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1480"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1489"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1495"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1516"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1552"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1504"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1525"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1561"/>
         <source>Add Teacher</source>
         <translation>Add Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1501"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar.cpp" line="1510"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
@@ -2109,36 +2112,36 @@
 <context>
     <name>SidebarController</name>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="567"/>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="674"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="568"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="675"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="568"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="569"/>
         <source>Which class would you like to delete?</source>
         <translation>Which class would you like to delete?</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="609"/>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="694"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="610"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="695"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="610"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="611"/>
         <source>Which teacher would you like to delete?</source>
         <translation>Which teacher would you like to delete?</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="625"/>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="660"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="626"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="661"/>
         <source>Class %1</source>
         <translation>Class %1</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="675"/>
-        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="695"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="676"/>
+        <location filename="../../../src/app/controllers/sidebar_controller.cpp" line="696"/>
         <source>Delete &apos;%1&apos;?</source>
         <translation>Delete &apos;%1&apos;?</translation>
     </message>
@@ -2146,32 +2149,32 @@
 <context>
     <name>SpeakingEvalDelegate</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="329"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="337"/>
         <source>Edit</source>
         <translation>Edit</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="556"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="566"/>
         <source>Enter Comment</source>
         <translation>Enter Comment</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="581"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="591"/>
         <source>Clear</source>
         <translation>Clear</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="587"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="597"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="593"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="603"/>
         <source>Cancel</source>
         <translation>Cancel</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="697"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_delegate.cpp" line="707"/>
         <source>Edit Comment</source>
         <translation>Edit Comment</translation>
     </message>
@@ -2471,191 +2474,191 @@
 <context>
     <name>SubPrepPage</name>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="739"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="926"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1138"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="740"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="927"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1139"/>
         <source>Important Information</source>
         <translation>Important Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="746"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="929"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1400"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="747"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="930"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1401"/>
         <source>Class Information</source>
         <translation>Class Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="753"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="932"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1436"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="754"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="933"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1437"/>
         <source>Sub Comments</source>
         <translation>Sub Comments</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="725"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1111"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="726"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1112"/>
         <source>Sub Prep</source>
         <translation>Sub Prep</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="732"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1124"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="733"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1125"/>
         <source>Prepare substitute materials and class notes.</source>
         <translation>Prepare substitute materials and class notes.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="767"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1147"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="768"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1148"/>
         <source>Personal Zoom Information</source>
         <translation>Personal Zoom Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="795"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1171"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="796"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1172"/>
         <source>Login Email</source>
         <translation>Login Email</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="802"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1173"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="803"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1174"/>
         <source>Password</source>
         <translation>Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="774"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1210"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="775"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1211"/>
         <source>Campus Information</source>
         <translation>Campus Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="809"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1260"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="810"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1261"/>
         <source>Campus</source>
         <translation>Campus</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="816"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1262"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="817"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1263"/>
         <source>Office Number</source>
         <translation>Office Number</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="823"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1264"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="824"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1265"/>
         <source>Office WiFi</source>
         <translation>Office WiFi</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="830"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1266"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2038"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="831"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1267"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2039"/>
         <source>WiFi Password</source>
         <translation>WiFi Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="837"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1268"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="838"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1269"/>
         <source>Photocopier Code</source>
         <translation>Photocopier Code</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="781"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1341"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="782"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1342"/>
         <source>Lesson Materials and Grading</source>
         <translation>Lesson Materials and Grading</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="844"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1346"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="845"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1347"/>
         <source>Class Materials</source>
         <translation>Class Materials</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="851"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1362"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="852"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1363"/>
         <source>Time Filler Activities</source>
         <translation>Time Filler Activities</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="858"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1378"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="859"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1379"/>
         <source>Book Report Grading</source>
         <translation>Book Report Grading</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="760"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1409"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="761"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1410"/>
         <source>Sorted by Co-Teacher</source>
         <translation>Sorted by Co-Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="788"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1445"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="789"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1446"/>
         <source>Comments</source>
         <translation>Comments</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1938"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1939"/>
         <source>No classes available.</source>
         <translation>No classes available.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2020"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2021"/>
         <source>Internet Type</source>
         <translation>Internet Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2029"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2030"/>
         <source>WiFi Name</source>
         <translation>WiFi Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2059"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2060"/>
         <source>Projection Type</source>
         <translation>Projection Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2068"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2069"/>
         <source>Zoom ID</source>
         <translation>Zoom ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2077"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2078"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2088"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2089"/>
         <source>Notes</source>
         <translation>Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2132"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2133"/>
         <source># of Students</source>
         <translation># of Students</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2142"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2143"/>
         <source>Regular</source>
         <translation>Regular</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2153"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2154"/>
         <source>Intensive</source>
         <translation>Intensive</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2167"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2168"/>
         <source>Schedule</source>
         <translation>Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2179"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2180"/>
         <source>Class Notes</source>
         <translation>Class Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2250"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2251"/>
         <source>Scoring: 0 / 20 / 40 / 60 / 80 / 100
 Comments: Please leave a comment about what the student did well and what they need to work on.
 Additional Rules: N/A</source>
@@ -2667,114 +2670,114 @@ Additional Rules: N/A</translation>
 <context>
     <name>TeacherInfoPage</name>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="186"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="816"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="187"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="820"/>
         <source>Teacher Information</source>
         <translation>Teacher Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="197"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="824"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="198"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="828"/>
         <source>View and manage teacher details.</source>
         <translation>View and manage teacher details.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="215"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="831"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="216"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="835"/>
         <source>Teacher Details</source>
         <translation>Teacher Details</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="240"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="852"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="244"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="856"/>
         <source>Korean Name</source>
         <translation>Korean Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="243"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="859"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="247"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="863"/>
         <source>English Name</source>
         <translation>English Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="246"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="866"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="250"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="870"/>
         <source>Room Number</source>
         <translation>Room Number</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="270"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="838"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="274"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="842"/>
         <source>Connectivity</source>
         <translation>Connectivity</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="305"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="873"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="309"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="877"/>
         <source>Internet Type</source>
         <translation>Internet Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="308"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="880"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="312"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="884"/>
         <source>WiFi Name</source>
         <translation>WiFi Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="311"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="887"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="315"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="891"/>
         <source>WiFi Password</source>
         <translation>WiFi Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="343"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="894"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="347"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="898"/>
         <source>Projection Type</source>
         <translation>Projection Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="346"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="901"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="350"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="905"/>
         <source>Zoom ID</source>
         <translation>Zoom ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="349"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="908"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="353"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="912"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="409"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="845"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="413"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="849"/>
         <source>Notes</source>
         <translation>Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="509"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="742"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="805"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="513"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="746"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="809"/>
         <source>Teacher Information for %1</source>
         <translation>Teacher Information for %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="584"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="588"/>
         <source>Unsaved Teacher Changes</source>
         <translation>Unsaved Teacher Changes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="589"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="593"/>
         <source>This teacher has unsaved changes.</source>
         <translation>This teacher has unsaved changes.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="783"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="787"/>
         <source>Save Changes *</source>
         <translation>Save Changes *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="423"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="784"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="427"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="788"/>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
@@ -2782,56 +2785,56 @@ Additional Rules: N/A</translation>
 <context>
     <name>TeacherInfoSection</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="70"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="209"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="75"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="214"/>
         <source>Korean</source>
         <translation>Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="71"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="216"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="76"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="221"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="72"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="223"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="77"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="228"/>
         <source>Room</source>
         <translation>Room</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="96"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="230"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="101"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="235"/>
         <source>Internet Type</source>
         <translation>Internet Type</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="237"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="102"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="242"/>
         <source>WiFi Name</source>
         <translation>WiFi Name</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="244"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="103"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="249"/>
         <source>WiFi Password</source>
         <translation>WiFi Password</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="120"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="251"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="125"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="256"/>
         <source>Projection Type</source>
         <translation>Projection Type</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="121"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="126"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="263"/>
         <source>Zoom ID</source>
         <translation>Zoom ID</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="265"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="127"/>
+        <location filename="../../../src/ui/shared/widgets/sections/teacher_info_section.cpp" line="270"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>

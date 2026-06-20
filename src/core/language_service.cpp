@@ -77,15 +77,23 @@ Language LanguageService::savedLanguage()
                 )
             .toInt();
 
-    switch (static_cast<Language>(storedValue))
+    switch (storedValue)
     {
-    case Language::SystemDefault:
-    case Language::EnglishUS:
-    case Language::EnglishGB:
-    case Language::EnglishCA:
-    case Language::EnglishAU:
-    case Language::Korean:
-        return static_cast<Language>(storedValue);
+    case static_cast<int>(Language::SystemDefault):
+        return Language::SystemDefault;
+
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        SettingsManager::instance().set(
+            OptionKeys::Language,
+            static_cast<int>(Language::English)
+            );
+        return Language::English;
+
+    case static_cast<int>(Language::Korean):
+        return Language::Korean;
     }
 
     return Language::SystemDefault;
@@ -97,17 +105,8 @@ QString LanguageService::localeNameFor(
 {
     switch (language)
     {
-    case Language::EnglishUS:
-        return QStringLiteral("en_US");
-
-    case Language::EnglishGB:
-        return QStringLiteral("en_GB");
-
-    case Language::EnglishCA:
-        return QStringLiteral("en_CA");
-
-    case Language::EnglishAU:
-        return QStringLiteral("en_AU");
+    case Language::English:
+        return englishLocaleFor(QLocale::system().uiLanguages());
 
     case Language::Korean:
         return QStringLiteral("ko_KR");
@@ -117,6 +116,41 @@ QString LanguageService::localeNameFor(
     }
 
     return QString();
+}
+
+QString LanguageService::englishLocaleFor(
+    const QStringList& uiLanguages
+    )
+{
+    for (const QString& uiLanguage : uiLanguages)
+    {
+        const QLocale locale(uiLanguage);
+
+        if (locale.language() != QLocale::English)
+        {
+            continue;
+        }
+
+        switch (locale.territory())
+        {
+        case QLocale::UnitedStates:
+            return QStringLiteral("en_US");
+
+        case QLocale::Canada:
+            return QStringLiteral("en_CA");
+
+        case QLocale::UnitedKingdom:
+            return QStringLiteral("en_GB");
+
+        case QLocale::Australia:
+            return QStringLiteral("en_AU");
+
+        default:
+            break;
+        }
+    }
+
+    return QStringLiteral("en_US");
 }
 
 QStringList LanguageService::candidateLocalesFor(
