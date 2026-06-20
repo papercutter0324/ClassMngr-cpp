@@ -1115,18 +1115,18 @@
 <context>
     <name>CampusMapPreview</name>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
         <source>Map View</source>
         <translation>지도 보기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="38"/>
         <source>Building View</source>
         <translation>건물 보기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="225"/>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="332"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="231"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="345"/>
         <source>No map images available</source>
         <translation>사용 가능한 지도 이미지가 없습니다</translation>
     </message>
@@ -1583,16 +1583,21 @@
         <translation>글꼴 크기</translation>
     </message>
     <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="188"/>
+        <source>Sidebar</source>
+        <translation>사이드바</translation>
+    </message>
+    <message>
         <source>English</source>
         <translation type="vanished">영어</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="196"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="201"/>
         <source>Help</source>
         <translation>도움말</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="210"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="215"/>
         <source>Admin</source>
         <translation>관리자</translation>
     </message>

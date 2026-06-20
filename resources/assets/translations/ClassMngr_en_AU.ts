@@ -1091,18 +1091,18 @@
 <context>
     <name>CampusMapPreview</name>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="36"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
         <source>Map View</source>
         <translation>Map View</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="37"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="38"/>
         <source>Building View</source>
         <translation>Building View</translation>
     </message>
     <message>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="225"/>
-        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="332"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="231"/>
+        <location filename="../../../src/features/campus/ui/campus_map_preview.cpp" line="345"/>
         <source>No map images available</source>
         <translation>No map images available</translation>
     </message>
@@ -1547,16 +1547,21 @@
         <translation>Font Size</translation>
     </message>
     <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="188"/>
+        <source>Sidebar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>English</source>
         <translation type="vanished">English</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="196"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="201"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="210"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="215"/>
         <source>Admin</source>
         <translation>Admin</translation>
     </message>

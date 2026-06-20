@@ -183,8 +183,13 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
 
     options->addSeparator();
 
-    options->addAction(actions.showSidebarTooltips);
-    options->addAction(actions.animateSidebarText);
+    QMenu* sidebarMenu =
+        options->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Sidebar")
+    );
+
+    sidebarMenu->addAction(actions.showSidebarTooltips);
+    sidebarMenu->addAction(actions.animateSidebarText);
 }
 
 void MenuBuilder::buildHelpMenu(MainWindow* window)
