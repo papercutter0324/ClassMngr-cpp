@@ -20,6 +20,35 @@
     },
 
     {
+      "name": "qt-linux",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_LINUX_PREFIX}"
+      }
+    },
+    {
+      "name": "qt-macos",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "/Users/papercutter0324/Qt/6.11.1/macos"
+      }
+    },
+    {
+      "name": "qt-windows-desktop",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/gcc_64"
+      }
+    },
+    {
+      "name": "qt-windows-laptop",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_WINDOWS_LAPTOP_PREFIX}"
+      }
+    },
+
+    {
       "name": "windows-msvc-base",
       "hidden": true,
       "inherits": "base",
@@ -33,13 +62,13 @@
     {
       "name": "windows-msvc-x64-base",
       "hidden": true,
-      "inherits": "windows-msvc-base",
+      "inherits": [
+        "windows-msvc-base",
+        "qt-windows-desktop"
+      ],
       "architecture": {
         "value": "x64",
         "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X64_PREFIX}"
       }
     },
     {
@@ -51,6 +80,28 @@
       "name": "windows-msvc-x64-release",
       "displayName": "Windows MSVC x64 Release",
       "inherits": "windows-msvc-x64-base"
+    },
+    {
+      "name": "windows-laptop-msvc-x64-base",
+      "hidden": true,
+      "inherits": [
+        "windows-msvc-base",
+        "qt-windows-laptop"
+      ],
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      }
+    },
+    {
+      "name": "windows-laptop-msvc-x64-debug",
+      "displayName": "Windows Laptop MSVC x64 Debug",
+      "inherits": "windows-laptop-msvc-x64-base"
+    },
+    {
+      "name": "windows-laptop-msvc-x64-release",
+      "displayName": "Windows Laptop MSVC x64 Release",
+      "inherits": "windows-laptop-msvc-x64-base"
     },
     {
       "name": "windows-msvc-arm64-release",
@@ -81,15 +132,17 @@
     {
       "name": "linux-gcc-debug",
       "displayName": "Linux GCC Debug",
-      "inherits": "base",
+      "inherits": [
+        "base",
+        "qt-linux"
+      ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
       },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/gcc_64"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
@@ -104,7 +157,10 @@
     {
       "name": "macos-clang-debug",
       "displayName": "macOS Clang Debug",
-      "inherits": "base",
+      "inherits": [
+        "base",
+        "qt-macos"
+      ],
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -112,7 +168,6 @@
       },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/macos",
         "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64"
       }
     },
@@ -135,6 +190,16 @@
     {
       "name": "windows-msvc-x64-release",
       "configurePreset": "windows-msvc-x64-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-laptop-msvc-x64-debug",
+      "configurePreset": "windows-laptop-msvc-x64-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-laptop-msvc-x64-release",
+      "configurePreset": "windows-laptop-msvc-x64-release",
       "configuration": "Release"
     },
     {
