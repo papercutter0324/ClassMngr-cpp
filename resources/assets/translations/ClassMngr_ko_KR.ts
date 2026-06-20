@@ -106,265 +106,265 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
         <source>New Database...</source>
         <translation>새 데이터베이스...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="93"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
         <source>Create a new database</source>
         <translation>새 데이터베이스 만들기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="266"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="290"/>
         <source>Open...</source>
         <translation>열기...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="267"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="291"/>
         <source>Open an existing file</source>
         <translation>기존 파일 열기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="102"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="298"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="103"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="275"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="299"/>
         <source>Save the current file</source>
         <translation>현재 파일 저장</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="107"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="306"/>
         <source>Save As...</source>
         <translation>다른 이름으로 저장...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="108"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="307"/>
         <source>Save the file with a new name</source>
         <translation>새 이름으로 파일 저장</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="112"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="312"/>
         <source>Export As...</source>
         <translation>다른 이름으로 내보내기...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="113"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="289"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="313"/>
         <source>Export the current file</source>
         <translation>현재 파일 내보내기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="117"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="296"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
         <source>Close</source>
         <translation>닫기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="118"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="297"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="321"/>
         <source>Close the current file</source>
         <translation>현재 파일 닫기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="328"/>
         <source>Exit</source>
         <translation>종료</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="123"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="329"/>
         <source>Exit the application</source>
         <translation>애플리케이션 종료</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="128"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="323"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="347"/>
         <source>Undo</source>
         <translation>실행 취소</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="129"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="324"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="348"/>
         <source>Undo the last action</source>
         <translation>마지막 작업 실행 취소</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="133"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="330"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="354"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="134"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="331"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="355"/>
         <source>Redo the last undone action</source>
         <translation>마지막으로 취소한 작업 다시 실행</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="138"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="337"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="361"/>
         <source>Cut</source>
         <translation>잘라내기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="139"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="338"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="362"/>
         <source>Cut the selected content</source>
         <translation>선택한 내용 잘라내기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="143"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="344"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="368"/>
         <source>Copy</source>
         <translation>복사</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="144"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="345"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="369"/>
         <source>Copy the selected content</source>
         <translation>선택한 내용 복사</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="148"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="351"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="375"/>
         <source>Paste</source>
         <translation>붙여넣기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="149"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="352"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="376"/>
         <source>Paste content from the clipboard</source>
         <translation>클립보드 내용 붙여넣기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="154"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="371"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="395"/>
         <source>New Class</source>
         <translation>새 수업</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="155"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="372"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="396"/>
         <source>Create a new class</source>
         <translation>새 수업 만들기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="159"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="377"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="401"/>
         <source>Delete Class</source>
         <translation>수업 삭제</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="160"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="402"/>
         <source>Delete the selected class</source>
         <translation>선택한 수업 삭제</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="164"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="383"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="407"/>
         <source>New Teacher</source>
         <translation>새 교사</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="384"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="408"/>
         <source>Create a new teacher</source>
         <translation>새 교사 만들기</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="389"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="413"/>
         <source>Delete Teacher</source>
         <translation>교사 삭제</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="390"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="414"/>
         <source>Delete the selected teacher</source>
         <translation>선택한 교사 삭제</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="177"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="429"/>
         <source>Automatic</source>
         <translation>자동</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="178"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="406"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="430"/>
         <source>Automatically save changes</source>
         <translation>변경 사항을 자동으로 저장</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="182"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="411"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="435"/>
         <source>Manual</source>
         <translation>수동</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="183"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="436"/>
         <source>Save changes manually</source>
         <translation>변경 사항을 수동으로 저장</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="191"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="429"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
         <source>Dark Theme</source>
         <translation>어두운 테마</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="430"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="454"/>
         <source>Use dark theme</source>
         <translation>어두운 테마 사용</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="196"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="435"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
         <source>Light Theme</source>
         <translation>밝은 테마</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="197"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="436"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="460"/>
         <source>Use light theme</source>
         <translation>밝은 테마 사용</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="205"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="452"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="476"/>
         <source>System Default</source>
         <translation>시스템 기본값</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
         <source>Use the system language</source>
         <translation>시스템 언어 사용</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="210"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="458"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="482"/>
         <source>English</source>
         <translation>영어</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="211"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
         <source>Use English</source>
         <translation>영어 사용</translation>
     </message>
@@ -402,73 +402,121 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="464"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
         <source>Korean</source>
         <translation>한국어</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
         <source>Use Korean</source>
         <translation>한국어 사용</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="222"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="224"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="514"/>
+        <source>Small</source>
+        <translation>작게</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="515"/>
+        <source>Use small font size</source>
+        <translation>작은 글꼴 크기 사용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="229"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="520"/>
+        <source>Normal</source>
+        <translation>보통</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="230"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="521"/>
+        <source>Use normal font size</source>
+        <translation>보통 글꼴 크기 사용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="526"/>
+        <source>Large</source>
+        <translation>크게</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="235"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="527"/>
+        <source>Use large font size</source>
+        <translation>큰 글꼴 크기 사용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="532"/>
+        <source>Extra Large</source>
+        <translation>매우 크게</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="533"/>
+        <source>Use extra large font size</source>
+        <translation>매우 큰 글꼴 크기 사용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="246"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="560"/>
         <source>Show Sidebar Tooltips</source>
         <translation>사이드바 툴팁 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="223"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="247"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="561"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>사이드바 이름이 잘릴 때 전체 이름을 툴팁으로 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="227"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="494"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="251"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="566"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>긴 사이드바 텍스트 애니메이션</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="228"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="495"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="252"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="567"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>마우스를 올리면 잘린 사이드바 이름을 움직여 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="233"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="539"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="257"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="611"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="540"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="612"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="238"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="545"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="262"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="617"/>
         <source>About</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="546"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="618"/>
         <source>Show application information</source>
         <translation>애플리케이션 정보 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="243"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="267"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="630"/>
         <source>Manage Campuses</source>
         <translation>캠퍼스 관리</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="559"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="268"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="631"/>
         <source>Manage campus settings</source>
         <translation>캠퍼스 설정 관리</translation>
     </message>
@@ -1149,42 +1197,42 @@
         <translation>메인 창</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="50"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="51"/>
         <source>Loading pages...</source>
         <translation>페이지 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="53"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="54"/>
         <source>Loading sidebar...</source>
         <translation>사이드바 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="56"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="57"/>
         <source>Initializing actions...</source>
         <translation>작업 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="59"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="60"/>
         <source>Initializing controllers...</source>
         <translation>컨트롤러 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="62"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="63"/>
         <source>Building menus...</source>
         <translation>메뉴 구성 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="66"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="67"/>
         <source>Connecting signals...</source>
         <translation>신호 연결 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="69"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="70"/>
         <source>Loading recent file...</source>
         <translation>최근 파일 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="92"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="93"/>
         <source> [ADMIN]</source>
         <translation> [관리자]</translation>
     </message>
@@ -1240,16 +1288,21 @@
         <translation>언어</translation>
     </message>
     <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="170"/>
+        <source>Font Size</source>
+        <translation>글꼴 크기</translation>
+    </message>
+    <message>
         <source>English</source>
         <translation type="vanished">영어</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="177"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="196"/>
         <source>Help</source>
         <translation>도움말</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="191"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="210"/>
         <source>Admin</source>
         <translation>관리자</translation>
     </message>
@@ -2015,12 +2068,12 @@
         <translation>시간</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1029"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1043"/>
         <source>Essay</source>
         <translation>에세이</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1054"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1068"/>
         <source>Lunch</source>
         <translation>점심</translation>
     </message>
@@ -2068,12 +2121,12 @@
         <translation>시간</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="953"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="965"/>
         <source>Essay</source>
         <translation>에세이</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="978"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="990"/>
         <source>Lunch</source>
         <translation>점심</translation>
     </message>

@@ -106,265 +106,265 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
         <source>New Database...</source>
         <translation>New Database...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="93"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
         <source>Create a new database</source>
         <translation>Create a new database</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="266"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="290"/>
         <source>Open...</source>
         <translation>Open...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="267"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="291"/>
         <source>Open an existing file</source>
         <translation>Open an existing file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="102"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="298"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="103"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="275"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="299"/>
         <source>Save the current file</source>
         <translation>Save the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="107"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="306"/>
         <source>Save As...</source>
         <translation>Save As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="108"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="307"/>
         <source>Save the file with a new name</source>
         <translation>Save the file with a new name</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="112"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="312"/>
         <source>Export As...</source>
         <translation>Export As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="113"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="289"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="313"/>
         <source>Export the current file</source>
         <translation>Export the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="117"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="296"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
         <source>Close</source>
         <translation>Close</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="118"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="297"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="321"/>
         <source>Close the current file</source>
         <translation>Close the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="328"/>
         <source>Exit</source>
         <translation>Exit</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="123"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="329"/>
         <source>Exit the application</source>
         <translation>Exit the application</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="128"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="323"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="347"/>
         <source>Undo</source>
         <translation>Undo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="129"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="324"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="348"/>
         <source>Undo the last action</source>
         <translation>Undo the last action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="133"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="330"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="354"/>
         <source>Redo</source>
         <translation>Redo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="134"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="331"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="355"/>
         <source>Redo the last undone action</source>
         <translation>Redo the last undone action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="138"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="337"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="361"/>
         <source>Cut</source>
         <translation>Cut</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="139"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="338"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="362"/>
         <source>Cut the selected content</source>
         <translation>Cut the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="143"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="344"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="368"/>
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="144"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="345"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="369"/>
         <source>Copy the selected content</source>
         <translation>Copy the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="148"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="351"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="375"/>
         <source>Paste</source>
         <translation>Paste</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="149"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="352"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="376"/>
         <source>Paste content from the clipboard</source>
         <translation>Paste content from the clipboard</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="154"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="371"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="395"/>
         <source>New Class</source>
         <translation>New Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="155"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="372"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="396"/>
         <source>Create a new class</source>
         <translation>Create a new class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="159"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="377"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="401"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="160"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="402"/>
         <source>Delete the selected class</source>
         <translation>Delete the selected class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="164"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="383"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="407"/>
         <source>New Teacher</source>
         <translation>New Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="384"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="408"/>
         <source>Create a new teacher</source>
         <translation>Create a new teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="389"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="413"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="390"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="414"/>
         <source>Delete the selected teacher</source>
         <translation>Delete the selected teacher</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="177"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="429"/>
         <source>Automatic</source>
         <translation>Automatic</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="178"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="406"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="430"/>
         <source>Automatically save changes</source>
         <translation>Automatically save changes</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="182"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="411"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="435"/>
         <source>Manual</source>
         <translation>Manual</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="183"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="436"/>
         <source>Save changes manually</source>
         <translation>Save changes manually</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="191"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="429"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
         <source>Dark Theme</source>
         <translation>Dark Theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="430"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="454"/>
         <source>Use dark theme</source>
         <translation>Use dark theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="196"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="435"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
         <source>Light Theme</source>
         <translation>Light Theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="197"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="436"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="460"/>
         <source>Use light theme</source>
         <translation>Use light theme</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="205"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="452"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="476"/>
         <source>System Default</source>
         <translation>System Default</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
         <source>Use the system language</source>
         <translation>Use the system language</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="210"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="458"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="482"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="211"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
         <source>Use English</source>
         <translation>Use English</translation>
     </message>
@@ -402,73 +402,121 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="464"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
         <source>Korean</source>
         <translation>Korean</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
         <source>Use Korean</source>
         <translation>Use Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="222"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="224"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="514"/>
+        <source>Small</source>
+        <translation>Small</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="515"/>
+        <source>Use small font size</source>
+        <translation>Use small font size</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="229"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="520"/>
+        <source>Normal</source>
+        <translation>Normal</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="230"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="521"/>
+        <source>Use normal font size</source>
+        <translation>Use normal font size</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="526"/>
+        <source>Large</source>
+        <translation>Large</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="235"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="527"/>
+        <source>Use large font size</source>
+        <translation>Use large font size</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="532"/>
+        <source>Extra Large</source>
+        <translation>Extra Large</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="533"/>
+        <source>Use extra large font size</source>
+        <translation>Use extra large font size</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="246"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="560"/>
         <source>Show Sidebar Tooltips</source>
         <translation>Show Sidebar Tooltips</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="223"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="247"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="561"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>Show full sidebar names in tooltips when they do not fit</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="227"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="494"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="251"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="566"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>Animate Overflowing Sidebar Text</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="228"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="495"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="252"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="567"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>Animate overflowing sidebar names on hover</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="233"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="539"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="257"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="611"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="540"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="612"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="238"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="545"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="262"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="617"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="546"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="618"/>
         <source>Show application information</source>
         <translation>Show application information</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="243"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="267"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="630"/>
         <source>Manage Campuses</source>
         <translation>Manage Campuses</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="559"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="268"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="631"/>
         <source>Manage campus settings</source>
         <translation>Manage campus settings</translation>
     </message>
@@ -1149,42 +1197,42 @@
         <translation>MainWindow</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="50"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="51"/>
         <source>Loading pages...</source>
         <translation>Loading pages...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="53"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="54"/>
         <source>Loading sidebar...</source>
         <translation>Loading sidebar...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="56"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="57"/>
         <source>Initializing actions...</source>
         <translation>Initializing actions...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="59"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="60"/>
         <source>Initializing controllers...</source>
         <translation>Initializing controllers...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="62"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="63"/>
         <source>Building menus...</source>
         <translation>Building menus...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="66"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="67"/>
         <source>Connecting signals...</source>
         <translation>Connecting signals...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="69"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="70"/>
         <source>Loading recent file...</source>
         <translation>Loading recent file...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="92"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="93"/>
         <source> [ADMIN]</source>
         <translation> [ADMIN]</translation>
     </message>
@@ -1240,16 +1288,21 @@
         <translation>Language</translation>
     </message>
     <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="170"/>
+        <source>Font Size</source>
+        <translation>Font Size</translation>
+    </message>
+    <message>
         <source>English</source>
         <translation type="vanished">English</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="177"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="196"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="191"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="210"/>
         <source>Admin</source>
         <translation>Admin</translation>
     </message>
@@ -2015,12 +2068,12 @@
         <translation>Time</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1029"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1043"/>
         <source>Essay</source>
         <translation>Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1054"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="1068"/>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>
@@ -2068,12 +2121,12 @@
         <translation>Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="953"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="965"/>
         <source>Essay</source>
         <translation>Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="978"/>
+        <location filename="../../../src/ui/shared/widgets/sections/schedule_section_widget.cpp" line="990"/>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>

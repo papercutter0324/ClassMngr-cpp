@@ -1,7 +1,11 @@
 #include "core/fontmanager.h"
+#include "ui/shared/constants/options.h"
 
 #include <QApplication>
 #include <QFont>
+#include <QLabel>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QtTest>
 
 class FontManagerTests : public QObject
@@ -9,6 +13,29 @@ class FontManagerTests : public QObject
     Q_OBJECT
 
 private slots:
+    void init()
+    {
+        FontManager::setSizeOffset(0);
+    }
+
+    void cleanup()
+    {
+        FontManager::setSizeOffset(0);
+
+        auto* app =
+            qobject_cast<QApplication*>(
+                QCoreApplication::instance()
+                );
+
+        if (app)
+        {
+            FontManager::applyGlobalFont(
+                *app,
+                QStringLiteral("en_US")
+                );
+        }
+    }
+
     void standardSizesAreExplicit()
     {
         QCOMPARE(FontManager::stdEnglishFont, 12);
@@ -68,6 +95,177 @@ private slots:
         QVERIFY(
             (static_cast<int>(font.styleStrategy())
              & static_cast<int>(QFont::PreferAntialias)) != 0
+            );
+    }
+
+    void configuredOffsetAppliesToAllManagedSizes()
+    {
+        const QList<int> offsets =
+            {
+                -2,
+                0,
+                2,
+                4
+            };
+
+        for (const int offset : offsets)
+        {
+            FontManager::setSizeOffset(offset);
+
+            QCOMPARE(
+                FontManager::sizeOffset(),
+                offset
+                );
+            QCOMPARE(
+                FontManager::getUiFont(10).pointSize(),
+                10 + offset
+                );
+            QCOMPARE(
+                FontManager::getKoreanFont(13).pointSize(),
+                13 + offset
+                );
+            QCOMPARE(
+                FontManager::getUiFont().pointSize(),
+                FontManager::getPlatformFontSize() + offset
+                );
+        }
+    }
+
+    void storedFontSizeValuesAreValidated()
+    {
+        QCOMPARE(
+            fontSizeFromStoredValue(-2),
+            FontSize::Small
+            );
+        QCOMPARE(
+            fontSizeFromStoredValue(0),
+            FontSize::Normal
+            );
+        QCOMPARE(
+            fontSizeFromStoredValue(2),
+            FontSize::Large
+            );
+        QCOMPARE(
+            fontSizeFromStoredValue(4),
+            FontSize::ExtraLarge
+            );
+        QCOMPARE(
+            fontSizeFromStoredValue(99),
+            FontSize::Normal
+            );
+    }
+
+    void liveFontSizeChangesDoNotAccumulate()
+    {
+        auto* app =
+            qobject_cast<QApplication*>(
+                QCoreApplication::instance()
+                );
+        QVERIFY(app);
+
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("en_US")
+            );
+
+        QWidget container;
+        QLabel inheritedLabel(&container);
+        QLabel explicitLabel(&container);
+        explicitLabel.setFont(
+            FontManager::getUiFont(10)
+            );
+
+        QTableWidget table(1, 1, &container);
+        auto* item =
+            new QTableWidgetItem(QStringLiteral("Item"));
+        item->setFont(
+            FontManager::getUiFont(11)
+            );
+        table.setItem(0, 0, item);
+
+        QLabel richTextLabel(&container);
+        FontManager::setManagedRichText(
+            &richTextLabel,
+            QStringLiteral(
+                "<span style=\"font-size:13pt\">한국어</span>"
+                "<span style=\"font-size:14pt\">English</span>"
+                )
+            );
+
+        FontManager::applyFontSize(
+            *app,
+            QStringLiteral("en_US"),
+            4
+            );
+
+        QCOMPARE(explicitLabel.font().pointSize(), 14);
+        QCOMPARE(item->font().pointSize(), 15);
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::getPlatformFontSize() + 4
+            );
+        QVERIFY(richTextLabel.text().contains(
+            QStringLiteral("font-size:17pt")
+            ));
+        QVERIFY(richTextLabel.text().contains(
+            QStringLiteral("font-size:18pt")
+            ));
+
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("ko_KR")
+            );
+        QVERIFY(inheritedLabel.font().family().contains(
+            QStringLiteral("Pretendard"),
+            Qt::CaseInsensitive
+            ));
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::stdKoreanFont + 4
+            );
+        QVERIFY(explicitLabel.font().family().contains(
+            QStringLiteral("Inter"),
+            Qt::CaseInsensitive
+            ));
+
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("en_US")
+            );
+
+        FontManager::applyFontSize(
+            *app,
+            QStringLiteral("en_US"),
+            -2
+            );
+
+        QCOMPARE(explicitLabel.font().pointSize(), 8);
+        QCOMPARE(item->font().pointSize(), 9);
+        QVERIFY(richTextLabel.text().contains(
+            QStringLiteral("font-size:11pt")
+            ));
+        QVERIFY(richTextLabel.text().contains(
+            QStringLiteral("font-size:12pt")
+            ));
+
+        FontManager::applyFontSize(
+            *app,
+            QStringLiteral("en_US"),
+            0
+            );
+
+        QCOMPARE(explicitLabel.font().pointSize(), 10);
+        QCOMPARE(item->font().pointSize(), 11);
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::getPlatformFontSize()
+            );
+        QCOMPARE(
+            richTextLabel.text(),
+            QStringLiteral(
+                "<span style=\"font-size:13pt\">한국어</span>"
+                "<span style=\"font-size:14pt\">English</span>"
+                )
             );
     }
 

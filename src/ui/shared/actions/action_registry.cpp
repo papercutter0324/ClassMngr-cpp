@@ -217,6 +217,30 @@ void ActionRegistry::retranslate()
             );
     }
 
+    if (fontSizeState)
+    {
+        updateActionText(
+            fontSizeState->action(FontSize::Small),
+            tr("Small"),
+            tr("Use small font size")
+            );
+        updateActionText(
+            fontSizeState->action(FontSize::Normal),
+            tr("Normal"),
+            tr("Use normal font size")
+            );
+        updateActionText(
+            fontSizeState->action(FontSize::Large),
+            tr("Large"),
+            tr("Use large font size")
+            );
+        updateActionText(
+            fontSizeState->action(FontSize::ExtraLarge),
+            tr("Extra Large"),
+            tr("Use extra large font size")
+            );
+    }
+
     updateActionText(
         showSidebarTooltips,
         tr("Show Sidebar Tooltips"),
@@ -480,6 +504,54 @@ void ActionRegistry::createOptionActions()
 
     languageState->loadFromSettings(
         Language::SystemDefault
+        );
+
+    fontSizeState =
+        new OptionState<FontSize>(OptionKeys::FontSize, this);
+
+    auto smallFontAction =
+        createCheckableAction(
+            tr("Small"),
+            tr("Use small font size")
+            );
+
+    auto normalFontAction =
+        createCheckableAction(
+            tr("Normal"),
+            tr("Use normal font size")
+            );
+
+    auto largeFontAction =
+        createCheckableAction(
+            tr("Large"),
+            tr("Use large font size")
+            );
+
+    auto extraLargeFontAction =
+        createCheckableAction(
+            tr("Extra Large"),
+            tr("Use extra large font size")
+            );
+
+    fontSizeState->addOption(
+        FontSize::Small,
+        smallFontAction
+        );
+    fontSizeState->addOption(
+        FontSize::Normal,
+        normalFontAction
+        );
+    fontSizeState->addOption(
+        FontSize::Large,
+        largeFontAction
+        );
+    fontSizeState->addOption(
+        FontSize::ExtraLarge,
+        extraLargeFontAction
+        );
+
+    fontSizeState->loadFromSettings(
+        FontSize::Normal
         );
 
 

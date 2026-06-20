@@ -40,6 +40,7 @@ class EditController;
 class ThemeController;
 class UpdateController;
 class LanguageController;
+class FontSizeController;
 class LanguageService;
 
 // =========================================================
@@ -145,6 +146,7 @@ private:
     std::unique_ptr<ThemeController> m_themeController;
     std::unique_ptr<UpdateController> m_updateController;
     std::unique_ptr<LanguageController> m_languageController;
+    std::unique_ptr<FontSizeController> m_fontSizeController;
 
     // =====================================================
     // State

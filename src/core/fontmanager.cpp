@@ -6,6 +6,13 @@
 #include <QFile>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QLabel>
+#include <QLayout>
+#include <QPointer>
+#include <QRegularExpression>
+#include <QTableWidget>
+#include <QTableWidgetItem>
+#include <QWidget>
 
 
 
@@ -22,6 +29,65 @@ QString FontManager::s_pretendardFamily;
 QStringList FontManager::s_loadedFamilies;
 
 QStringList FontManager::s_fontPaths;
+
+int FontManager::s_sizeOffset = 0;
+
+namespace
+{
+constexpr auto ManagedRichTextProperty =
+    "_classmngr_managed_font_size_rich_text";
+
+constexpr auto MaterializedInheritedFontProperty =
+    "_classmngr_materialized_inherited_font";
+
+struct WidgetFontSnapshot
+{
+    QPointer<QWidget> widget;
+    QFont font;
+    bool wasInherited = false;
+};
+
+struct TableItemFontSnapshot
+{
+    QTableWidgetItem* item = nullptr;
+    QFont font;
+};
+
+void refreshMaterializedInheritedFonts(
+    QWidget* widget,
+    const QFont& inheritedFont
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    if (widget->property(
+            MaterializedInheritedFontProperty
+            ).toBool())
+    {
+        widget->setFont(inheritedFont);
+    }
+
+    const QFont childInheritedFont =
+        widget->font();
+
+    const auto children =
+        widget->findChildren<QWidget*>(
+            QString(),
+            Qt::FindDirectChildrenOnly
+            );
+
+    for (QWidget* child : children)
+    {
+        refreshMaterializedInheritedFonts(
+            child,
+            childInheritedFont
+            );
+    }
+}
+}
 
 
 
@@ -179,6 +245,28 @@ int FontManager::getPlatformFontSize()
 #endif
 }
 
+int FontManager::sizeOffset()
+{
+    return s_sizeOffset;
+}
+
+void FontManager::setSizeOffset(
+    int offset
+    )
+{
+    s_sizeOffset = offset;
+}
+
+int FontManager::adjustedPointSize(
+    int baseSize
+    )
+{
+    return qMax(
+        1,
+        baseSize + s_sizeOffset
+        );
+}
+
 
 
 // =========================================================
@@ -201,6 +289,8 @@ QFont FontManager::getUiFont(
         size =
             getPlatformFontSize();
     }
+
+    size = adjustedPointSize(size);
 
     return buildFont(
         s_interFamily,
@@ -232,6 +322,8 @@ QFont FontManager::getKoreanFont(
     {
         size = stdKoreanFont;
     }
+
+    size = adjustedPointSize(size);
 
     return buildFont(
         s_pretendardFamily,
@@ -357,10 +449,246 @@ void FontManager::applyGlobalFont(
         font
         );
 
+    for (QWidget* topLevelWidget : app.topLevelWidgets())
+    {
+        refreshMaterializedInheritedFonts(
+            topLevelWidget,
+            font
+            );
+    }
+
     qDebug()
         << "[FontManager] Global font applied:"
         << font.family()
         << font.pointSize();
+}
+
+void FontManager::applyFontSize(
+    QApplication& app,
+    const QString& localeName,
+    int offset
+    )
+{
+    const int delta =
+        offset - s_sizeOffset;
+
+    if (delta == 0)
+    {
+        return;
+    }
+
+    QList<WidgetFontSnapshot> widgetFonts;
+    QList<TableItemFontSnapshot> tableItemFonts;
+    QList<QPair<QPointer<QLabel>, QString>> richTextLabels;
+
+    const QWidgetList widgets =
+        app.allWidgets();
+
+    for (QWidget* widget : widgets)
+    {
+        if (!widget)
+        {
+            continue;
+        }
+
+        const bool materializedInheritedFont =
+            widget->property(
+                MaterializedInheritedFontProperty
+                ).toBool();
+
+        widgetFonts.append(
+            {
+                widget,
+                widget->font(),
+                materializedInheritedFont
+                    || !widget->testAttribute(Qt::WA_SetFont)
+            }
+            );
+
+        if (auto* label = qobject_cast<QLabel*>(widget);
+            label
+            && label->property(ManagedRichTextProperty).toBool())
+        {
+            richTextLabels.append(
+                {
+                    label,
+                    label->text()
+                }
+                );
+        }
+
+        auto* table =
+            qobject_cast<QTableWidget*>(widget);
+
+        if (!table)
+        {
+            continue;
+        }
+
+        for (int row = 0; row < table->rowCount(); ++row)
+        {
+            for (int column = 0;
+                 column < table->columnCount();
+                 ++column)
+            {
+                QTableWidgetItem* item =
+                    table->item(row, column);
+
+                if (
+                    item
+                    && item->font().pointSize() > 0
+                    )
+                {
+                    tableItemFonts.append(
+                        {
+                            item,
+                            item->font()
+                        }
+                        );
+                }
+            }
+        }
+    }
+
+    s_sizeOffset = offset;
+
+    applyGlobalFont(
+        app,
+        localeName
+        );
+
+    const auto resizeFont =
+        [delta](QFont font)
+        {
+            if (font.pointSize() > 0)
+            {
+                font.setPointSize(
+                    qMax(
+                        1,
+                        font.pointSize() + delta
+                        )
+                    );
+            }
+
+            return font;
+        };
+
+    for (const WidgetFontSnapshot& snapshot : widgetFonts)
+    {
+        if (snapshot.widget)
+        {
+            snapshot.widget->setFont(
+                resizeFont(snapshot.font)
+                );
+
+            if (snapshot.wasInherited)
+            {
+                snapshot.widget->setProperty(
+                    MaterializedInheritedFontProperty,
+                    true
+                    );
+            }
+        }
+    }
+
+    for (const TableItemFontSnapshot& snapshot : tableItemFonts)
+    {
+        if (snapshot.item)
+        {
+            snapshot.item->setFont(
+                resizeFont(snapshot.font)
+                );
+        }
+    }
+
+    for (const auto& [label, html] : richTextLabels)
+    {
+        if (label)
+        {
+            label->setText(
+                adjustRichTextPointSizes(
+                    html,
+                    delta
+                    )
+                );
+        }
+    }
+
+    for (QWidget* widget : widgets)
+    {
+        if (!widget)
+        {
+            continue;
+        }
+
+        widget->updateGeometry();
+        widget->update();
+
+        if (QLayout* layout = widget->layout())
+        {
+            layout->invalidate();
+        }
+    }
+}
+
+void FontManager::setManagedRichText(
+    QLabel* label,
+    const QString& html
+    )
+{
+    if (!label)
+    {
+        return;
+    }
+
+    label->setProperty(
+        ManagedRichTextProperty,
+        true
+        );
+    label->setText(html);
+}
+
+QString FontManager::adjustRichTextPointSizes(
+    const QString& html,
+    int delta
+    )
+{
+    if (delta == 0)
+    {
+        return html;
+    }
+
+    static const QRegularExpression pointSizeExpression(
+        QStringLiteral("font-size\\s*:\\s*(\\d+)pt"),
+        QRegularExpression::CaseInsensitiveOption
+        );
+
+    QString adjusted = html;
+    QList<QRegularExpressionMatch> matches;
+
+    auto iterator =
+        pointSizeExpression.globalMatch(html);
+
+    while (iterator.hasNext())
+    {
+        matches.prepend(iterator.next());
+    }
+
+    for (const QRegularExpressionMatch& match : matches)
+    {
+        const int pointSize =
+            match.captured(1).toInt();
+
+        adjusted.replace(
+            match.capturedStart(1),
+            match.capturedLength(1),
+            QString::number(
+                qMax(1, pointSize + delta)
+                )
+            );
+    }
+
+    return adjusted;
 }
 
 

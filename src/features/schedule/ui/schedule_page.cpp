@@ -909,11 +909,12 @@ QWidget* SchedulePage::createScheduleLabel(
     const QString englishLine =
         joinedEnglishLine(entry);
 
-    label->setText(
+    FontManager::setManagedRichText(
+        label,
         QStringLiteral(
             "<div style=\"text-align:center; line-height:1.25;\">"
             "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
-            "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%5</div>"
+            "<div style=\"color:%1; font-size:%5pt; font-weight:400;\">%6</div>"
             "</div>"
             )
             .arg(
@@ -926,8 +927,13 @@ QWidget* SchedulePage::createScheduleLabel(
                     .family()
                     .toHtmlEscaped()
                 )
-            .arg(FontManager::stdKoreanFont)
+            .arg(
+                FontManager::getKoreanFont().pointSize()
+                )
             .arg(escaped(koreanLine))
+            .arg(
+                FontManager::adjustedPointSize(14)
+                )
             .arg(escaped(englishLine))
         );
 
@@ -983,7 +989,7 @@ QWidget* SchedulePage::createMultiScheduleLabel(
             QStringLiteral(
                 "<div style=\"margin-bottom:8px; text-align:center; line-height:1.2;\">"
                 "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
-                "<div style=\"color:%1; font-size:14pt; font-weight:400;\">%5</div>"
+                "<div style=\"color:%1; font-size:%5pt; font-weight:400;\">%6</div>"
                 "</div>"
                 )
                 .arg(fontColor)
@@ -992,12 +998,20 @@ QWidget* SchedulePage::createMultiScheduleLabel(
                         .family()
                         .toHtmlEscaped()
                     )
-                .arg(FontManager::stdKoreanFont)
+                .arg(
+                    FontManager::getKoreanFont().pointSize()
+                    )
                 .arg(escaped(koreanLine))
+                .arg(
+                    FontManager::adjustedPointSize(14)
+                    )
                 .arg(escaped(englishLine));
     }
 
-    label->setText(html);
+    FontManager::setManagedRichText(
+        label,
+        html
+        );
 
     return label;
 }

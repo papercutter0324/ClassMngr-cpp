@@ -162,6 +162,25 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
             );
     }
 
+    //
+    // Font Size
+    //
+    QMenu* fontSizeMenu =
+        options->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Font Size")
+    );
+
+    addOptionMenu<FontSize>(
+        fontSizeMenu,
+        actions.fontSizeState,
+        {
+            FontSize::Small,
+            FontSize::Normal,
+            FontSize::Large,
+            FontSize::ExtraLarge
+        }
+        );
+
     options->addSeparator();
 
     options->addAction(actions.showSidebarTooltips);

@@ -3,6 +3,7 @@
 #include "menu_builder.h"
 
 #include "app/controllers/edit_controller.h"
+#include "app/controllers/font_size_controller.h"
 #include "app/controllers/language_controller.h"
 #include "app/controllers/navigation_controller.h"
 #include "app/controllers/sidebar_controller.h"
@@ -179,6 +180,13 @@ void MainWindow::connectControllers()
             this
             );
     m_languageController->connectActions(m_actions);
+
+    m_fontSizeController =
+        std::make_unique<FontSizeController>(
+            m_languageService,
+            this
+            );
+    m_fontSizeController->connectActions(m_actions);
 }
 
 void MainWindow::buildMenus()

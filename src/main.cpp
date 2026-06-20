@@ -4,7 +4,10 @@
 #include "core/fontmanager.h"
 #include "core/language_service.h"
 #include "core/resource_paths.h"
+#include "core/settingsmanager.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
+#include "ui/shared/constants/options.h"
+#include "ui/shared/state/option_state_keys.h"
 #include "core/utils/platform.h"
 
 #include <QApplication>
@@ -70,6 +73,18 @@ int main(int argc, char *argv[])
     // =====================================================
     // Fonts
     // =====================================================
+
+    const FontSize savedFontSize =
+        fontSizeFromStoredValue(
+            SettingsManager::instance().get(
+                OptionKeys::FontSize,
+                fontSizeOffset(FontSize::Normal)
+                ).toInt()
+            );
+
+    FontManager::setSizeOffset(
+        fontSizeOffset(savedFontSize)
+        );
 
     FontManager::applyGlobalFont(
         app,

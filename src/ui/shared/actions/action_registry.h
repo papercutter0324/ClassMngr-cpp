@@ -25,6 +25,7 @@ public:
     OptionState<SaveMode>* saveModeState = nullptr;
     OptionState<Theme>* themeState = nullptr;
     OptionState<Language>* languageState = nullptr;
+    OptionState<FontSize>* fontSizeState = nullptr;
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;

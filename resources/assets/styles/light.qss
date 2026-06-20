@@ -32,7 +32,6 @@ QWidget#startTimeControls {
 
 QLabel#pageTitle {
     color: #101828;
-    font-size: 24pt;
     font-weight: 700;
 }
 

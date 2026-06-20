@@ -8,6 +8,7 @@
 #include <QStringList>
 
 class FontManagerTests;
+class QLabel;
 
 
 // =========================================================
@@ -31,6 +32,12 @@ public:
         const QString& localeName = QString()
         );
 
+    static void applyFontSize(
+        QApplication& app,
+        const QString& localeName,
+        int offset
+        );
+
 
 
     // =====================================================
@@ -47,6 +54,26 @@ public:
         int size = stdKoreanFont,
         int weight = QFont::Normal,
         bool italic = false
+        );
+
+    static int sizeOffset();
+
+    static void setSizeOffset(
+        int offset
+        );
+
+    static int adjustedPointSize(
+        int baseSize
+        );
+
+    static void setManagedRichText(
+        QLabel* label,
+        const QString& html
+        );
+
+    static QString adjustRichTextPointSizes(
+        const QString& html,
+        int delta
         );
 
 
@@ -105,6 +132,8 @@ private:
     static QStringList s_loadedFamilies;
 
     static QStringList s_fontPaths;
+
+    static int s_sizeOffset;
 
 };
 
