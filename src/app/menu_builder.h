@@ -13,19 +13,3 @@ private:
     static void buildHelpMenu(MainWindow* window);
     static void buildAdminMenu(MainWindow* window);
 };
-
-/*
- * Switch to a namespace?
- *
- * namespace MenuBuilder
-{
-    void build(MainWindow* window);
-
-    void buildFileMenu(MainWindow* window);
-    void buildEditMenu(MainWindow* window);
-    void buildClassMenu(MainWindow* window);
-    void buildOptionsMenu(MainWindow* window);
-    void buildHelpMenu(MainWindow* window);
-    void buildAdminMenu(MainWindow* window);
-}
- */
