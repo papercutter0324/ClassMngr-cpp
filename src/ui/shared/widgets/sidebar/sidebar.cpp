@@ -136,9 +136,12 @@ void Sidebar::setupUi()
         );
     m_tree->setStyleSheet(
         QStringLiteral(
-            "QTreeWidget { border-width: %1px; border-style: solid; }"
+            "QTreeWidget { border-width: %1px; border-style: solid; "
+            "border-radius: %2px; }"
             ).arg(
                 UiConstants::MainWindow::SidebarFrameWidth
+                ).arg(
+                UiConstants::MainWindow::SidebarFrameRadius
                 )
         );
 

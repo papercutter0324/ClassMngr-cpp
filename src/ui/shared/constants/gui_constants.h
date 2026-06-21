@@ -11,6 +11,7 @@ namespace MainWindow
 inline constexpr int SidebarMinWidth = 150;
 inline constexpr int SidebarMaxWidth = 400;
 inline constexpr int SidebarFrameWidth = 2;
+inline constexpr int SidebarFrameRadius = 8;
 inline constexpr int PagesMinWidth   = 600;
 }
 
