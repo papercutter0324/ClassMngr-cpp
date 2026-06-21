@@ -40,8 +40,6 @@
 namespace
 {
 constexpr int AutosaveDelayMs = 750;
-constexpr int FieldMinimumWidth = 190;
-constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
 constexpr int UntitledCardTopMargin = 4;
 const QString NotAvailableText =
     QStringLiteral("N/A");
@@ -138,10 +136,10 @@ void applyFieldWidth(
     }
 
     widget->setMinimumWidth(
-        FieldMinimumWidth
+        UiConstants::Forms::FieldMinimumWidth
         );
     widget->setMaximumWidth(
-        FieldMaximumWidth
+        UiConstants::Forms::FieldMaximumWidth
         );
 }
 
@@ -460,6 +458,29 @@ void MyInfoPage::scrollToSection(
         );
 }
 
+void MyInfoPage::scrollToTop()
+{
+    m_currentSection =
+        MyInfoSection::MyInformation;
+
+    QTimer::singleShot(
+        0,
+        this,
+        [this]()
+        {
+            if (auto* scrollBar =
+                    m_scrollArea
+                        ? m_scrollArea->verticalScrollBar()
+                        : nullptr)
+            {
+                scrollBar->setValue(
+                    scrollBar->minimum()
+                    );
+            }
+        }
+        );
+}
+
 QString MyInfoPage::currentSectionName() const
 {
     switch (m_currentSection)
@@ -687,6 +708,15 @@ void MyInfoPage::buildUi()
 
     auto* headerLayout =
         new QVBoxLayout;
+    headerLayout->setContentsMargins(
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin
+        );
+    headerLayout->setSpacing(
+        UiConstants::Pages::HeaderSpacing
+        );
 
     m_titleLabel =
         new QLabel(
@@ -696,7 +726,7 @@ void MyInfoPage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
         FontManager::getUiFont(
-            24,
+            UiConstants::Pages::TitleFontSize,
             QFont::Bold
             )
         );
@@ -708,12 +738,17 @@ void MyInfoPage::buildUi()
             );
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     buildMyInformationSection();
     buildClassScheduleSection();
@@ -727,6 +762,10 @@ void MyInfoPage::buildUi()
 
 void MyInfoPage::buildClassScheduleSection()
 {
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::MajorSectionSpacing
+        );
+
     m_classScheduleHeading =
         createTopLevelHeading(
             tr("Class Schedule"),
@@ -940,6 +979,10 @@ void MyInfoPage::buildMyInformationSection()
 
 void MyInfoPage::buildMonthlyCalendarSection()
 {
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::MajorSectionSpacing
+        );
+
     m_monthlyCalendarHeading =
         createTopLevelHeading(
             tr("Monthly Calendar"),
@@ -1356,7 +1399,7 @@ QLabel* MyInfoPage::createTopLevelHeading(
     label->setAlignment(Qt::AlignCenter);
     label->setFont(
         FontManager::getUiFont(
-            20,
+            UiConstants::Pages::SectionTitleFontSize,
             QFont::DemiBold
             )
         );

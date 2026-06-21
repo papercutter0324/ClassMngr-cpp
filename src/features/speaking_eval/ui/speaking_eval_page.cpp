@@ -7,6 +7,7 @@
 #include "data/data_service.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
 #include <QAbstractButton>
@@ -707,6 +708,9 @@ void SpeakingEvalPage::buildUi()
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
     contentLayout()->addLayout(headerLayout);
+    contentLayout()->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     m_undoStack =
         new QUndoStack(this);

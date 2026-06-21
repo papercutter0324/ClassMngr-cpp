@@ -40,8 +40,6 @@
 namespace
 {
 constexpr int AutosaveDelayMs = 750;
-constexpr int FieldMinimumWidth = 190;
-constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
 constexpr int CampusFieldWidth = 150;
 constexpr int OfficeNumberFieldWidth = 115;
 constexpr int CompactFieldWidth = 170;
@@ -163,10 +161,10 @@ void applyFieldWidth(
     }
 
     widget->setMinimumWidth(
-        FieldMinimumWidth
+        UiConstants::Forms::FieldMinimumWidth
         );
     widget->setMaximumWidth(
-        FieldMaximumWidth
+        UiConstants::Forms::FieldMaximumWidth
         );
 }
 
@@ -919,6 +917,29 @@ void SubPrepPage::scrollToSection(
         );
 }
 
+void SubPrepPage::scrollToTop()
+{
+    m_currentSection =
+        SubPrepSection::ImportantInformation;
+
+    QTimer::singleShot(
+        0,
+        this,
+        [this]()
+        {
+            if (auto* scrollBar =
+                    m_scrollArea
+                        ? m_scrollArea->verticalScrollBar()
+                        : nullptr)
+            {
+                scrollBar->setValue(
+                    scrollBar->minimum()
+                    );
+            }
+        }
+        );
+}
+
 QString SubPrepPage::currentSectionName() const
 {
     switch (m_currentSection)
@@ -1104,8 +1125,15 @@ void SubPrepPage::buildUi()
 
     auto* headerLayout =
         new QVBoxLayout;
-    headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(2);
+    headerLayout->setContentsMargins(
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin
+        );
+    headerLayout->setSpacing(
+        UiConstants::Pages::HeaderSpacing
+        );
 
     m_titleLabel =
         new QLabel(
@@ -1115,7 +1143,7 @@ void SubPrepPage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
         FontManager::getUiFont(
-            24,
+            UiConstants::Pages::TitleFontSize,
             QFont::Bold
             )
         );
@@ -1127,12 +1155,17 @@ void SubPrepPage::buildUi()
             );
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     m_importantInformationHeading =
         createTopLevelHeading(
@@ -1396,6 +1429,10 @@ void SubPrepPage::buildUi()
         m_materialsCard
         );
 
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::MajorSectionSpacing
+        );
+
     m_classInformationHeading =
         createTopLevelHeading(
             tr("Class Information"),
@@ -1413,7 +1450,9 @@ void SubPrepPage::buildUi()
     m_classInfoSubtitle->setObjectName("pageSubtitle");
     m_classInfoSubtitle->setAlignment(Qt::AlignCenter);
     m_classInfoSubtitle->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
     m_scrollContentLayout->addWidget(
         m_classInfoSubtitle
@@ -1430,6 +1469,10 @@ void SubPrepPage::buildUi()
     m_classInformationLayout->setAlignment(Qt::AlignTop);
     m_scrollContentLayout->addWidget(
         m_classInformationContent
+        );
+
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::MajorSectionSpacing
         );
 
     m_subCommentsHeading =
@@ -2271,7 +2314,7 @@ QLabel* SubPrepPage::createTopLevelHeading(
     label->setAlignment(Qt::AlignCenter);
     label->setFont(
         FontManager::getUiFont(
-            20,
+            UiConstants::Pages::SectionTitleFontSize,
             QFont::DemiBold
             )
         );

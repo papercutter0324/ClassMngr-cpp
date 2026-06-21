@@ -359,6 +359,9 @@ void ClassNotesPage::buildUi()
     headerLayout->addWidget(m_subtitleLabel);
 
     contentLayout()->addLayout(headerLayout);
+    contentLayout()->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     m_notesCard =
         new SectionCard(

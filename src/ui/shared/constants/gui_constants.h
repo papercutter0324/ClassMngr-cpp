@@ -21,8 +21,15 @@ inline constexpr int PagesMinWidth   = 800;
 
 namespace Pages
 {
-inline constexpr int Margin  = 24;
-inline constexpr int Spacing = 10;
+inline constexpr int Margin               = 24;
+inline constexpr int Spacing              = 10;
+inline constexpr int MajorSectionSpacing  = 48;
+inline constexpr int TitleFontSize        = 24;
+inline constexpr int SubtitleFontSize     = 11;
+inline constexpr int SectionTitleFontSize = 20;
+inline constexpr int HeaderMargin         = 0;
+inline constexpr int HeaderSpacing        = 2;
+inline constexpr int HeaderContentSpacing = 24;
 }
 
 
@@ -49,6 +56,9 @@ inline constexpr int HorizontalSpacing = 16;
 inline constexpr int VerticalSpacing   = 4;
 
 inline constexpr int LabelIndent = 4;
+
+inline constexpr int FieldMinimumWidth = 190;
+inline constexpr int FieldMaximumWidth = FieldMinimumWidth * 2;
 }
 
 
@@ -98,10 +108,10 @@ inline constexpr int ColorPreviewHeight        = 24;
 inline constexpr int ColorPreviewButtonSpacing = 5;
 inline constexpr int ColorButtonExtraWidth     = 10;
 
-inline constexpr int GradeMaxWidth            = 95;
-inline constexpr int StudentCountMaxWidth     = 110;
-inline constexpr int LevelComboExtraWidth     = 10;
-inline constexpr int EssayBookWidthReduction  = 30;
+inline constexpr int GradeMaxWidth             = 95;
+inline constexpr int StudentCountMaxWidth      = 110;
+inline constexpr int LevelComboExtraWidth      = 10;
+inline constexpr int EssayBookWidthReduction   = 30;
 
 inline constexpr int ColorColumnStretch        = 1;
 inline constexpr int GradeColumnStretch        = 1;

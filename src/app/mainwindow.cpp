@@ -465,9 +465,7 @@ void MainWindow::applyDatabaseLoadedState()
     {
         m_pages->showPage(PageType::MyInfo);
         m_pages->refreshAll();
-        m_pages->myInfoPage()->scrollToSection(
-            MyInfoSection::MyInformation
-            );
+        m_pages->myInfoPage()->scrollToTop();
     }
 
     if (ui && ui->sidebarWidget)

@@ -48,6 +48,7 @@ public:
     void scrollToSection(
         MyInfoSection section
         );
+    void scrollToTop();
     QString currentSectionName() const;
     QString currentSectionKey() const;
 

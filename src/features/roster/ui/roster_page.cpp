@@ -9,6 +9,7 @@
 #include "features/roster/ui/roster_item_delegate.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
 #include <QAbstractButton>
@@ -688,6 +689,9 @@ void RosterPage::buildUi()
     headerLayout->addWidget(m_subtitleLabel);
 
     contentLayout()->addLayout(headerLayout);
+    contentLayout()->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     m_model =
         new RosterModel(this);

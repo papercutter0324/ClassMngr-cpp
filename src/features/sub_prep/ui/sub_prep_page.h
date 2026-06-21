@@ -45,6 +45,7 @@ public:
     void scrollToSection(
         SubPrepSection section
         );
+    void scrollToTop();
     QString currentSectionName() const;
     QString currentSectionKey() const;
 

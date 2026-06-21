@@ -160,6 +160,9 @@ void ClassInfoPage::buildUi()
     headerLayout->addWidget(m_subtitleLabel);
 
     contentLayout()->addLayout(headerLayout);
+    contentLayout()->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);

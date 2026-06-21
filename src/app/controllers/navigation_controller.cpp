@@ -330,14 +330,6 @@ void NavigationController::handleSubPrep(
     const bool rootClick =
         data.path.size() == 1;
 
-    if (rootClick && alreadyShowingSubPrep)
-    {
-        m_sidebar->selectSubPrepSection(
-            m_pages->subPrepPage()->currentSectionKey()
-            );
-        return;
-    }
-
     if (!alreadyShowingSubPrep && !m_pages->confirmCurrentPageCanLeave())
     {
         return;
@@ -351,8 +343,15 @@ void NavigationController::handleSubPrep(
     }
 
     m_pages->showPage(PageType::SubPrep);
-    m_pages->subPrepPage()
-        ->scrollToSection(section);
+    if (rootClick)
+    {
+        m_pages->subPrepPage()->scrollToTop();
+    }
+    else
+    {
+        m_pages->subPrepPage()
+            ->scrollToSection(section);
+    }
 }
 
 void NavigationController::handleMyInfo(
@@ -394,14 +393,6 @@ void NavigationController::handleMyInfo(
     const bool rootClick =
         data.path.size() == 1;
 
-    if (rootClick && alreadyShowingMyInfo)
-    {
-        m_sidebar->selectMyInfoSection(
-            m_pages->myInfoPage()->currentSectionKey()
-            );
-        return;
-    }
-
     if (!alreadyShowingMyInfo && !m_pages->confirmCurrentPageCanLeave())
     {
         return;
@@ -415,8 +406,15 @@ void NavigationController::handleMyInfo(
     }
 
     m_pages->showPage(PageType::MyInfo);
-    m_pages->myInfoPage()
-        ->scrollToSection(section);
+    if (rootClick)
+    {
+        m_pages->myInfoPage()->scrollToTop();
+    }
+    else
+    {
+        m_pages->myInfoPage()
+            ->scrollToSection(section);
+    }
 }
 
 void NavigationController::handleCampus(
