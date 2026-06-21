@@ -132,6 +132,7 @@ private:
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;
 
+    QLabel* m_nameLabel = nullptr;
     QLabel* m_campusLabel = nullptr;
     QLabel* m_zoomLoginIdLabel = nullptr;
     QLabel* m_zoomPasswordLabel = nullptr;
@@ -139,6 +140,7 @@ private:
 
     ScheduleSectionWidget* m_scheduleWidget = nullptr;
 
+    QLineEdit* m_nameEdit = nullptr;
     QComboBox* m_campusCombo = nullptr;
     QLineEdit* m_zoomLoginIdEdit = nullptr;
     QLineEdit* m_zoomPasswordEdit = nullptr;

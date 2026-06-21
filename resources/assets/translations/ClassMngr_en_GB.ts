@@ -1609,6 +1609,12 @@
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="309"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="899"/>
+        <source>My Name</source>
+        <translation>My Name</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="309"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="848"/>
         <source>My Campus</source>
         <translation>My Campus</translation>

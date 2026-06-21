@@ -109,6 +109,8 @@ int findCampusIndex(
 
 namespace SettingsKeys
 {
+const QString Name =
+    QStringLiteral("myInfo/name");
 const QString Campus =
     QStringLiteral("myInfo/campus");
 const QString ZoomLoginId =
@@ -298,6 +300,13 @@ void MyInfoPage::retranslateUi()
     {
         m_monthlyCalendarHeading->setText(
             tr("Monthly Calendar")
+            );
+    }
+
+    if (m_nameLabel)
+    {
+        m_nameLabel->setText(
+            tr("My Name")
             );
     }
 
@@ -863,6 +872,8 @@ void MyInfoPage::buildMyInformationSection()
         UiConstants::ClassInfo::Form::VerticalSpacing
         );
 
+    m_nameEdit =
+        new QLineEdit(card);
     m_campusCombo =
         new NoWheelComboBox(card);
 
@@ -876,6 +887,7 @@ void MyInfoPage::buildMyInformationSection()
             card
             );
 
+    applyFieldWidth(m_nameEdit);
     applyFieldWidth(m_campusCombo);
     applyFieldWidth(m_zoomLoginIdEdit);
     applyFieldWidth(m_zoomPasswordEdit);
@@ -883,6 +895,8 @@ void MyInfoPage::buildMyInformationSection()
     m_zoomLoginIdEdit->installEventFilter(this);
     m_zoomPasswordEdit->installEventFilter(this);
 
+    m_nameLabel =
+        createFieldLabel(tr("My Name"), card);
     m_campusLabel =
         createFieldLabel(tr("My Campus"), card);
     m_zoomLoginIdLabel =
@@ -893,55 +907,67 @@ void MyInfoPage::buildMyInformationSection()
         createFieldLabel(tr("Zoom"), card);
 
     grid->addWidget(
+        m_nameLabel,
+        0,
+        0,
+        Qt::AlignLeft
+        );
+    grid->addWidget(
         m_campusLabel,
         0,
-        0,
+        1,
         Qt::AlignLeft
         );
     grid->addWidget(
         m_zoomLoginIdLabel,
         0,
-        1,
+        2,
         Qt::AlignLeft
         );
     grid->addWidget(
         m_zoomPasswordLabel,
         0,
-        2,
+        3,
         Qt::AlignLeft
         );
     grid->addWidget(
         m_zoomLabel,
         0,
-        3,
+        4,
         Qt::AlignLeft
         );
 
     grid->addWidget(
-        m_campusCombo,
+        m_nameEdit,
         1,
         0,
         Qt::AlignLeft
         );
     grid->addWidget(
-        m_zoomLoginIdEdit,
+        m_campusCombo,
         1,
         1,
         Qt::AlignLeft
         );
     grid->addWidget(
-        m_zoomPasswordEdit,
+        m_zoomLoginIdEdit,
         1,
         2,
         Qt::AlignLeft
         );
     grid->addWidget(
-        m_zoomNotAvailableCheck,
+        m_zoomPasswordEdit,
         1,
         3,
+        Qt::AlignLeft
+        );
+    grid->addWidget(
+        m_zoomNotAvailableCheck,
+        1,
+        4,
         Qt::AlignLeft | Qt::AlignVCenter
         );
-    grid->setColumnStretch(4, 1);
+    grid->setColumnStretch(5, 1);
 
     cardLayout->addLayout(
         grid
@@ -951,6 +977,12 @@ void MyInfoPage::buildMyInformationSection()
         card
         );
 
+    connect(
+        m_nameEdit,
+        &QLineEdit::textChanged,
+        this,
+        &MyInfoPage::handleEditableChanged
+        );
     connect(
         m_campusCombo,
         &QComboBox::currentTextChanged,
@@ -1117,10 +1149,20 @@ void MyInfoPage::loadStoredSettings()
         return;
     }
 
+    const QSignalBlocker nameBlocker(m_nameEdit);
     const QSignalBlocker campusBlocker(m_campusCombo);
     const QSignalBlocker loginBlocker(m_zoomLoginIdEdit);
     const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
     const QSignalBlocker checkBlocker(m_zoomNotAvailableCheck);
+
+    m_nameEdit->setText(
+        dataService
+            ->loadSetting(
+                SettingsKeys::Name,
+                QString()
+                )
+            .toString()
+        );
 
     const QString campus =
         dataService
@@ -1240,6 +1282,10 @@ bool MyInfoPage::saveMyInfoInternal()
         normalizeZoomFields();
     }
 
+    dataService->saveSetting(
+        SettingsKeys::Name,
+        m_nameEdit->text()
+        );
     dataService->saveSetting(
         SettingsKeys::Campus,
         m_campusCombo->currentText()
