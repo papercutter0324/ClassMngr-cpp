@@ -94,6 +94,7 @@ private:
 
     void initializeServices();
     void initializeWindow();
+    void adjustSizeForAvailableScreen();
 
     void initializePages();
     void initializeSidebar();

@@ -23,6 +23,7 @@
 #include "ui/shared/dialogs/about_dialog.h"
 
 #include <QMenuBar>
+#include <QScreen>
 #include <QTimer>
 
 
@@ -105,6 +106,37 @@ void MainWindow::initializeWindow()
 
     ui->pagesWidget->setMinimumWidth(
         UiConstants::MainWindow::PagesMinWidth);
+
+    adjustSizeForAvailableScreen();
+}
+
+void MainWindow::adjustSizeForAvailableScreen()
+{
+    QScreen* availableScreen =
+        screen();
+
+    if (!availableScreen)
+    {
+        return;
+    }
+
+    const QSize defaultWindowSize =
+        size();
+
+    const QSize availableScreenSize =
+        availableScreen
+            ->availableGeometry()
+            .size();
+
+    if (
+        availableScreenSize.width()
+            < defaultWindowSize.width()
+        || availableScreenSize.height()
+            < defaultWindowSize.height()
+        )
+    {
+        resize(minimumSize());
+    }
 }
 
 void MainWindow::initializePages()
