@@ -16,15 +16,15 @@ Item {
     property var termProvider: academicCalendarProvider
     // qmllint enable unqualified
     property date shownDate: new Date()
-    property color toolbarColor: "#3949ab"
-    property color toolbarTextColor: "#f5f5f5"
-    property color textColor: "#111111"
-    property color mutedTextColor: "#111111"
+    property color toolbarColor: "#536f8a"
+    property color toolbarTextColor: "#fbfaf7"
+    property color textColor: "#27313a"
+    property color mutedTextColor: "#66727a"
     property color inactiveTextColor: "transparent"
-    property color calendarBackground: "#ffffff"
-    property color headerBackground: "#ffffff"
+    property color calendarBackground: "#f5f3ee"
+    property color headerBackground: "#e2e1dc"
     property color cellBackground: calendarBackground
-    property color gridLineColor: "#d0d7e2"
+    property color gridLineColor: "#cbc9c2"
     property color accentColor: toolbarColor
     property color accentTextColor: toolbarTextColor
     readonly property int termRevision: termProvider ? termProvider.revision : 0
