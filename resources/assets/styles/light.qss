@@ -419,7 +419,7 @@ QLabel[role="schedule_empty"] {
 }
 
 QSplitter::handle {
-    background-color: #e4e9f1;
+    background: transparent;
 }
 
 QToolTip {
