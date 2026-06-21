@@ -3,6 +3,7 @@
 #include "core/build_info.h"
 #include "core/fontmanager.h"
 #include "core/language_service.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
@@ -14,6 +15,7 @@
 #include <QIcon>
 #include <QTimer>
 #include <QElapsedTimer>
+#include <QDebug>
 
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
@@ -54,6 +56,17 @@ int main(int argc, char *argv[])
     app.setApplicationVersion(
         QString::fromUtf8(BuildInfo::Version)
         );
+
+    if (
+        const Status resourcePackStatus =
+            ResourcePackManager::instance().initialize();
+        !resourcePackStatus
+        )
+    {
+        qWarning().noquote()
+            << resourcePackStatus.error();
+    }
+
     app.setWindowIcon(getAppIcon());
 
 

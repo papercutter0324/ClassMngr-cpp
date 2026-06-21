@@ -24,6 +24,7 @@ public:
     void maybeCheckOnStartup();
 
 private:
+    void maybeCheckResourcePacksOnStartup();
     void showManualUpdateDialog();
     void showUpdateDialogForResult(
         const UpdateCheckResult& result
@@ -32,4 +33,5 @@ private:
 private:
     MainWindow* m_window = nullptr;
     bool m_startupCheckStarted = false;
+    bool m_resourcePackCheckStarted = false;
 };

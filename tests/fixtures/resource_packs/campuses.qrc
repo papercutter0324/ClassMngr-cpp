@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/resource-packs/campuses">
+    <file alias="marker.txt">marker.txt</file>
+  </qresource>
+</RCC>

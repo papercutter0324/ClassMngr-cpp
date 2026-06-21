@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/resource_packs/resource_pack_manager.h"
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -12,6 +14,27 @@
 
 namespace ResourcePaths::Detail
 {
+inline QString activePackPath(
+    const QString& packId,
+    const QString& relativePath = QString()
+    )
+{
+    const QString root =
+        ResourcePackManager::instance().activeRoot(packId);
+
+    if (root.isEmpty())
+    {
+        return QString();
+    }
+
+    if (relativePath.isEmpty())
+    {
+        return root;
+    }
+
+    return QDir(root).filePath(relativePath);
+}
+
 inline QString resolveResourcePath(
     const QString& resourcePath
     )
@@ -158,6 +181,17 @@ inline constexpr auto Certificate =
 
 inline QString report()
 {
+    const QString packPath =
+        Detail::activePackPath(
+            QStringLiteral("templates"),
+            QStringLiteral("report.html")
+            );
+
+    if (!packPath.isEmpty() && QFile::exists(packPath))
+    {
+        return packPath;
+    }
+
     return Detail::resolveResourcePath(
         QString::fromUtf8(Report)
         );
@@ -165,9 +199,32 @@ inline QString report()
 
 inline QString certificate()
 {
+    const QString packPath =
+        Detail::activePackPath(
+            QStringLiteral("templates"),
+            QStringLiteral("certificate.html")
+            );
+
+    if (!packPath.isEmpty() && QFile::exists(packPath))
+    {
+        return packPath;
+    }
+
     return Detail::resolveResourcePath(
         QString::fromUtf8(Certificate)
         );
+}
+
+inline QString directory()
+{
+    const QString packPath =
+        Detail::activePackPath(
+            QStringLiteral("templates")
+            );
+
+    return packPath.isEmpty()
+        ? QStringLiteral(":/assets/templates")
+        : packPath;
 }
 }
 
@@ -178,6 +235,16 @@ inline constexpr auto Directory =
 
 inline QString directory()
 {
+    const QString packPath =
+        Detail::activePackPath(
+            QStringLiteral("campuses")
+            );
+
+    if (!packPath.isEmpty())
+    {
+        return packPath;
+    }
+
     const QString relativePath =
         QStringLiteral("assets/campuses");
 
@@ -234,6 +301,21 @@ inline QString directory()
     }
 
     return QString::fromUtf8(Directory);
+}
+}
+
+namespace ResourcePaths::RosterDesigns
+{
+inline QString directory()
+{
+    const QString packPath =
+        Detail::activePackPath(
+            QStringLiteral("roster-designs")
+            );
+
+    return packPath.isEmpty()
+        ? QStringLiteral(":/assets/roster-designs")
+        : packPath;
 }
 }
 

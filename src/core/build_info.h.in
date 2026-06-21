@@ -19,4 +19,19 @@ inline constexpr bool UpdateRequireSignature =
 
 inline constexpr bool UpdateCheckOnStartup =
     @CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP@;
+
+inline constexpr auto ResourcePackManifestUrl =
+    R"CLASSMNGR(@CLASSMNGR_RESOURCE_PACK_MANIFEST_URL@)CLASSMNGR";
+
+inline constexpr auto ResourcePackSignatureUrl =
+    R"CLASSMNGR(@CLASSMNGR_RESOURCE_PACK_SIGNATURE_URL@)CLASSMNGR";
+
+inline constexpr auto ResourcePackPublicKeyPem =
+    R"CLASSMNGR(@CLASSMNGR_RESOURCE_PACK_PUBLIC_KEY_PEM@)CLASSMNGR";
+
+inline constexpr bool ResourcePackRequireSignature =
+    @CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE_CPP@;
+
+inline constexpr bool ResourcePackCheckOnStartup =
+    @CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP_CPP@;
 }

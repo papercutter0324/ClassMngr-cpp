@@ -1,0 +1,104 @@
+# ClassMngr Resource Packs
+
+ClassMngr can update campus information, printable templates, and roster
+designs independently of the application. Packs are Qt binary resource
+collections (`.rcc`). They are data-only, platform-neutral, and mounted
+read-only.
+
+The known pack ids and their required RCC roots are:
+
+| Pack id | RCC prefix | Compiled fallback |
+| --- | --- | --- |
+| `campuses` | `/resource-packs/campuses` | `:/assets/campuses` |
+| `templates` | `/resource-packs/templates` | `:/assets/templates` |
+| `roster-designs` | `/resource-packs/roster-designs` | `:/assets/roster-designs` |
+
+If an installed pack is absent, corrupt, has invalid metadata, or cannot be
+mounted, the app uses its compiled fallback. Downloaded updates are staged
+atomically and become active on the next launch.
+
+## Building a pack
+
+Create a qrc file whose prefix matches the table. For example:
+
+```xml
+<!DOCTYPE RCC>
+<RCC version="1.0">
+  <qresource prefix="/resource-packs/campuses">
+    <file alias="bundang.json">campuses/bundang.json</file>
+    <file alias="bundang/bundang_map.png">campuses/bundang/bundang_map.png</file>
+  </qresource>
+</RCC>
+```
+
+Build it with the `rcc` executable from the same Qt major version used by the
+application:
+
+```sh
+rcc --binary campuses.qrc --output campuses-1.1.0.rcc
+sha256sum campuses-1.1.0.rcc
+```
+
+Pack versions use strict `x.x.x` format. The embedded fallback version is
+currently `1.0.0`; when compiled fallback content changes, update the matching
+definition in `resource_pack_manager.cpp`.
+
+## Server manifest
+
+Publish pack files first. Publish `latest.json` and its detached signature
+last.
+
+```json
+{
+  "schemaVersion": 1,
+  "packs": {
+    "campuses": {
+      "version": "1.1.0",
+      "url": "https://example.com/packs/campuses-1.1.0.rcc",
+      "fileName": "campuses-1.1.0.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 123456
+    },
+    "templates": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/templates-1.0.1.rcc",
+      "fileName": "templates-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 234567
+    },
+    "roster-designs": {
+      "version": "1.2.0",
+      "url": "https://example.com/packs/roster-designs-1.2.0.rcc",
+      "fileName": "roster-designs-1.2.0.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 345678
+    }
+  }
+}
+```
+
+Sign the exact manifest bytes. The resource-pack updater uses the application
+update public key unless a separate resource-pack key is configured.
+
+```sh
+openssl dgst -sha256 -sign private.pem -out latest.sig latest.json
+```
+
+## Build configuration
+
+```sh
+cmake --preset linux-gcc-release \
+  -DCLASSMNGR_RESOURCE_PACK_MANIFEST_URL="https://example.com/packs/latest.json" \
+  -DCLASSMNGR_RESOURCE_PACK_SIGNATURE_URL="https://example.com/packs/latest.sig" \
+  -DCLASSMNGR_RESOURCE_PACK_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----"
+```
+
+`CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE` and
+`CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP` both default to `ON`. If the public
+key setting is omitted, `CLASSMNGR_UPDATE_PUBLIC_KEY_PEM` is reused. With no
+manifest URL configured, startup checks are skipped.
+
+The signed manifest supplies the artifact checksums. Each download is size- and
+SHA-256-verified, checked for the expected RCC root, then installed through an
+atomic metadata update. Network or validation failures only log a warning and
+never prevent startup.

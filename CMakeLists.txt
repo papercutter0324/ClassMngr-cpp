@@ -38,6 +38,24 @@ option(CLASSMNGR_UPDATE_CHECK_ON_STARTUP
     OFF
 )
 
+set(CLASSMNGR_RESOURCE_PACK_MANIFEST_URL "" CACHE STRING
+    "HTTPS URL for the resource-pack manifest"
+)
+set(CLASSMNGR_RESOURCE_PACK_SIGNATURE_URL "" CACHE STRING
+    "HTTPS URL for the detached resource-pack manifest signature"
+)
+set(CLASSMNGR_RESOURCE_PACK_PUBLIC_KEY_PEM "" CACHE STRING
+    "PEM public key for resource packs; defaults to the application update key"
+)
+option(CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE
+    "Require resource-pack manifest signature verification"
+    ON
+)
+option(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP
+    "Check configured resource packs for updates after launch"
+    ON
+)
+
 set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP false)
 if(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE)
     set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP true)
@@ -46,6 +64,16 @@ endif()
 set(CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP false)
 if(CLASSMNGR_UPDATE_CHECK_ON_STARTUP)
     set(CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP true)
+endif()
+
+set(CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE_CPP false)
+if(CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE)
+    set(CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE_CPP true)
+endif()
+
+set(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP_CPP false)
+if(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP)
+    set(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP_CPP true)
 endif()
 
 configure_file(
@@ -69,6 +97,12 @@ file(GLOB_RECURSE CLASSMNGR_CAMPUS_MAP_IMAGES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.jpeg"
 )
 
+file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*"
+    "${PROJECT_SOURCE_DIR}/resources/assets/templates/*"
+    "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
+)
+
 qt_add_resources(ClassMngr app_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
@@ -81,11 +115,10 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/spin_up_dark.svg
         resources/assets/icons/spin_up_light.svg
         resources/assets/icons/icon_256x256.png
-        resources/assets/campuses/bundang.json
         resources/assets/splash/splash.png
         resources/assets/styles/dark.qss
         resources/assets/styles/light.qss
-        ${CLASSMNGR_CAMPUS_MAP_IMAGES}
+        ${CLASSMNGR_EMBEDDED_PACK_FILES}
 )
 
 set_source_files_properties(
@@ -228,6 +261,54 @@ if(BUILD_TESTING)
         COMMAND ClassMngrUpdaterTests
     )
 
+    qt_add_executable(ClassMngrResourcePackTests
+        tests/resource_pack_tests.cpp
+        src/core/resource_packs/resource_pack_manager.cpp
+        src/core/resource_packs/resource_pack_manifest.cpp
+        src/core/updater/version.cpp
+    )
+
+    set(CLASSMNGR_TEST_CAMPUS_PACK_PATH
+        "${CMAKE_CURRENT_BINARY_DIR}/test-campuses.rcc"
+    )
+
+    qt_add_binary_resources(ClassMngrTestCampusPack
+        tests/fixtures/resource_packs/campuses.qrc
+        DESTINATION
+            "${CLASSMNGR_TEST_CAMPUS_PACK_PATH}"
+    )
+
+    add_dependencies(
+        ClassMngrResourcePackTests
+        ClassMngrTestCampusPack
+    )
+
+    target_compile_features(ClassMngrResourcePackTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrResourcePackTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrResourcePackTests
+        PRIVATE
+            CLASSMNGR_TEST_CAMPUS_PACK_PATH="${CLASSMNGR_TEST_CAMPUS_PACK_PATH}"
+    )
+
+    target_link_libraries(ClassMngrResourcePackTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrResourcePackTests
+        COMMAND ClassMngrResourcePackTests
+    )
+
     qt_add_executable(ClassMngrFontManagerTests
         tests/fontmanager_tests.cpp
         src/core/fontmanager.cpp
@@ -357,6 +438,7 @@ if(BUILD_TESTING)
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests
+            ClassMngrResourcePackTests
             ClassMngrFontManagerTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
