@@ -57,6 +57,10 @@ QWidget#sectionCard {
     border-radius: 8px;
 }
 
+QTreeWidget#sidebarTree {
+    border-color: #e4e9f1;
+}
+
 QFrame[role="card"]:hover,
 QWidget[role="card"]:hover,
 QFrame#sectionCard:hover,

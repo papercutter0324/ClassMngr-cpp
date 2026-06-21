@@ -3,6 +3,7 @@
 #include "sidebar_marquee_delegate.h"
 #include "sidebar_types.h"
 #include "core/fontmanager.h"
+#include "ui/shared/constants/gui_constants.h"
 
 #include <QDesktopServices>
 #include <QFontMetrics>
@@ -129,6 +130,17 @@ void Sidebar::setupUi()
 
     m_tree =
         new QTreeWidget(this);
+
+    m_tree->setObjectName(
+        QStringLiteral("sidebarTree")
+        );
+    m_tree->setStyleSheet(
+        QStringLiteral(
+            "QTreeWidget { border-width: %1px; border-style: solid; }"
+            ).arg(
+                UiConstants::MainWindow::SidebarFrameWidth
+                )
+        );
 
     m_tree->setFont(
         FontManager::getUiFont(
