@@ -98,6 +98,18 @@ QWidget[role="input"] {
     padding: 5px 8px;
 }
 
+QComboBox:editable,
+QComboBox:!editable {
+    background: #f5f3ee;
+}
+
+QComboBox QLineEdit {
+    background: #f5f3ee;
+    color: #27313a;
+    border: none;
+    padding: 0;
+}
+
 QLineEdit:focus,
 QPlainTextEdit:focus,
 QTextEdit:focus,
@@ -127,7 +139,7 @@ QDateTimeEdit:disabled {
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
-    background-color: #ebeae5;
+    background-color: #f5f3ee;
     border-left: 1px solid #cbc9c2;
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
@@ -152,7 +164,7 @@ QComboBox::down-arrow {
     height: 6px;
 }
 
-QComboBox:disabled::drop-down {
+QComboBox::drop-down:disabled {
     background-color: #deded8;
     border-left-color: #d2d0c9;
 }
