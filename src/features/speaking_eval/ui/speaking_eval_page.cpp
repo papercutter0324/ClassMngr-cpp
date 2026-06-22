@@ -1,5 +1,7 @@
 #include "speaking_eval_page.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/roster.h"
@@ -755,7 +757,7 @@ void SpeakingEvalPage::buildUi()
     bottomLayout()->addStretch();
 
     m_importNamesButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Import Names"),
             this
             );
@@ -778,7 +780,7 @@ void SpeakingEvalPage::buildUi()
     for (int index = 0; index < disabledLabels.size(); ++index)
     {
         auto* button =
-            new QPushButton(
+            new TextFitPushButton(
                 disabledLabels[index],
                 this
                 );
@@ -805,7 +807,7 @@ void SpeakingEvalPage::buildUi()
     bottomLayout()->addSpacing(20);
 
     m_koreanKeyboardButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Korean Keyboard"),
             this
             );
@@ -822,7 +824,7 @@ void SpeakingEvalPage::buildUi()
     bottomLayout()->addWidget(m_koreanKeyboardButton);
 
     m_saveButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Save Changes"),
             this
             );

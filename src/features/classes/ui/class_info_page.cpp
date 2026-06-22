@@ -1,5 +1,7 @@
 #include "class_info_page.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
@@ -245,7 +247,7 @@ void ClassInfoPage::buildUi()
     updateScrollContentMinimumWidth();
 
     m_saveButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Save Changes")
             );
 

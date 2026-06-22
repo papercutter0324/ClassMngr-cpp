@@ -847,13 +847,13 @@
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="649"/>
-        <source>Open in Naver Maps</source>
-        <translation>네이버 지도에서 열기</translation>
+        <source>Naver Maps</source>
+        <translation>네이버 지도</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="670"/>
-        <source>Open in Kakao Map</source>
-        <translation>카카오맵에서 열기</translation>
+        <source>Kakao Maps</source>
+        <translation>카카오맵</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="356"/>

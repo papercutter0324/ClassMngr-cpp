@@ -1,5 +1,7 @@
 #include "class_notes_page.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/class_info.h"
@@ -416,7 +418,7 @@ void ClassNotesPage::buildUi()
     contentLayout()->addStretch();
 
     m_saveButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Save Changes"),
             this
             );

@@ -1,5 +1,7 @@
 #include "schedule_editor_dialog.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "features/classes/config/class_info_config.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -226,7 +228,7 @@ void ScheduleEditorDialog::buildUi()
     m_classColorPreview->setFixedSize(28, 28);
 
     auto* classColorButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Choose Color"),
             this
             );
@@ -246,7 +248,7 @@ void ScheduleEditorDialog::buildUi()
     m_fontColorPreview->setFixedSize(28, 28);
 
     auto* fontColorButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Choose Color"),
             this
             );
@@ -282,13 +284,13 @@ void ScheduleEditorDialog::buildUi()
     footerLayout->addStretch();
 
     auto* cancelButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Cancel"),
             this
             );
 
     auto* saveButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Save"),
             this
             );

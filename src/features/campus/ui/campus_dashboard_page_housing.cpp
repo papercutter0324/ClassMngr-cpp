@@ -1,5 +1,7 @@
 #include "campus_dashboard_page.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "campus_dashboard_page_detail.h"
 
 #include <QFormLayout>
@@ -164,7 +166,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
     nameLayout->setSpacing(8);
 
     section.toggleLanguageButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Show Korean"),
             nameRow
             );
@@ -172,7 +174,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
     Detail::setStaticToggleButtonWidth(section.toggleLanguageButton);
 
     section.removeButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Remove"),
             nameRow
             );

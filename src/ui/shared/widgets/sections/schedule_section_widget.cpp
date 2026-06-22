@@ -1,5 +1,7 @@
 #include "schedule_section_widget.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "data/data_service.h"
@@ -346,17 +348,17 @@ void ScheduleSectionWidget::buildUi()
     controlsLayout->setSpacing(8);
 
     m_timeFormatButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_timeFormatButton->setObjectName("primaryButton");
     m_timeFormatButton->setMinimumWidth(140);
 
     m_weekendButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_weekendButton->setObjectName("primaryButton");
     m_weekendButton->setMinimumWidth(150);
 
     m_scheduleModeButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_scheduleModeButton->setObjectName("primaryButton");
     m_scheduleModeButton->setMinimumWidth(200);
 

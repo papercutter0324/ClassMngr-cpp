@@ -35,7 +35,7 @@ void setStaticToggleButtonWidth(
                 )
             ) + 32;
 
-    button->setFixedWidth(width);
+    button->setMinimumWidth(width);
     button->setSizePolicy(
         QSizePolicy::Fixed,
         QSizePolicy::Fixed

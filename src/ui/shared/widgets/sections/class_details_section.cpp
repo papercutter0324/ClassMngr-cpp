@@ -1,5 +1,7 @@
 #include "class_details_section.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include <QSignalBlocker>
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -177,7 +179,7 @@ ClassDetailsSection::ClassDetailsSection(
     m_essayBookCombo = new NoWheelComboBox(this);
 
     m_colorButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
 
     m_colorButton->setText(
         tr("Choose Color")

@@ -2,6 +2,7 @@
 
 #include "ui/shared/styles/role_style_registry.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -71,7 +72,7 @@ QPushButton* BottomBarBuilder::addButton(
     bool expand
     )
 {
-    auto* button = new QPushButton(text);
+    auto* button = new TextFitPushButton(text);
 
     RoleStyleRegistry::apply(
         button,

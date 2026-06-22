@@ -1,5 +1,7 @@
 #include "about_dialog.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/appsettings.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
@@ -304,19 +306,19 @@ void AboutDialog::buildUi()
         new QHBoxLayout;
 
     auto* aboutQtButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("About Qt"),
             this
             );
 
     auto* interLicenseButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("View Inter License"),
             this
             );
 
     auto* pretendardLicenseButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("View Pretendard License"),
             this
             );
@@ -351,7 +353,7 @@ void AboutDialog::buildUi()
     licenseButtonLayout->addStretch();
 
     auto* closeButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Close"),
             this
             );
@@ -424,7 +426,7 @@ void AboutDialog::showLicense(
         );
 
     auto* closeButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Close"),
             &dialog
             );

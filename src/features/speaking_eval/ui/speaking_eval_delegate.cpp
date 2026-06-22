@@ -1,5 +1,7 @@
 #include "speaking_eval_delegate.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/fontmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -587,19 +589,19 @@ bool SpeakingEvalDelegate::showCommentDialog(
         new QHBoxLayout;
 
     auto* clearButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Clear"),
             &dialog
             );
 
     auto* okButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("OK"),
             &dialog
             );
 
     auto* cancelButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Cancel"),
             &dialog
             );

@@ -823,13 +823,13 @@
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="649"/>
-        <source>Open in Naver Maps</source>
-        <translation>Open in Naver Maps</translation>
+        <source>Naver Maps</source>
+        <translation>Naver Maps</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_data.cpp" line="670"/>
-        <source>Open in Kakao Map</source>
-        <translation>Open in Kakao Map</translation>
+        <source>Kakao Maps</source>
+        <translation>Kakao Maps</translation>
     </message>
     <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page.cpp" line="356"/>

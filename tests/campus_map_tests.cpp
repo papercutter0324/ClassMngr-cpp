@@ -1,8 +1,10 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "features/campus/ui/campus_map_preview.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QFile>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -24,6 +26,7 @@ private slots:
     void bundledCampusImagesLoad();
     void gallerySwitchesAtBreakpoint();
     void mapControlsStayCenteredOverFirstImage();
+    void wideMapControlsAreNotCompressed();
     void galleryHandlesMissingImagesAndCampusChanges();
 };
 
@@ -512,6 +515,64 @@ void CampusMapTests::mapControlsStayCenteredOverFirstImage()
         );
     QCoreApplication::processEvents();
     verifyCentered();
+}
+
+void CampusMapTests::wideMapControlsAreNotCompressed()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString mapImagePath =
+        directory.filePath(QStringLiteral("map.png"));
+    const QString buildingImagePath =
+        directory.filePath(QStringLiteral("building.png"));
+
+    QVERIFY(QImage(400, 300, QImage::Format_ARGB32)
+        .save(mapImagePath));
+    QVERIFY(QImage(300, 400, QImage::Format_ARGB32)
+        .save(buildingImagePath));
+
+    CampusMapPreview preview;
+    auto* controls = new QWidget;
+    auto* layout = new QHBoxLayout(controls);
+
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+    layout->addStretch();
+
+    auto* naverButton =
+        new TextFitPushButton(
+            QStringLiteral("Naver Maps"),
+            controls
+            );
+    auto* kakaoButton =
+        new TextFitPushButton(
+            QStringLiteral("Kakao Maps"),
+            controls
+            );
+
+    QFont extraLargeFont = naverButton->font();
+    extraLargeFont.setPointSize(
+        extraLargeFont.pointSize() + 4
+        );
+    naverButton->setFont(extraLargeFont);
+    kakaoButton->setFont(extraLargeFont);
+
+    layout->addWidget(naverButton);
+    layout->addWidget(kakaoButton);
+    layout->addStretch();
+
+    preview.setMapControls(controls);
+    preview.setImagePaths({mapImagePath, buildingImagePath});
+    preview.resize(
+        CampusMapPreview::HorizontalBreakpoint,
+        1000
+        );
+    preview.show();
+    QCoreApplication::processEvents();
+
+    QVERIFY(naverButton->width() >= naverButton->sizeHint().width());
+    QVERIFY(kakaoButton->width() >= kakaoButton->sizeHint().width());
 }
 
 QTEST_MAIN(CampusMapTests)

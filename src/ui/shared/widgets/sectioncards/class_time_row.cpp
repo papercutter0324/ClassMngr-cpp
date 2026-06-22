@@ -3,6 +3,7 @@
 #include "features/classes/config/class_info_config.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
 #include <QComboBox>
@@ -113,7 +114,11 @@ void applyButtonWidth(
 
     if (preferredWidth >= minimumWidth)
     {
-        button->setFixedWidth(preferredWidth);
+        button->setMinimumWidth(preferredWidth);
+        button->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Preferred
+            );
         return;
     }
 
@@ -217,7 +222,8 @@ ClassTimeRow::ClassTimeRow(
         UiConstants::ClassInfo::TimeRow::EndComboWidth
         );
 
-    m_removeButton = new QPushButton(tr("Remove"), this);
+    m_removeButton =
+        new TextFitPushButton(tr("Remove"), this);
     applyButtonWidth(
         m_removeButton,
         UiConstants::ClassInfo::TimeRow::RemoveButtonWidth

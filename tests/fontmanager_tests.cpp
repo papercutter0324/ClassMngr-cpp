@@ -1,5 +1,6 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/options.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QApplication>
 #include <QFont>
@@ -321,6 +322,50 @@ private slots:
         QCOMPARE(
             app->font().pointSize(),
             FontManager::getPlatformFontSize()
+            );
+    }
+
+    void buttonWidthHintsTrackTextAndFontSize()
+    {
+        TextFitPushButton button(
+            QStringLiteral("Save Changes")
+            );
+
+        const int normalWidth =
+            button.minimumSizeHint().width();
+        const int normalSizeHintWidth =
+            button.sizeHint().width();
+
+        button.setText(
+            QStringLiteral("Save All Changes to This Class")
+            );
+
+        const int longTextWidth =
+            button.minimumSizeHint().width();
+        const int longTextSizeHintWidth =
+            button.sizeHint().width();
+
+        QVERIFY(longTextWidth > normalWidth);
+        QVERIFY(longTextSizeHintWidth > normalSizeHintWidth);
+        QVERIFY(
+            longTextWidth
+            >= QFontMetrics(button.font())
+                .horizontalAdvance(button.text()) + 48
+            );
+
+        QFont largerFont = button.font();
+        largerFont.setPointSize(
+            largerFont.pointSize() + 4
+            );
+        button.setFont(largerFont);
+
+        QVERIFY(
+            button.minimumSizeHint().width()
+            > longTextWidth
+            );
+        QVERIFY(
+            button.sizeHint().width()
+            > longTextSizeHintWidth
             );
     }
 };

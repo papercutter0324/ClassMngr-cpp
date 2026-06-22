@@ -1,5 +1,7 @@
 #include "update_dialog.h"
 
+#include "ui/shared/widgets/text_fit_push_button.h"
+
 #include "core/fontmanager.h"
 #include "core/updater/update_installer.h"
 
@@ -270,22 +272,22 @@ void UpdateDialog::buildUi()
         new QHBoxLayout;
 
     m_checkButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Check Again"),
             this
             );
     m_downloadButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Download"),
             this
             );
     m_installButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Install and Close"),
             this
             );
     m_closeButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Close"),
             this
             );

@@ -5,6 +5,7 @@
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/sectioncards/class_time_row.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 #include "features/classes/config/class_info_config.h"
 
 #include <QComboBox>
@@ -200,14 +201,28 @@ ClassScheduleSection::ClassScheduleSection(QWidget* parent)
         UiConstants::ClassInfo::Schedule::RowColumnSpan
         );
 
-    m_addRegularButton = new QPushButton(tr("+ Add Time"), this);
-    m_addIntensiveButton = new QPushButton(tr("+ Add Intensive Time"), this);
+    m_addRegularButton =
+        new TextFitPushButton(tr("+ Add Time"), this);
+    m_addIntensiveButton =
+        new TextFitPushButton(
+            tr("+ Add Intensive Time"),
+            this
+            );
 
-    m_addRegularButton->setFixedWidth(
+    m_addRegularButton->setMinimumWidth(
         UiConstants::ClassInfo::Schedule::AddButtonFixedWidth
         );
-    m_addIntensiveButton->setFixedWidth(
+    m_addIntensiveButton->setMinimumWidth(
         UiConstants::ClassInfo::Schedule::AddButtonFixedWidth
+        );
+
+    m_addRegularButton->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Preferred
+        );
+    m_addIntensiveButton->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Preferred
         );
 
     connect(m_addRegularButton, &QPushButton::clicked, this, [this] {

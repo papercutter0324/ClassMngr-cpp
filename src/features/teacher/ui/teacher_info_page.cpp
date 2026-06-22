@@ -7,6 +7,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/sectioncards/teacher_section_card.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QComboBox>
@@ -438,7 +439,7 @@ void TeacherInfoPage::buildUi()
     // =====================================================
 
     m_saveButton =
-        new QPushButton(tr("Save Changes"));
+        new TextFitPushButton(tr("Save Changes"));
 
     m_saveButton->setObjectName(
         "primaryButton");
