@@ -7,6 +7,10 @@ project(ClassMngr
 
 include(CTest)
 
+add_compile_options(
+    $<$<CXX_COMPILER_ID:MSVC>:/FS>
+)
+
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
@@ -162,11 +166,6 @@ target_compile_features(ClassMngr
 
 set_target_properties(ClassMngr PROPERTIES
     CXX_EXTENSIONS OFF
-)
-
-target_compile_options(ClassMngr
-    PRIVATE
-        $<$<CXX_COMPILER_ID:MSVC>:/FS>
 )
 
 target_include_directories(ClassMngr

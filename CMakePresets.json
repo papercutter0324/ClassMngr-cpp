@@ -44,7 +44,7 @@
       "name": "qt-windows-laptop",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_WINDOWS_LAPTOP_PREFIX}"
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.11.1/msvc2022_64"
       }
     },
 
