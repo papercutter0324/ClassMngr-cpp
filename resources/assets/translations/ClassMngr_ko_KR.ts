@@ -879,6 +879,14 @@
         <translation>도로명 주소 표시</translation>
     </message>
     <message>
+        <source>Hide Details</source>
+        <translation>세부 정보 숨기기</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation>세부 정보 표시</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="409"/>
         <source>(%1)</source>
         <translation>(%1)</translation>

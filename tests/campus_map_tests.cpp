@@ -20,6 +20,7 @@ class CampusMapTests : public QObject
 
 private slots:
     void mapConfigurationRoundTrips();
+    void legacyAddressNoteMigratesToSharedField();
     void legacyImageMainRemainsSupported();
     void explicitEmptyMapDoesNotRestoreLegacyImage();
     void mapUrlsRequireAbsoluteHttps();
@@ -51,6 +52,8 @@ void CampusMapTests::mapConfigurationRoundTrips()
         QStringLiteral("https://map.naver.com/example");
     campus.kakaoMapUrl =
         QStringLiteral("https://map.kakao.com/example");
+    campus.directionsNote =
+        QStringLiteral("Use the side entrance.");
 
     QJsonObject housingLinks;
     housingLinks.insert(
@@ -83,6 +86,10 @@ void CampusMapTests::mapConfigurationRoundTrips()
         QStringLiteral("map"),
         housingMap
         );
+    housing.insert(
+        QStringLiteral("addr_note"),
+        QStringLiteral("Ask security for the key.")
+        );
     campus.housingLocations.append(housing);
 
     const Status saved =
@@ -102,6 +109,10 @@ void CampusMapTests::mapConfigurationRoundTrips()
         loaded->housingLocations,
         campus.housingLocations
         );
+    QCOMPARE(
+        loaded->directionsNote,
+        campus.directionsNote
+        );
 
     QFile file(
         repository.filePathForCampusId(campus.id)
@@ -112,6 +123,22 @@ void CampusMapTests::mapConfigurationRoundTrips()
         QJsonDocument::fromJson(
             file.readAll()
             ).object();
+
+    const QJsonObject savedDirections =
+        root.value(QStringLiteral("directions")).toObject();
+
+    QCOMPARE(
+        savedDirections
+            .value(QStringLiteral("addr_note"))
+            .toString(),
+        campus.directionsNote
+        );
+    QVERIFY(
+        !savedDirections
+            .value(QStringLiteral("en"))
+            .toObject()
+            .contains(QStringLiteral("addr_note"))
+        );
 
     QCOMPARE(
         root.value(QStringLiteral("image_main")).toString(),
@@ -125,6 +152,98 @@ void CampusMapTests::mapConfigurationRoundTrips()
             .toArray()
             .size(),
         2
+        );
+}
+
+void CampusMapTests::legacyAddressNoteMigratesToSharedField()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    CampusJsonRepository repository(
+        directory.path()
+        );
+
+    QJsonObject englishAddress;
+    englishAddress.insert(
+        QStringLiteral("addr_note"),
+        QStringLiteral("Legacy shared note")
+        );
+
+    QJsonObject directions;
+    directions.insert(
+        QStringLiteral("en"),
+        englishAddress
+        );
+    directions.insert(
+        QStringLiteral("kr"),
+        QJsonObject()
+        );
+
+    QJsonObject root;
+    root.insert(
+        QStringLiteral("id"),
+        QStringLiteral("legacy-note")
+        );
+    root.insert(
+        QStringLiteral("campus_name"),
+        QStringLiteral("Legacy Note")
+        );
+    root.insert(
+        QStringLiteral("directions"),
+        directions
+        );
+
+    QFile file(
+        repository.filePathForCampusId(
+            QStringLiteral("legacy-note")
+            )
+        );
+    QVERIFY(file.open(QIODevice::WriteOnly));
+
+    const QByteArray legacyJson =
+        QJsonDocument(root).toJson();
+
+    QCOMPARE(
+        file.write(legacyJson),
+        static_cast<qint64>(legacyJson.size())
+        );
+    file.close();
+
+    const std::optional<CampusInfo> loaded =
+        repository.loadCampus(
+            QStringLiteral("legacy-note")
+            );
+
+    QVERIFY(loaded.has_value());
+    QCOMPARE(
+        loaded->directionsNote,
+        QStringLiteral("Legacy shared note")
+        );
+
+    const Status saved =
+        repository.saveCampus(*loaded);
+    QVERIFY(saved.has_value());
+
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    const QJsonObject savedRoot =
+        QJsonDocument::fromJson(file.readAll()).object();
+    const QJsonObject savedDirections =
+        savedRoot
+            .value(QStringLiteral("directions"))
+            .toObject();
+
+    QCOMPARE(
+        savedDirections
+            .value(QStringLiteral("addr_note"))
+            .toString(),
+        QStringLiteral("Legacy shared note")
+        );
+    QVERIFY(
+        !savedDirections
+            .value(QStringLiteral("en"))
+            .toObject()
+            .contains(QStringLiteral("addr_note"))
         );
 }
 

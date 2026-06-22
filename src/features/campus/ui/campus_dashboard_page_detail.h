@@ -14,8 +14,11 @@ namespace CampusDashboardPageDetail
 inline constexpr int AutosaveDebounceMs = 800;
 inline constexpr auto NotApplicableText = "N/A";
 
-void setStaticToggleButtonWidth(
-    QPushButton* button
+void setStaticToggleButtonWidths(
+    QPushButton* firstButton,
+    QPushButton* secondButton,
+    QPushButton* thirdButton,
+    const QStringList& labels
     );
 
 QString jsonString(

@@ -143,6 +143,13 @@ void CampusDashboardPage::populateFields(
         campus.directionsAddressKr
         );
 
+    if (m_directionsNoteEdit)
+    {
+        m_directionsNoteEdit->setText(
+            campus.directionsNote
+            );
+    }
+
     m_officeNumberEdit->setText(campus.officeNumber);
     m_transitStepsEdit->setPlainText(
         campus.transitSteps.join(u'\n')
@@ -350,6 +357,10 @@ Status CampusDashboardPage::readFieldsIntoCampus(
         addressSectionToJson(m_directionsEnglishAddress);
     updated.directionsAddressKr =
         addressSectionToJson(m_directionsKoreanAddress);
+    updated.directionsNote =
+        m_directionsNoteEdit
+            ? m_directionsNoteEdit->text()
+            : QString();
     updated.address =
         completeAddressFor(m_directionsEnglishAddress);
     updated.phoneNumber =

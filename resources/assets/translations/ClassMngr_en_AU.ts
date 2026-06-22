@@ -855,6 +855,14 @@
         <translation>Show Modern</translation>
     </message>
     <message>
+        <source>Hide Details</source>
+        <translation>Hide Details</translation>
+    </message>
+    <message>
+        <source>Show Details</source>
+        <translation>Show Details</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/campus/ui/campus_dashboard_page_address.cpp" line="409"/>
         <source>(%1)</source>
         <translation>(%1)</translation>

@@ -12,34 +12,65 @@
 namespace CampusDashboardPageDetail
 {
 
-void setStaticToggleButtonWidth(
-    QPushButton* button
+namespace
+{
+constexpr int ButtonHorizontalPadding = 48;
+}
+
+void setStaticToggleButtonWidths(
+    QPushButton* firstButton,
+    QPushButton* secondButton,
+    QPushButton* thirdButton,
+    const QStringList& labels
     )
 {
-    if (!button)
+    if (!firstButton || !secondButton || !thirdButton)
     {
         return;
     }
 
-    const QFontMetrics metrics(button->font());
+    const QFontMetrics firstMetrics(
+        firstButton->font()
+        );
+    const QFontMetrics secondMetrics(
+        secondButton->font()
+        );
+    const QFontMetrics thirdMetrics(
+        thirdButton->font()
+        );
+
+    int maximumTextWidth = 0;
+
+    for (const QString& label : labels)
+    {
+        maximumTextWidth =
+            qMax(
+                maximumTextWidth,
+                qMax(
+                    qMax(
+                        firstMetrics.horizontalAdvance(label),
+                        secondMetrics.horizontalAdvance(label)
+                        ),
+                    thirdMetrics.horizontalAdvance(label)
+                    )
+                );
+    }
 
     const int width =
-        qMax(
-            qMax(
-                metrics.horizontalAdvance(QStringLiteral("Show Modern")),
-                metrics.horizontalAdvance(QStringLiteral("Show Classic"))
-                ),
-            qMax(
-                metrics.horizontalAdvance(QStringLiteral("Show Korean")),
-                metrics.horizontalAdvance(QStringLiteral("Show English"))
-                )
-            ) + 32;
+        maximumTextWidth + ButtonHorizontalPadding;
 
-    button->setMinimumWidth(width);
-    button->setSizePolicy(
-        QSizePolicy::Fixed,
-        QSizePolicy::Fixed
-        );
+    for (QPushButton* button : {
+             firstButton,
+             secondButton,
+             thirdButton
+         })
+    {
+        button->setFixedWidth(width);
+        button->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Fixed
+            );
+    }
 }
 
 QString jsonString(
@@ -280,6 +311,11 @@ QJsonObject emptyHousingLocation()
     housing.insert(
         QStringLiteral("kr"),
         QJsonObject()
+        );
+
+    housing.insert(
+        QStringLiteral("addr_note"),
+        QString()
         );
 
     return housing;

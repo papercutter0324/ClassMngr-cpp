@@ -271,15 +271,52 @@ void CampusDashboardPage::retranslateUi()
     updateAddressSystemButton(
         &m_directionsKoreanAddress
         );
+    updateAddressComponentsButton(
+        &m_directionsEnglishAddress
+        );
+    updateAddressComponentsButton(
+        &m_directionsKoreanAddress
+        );
+
+    const auto updateControlWidths =
+        [this](AddressSectionWidgets* section)
+    {
+        if (!section)
+        {
+            return;
+        }
+
+        Detail::setStaticToggleButtonWidths(
+            section->toggleLanguageButton,
+            section->toggleAddressSystemButton,
+            section->toggleAddressComponentsButton,
+            {
+                tr("Show English"),
+                tr("Show Korean"),
+                tr("Show Modern"),
+                tr("Show Classic"),
+                tr("Show Details"),
+                tr("Hide Details")
+            }
+            );
+    };
+
+    updateControlWidths(&m_directionsEnglishAddress);
+    updateControlWidths(&m_directionsKoreanAddress);
 
     for (HousingSectionWidgets& section : m_housingSections)
     {
-        if (section.toggleLanguageButton)
+        if (section.english.toggleLanguageButton)
         {
-            section.toggleLanguageButton->setText(
-                section.showingEnglish
-                    ? tr("Show Korean")
-                    : tr("Show English")
+            section.english.toggleLanguageButton->setText(
+                tr("Show Korean")
+                );
+        }
+
+        if (section.korean.toggleLanguageButton)
+        {
+            section.korean.toggleLanguageButton->setText(
+                tr("Show English")
                 );
         }
 
@@ -296,6 +333,14 @@ void CampusDashboardPage::retranslateUi()
         updateAddressSystemButton(
             &section.korean
             );
+        updateAddressComponentsButton(
+            &section.english
+            );
+        updateAddressComponentsButton(
+            &section.korean
+            );
+        updateControlWidths(&section.english);
+        updateControlWidths(&section.korean);
     }
 
     updateDirectionsCompleteAddresses();

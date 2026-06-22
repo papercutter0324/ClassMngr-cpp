@@ -92,7 +92,6 @@ void CampusDashboardPage::clearHousingSections()
         unregisterLineEdit(section.english.line1);
         unregisterLineEdit(section.english.line2);
         unregisterLineEdit(section.english.postalCode);
-        unregisterLineEdit(section.english.note);
         unregisterTextEdit(section.korean.complete);
         unregisterLineEdit(section.korean.buildingName);
         unregisterLineEdit(section.korean.province);
@@ -101,7 +100,7 @@ void CampusDashboardPage::clearHousingSections()
         unregisterLineEdit(section.korean.line1);
         unregisterLineEdit(section.korean.line2);
         unregisterLineEdit(section.korean.postalCode);
-        unregisterLineEdit(section.korean.note);
+        unregisterLineEdit(section.note);
 
         if (section.container)
         {
@@ -149,55 +148,19 @@ void CampusDashboardPage::addHousingSectionFromJson(
         new QLineEdit(container);
 
     m_lineEdits.append(section.name);
-
-    auto* nameRow =
-        new QWidget(container);
-
-    auto* nameLayout =
-        new QHBoxLayout(nameRow);
-
-    nameLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    nameLayout->setSpacing(8);
-
-    section.toggleLanguageButton =
-        new TextFitPushButton(
-            tr("Show Korean"),
-            nameRow
-            );
-
-    Detail::setStaticToggleButtonWidth(section.toggleLanguageButton);
+    section.name->hide();
 
     section.removeButton =
         new TextFitPushButton(
             tr("Remove"),
-            nameRow
+            container
             );
 
-    nameLayout->addWidget(section.name, 1);
-    nameLayout->addWidget(section.toggleLanguageButton);
-    nameLayout->addWidget(section.removeButton);
-
-    auto* nameForm =
-        new QFormLayout;
-
-    nameForm->setSpacing(8);
-    nameForm->setFieldGrowthPolicy(
-        QFormLayout::ExpandingFieldsGrow
+    sectionLayout->addWidget(
+        section.removeButton,
+        0,
+        Qt::AlignRight
         );
-
-    addFormRow(
-        nameForm,
-        QT_TR_NOOP("Housing Name:"),
-        nameRow
-        );
-
-    sectionLayout->addLayout(nameForm);
 
     section.english =
         createAddressSection(
@@ -217,6 +180,23 @@ void CampusDashboardPage::addHousingSectionFromJson(
     sectionLayout->addWidget(section.korean.container);
 
     section.korean.container->setVisible(false);
+
+    auto* noteForm =
+        new QFormLayout;
+
+    noteForm->setSpacing(8);
+    noteForm->setContentsMargins(0, 0, 0, 0);
+    noteForm->setFieldGrowthPolicy(
+        QFormLayout::ExpandingFieldsGrow
+        );
+
+    section.note =
+        addLineField(
+            noteForm,
+            QT_TR_NOOP("Note:")
+            );
+
+    sectionLayout->addLayout(noteForm);
 
     section.container =
         container;
@@ -245,20 +225,64 @@ void CampusDashboardPage::addHousingSectionFromJson(
             QStringLiteral("map")
             );
 
-    populateAddressSection(
-        &section.english,
+    const QJsonObject englishAddress =
         Detail::jsonObject(
             housing,
             QStringLiteral("en")
-            )
+            );
+
+    const QJsonObject koreanAddress =
+        Detail::jsonObject(
+            housing,
+            QStringLiteral("kr")
+            );
+
+    QString note =
+        Detail::jsonString(
+            housing,
+            QStringLiteral("addr_note")
+            );
+
+    if (note.trimmed().isEmpty())
+    {
+        note = Detail::sharedAddressNote(
+            englishAddress,
+            Detail::jsonObject(
+                englishAddress,
+                QStringLiteral("modern")
+                ),
+            Detail::jsonObject(
+                englishAddress,
+                QStringLiteral("classic")
+                )
+            );
+    }
+
+    if (note.trimmed().isEmpty())
+    {
+        note = Detail::sharedAddressNote(
+            koreanAddress,
+            Detail::jsonObject(
+                koreanAddress,
+                QStringLiteral("modern")
+                ),
+            Detail::jsonObject(
+                koreanAddress,
+                QStringLiteral("classic")
+                )
+            );
+    }
+
+    section.note->setText(note);
+
+    populateAddressSection(
+        &section.english,
+        englishAddress
         );
 
     populateAddressSection(
         &section.korean,
-        Detail::jsonObject(
-            housing,
-            QStringLiteral("kr")
-            )
+        koreanAddress
         );
 
     connect(
@@ -311,7 +335,6 @@ void CampusDashboardPage::addHousingSectionFromJson(
                 unregisterLineEdit(section.english.line1);
                 unregisterLineEdit(section.english.line2);
                 unregisterLineEdit(section.english.postalCode);
-                unregisterLineEdit(section.english.note);
                 unregisterTextEdit(section.korean.complete);
                 unregisterLineEdit(section.korean.buildingName);
                 unregisterLineEdit(section.korean.province);
@@ -320,7 +343,7 @@ void CampusDashboardPage::addHousingSectionFromJson(
                 unregisterLineEdit(section.korean.line1);
                 unregisterLineEdit(section.korean.line2);
                 unregisterLineEdit(section.korean.postalCode);
-                unregisterLineEdit(section.korean.note);
+                unregisterLineEdit(section.note);
 
                 if (section.container)
                 {
@@ -349,45 +372,12 @@ void CampusDashboardPage::addHousingSectionFromJson(
 
     m_housingSections.append(section);
 
-    connect(
-        m_housingSections.last().toggleLanguageButton,
-        &QPushButton::clicked,
-        this,
-        [this, container]()
-        {
-            for (HousingSectionWidgets& section : m_housingSections)
-            {
-                if (section.container != container)
-                {
-                    continue;
-                }
-
-                section.showingEnglish =
-                    !section.showingEnglish;
-
-                section.english.container->setVisible(
-                    section.showingEnglish
-                    );
-
-                section.korean.container->setVisible(
-                    !section.showingEnglish
-                    );
-
-                section.toggleLanguageButton->setText(
-                    section.showingEnglish
-                        ? tr("Show Korean")
-                        : tr("Show English")
-                    );
-
-                break;
-            }
-        }
-        );
-
     applyAdminMode();
     updateHousingRemoveButtonVisibility();
-    updateCompleteAddress(&m_housingSections.last().english);
-    updateCompleteAddress(&m_housingSections.last().korean);
+    updateCompleteAddressPair(
+        &m_housingSections.last().english,
+        &m_housingSections.last().korean
+        );
 }
 
 QJsonArray CampusDashboardPage::housingSectionsToJson() const
@@ -413,6 +403,13 @@ QJsonArray CampusDashboardPage::housingSectionsToJson() const
         housing.insert(
             QStringLiteral("kr"),
             addressSectionToJson(section.korean)
+            );
+
+        housing.insert(
+            QStringLiteral("addr_note"),
+            section.note
+                ? section.note->text()
+                : QString()
             );
 
         housing.insert(
@@ -448,7 +445,9 @@ void CampusDashboardPage::updateHousingCompleteAddresses()
 {
     for (HousingSectionWidgets& section : m_housingSections)
     {
-        updateCompleteAddress(&section.english);
-        updateCompleteAddress(&section.korean);
+        updateCompleteAddressPair(
+            &section.english,
+            &section.korean
+            );
     }
 }

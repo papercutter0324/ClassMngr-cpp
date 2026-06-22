@@ -2,11 +2,15 @@
 
 #include "campus_dashboard_page_detail.h"
 
+#include <QFormLayout>
 #include <QJsonObject>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QWidget>
+
+#include <utility>
 
 namespace Detail = CampusDashboardPageDetail;
 
@@ -44,13 +48,6 @@ void CampusDashboardPage::populateAddressSection(
                 : classicAddress
             );
 
-    const QString note =
-        Detail::sharedAddressNote(
-            address,
-            modernAddress,
-            classicAddress
-            );
-
     section->showingModernAddress =
         Detail::jsonString(
             address,
@@ -64,13 +61,8 @@ void CampusDashboardPage::populateAddressSection(
             : section->classicAddress
         );
 
-    if (section->note)
-    {
-        section->note->setText(note);
-    }
-
     updateAddressSystemButton(section);
-    updateCompleteAddress(section);
+    updateCompleteAddressPairFor(section);
 }
 
 void CampusDashboardPage::loadAddressFields(
@@ -185,13 +177,6 @@ QJsonObject CampusDashboardPage::addressSectionToJson(
             : QStringLiteral("classic")
         );
 
-    address.insert(
-        QStringLiteral("addr_note"),
-        section.note
-            ? section.note->text()
-            : QString()
-        );
-
     return address;
 }
 
@@ -303,6 +288,140 @@ void CampusDashboardPage::handleAddressSystemToggle(
     }
 }
 
+void CampusDashboardPage::handleAddressComponentsToggle(
+    QPushButton* button
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    const auto togglePair =
+        [this, button](
+            AddressSectionWidgets* english,
+            AddressSectionWidgets* korean
+            )
+    {
+        if (!english || !korean)
+        {
+            return false;
+        }
+
+        AddressSectionWidgets* selected = nullptr;
+
+        if (english->toggleAddressComponentsButton == button)
+        {
+            selected = english;
+        }
+        else if (korean->toggleAddressComponentsButton == button)
+        {
+            selected = korean;
+        }
+
+        if (!selected)
+        {
+            return false;
+        }
+
+        const bool visible =
+            !selected->showingAddressComponents;
+
+        setAddressComponentsVisible(english, visible);
+        setAddressComponentsVisible(korean, visible);
+        return true;
+    };
+
+    if (togglePair(
+            &m_directionsEnglishAddress,
+            &m_directionsKoreanAddress
+            ))
+    {
+        return;
+    }
+
+    for (HousingSectionWidgets& section : m_housingSections)
+    {
+        if (togglePair(&section.english, &section.korean))
+        {
+            return;
+        }
+    }
+}
+
+void CampusDashboardPage::handleAddressLanguageToggle(
+    QPushButton* button
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    if (
+        m_directionsEnglishAddress.toggleLanguageButton == button
+        || m_directionsKoreanAddress.toggleLanguageButton == button
+        )
+    {
+        showDirectionsLanguage(
+            !m_directionsShowingEnglish
+            );
+        return;
+    }
+
+    for (HousingSectionWidgets& section : m_housingSections)
+    {
+        if (
+            section.english.toggleLanguageButton != button
+            && section.korean.toggleLanguageButton != button
+            )
+        {
+            continue;
+        }
+
+        section.showingEnglish =
+            !section.showingEnglish;
+
+        section.english.container->setVisible(
+            section.showingEnglish
+            );
+        section.korean.container->setVisible(
+            !section.showingEnglish
+            );
+
+        section.english.toggleLanguageButton->setText(
+            tr("Show Korean")
+            );
+        section.korean.toggleLanguageButton->setText(
+            tr("Show English")
+            );
+        return;
+    }
+}
+
+void CampusDashboardPage::setAddressComponentsVisible(
+    AddressSectionWidgets* section,
+    bool visible
+    )
+{
+    if (!section || !section->form)
+    {
+        return;
+    }
+
+    section->showingAddressComponents = visible;
+
+    for (QWidget* field : std::as_const(section->componentFields))
+    {
+        if (field)
+        {
+            section->form->setRowVisible(field, visible);
+        }
+    }
+
+    updateAddressComponentsButton(section);
+}
+
 void CampusDashboardPage::toggleAddressSystem(
     AddressSectionWidgets* section
     )
@@ -325,7 +444,7 @@ void CampusDashboardPage::toggleAddressSystem(
         );
 
     updateAddressSystemButton(section);
-    updateCompleteAddress(section);
+    updateCompleteAddressPairFor(section);
 }
 
 void CampusDashboardPage::storeCurrentAddressVariant(
@@ -362,6 +481,22 @@ void CampusDashboardPage::updateAddressSystemButton(
         section->showingModernAddress
             ? tr("Show Classic")
             : tr("Show Modern")
+        );
+}
+
+void CampusDashboardPage::updateAddressComponentsButton(
+    AddressSectionWidgets* section
+    ) const
+{
+    if (!section || !section->toggleAddressComponentsButton)
+    {
+        return;
+    }
+
+    section->toggleAddressComponentsButton->setText(
+        section->showingAddressComponents
+            ? tr("Hide Details")
+            : tr("Show Details")
         );
 }
 
@@ -473,17 +608,17 @@ QString CampusDashboardPage::completeAddressFor(
         regionParts.append(province);
     }
 
-    if (!postalCode.isEmpty())
-    {
-        regionParts.append(postalCode);
-    }
-
     const QString finalLine =
         regionParts.join(QStringLiteral(" "));
 
     if (!finalLine.isEmpty())
     {
         parts.append(finalLine);
+    }
+
+    if (!postalCode.isEmpty())
+    {
+        parts.append(postalCode);
     }
 
     return parts.join(u'\n');
@@ -502,20 +637,67 @@ void CampusDashboardPage::updateCompleteAddress(
         completeAddressFor(*section)
         );
 
-    const int lineCount =
-        qMax(
-            1,
-            section
-                ->complete
-                ->toPlainText()
-                .count(u'\n') + 1
-            );
-
-    configureExpandingTextField(
-        section->complete,
-        lineCount,
-        lineCount
+    section->complete->setFixedHeight(
+        CompleteAddressMinimumHeight
         );
+}
+
+void CampusDashboardPage::updateCompleteAddressPair(
+    AddressSectionWidgets* english,
+    AddressSectionWidgets* korean
+    )
+{
+    if (!english || !korean)
+    {
+        return;
+    }
+
+    if (!english->complete || !korean->complete)
+    {
+        return;
+    }
+
+    updateCompleteAddress(english);
+    updateCompleteAddress(korean);
+}
+
+void CampusDashboardPage::updateCompleteAddressPairFor(
+    AddressSectionWidgets* section
+    )
+{
+    if (!section)
+    {
+        return;
+    }
+
+    if (
+        section == &m_directionsEnglishAddress
+        || section == &m_directionsKoreanAddress
+        )
+    {
+        updateCompleteAddressPair(
+            &m_directionsEnglishAddress,
+            &m_directionsKoreanAddress
+            );
+        return;
+    }
+
+    for (HousingSectionWidgets& housing : m_housingSections)
+    {
+        if (
+            section == &housing.english
+            || section == &housing.korean
+            )
+        {
+            updateCompleteAddressPair(
+                &housing.english,
+                &housing.korean
+                );
+            return;
+        }
+    }
+
+    updateCompleteAddress(section);
 }
 
 void CampusDashboardPage::showDirectionsLanguage(
@@ -535,12 +717,17 @@ void CampusDashboardPage::showDirectionsLanguage(
         m_directionsKoreanAddress.container->setVisible(!showEnglish);
     }
 
-    if (m_directionsToggleLanguageButton)
+    if (m_directionsEnglishAddress.toggleLanguageButton)
     {
-        m_directionsToggleLanguageButton->setText(
-            showEnglish
-                ? tr("Show Korean")
-                : tr("Show English")
+        m_directionsEnglishAddress.toggleLanguageButton->setText(
+            tr("Show Korean")
+            );
+    }
+
+    if (m_directionsKoreanAddress.toggleLanguageButton)
+    {
+        m_directionsKoreanAddress.toggleLanguageButton->setText(
+            tr("Show English")
             );
     }
 }
@@ -583,8 +770,7 @@ CampusDashboardPage::addressSectionForField(
             || section.district == edit
             || section.line1 == edit
             || section.line2 == edit
-            || section.postalCode == edit
-            || section.note == edit;
+            || section.postalCode == edit;
     };
 
     if (containsField(m_directionsEnglishAddress))
@@ -663,6 +849,8 @@ void CampusDashboardPage::handleAddressVariantFieldEdited(
 
 void CampusDashboardPage::updateDirectionsCompleteAddresses()
 {
-    updateCompleteAddress(&m_directionsEnglishAddress);
-    updateCompleteAddress(&m_directionsKoreanAddress);
+    updateCompleteAddressPair(
+        &m_directionsEnglishAddress,
+        &m_directionsKoreanAddress
+        );
 }

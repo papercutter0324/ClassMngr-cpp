@@ -64,6 +64,8 @@ private slots:
     void handleSaveTimeout();
 
 private:
+    static constexpr int CompleteAddressMinimumHeight = 150;
+
     struct AddressSectionWidgets;
     struct HousingSectionWidgets;
 
@@ -147,11 +149,28 @@ private:
     void updateCompleteAddress(
         AddressSectionWidgets* section
         );
+    void updateCompleteAddressPair(
+        AddressSectionWidgets* english,
+        AddressSectionWidgets* korean
+        );
+    void updateCompleteAddressPairFor(
+        AddressSectionWidgets* section
+        );
     void handleAddressSystemToggle(
+        QPushButton* button
+        );
+    void handleAddressComponentsToggle(
+        QPushButton* button
+        );
+    void handleAddressLanguageToggle(
         QPushButton* button
         );
     void toggleAddressSystem(
         AddressSectionWidgets* section
+        );
+    void setAddressComponentsVisible(
+        AddressSectionWidgets* section,
+        bool visible
         );
     void storeCurrentAddressVariant(
         AddressSectionWidgets* section
@@ -164,6 +183,9 @@ private:
         const AddressSectionWidgets& section
         ) const;
     void updateAddressSystemButton(
+        AddressSectionWidgets* section
+        ) const;
+    void updateAddressComponentsButton(
         AddressSectionWidgets* section
         ) const;
     void updateHousingRemoveButtonVisibility();
@@ -225,7 +247,10 @@ private:
         QWidget* container = nullptr;
         QFormLayout* form = nullptr;
         QPlainTextEdit* complete = nullptr;
+        QWidget* completeControls = nullptr;
+        QPushButton* toggleLanguageButton = nullptr;
         QPushButton* toggleAddressSystemButton = nullptr;
+        QPushButton* toggleAddressComponentsButton = nullptr;
         QLineEdit* buildingName = nullptr;
         QLineEdit* province = nullptr;
         QLineEdit* city = nullptr;
@@ -234,11 +259,12 @@ private:
         QLineEdit* line2 = nullptr;
         QLineEdit* line2Suffix = nullptr;
         QLineEdit* postalCode = nullptr;
-        QLineEdit* note = nullptr;
         QJsonObject modernAddress;
         QJsonObject classicAddress;
+        QList<QWidget*> componentFields;
         bool koreanAddress = false;
         bool showingModernAddress = true;
+        bool showingAddressComponents = true;
     };
 
     struct HousingSectionWidgets
@@ -247,7 +273,7 @@ private:
         QLineEdit* name = nullptr;
         AddressSectionWidgets english;
         AddressSectionWidgets korean;
-        QPushButton* toggleLanguageButton = nullptr;
+        QLineEdit* note = nullptr;
         QPushButton* removeButton = nullptr;
         QJsonObject map;
         bool showingEnglish = true;
@@ -301,6 +327,7 @@ private:
     QLineEdit* m_buildingKrEdit = nullptr;
     QLineEdit* m_phoneEdit = nullptr;
     QLineEdit* m_phoneKrEdit = nullptr;
+    QLineEdit* m_directionsNoteEdit = nullptr;
     QLineEdit* m_officeNumberEdit = nullptr;
     QLineEdit* m_officeWifiEdit = nullptr;
     QLineEdit* m_officeWifiPasswordEdit = nullptr;
@@ -314,7 +341,6 @@ private:
     QPlainTextEdit* m_arrivalInfoEdit = nullptr;
     QPlainTextEdit* m_printerStepsEdit = nullptr;
 
-    QPushButton* m_directionsToggleLanguageButton = nullptr;
     AddressSectionWidgets m_directionsEnglishAddress;
     AddressSectionWidgets m_directionsKoreanAddress;
     bool m_directionsShowingEnglish = true;

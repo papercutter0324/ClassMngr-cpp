@@ -19,6 +19,7 @@ struct CampusInfo
     QString officeNumber;
     QJsonObject directionsAddressEn;
     QJsonObject directionsAddressKr;
+    QString directionsNote;
 
     QStringList transitSteps;
     QString arrivalInfo;

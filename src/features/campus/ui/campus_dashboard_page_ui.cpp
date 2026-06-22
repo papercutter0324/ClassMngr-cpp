@@ -60,59 +60,11 @@ QWidget* CampusDashboardPage::createDirectionsTab()
 
     layout->setSpacing(10);
 
-    auto* campusForm =
-        new QFormLayout;
-
-    campusForm->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    campusForm->setSpacing(10);
-    campusForm->setFieldGrowthPolicy(
-        QFormLayout::ExpandingFieldsGrow
-        );
-
-    auto* campusRow =
-        new QWidget(container);
-
-    auto* campusRowLayout =
-        new QHBoxLayout(campusRow);
-
-    campusRowLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    campusRowLayout->setSpacing(8);
-
     m_nameEdit =
-        new QLineEdit(campusRow);
-
-    m_directionsToggleLanguageButton =
-        new TextFitPushButton(
-            tr("Show Korean"),
-            campusRow
-            );
-
-    Detail::setStaticToggleButtonWidth(m_directionsToggleLanguageButton);
+        new QLineEdit(container);
 
     m_lineEdits.append(m_nameEdit);
-
-    campusRowLayout->addWidget(m_nameEdit, 1);
-    campusRowLayout->addWidget(m_directionsToggleLanguageButton);
-
-    addFormRow(
-        campusForm,
-        QT_TR_NOOP("Campus Name:"),
-        campusRow
-        );
-
-    layout->addLayout(campusForm);
+    m_nameEdit->hide();
 
     m_directionsEnglishAddress =
         createAddressSection(
@@ -131,20 +83,23 @@ QWidget* CampusDashboardPage::createDirectionsTab()
 
     insertFormRow(
         m_directionsEnglishAddress.form,
-        1,
+        0,
         QT_TR_NOOP("Building Name:"),
         m_buildingEdit
         );
 
     insertFormRow(
         m_directionsEnglishAddress.form,
-        2,
+        1,
         QT_TR_NOOP("Phone Number:"),
         m_phoneEdit
         );
 
     m_directionsEnglishAddress.line2Suffix =
         m_buildingEdit;
+    m_directionsEnglishAddress.componentFields.append(
+        m_buildingEdit
+        );
 
     m_directionsKoreanAddress =
         createAddressSection(
@@ -169,23 +124,43 @@ QWidget* CampusDashboardPage::createDirectionsTab()
 
     insertFormRow(
         m_directionsKoreanAddress.form,
-        1,
+        0,
         QT_TR_NOOP("Building Name:"),
         m_buildingKrEdit
         );
 
     insertFormRow(
         m_directionsKoreanAddress.form,
-        2,
+        1,
         QT_TR_NOOP("Phone Number:"),
         m_phoneKrEdit
         );
 
     m_directionsKoreanAddress.line2Suffix =
         m_buildingKrEdit;
+    m_directionsKoreanAddress.componentFields.append(
+        m_buildingKrEdit
+        );
 
     layout->addWidget(m_directionsEnglishAddress.container);
     layout->addWidget(m_directionsKoreanAddress.container);
+
+    auto* directionsNoteForm =
+        new QFormLayout;
+
+    directionsNoteForm->setSpacing(8);
+    directionsNoteForm->setContentsMargins(0, 0, 0, 0);
+    directionsNoteForm->setFieldGrowthPolicy(
+        QFormLayout::ExpandingFieldsGrow
+        );
+
+    m_directionsNoteEdit =
+        addLineField(
+            directionsNoteForm,
+            QT_TR_NOOP("Note:")
+            );
+
+    layout->addLayout(directionsNoteForm);
 
     auto* transitForm =
         new QFormLayout;
@@ -280,16 +255,6 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         {
             syncPhoneFields(m_phoneKrEdit);
             handleFieldEdited();
-        }
-        );
-
-    connect(
-        m_directionsToggleLanguageButton,
-        &QPushButton::clicked,
-        this,
-        [this]()
-        {
-            showDirectionsLanguage(!m_directionsShowingEnglish);
         }
         );
 
@@ -830,7 +795,8 @@ void CampusDashboardPage::updateTextFieldHeight(
         edit->frameWidth() * 2 + 12;
 
     edit->setFixedHeight(
-        (metrics.lineSpacing() * visibleLines * 6) / 5 + framePadding
+        (metrics.lineSpacing() * visibleLines * 6) / 5
+            + framePadding
         );
 }
 
@@ -879,8 +845,25 @@ CampusDashboardPage::createAddressSection(
         QFormLayout::ExpandingFieldsGrow
         );
 
+    auto* completeAddressContainer =
+        new QWidget(section.container);
+
+    completeAddressContainer->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+
+    auto* completeForm =
+        new QFormLayout(completeAddressContainer);
+
+    completeForm->setContentsMargins(0, 0, 0, 0);
+    completeForm->setSpacing(8);
+    completeForm->setFieldGrowthPolicy(
+        QFormLayout::ExpandingFieldsGrow
+        );
+
     section.complete =
-        new QPlainTextEdit(section.container);
+        new QPlainTextEdit(completeAddressContainer);
 
     if (koreanAddress)
     {
@@ -891,25 +874,60 @@ CampusDashboardPage::createAddressSection(
 
     section.complete->setReadOnly(true);
     section.complete->setMinimumWidth(280);
-    section.complete->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    section.complete->setLineWrapMode(QPlainTextEdit::NoWrap);
     section.complete->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    section.complete->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     configureExpandingTextField(
         section.complete,
         1,
         8
         );
+    section.complete->setFixedHeight(
+        CompleteAddressMinimumHeight
+        );
+
+    section.toggleLanguageButton =
+        new TextFitPushButton(
+            koreanAddress
+                ? tr("Show English")
+                : tr("Show Korean"),
+            completeAddressContainer
+            );
 
     section.toggleAddressSystemButton =
         new TextFitPushButton(
             tr("Show Classic"),
-            addressContainer
+            completeAddressContainer
             );
 
-    Detail::setStaticToggleButtonWidth(section.toggleAddressSystemButton);
+    section.toggleAddressComponentsButton =
+        new TextFitPushButton(
+            tr("Hide Details"),
+            completeAddressContainer
+            );
+
+    Detail::setStaticToggleButtonWidths(
+        section.toggleLanguageButton,
+        section.toggleAddressSystemButton,
+        section.toggleAddressComponentsButton,
+        {
+            tr("Show English"),
+            tr("Show Korean"),
+            tr("Show Modern"),
+            tr("Show Classic"),
+            tr("Show Details"),
+            tr("Hide Details")
+        }
+        );
 
     auto* completeRow =
-        new QWidget(addressContainer);
+        new QWidget(completeAddressContainer);
+
+    completeRow->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
 
     auto* completeLayout =
         new QHBoxLayout(completeRow);
@@ -922,20 +940,62 @@ CampusDashboardPage::createAddressSection(
         );
 
     completeLayout->setSpacing(8);
+    section.completeControls =
+        new QWidget(completeRow);
+
+    section.completeControls->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Expanding
+        );
+
+    auto* controlsLayout =
+        new QVBoxLayout(section.completeControls);
+
+    controlsLayout->setContentsMargins(0, 0, 0, 0);
+    controlsLayout->setSpacing(8);
+    controlsLayout->setAlignment(Qt::AlignTop);
+    controlsLayout->addWidget(
+        section.toggleLanguageButton,
+        0,
+        Qt::AlignTop | Qt::AlignRight
+        );
+    controlsLayout->addWidget(
+        section.toggleAddressSystemButton,
+        0,
+        Qt::AlignTop | Qt::AlignRight
+        );
+    controlsLayout->addWidget(
+        section.toggleAddressComponentsButton,
+        0,
+        Qt::AlignTop | Qt::AlignRight
+        );
+
     completeLayout->addWidget(section.complete, 1);
     completeLayout->addWidget(
-        section.toggleAddressSystemButton,
+        section.completeControls,
         0,
         Qt::AlignTop
         );
 
     addFormRow(
-        section.form,
+        completeForm,
         QT_TR_NOOP("Complete Address:"),
         completeRow
         );
 
+    sectionLayout->addWidget(completeAddressContainer);
+
     m_alwaysReadOnlyTextEdits.append(section.complete);
+
+    connect(
+        section.toggleLanguageButton,
+        &QPushButton::clicked,
+        this,
+        [this, button = section.toggleLanguageButton]()
+        {
+            handleAddressLanguageToggle(button);
+        }
+        );
 
     connect(
         section.toggleAddressSystemButton,
@@ -944,6 +1004,16 @@ CampusDashboardPage::createAddressSection(
         [this, button = section.toggleAddressSystemButton]()
         {
             handleAddressSystemToggle(button);
+        }
+        );
+
+    connect(
+        section.toggleAddressComponentsButton,
+        &QPushButton::clicked,
+        this,
+        [this, button = section.toggleAddressComponentsButton]()
+        {
+            handleAddressComponentsToggle(button);
         }
         );
 
@@ -995,11 +1065,17 @@ CampusDashboardPage::createAddressSection(
             QT_TR_NOOP("Postal Code:")
             );
 
-    section.note =
-        addLineField(
-            section.form,
-            QT_TR_NOOP("Note:")
-            );
+    section.componentFields = {
+        section.buildingName,
+        section.province,
+        section.city,
+        section.district,
+        section.line1,
+        section.line2,
+        section.postalCode
+    };
+
+    section.componentFields.removeAll(nullptr);
 
     sectionLayout->addWidget(addressContainer);
 
@@ -1062,8 +1138,7 @@ CampusDashboardPage::createAddressSection(
                  section.district,
                  section.line1,
                  section.line2,
-                 section.postalCode,
-                 section.note
+                 section.postalCode
              })
         {
             if (edit)

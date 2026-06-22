@@ -225,6 +225,67 @@ QJsonObject normalizedAddressObject(
     return address;
 }
 
+QString sharedAddressNote(
+    const QJsonObject& address
+    )
+{
+    const QString topLevelNote =
+        valueString(
+            address,
+            QStringLiteral("addr_note")
+            );
+
+    if (!topLevelNote.trimmed().isEmpty())
+    {
+        return topLevelNote;
+    }
+
+    for (const QString& variant : {
+             QStringLiteral("modern"),
+             QStringLiteral("classic")
+         })
+    {
+        const QString variantNote =
+            valueString(
+                address.value(variant).toObject(),
+                QStringLiteral("addr_note")
+                );
+
+        if (!variantNote.trimmed().isEmpty())
+        {
+            return variantNote;
+        }
+    }
+
+    return QString();
+}
+
+QJsonObject withoutAddressNotes(
+    QJsonObject address
+    )
+{
+    address.remove(QStringLiteral("addr_note"));
+
+    for (const QString& variant : {
+             QStringLiteral("modern"),
+             QStringLiteral("classic")
+         })
+    {
+        QJsonObject variantAddress =
+            address.value(variant).toObject();
+
+        if (!variantAddress.isEmpty())
+        {
+            variantAddress.remove(
+                QStringLiteral("addr_note")
+                );
+            address.insert(variant, variantAddress);
+        }
+    }
+
+    return address;
+}
+
 QJsonObject directionsLanguageObject(
     const QString& buildingName,
     const QJsonObject& address
@@ -238,7 +299,7 @@ QJsonObject directionsLanguageObject(
         buildingName
         );
 
-    return object;
+    return withoutAddressNotes(object);
 }
 
 bool isDefaultCampus(
@@ -305,6 +366,11 @@ QJsonObject campusToJson(
             campus.buildingNameKr,
             campus.directionsAddressKr
             )
+        );
+
+    directions.insert(
+        QStringLiteral("addr_note"),
+        campus.directionsNote
         );
 
     object.insert(
@@ -500,6 +566,24 @@ CampusInfo campusFromJson(
 
     campus.directionsAddressKr =
         normalizedAddressObject(koreanDirections);
+
+    campus.directionsNote =
+        valueString(
+            directions,
+            QStringLiteral("addr_note")
+            );
+
+    if (campus.directionsNote.trimmed().isEmpty())
+    {
+        campus.directionsNote =
+            sharedAddressNote(englishDirections);
+    }
+
+    if (campus.directionsNote.trimmed().isEmpty())
+    {
+        campus.directionsNote =
+            sharedAddressNote(koreanDirections);
+    }
 
     campus.phoneNumber =
         valueString(
