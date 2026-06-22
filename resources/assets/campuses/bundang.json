@@ -5,14 +5,13 @@
     "campus_code": "BDG",
     "campus_name": "Bundang",
     "directions": {
+        "addr_note": "The sole elevator on the right doesn’t go to the 4th floor.",
         "en": {
-            "addr_note": "The sole elevator on the right doesn’t go to the 4th floor.",
             "address_system": "modern",
             "building_name": "XY Building",
             "city": "Seongnam-si",
             "city_district": "Seongnam-si Bundang-gu",
             "classic": {
-                "addr_note": "",
                 "building_name": "",
                 "city": "Seongnam-si",
                 "city_district": "Seongnam-si Bundang-gu",
@@ -26,7 +25,6 @@
             "line1": "Baekhyun-ro 101beon-gil 30",
             "line2": "4th Floor",
             "modern": {
-                "addr_note": "",
                 "building_name": "",
                 "city": "Seongnam-si",
                 "city_district": "Seongnam-si Bundang-gu",
@@ -40,13 +38,11 @@
             "province": "Gyeonggi-do"
         },
         "kr": {
-            "addr_note": "",
             "address_system": "modern",
             "building_name": "XY빌딩",
             "city": "성남시",
             "city_district": "성남시 분당구",
             "classic": {
-                "addr_note": "",
                 "building_name": "",
                 "city": "성남시",
                 "city_district": "성남시 분당구",
@@ -60,7 +56,6 @@
             "line1": "백현로101번길30",
             "line2": "4층",
             "modern": {
-                "addr_note": "",
                 "building_name": "",
                 "city": "성남시",
                 "city_district": "성남시 분당구",
@@ -76,8 +71,8 @@
     },
     "housing_locations": [
         {
+            "addr_note": "",
             "en": {
-                "addr_note": "",
                 "address_system": "modern",
                 "building_name": "Cheonggu Blueville",
                 "city": "Seongnam-si",
@@ -109,7 +104,6 @@
                 "province": "Gyeonggi-do"
             },
             "kr": {
-                "addr_note": "",
                 "address_system": "classic",
                 "building_name": "청구블루빌",
                 "city": "성남시",
