@@ -18,8 +18,8 @@ class QLabel;
 class FontManager
 {
 public:
-    static constexpr int stdEnglishFont = 12;
-    static constexpr int stdKoreanFont = 13;
+    static constexpr int stdEnglishFont = 14;
+    static constexpr int stdKoreanFont = 15;
 
     // =====================================================
     // Setup
