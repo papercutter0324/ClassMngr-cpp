@@ -2,6 +2,7 @@
 #include "core/fontmanager.h"
 #include "features/teacher/ui/teacher_model.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
 
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -80,10 +81,10 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     m_grid->addWidget(m_teacherEnLabel, 0, 1, Qt::AlignLeft);
     m_grid->addWidget(m_roomLabel, 0, 2, Qt::AlignLeft);
 
-    m_grid->addWidget(m_teacherKrCombo, 1, 0, Qt::AlignLeft);
-    m_grid->addWidget(m_teacherEnCombo, 1, 1, Qt::AlignLeft);
+    m_grid->addWidget(m_teacherKrCombo, 1, 0);
+    m_grid->addWidget(m_teacherEnCombo, 1, 1);
 
-    m_grid->addWidget(m_roomNumberEdit, 1, 2, Qt::AlignLeft);
+    m_grid->addWidget(m_roomNumberEdit, 1, 2);
 
     m_grid->addItem(
         new QSpacerItem(
@@ -105,9 +106,9 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     m_grid->addWidget(m_internetTypeLabel, 3, 0, Qt::AlignLeft);
     m_grid->addWidget(m_wifiNameLabel, 3, 1, Qt::AlignLeft);
     m_grid->addWidget(m_wifiPasswordLabel, 3, 2, Qt::AlignLeft);
-    m_grid->addWidget(m_internetTypeEdit, 4, 0, Qt::AlignLeft);
-    m_grid->addWidget(m_wifiNameEdit, 4, 1, Qt::AlignLeft);
-    m_grid->addWidget(m_wifiPasswordEdit, 4, 2, Qt::AlignLeft);
+    m_grid->addWidget(m_internetTypeEdit, 4, 0);
+    m_grid->addWidget(m_wifiNameEdit, 4, 1);
+    m_grid->addWidget(m_wifiPasswordEdit, 4, 2);
 
     m_grid->addItem(
         new QSpacerItem(
@@ -129,9 +130,9 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     m_grid->addWidget(m_projectionTypeLabel, 6, 0, Qt::AlignLeft);
     m_grid->addWidget(m_zoomIdLabel, 6, 1, Qt::AlignLeft);
     m_grid->addWidget(m_zoomPasswordLabel, 6, 2, Qt::AlignLeft);
-    m_grid->addWidget(m_projectionTypeEdit, 7, 0, Qt::AlignLeft);
-    m_grid->addWidget(m_zoomIdEdit, 7, 1, Qt::AlignLeft);
-    m_grid->addWidget(m_zoomPasswordEdit, 7, 2, Qt::AlignLeft);
+    m_grid->addWidget(m_projectionTypeEdit, 7, 0);
+    m_grid->addWidget(m_zoomIdEdit, 7, 1);
+    m_grid->addWidget(m_zoomPasswordEdit, 7, 2);
 
     m_grid->setColumnStretch(
         0,
@@ -301,6 +302,7 @@ void TeacherInfoSection::rebuildTeacherCombos()
 
     if (!m_model)
     {
+        updateFieldWidths();
         return;
     }
 
@@ -319,6 +321,8 @@ void TeacherInfoSection::rebuildTeacherCombos()
             teacher.id
             );
     }
+
+    updateFieldWidths();
 }
 
 void TeacherInfoSection::applyTeacher(int index)
@@ -349,6 +353,7 @@ void TeacherInfoSection::applyTeacher(int index)
     m_projectionTypeEdit->setText(t.projectionType);
     m_zoomIdEdit->setText(t.zoomId);
     m_zoomPasswordEdit->setText(t.zoomPassword);
+    updateFieldWidths();
 }
 
 void TeacherInfoSection::clearTeacher()
@@ -371,30 +376,11 @@ void TeacherInfoSection::clearTeacher()
     m_projectionTypeEdit->clear();
     m_zoomIdEdit->clear();
     m_zoomPasswordEdit->clear();
+    updateFieldWidths();
 }
 
 void TeacherInfoSection::applyFieldWidths()
 {
-    const auto applyWidth =
-        [](QWidget* widget)
-        {
-            if (!widget)
-            {
-                return;
-            }
-
-            widget->setMinimumWidth(
-                UiConstants::ClassInfo::Teacher::FieldMinWidth
-                );
-            widget->setMaximumWidth(
-                UiConstants::ClassInfo::Teacher::FieldMaxWidth
-                );
-            widget->setSizePolicy(
-                QSizePolicy::Maximum,
-                QSizePolicy::Preferred
-                );
-        };
-
     for (auto* widget : {
              static_cast<QWidget*>(m_teacherKrCombo),
              static_cast<QWidget*>(m_teacherEnCombo),
@@ -407,6 +393,30 @@ void TeacherInfoSection::applyFieldWidths()
              static_cast<QWidget*>(m_zoomPasswordEdit)
          })
     {
-        applyWidth(widget);
+        WidgetSizing::installTextAwareFieldWidth(
+            widget,
+            UiConstants::ClassInfo::Teacher::FieldMinWidth
+            );
+    }
+}
+
+void TeacherInfoSection::updateFieldWidths()
+{
+    for (auto* widget : {
+             static_cast<QWidget*>(m_teacherKrCombo),
+             static_cast<QWidget*>(m_teacherEnCombo),
+             static_cast<QWidget*>(m_roomNumberEdit),
+             static_cast<QWidget*>(m_internetTypeEdit),
+             static_cast<QWidget*>(m_wifiNameEdit),
+             static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_projectionTypeEdit),
+             static_cast<QWidget*>(m_zoomIdEdit),
+             static_cast<QWidget*>(m_zoomPasswordEdit)
+         })
+    {
+        WidgetSizing::updateTextAwareFieldWidth(
+            widget,
+            UiConstants::ClassInfo::Teacher::FieldMinWidth
+            );
     }
 }

@@ -5,6 +5,8 @@
 #include "campus_dashboard_page_detail.h"
 #include "features/campus/ui/campus_map_preview.h"
 #include "core/settingsmanager.h"
+#include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 
 #include <QCheckBox>
@@ -88,6 +90,7 @@ void CampusDashboardPage::loadCampuses()
 
     if (campuses.isEmpty())
     {
+        updateCampusSelectorWidth();
         return;
     }
 
@@ -111,6 +114,7 @@ void CampusDashboardPage::loadCampuses()
     }
 
     m_campusCombo->setCurrentIndex(index);
+    updateCampusSelectorWidth();
 
     loadSelectedCampus();
 }
@@ -537,6 +541,15 @@ void CampusDashboardPage::updateCampusSelectorItem(
     m_campusCombo->setItemData(
         index,
         m_currentCampus.id
+        );
+    updateCampusSelectorWidth();
+}
+
+void CampusDashboardPage::updateCampusSelectorWidth()
+{
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_campusCombo,
+        UiConstants::Forms::FieldMinimumWidth
         );
 }
 

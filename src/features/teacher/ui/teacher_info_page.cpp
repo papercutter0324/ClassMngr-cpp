@@ -6,6 +6,7 @@
 #include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/teacher_section_card.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -30,53 +31,6 @@ namespace
 
 constexpr int TeacherNameFieldWidth = 140;
 constexpr int TeacherRoomNumberFieldWidth = 115;
-
-void applyTeacherFieldWidth(
-    QWidget* widget
-    )
-{
-    if (!widget)
-    {
-        return;
-    }
-
-    widget->setMinimumWidth(
-        UiConstants::ClassInfo::Teacher::FieldMinWidth
-        );
-
-    widget->setMaximumWidth(
-        UiConstants::ClassInfo::Teacher::FieldMaxWidth
-        );
-
-    widget->setSizePolicy(
-        QSizePolicy::Maximum,
-        QSizePolicy::Preferred
-        );
-}
-
-void applyFixedTeacherFieldWidth(
-    QWidget* widget,
-    int width
-    )
-{
-    if (!widget)
-    {
-        return;
-    }
-
-    widget->setMinimumWidth(
-        width
-        );
-
-    widget->setMaximumWidth(
-        width
-        );
-
-    widget->setSizePolicy(
-        QSizePolicy::Fixed,
-        QSizePolicy::Preferred
-        );
-}
 
 int findComboText(
     QComboBox* combo,
@@ -242,17 +196,20 @@ void TeacherInfoPage::buildUi()
     m_teacherEnEdit = new QLineEdit;
     m_roomNumberEdit = new QLineEdit;
 
-    applyFixedTeacherFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_teacherKrEdit,
-        TeacherNameFieldWidth
+        TeacherNameFieldWidth,
+        QSizePolicy::Maximum
         );
-    applyFixedTeacherFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_teacherEnEdit,
-        TeacherNameFieldWidth
+        TeacherNameFieldWidth,
+        QSizePolicy::Maximum
         );
-    applyFixedTeacherFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_roomNumberEdit,
-        TeacherRoomNumberFieldWidth
+        TeacherRoomNumberFieldWidth,
+        QSizePolicy::Maximum
         );
 
     m_teacherKrLabel =
@@ -273,9 +230,14 @@ void TeacherInfoPage::buildUi()
     detailsGrid->addWidget(
         m_roomNumberLabel, 0, 2);
 
-    detailsGrid->addWidget(m_teacherKrEdit, 1, 0);
-    detailsGrid->addWidget(m_teacherEnEdit, 1, 1);
-    detailsGrid->addWidget(m_roomNumberEdit, 1, 2);
+    detailsGrid->addWidget(m_teacherKrEdit, 1, 0, Qt::AlignLeft);
+    detailsGrid->addWidget(m_teacherEnEdit, 1, 1, Qt::AlignLeft);
+    detailsGrid->addWidget(m_roomNumberEdit, 1, 2, Qt::AlignLeft);
+
+    detailsGrid->setColumnStretch(0, 0);
+    detailsGrid->setColumnStretch(1, 0);
+    detailsGrid->setColumnStretch(2, 0);
+    detailsGrid->setColumnStretch(3, 1);
 
     m_detailsCard->contentLayout()->addLayout(detailsGrid);
 
@@ -339,11 +301,11 @@ void TeacherInfoPage::buildUi()
         m_wifiPasswordLabel, 0, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        m_internetTypeCombo, 1, 0, Qt::AlignLeft);
+        m_internetTypeCombo, 1, 0);
     connectivityGrid->addWidget(
-        m_wifiNameEdit, 1, 1, Qt::AlignLeft);
+        m_wifiNameEdit, 1, 1);
     connectivityGrid->addWidget(
-        m_wifiPasswordEdit, 1, 2, Qt::AlignLeft);
+        m_wifiPasswordEdit, 1, 2);
 
     connectivityGrid->addItem(
         new QSpacerItem(
@@ -377,11 +339,11 @@ void TeacherInfoPage::buildUi()
         m_zoomPasswordLabel, 3, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        m_projectionTypeCombo, 4, 0, Qt::AlignLeft);
+        m_projectionTypeCombo, 4, 0);
     connectivityGrid->addWidget(
-        m_zoomIdEdit, 4, 1, Qt::AlignLeft);
+        m_zoomIdEdit, 4, 1);
     connectivityGrid->addWidget(
-        m_zoomPasswordEdit, 4, 2, Qt::AlignLeft);
+        m_zoomPasswordEdit, 4, 2);
 
     for (auto* widget : {
              static_cast<QWidget*>(m_internetTypeCombo),
@@ -392,7 +354,10 @@ void TeacherInfoPage::buildUi()
              static_cast<QWidget*>(m_zoomPasswordEdit)
          })
     {
-        applyTeacherFieldWidth(widget);
+        WidgetSizing::installTextAwareFieldWidth(
+            widget,
+            UiConstants::ClassInfo::Teacher::FieldMinWidth
+            );
     }
 
     connectivityGrid->setColumnStretch(
@@ -563,6 +528,8 @@ void TeacherInfoPage::loadTeacher(
 
     m_notesEdit->setPlainText(
         teacher.notes);
+
+    updateFieldWidths();
 
     m_loading = false;
     clearDirty();
@@ -802,6 +769,37 @@ void TeacherInfoPage::updateActions()
             ? tr("Save Changes *")
             : tr("Save Changes")
         );
+}
+
+void TeacherInfoPage::updateFieldWidths()
+{
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_teacherKrEdit,
+        TeacherNameFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_teacherEnEdit,
+        TeacherNameFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_roomNumberEdit,
+        TeacherRoomNumberFieldWidth
+        );
+
+    for (auto* widget : {
+             static_cast<QWidget*>(m_internetTypeCombo),
+             static_cast<QWidget*>(m_wifiNameEdit),
+             static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_projectionTypeCombo),
+             static_cast<QWidget*>(m_zoomIdEdit),
+             static_cast<QWidget*>(m_zoomPasswordEdit)
+         })
+    {
+        WidgetSizing::updateTextAwareFieldWidth(
+            widget,
+            UiConstants::ClassInfo::Teacher::FieldMinWidth
+            );
+    }
 }
 
 Teacher TeacherInfoPage::teacher() const

@@ -5,6 +5,8 @@
 #include "campus_dashboard_page_detail.h"
 #include "core/fontmanager.h"
 #include "features/campus/ui/campus_map_preview.h"
+#include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -23,6 +25,7 @@
 #include <QTextDocument>
 #include <QVBoxLayout>
 
+#include <algorithm>
 #include <utility>
 
 namespace Detail = CampusDashboardPageDetail;
@@ -89,7 +92,7 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         );
 
     insertFormRow(
-        m_directionsEnglishAddress.form,
+        m_directionsEnglishAddress.summaryForm,
         1,
         QT_TR_NOOP("Phone Number:"),
         m_phoneEdit
@@ -130,7 +133,7 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         );
 
     insertFormRow(
-        m_directionsKoreanAddress.form,
+        m_directionsKoreanAddress.summaryForm,
         1,
         QT_TR_NOOP("Phone Number:"),
         m_phoneKrEdit
@@ -140,6 +143,16 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         m_buildingKrEdit;
     m_directionsKoreanAddress.componentFields.append(
         m_buildingKrEdit
+        );
+    alignAddressDetailsWithCompleteField(
+        &m_directionsEnglishAddress
+        );
+    alignAddressDetailsWithCompleteField(
+        &m_directionsKoreanAddress
+        );
+    hideAddressComponents(
+        &m_directionsEnglishAddress,
+        &m_directionsKoreanAddress
         );
 
     layout->addWidget(m_directionsEnglishAddress.container);
@@ -656,8 +669,87 @@ void CampusDashboardPage::retranslateRegisteredLabels()
         {
             entry.label->setText(
                 tr(entry.sourceText)
-                );
+            );
         }
+    }
+
+    alignAllAddressDetailsWithCompleteFields();
+}
+
+void CampusDashboardPage::alignAddressDetailsWithCompleteField(
+    AddressSectionWidgets* section
+    ) const
+{
+    if (
+        !section
+        || !section->form
+        || !section->summaryForm
+        )
+    {
+        return;
+    }
+
+    int summaryLabelColumnWidth = 0;
+
+    for (int row = 0; row < section->summaryForm->rowCount(); ++row)
+    {
+        QLayoutItem* item =
+            section->summaryForm->itemAt(
+                row,
+                QFormLayout::LabelRole
+                );
+
+        if (auto* label =
+                item
+                    ? qobject_cast<QLabel*>(item->widget())
+                    : nullptr)
+        {
+            summaryLabelColumnWidth =
+                std::max(
+                    summaryLabelColumnWidth,
+                    label->sizeHint().width()
+                    );
+        }
+    }
+
+    if (summaryLabelColumnWidth <= 0)
+    {
+        return;
+    }
+
+    int horizontalSpacing =
+        section->summaryForm->horizontalSpacing();
+
+    if (horizontalSpacing < 0)
+    {
+        horizontalSpacing =
+            section->summaryForm->spacing();
+    }
+
+    const int leftMargin =
+        summaryLabelColumnWidth
+        + std::max(
+            0,
+            horizontalSpacing
+            );
+
+    section->form->setContentsMargins(
+        leftMargin,
+        0,
+        0,
+        0
+        );
+}
+
+void CampusDashboardPage::alignAllAddressDetailsWithCompleteFields()
+{
+    alignAddressDetailsWithCompleteField(&m_directionsEnglishAddress);
+    alignAddressDetailsWithCompleteField(&m_directionsKoreanAddress);
+
+    for (HousingSectionWidgets& section : m_housingSections)
+    {
+        alignAddressDetailsWithCompleteField(&section.english);
+        alignAddressDetailsWithCompleteField(&section.korean);
     }
 }
 
@@ -834,7 +926,7 @@ CampusDashboardPage::createAddressSection(
         new QFormLayout(addressContainer);
 
     section.form->setContentsMargins(
-        24,
+        0,
         0,
         0,
         0
@@ -855,6 +947,8 @@ CampusDashboardPage::createAddressSection(
 
     auto* completeForm =
         new QFormLayout(completeAddressContainer);
+    section.summaryForm =
+        completeForm;
 
     completeForm->setContentsMargins(0, 0, 0, 0);
     completeForm->setSpacing(8);
@@ -903,7 +997,7 @@ CampusDashboardPage::createAddressSection(
 
     section.toggleAddressComponentsButton =
         new TextFitPushButton(
-            tr("Hide Details"),
+            tr("Show Details"),
             completeAddressContainer
             );
 
@@ -1077,6 +1171,10 @@ CampusDashboardPage::createAddressSection(
 
     section.componentFields.removeAll(nullptr);
 
+    alignAddressDetailsWithCompleteField(
+        &section
+        );
+
     sectionLayout->addWidget(addressContainer);
 
     auto connectMirroredField =
@@ -1173,9 +1271,16 @@ void CampusDashboardPage::buildUi()
 
     m_campusCombo =
         new NoWheelComboBox(this);
+    WidgetSizing::installTextAwareFieldWidth(
+        m_campusCombo,
+        UiConstants::Forms::FieldMinimumWidth,
+        QSizePolicy::Maximum
+        );
 
     selectorLayout->addWidget(selectorLabel);
-    selectorLayout->addWidget(m_campusCombo);
+    selectorLayout->addWidget(
+        m_campusCombo
+        );
 
     if (m_adminMode)
     {

@@ -11,6 +11,7 @@
 #include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "core/utils/sidebar_node_naming.h"
 
@@ -150,45 +151,6 @@ struct TeacherGroup
     Teacher teacher;
     QList<ClassSummary> classes;
 };
-
-void applyFieldWidth(
-    QWidget* widget
-    )
-{
-    if (!widget)
-    {
-        return;
-    }
-
-    widget->setMinimumWidth(
-        UiConstants::Forms::FieldMinimumWidth
-        );
-    widget->setMaximumWidth(
-        UiConstants::Forms::FieldMaximumWidth
-        );
-}
-
-void applyFixedFieldWidth(
-    QWidget* widget,
-    int width
-    )
-{
-    if (!widget)
-    {
-        return;
-    }
-
-    widget->setMinimumWidth(
-        width
-        );
-    widget->setMaximumWidth(
-        width
-        );
-    widget->setSizePolicy(
-        QSizePolicy::Fixed,
-        widget->sizePolicy().verticalPolicy()
-        );
-}
 
 QString valueOrNa(
     const QString& value
@@ -555,7 +517,7 @@ QLineEdit* createReadOnlyValueEdit(
 
     edit->setReadOnly(true);
     edit->setCursorPosition(0);
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         edit,
         CompactFieldWidth
         );
@@ -627,11 +589,13 @@ void addHorizontalInfoField(
         column,
         Qt::AlignLeft
         );
+    auto* valueEdit =
+        createReadOnlyValueEdit(value, parent);
+
     grid->addWidget(
-        createReadOnlyValueEdit(value, parent),
+        valueEdit,
         valueRow,
-        column,
-        Qt::AlignLeft | Qt::AlignTop
+        column
         );
 }
 
@@ -1004,7 +968,6 @@ bool SubPrepPage::eventFilter(
             handleEditableChanged();
         }
     }
-
     return BasePage::eventFilter(
         watched,
         event
@@ -1198,8 +1161,16 @@ void SubPrepPage::buildUi()
     m_zoomEmailEdit->setReadOnly(true);
     m_zoomPasswordEdit->setReadOnly(true);
 
-    applyFieldWidth(m_zoomEmailEdit);
-    applyFieldWidth(m_zoomPasswordEdit);
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomEmailEdit,
+        UiConstants::Forms::FieldMinimumWidth,
+        QSizePolicy::Maximum
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomPasswordEdit,
+        UiConstants::Forms::FieldMinimumWidth,
+        QSizePolicy::Maximum
+        );
 
     m_zoomEmailLabel =
         createFieldLabel(tr("Login Email"), m_zoomCard);
@@ -1230,6 +1201,8 @@ void SubPrepPage::buildUi()
         1,
         Qt::AlignLeft
         );
+    zoomGrid->setColumnStretch(0, 0);
+    zoomGrid->setColumnStretch(1, 0);
     zoomGrid->setColumnStretch(2, 1);
 
     m_zoomCard->contentLayout()->addLayout(
@@ -1269,23 +1242,23 @@ void SubPrepPage::buildUi()
     m_officeWifiPasswordEdit->setReadOnly(true);
     m_photocopierCodeEdit->setReadOnly(true);
 
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_campusCombo,
         CampusFieldWidth
         );
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_officeNumberEdit,
         OfficeNumberFieldWidth
         );
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_officeWifiEdit,
         CompactFieldWidth
         );
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_officeWifiPasswordEdit,
         CompactFieldWidth
         );
-    applyFixedFieldWidth(
+    WidgetSizing::installTextAwareFieldWidth(
         m_photocopierCodeEdit,
         CompactFieldWidth
         );
@@ -1334,34 +1307,35 @@ void SubPrepPage::buildUi()
     campusGrid->addWidget(
         m_campusCombo,
         1,
-        0,
-        Qt::AlignLeft
+        0
         );
     campusGrid->addWidget(
         m_officeNumberEdit,
         1,
-        1,
-        Qt::AlignLeft
+        1
         );
     campusGrid->addWidget(
         m_officeWifiEdit,
         1,
-        2,
-        Qt::AlignLeft
+        2
         );
     campusGrid->addWidget(
         m_officeWifiPasswordEdit,
         1,
-        3,
-        Qt::AlignLeft
+        3
         );
     campusGrid->addWidget(
         m_photocopierCodeEdit,
         1,
-        4,
-        Qt::AlignLeft
+        4
         );
-    campusGrid->setColumnStretch(5, 1);
+    for (int column = 0; column < 5; ++column)
+    {
+        campusGrid->setColumnStretch(
+            column,
+            1
+            );
+    }
 
     m_campusCard->contentLayout()->addLayout(
         campusGrid
@@ -1594,6 +1568,14 @@ void SubPrepPage::loadPersonalZoomInformation()
             ? NotAvailableText
             : password
         );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_zoomEmailEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_zoomPasswordEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
 }
 
 void SubPrepPage::loadStoredSettings()
@@ -1732,6 +1714,8 @@ void SubPrepPage::loadCampuses()
             );
     }
 
+    updateCampusFieldWidths();
+
     m_loading =
         wasLoading;
 }
@@ -1787,8 +1771,39 @@ void SubPrepPage::loadCampusFields(
             : campus.photocopierCode
         );
 
+    updateCampusFieldWidths();
+
     m_loading =
         wasLoading;
+}
+
+void SubPrepPage::updateCampusFieldWidths()
+{
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_campusCombo,
+        CampusFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_officeNumberEdit,
+        OfficeNumberFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_officeWifiEdit,
+        CompactFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_officeWifiPasswordEdit,
+        CompactFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_photocopierCodeEdit,
+        CompactFieldWidth
+        );
+
+    if (m_campusCard)
+    {
+        m_campusCard->updateGeometry();
+    }
 }
 
 bool SubPrepPage::saveSubPrepInternal()
@@ -2051,10 +2066,10 @@ void SubPrepPage::rebuildClassInformation()
         teacherGrid->setVerticalSpacing(
             UiConstants::ClassInfo::Form::VerticalSpacing
             );
-        teacherGrid->setColumnStretch(0, 0);
-        teacherGrid->setColumnStretch(1, 0);
-        teacherGrid->setColumnStretch(2, 0);
-        teacherGrid->setColumnStretch(3, 1);
+        teacherGrid->setColumnStretch(0, 1);
+        teacherGrid->setColumnStretch(1, 1);
+        teacherGrid->setColumnStretch(2, 1);
+        teacherGrid->setColumnStretch(3, 0);
 
         addHorizontalInfoField(
             teacherGrid,

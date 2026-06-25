@@ -53,6 +53,8 @@ void applyComboWidth(
     int maximumWidth = 0
     )
 {
+    Q_UNUSED(maximumWidth);
+
     if (!combo)
     {
         return;
@@ -65,30 +67,13 @@ void applyComboWidth(
             UiConstants::ClassInfo::TextWidthPadding
             );
 
-    if (
-        preferredWidth > 0
-        && preferredWidth >= minimumWidth
-        )
-    {
-        combo->setFixedWidth(preferredWidth);
-        return;
-    }
-
-    combo->setMinimumWidth(minimumWidth);
-
-    if (maximumWidth > 0)
-    {
-        combo->setMaximumWidth(
-            std::max(
-                maximumWidth,
-                minimumWidth
-                )
-            );
-    }
-
-    combo->setSizePolicy(
-        QSizePolicy::Minimum,
-        QSizePolicy::Preferred
+    WidgetSizing::installTextAwareFieldWidth(
+        combo,
+        std::max(
+            preferredWidth,
+            minimumWidth
+            ),
+        QSizePolicy::Minimum
         );
 }
 

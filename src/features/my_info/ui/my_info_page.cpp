@@ -11,6 +11,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "ui/shared/widgets/sections/schedule_section_widget.h"
 
@@ -126,23 +127,6 @@ const QString LegacyZoomPassword =
     QStringLiteral("subPrep/personalZoomPassword");
 const QString LegacyZoomNotAvailable =
     QStringLiteral("subPrep/personalZoomNotAvailable");
-}
-
-void applyFieldWidth(
-    QWidget* widget
-    )
-{
-    if (!widget)
-    {
-        return;
-    }
-
-    widget->setMinimumWidth(
-        UiConstants::Forms::FieldMinimumWidth
-        );
-    widget->setMaximumWidth(
-        UiConstants::Forms::FieldMaximumWidth
-        );
 }
 
 QVariant loadSettingWithLegacyFallback(
@@ -887,10 +871,22 @@ void MyInfoPage::buildMyInformationSection()
             card
             );
 
-    applyFieldWidth(m_nameEdit);
-    applyFieldWidth(m_campusCombo);
-    applyFieldWidth(m_zoomLoginIdEdit);
-    applyFieldWidth(m_zoomPasswordEdit);
+    WidgetSizing::installTextAwareFieldWidth(
+        m_nameEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_campusCombo,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomLoginIdEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomPasswordEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
 
     m_zoomLoginIdEdit->installEventFilter(this);
     m_zoomPasswordEdit->installEventFilter(this);
@@ -940,26 +936,22 @@ void MyInfoPage::buildMyInformationSection()
     grid->addWidget(
         m_nameEdit,
         1,
-        0,
-        Qt::AlignLeft
+        0
         );
     grid->addWidget(
         m_campusCombo,
         1,
-        1,
-        Qt::AlignLeft
+        1
         );
     grid->addWidget(
         m_zoomLoginIdEdit,
         1,
-        2,
-        Qt::AlignLeft
+        2
         );
     grid->addWidget(
         m_zoomPasswordEdit,
         1,
-        3,
-        Qt::AlignLeft
+        3
         );
     grid->addWidget(
         m_zoomNotAvailableCheck,
@@ -967,7 +959,11 @@ void MyInfoPage::buildMyInformationSection()
         4,
         Qt::AlignLeft | Qt::AlignVCenter
         );
-    grid->setColumnStretch(5, 1);
+    grid->setColumnStretch(0, 1);
+    grid->setColumnStretch(1, 1);
+    grid->setColumnStretch(2, 1);
+    grid->setColumnStretch(3, 1);
+    grid->setColumnStretch(5, 0);
 
     cardLayout->addLayout(
         grid
@@ -1257,6 +1253,7 @@ void MyInfoPage::loadStoredSettings()
         );
 
     setZoomFieldsEnabled();
+    updateMyInformationFieldWidths();
 }
 
 bool MyInfoPage::saveMyInfoInternal()
@@ -1324,6 +1321,11 @@ bool MyInfoPage::normalizeZoomFields()
             )
         || changed;
 
+    if (changed)
+    {
+        updateMyInformationFieldWidths();
+    }
+
     return changed;
 }
 
@@ -1368,6 +1370,26 @@ void MyInfoPage::setZoomFieldsEnabled()
             fieldsEnabled
             );
     }
+}
+
+void MyInfoPage::updateMyInformationFieldWidths()
+{
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_nameEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_campusCombo,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_zoomLoginIdEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_zoomPasswordEdit,
+        UiConstants::Forms::FieldMinimumWidth
+        );
 }
 
 void MyInfoPage::clearDirty()

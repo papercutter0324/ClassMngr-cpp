@@ -75,6 +75,7 @@ private:
     void loadCampusFields(
         const QString& campusId
         );
+    void updateCampusFieldWidths();
 
     bool saveSubPrepInternal();
 

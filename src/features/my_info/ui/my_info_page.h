@@ -100,6 +100,7 @@ private:
         const QString& defaultText
         );
     void setZoomFieldsEnabled();
+    void updateMyInformationFieldWidths();
     void clearDirty();
     void openCalendarDialog(
         const CalendarEvent& event,

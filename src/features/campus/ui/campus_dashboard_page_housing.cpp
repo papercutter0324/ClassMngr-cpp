@@ -285,6 +285,11 @@ void CampusDashboardPage::addHousingSectionFromJson(
         koreanAddress
         );
 
+    hideAddressComponents(
+        &section.english,
+        &section.korean
+        );
+
     connect(
         section.name,
         &QLineEdit::textEdited,

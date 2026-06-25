@@ -76,6 +76,7 @@ private:
     void clearDirty();
 
     void updateActions();
+    void updateFieldWidths();
 
 private:
 

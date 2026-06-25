@@ -37,6 +37,7 @@ private:
     void applyTeacher(int index);
     void clearTeacher();
     void applyFieldWidths();
+    void updateFieldWidths();
 
 private:
     QGridLayout* m_grid = nullptr;

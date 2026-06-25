@@ -172,6 +172,14 @@ private:
         AddressSectionWidgets* section,
         bool visible
         );
+    void hideAddressComponents(
+        AddressSectionWidgets* english,
+        AddressSectionWidgets* korean
+        );
+    void alignAddressDetailsWithCompleteField(
+        AddressSectionWidgets* section
+        ) const;
+    void alignAllAddressDetailsWithCompleteFields();
     void storeCurrentAddressVariant(
         AddressSectionWidgets* section
         ) const;
@@ -218,6 +226,7 @@ private:
     void updateCampusSelectorItem(
         int index
         );
+    void updateCampusSelectorWidth();
     QString campusDisplayName(
         const CampusInfo& campus
         ) const;
@@ -245,6 +254,7 @@ private:
     struct AddressSectionWidgets
     {
         QWidget* container = nullptr;
+        QFormLayout* summaryForm = nullptr;
         QFormLayout* form = nullptr;
         QPlainTextEdit* complete = nullptr;
         QWidget* completeControls = nullptr;

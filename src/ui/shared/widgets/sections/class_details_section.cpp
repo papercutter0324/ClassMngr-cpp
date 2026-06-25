@@ -10,6 +10,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMargins>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QtAssert>
@@ -78,30 +79,6 @@ QStringList allReadingBooks()
     return values;
 }
 
-QStringList allEssayBooks()
-{
-    QStringList values{QString()};
-
-    for (const QString& grade : ClassInfoConfig::Grades)
-    {
-        const QStringList levels =
-            ClassInfoConfig::levelsForGrade(grade);
-
-        for (const QString& level : levels)
-        {
-            appendUnique(
-                values,
-                ClassInfoConfig::essayBooks(
-                    grade,
-                    level
-                    )
-                );
-        }
-    }
-
-    return values;
-}
-
 void setLabelMinimumWidth(
     QLabel* label
     )
@@ -116,9 +93,11 @@ void setLabelMinimumWidth(
         );
 }
 
-int setComboMinimumWidthForTexts(
+int installComboWidthForTexts(
     QComboBox* combo,
-    const QStringList& texts
+    const QStringList& texts,
+    int preferredWidth = 0,
+    int extraWidth = 0
     )
 {
     if (!combo)
@@ -127,17 +106,54 @@ int setComboMinimumWidthForTexts(
     }
 
     const int minimumWidth =
-        WidgetSizing::comboMinimumWidthForTexts(
-            combo,
-            texts,
-            UiConstants::ClassInfo::TextWidthPadding
+        std::max(
+            preferredWidth,
+            WidgetSizing::comboMinimumWidthForTexts(
+                combo,
+                texts,
+                UiConstants::ClassInfo::TextWidthPadding
+                )
+            + extraWidth
             );
 
-    combo->setMinimumWidth(
+    WidgetSizing::installTextAwareFieldWidth(
+        combo,
         minimumWidth
         );
 
     return minimumWidth;
+}
+
+int studentCountMinimumWidth(
+    QLineEdit* edit
+    )
+{
+    if (!edit)
+    {
+        return 0;
+    }
+
+    const QMargins margins =
+        edit->textMargins();
+
+    return WidgetSizing::textWidth(
+        edit,
+        QStringLiteral("000")
+        )
+        + margins.left()
+        + margins.right()
+        + WidgetSizing::LineEditTextPadding;
+}
+
+int essayBookMinimumWidth(
+    QComboBox* combo
+    )
+{
+    return WidgetSizing::comboMinimumWidthForTexts(
+        combo,
+        { QStringLiteral("000") },
+        UiConstants::ClassInfo::TextWidthPadding
+        );
 }
 }
 
@@ -162,18 +178,12 @@ ClassDetailsSection::ClassDetailsSection(
     m_pendingFontColor = "#000000";
 
     m_gradeCombo = new NoWheelComboBox(this);
-    m_gradeCombo->setMaximumWidth(
-        UiConstants::ClassInfo::Details::GradeMaxWidth
-        );
     m_gradeCombo->addItem(QString());
     m_gradeCombo->addItems(ClassInfoConfig::Grades);
 
     m_levelCombo = new NoWheelComboBox(this);
     m_studentCountEdit = new QLineEdit(this);
     m_studentCountEdit->setReadOnly(true);
-    m_studentCountEdit->setMaximumWidth(
-        UiConstants::ClassInfo::Details::StudentCountMaxWidth
-        );
 
     m_readingBookCombo = new NoWheelComboBox(this);
     m_essayBookCombo = new NoWheelComboBox(this);
@@ -195,7 +205,6 @@ ClassDetailsSection::ClassDetailsSection(
 
     colorLayout->addWidget(m_colorPreview);
     colorLayout->addWidget(m_colorButton);
-    colorLayout->addStretch();
 
     auto* grid =
         new QGridLayout;
@@ -243,61 +252,36 @@ ClassDetailsSection::ClassDetailsSection(
 
     updateLabelMinimumWidths();
 
-    setComboMinimumWidthForTexts(
+    installComboWidthForTexts(
         m_gradeCombo,
-        ClassInfoConfig::Grades
+        ClassInfoConfig::Grades,
+        UiConstants::ClassInfo::Details::GradeMaxWidth
         );
 
-    m_gradeCombo->setMaximumWidth(
-        std::max(
-            UiConstants::ClassInfo::Details::GradeMaxWidth,
-            m_gradeCombo->minimumWidth()
-            )
+    installComboWidthForTexts(
+        m_levelCombo,
+        allLevels(),
+        0,
+        UiConstants::ClassInfo::Details::LevelComboExtraWidth
         );
 
-    const int levelMinimumWidth =
-        setComboMinimumWidthForTexts(
-            m_levelCombo,
-            allLevels()
-            );
-
-    m_levelCombo->setMinimumWidth(
-        levelMinimumWidth
-        + UiConstants::ClassInfo::Details::LevelComboExtraWidth
+    installComboWidthForTexts(
+        m_readingBookCombo,
+        allReadingBooks()
         );
 
-    const int readingBookMinimumWidth =
-        setComboMinimumWidthForTexts(
-            m_readingBookCombo,
-            allReadingBooks()
-            );
-
-    const int essayBookMinimumWidth =
-        setComboMinimumWidthForTexts(
-            m_essayBookCombo,
-            allEssayBooks()
-            );
-
-    m_essayBookCombo->setMaximumWidth(
-        std::max(
-            essayBookMinimumWidth,
-            readingBookMinimumWidth
-            - UiConstants::ClassInfo::Details::EssayBookWidthReduction
-            )
+    WidgetSizing::installTextAwareFieldWidth(
+        m_essayBookCombo,
+        essayBookMinimumWidth(m_essayBookCombo),
+        QSizePolicy::Fixed,
+        true
         );
 
-    m_studentCountEdit->setMinimumWidth(
-        std::min(
-            UiConstants::ClassInfo::Details::StudentCountMaxWidth,
-            std::max(
-                m_studentCountEdit->minimumSizeHint().width(),
-                WidgetSizing::textWidth(
-                    m_studentCountEdit,
-                    QStringLiteral("000")
-                    )
-                + UiConstants::ClassInfo::TextWidthPadding
-                )
-            )
+    WidgetSizing::installTextAwareFieldWidth(
+        m_studentCountEdit,
+        studentCountMinimumWidth(m_studentCountEdit),
+        QSizePolicy::Fixed,
+        true
         );
 
     grid->addWidget(m_colorLabel, 0, 0);
@@ -460,6 +444,12 @@ void ClassDetailsSection::loadInfo(
         QString::number(
             studentCount
             )
+            .trimmed()
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_studentCountEdit,
+        studentCountMinimumWidth(m_studentCountEdit),
+        true
         );
 
     m_loadingInfo = false;
@@ -668,6 +658,12 @@ void ClassDetailsSection::rebuildBookOptions(
 
     if (essayIndex >= 0)
         m_essayBookCombo->setCurrentIndex(essayIndex);
+
+    WidgetSizing::updateTextAwareFieldWidth(
+        m_essayBookCombo,
+        essayBookMinimumWidth(m_essayBookCombo),
+        true
+        );
 }
 
 void ClassDetailsSection::openColorPicker()

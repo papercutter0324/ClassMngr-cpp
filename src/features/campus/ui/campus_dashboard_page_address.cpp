@@ -422,6 +422,21 @@ void CampusDashboardPage::setAddressComponentsVisible(
     updateAddressComponentsButton(section);
 }
 
+void CampusDashboardPage::hideAddressComponents(
+    AddressSectionWidgets* english,
+    AddressSectionWidgets* korean
+    )
+{
+    setAddressComponentsVisible(
+        english,
+        false
+        );
+    setAddressComponentsVisible(
+        korean,
+        false
+        );
+}
+
 void CampusDashboardPage::toggleAddressSystem(
     AddressSectionWidgets* section
     )
