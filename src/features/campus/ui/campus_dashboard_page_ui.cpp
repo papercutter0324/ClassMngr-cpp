@@ -30,7 +30,7 @@
 
 namespace Detail = CampusDashboardPageDetail;
 
-QWidget* CampusDashboardPage::createDirectionsTab()
+QWidget* CampusDashboardPage::createAddressTab()
 {
     auto* tab =
         new QWidget(this);
@@ -157,56 +157,6 @@ QWidget* CampusDashboardPage::createDirectionsTab()
 
     layout->addWidget(m_directionsEnglishAddress.container);
     layout->addWidget(m_directionsKoreanAddress.container);
-
-    auto* directionsNoteForm =
-        new QFormLayout;
-
-    directionsNoteForm->setSpacing(8);
-    directionsNoteForm->setContentsMargins(0, 0, 0, 0);
-    directionsNoteForm->setFieldGrowthPolicy(
-        QFormLayout::ExpandingFieldsGrow
-        );
-
-    m_directionsNoteEdit =
-        addLineField(
-            directionsNoteForm,
-            QT_TR_NOOP("Note:")
-            );
-
-    layout->addLayout(directionsNoteForm);
-
-    auto* transitForm =
-        new QFormLayout;
-
-    transitForm->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    transitForm->setSpacing(10);
-    transitForm->setFieldGrowthPolicy(
-        QFormLayout::ExpandingFieldsGrow
-        );
-
-    m_transitStepsEdit =
-        addTextField(
-            transitForm,
-            QT_TR_NOOP("Transit Steps:"),
-            5,
-            10
-            );
-
-    m_arrivalInfoEdit =
-        addTextField(
-            transitForm,
-            QT_TR_NOOP("Upon Arriving:"),
-            5,
-            10
-            );
-
-    layout->addLayout(transitForm);
     layout->addStretch();
 
     scroll->setWidget(container);
@@ -272,6 +222,44 @@ QWidget* CampusDashboardPage::createDirectionsTab()
         );
 
     showDirectionsLanguage(true);
+
+    return tab;
+}
+
+QWidget* CampusDashboardPage::createDirectionsTab()
+{
+    QFormLayout* form = nullptr;
+
+    QWidget* tab =
+        Detail::createScrollContainer(
+            this,
+            &form
+            );
+
+    form->setLabelAlignment(Qt::AlignLeft | Qt::AlignTop);
+    form->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+
+    m_transitStepsEdit =
+        addTextField(
+            form,
+            QT_TR_NOOP("Transit Steps:"),
+            5,
+            10
+            );
+
+    m_arrivalInfoEdit =
+        addTextField(
+            form,
+            QT_TR_NOOP("Upon Arriving:"),
+            5,
+            10
+            );
+
+    m_directionsNoteEdit =
+        addLineField(
+            form,
+            QT_TR_NOOP("Note:")
+            );
 
     return tab;
 }
@@ -1354,11 +1342,14 @@ void CampusDashboardPage::buildUi()
     m_tabs =
         new QTabWidget(this);
 
-    m_directionsTab =
-        createDirectionsTab();
-
     m_informationTab =
         createInformationTab();
+
+    m_addressTab =
+        createAddressTab();
+
+    m_directionsTab =
+        createDirectionsTab();
 
     m_housingTab =
         createHousingTab();
@@ -1374,6 +1365,11 @@ void CampusDashboardPage::buildUi()
     m_tabs->addTab(
         m_directionsTab,
         tr("Directions")
+        );
+
+    m_tabs->addTab(
+        m_addressTab,
+        tr("Address")
         );
 
     m_tabs->addTab(

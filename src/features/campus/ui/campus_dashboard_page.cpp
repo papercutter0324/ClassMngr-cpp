@@ -44,6 +44,14 @@ CampusDashboardPage::CampusDashboardPage(
     loadCampuses();
 }
 
+void CampusDashboardPage::showAddress()
+{
+    if (m_tabs && m_addressTab)
+    {
+        m_tabs->setCurrentWidget(m_addressTab);
+    }
+}
+
 void CampusDashboardPage::showDirections()
 {
     if (m_tabs && m_directionsTab)
@@ -91,6 +99,11 @@ QString CampusDashboardPage::currentSectionName() const
         return tr("Information");
     }
 
+    if (currentTab == m_addressTab)
+    {
+        return tr("Address");
+    }
+
     if (currentTab == m_directionsTab)
     {
         return tr("Directions");
@@ -124,6 +137,11 @@ QString CampusDashboardPage::currentSectionKey() const
     if (currentTab == m_informationTab)
     {
         return QStringLiteral("campus_information");
+    }
+
+    if (currentTab == m_addressTab)
+    {
+        return QStringLiteral("campus_address");
     }
 
     if (currentTab == m_directionsTab)
@@ -168,6 +186,20 @@ void CampusDashboardPage::retranslateUi()
                 m_tabs->setTabText(
                     index,
                     tr("Information")
+                    );
+            }
+        }
+
+        if (m_addressTab)
+        {
+            const int index =
+                m_tabs->indexOf(m_addressTab);
+
+            if (index >= 0)
+            {
+                m_tabs->setTabText(
+                    index,
+                    tr("Address")
                     );
             }
         }

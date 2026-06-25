@@ -35,6 +35,7 @@ public:
         QWidget *parent = nullptr
         );
 
+    void showAddress();
     void showDirections();
     void showInformation();
     void showHousing();
@@ -69,6 +70,7 @@ private:
     struct AddressSectionWidgets;
     struct HousingSectionWidgets;
 
+    QWidget* createAddressTab();
     QWidget* createDirectionsTab();
     QWidget* createInformationTab();
     QWidget* createHousingTab();
@@ -318,6 +320,7 @@ private:
     QComboBox* m_campusCombo = nullptr;
     QTabWidget* m_tabs = nullptr;
 
+    QWidget* m_addressTab = nullptr;
     QWidget* m_directionsTab = nullptr;
     QWidget* m_informationTab = nullptr;
     QWidget* m_housingTab = nullptr;

@@ -470,6 +470,12 @@ void NavigationController::handleCampus(
             ? data.routeKey
             : QStringLiteral("campus_information");
 
+    if (pageKey == QStringLiteral("campus_address"))
+    {
+        m_pages->campusDashboard()->showAddress();
+        return;
+    }
+
     if (pageKey == QStringLiteral("campus_directions"))
     {
         m_pages->campusDashboard()->showDirections();

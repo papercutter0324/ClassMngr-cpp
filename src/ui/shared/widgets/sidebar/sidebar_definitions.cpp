@@ -159,6 +159,12 @@ QList<TreeNodeSpec> treeStructure()
                 },
 
                 {
+                    "campus_address",
+                    QObject::tr("Address"),
+                    NodeType::Page
+                },
+
+                {
                     "campus_housing",
                     QObject::tr("Housing"),
                     NodeType::Page
