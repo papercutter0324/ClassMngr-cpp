@@ -14,9 +14,101 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QVBoxLayout>
 
 namespace Detail = CampusDashboardPageDetail;
+
+QWidget* CampusDashboardPage::createHousingTab()
+{
+    auto* tab =
+        new QWidget(this);
+
+    auto* root =
+        new QVBoxLayout(tab);
+
+    auto* scroll =
+        new QScrollArea(tab);
+
+    scroll->setWidgetResizable(true);
+    scroll->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    scroll->setFrameShape(QFrame::NoFrame);
+
+    auto* container =
+        new QFrame(scroll);
+
+    container->setFrameShape(QFrame::NoFrame);
+    container->setFrameShadow(QFrame::Plain);
+
+    auto* containerLayout =
+        new QVBoxLayout(container);
+
+    containerLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    containerLayout->setSpacing(10);
+
+    m_housingSectionsLayout =
+        new QVBoxLayout;
+
+    m_housingSectionsLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    m_housingSectionsLayout->setSpacing(12);
+
+    m_housingEmptyLabel =
+        new QLabel(
+            tr("No housing information available"),
+            container
+            );
+
+    m_housingSectionsLayout->addWidget(m_housingEmptyLabel);
+    m_housingSectionsLayout->addStretch();
+
+    containerLayout->addLayout(m_housingSectionsLayout, 1);
+
+    scroll->setWidget(container);
+    root->addWidget(scroll);
+
+    m_addHousingButton =
+        new TextFitPushButton(
+            tr("Add Housing Location"),
+            container
+            );
+
+    m_addHousingButton->setVisible(m_adminMode);
+
+    auto* buttonLayout =
+        new QHBoxLayout;
+
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(m_addHousingButton);
+
+    containerLayout->addLayout(buttonLayout);
+
+    connect(
+        m_addHousingButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            addHousingSectionFromJson(Detail::emptyHousingLocation());
+            updateHousingCompleteAddresses();
+            m_dirty = true;
+            scheduleSave();
+        }
+        );
+
+    return tab;
+}
 
 void CampusDashboardPage::populateHousingSections(
     const QJsonArray& housingLocations
