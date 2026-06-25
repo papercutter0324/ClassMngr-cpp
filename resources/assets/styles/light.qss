@@ -98,6 +98,37 @@ QWidget[role="input"] {
     padding: 5px 8px;
 }
 
+QCheckBox#zoomNotAvailableCheck,
+QCheckBox#printerDriverUrlUnavailableCheck,
+QCheckBox#photocopierCodeUnavailableCheck {
+    background: transparent;
+    spacing: 6px;
+}
+
+QCheckBox#zoomNotAvailableCheck::indicator,
+QCheckBox#printerDriverUrlUnavailableCheck::indicator,
+QCheckBox#photocopierCodeUnavailableCheck::indicator {
+    width: 16px;
+    height: 16px;
+    background-color: #f5f3ee;
+    border: 1px solid #cbc9c2;
+    border-radius: 4px;
+}
+
+QCheckBox#zoomNotAvailableCheck::indicator:hover,
+QCheckBox#printerDriverUrlUnavailableCheck::indicator:hover,
+QCheckBox#photocopierCodeUnavailableCheck::indicator:hover {
+    border-color: #4b6f91;
+}
+
+QCheckBox#zoomNotAvailableCheck::indicator:checked,
+QCheckBox#printerDriverUrlUnavailableCheck::indicator:checked,
+QCheckBox#photocopierCodeUnavailableCheck::indicator:checked {
+    image: url(:/assets/icons/check_light.svg);
+    background-color: #f5f3ee;
+    border-color: #4b6f91;
+}
+
 QComboBox:editable,
 QComboBox:!editable {
     background: #f5f3ee;

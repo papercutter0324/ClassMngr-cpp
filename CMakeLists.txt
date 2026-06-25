@@ -114,6 +114,8 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/Inter.ttc
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
+        resources/assets/icons/check_dark.svg
+        resources/assets/icons/check_light.svg
         resources/assets/icons/combo_arrow_dark.svg
         resources/assets/icons/combo_arrow_light.svg
         resources/assets/icons/spin_up_dark.svg

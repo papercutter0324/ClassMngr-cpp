@@ -870,6 +870,9 @@ void MyInfoPage::buildMyInformationSection()
             tr("N/A"),
             card
             );
+    m_zoomNotAvailableCheck->setObjectName(
+        "zoomNotAvailableCheck"
+        );
 
     WidgetSizing::installTextAwareFieldWidth(
         m_nameEdit,

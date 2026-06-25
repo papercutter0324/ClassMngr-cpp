@@ -86,6 +86,9 @@ QWidget* CampusDashboardPage::createInformationTab()
             tr("N/A"),
             driverRow
             );
+    m_printerDriverUrlUnavailableCheck->setObjectName(
+        "printerDriverUrlUnavailableCheck"
+        );
 
     m_printerDriverUrlUnavailableCheck->setSizePolicy(
         QSizePolicy::Fixed,
@@ -159,6 +162,9 @@ QWidget* CampusDashboardPage::createInformationTab()
             tr("N/A"),
             photocopierRow
             );
+    m_photocopierCodeUnavailableCheck->setObjectName(
+        "photocopierCodeUnavailableCheck"
+        );
 
     m_photocopierCodeUnavailableCheck->setSizePolicy(
         QSizePolicy::Fixed,
