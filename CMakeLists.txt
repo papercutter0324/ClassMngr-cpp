@@ -343,6 +343,42 @@ if(BUILD_TESTING)
         COMMAND ClassMngrFontManagerTests
     )
 
+    qt_add_executable(ClassMngrTeacherInfoSectionTests
+        tests/teacher_info_section_tests.cpp
+        src/core/fontmanager.cpp
+        src/features/teacher/ui/teacher_model.cpp
+        src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/sections/teacher_info_section.cpp
+    )
+
+    target_compile_features(ClassMngrTeacherInfoSectionTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTeacherInfoSectionTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrTeacherInfoSectionTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrTeacherInfoSectionTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrTeacherInfoSectionTests
+        COMMAND ClassMngrTeacherInfoSectionTests
+    )
+
     qt_add_executable(ClassMngrLanguageServiceTests
         tests/language_service_tests.cpp
         src/core/language_service.cpp
@@ -441,6 +477,7 @@ if(BUILD_TESTING)
             ClassMngrUpdaterTests
             ClassMngrResourcePackTests
             ClassMngrFontManagerTests
+            ClassMngrTeacherInfoSectionTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests

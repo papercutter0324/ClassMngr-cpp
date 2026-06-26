@@ -34,7 +34,8 @@ private slots:
 
 private:
     void rebuildTeacherCombos();
-    void applyTeacher(int index);
+    const Teacher* teacherById(int teacherId) const;
+    void applyTeacher(const Teacher& teacher);
     void clearTeacher();
     void applyFieldWidths();
     void updateFieldWidths();

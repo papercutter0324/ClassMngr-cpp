@@ -6,13 +6,143 @@
 
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include <QCollator>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QLocale>
 #include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QVBoxLayout>
+
+#include <algorithm>
+
+namespace
+{
+enum class TeacherNameField
+{
+    Korean,
+    English
+};
+
+QString teacherName(
+    const Teacher& teacher,
+    TeacherNameField field
+    )
+{
+    return field == TeacherNameField::Korean
+        ? teacher.teacherKr.trimmed()
+        : teacher.teacherEn.trimmed();
+}
+
+QCollator teacherNameCollator(
+    TeacherNameField field
+    )
+{
+    QCollator collator(
+        field == TeacherNameField::Korean
+            ? QLocale(QStringLiteral("ko_KR"))
+            : QLocale(QStringLiteral("en_US"))
+        );
+
+    collator.setCaseSensitivity(Qt::CaseInsensitive);
+    collator.setNumericMode(true);
+
+    return collator;
+}
+
+QVector<Teacher> sortedTeachers(
+    const TeacherModel* model,
+    TeacherNameField field
+    )
+{
+    QVector<Teacher> teachers;
+
+    if (!model)
+    {
+        return teachers;
+    }
+
+    teachers.reserve(
+        model->rowCount()
+        );
+
+    for (int row = 0; row < model->rowCount(); ++row)
+    {
+        teachers.append(
+            model->teacherAt(row)
+            );
+    }
+
+    QCollator primaryCollator =
+        teacherNameCollator(
+            field
+            );
+    QCollator fallbackCollator =
+        teacherNameCollator(
+            field == TeacherNameField::Korean
+                ? TeacherNameField::English
+                : TeacherNameField::Korean
+            );
+    const TeacherNameField fallbackField =
+        field == TeacherNameField::Korean
+            ? TeacherNameField::English
+            : TeacherNameField::Korean;
+
+    std::ranges::sort(
+        teachers,
+        [&](const Teacher& left, const Teacher& right)
+        {
+            const QString leftName =
+                teacherName(
+                    left,
+                    field
+                    );
+            const QString rightName =
+                teacherName(
+                    right,
+                    field
+                    );
+
+            const bool leftEmpty =
+                leftName.isEmpty();
+            const bool rightEmpty =
+                rightName.isEmpty();
+
+            if (leftEmpty != rightEmpty)
+            {
+                return !leftEmpty;
+            }
+
+            const int primaryComparison =
+                primaryCollator.compare(
+                    leftName,
+                    rightName
+                    );
+
+            if (primaryComparison != 0)
+            {
+                return primaryComparison < 0;
+            }
+
+            const int fallbackComparison =
+                fallbackCollator.compare(
+                    teacherName(left, fallbackField),
+                    teacherName(right, fallbackField)
+                    );
+
+            if (fallbackComparison != 0)
+            {
+                return fallbackComparison < 0;
+            }
+
+            return left.id < right.id;
+        });
+
+    return teachers;
+}
+}
 
 TeacherInfoSection::TeacherInfoSection(QWidget* parent)
     : QWidget(parent)
@@ -47,10 +177,16 @@ TeacherInfoSection::TeacherInfoSection(QWidget* parent)
         };
 
     m_teacherKrCombo = new NoWheelComboBox(this);
+    m_teacherKrCombo->setObjectName(
+        QStringLiteral("teacherKrCombo")
+        );
     m_teacherKrCombo->setFont(
         FontManager::getKoreanFont()
         );
     m_teacherEnCombo = new NoWheelComboBox(this);
+    m_teacherEnCombo->setObjectName(
+        QStringLiteral("teacherEnCombo")
+        );
     m_model = new TeacherModel(this);
 
     m_roomNumberEdit = new QLineEdit(this);
@@ -190,16 +326,20 @@ void TeacherInfoSection::setTeachers(const QList<Teacher>& teachers)
 
 void TeacherInfoSection::selectTeacher(int teacherId)
 {
-    const int comboIndex =
-        m_teacherKrCombo->findData(teacherId);
+    const Teacher* teacher =
+        teacherById(
+            teacherId
+            );
 
-    if (comboIndex < 0)
+    if (!teacher)
     {
         clearTeacher();
         return;
     }
 
-    applyTeacher(comboIndex - 1);
+    applyTeacher(
+        *teacher
+        );
 }
 
 int TeacherInfoSection::teacherId() const
@@ -276,7 +416,9 @@ void TeacherInfoSection::retranslateUi()
 void TeacherInfoSection::onTeacherIndexChanged(int index)
 {
     if (!m_model)
+    {
         return;
+    }
 
     if (index <= 0)
     {
@@ -285,7 +427,35 @@ void TeacherInfoSection::onTeacherIndexChanged(int index)
         return;
     }
 
-    applyTeacher(index - 1);
+    const auto* combo =
+        qobject_cast<QComboBox*>(
+            sender()
+            );
+
+    bool validTeacherId = false;
+    const int selectedTeacherId =
+        combo
+            ? combo->itemData(index).toInt(&validTeacherId)
+            : -1;
+
+    const Teacher* teacher =
+        teacherById(
+            validTeacherId
+                ? selectedTeacherId
+                : -1
+            );
+
+    if (!teacher)
+    {
+        clearTeacher();
+        emit dataChanged();
+        return;
+    }
+
+    applyTeacher(
+        *teacher
+        );
+
     emit dataChanged();
 }
 
@@ -306,16 +476,28 @@ void TeacherInfoSection::rebuildTeacherCombos()
         return;
     }
 
-    for (int row = 0; row < m_model->rowCount(); ++row)
-    {
-        const Teacher& teacher =
-            m_model->teacherAt(row);
+    const QVector<Teacher> koreanTeachers =
+        sortedTeachers(
+            m_model,
+            TeacherNameField::Korean
+            );
 
+    for (const Teacher& teacher : koreanTeachers)
+    {
         m_teacherKrCombo->addItem(
             teacher.teacherKr,
             teacher.id
             );
+    }
 
+    const QVector<Teacher> englishTeachers =
+        sortedTeachers(
+            m_model,
+            TeacherNameField::English
+            );
+
+    for (const Teacher& teacher : englishTeachers)
+    {
         m_teacherEnCombo->addItem(
             teacher.teacherEn,
             teacher.id
@@ -325,11 +507,30 @@ void TeacherInfoSection::rebuildTeacherCombos()
     updateFieldWidths();
 }
 
-void TeacherInfoSection::applyTeacher(int index)
+const Teacher* TeacherInfoSection::teacherById(int teacherId) const
 {
-    const auto& t = m_model->teacherAt(index);
+    if (!m_model || teacherId <= 0)
+    {
+        return nullptr;
+    }
 
-    if (t.id < 0)
+    for (int row = 0; row < m_model->rowCount(); ++row)
+    {
+        const Teacher& teacher =
+            m_model->teacherAt(row);
+
+        if (teacher.id == teacherId)
+        {
+            return &teacher;
+        }
+    }
+
+    return nullptr;
+}
+
+void TeacherInfoSection::applyTeacher(const Teacher& teacher)
+{
+    if (teacher.id < 0)
     {
         clearTeacher();
         return;
@@ -338,21 +539,29 @@ void TeacherInfoSection::applyTeacher(int index)
     m_teacherKrCombo->blockSignals(true);
     m_teacherEnCombo->blockSignals(true);
 
-    m_teacherKrCombo->setCurrentIndex(index + 1);
-    m_teacherEnCombo->setCurrentIndex(index + 1);
+    m_teacherKrCombo->setCurrentIndex(
+        m_teacherKrCombo->findData(
+            teacher.id
+            )
+        );
+    m_teacherEnCombo->setCurrentIndex(
+        m_teacherEnCombo->findData(
+            teacher.id
+            )
+        );
 
     m_teacherKrCombo->blockSignals(false);
     m_teacherEnCombo->blockSignals(false);
 
-    m_selectedTeacherId = t.id;
+    m_selectedTeacherId = teacher.id;
 
-    m_roomNumberEdit->setText(t.roomNumber);
-    m_internetTypeEdit->setText(t.internetType);
-    m_wifiNameEdit->setText(t.wifiName);
-    m_wifiPasswordEdit->setText(t.wifiPassword);
-    m_projectionTypeEdit->setText(t.projectionType);
-    m_zoomIdEdit->setText(t.zoomId);
-    m_zoomPasswordEdit->setText(t.zoomPassword);
+    m_roomNumberEdit->setText(teacher.roomNumber);
+    m_internetTypeEdit->setText(teacher.internetType);
+    m_wifiNameEdit->setText(teacher.wifiName);
+    m_wifiPasswordEdit->setText(teacher.wifiPassword);
+    m_projectionTypeEdit->setText(teacher.projectionType);
+    m_zoomIdEdit->setText(teacher.zoomId);
+    m_zoomPasswordEdit->setText(teacher.zoomPassword);
     updateFieldWidths();
 }
 
