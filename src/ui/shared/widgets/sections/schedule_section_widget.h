@@ -56,7 +56,18 @@ private:
         ) const;
     QString slotState(
         const QString& day,
+        const QString& timeLabel,
+        const QString& defaultState
+        ) const;
+    QString defaultSlotState(
+        const QString& day,
         const QString& timeLabel
+        ) const;
+    bool regularSlotTogglingEnabled(
+        const QString& day
+        ) const;
+    bool slotTogglingEnabled(
+        const QString& day
         ) const;
     QString formatDisplayTime(
         const QString& timeLabel
@@ -83,6 +94,7 @@ private:
     bool m_showIntensive = false;
     bool m_showAllHours = false;
     bool m_showWeekends = false;
+    bool m_regularWeekdaySlotTogglingEnabled = false;
 
     QMap<QString, QString> m_intensiveSlotStates;
 

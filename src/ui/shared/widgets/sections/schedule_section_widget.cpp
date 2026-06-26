@@ -21,6 +21,7 @@
 #include <QScrollBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTime>
 #include <QVariant>
 #include <QVBoxLayout>
 
@@ -29,6 +30,61 @@ namespace
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
+constexpr int RegularEarlyEmptyFinalHour = 15;
+
+QString emptySlotState()
+{
+    return QStringLiteral("empty");
+}
+
+QString essaySlotState()
+{
+    return QStringLiteral("essay");
+}
+
+QString lunchSlotState()
+{
+    return QStringLiteral("lunch");
+}
+
+bool isWeekendDay(
+    const QString& day
+    )
+{
+    return day == QStringLiteral("Saturday")
+        || day == QStringLiteral("Sunday");
+}
+
+bool isRegularEarlyEmptySlot(
+    const QString& timeLabel
+    )
+{
+    const QTime time =
+        QTime::fromString(
+            timeLabel,
+            QStringLiteral("HH:mm")
+            );
+
+    return time.isValid()
+        && time.hour() <= RegularEarlyEmptyFinalHour;
+}
+
+QString nextSlotState(
+    const QString& currentState
+    )
+{
+    if (currentState == essaySlotState())
+    {
+        return lunchSlotState();
+    }
+
+    if (currentState == lunchSlotState())
+    {
+        return emptySlotState();
+    }
+
+    return essaySlotState();
+}
 
 DataService* openDataService(
     ApplicationServices* services
@@ -230,10 +286,7 @@ void ScheduleSectionWidget::onCellClicked(
         return;
     }
 
-    if (
-        m_showIntensive
-        && widget->property("is_slot_cell").toBool()
-        )
+    if (widget->property("is_slot_cell").toBool())
     {
         const QString day =
             widget->property("day").toString();
@@ -241,33 +294,36 @@ void ScheduleSectionWidget::onCellClicked(
         const QString timeLabel =
             widget->property("time_label").toString();
 
-        const QString currentState =
-            slotState(
+        if (!slotTogglingEnabled(day))
+        {
+            return;
+        }
+
+        const QString defaultState =
+            defaultSlotState(
                 day,
                 timeLabel
                 );
 
-        QString newState;
+        const QString currentState =
+            slotState(
+                day,
+                timeLabel,
+                defaultState
+                );
 
-        if (currentState == QStringLiteral("essay"))
-        {
-            newState = QStringLiteral("lunch");
-        }
-        else if (currentState == QStringLiteral("lunch"))
-        {
-            newState = QStringLiteral("empty");
-        }
-        else
-        {
-            newState = QStringLiteral("essay");
-        }
+        const QString newState =
+            nextSlotState(
+                currentState
+                );
 
         if (auto* dataService = openDataService(m_services))
         {
             dataService->saveIntensiveSlotState(
                 day,
                 timeLabel,
-                newState
+                newState,
+                defaultState
                 );
         }
 
@@ -504,12 +560,16 @@ void ScheduleSectionWidget::loadSchedule()
                     const QString state =
                         slotState(
                             day,
-                            scheduleRow.label
+                            scheduleRow.label,
+                            defaultSlotState(
+                                day,
+                                scheduleRow.label
+                                )
                             );
 
                     if (
-                        state == QStringLiteral("essay")
-                        || state == QStringLiteral("lunch")
+                        state == essaySlotState()
+                        || state == lunchSlotState()
                         )
                     {
                         return true;
@@ -872,7 +932,8 @@ QString ScheduleSectionWidget::slotKey(
 
 QString ScheduleSectionWidget::slotState(
     const QString& day,
-    const QString& timeLabel
+    const QString& timeLabel,
+    const QString& defaultState
     ) const
 {
     return m_intensiveSlotStates.value(
@@ -880,8 +941,51 @@ QString ScheduleSectionWidget::slotState(
             day,
             timeLabel
             ),
-        QStringLiteral("essay")
+        defaultState
         );
+}
+
+QString ScheduleSectionWidget::defaultSlotState(
+    const QString& day,
+    const QString& timeLabel
+    ) const
+{
+    if (isWeekendDay(day))
+    {
+        return emptySlotState();
+    }
+
+    if (m_showIntensive)
+    {
+        return essaySlotState();
+    }
+
+    if (isRegularEarlyEmptySlot(timeLabel))
+    {
+        return emptySlotState();
+    }
+
+    return essaySlotState();
+}
+
+bool ScheduleSectionWidget::regularSlotTogglingEnabled(
+    const QString& day
+    ) const
+{
+    if (isWeekendDay(day))
+    {
+        return true;
+    }
+
+    return m_regularWeekdaySlotTogglingEnabled;
+}
+
+bool ScheduleSectionWidget::slotTogglingEnabled(
+    const QString& day
+    ) const
+{
+    return m_showIntensive
+        || regularSlotTogglingEnabled(day);
 }
 
 QString ScheduleSectionWidget::formatDisplayTime(
@@ -1046,10 +1150,20 @@ QWidget* ScheduleSectionWidget::createSlotLabel(
     const QString& timeLabel
     )
 {
-    QString state =
-        m_showIntensive
-            ? slotState(day, timeLabel)
-            : QStringLiteral("essay");
+    const QString defaultState =
+        defaultSlotState(
+            day,
+            timeLabel
+            );
+
+    const QString state =
+        slotTogglingEnabled(day)
+            ? slotState(
+                day,
+                timeLabel,
+                defaultState
+                )
+            : defaultState;
 
     auto* label =
         new QLabel(this);
@@ -1062,7 +1176,7 @@ QWidget* ScheduleSectionWidget::createSlotLabel(
     label->setProperty("slot_state", state);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    if (state == QStringLiteral("essay"))
+    if (state == essaySlotState())
     {
         label->setText(
             tr("Essay")
@@ -1087,7 +1201,7 @@ QWidget* ScheduleSectionWidget::createSlotLabel(
                 )
             );
     }
-    else if (state == QStringLiteral("lunch"))
+    else if (state == lunchSlotState())
     {
         label->setText(
             tr("Lunch")

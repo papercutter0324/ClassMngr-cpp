@@ -55,12 +55,13 @@ QList<IntensiveSlotState> IntensiveSlotStateRepository::loadIntensiveSlotStates(
 void IntensiveSlotStateRepository::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
-    const QString& state
+    const QString& state,
+    const QString& defaultState
     )
 {
     QSqlQuery query(m_database);
 
-    if (state == QStringLiteral("essay"))
+    if (state == defaultState)
     {
         query.prepare(R"(
             DELETE FROM intensive_slot_states

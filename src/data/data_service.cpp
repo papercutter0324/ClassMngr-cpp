@@ -846,7 +846,8 @@ QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()
 void DataService::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
-    const QString& state
+    const QString& state,
+    const QString& defaultState
     )
 {
     if (m_intensiveSlotStateRepository)
@@ -854,7 +855,8 @@ void DataService::saveIntensiveSlotState(
         m_intensiveSlotStateRepository->saveIntensiveSlotState(
             day,
             startTime,
-            state
+            state,
+            defaultState
             );
     }
 }

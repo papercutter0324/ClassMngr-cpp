@@ -18,7 +18,8 @@ public:
     void saveIntensiveSlotState(
         const QString& day,
         const QString& startTime,
-        const QString& state
+        const QString& state,
+        const QString& defaultState = QStringLiteral("essay")
         );
 
 private:

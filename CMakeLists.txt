@@ -379,6 +379,33 @@ if(BUILD_TESTING)
         COMMAND ClassMngrTeacherInfoSectionTests
     )
 
+    qt_add_executable(ClassMngrIntensiveSlotStateRepositoryTests
+        tests/intensive_slot_state_repository_tests.cpp
+        src/data/repositories/intensive_slot_state_repository.cpp
+    )
+
+    target_compile_features(ClassMngrIntensiveSlotStateRepositoryTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrIntensiveSlotStateRepositoryTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrIntensiveSlotStateRepositoryTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrIntensiveSlotStateRepositoryTests
+        COMMAND ClassMngrIntensiveSlotStateRepositoryTests
+    )
+
     qt_add_executable(ClassMngrLanguageServiceTests
         tests/language_service_tests.cpp
         src/core/language_service.cpp
@@ -478,6 +505,7 @@ if(BUILD_TESTING)
             ClassMngrResourcePackTests
             ClassMngrFontManagerTests
             ClassMngrTeacherInfoSectionTests
+            ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
