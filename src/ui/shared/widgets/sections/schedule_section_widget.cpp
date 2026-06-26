@@ -174,6 +174,19 @@ void ScheduleSectionWidget::toggleTimeFormat()
 void ScheduleSectionWidget::toggleScheduleMode()
 {
     m_showIntensive = !m_showIntensive;
+
+    if (!m_showIntensive)
+    {
+        m_showAllHours = false;
+    }
+
+    updateButtons();
+    loadSchedule();
+}
+
+void ScheduleSectionWidget::toggleShowAllHours()
+{
+    m_showAllHours = !m_showAllHours;
     updateButtons();
     loadSchedule();
 }
@@ -357,14 +370,21 @@ void ScheduleSectionWidget::buildUi()
     m_weekendButton->setObjectName("primaryButton");
     m_weekendButton->setMinimumWidth(150);
 
+    m_showAllHoursButton =
+        new TextFitPushButton(this);
+    m_showAllHoursButton->setObjectName("primaryButton");
+    m_showAllHoursButton->setCheckable(true);
+    m_showAllHoursButton->setMinimumWidth(170);
+
     m_scheduleModeButton =
         new TextFitPushButton(this);
     m_scheduleModeButton->setObjectName("primaryButton");
     m_scheduleModeButton->setMinimumWidth(200);
 
     controlsLayout->addWidget(m_timeFormatButton);
-    controlsLayout->addStretch();
     controlsLayout->addWidget(m_weekendButton);
+    controlsLayout->addStretch();
+    controlsLayout->addWidget(m_showAllHoursButton);
     controlsLayout->addWidget(m_scheduleModeButton);
 
     layout->addLayout(controlsLayout);
@@ -381,6 +401,13 @@ void ScheduleSectionWidget::buildUi()
         &QPushButton::clicked,
         this,
         &ScheduleSectionWidget::toggleWeekends
+        );
+
+    connect(
+        m_showAllHoursButton,
+        &QPushButton::clicked,
+        this,
+        &ScheduleSectionWidget::toggleShowAllHours
         );
 
     connect(
@@ -450,11 +477,72 @@ void ScheduleSectionWidget::loadSchedule()
     const ScheduleBuildResult result =
         builder.build(
             m_showIntensive,
-            days
+            days,
+            m_showIntensive
             );
 
-    const QList<ScheduleRow> rows =
+    QList<ScheduleRow> rows =
         result.rows;
+
+    if (m_showIntensive && !m_showAllHours)
+    {
+        auto rowHasVisibleContent =
+            [this, &days, &result](const ScheduleRow& scheduleRow)
+            {
+                for (const QString& day : days)
+                {
+                    const QList<ScheduleEntry> entries =
+                        result.schedule
+                            .value(day)
+                            .value(scheduleRow.label);
+
+                    if (!entries.isEmpty())
+                    {
+                        return true;
+                    }
+
+                    const QString state =
+                        slotState(
+                            day,
+                            scheduleRow.label
+                            );
+
+                    if (
+                        state == QStringLiteral("essay")
+                        || state == QStringLiteral("lunch")
+                        )
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+        int firstVisibleRow = -1;
+        int lastVisibleRow = -1;
+
+        for (int rowIndex = 0; rowIndex < rows.size(); ++rowIndex)
+        {
+            if (rowHasVisibleContent(rows[rowIndex]))
+            {
+                if (firstVisibleRow < 0)
+                {
+                    firstVisibleRow = rowIndex;
+                }
+
+                lastVisibleRow = rowIndex;
+            }
+        }
+
+        rows =
+            firstVisibleRow >= 0
+                ? rows.mid(
+                    firstVisibleRow,
+                    lastVisibleRow - firstVisibleRow + 1
+                    )
+                : QList<ScheduleRow>();
+    }
 
     clearTableWidgets();
     m_table->clearContents();
@@ -592,6 +680,7 @@ void ScheduleSectionWidget::updateButtons()
     if (
         !m_timeFormatButton
         || !m_weekendButton
+        || !m_showAllHoursButton
         || !m_scheduleModeButton
         )
     {
@@ -608,6 +697,18 @@ void ScheduleSectionWidget::updateButtons()
         m_showWeekends
             ? tr("Hide Weekends")
             : tr("Show Weekends")
+        );
+
+    m_showAllHoursButton->setText(
+        m_showAllHours
+            ? tr("Hide All Hours")
+            : tr("Show All Hours")
+        );
+    m_showAllHoursButton->setChecked(
+        m_showAllHours
+        );
+    m_showAllHoursButton->setVisible(
+        m_showIntensive
         );
 
     m_scheduleModeButton->setText(

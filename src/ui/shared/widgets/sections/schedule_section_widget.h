@@ -31,6 +31,7 @@ signals:
 private slots:
     void toggleTimeFormat();
     void toggleScheduleMode();
+    void toggleShowAllHours();
     void toggleWeekends();
     void onCellClicked(
         int row,
@@ -80,6 +81,7 @@ private:
 
     bool m_use24h = false;
     bool m_showIntensive = false;
+    bool m_showAllHours = false;
     bool m_showWeekends = false;
 
     QMap<QString, QString> m_intensiveSlotStates;
@@ -87,5 +89,6 @@ private:
     QTableWidget* m_table = nullptr;
     QPushButton* m_timeFormatButton = nullptr;
     QPushButton* m_weekendButton = nullptr;
+    QPushButton* m_showAllHoursButton = nullptr;
     QPushButton* m_scheduleModeButton = nullptr;
 };

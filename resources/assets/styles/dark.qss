@@ -285,6 +285,18 @@ QPushButton[role="primary"]:hover {
     border-color: #409cff;
 }
 
+QPushButton#primaryButton:checked,
+QPushButton[role="primary"]:checked {
+    background-color: #0067cc;
+    border-color: #005bb5;
+}
+
+QPushButton#primaryButton:checked:hover,
+QPushButton[role="primary"]:checked:hover {
+    background-color: #005bb5;
+    border-color: #004f99;
+}
+
 QPushButton#primaryButton:pressed,
 QPushButton[role="primary"]:pressed {
     background-color: #0067cc;

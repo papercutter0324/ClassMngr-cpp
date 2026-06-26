@@ -8,6 +8,8 @@ namespace
 {
 constexpr int DefaultStartHour = 16;
 constexpr int FinalHour = 21;
+constexpr int FullIntensiveStartHour = 9;
+constexpr int FullIntensiveFinalHour = 21;
 
 ScheduleEntry toEntry(
     int classId,
@@ -43,7 +45,8 @@ ScheduleBuilder::ScheduleBuilder(
 
 ScheduleBuildResult ScheduleBuilder::build(
     bool useIntensive,
-    const QStringList& visibleDays
+    const QStringList& visibleDays,
+    bool showAllHours
     ) const
 {
     ScheduleBuildResult result;
@@ -168,15 +171,28 @@ ScheduleBuildResult ScheduleBuilder::build(
         }
     }
 
+    const bool showFullIntensiveHours =
+        useIntensive && showAllHours;
+
     const int startHour =
-        hasEarliestHour && earliestHour < DefaultStartHour
-            ? earliestHour
-            : DefaultStartHour;
+        showFullIntensiveHours
+            ? FullIntensiveStartHour
+            : hasEarliestHour && earliestHour < DefaultStartHour
+                ? earliestHour
+                : DefaultStartHour;
 
     const int finalHour =
-        useIntensive && hasLatestHour
-            ? latestHour
-            : FinalHour;
+        showFullIntensiveHours
+            ? FullIntensiveFinalHour
+            : useIntensive && hasLatestHour
+                ? latestHour
+                : FinalHour;
+
+    if (showFullIntensiveHours)
+    {
+        scheduleOffset = 0;
+        result.uses55Endings = false;
+    }
 
     result.scheduleOffset = scheduleOffset;
     result.rows =
