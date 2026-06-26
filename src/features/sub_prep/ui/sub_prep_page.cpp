@@ -4,6 +4,7 @@
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
+#include "features/sub_prep/ui/sub_prep_class_navigation.h"
 #include "features/sub_prep/ui/sub_prep_content_builder.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -13,9 +14,11 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
+#include "ui/shared/widgets/uniform_width_tab_bar.h"
 #include "core/utils/sidebar_node_naming.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -32,6 +35,7 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStringList>
+#include <QTabWidget>
 #include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -45,6 +49,7 @@ constexpr int CampusFieldWidth = 150;
 constexpr int OfficeNumberFieldWidth = 115;
 constexpr int CompactFieldWidth = 170;
 constexpr int TextEditVerticalPadding = 24;
+constexpr int ClassTabContentTopMargin = 16;
 
 const QString NotAvailableText =
     QStringLiteral("N/A");
@@ -143,13 +148,6 @@ struct ClassSummary
     Teacher teacher;
     QString displayName;
     int studentCount = 0;
-};
-
-struct TeacherGroup
-{
-    int teacherId = -1;
-    Teacher teacher;
-    QList<ClassSummary> classes;
 };
 
 QString valueOrNa(
@@ -337,31 +335,6 @@ QString formatSchedule(
     return labels.isEmpty()
         ? NotAvailableText
         : labels.join(QStringLiteral("; "));
-}
-
-QString teacherSortKey(
-    const Teacher& teacher
-    )
-{
-    const QString koreanName =
-        teacher.teacherKr.trimmed();
-
-    if (!koreanName.isEmpty())
-    {
-        return koreanName;
-    }
-
-    const QString englishName =
-        teacher.teacherEn.trimmed();
-
-    if (!englishName.isEmpty())
-    {
-        return englishName;
-    }
-
-    return SidebarNodeNaming::formatTeacherDisplayName(
-        teacher
-        );
 }
 
 QString teacherDisplayName(
@@ -720,7 +693,7 @@ void SubPrepPage::retranslateUi()
     if (m_classInfoSubtitle)
     {
         m_classInfoSubtitle->setText(
-            tr("Sorted by Co-Teacher")
+            tr("Select a class")
             );
     }
 
@@ -1418,7 +1391,7 @@ void SubPrepPage::buildUi()
 
     m_classInfoSubtitle =
         new QLabel(
-            tr("Sorted by Co-Teacher"),
+            tr("Select a class"),
             m_scrollContent
             );
     m_classInfoSubtitle->setObjectName("pageSubtitle");
@@ -1877,10 +1850,9 @@ void SubPrepPage::rebuildClassInformation()
     }
 
     clearClassInformation();
+    m_classInformationTabs = nullptr;
 
-    QList<TeacherGroup> groups;
-    TeacherGroup unassignedGroup;
-    unassignedGroup.teacherId = -1;
+    QList<ClassSummary> summaries;
 
     const QList<Classroom> classes =
         dataService->getClasses();
@@ -1912,86 +1884,20 @@ void SubPrepPage::rebuildClassInformation()
                 summary.info
                 );
 
-        if (summary.teacher.id <= 0)
-        {
-            unassignedGroup.classes.append(
-                summary
-                );
-            continue;
-        }
-
-        auto group =
-            std::find_if(
-                groups.begin(),
-                groups.end(),
-                [&summary](const TeacherGroup& candidate)
-                {
-                    return candidate.teacherId == summary.teacher.id;
-                }
-                );
-
-        if (group == groups.end())
-        {
-            TeacherGroup newGroup;
-            newGroup.teacherId =
-                summary.teacher.id;
-            newGroup.teacher =
-                summary.teacher;
-            newGroup.classes.append(
-                summary
-                );
-
-            groups.append(
-                newGroup
-                );
-        }
-        else
-        {
-            group->classes.append(
-                summary
-                );
-        }
+        summaries.append(summary);
     }
 
-    const auto sortClasses =
-        [](TeacherGroup& group)
+    if (summaries.isEmpty())
+    {
+        m_selectedClassId = -1;
+
+        if (m_classInfoSubtitle)
         {
-            std::sort(
-                group.classes.begin(),
-                group.classes.end(),
-                [](const ClassSummary& first, const ClassSummary& second)
-                {
-                    return QString::localeAwareCompare(
-                        first.displayName,
-                        second.displayName
-                        ) < 0;
-                }
+            m_classInfoSubtitle->setText(
+                tr("Select a class")
                 );
-        };
-
-    for (TeacherGroup& group : groups)
-    {
-        sortClasses(group);
-    }
-    sortClasses(unassignedGroup);
-
-    std::sort(
-        groups.begin(),
-        groups.end(),
-        [](const TeacherGroup& first, const TeacherGroup& second)
-        {
-            return QString::localeAwareCompare(
-                teacherSortKey(first.teacher),
-                teacherSortKey(second.teacher)
-                ) < 0;
         }
-        );
 
-    if (
-        groups.isEmpty()
-        && unassignedGroup.classes.isEmpty()
-        )
-    {
         auto* emptyLabel =
             new QLabel(
                 tr("No classes available."),
@@ -2004,174 +1910,303 @@ void SubPrepPage::rebuildClassInformation()
         return;
     }
 
-    if (!unassignedGroup.classes.isEmpty())
+    QList<SubPrepClassNavigation::ClassEntry> navigationEntries;
+
+    for (const ClassSummary& summary : std::as_const(summaries))
     {
-        groups.append(
-            unassignedGroup
+        SubPrepClassNavigation::ClassEntry entry;
+        entry.classId =
+            summary.classroom.id;
+        entry.classroomName =
+            summary.classroom.name;
+        entry.grade =
+            summary.info.classGrade;
+        entry.level =
+            summary.info.classLevel;
+        entry.regularTimes =
+            summary.info.classTimes;
+        entry.intensiveTimes =
+            summary.info.intensiveTimes;
+        entry.teacherEn =
+            summary.teacher.teacherEn;
+        entry.teacherKr =
+            summary.teacher.teacherKr;
+
+        navigationEntries.append(entry);
+    }
+
+    const SubPrepClassNavigation::Model navigation =
+        SubPrepClassNavigation::build(
+            navigationEntries
+            );
+
+    if (m_classInfoSubtitle)
+    {
+        m_classInfoSubtitle->setText(
+            navigation.mode == SubPrepClassNavigation::Mode::GradeGrouped
+                ? tr("Grouped by grade")
+                : tr("Select a class")
             );
     }
 
-    for (const TeacherGroup& group : groups)
-    {
-        const bool unassigned =
-            group.teacherId <= 0;
+    const int previousClassId =
+        m_selectedClassId;
 
-        auto* teacherHeading =
-            new QLabel(
-                teacherHeadingText(
-                    group.teacher,
-                    unassigned
-                    ),
-                m_classInformationContent
-                );
-        teacherHeading->setObjectName("sectionTitle");
-        teacherHeading->setFont(
-            FontManager::getUiFont(
-                16,
-                QFont::DemiBold
-                )
-            );
-        m_classInformationLayout->addWidget(
-            teacherHeading
-            );
-
-        auto* teacherCard =
-            new QFrame(m_classInformationContent);
-        teacherCard->setProperty(
-            "role",
-            UiRoles::Card
-            );
-        teacherCard->setObjectName(
-            "sectionCard"
-            );
-
-        auto* teacherLayout =
-            new QVBoxLayout(teacherCard);
-        teacherLayout->setAlignment(Qt::AlignTop);
-        teacherLayout->setContentsMargins(
-            UiConstants::ClassInfo::SectionCard::Margin,
-            UiConstants::ClassInfo::SectionCard::Margin,
-            UiConstants::ClassInfo::SectionCard::Margin,
-            UiConstants::ClassInfo::SectionCard::Margin
-            );
-        teacherLayout->setSpacing(
-            UiConstants::ClassInfo::SectionCard::Spacing
-            );
-
-        auto* teacherGrid =
-            new QGridLayout;
-        teacherGrid->setHorizontalSpacing(
-            UiConstants::ClassInfo::Form::HorizontalSpacing
-            );
-        teacherGrid->setVerticalSpacing(
-            UiConstants::ClassInfo::Form::VerticalSpacing
-            );
-        teacherGrid->setColumnStretch(0, 1);
-        teacherGrid->setColumnStretch(1, 1);
-        teacherGrid->setColumnStretch(2, 1);
-        teacherGrid->setColumnStretch(3, 0);
-
-        addHorizontalInfoField(
-            teacherGrid,
-            0,
-            1,
-            0,
-            tr("Internet Type"),
-            unassigned ? QString() : group.teacher.internetType,
-            teacherCard
-            );
-        addHorizontalInfoField(
-            teacherGrid,
-            0,
-            1,
-            1,
-            tr("WiFi Name"),
-            unassigned ? QString() : group.teacher.wifiName,
-            teacherCard
-            );
-        addHorizontalInfoField(
-            teacherGrid,
-            0,
-            1,
-            2,
-            tr("WiFi Password"),
-            unassigned ? QString() : group.teacher.wifiPassword,
-            teacherCard
-            );
-        teacherGrid->addItem(
-            new QSpacerItem(
-                0,
-                UiConstants::ClassInfo::Form::GroupSpacerHeight,
-                QSizePolicy::Minimum,
-                QSizePolicy::Fixed
-                ),
-            2,
-            0,
-            1,
-            4
-            );
-        addHorizontalInfoField(
-            teacherGrid,
-            3,
-            4,
-            0,
-            tr("Projection Type"),
-            unassigned ? QString() : group.teacher.projectionType,
-            teacherCard
-            );
-        addHorizontalInfoField(
-            teacherGrid,
-            3,
-            4,
-            1,
-            tr("Zoom ID"),
-            unassigned ? QString() : group.teacher.zoomId,
-            teacherCard
-            );
-        addHorizontalInfoField(
-            teacherGrid,
-            3,
-            4,
-            2,
-            tr("Zoom Password"),
-            unassigned ? QString() : group.teacher.zoomPassword,
-            teacherCard
-            );
-
-        teacherLayout->addLayout(
-            teacherGrid
-            );
-
-        teacherLayout->addWidget(
-            createFieldLabel(
-                tr("Notes"),
-                teacherCard
-                )
-            );
-
-        auto* teacherNotes =
-            createTextEdit(
-                6,
-                true,
-                teacherCard
-                );
-        teacherNotes->setPlainText(
-            unassigned ? QString() : group.teacher.notes
-            );
-        teacherLayout->addWidget(
-            teacherNotes
-            );
-
-        m_classInformationLayout->addWidget(
-            teacherCard
-            );
-
-        for (const ClassSummary& summary : group.classes)
+    auto findSummary =
+        [&summaries](int classId) -> const ClassSummary*
         {
+            for (const ClassSummary& summary : summaries)
+            {
+                if (summary.classroom.id == classId)
+                {
+                    return &summary;
+                }
+            }
+
+            return nullptr;
+        };
+
+    auto configureTabs =
+        [](QTabWidget* tabs)
+        {
+            if (!tabs)
+            {
+                return;
+            }
+
+            tabs->setTabShape(QTabWidget::Rounded);
+            tabs->setDocumentMode(true);
+            tabs->setElideMode(Qt::ElideRight);
+            tabs->setUsesScrollButtons(true);
+        };
+
+    auto tabIndexForClass =
+        [](QTabWidget* tabs, int classId)
+        {
+            if (!tabs)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < tabs->count(); ++index)
+            {
+                QWidget* page =
+                    tabs->widget(index);
+
+                if (
+                    page
+                    && page->property("class_id").toInt() == classId
+                    )
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        };
+
+    auto updateSelectedFromTabs =
+        [this](QTabWidget* tabs)
+        {
+            if (!tabs || tabs->currentIndex() < 0)
+            {
+                return;
+            }
+
+            QWidget* page =
+                tabs->currentWidget();
+
+            const int classId =
+                page
+                    ? page->property("class_id").toInt()
+                    : -1;
+
+            if (classId > 0)
+            {
+                m_selectedClassId = classId;
+            }
+        };
+
+    auto createClassPage =
+        [this](const ClassSummary& summary, QWidget* parent)
+        {
+            const bool unassigned =
+                summary.teacher.id <= 0;
+
+            auto* page =
+                new QWidget(parent);
+            page->setProperty(
+                "class_id",
+                summary.classroom.id
+                );
+
+            auto* pageLayout =
+                new QVBoxLayout(page);
+            pageLayout->setContentsMargins(
+                0,
+                ClassTabContentTopMargin,
+                0,
+                0
+                );
+            pageLayout->setSpacing(
+                UiConstants::ClassInfo::Page::ContentSpacing
+                );
+            pageLayout->setAlignment(Qt::AlignTop);
+
+            auto* teacherHeading =
+                new QLabel(
+                    teacherHeadingText(
+                        summary.teacher,
+                        unassigned
+                        ),
+                    page
+                    );
+            teacherHeading->setObjectName("sectionTitle");
+            teacherHeading->setFont(
+                FontManager::getUiFont(
+                    16,
+                    QFont::DemiBold
+                    )
+                );
+            pageLayout->addWidget(
+                teacherHeading
+                );
+
+            auto* teacherCard =
+                new QFrame(page);
+            teacherCard->setProperty(
+                "role",
+                UiRoles::Card
+                );
+            teacherCard->setObjectName(
+                "sectionCard"
+                );
+
+            auto* teacherLayout =
+                new QVBoxLayout(teacherCard);
+            teacherLayout->setAlignment(Qt::AlignTop);
+            teacherLayout->setContentsMargins(
+                UiConstants::ClassInfo::SectionCard::Margin,
+                UiConstants::ClassInfo::SectionCard::Margin,
+                UiConstants::ClassInfo::SectionCard::Margin,
+                UiConstants::ClassInfo::SectionCard::Margin
+                );
+            teacherLayout->setSpacing(
+                UiConstants::ClassInfo::SectionCard::Spacing
+                );
+
+            auto* teacherGrid =
+                new QGridLayout;
+            teacherGrid->setHorizontalSpacing(
+                UiConstants::ClassInfo::Form::HorizontalSpacing
+                );
+            teacherGrid->setVerticalSpacing(
+                UiConstants::ClassInfo::Form::VerticalSpacing
+                );
+            teacherGrid->setColumnStretch(0, 1);
+            teacherGrid->setColumnStretch(1, 1);
+            teacherGrid->setColumnStretch(2, 1);
+            teacherGrid->setColumnStretch(3, 0);
+
+            addHorizontalInfoField(
+                teacherGrid,
+                0,
+                1,
+                0,
+                tr("Internet Type"),
+                unassigned ? QString() : summary.teacher.internetType,
+                teacherCard
+                );
+            addHorizontalInfoField(
+                teacherGrid,
+                0,
+                1,
+                1,
+                tr("WiFi Name"),
+                unassigned ? QString() : summary.teacher.wifiName,
+                teacherCard
+                );
+            addHorizontalInfoField(
+                teacherGrid,
+                0,
+                1,
+                2,
+                tr("WiFi Password"),
+                unassigned ? QString() : summary.teacher.wifiPassword,
+                teacherCard
+                );
+            teacherGrid->addItem(
+                new QSpacerItem(
+                    0,
+                    UiConstants::ClassInfo::Form::GroupSpacerHeight,
+                    QSizePolicy::Minimum,
+                    QSizePolicy::Fixed
+                    ),
+                2,
+                0,
+                1,
+                4
+                );
+            addHorizontalInfoField(
+                teacherGrid,
+                3,
+                4,
+                0,
+                tr("Projection Type"),
+                unassigned ? QString() : summary.teacher.projectionType,
+                teacherCard
+                );
+            addHorizontalInfoField(
+                teacherGrid,
+                3,
+                4,
+                1,
+                tr("Zoom ID"),
+                unassigned ? QString() : summary.teacher.zoomId,
+                teacherCard
+                );
+            addHorizontalInfoField(
+                teacherGrid,
+                3,
+                4,
+                2,
+                tr("Zoom Password"),
+                unassigned ? QString() : summary.teacher.zoomPassword,
+                teacherCard
+                );
+
+            teacherLayout->addLayout(
+                teacherGrid
+                );
+
+            teacherLayout->addWidget(
+                createFieldLabel(
+                    tr("Notes"),
+                    teacherCard
+                    )
+                );
+
+            auto* teacherNotes =
+                createTextEdit(
+                    6,
+                    true,
+                    teacherCard
+                    );
+            teacherNotes->setPlainText(
+                unassigned ? QString() : summary.teacher.notes
+                );
+            teacherLayout->addWidget(
+                teacherNotes
+                );
+
+            pageLayout->addWidget(
+                teacherCard
+                );
+
             auto* classCard =
                 new SectionCard(
                     summary.displayName,
-                    m_classInformationContent
+                    page
                     );
 
             auto* classGrid =
@@ -2253,11 +2288,229 @@ void SubPrepPage::rebuildClassInformation()
                 classNotes
                 );
 
-            m_classInformationLayout->addWidget(
+            pageLayout->addWidget(
                 classCard
                 );
+
+            return page;
+        };
+
+    if (navigation.mode == SubPrepClassNavigation::Mode::Flat)
+    {
+        auto* tabs =
+            new UniformWidthTabWidget(
+                QStringLiteral("subPrepClassTabBar"),
+                m_classInformationContent
+                );
+        tabs->setObjectName("subPrepClassTabs");
+        configureTabs(tabs);
+
+        for (const SubPrepClassNavigation::ClassTab& tab
+             : navigation.flatClasses)
+        {
+            const ClassSummary* summary =
+                findSummary(tab.classId);
+
+            if (!summary)
+            {
+                continue;
+            }
+
+            tabs->addTab(
+                createClassPage(
+                    *summary,
+                    tabs
+                    ),
+                tab.label
+                );
+        }
+
+        connect(
+            tabs,
+            &QTabWidget::currentChanged,
+            this,
+            [tabs, updateSelectedFromTabs](int)
+            {
+                updateSelectedFromTabs(tabs);
+            }
+            );
+
+        int selectedIndex =
+            tabIndexForClass(
+                tabs,
+                previousClassId
+                );
+
+        if (selectedIndex < 0 && tabs->count() > 0)
+        {
+            selectedIndex = 0;
+        }
+
+        if (selectedIndex >= 0)
+        {
+            tabs->setCurrentIndex(selectedIndex);
+        }
+
+        updateSelectedFromTabs(tabs);
+
+        m_classInformationTabs = tabs;
+        m_classInformationLayout->addWidget(
+            tabs
+            );
+        return;
+    }
+
+    auto* gradeTabs =
+        new UniformWidthTabWidget(
+            QStringLiteral("subPrepGradeTabBar"),
+            m_classInformationContent
+            );
+    gradeTabs->setObjectName("subPrepGradeTabs");
+    configureTabs(gradeTabs);
+
+    int selectedGradeIndex = -1;
+    int selectedClassIndex = -1;
+
+    for (const SubPrepClassNavigation::GradeGroup& group
+         : navigation.gradeGroups)
+    {
+        auto* gradePage =
+            new QWidget(gradeTabs);
+
+        auto* gradeLayout =
+            new QVBoxLayout(gradePage);
+        gradeLayout->setContentsMargins(0, 0, 0, 0);
+        gradeLayout->setSpacing(
+            UiConstants::ClassInfo::Page::ContentSpacing
+            );
+        gradeLayout->setAlignment(Qt::AlignTop);
+
+        auto* classTabs =
+            new UniformWidthTabWidget(
+                QStringLiteral("subPrepClassTabBar"),
+                gradePage
+                );
+        classTabs->setObjectName("subPrepClassTabs");
+        configureTabs(classTabs);
+
+        for (const SubPrepClassNavigation::ClassTab& tab
+             : group.classes)
+        {
+            const ClassSummary* summary =
+                findSummary(tab.classId);
+
+            if (!summary)
+            {
+                continue;
+            }
+
+            classTabs->addTab(
+                createClassPage(
+                    *summary,
+                    classTabs
+                    ),
+                tab.label
+                );
+
+            if (tab.classId == previousClassId)
+            {
+                selectedGradeIndex =
+                    gradeTabs->count();
+                selectedClassIndex =
+                    classTabs->count() - 1;
+            }
+        }
+
+        connect(
+            classTabs,
+            &QTabWidget::currentChanged,
+            this,
+            [classTabs, updateSelectedFromTabs](int)
+            {
+                updateSelectedFromTabs(classTabs);
+            }
+            );
+
+        gradeLayout->addWidget(
+            classTabs
+            );
+
+        gradeTabs->addTab(
+            gradePage,
+            group.label
+            );
+    }
+
+    connect(
+        gradeTabs,
+        &QTabWidget::currentChanged,
+        this,
+        [gradeTabs, updateSelectedFromTabs](int index)
+        {
+            QWidget* gradePage =
+                gradeTabs->widget(index);
+
+            auto* classTabs =
+                gradePage
+                    ? gradePage->findChild<QTabWidget*>(
+                        QStringLiteral("subPrepClassTabs"),
+                        Qt::FindDirectChildrenOnly
+                        )
+                    : nullptr;
+
+            updateSelectedFromTabs(classTabs);
+        }
+        );
+
+    if (gradeTabs->count() > 0)
+    {
+        if (selectedGradeIndex < 0)
+        {
+            selectedGradeIndex = 0;
+        }
+
+        gradeTabs->setCurrentIndex(
+            selectedGradeIndex
+            );
+
+        QWidget* gradePage =
+            gradeTabs->widget(
+                selectedGradeIndex
+                );
+
+        auto* selectedClassTabs =
+            gradePage
+                ? gradePage->findChild<QTabWidget*>(
+                    QStringLiteral("subPrepClassTabs"),
+                    Qt::FindDirectChildrenOnly
+                    )
+                : nullptr;
+
+        if (selectedClassTabs)
+        {
+            if (
+                selectedClassIndex < 0
+                || selectedClassIndex >= selectedClassTabs->count()
+                )
+            {
+                selectedClassIndex = 0;
+            }
+
+            if (selectedClassTabs->count() > 0)
+            {
+                selectedClassTabs->setCurrentIndex(
+                    selectedClassIndex
+                    );
+            }
+
+            updateSelectedFromTabs(selectedClassTabs);
         }
     }
+
+    m_classInformationTabs = gradeTabs;
+    m_classInformationLayout->addWidget(
+        gradeTabs
+        );
 }
 
 bool SubPrepPage::normalizeLineEdit(

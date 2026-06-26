@@ -12,6 +12,7 @@ class QLabel;
 class QLineEdit;
 class QScrollArea;
 class QShowEvent;
+class QTabWidget;
 class QTextEdit;
 class QTimer;
 class QVBoxLayout;
@@ -159,6 +160,8 @@ private:
 
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
+    QTabWidget* m_classInformationTabs = nullptr;
+    int m_selectedClassId = -1;
 
     QTimer* m_autosaveTimer = nullptr;
 };

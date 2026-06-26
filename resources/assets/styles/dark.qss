@@ -355,6 +355,48 @@ QMenu::item:disabled {
     color: #777777;
 }
 
+QTabWidget#subPrepGradeTabs::pane,
+QTabWidget#subPrepClassTabs::pane {
+    border: 0;
+    background: transparent;
+    margin-top: 8px;
+}
+
+QTabBar#subPrepGradeTabBar::tab,
+QTabBar#subPrepClassTabBar::tab {
+    background-color: #303030;
+    color: #f0f0f0;
+    border: 1px solid #454545;
+    border-radius: 7px;
+    margin-right: 6px;
+}
+
+QTabBar#subPrepGradeTabBar,
+QTabBar#subPrepClassTabBar {
+    qproperty-drawBase: 0;
+}
+
+QTabBar#subPrepGradeTabBar::tab {
+    padding: 7px 22px;
+}
+
+QTabBar#subPrepClassTabBar::tab {
+    padding: 6px 14px;
+}
+
+QTabBar#subPrepGradeTabBar::tab:hover,
+QTabBar#subPrepClassTabBar::tab:hover {
+    background-color: #383838;
+    border-color: #5a6370;
+}
+
+QTabBar#subPrepGradeTabBar::tab:selected,
+QTabBar#subPrepClassTabBar::tab:selected {
+    background-color: #0a84ff;
+    color: #ffffff;
+    border-color: #0a84ff;
+}
+
 QTableView,
 QTableWidget,
 QTableView[role="roster_table"],

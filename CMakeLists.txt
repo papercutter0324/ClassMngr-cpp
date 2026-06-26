@@ -406,6 +406,61 @@ if(BUILD_TESTING)
         COMMAND ClassMngrIntensiveSlotStateRepositoryTests
     )
 
+    qt_add_executable(ClassMngrSubPrepClassNavigationTests
+        tests/sub_prep_class_navigation_tests.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/sub_prep/ui/sub_prep_class_navigation.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepClassNavigationTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepClassNavigationTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepClassNavigationTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepClassNavigationTests
+        COMMAND ClassMngrSubPrepClassNavigationTests
+    )
+
+    qt_add_executable(ClassMngrUniformWidthTabBarTests
+        tests/uniform_width_tab_bar_tests.cpp
+        src/ui/shared/widgets/uniform_width_tab_bar.cpp
+    )
+
+    target_compile_features(ClassMngrUniformWidthTabBarTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrUniformWidthTabBarTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrUniformWidthTabBarTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrUniformWidthTabBarTests
+        COMMAND ClassMngrUniformWidthTabBarTests
+    )
+
     qt_add_executable(ClassMngrLanguageServiceTests
         tests/language_service_tests.cpp
         src/core/language_service.cpp
@@ -506,6 +561,8 @@ if(BUILD_TESTING)
             ClassMngrFontManagerTests
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
+            ClassMngrSubPrepClassNavigationTests
+            ClassMngrUniformWidthTabBarTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
