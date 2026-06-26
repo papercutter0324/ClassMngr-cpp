@@ -3,11 +3,14 @@
 #include "core/resource_paths.h"
 
 #include <QDebug>
+#include <QEvent>
 #include <QFile>
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QLabel>
 #include <QLayout>
+#include <QMenu>
+#include <QMenuBar>
 #include <QPointer>
 #include <QRegularExpression>
 #include <QTableWidget>
@@ -39,6 +42,14 @@ constexpr auto ManagedRichTextProperty =
 
 constexpr auto MaterializedInheritedFontProperty =
     "_classmngr_materialized_inherited_font";
+
+constexpr int ManagedMenuPointSizeDelta = -2;
+
+QFont s_currentManagedMenuFont;
+
+bool s_hasCurrentManagedMenuFont = false;
+
+QPointer<QObject> s_menuFontEventFilter;
 
 struct WidgetFontSnapshot
 {
@@ -85,6 +96,140 @@ void refreshMaterializedInheritedFonts(
             child,
             childInheritedFont
             );
+    }
+}
+
+QFont menuFontFromManagedFont(
+    QFont font
+    )
+{
+    if (font.pointSize() > 0)
+    {
+        font.setPointSize(
+            qMax(
+                1,
+                font.pointSize() + ManagedMenuPointSizeDelta
+                )
+            );
+    }
+
+    return font;
+}
+
+void applyMenuFontToWidget(
+    QWidget* widget
+    )
+{
+    if (!widget || !s_hasCurrentManagedMenuFont)
+    {
+        return;
+    }
+
+    if (
+        !qobject_cast<QMenuBar*>(widget)
+        && !qobject_cast<QMenu*>(widget)
+        )
+    {
+        return;
+    }
+
+    widget->setFont(
+        s_currentManagedMenuFont
+        );
+    widget->updateGeometry();
+    widget->update();
+}
+
+class MenuFontEventFilter : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(
+        QObject* object,
+        QEvent* event
+        ) override
+    {
+        if (
+            event
+            && (
+                event->type() == QEvent::Polish
+                || event->type() == QEvent::Show
+                )
+            )
+        {
+            applyMenuFontToWidget(
+                qobject_cast<QWidget*>(object)
+                );
+        }
+
+        return QObject::eventFilter(
+            object,
+            event
+            );
+    }
+};
+
+void ensureMenuFontEventFilter(
+    QApplication& app
+    )
+{
+    if (s_menuFontEventFilter)
+    {
+        return;
+    }
+
+    auto* filter =
+        new MenuFontEventFilter(&app);
+
+    app.installEventFilter(
+        filter
+        );
+
+    s_menuFontEventFilter =
+        filter;
+}
+
+void applyManagedMenuFont(
+    QApplication& app,
+    const QFont& managedFont
+    )
+{
+    ensureMenuFontEventFilter(
+        app
+        );
+
+    s_currentManagedMenuFont =
+        menuFontFromManagedFont(
+            managedFont
+            );
+    s_hasCurrentManagedMenuFont =
+        true;
+
+    app.setFont(
+        s_currentManagedMenuFont,
+        "QMenuBar"
+        );
+    app.setFont(
+        s_currentManagedMenuFont,
+        "QMenu"
+        );
+
+    const QWidgetList widgets =
+        app.allWidgets();
+
+    for (QWidget* widget : widgets)
+    {
+        if (
+            qobject_cast<QMenuBar*>(widget)
+            || qobject_cast<QMenu*>(widget)
+            )
+        {
+            applyMenuFontToWidget(
+                widget
+                );
+        }
     }
 }
 }
@@ -449,6 +594,11 @@ void FontManager::applyGlobalFont(
         font
         );
 
+    applyManagedMenuFont(
+        app,
+        font
+        );
+
     for (QWidget* topLevelWidget : app.topLevelWidgets())
     {
         refreshMaterializedInheritedFonts(
@@ -487,6 +637,14 @@ void FontManager::applyFontSize(
     for (QWidget* widget : widgets)
     {
         if (!widget)
+        {
+            continue;
+        }
+
+        if (
+            qobject_cast<QMenuBar*>(widget)
+            || qobject_cast<QMenu*>(widget)
+            )
         {
             continue;
         }
@@ -629,6 +787,19 @@ void FontManager::applyFontSize(
             layout->invalidate();
         }
     }
+
+    const QFont menuFont =
+        localeName.startsWith(
+            QStringLiteral("ko"),
+            Qt::CaseInsensitive
+            )
+            ? getKoreanFont()
+            : getUiFont();
+
+    applyManagedMenuFont(
+        app,
+        menuFont
+        );
 }
 
 void FontManager::setManagedRichText(

@@ -5,6 +5,8 @@
 #include <QApplication>
 #include <QFont>
 #include <QLabel>
+#include <QMenu>
+#include <QMenuBar>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QtTest>
@@ -39,8 +41,8 @@ private slots:
 
     void standardSizesAreExplicit()
     {
-        QCOMPARE(FontManager::stdEnglishFont, 12);
-        QCOMPARE(FontManager::stdKoreanFont, 13);
+        QCOMPARE(FontManager::stdEnglishFont, 14);
+        QCOMPARE(FontManager::stdKoreanFont, 15);
     }
 
     void standardFontsUseExpectedFamiliesAndSizes()
@@ -322,6 +324,124 @@ private slots:
         QCOMPARE(
             app->font().pointSize(),
             FontManager::getPlatformFontSize()
+            );
+    }
+
+    void menuFontsFollowGlobalFontAndSize()
+    {
+        auto* app =
+            qobject_cast<QApplication*>(
+                QCoreApplication::instance()
+                );
+        QVERIFY(app);
+
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("en_US")
+            );
+
+        QMenuBar menuBar;
+        QMenu menu(
+            QStringLiteral("File")
+            );
+        QMenu* nestedMenu =
+            menu.addMenu(
+                QStringLiteral("Recent Files")
+                );
+        menuBar.ensurePolished();
+        menu.ensurePolished();
+        nestedMenu->ensurePolished();
+
+        const QFont englishFont =
+            FontManager::getUiFont();
+        const int englishMenuPointSize =
+            qMax(
+                1,
+                englishFont.pointSize() - 2
+                );
+
+        QCOMPARE(
+            menuBar.font().pointSize(),
+            englishMenuPointSize
+            );
+        QCOMPARE(
+            menu.font().pointSize(),
+            englishMenuPointSize
+            );
+        QCOMPARE(
+            nestedMenu->font().pointSize(),
+            englishMenuPointSize
+            );
+
+        FontManager::applyFontSize(
+            *app,
+            QStringLiteral("en_US"),
+            fontSizeOffset(FontSize::Large)
+            );
+
+        const QFont largeEnglishFont =
+            FontManager::getUiFont();
+        const int largeEnglishMenuPointSize =
+            qMax(
+                1,
+                largeEnglishFont.pointSize() - 2
+                );
+
+        QCOMPARE(
+            menuBar.font().pointSize(),
+            largeEnglishMenuPointSize
+            );
+        QCOMPARE(
+            menu.font().pointSize(),
+            largeEnglishMenuPointSize
+            );
+        QCOMPARE(
+            nestedMenu->font().pointSize(),
+            largeEnglishMenuPointSize
+            );
+
+        QMenu newMenuAfterSizeChange(
+            QStringLiteral("Context")
+            );
+        newMenuAfterSizeChange.ensurePolished();
+
+        QCOMPARE(
+            newMenuAfterSizeChange.font().pointSize(),
+            largeEnglishMenuPointSize
+            );
+
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("ko_KR")
+            );
+
+        const QFont koreanFont =
+            FontManager::getKoreanFont();
+        const int koreanMenuPointSize =
+            qMax(
+                1,
+                koreanFont.pointSize() - 2
+                );
+
+        QVERIFY(menu.font().family().contains(
+            QStringLiteral("Pretendard"),
+            Qt::CaseInsensitive
+            ));
+        QCOMPARE(
+            menuBar.font().pointSize(),
+            koreanMenuPointSize
+            );
+        QCOMPARE(
+            menu.font().pointSize(),
+            koreanMenuPointSize
+            );
+        QCOMPARE(
+            nestedMenu->font().pointSize(),
+            koreanMenuPointSize
+            );
+        QCOMPARE(
+            newMenuAfterSizeChange.font().pointSize(),
+            koreanMenuPointSize
             );
     }
 
