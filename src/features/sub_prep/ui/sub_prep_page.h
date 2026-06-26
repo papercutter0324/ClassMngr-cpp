@@ -81,7 +81,6 @@ private:
     bool saveSubPrepInternal();
 
     void refreshGeneratedContent();
-    void rebuildTimeFillerActivities();
     void rebuildClassInformation();
 
     bool normalizeLineEdit(
@@ -133,7 +132,6 @@ private:
     QLineEdit* m_photocopierCodeEdit = nullptr;
 
     QTextEdit* m_classMaterialsEdit = nullptr;
-    QTextEdit* m_timeFillerActivitiesEdit = nullptr;
     QTextEdit* m_bookReportGradingEdit = nullptr;
     QTextEdit* m_subCommentsEdit = nullptr;
 
@@ -155,7 +153,6 @@ private:
     QLabel* m_officeWifiPasswordLabel = nullptr;
     QLabel* m_photocopierCodeLabel = nullptr;
     QLabel* m_classMaterialsLabel = nullptr;
-    QLabel* m_timeFillerActivitiesLabel = nullptr;
     QLabel* m_bookReportGradingLabel = nullptr;
 
     QWidget* m_classInformationContent = nullptr;

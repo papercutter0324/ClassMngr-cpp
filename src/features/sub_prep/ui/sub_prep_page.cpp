@@ -5,7 +5,6 @@
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_class_navigation.h"
-#include "features/sub_prep/ui/sub_prep_content_builder.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -781,13 +780,6 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_timeFillerActivitiesLabel)
-    {
-        m_timeFillerActivitiesLabel->setText(
-            tr("Time Filler Activities")
-            );
-    }
-
     if (m_bookReportGradingLabel)
     {
         m_bookReportGradingLabel->setText(
@@ -1339,22 +1331,6 @@ void SubPrepPage::buildUi()
         m_classMaterialsEdit
         );
 
-    m_timeFillerActivitiesLabel =
-        createFieldLabel(tr("Time Filler Activities"), m_materialsCard);
-    m_materialsCard->contentLayout()->addWidget(
-        m_timeFillerActivitiesLabel
-        );
-
-    m_timeFillerActivitiesEdit =
-        createTextEdit(
-            8,
-            true,
-            m_materialsCard
-            );
-    m_materialsCard->contentLayout()->addWidget(
-        m_timeFillerActivitiesEdit
-        );
-
     m_bookReportGradingLabel =
         createFieldLabel(tr("Book Report Grading"), m_materialsCard);
     m_materialsCard->contentLayout()->addWidget(
@@ -1816,27 +1792,7 @@ bool SubPrepPage::saveSubPrepInternal()
 
 void SubPrepPage::refreshGeneratedContent()
 {
-    rebuildTimeFillerActivities();
     rebuildClassInformation();
-}
-
-void SubPrepPage::rebuildTimeFillerActivities()
-{
-    auto* dataService =
-        openDataService(m_services);
-
-    if (!dataService || !m_timeFillerActivitiesEdit)
-    {
-        return;
-    }
-
-    const QSignalBlocker blocker(m_timeFillerActivitiesEdit);
-
-    m_timeFillerActivitiesEdit->setHtml(
-        SubPrepContentBuilder::timeFillerActivitiesHtml(
-            dataService
-            )
-        );
 }
 
 void SubPrepPage::rebuildClassInformation()
@@ -2286,6 +2242,28 @@ void SubPrepPage::rebuildClassInformation()
                 );
             classCard->contentLayout()->addWidget(
                 classNotes
+                );
+
+            classCard->contentLayout()->addWidget(
+                createFieldLabel(
+                    tr("Time Filler Activities"),
+                    classCard
+                    )
+                );
+
+            auto* timeFillerActivities =
+                createTextEdit(
+                    4,
+                    true,
+                    classCard
+                    );
+            timeFillerActivities->setPlainText(
+                valueOrNa(
+                    summary.info.timeFillerActivities
+                    )
+                );
+            classCard->contentLayout()->addWidget(
+                timeFillerActivities
                 );
 
             pageLayout->addWidget(
