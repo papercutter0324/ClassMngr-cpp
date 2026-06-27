@@ -356,14 +356,18 @@ QMenu::item:disabled {
 }
 
 QTabWidget#subPrepGradeTabs::pane,
-QTabWidget#subPrepClassTabs::pane {
+QTabWidget#subPrepClassTabs::pane,
+QTabWidget#myInfoGradeTabs::pane,
+QTabWidget#myInfoClassTabs::pane {
     border: 0;
     background: transparent;
     margin-top: 8px;
 }
 
 QTabBar#subPrepGradeTabBar::tab,
-QTabBar#subPrepClassTabBar::tab {
+QTabBar#subPrepClassTabBar::tab,
+QTabBar#myInfoGradeTabBar::tab,
+QTabBar#myInfoClassTabBar::tab {
     background-color: #303030;
     color: #f0f0f0;
     border: 1px solid #454545;
@@ -372,26 +376,34 @@ QTabBar#subPrepClassTabBar::tab {
 }
 
 QTabBar#subPrepGradeTabBar,
-QTabBar#subPrepClassTabBar {
+QTabBar#subPrepClassTabBar,
+QTabBar#myInfoGradeTabBar,
+QTabBar#myInfoClassTabBar {
     qproperty-drawBase: 0;
 }
 
-QTabBar#subPrepGradeTabBar::tab {
+QTabBar#subPrepGradeTabBar::tab,
+QTabBar#myInfoGradeTabBar::tab {
     padding: 7px 22px;
 }
 
-QTabBar#subPrepClassTabBar::tab {
+QTabBar#subPrepClassTabBar::tab,
+QTabBar#myInfoClassTabBar::tab {
     padding: 6px 14px;
 }
 
 QTabBar#subPrepGradeTabBar::tab:hover,
-QTabBar#subPrepClassTabBar::tab:hover {
+QTabBar#subPrepClassTabBar::tab:hover,
+QTabBar#myInfoGradeTabBar::tab:hover,
+QTabBar#myInfoClassTabBar::tab:hover {
     background-color: #383838;
     border-color: #5a6370;
 }
 
 QTabBar#subPrepGradeTabBar::tab:selected,
-QTabBar#subPrepClassTabBar::tab:selected {
+QTabBar#subPrepClassTabBar::tab:selected,
+QTabBar#myInfoGradeTabBar::tab:selected,
+QTabBar#myInfoClassTabBar::tab:selected {
     background-color: #0a84ff;
     color: #ffffff;
     border-color: #0a84ff;
