@@ -219,6 +219,24 @@ void SettingsManager::setSidebarMarqueeEnabled(
         );
 }
 
+bool SettingsManager::showAllKoreanTeachers() const
+{
+    return get(
+        Keys::SHOW_ALL_KOREAN_TEACHERS,
+        true
+        ).toBool();
+}
+
+void SettingsManager::setShowAllKoreanTeachers(
+    bool enabled
+    )
+{
+    set(
+        Keys::SHOW_ALL_KOREAN_TEACHERS,
+        enabled
+        );
+}
+
 // =========================================================
 // Recent Files
 // =========================================================

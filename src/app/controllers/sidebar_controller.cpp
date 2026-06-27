@@ -1,6 +1,7 @@
 #include "sidebar_controller.h"
 
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "data/data_service.h"
 
 #include "domain/models/class_info.h"
@@ -22,9 +23,11 @@
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QHash>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSet>
 #include <QTime>
 #include <QVBoxLayout>
 
@@ -421,6 +424,76 @@ bool sidebarClassNodeLessThan(
     return left.classId < right.classId;
 }
 
+bool teacherSidebarLessThan(
+    const Teacher& left,
+    const Teacher& right
+    )
+{
+    const QString leftEnglish =
+        left.teacherEn.trimmed();
+    const QString rightEnglish =
+        right.teacherEn.trimmed();
+
+    const bool leftHasEnglish =
+        !leftEnglish.isEmpty();
+    const bool rightHasEnglish =
+        !rightEnglish.isEmpty();
+
+    if (leftHasEnglish != rightHasEnglish)
+    {
+        return leftHasEnglish;
+    }
+
+    const int englishComparison =
+        QString::localeAwareCompare(
+            leftEnglish,
+            rightEnglish
+            );
+
+    if (englishComparison != 0)
+    {
+        return englishComparison < 0;
+    }
+
+    const int koreanComparison =
+        QString::localeAwareCompare(
+            left.teacherKr.trimmed(),
+            right.teacherKr.trimmed()
+            );
+
+    if (koreanComparison != 0)
+    {
+        return koreanComparison < 0;
+    }
+
+    return left.id < right.id;
+}
+
+QList<Teacher> sortedTeachers(
+    QList<Teacher> teachers
+    )
+{
+    teachers.erase(
+        std::remove_if(
+            teachers.begin(),
+            teachers.end(),
+            [](const Teacher& teacher)
+            {
+                return teacher.id <= 0;
+            }
+            ),
+        teachers.end()
+        );
+
+    std::sort(
+        teachers.begin(),
+        teachers.end(),
+        teacherSidebarLessThan
+        );
+
+    return teachers;
+}
+
 int chooseRecord(
     QWidget* parent,
     const QString& title,
@@ -563,6 +636,16 @@ void SidebarController::connectActions(ActionRegistry& actions)
         );
 
     connect(
+        actions.showAllKoreanTeachers,
+        &QAction::toggled,
+        this,
+        [this](bool)
+        {
+            refreshTeacherSidebar();
+        }
+        );
+
+    connect(
         m_sidebar,
         &Sidebar::addClassRequested,
         this,
@@ -692,10 +775,53 @@ void SidebarController::refreshTeacherSidebar()
         return;
     }
 
-    const auto teachers =
+    const QList<Teacher> teachers =
         ds->getAllTeachers();
 
-    for (const auto& teacher : teachers)
+    QHash<int, Teacher> teachersById;
+
+    for (const Teacher& teacher : teachers)
+    {
+        if (teacher.id > 0)
+        {
+            teachersById.insert(
+                teacher.id,
+                teacher
+                );
+        }
+    }
+
+    QSet<int> myTeacherIds;
+    QList<Teacher> myTeachers;
+
+    for (const Classroom& classroom : ds->getClasses())
+    {
+        const ClassInfo classInfo =
+            ds->loadClassInfo(
+                classroom.id
+                );
+
+        const int teacherId =
+            classInfo.teacherId;
+
+        if (
+            teacherId <= 0
+            || myTeacherIds.contains(teacherId)
+            || !teachersById.contains(teacherId)
+            )
+        {
+            continue;
+        }
+
+        myTeacherIds.insert(
+            teacherId
+            );
+        myTeachers.append(
+            teachersById.value(teacherId)
+            );
+    }
+
+    for (const Teacher& teacher : sortedTeachers(myTeachers))
     {
         const QString displayName =
             SidebarNodeNaming::formatTeacherDisplayName(
@@ -704,8 +830,35 @@ void SidebarController::refreshTeacherSidebar()
 
         m_sidebar->addTeacherNode(
             displayName,
-            teacher.id
+            teacher.id,
+            true
             );
+    }
+
+    const bool showAllKoreanTeachers =
+        m_actions && m_actions->showAllKoreanTeachers
+            ? m_actions->showAllKoreanTeachers->isChecked()
+            : SettingsManager::instance().showAllKoreanTeachers();
+
+    m_sidebar->setAllKoreanTeachersVisible(
+        showAllKoreanTeachers
+        );
+
+    if (showAllKoreanTeachers)
+    {
+        for (const Teacher& teacher : sortedTeachers(teachers))
+        {
+            const QString displayName =
+                SidebarNodeNaming::formatTeacherDisplayName(
+                    teacher
+                    );
+
+            m_sidebar->addTeacherNode(
+                displayName,
+                teacher.id,
+                false
+                );
+        }
     }
 
     updateActionStates();

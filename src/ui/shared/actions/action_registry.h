@@ -29,6 +29,7 @@ public:
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;
+    QAction* showAllKoreanTeachers = nullptr;
 
     // =====================================================
     // File

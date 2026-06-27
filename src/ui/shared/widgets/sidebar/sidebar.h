@@ -4,6 +4,7 @@
 #include "sidebar_types.h"
 
 #include <QHash>
+#include <QList>
 #include <QTreeWidgetItem>
 #include <QWidget>
 
@@ -54,10 +55,15 @@ public:
 
     void addTeacherNode(
         const QString &displayName,
-        int teacherId
+        int teacherId,
+        bool myCoTeacher
         );
 
     void clearTeachers();
+
+    void setAllKoreanTeachersVisible(
+        bool visible
+        );
 
     void selectTeacher(
         int teacherId
@@ -263,7 +269,7 @@ private:
 
     QHash<
         int,
-        QTreeWidgetItem*
+        QList<QTreeWidgetItem*>
         > m_teacherItems;
 };
 

@@ -74,6 +74,9 @@ public:
         static constexpr auto SIDEBAR_MARQUEE_ENABLED =
             "options/sidebarMarqueeEnabled";
 
+        static constexpr auto SHOW_ALL_KOREAN_TEACHERS =
+            "options/showAllKoreanTeachers";
+
         static constexpr auto RECENT_FILES =
             "files/recent";
 
@@ -159,6 +162,11 @@ public:
 
     bool sidebarMarqueeEnabled() const;
     void setSidebarMarqueeEnabled(
+        bool enabled
+        );
+
+    bool showAllKoreanTeachers() const;
+    void setShowAllKoreanTeachers(
         bool enabled
         );
 

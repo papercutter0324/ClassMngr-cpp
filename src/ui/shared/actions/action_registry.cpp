@@ -251,6 +251,11 @@ void ActionRegistry::retranslate()
         tr("Animate Overflowing Sidebar Text"),
         tr("Animate overflowing sidebar names on hover")
         );
+    updateActionText(
+        showAllKoreanTeachers,
+        tr("Show All Korean Teachers"),
+        tr("Show every Korean teacher in the sidebar")
+        );
 
     updateActionText(
         checkForUpdates,
@@ -567,12 +572,22 @@ void ActionRegistry::createOptionActions()
             tr("Animate overflowing sidebar names on hover")
             );
 
+    showAllKoreanTeachers =
+        createCheckableAction(
+            tr("Show All Korean Teachers"),
+            tr("Show every Korean teacher in the sidebar")
+            );
+
     showSidebarTooltips->setChecked(
         SettingsManager::instance().sidebarTooltipsEnabled()
         );
 
     animateSidebarText->setChecked(
         SettingsManager::instance().sidebarMarqueeEnabled()
+        );
+
+    showAllKoreanTeachers->setChecked(
+        SettingsManager::instance().showAllKoreanTeachers()
         );
 
     connect(
@@ -594,6 +609,18 @@ void ActionRegistry::createOptionActions()
         [](bool enabled)
         {
             SettingsManager::instance().setSidebarMarqueeEnabled(
+                enabled
+                );
+        }
+        );
+
+    connect(
+        showAllKoreanTeachers,
+        &QAction::toggled,
+        this,
+        [](bool enabled)
+        {
+            SettingsManager::instance().setShowAllKoreanTeachers(
                 enabled
                 );
         }

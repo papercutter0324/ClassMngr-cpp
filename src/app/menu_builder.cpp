@@ -190,6 +190,7 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
 
     sidebarMenu->addAction(actions.showSidebarTooltips);
     sidebarMenu->addAction(actions.animateSidebarText);
+    sidebarMenu->addAction(actions.showAllKoreanTeachers);
 }
 
 void MenuBuilder::buildHelpMenu(MainWindow* window)

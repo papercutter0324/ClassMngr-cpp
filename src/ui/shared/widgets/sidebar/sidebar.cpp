@@ -659,9 +659,31 @@ int Sidebar::getSelectedClassId() const
 
 void Sidebar::addTeacherNode(
     const QString &displayName,
-    int teacherId
+    int teacherId,
+    bool myCoTeacher
     )
 {
+    auto* teachersRoot =
+        m_nodes.value(
+            QStringLiteral("teachers"),
+            nullptr
+            );
+
+    auto* group =
+        teachersRoot
+            ? childWithKey(
+                teachersRoot,
+                myCoTeacher
+                    ? QStringLiteral("teachers_mine")
+                    : QStringLiteral("teachers_all_korean")
+                )
+            : nullptr;
+
+    if (!group)
+    {
+        return;
+    }
+
     auto *item =
         createItem(
             displayName,
@@ -676,11 +698,12 @@ void Sidebar::addTeacherNode(
         teacherId
         );
 
-    m_nodes["teachers"]->addChild(item);
+    group->addChild(item);
 
-    m_nodes["teachers"]->setExpanded(true);
+    teachersRoot->setExpanded(true);
+    group->setExpanded(true);
 
-    m_teacherItems[teacherId] = item;
+    m_teacherItems[teacherId].append(item);
 
     updateTreeColumnWidth();
 }
@@ -702,6 +725,66 @@ void Sidebar::clearTeachers()
 
     m_teacherItems.clear();
 
+    for (const auto& child : treeStructure())
+    {
+        if (child.key != QStringLiteral("teachers"))
+        {
+            continue;
+        }
+
+        for (const auto& group : child.children)
+        {
+            auto* groupItem =
+                createItem(
+                    group.label,
+                    group.type,
+                    false,
+                    group.key
+                    );
+
+            m_nodes["teachers"]->addChild(groupItem);
+        }
+        break;
+    }
+
+    updateTreeColumnWidth();
+}
+
+void Sidebar::setAllKoreanTeachersVisible(
+    bool visible
+    )
+{
+    auto* teachersRoot =
+        m_nodes.value(
+            QStringLiteral("teachers"),
+            nullptr
+            );
+
+    auto* allTeachers =
+        teachersRoot
+            ? childWithKey(
+                teachersRoot,
+                QStringLiteral("teachers_all_korean")
+                )
+            : nullptr;
+
+    if (!allTeachers)
+    {
+        return;
+    }
+
+    if (
+        !visible
+        && itemContainsCurrentSelection(
+            allTeachers,
+            m_tree->currentItem()
+            )
+        )
+    {
+        m_tree->clearSelection();
+    }
+
+    allTeachers->setHidden(!visible);
     updateTreeColumnWidth();
 }
 
@@ -862,13 +945,16 @@ void Sidebar::selectTeacher(
     int teacherId
     )
 {
-    if (!m_teacherItems.contains(teacherId))
+    const auto items =
+        m_teacherItems.value(teacherId);
+
+    if (items.isEmpty())
     {
         return;
     }
 
     auto *item =
-        m_teacherItems[teacherId];
+        items.first();
 
     m_tree->setCurrentItem(item);
 
