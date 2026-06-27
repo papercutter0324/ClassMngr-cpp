@@ -701,7 +701,10 @@ void Sidebar::addTeacherNode(
     group->addChild(item);
 
     teachersRoot->setExpanded(true);
-    group->setExpanded(true);
+    if (myCoTeacher)
+    {
+        group->setExpanded(true);
+    }
 
     m_teacherItems[teacherId].append(item);
 
