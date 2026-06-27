@@ -2,6 +2,7 @@
 
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
 
 #include <QAbstractButton>
 #include <QButtonGroup>
@@ -214,20 +215,30 @@ void CalendarEventDialog::buildUi()
 
     for (auto* edit : {m_startDateEdit, m_endDateEdit})
     {
-        edit->setFixedWidth(DateTimeFieldWidth);
         edit->setCalendarPopup(true);
         edit->setDisplayFormat(
             QStringLiteral("yyyy-MM-dd")
+            );
+        WidgetSizing::installTextAwareFieldWidth(
+            edit,
+            DateTimeFieldWidth,
+            QSizePolicy::Maximum,
+            true
             );
     }
 
     for (auto* edit : {m_startTimeEdit, m_endTimeEdit})
     {
-        edit->setFixedWidth(DateTimeFieldWidth);
         edit->setDisplayFormat(
             m_use24h
                 ? QStringLiteral("HH:mm")
                 : QStringLiteral("h:mm AP")
+            );
+        WidgetSizing::installTextAwareFieldWidth(
+            edit,
+            DateTimeFieldWidth,
+            QSizePolicy::Maximum,
+            true
             );
     }
 

@@ -2,8 +2,10 @@
 
 #include <algorithm>
 
+#include <QAbstractSpinBox>
 #include <QApplication>
 #include <QComboBox>
+#include <QDateTimeEdit>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QLabel>
@@ -15,6 +17,7 @@
 #include <QSizePolicy>
 #include <QStyle>
 #include <QStyleOptionComboBox>
+#include <QStyleOptionSpinBox>
 #include <QStringList>
 #include <QWidget>
 
@@ -23,6 +26,8 @@ namespace WidgetSizing
 inline constexpr int LineEditTextPadding = 28;
 inline constexpr int ComboBoxTextPadding = 8;
 inline constexpr int ComboBoxFallbackChromeWidth = 56;
+inline constexpr int DateTimeEditTextPadding = 10;
+inline constexpr int DateTimeEditFallbackChromeWidth = 48;
 
 inline int textWidth(
     const QWidget* widget,
@@ -236,6 +241,96 @@ inline int comboMinimumWidthForText(
         );
 }
 
+inline int dateTimeEditChromeWidth(
+    const QDateTimeEdit* edit,
+    int probeWidth = 200
+    )
+{
+    if (!edit)
+    {
+        return DateTimeEditFallbackChromeWidth;
+    }
+
+    probeWidth =
+        std::max(
+            1,
+            probeWidth
+            );
+
+    QStyleOptionSpinBox option;
+    option.initFrom(edit);
+    option.frame = edit->hasFrame();
+    option.buttonSymbols = edit->buttonSymbols();
+    option.stepEnabled =
+        QAbstractSpinBox::StepUpEnabled
+        | QAbstractSpinBox::StepDownEnabled;
+    option.rect = QRect(
+        0,
+        0,
+        probeWidth,
+        std::max(
+            edit->height(),
+            edit->sizeHint().height()
+            )
+        );
+
+    QStyle* style =
+        edit->style()
+            ? edit->style()
+            : QApplication::style();
+
+    const QRect editRect =
+        style->subControlRect(
+            QStyle::CC_SpinBox,
+            &option,
+            QStyle::SC_SpinBoxEditField,
+            edit
+            );
+
+    if (
+        editRect.isValid()
+        && editRect.width() > 0
+        && editRect.width() < option.rect.width()
+        )
+    {
+        return option.rect.width()
+            - editRect.width();
+    }
+
+    return DateTimeEditFallbackChromeWidth;
+}
+
+inline int dateTimeEditMinimumWidthForText(
+    const QDateTimeEdit* edit,
+    int minimumWidth,
+    int padding = DateTimeEditTextPadding
+    )
+{
+    if (!edit)
+    {
+        return minimumWidth;
+    }
+
+    const int probeWidth =
+        std::max(
+            minimumWidth,
+            std::max(
+                edit->width(),
+                200
+                )
+            );
+
+    return std::max(
+        minimumWidth,
+        textWidth(
+            edit,
+            edit->text().trimmed()
+            )
+            + dateTimeEditChromeWidth(edit, probeWidth)
+            + padding
+        );
+}
+
 inline void updateTextAwareFieldWidth(
     QWidget* widget,
     int minimumWidth,
@@ -262,6 +357,14 @@ inline void updateTextAwareFieldWidth(
         calculatedWidth =
             comboMinimumWidthForText(
                 combo,
+                minimumWidth
+                );
+    }
+    else if (auto* dateTimeEdit = qobject_cast<QDateTimeEdit*>(widget))
+    {
+        calculatedWidth =
+            dateTimeEditMinimumWidthForText(
+                dateTimeEdit,
                 minimumWidth
                 );
     }
@@ -389,6 +492,22 @@ inline void installTextAwareFieldWidth(
             {
                 updateTextAwareFieldWidth(
                     combo,
+                    minimumWidth,
+                    lockToCalculatedWidth
+                );
+            }
+            );
+    }
+    else if (auto* dateTimeEdit = qobject_cast<QDateTimeEdit*>(widget))
+    {
+        QObject::connect(
+            dateTimeEdit,
+            &QDateTimeEdit::dateTimeChanged,
+            dateTimeEdit,
+            [dateTimeEdit, minimumWidth, lockToCalculatedWidth]()
+            {
+                updateTextAwareFieldWidth(
+                    dateTimeEdit,
                     minimumWidth,
                     lockToCalculatedWidth
                     );
