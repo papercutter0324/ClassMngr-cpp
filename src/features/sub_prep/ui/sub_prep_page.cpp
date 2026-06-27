@@ -890,6 +890,7 @@ void SubPrepPage::showEvent(
 
     if (!m_dirty)
     {
+        loadStoredSettings();
         loadCampuses();
     }
 }
