@@ -31,6 +31,12 @@ QList<TreeNodeSpec> treeStructure()
                 },
 
                 {
+                    "my_info_class_information",
+                    QObject::tr("Class Information"),
+                    NodeType::Page
+                },
+
+                {
                     "my_info_calendar",
                     QObject::tr("Monthly Calendar"),
                     NodeType::Page
@@ -47,12 +53,6 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "sub_prep_important",
                     QObject::tr("Important Information"),
-                    NodeType::Page
-                },
-
-                {
-                    "sub_prep_class_information",
-                    QObject::tr("Class Information"),
                     NodeType::Page
                 },
 

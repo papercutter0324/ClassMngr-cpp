@@ -316,12 +316,7 @@ void NavigationController::handleSubPrep(
     SubPrepSection section =
         SubPrepSection::ImportantInformation;
 
-    if (sectionKey == QStringLiteral("sub_prep_class_information"))
-    {
-        section =
-            SubPrepSection::ClassInformation;
-    }
-    else if (sectionKey == QStringLiteral("sub_prep_comments"))
+    if (sectionKey == QStringLiteral("sub_prep_comments"))
     {
         section =
             SubPrepSection::SubComments;
@@ -383,6 +378,11 @@ void NavigationController::handleMyInfo(
     {
         section =
             MyInfoSection::ClassSchedule;
+    }
+    else if (sectionKey == QStringLiteral("my_info_class_information"))
+    {
+        section =
+            MyInfoSection::ClassInformation;
     }
     else if (sectionKey == QStringLiteral("my_info_calendar"))
     {

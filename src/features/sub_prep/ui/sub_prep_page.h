@@ -22,7 +22,6 @@ class SectionCard;
 enum class SubPrepSection
 {
     ImportantInformation,
-    ClassInformation,
     SubComments
 };
 

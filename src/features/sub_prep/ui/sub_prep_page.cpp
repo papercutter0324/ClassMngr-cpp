@@ -675,24 +675,10 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_classInformationHeading)
-    {
-        m_classInformationHeading->setText(
-            tr("Class Information")
-            );
-    }
-
     if (m_subCommentsHeading)
     {
         m_subCommentsHeading->setText(
             tr("Sub Comments")
-            );
-    }
-
-    if (m_classInfoSubtitle)
-    {
-        m_classInfoSubtitle->setText(
-            tr("Select a class")
             );
     }
 
@@ -805,10 +791,6 @@ void SubPrepPage::scrollToSection(
         target =
             m_importantInformationHeading;
         break;
-    case SubPrepSection::ClassInformation:
-        target =
-            m_classInformationHeading;
-        break;
     case SubPrepSection::SubComments:
         target =
             m_subCommentsHeading;
@@ -876,9 +858,6 @@ QString SubPrepPage::currentSectionName() const
     case SubPrepSection::ImportantInformation:
         return tr("Important Information");
 
-    case SubPrepSection::ClassInformation:
-        return tr("Class Information");
-
     case SubPrepSection::SubComments:
         return tr("Sub Comments");
     }
@@ -892,9 +871,6 @@ QString SubPrepPage::currentSectionKey() const
     {
     case SubPrepSection::ImportantInformation:
         return QStringLiteral("sub_prep_important");
-
-    case SubPrepSection::ClassInformation:
-        return QStringLiteral("sub_prep_class_information");
 
     case SubPrepSection::SubComments:
         return QStringLiteral("sub_prep_comments");
@@ -1352,52 +1328,6 @@ void SubPrepPage::buildUi()
         m_materialsCard
         );
 
-    m_scrollContentLayout->addSpacing(
-        UiConstants::Pages::MajorSectionSpacing
-        );
-
-    m_classInformationHeading =
-        createTopLevelHeading(
-            tr("Class Information"),
-            m_scrollContent
-        );
-    m_scrollContentLayout->addWidget(
-        m_classInformationHeading
-        );
-
-    m_classInfoSubtitle =
-        new QLabel(
-            tr("Select a class"),
-            m_scrollContent
-            );
-    m_classInfoSubtitle->setObjectName("pageSubtitle");
-    m_classInfoSubtitle->setAlignment(Qt::AlignCenter);
-    m_classInfoSubtitle->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
-        );
-    m_scrollContentLayout->addWidget(
-        m_classInfoSubtitle
-        );
-
-    m_classInformationContent =
-        new QWidget(m_scrollContent);
-    m_classInformationLayout =
-        new QVBoxLayout(m_classInformationContent);
-    m_classInformationLayout->setContentsMargins(0, 0, 0, 0);
-    m_classInformationLayout->setSpacing(
-        UiConstants::ClassInfo::Page::ContentSpacing
-        );
-    m_classInformationLayout->setAlignment(Qt::AlignTop);
-    m_scrollContentLayout->addWidget(
-        m_classInformationContent
-        );
-
-    m_scrollContentLayout->addSpacing(
-        UiConstants::Pages::MajorSectionSpacing
-        );
-
     m_subCommentsHeading =
         createTopLevelHeading(
             tr("Sub Comments"),
@@ -1792,7 +1722,6 @@ bool SubPrepPage::saveSubPrepInternal()
 
 void SubPrepPage::refreshGeneratedContent()
 {
-    rebuildClassInformation();
 }
 
 void SubPrepPage::rebuildClassInformation()

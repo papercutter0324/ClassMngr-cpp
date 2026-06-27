@@ -14,13 +14,17 @@ class QLineEdit;
 class QQuickWidget;
 class QScrollArea;
 class QShowEvent;
+class QTabWidget;
+class QTextEdit;
 class QTimer;
 class QVBoxLayout;
+class QWidget;
 class ScheduleSectionWidget;
 
 enum class MyInfoSection
 {
     ClassSchedule,
+    ClassInformation,
     MyInformation,
     MonthlyCalendar
 };
@@ -89,6 +93,7 @@ private slots:
 private:
     void buildUi();
     void buildClassScheduleSection();
+    void buildClassInformationSection();
     void buildMyInformationSection();
     void buildMonthlyCalendarSection();
     void loadPageData();
@@ -101,6 +106,9 @@ private:
         );
     void setZoomFieldsEnabled();
     void updateMyInformationFieldWidths();
+    void refreshGeneratedContent();
+    void rebuildClassInformation();
+    void clearClassInformation();
     void clearDirty();
     void openCalendarDialog(
         const CalendarEvent& event,
@@ -113,6 +121,11 @@ private:
         ) const;
     QLabel* createFieldLabel(
         const QString& text,
+        QWidget* parent
+        ) const;
+    QTextEdit* createTextEdit(
+        int minimumLines,
+        bool readOnly,
         QWidget* parent
         ) const;
 
@@ -130,6 +143,8 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_classScheduleHeading = nullptr;
+    QLabel* m_classInformationHeading = nullptr;
+    QLabel* m_classInfoSubtitle = nullptr;
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;
 
@@ -140,6 +155,11 @@ private:
     QLabel* m_zoomLabel = nullptr;
 
     ScheduleSectionWidget* m_scheduleWidget = nullptr;
+
+    QWidget* m_classInformationContent = nullptr;
+    QVBoxLayout* m_classInformationLayout = nullptr;
+    QTabWidget* m_classInformationTabs = nullptr;
+    int m_selectedClassId = -1;
 
     QLineEdit* m_nameEdit = nullptr;
     QComboBox* m_campusCombo = nullptr;
