@@ -319,6 +319,85 @@ inline QString directory()
 }
 }
 
+namespace ResourcePaths::Files
+{
+inline QString directory(
+    const QString& packId
+    )
+{
+    const QString packPath =
+        Detail::activePackPath(packId);
+
+    if (!packPath.isEmpty())
+    {
+        return packPath;
+    }
+
+    const QString embeddedRoot =
+        ResourcePackManager::instance().embeddedRoot(packId);
+
+    return embeddedRoot.isEmpty()
+        ? QString()
+        : Detail::resolveResourcePath(embeddedRoot);
+}
+
+inline QString bookReportsDirectory()
+{
+    return directory(
+        QStringLiteral("book-reports")
+        );
+}
+
+inline QString essayDirectory()
+{
+    return directory(
+        QStringLiteral("essay")
+        );
+}
+
+inline QString essayTopicsDirectory()
+{
+    return directory(
+        QStringLiteral("essay-topics")
+        );
+}
+
+inline QString evaluationsDirectory()
+{
+    return directory(
+        QStringLiteral("evaluations")
+        );
+}
+
+inline QString guidesDirectory()
+{
+    return directory(
+        QStringLiteral("guides")
+        );
+}
+
+inline QString lessonsDirectory()
+{
+    return directory(
+        QStringLiteral("lessons")
+        );
+}
+
+inline QString subPrepDirectory()
+{
+    return directory(
+        QStringLiteral("sub-prep")
+        );
+}
+
+inline QString trainingDirectory()
+{
+    return directory(
+        QStringLiteral("training")
+        );
+}
+}
+
 namespace ResourcePaths::Styles
 {
 inline constexpr auto Dark =

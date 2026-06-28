@@ -10,6 +10,23 @@
 
 namespace
 {
+QStringList expectedPackIds()
+{
+    return {
+        QStringLiteral("campuses"),
+        QStringLiteral("templates"),
+        QStringLiteral("roster-designs"),
+        QStringLiteral("book-reports"),
+        QStringLiteral("essay"),
+        QStringLiteral("essay-topics"),
+        QStringLiteral("evaluations"),
+        QStringLiteral("guides"),
+        QStringLiteral("lessons"),
+        QStringLiteral("sub-prep"),
+        QStringLiteral("training")
+    };
+}
+
 QJsonObject artifactObject(
     const QString& version = QStringLiteral("1.1.0"),
     const QString& url = QStringLiteral("https://example.com/campuses.rcc"),
@@ -27,27 +44,37 @@ QJsonObject artifactObject(
     return artifact;
 }
 
+QJsonObject artifactObjectForPack(
+    const QString& packId
+    )
+{
+    const QString fileName =
+        packId + QStringLiteral(".rcc");
+
+    return artifactObject(
+        QStringLiteral("1.1.0"),
+        QStringLiteral("https://example.com/%1").arg(fileName),
+        fileName
+        );
+}
+
 QByteArray manifestJson(
     QJsonObject campuses = artifactObject()
     )
 {
     QJsonObject packs;
-    packs.insert(QStringLiteral("campuses"), campuses);
+
+    for (const QString& packId : expectedPackIds())
+    {
+        packs.insert(
+            packId,
+            artifactObjectForPack(packId)
+            );
+    }
+
     packs.insert(
-        QStringLiteral("templates"),
-        artifactObject(
-            QStringLiteral("1.2.0"),
-            QStringLiteral("https://example.com/templates.rcc"),
-            QStringLiteral("templates.rcc")
-            )
-        );
-    packs.insert(
-        QStringLiteral("roster-designs"),
-        artifactObject(
-            QStringLiteral("2.0.0"),
-            QStringLiteral("https://example.com/roster-designs.rcc"),
-            QStringLiteral("roster-designs.rcc")
-            )
+        QStringLiteral("campuses"),
+        campuses
         );
 
     QJsonObject root;
@@ -63,26 +90,55 @@ class ResourcePackTests : public QObject
     Q_OBJECT
 
 private slots:
+    void knowsConfiguredPacks();
     void parsesKnownPacks();
     void requiresConfiguredPacks();
     void rejectsUnsafeArtifacts();
     void stagesAndMountsValidRccPack();
 };
 
+void ResourcePackTests::knowsConfiguredPacks()
+{
+    ResourcePackManager manager(
+        QStringLiteral("unused")
+        );
+
+    QCOMPARE(
+        manager.knownPackIds(),
+        expectedPackIds()
+        );
+    QCOMPARE(
+        manager.embeddedRoot(QStringLiteral("book-reports")),
+        QStringLiteral(":/assets/files/book reports")
+        );
+    QCOMPARE(
+        manager.embeddedRoot(QStringLiteral("essay-topics")),
+        QStringLiteral(":/assets/files/essay_topics")
+        );
+    QCOMPARE(
+        manager.embeddedRoot(QStringLiteral("sub-prep")),
+        QStringLiteral(":/assets/files/sub prep")
+        );
+}
+
 void ResourcePackTests::parsesKnownPacks()
 {
+    QStringList sortedExpectedPackIds =
+        expectedPackIds();
+    sortedExpectedPackIds.sort();
+
     const auto manifest =
         ResourcePackManifest::fromJson(
             manifestJson(),
-            {
-                QStringLiteral("campuses"),
-                QStringLiteral("templates"),
-                QStringLiteral("roster-designs")
-            }
+            expectedPackIds()
             );
 
     QVERIFY(manifest.has_value());
     QCOMPARE(manifest->schemaVersion(), 1);
+    QCOMPARE(
+        manifest->packIds(),
+        sortedExpectedPackIds
+        );
 
     const auto campuses =
         manifest->artifact(QStringLiteral("campuses"));

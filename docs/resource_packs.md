@@ -1,9 +1,9 @@
 # ClassMngr Resource Packs
 
-ClassMngr can update campus information, printable templates, and roster
-designs independently of the application. Packs are Qt binary resource
-collections (`.rcc`). They are data-only, platform-neutral, and mounted
-read-only.
+ClassMngr can update campus information, printable templates, roster designs,
+and bundled file categories independently of the application. Packs are Qt
+binary resource collections (`.rcc`). They are data-only, platform-neutral, and
+mounted read-only.
 
 The known pack ids and their required RCC roots are:
 
@@ -12,6 +12,14 @@ The known pack ids and their required RCC roots are:
 | `campuses` | `/resource-packs/campuses` | `:/assets/campuses` |
 | `templates` | `/resource-packs/templates` | `:/assets/templates` |
 | `roster-designs` | `/resource-packs/roster-designs` | `:/assets/roster-designs` |
+| `book-reports` | `/resource-packs/book-reports` | `:/assets/files/book reports` |
+| `essay` | `/resource-packs/essay` | `:/assets/files/essay` |
+| `essay-topics` | `/resource-packs/essay-topics` | `:/assets/files/essay_topics` |
+| `evaluations` | `/resource-packs/evaluations` | `:/assets/files/evaluations` |
+| `guides` | `/resource-packs/guides` | `:/assets/files/guides` |
+| `lessons` | `/resource-packs/lessons` | `:/assets/files/lessons` |
+| `sub-prep` | `/resource-packs/sub-prep` | `:/assets/files/sub prep` |
+| `training` | `/resource-packs/training` | `:/assets/files/training` |
 
 If an installed pack is absent, corrupt, has invalid metadata, or cannot be
 mounted, the app uses its compiled fallback. Downloaded updates are staged
@@ -31,6 +39,10 @@ Create a qrc file whose prefix matches the table. For example:
 </RCC>
 ```
 
+The external pack contents should live directly under that pack's resource
+root. For example, the `book-reports` pack uses
+`/resource-packs/book-reports`, not `/resource-packs/book-reports/book reports`.
+
 Build it with the `rcc` executable from the same Qt major version used by the
 application:
 
@@ -46,7 +58,8 @@ definition in `resource_pack_manager.cpp`.
 ## Server manifest
 
 Publish pack files first. Publish `latest.json` and its detached signature
-last.
+last. The manifest should include every known pack id, even when a given pack
+does not currently have an update available.
 
 ```json
 {
@@ -72,6 +85,62 @@ last.
       "fileName": "roster-designs-1.2.0.rcc",
       "sha256": "64 lowercase hexadecimal characters",
       "sizeBytes": 345678
+    },
+    "book-reports": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/book-reports-1.0.1.rcc",
+      "fileName": "book-reports-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 456789
+    },
+    "essay": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/essay-1.0.1.rcc",
+      "fileName": "essay-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 567890
+    },
+    "essay-topics": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/essay-topics-1.0.1.rcc",
+      "fileName": "essay-topics-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 678901
+    },
+    "evaluations": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/evaluations-1.0.1.rcc",
+      "fileName": "evaluations-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 789012
+    },
+    "guides": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/guides-1.0.1.rcc",
+      "fileName": "guides-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 890123
+    },
+    "lessons": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/lessons-1.0.1.rcc",
+      "fileName": "lessons-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 901234
+    },
+    "sub-prep": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/sub-prep-1.0.1.rcc",
+      "fileName": "sub-prep-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 101234
+    },
+    "training": {
+      "version": "1.0.1",
+      "url": "https://example.com/packs/training-1.0.1.rcc",
+      "fileName": "training-1.0.1.rcc",
+      "sha256": "64 lowercase hexadecimal characters",
+      "sizeBytes": 112345
     }
   }
 }

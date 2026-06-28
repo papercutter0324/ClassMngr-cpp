@@ -23,6 +23,9 @@ public:
     [[nodiscard]] QString activeRoot(
         const QString& packId
         ) const;
+    [[nodiscard]] QString embeddedRoot(
+        const QString& packId
+        ) const;
     [[nodiscard]] Version currentVersion(
         const QString& packId
         ) const;
@@ -37,6 +40,7 @@ private:
     struct Definition
     {
         QString id;
+        QString embeddedRoot;
         Version embeddedVersion;
     };
 

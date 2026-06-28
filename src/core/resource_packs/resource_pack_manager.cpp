@@ -66,14 +66,57 @@ ResourcePackManager::ResourcePackManager(
     : m_definitions({
         {
             QStringLiteral("campuses"),
+            QStringLiteral(":/assets/campuses"),
             Version(1, 0, 0)
         },
         {
             QStringLiteral("templates"),
+            QStringLiteral(":/assets/templates"),
             Version(1, 0, 0)
         },
         {
             QStringLiteral("roster-designs"),
+            QStringLiteral(":/assets/roster-designs"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("book-reports"),
+            QStringLiteral(":/assets/files/book reports"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("essay"),
+            QStringLiteral(":/assets/files/essay"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("essay-topics"),
+            QStringLiteral(":/assets/files/essay_topics"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("evaluations"),
+            QStringLiteral(":/assets/files/evaluations"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("guides"),
+            QStringLiteral(":/assets/files/guides"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("lessons"),
+            QStringLiteral(":/assets/files/lessons"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("sub-prep"),
+            QStringLiteral(":/assets/files/sub prep"),
+            Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("training"),
+            QStringLiteral(":/assets/files/training"),
             Version(1, 0, 0)
         }
     })
@@ -160,6 +203,18 @@ QString ResourcePackManager::activeRoot(
     ) const
 {
     return m_activeRoots.value(packId);
+}
+
+QString ResourcePackManager::embeddedRoot(
+    const QString& packId
+    ) const
+{
+    const Definition* packDefinition =
+        definition(packId);
+
+    return packDefinition
+        ? packDefinition->embeddedRoot
+        : QString();
 }
 
 Version ResourcePackManager::currentVersion(

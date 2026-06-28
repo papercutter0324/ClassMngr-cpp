@@ -121,6 +121,7 @@ file(GLOB_RECURSE CLASSMNGR_CAMPUS_MAP_IMAGES CONFIGURE_DEPENDS
 
 file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*"
+    "${PROJECT_SOURCE_DIR}/resources/assets/files/*"
     "${PROJECT_SOURCE_DIR}/resources/assets/templates/*"
     "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
 )
