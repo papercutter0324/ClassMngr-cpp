@@ -7,6 +7,7 @@ class QResizeEvent;
 class QShowEvent;
 class QEvent;
 class QObject;
+class QWheelEvent;
 
 class UniformWidthTabBar : public QTabBar
 {
@@ -20,6 +21,11 @@ public:
     QSize tabSizeHint(
         int index
         ) const override;
+
+protected:
+    void wheelEvent(
+        QWheelEvent* event
+        ) override;
 };
 
 class UniformWidthTabWidget : public QTabWidget

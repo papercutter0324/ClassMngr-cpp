@@ -5,6 +5,7 @@
 #include <QEvent>
 #include <QResizeEvent>
 #include <QShowEvent>
+#include <QWheelEvent>
 
 UniformWidthTabBar::UniformWidthTabBar(
     QWidget* parent
@@ -39,6 +40,13 @@ QSize UniformWidthTabBar::tabSizeHint(
         );
 
     return hint;
+}
+
+void UniformWidthTabBar::wheelEvent(
+    QWheelEvent* event
+    )
+{
+    event->ignore();
 }
 
 UniformWidthTabWidget::UniformWidthTabWidget(
