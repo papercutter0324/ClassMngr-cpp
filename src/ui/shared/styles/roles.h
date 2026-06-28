@@ -8,8 +8,14 @@ inline constexpr auto Card =
 inline constexpr auto ButtonFooter =
     "button_footer";
 
+inline constexpr auto IconButton =
+    "icon_button";
+
 inline constexpr auto Primary =
     "primary";
+
+inline constexpr auto Default =
+    "default";
 
 inline constexpr auto Input =
     "input";

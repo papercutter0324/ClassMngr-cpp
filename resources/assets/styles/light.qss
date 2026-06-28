@@ -20,6 +20,12 @@ QWidget[role="campus_info"] {
     color: #27313a;
 }
 
+QPdfView#pdfViewerView {
+    background-color: #deded8;
+    border: 2px solid #d2d0c9;
+    border-radius: 6px;
+}
+
 QLabel {
     background: transparent;
 }
@@ -329,6 +335,24 @@ QPushButton[role="button_footer"] {
 
 QPushButton[role="button_footer"]:hover {
     background-color: #ebe9e3;
+}
+
+QPushButton[role="icon_button"] {
+    background-color: #f5f3ee;
+    border: 2px solid #c5c7c3;
+    border-radius: 6px;
+    padding: 0;
+    min-height: 24px;
+    min-width: 28px;
+}
+
+QPushButton[role="icon_button"]:hover {
+    background-color: #ebe9e3;
+    border-color: #a8b2b8;
+}
+
+QPushButton[role="icon_button"]:pressed {
+    background-color: #dfdfd9;
 }
 
 QMenuBar {

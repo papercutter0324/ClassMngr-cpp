@@ -14,6 +14,8 @@ add_compile_options(
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
+    Pdf
+    PdfWidgets
     Qml
     Quick
     QuickControls2
@@ -205,6 +207,8 @@ target_link_libraries(ClassMngr
         Qt6::Core
         Qt6::Gui
         Qt6::Network
+        Qt6::Pdf
+        Qt6::PdfWidgets
         Qt6::Qml
         Qt6::Quick
         Qt6::QuickControls2
