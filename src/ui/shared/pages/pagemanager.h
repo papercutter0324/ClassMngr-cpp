@@ -23,6 +23,7 @@ class CampusDashboardPage;
 class RosterPage;
 class SpeakingEvalPage;
 class SubPrepPage;
+class PdfViewerPage;
 
 
 
@@ -40,7 +41,8 @@ enum class PageType
     Roster,
     ClassNotes,
     SpeakingEval,
-    SubPrep
+    SubPrep,
+    PdfViewer
 };
 
 
@@ -112,6 +114,8 @@ public:
 
     SpeakingEvalPage* speakingPage() const;
 
+    PdfViewerPage* pdfViewerPage() const;
+
 
 
     // =====================================================
@@ -169,6 +173,8 @@ private:
     RosterPage* m_rosterPage = nullptr;
 
     SpeakingEvalPage* m_speakingPage = nullptr;
+
+    PdfViewerPage* m_pdfViewerPage = nullptr;
 
 
 

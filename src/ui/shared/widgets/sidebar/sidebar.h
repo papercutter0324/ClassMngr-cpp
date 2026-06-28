@@ -11,6 +11,7 @@
 class QTreeWidget;
 class QResizeEvent;
 class SidebarMarqueeDelegate;
+struct TreeNodeSpec;
 
 
 
@@ -191,6 +192,10 @@ private:
         NodeType type,
         bool selectable = true,
         const QString& key = QString()
+        );
+
+    QTreeWidgetItem* createItem(
+        const TreeNodeSpec& spec
         );
 
     QStringList getItemPath(

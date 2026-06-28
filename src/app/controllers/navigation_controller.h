@@ -38,6 +38,10 @@ private:
         const NavigationData& data
         );
 
+    void handleDocument(
+        const NavigationData& data
+        );
+
     void handleTeacher(
         const NavigationData& data
         );

@@ -365,54 +365,8 @@ void Sidebar::buildTree()
     {
         auto *item =
             createItem(
-                spec.label,
-                spec.type,
-                spec.children.isEmpty(),
-                spec.key
+                spec
                 );
-
-
-
-        // =================================================
-        // Store URL
-        // =================================================
-
-        if (!spec.url.isEmpty())
-        {
-            item->setData(
-                0,
-                Qt::UserRole + 1,
-                spec.url
-                );
-        }
-
-
-
-        // =================================================
-        // Children
-        // =================================================
-
-        for (const auto &child : spec.children)
-        {
-            auto *childItem =
-                createItem(
-                    child.label,
-                    child.type,
-                    child.children.isEmpty(),
-                    child.key
-                    );
-
-            if (!child.url.isEmpty())
-            {
-                childItem->setData(
-                    0,
-                    Qt::UserRole + 1,
-                    child.url
-                    );
-            }
-
-            item->addChild(childItem);
-        }
 
         m_tree->addTopLevelItem(item);
 
@@ -580,6 +534,37 @@ QTreeWidgetItem* Sidebar::createItem(
         item->setFlags(
             item->flags()
             & ~Qt::ItemIsSelectable
+            );
+    }
+
+    return item;
+}
+
+QTreeWidgetItem* Sidebar::createItem(
+    const TreeNodeSpec& spec
+    )
+{
+    auto* item =
+        createItem(
+            spec.label,
+            spec.type,
+            spec.children.isEmpty(),
+            spec.key
+            );
+
+    if (!spec.url.isEmpty())
+    {
+        item->setData(
+            0,
+            Qt::UserRole + 1,
+            spec.url
+            );
+    }
+
+    for (const auto& child : spec.children)
+    {
+        item->addChild(
+            createItem(child)
             );
     }
 

@@ -1,5 +1,6 @@
 #include "navigation_controller.h"
 
+#include "core/resource_paths.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
 
@@ -14,6 +15,9 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
+#include "ui/shared/pages/pdf_viewer_page.h"
+
+#include <QDir>
 
 namespace
 {
@@ -39,6 +43,23 @@ QString evaluationNameForKey(
     if (key == QStringLiteral("speaking_fall"))
     {
         return QStringLiteral("Fall");
+    }
+
+    return QString();
+}
+
+QString guideFileNameForKey(
+    const QString& key
+    )
+{
+    if (key == QStringLiteral("document_guides_lesson_planning"))
+    {
+        return QStringLiteral("DYB Lesson Planning Guide (v1.1).pdf");
+    }
+
+    if (key == QStringLiteral("document_guides_powerpoint_shortcuts"))
+    {
+        return QStringLiteral("PowerPoint Keyboard Shortcuts.pdf");
     }
 
     return QString();
@@ -152,6 +173,12 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("document"))
+        {
+            handleDocument(data);
+            return;
+        }
+
         return;
 
     case NodeType::Page:
@@ -175,6 +202,12 @@ void NavigationController::handleNavigation(
         if (data.keys.first() == QStringLiteral("campus_info"))
         {
             handleCampus(data);
+            return;
+        }
+
+        if (data.keys.first() == QStringLiteral("document"))
+        {
+            handleDocument(data);
             return;
         }
 
@@ -289,6 +322,41 @@ void NavigationController::handleNavigation(
     default:
         return;
     }
+}
+
+void NavigationController::handleDocument(
+    const NavigationData& data
+    )
+{
+    const QString fileName =
+        guideFileNameForKey(
+            data.routeKey
+            );
+
+    if (fileName.trimmed().isEmpty())
+    {
+        return;
+    }
+
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    const QString filePath =
+        QDir(
+            ResourcePaths::Files::guidesDirectory()
+            ).filePath(
+                fileName
+                );
+
+    [[maybe_unused]] const bool loaded =
+        m_pages->pdfViewerPage()
+            ->loadPdf(filePath);
+
+    m_pages->showPage(
+        PageType::PdfViewer
+        );
 }
 
 void NavigationController::handleSubPrep(

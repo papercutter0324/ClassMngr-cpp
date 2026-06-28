@@ -91,6 +91,58 @@ QList<TreeNodeSpec> treeStructure()
         },
 
         {
+            "document",
+            QObject::tr("Document"),
+            NodeType::Root,
+
+            {
+                {
+                    "document_guides",
+                    QObject::tr("Guides"),
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_guides_lesson_planning",
+                            QObject::tr("Lesson Planning"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_guides_powerpoint_shortcuts",
+                            QObject::tr("PowerPoint Shortcuts"),
+                            NodeType::Page
+                        }
+                    }
+                },
+
+                {
+                    "document_lesson_templates",
+                    QObject::tr("Lesson Templates"),
+                    NodeType::Root
+                },
+
+                {
+                    "document_online_essay",
+                    QObject::tr("Online Essay"),
+                    NodeType::Root
+                },
+
+                {
+                    "document_book_reports",
+                    QObject::tr("Book Reports"),
+                    NodeType::Root
+                },
+
+                {
+                    "document_training",
+                    QObject::tr("Training"),
+                    NodeType::Root
+                }
+            }
+        },
+
+        {
             "useful_links",
             QObject::tr("Useful Links"),
             NodeType::Root,

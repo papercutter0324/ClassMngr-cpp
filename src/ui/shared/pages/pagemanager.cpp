@@ -11,6 +11,7 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
+#include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/utils/unsaved_changes_dialog.h"
 
 
@@ -100,6 +101,11 @@ void PageManager::initialize(
             this
             );
 
+    m_pdfViewerPage =
+        new PdfViewerPage(
+            this
+            );
+
     registerPages();
 
     showPage(
@@ -141,6 +147,9 @@ void PageManager::registerPages()
 
     m_pages[PageType::SpeakingEval] =
         m_speakingPage;
+
+    m_pages[PageType::PdfViewer] =
+        m_pdfViewerPage;
 
     for (BasePage* page : m_pages)
     {
@@ -301,4 +310,9 @@ RosterPage* PageManager::rosterPage() const
 SpeakingEvalPage* PageManager::speakingPage() const
 {
     return m_speakingPage;
+}
+
+PdfViewerPage* PageManager::pdfViewerPage() const
+{
+    return m_pdfViewerPage;
 }
