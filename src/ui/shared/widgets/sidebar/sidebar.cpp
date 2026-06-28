@@ -9,7 +9,9 @@
 #include <QFontMetrics>
 #include <QHeaderView>
 #include <QMenu>
+#include <QProxyStyle>
 #include <QResizeEvent>
+#include <QStyleOption>
 #include <QTreeWidget>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -20,6 +22,74 @@
 
 namespace
 {
+class SidebarTreeStyle final : public QProxyStyle
+{
+public:
+    explicit SidebarTreeStyle(
+        QObject* parent = nullptr
+        )
+        : QProxyStyle()
+    {
+        setParent(parent);
+    }
+
+    void drawPrimitive(
+        PrimitiveElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget = nullptr
+        ) const override
+    {
+        if (element == PE_IndicatorBranch && option)
+        {
+            if (option->state & QStyle::State_Children)
+            {
+                QStyleOption arrowOption(*option);
+                const int indicatorSize =
+                    QProxyStyle::pixelMetric(
+                        QStyle::PM_IndicatorWidth,
+                        option,
+                        widget
+                        );
+
+                arrowOption.rect =
+                    QRect(
+                        0,
+                        0,
+                        indicatorSize,
+                        indicatorSize
+                        );
+                arrowOption.rect.moveCenter(
+                    option->rect.center()
+                    );
+
+                const PrimitiveElement arrow =
+                    option->state & QStyle::State_Open
+                        ? PE_IndicatorArrowDown
+                        : option->direction == Qt::RightToLeft
+                            ? PE_IndicatorArrowLeft
+                            : PE_IndicatorArrowRight;
+
+                QProxyStyle::drawPrimitive(
+                    arrow,
+                    &arrowOption,
+                    painter,
+                    widget
+                    );
+            }
+
+            return;
+        }
+
+        QProxyStyle::drawPrimitive(
+            element,
+            option,
+            painter,
+            widget
+            );
+    }
+};
+
 bool itemContainsCurrentSelection(
     QTreeWidgetItem* root,
     QTreeWidgetItem* current
@@ -130,6 +200,9 @@ void Sidebar::setupUi()
 
     m_tree =
         new QTreeWidget(this);
+    m_tree->setStyle(
+        new SidebarTreeStyle(m_tree)
+        );
 
     m_tree->setObjectName(
         QStringLiteral("sidebarTree")
