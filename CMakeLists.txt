@@ -88,6 +88,24 @@ configure_file(
 
 qt_standard_project_setup()
 
+set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
+set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
+set(CLASSMNGR_QT_DEPLOY_QML_PLUGINS "\\$")
+string(APPEND CLASSMNGR_QT_DEPLOY_QML_PLUGINS "{plugins_found}")
+if(UNIX AND NOT APPLE)
+    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
+        "find_program(CLASSMNGR_PATCHELF_EXECUTABLE patchelf)\n"
+        "if(NOT CLASSMNGR_PATCHELF_EXECUTABLE)\n"
+        "    message(FATAL_ERROR \"patchelf is required to deploy ClassMngr on Linux. Install patchelf and rerun cmake --install.\")\n"
+        "endif()\n"
+        "set(__QT_DEPLOY_USE_PATCHELF ON)\n"
+        "set(__QT_DEPLOY_PATCHELF_EXECUTABLE patchelf)\n"
+    )
+    string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
+        "    POST_INCLUDE_REGEXES [[.*/libQt6.*[.]so([.].*)?$]]\n"
+    )
+endif()
+
 qt_add_executable(ClassMngr
     WIN32
     MACOSX_BUNDLE
@@ -220,10 +238,19 @@ install(FILES
     DESTINATION licenses/fonts/pretendard
 )
 
-qt_generate_deploy_app_script(
+qt_generate_deploy_script(
     TARGET ClassMngr
     OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
+    CONTENT "
+${CLASSMNGR_QT_DEPLOY_PREAMBLE}
+qt_deploy_qml_imports(TARGET ClassMngr PLUGINS_FOUND plugins_found)
+qt_deploy_runtime_dependencies(
+    EXECUTABLE \"$<TARGET_FILE:ClassMngr>\"
+    ADDITIONAL_MODULES ${CLASSMNGR_QT_DEPLOY_QML_PLUGINS}
+    GENERATE_QT_CONF
+${CLASSMNGR_QT_DEPLOY_OPTIONS}
+)
+"
 )
 install(SCRIPT ${deploy_script})
 
