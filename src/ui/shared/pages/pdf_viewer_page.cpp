@@ -179,7 +179,7 @@ void PdfViewerPage::handleDocumentStatusChanged()
     if (m_document->status() == QPdfDocument::Status::Ready)
     {
         m_view->setPageMode(
-            QPdfView::PageMode::SinglePage
+            QPdfView::PageMode::MultiPage
             );
 
         clearStatusMessage();
@@ -235,7 +235,7 @@ void PdfViewerPage::buildUi()
 
     contentLayout()->setContentsMargins(
         16,
-        16,
+        0,
         16,
         0
         );
