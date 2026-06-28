@@ -19,8 +19,6 @@
 #include <algorithm>
 #include <utility>
 
-#include <QComboBox>
-#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QEvent>
 #include <QFont>
 #include <QFontMetrics>
@@ -38,13 +36,11 @@
 #include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QVariant>
 #include <QtAssert>
 
 namespace
 {
 constexpr int AutosaveDelayMs = 750;
-constexpr int CampusFieldWidth = 150;
 constexpr int OfficeNumberFieldWidth = 115;
 constexpr int CompactFieldWidth = 170;
 constexpr int TextEditVerticalPadding = 24;
@@ -83,53 +79,8 @@ QString campusDisplayName(
         : campus.campusName.trimmed();
 }
 
-int findCampusIndex(
-    QComboBox* combo,
-    const QString& savedCampus
-    )
-{
-    if (!combo || savedCampus.trimmed().isEmpty())
-    {
-        return -1;
-    }
-
-    const QString normalized =
-        savedCampus.trimmed();
-
-    for (int index = 0; index < combo->count(); ++index)
-    {
-        if (
-            combo->itemData(index).toString().compare(
-                normalized,
-                Qt::CaseInsensitive
-                ) == 0
-            || combo->itemText(index).compare(
-                normalized,
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        {
-            return index;
-        }
-    }
-
-    return -1;
-}
-
 namespace SettingsKeys
 {
-const QString PersonalZoomEmail =
-    QStringLiteral("subPrep/personalZoomEmail");
-const QString PersonalZoomPassword =
-    QStringLiteral("subPrep/personalZoomPassword");
-const QString MyInfoZoomLoginId =
-    QStringLiteral("myInfo/zoomLoginId");
-const QString MyInfoZoomPassword =
-    QStringLiteral("myInfo/zoomPassword");
-const QString MyInfoZoomNotAvailable =
-    QStringLiteral("myInfo/zoomNotAvailable");
-const QString LegacyZoomNotAvailable =
-    QStringLiteral("subPrep/personalZoomNotAvailable");
 const QString MyInfoCampus =
     QStringLiteral("myInfo/campus");
 const QString ClassMaterials =
@@ -440,42 +391,6 @@ QLabel* createValueLabel(
     return label;
 }
 
-QVariant loadSettingWithLegacyFallback(
-    DataService* dataService,
-    const QString& primaryKey,
-    const QString& legacyKey,
-    const QVariant& defaultValue
-    )
-{
-    QVariant value =
-        dataService->loadSetting(
-            primaryKey,
-            QVariant()
-            );
-
-    if (value.isValid())
-    {
-        return value;
-    }
-
-    value =
-        dataService->loadSetting(
-            legacyKey,
-            QVariant()
-            );
-
-    if (value.isValid())
-    {
-        dataService->saveSetting(
-            primaryKey,
-            value
-            );
-        return value;
-    }
-
-    return defaultValue;
-}
-
 QLineEdit* createReadOnlyValueEdit(
     const QString& value,
     QWidget* parent
@@ -643,7 +558,6 @@ void SubPrepPage::refresh()
     }
 
     refreshGeneratedContent();
-    loadPersonalZoomInformation();
 
     if (!m_dirty)
     {
@@ -682,13 +596,6 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_zoomCard)
-    {
-        m_zoomCard->setTitle(
-            tr("Personal Zoom Information")
-            );
-    }
-
     if (m_campusCard)
     {
         m_campusCard->setTitle(
@@ -707,27 +614,6 @@ void SubPrepPage::retranslateUi()
     {
         m_commentsCard->setTitle(
             tr("Comments")
-            );
-    }
-
-    if (m_zoomEmailLabel)
-    {
-        m_zoomEmailLabel->setText(
-            tr("Login Email")
-            );
-    }
-
-    if (m_zoomPasswordLabel)
-    {
-        m_zoomPasswordLabel->setText(
-            tr("Password")
-            );
-    }
-
-    if (m_campusLabel)
-    {
-        m_campusLabel->setText(
-            tr("Campus")
             );
     }
 
@@ -886,7 +772,6 @@ void SubPrepPage::showEvent(
     BasePage::showEvent(event);
 
     refreshGeneratedContent();
-    loadPersonalZoomInformation();
 
     if (!m_dirty)
     {
@@ -929,50 +814,6 @@ void SubPrepPage::handleEditableChanged()
     {
         m_autosaveTimer->start();
     }
-}
-
-void SubPrepPage::handleCampusChanged(
-    int index
-    )
-{
-    if (
-        m_loading
-        || !m_campusCombo
-        || index < 0
-        )
-    {
-        return;
-    }
-
-    if (m_dirty)
-    {
-        saveSubPrepInternal();
-    }
-
-    const QString campusId =
-        m_campusCombo
-            ->itemData(index)
-            .toString();
-
-    if (campusId.trimmed().isEmpty())
-    {
-        return;
-    }
-
-    m_currentCampusId =
-        campusId;
-
-    if (auto* dataService = openDataService(m_services))
-    {
-        dataService->saveSetting(
-            SettingsKeys::MyInfoCampus,
-            m_campusCombo->currentText()
-            );
-    }
-
-    loadCampusFields(
-        campusId
-        );
 }
 
 void SubPrepPage::autosave()
@@ -1081,79 +922,6 @@ void SubPrepPage::buildUi()
         m_importantInformationHeading
         );
 
-    m_zoomCard =
-        new SectionCard(
-            tr("Personal Zoom Information"),
-            m_scrollContent
-            );
-    auto* zoomGrid =
-        new QGridLayout;
-    zoomGrid->setHorizontalSpacing(
-        UiConstants::ClassInfo::Form::HorizontalSpacing
-        );
-    zoomGrid->setVerticalSpacing(
-        UiConstants::ClassInfo::Form::VerticalSpacing
-        );
-
-    m_zoomEmailEdit =
-        new QLineEdit(m_zoomCard);
-    m_zoomPasswordEdit =
-        new QLineEdit(m_zoomCard);
-
-    m_zoomEmailEdit->setReadOnly(true);
-    m_zoomPasswordEdit->setReadOnly(true);
-
-    WidgetSizing::installTextAwareFieldWidth(
-        m_zoomEmailEdit,
-        UiConstants::Forms::FieldMinimumWidth,
-        QSizePolicy::Maximum
-        );
-    WidgetSizing::installTextAwareFieldWidth(
-        m_zoomPasswordEdit,
-        UiConstants::Forms::FieldMinimumWidth,
-        QSizePolicy::Maximum
-        );
-
-    m_zoomEmailLabel =
-        createFieldLabel(tr("Login Email"), m_zoomCard);
-    m_zoomPasswordLabel =
-        createFieldLabel(tr("Password"), m_zoomCard);
-
-    zoomGrid->addWidget(
-        m_zoomEmailLabel,
-        0,
-        0,
-        Qt::AlignLeft
-        );
-    zoomGrid->addWidget(
-        m_zoomPasswordLabel,
-        0,
-        1,
-        Qt::AlignLeft
-        );
-    zoomGrid->addWidget(
-        m_zoomEmailEdit,
-        1,
-        0,
-        Qt::AlignLeft
-        );
-    zoomGrid->addWidget(
-        m_zoomPasswordEdit,
-        1,
-        1,
-        Qt::AlignLeft
-        );
-    zoomGrid->setColumnStretch(0, 0);
-    zoomGrid->setColumnStretch(1, 0);
-    zoomGrid->setColumnStretch(2, 1);
-
-    m_zoomCard->contentLayout()->addLayout(
-        zoomGrid
-        );
-    m_scrollContentLayout->addWidget(
-        m_zoomCard
-        );
-
     m_campusCard =
         new SectionCard(
             tr("Campus Information"),
@@ -1168,8 +936,6 @@ void SubPrepPage::buildUi()
         UiConstants::ClassInfo::Form::VerticalSpacing
         );
 
-    m_campusCombo =
-        new NoWheelComboBox(m_campusCard);
     m_officeNumberEdit =
         new QLineEdit(m_campusCard);
     m_officeWifiEdit =
@@ -1184,10 +950,6 @@ void SubPrepPage::buildUi()
     m_officeWifiPasswordEdit->setReadOnly(true);
     m_photocopierCodeEdit->setReadOnly(true);
 
-    WidgetSizing::installTextAwareFieldWidth(
-        m_campusCombo,
-        CampusFieldWidth
-        );
     WidgetSizing::installTextAwareFieldWidth(
         m_officeNumberEdit,
         OfficeNumberFieldWidth
@@ -1205,8 +967,6 @@ void SubPrepPage::buildUi()
         CompactFieldWidth
         );
 
-    m_campusLabel =
-        createFieldLabel(tr("Campus"), m_campusCard);
     m_officeNumberLabel =
         createFieldLabel(tr("Office Number"), m_campusCard);
     m_officeWifiLabel =
@@ -1217,61 +977,50 @@ void SubPrepPage::buildUi()
         createFieldLabel(tr("Photocopier Code"), m_campusCard);
 
     campusGrid->addWidget(
-        m_campusLabel,
-        0,
-        0,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
         m_officeNumberLabel,
         0,
-        1,
+        0,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
         m_officeWifiLabel,
         0,
-        2,
+        1,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
         m_officeWifiPasswordLabel,
         0,
-        3,
+        2,
         Qt::AlignLeft
         );
     campusGrid->addWidget(
         m_photocopierCodeLabel,
         0,
-        4,
+        3,
         Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        m_campusCombo,
-        1,
-        0
         );
     campusGrid->addWidget(
         m_officeNumberEdit,
         1,
-        1
+        0
         );
     campusGrid->addWidget(
         m_officeWifiEdit,
         1,
-        2
+        1
         );
     campusGrid->addWidget(
         m_officeWifiPasswordEdit,
         1,
-        3
+        2
         );
     campusGrid->addWidget(
         m_photocopierCodeEdit,
         1,
-        4
+        3
         );
-    for (int column = 0; column < 5; ++column)
+    for (int column = 0; column < 4; ++column)
     {
         campusGrid->setColumnStretch(
             column,
@@ -1358,12 +1107,6 @@ void SubPrepPage::buildUi()
         );
 
     connect(
-        m_campusCombo,
-        &QComboBox::currentIndexChanged,
-        this,
-        &SubPrepPage::handleCampusChanged
-        );
-    connect(
         m_classMaterialsEdit,
         &QTextEdit::textChanged,
         this,
@@ -1400,64 +1143,6 @@ void SubPrepPage::loadPageData()
     clearDirty();
 }
 
-void SubPrepPage::loadPersonalZoomInformation()
-{
-    auto* dataService =
-        openDataService(m_services);
-
-    if (!dataService)
-    {
-        return;
-    }
-
-    const QSignalBlocker emailBlocker(m_zoomEmailEdit);
-    const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
-
-    const QString email =
-        loadSettingWithLegacyFallback(
-            dataService,
-            SettingsKeys::MyInfoZoomLoginId,
-            SettingsKeys::PersonalZoomEmail,
-            NotAvailableText
-            )
-            .toString();
-    const QString password =
-        loadSettingWithLegacyFallback(
-            dataService,
-            SettingsKeys::MyInfoZoomPassword,
-            SettingsKeys::PersonalZoomPassword,
-            NotAvailableText
-            )
-            .toString();
-    const bool zoomNotAvailable =
-        loadSettingWithLegacyFallback(
-            dataService,
-            SettingsKeys::MyInfoZoomNotAvailable,
-            SettingsKeys::LegacyZoomNotAvailable,
-            true
-            )
-            .toBool();
-
-    m_zoomEmailEdit->setText(
-        zoomNotAvailable || email.trimmed().isEmpty()
-            ? NotAvailableText
-            : email
-        );
-    m_zoomPasswordEdit->setText(
-        zoomNotAvailable || password.trimmed().isEmpty()
-            ? NotAvailableText
-            : password
-        );
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_zoomEmailEdit,
-        UiConstants::Forms::FieldMinimumWidth
-        );
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_zoomPasswordEdit,
-        UiConstants::Forms::FieldMinimumWidth
-        );
-}
-
 void SubPrepPage::loadStoredSettings()
 {
     auto* dataService =
@@ -1467,8 +1152,6 @@ void SubPrepPage::loadStoredSettings()
     {
         return;
     }
-
-    loadPersonalZoomInformation();
 
     const QSignalBlocker materialsBlocker(m_classMaterialsEdit);
     const QSignalBlocker gradingBlocker(m_bookReportGradingEdit);
@@ -1512,7 +1195,7 @@ void SubPrepPage::loadCampuses()
     auto* dataService =
         openDataService(m_services);
 
-    if (!dataService || !m_campusCombo)
+    if (!dataService)
     {
         return;
     }
@@ -1525,74 +1208,49 @@ void SubPrepPage::loadCampuses()
     m_campuses =
         campusRepository().loadCampuses();
 
-    const QSignalBlocker comboBlocker(m_campusCombo);
-
-    m_campusCombo->clear();
-
-    for (const CampusInfo& campus : m_campuses)
-    {
-        const QString displayName =
-            campusDisplayName(campus);
-
-        if (displayName.isEmpty())
-        {
-            continue;
-        }
-
-        m_campusCombo->addItem(
-            displayName,
-            campus.id
-            );
-    }
-
     const QString savedCampus =
         dataService
             ->loadSetting(
                 SettingsKeys::MyInfoCampus,
                 QString()
-                )
+            )
             .toString();
 
-    int index =
-        findCampusIndex(
-            m_campusCombo,
-            savedCampus
-            );
+    QString campusId;
+    const QString normalizedCampus =
+        savedCampus.trimmed();
 
-    if (
-        index < 0
-        && m_campusCombo->count() > 0
-        )
+    for (const CampusInfo& campus : std::as_const(m_campuses))
     {
-        index = 0;
-    }
-
-    if (index >= 0)
-    {
-        m_campusCombo->setCurrentIndex(index);
-
-        m_currentCampusId =
-            m_campusCombo
-                ->itemData(index)
-                .toString();
-
         if (
-            m_campusCombo->currentText().compare(
-                savedCampus.trimmed(),
+            campus.id.compare(
+                normalizedCampus,
                 Qt::CaseInsensitive
-                ) != 0
+                ) == 0
+            || campusDisplayName(campus).compare(
+                normalizedCampus,
+                Qt::CaseInsensitive
+                ) == 0
             )
         {
-            dataService->saveSetting(
-                SettingsKeys::MyInfoCampus,
-                m_campusCombo->currentText()
-                );
+            campusId =
+                campus.id;
+            break;
         }
-
-        loadCampusFields(
-            m_currentCampusId
-            );
     }
+
+    if (
+        campusId.isEmpty()
+        && !m_campuses.isEmpty()
+        )
+    {
+        campusId =
+            m_campuses.first().id;
+    }
+
+    loadCampusFields(
+        campusId
+        );
 
     updateCampusFieldWidths();
 
@@ -1604,17 +1262,13 @@ void SubPrepPage::loadCampusFields(
     const QString& campusId
     )
 {
-    if (campusId.trimmed().isEmpty())
-    {
-        return;
-    }
-
     const bool wasLoading =
         m_loading;
 
     m_loading = true;
 
     CampusInfo campus;
+    bool foundCampus = false;
 
     for (const CampusInfo& campusInfo : m_campuses)
     {
@@ -1627,6 +1281,8 @@ void SubPrepPage::loadCampusFields(
         {
             campus =
                 campusInfo;
+            foundCampus =
+                true;
             break;
         }
     }
@@ -1636,17 +1292,25 @@ void SubPrepPage::loadCampusFields(
     const QSignalBlocker wifiPasswordBlocker(m_officeWifiPasswordEdit);
     const QSignalBlocker photocopierBlocker(m_photocopierCodeEdit);
 
+    const auto fieldText =
+        [foundCampus](const QString& value)
+        {
+            return foundCampus
+                ? value
+                : NotAvailableText;
+        };
+
     m_officeNumberEdit->setText(
-        campus.officeNumber
+        fieldText(campus.officeNumber)
         );
     m_officeWifiEdit->setText(
-        campus.officeWifi
+        fieldText(campus.officeWifi)
         );
     m_officeWifiPasswordEdit->setText(
-        campus.officeWifiPassword
+        fieldText(campus.officeWifiPassword)
         );
     m_photocopierCodeEdit->setText(
-        campus.photocopierCode.trimmed().isEmpty()
+        !foundCampus || campus.photocopierCode.trimmed().isEmpty()
             ? NotAvailableText
             : campus.photocopierCode
         );
@@ -1659,10 +1323,6 @@ void SubPrepPage::loadCampusFields(
 
 void SubPrepPage::updateCampusFieldWidths()
 {
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_campusCombo,
-        CampusFieldWidth
-        );
     WidgetSizing::updateTextAwareFieldWidth(
         m_officeNumberEdit,
         OfficeNumberFieldWidth

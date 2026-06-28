@@ -6,7 +6,6 @@
 #include <QList>
 
 class ApplicationServices;
-class QComboBox;
 class QEvent;
 class QLabel;
 class QLineEdit;
@@ -61,15 +60,11 @@ protected:
 
 private slots:
     void handleEditableChanged();
-    void handleCampusChanged(
-        int index
-        );
     void autosave();
 
 private:
     void buildUi();
     void loadPageData();
-    void loadPersonalZoomInformation();
     void loadStoredSettings();
     void loadCampuses();
     void loadCampusFields(
@@ -111,7 +106,6 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     SubPrepSection m_currentSection = SubPrepSection::ImportantInformation;
-    QString m_currentCampusId;
     QList<CampusInfo> m_campuses;
 
     QScrollArea* m_scrollArea = nullptr;
@@ -121,10 +115,6 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
 
-    QLineEdit* m_zoomEmailEdit = nullptr;
-    QLineEdit* m_zoomPasswordEdit = nullptr;
-
-    QComboBox* m_campusCombo = nullptr;
     QLineEdit* m_officeNumberEdit = nullptr;
     QLineEdit* m_officeWifiEdit = nullptr;
     QLineEdit* m_officeWifiPasswordEdit = nullptr;
@@ -139,14 +129,10 @@ private:
     QLabel* m_subCommentsHeading = nullptr;
     QLabel* m_classInfoSubtitle = nullptr;
 
-    SectionCard* m_zoomCard = nullptr;
     SectionCard* m_campusCard = nullptr;
     SectionCard* m_materialsCard = nullptr;
     SectionCard* m_commentsCard = nullptr;
 
-    QLabel* m_zoomEmailLabel = nullptr;
-    QLabel* m_zoomPasswordLabel = nullptr;
-    QLabel* m_campusLabel = nullptr;
     QLabel* m_officeNumberLabel = nullptr;
     QLabel* m_officeWifiLabel = nullptr;
     QLabel* m_officeWifiPasswordLabel = nullptr;
