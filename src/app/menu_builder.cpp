@@ -183,6 +183,29 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
 
     options->addSeparator();
 
+    QMenu* documentsMenu =
+        options->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Documents")
+            );
+
+    QMenu* documentPageSpacingMenu =
+        documentsMenu->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Page Spacing")
+            );
+
+    addOptionMenu<DocumentPageSpacing>(
+        documentPageSpacingMenu,
+        actions.documentPageSpacingState,
+        {
+            DocumentPageSpacing::None,
+            DocumentPageSpacing::Small,
+            DocumentPageSpacing::Medium,
+            DocumentPageSpacing::Large
+        }
+        );
+
+    options->addSeparator();
+
     QMenu* sidebarMenu =
         options->addMenu(
         QCoreApplication::translate("MenuBuilder", "Sidebar")

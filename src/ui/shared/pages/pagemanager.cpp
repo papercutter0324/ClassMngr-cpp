@@ -233,6 +233,18 @@ void PageManager::setSaveMode(
     }
 }
 
+void PageManager::setDocumentPageSpacing(
+    DocumentPageSpacing spacing
+    )
+{
+    if (m_pdfViewerPage)
+    {
+        m_pdfViewerPage->setDocumentPageSpacing(
+            spacing
+            );
+    }
+}
+
 
 
 // =========================================================

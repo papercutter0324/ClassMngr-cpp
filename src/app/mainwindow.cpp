@@ -322,6 +322,32 @@ void MainWindow::connectSignals()
             );
     }
 
+    if (m_actions.documentPageSpacingState)
+    {
+        const auto previousDocumentPageSpacingHandler =
+            m_actions.documentPageSpacingState->onChanged;
+
+        m_actions.documentPageSpacingState->onChanged =
+            [this, previousDocumentPageSpacingHandler](
+                DocumentPageSpacing spacing
+                )
+        {
+            if (previousDocumentPageSpacingHandler)
+            {
+                previousDocumentPageSpacingHandler(spacing);
+            }
+
+            if (m_pages)
+            {
+                m_pages->setDocumentPageSpacing(spacing);
+            }
+        };
+
+        m_actions.documentPageSpacingState->onChanged(
+            m_actions.documentPageSpacingState->current()
+            );
+    }
+
     ui->sidebarWidget->setOverflowTooltipsEnabled(
         m_actions.showSidebarTooltips->isChecked()
         );

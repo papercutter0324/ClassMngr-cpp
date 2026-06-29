@@ -90,6 +90,10 @@ public:
         SaveMode mode
         );
 
+    void setDocumentPageSpacing(
+        DocumentPageSpacing spacing
+        );
+
 
 
     // =====================================================

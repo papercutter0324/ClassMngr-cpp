@@ -35,6 +35,10 @@ public:
 
     [[nodiscard]] QString currentFilePath() const;
 
+    void setDocumentPageSpacing(
+        DocumentPageSpacing spacing
+        );
+
 public slots:
     void zoomIn();
     void zoomOut();
@@ -93,4 +97,5 @@ private:
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;
     PdfViewerDocumentActions m_documentActions;
+    DocumentPageSpacing m_documentPageSpacing = DocumentPageSpacing::Small;
 };

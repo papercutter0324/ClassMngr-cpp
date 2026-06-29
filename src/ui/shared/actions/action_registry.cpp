@@ -241,6 +241,30 @@ void ActionRegistry::retranslate()
             );
     }
 
+    if (documentPageSpacingState)
+    {
+        updateActionText(
+            documentPageSpacingState->action(DocumentPageSpacing::None),
+            tr("None"),
+            tr("Show PDF pages with no added spacing")
+            );
+        updateActionText(
+            documentPageSpacingState->action(DocumentPageSpacing::Small),
+            tr("Small"),
+            tr("Show PDF pages with small spacing")
+            );
+        updateActionText(
+            documentPageSpacingState->action(DocumentPageSpacing::Medium),
+            tr("Medium"),
+            tr("Show PDF pages with medium spacing")
+            );
+        updateActionText(
+            documentPageSpacingState->action(DocumentPageSpacing::Large),
+            tr("Large"),
+            tr("Show PDF pages with large spacing")
+            );
+    }
+
     updateActionText(
         showSidebarTooltips,
         tr("Show Sidebar Tooltips"),
@@ -557,6 +581,57 @@ void ActionRegistry::createOptionActions()
 
     fontSizeState->loadFromSettings(
         FontSize::Normal
+        );
+
+    documentPageSpacingState =
+        new OptionState<DocumentPageSpacing>(
+            OptionKeys::DocumentPageSpacing,
+            this
+            );
+
+    auto noDocumentPageSpacingAction =
+        createCheckableAction(
+            tr("None"),
+            tr("Show PDF pages with no added spacing")
+            );
+
+    auto smallDocumentPageSpacingAction =
+        createCheckableAction(
+            tr("Small"),
+            tr("Show PDF pages with small spacing")
+            );
+
+    auto mediumDocumentPageSpacingAction =
+        createCheckableAction(
+            tr("Medium"),
+            tr("Show PDF pages with medium spacing")
+            );
+
+    auto largeDocumentPageSpacingAction =
+        createCheckableAction(
+            tr("Large"),
+            tr("Show PDF pages with large spacing")
+            );
+
+    documentPageSpacingState->addOption(
+        DocumentPageSpacing::None,
+        noDocumentPageSpacingAction
+        );
+    documentPageSpacingState->addOption(
+        DocumentPageSpacing::Small,
+        smallDocumentPageSpacingAction
+        );
+    documentPageSpacingState->addOption(
+        DocumentPageSpacing::Medium,
+        mediumDocumentPageSpacingAction
+        );
+    documentPageSpacingState->addOption(
+        DocumentPageSpacing::Large,
+        largeDocumentPageSpacingAction
+        );
+
+    documentPageSpacingState->loadFromSettings(
+        DocumentPageSpacing::Small
         );
 
 

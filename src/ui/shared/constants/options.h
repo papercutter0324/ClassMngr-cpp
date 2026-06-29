@@ -56,3 +56,34 @@ enum class Language
     // per-region English options and are migrated to English on startup.
     Korean = 5
 };
+
+enum class DocumentPageSpacing
+{
+    None = 0,
+    Small = 1,
+    Medium = 2,
+    Large = 3
+};
+
+inline constexpr int DocumentPageSpacingSmallPixels = 8;
+
+constexpr int documentPageSpacingPixels(
+    DocumentPageSpacing spacing
+    )
+{
+    switch (spacing)
+    {
+    case DocumentPageSpacing::None:
+        return 0;
+
+    case DocumentPageSpacing::Medium:
+        return DocumentPageSpacingSmallPixels * 2;
+
+    case DocumentPageSpacing::Large:
+        return DocumentPageSpacingSmallPixels * 4;
+
+    case DocumentPageSpacing::Small:
+    default:
+        return DocumentPageSpacingSmallPixels;
+    }
+}

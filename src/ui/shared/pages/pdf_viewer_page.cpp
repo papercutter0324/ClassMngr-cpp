@@ -233,6 +233,25 @@ QString PdfViewerPage::currentFilePath() const
     return m_currentFilePath;
 }
 
+void PdfViewerPage::setDocumentPageSpacing(
+    DocumentPageSpacing spacing
+    )
+{
+    m_documentPageSpacing =
+        spacing;
+
+    if (!m_view)
+    {
+        return;
+    }
+
+    m_view->setPageSpacing(
+        documentPageSpacingPixels(
+            m_documentPageSpacing
+            )
+        );
+}
+
 void PdfViewerPage::zoomIn()
 {
     m_view->setZoomMode(
@@ -588,6 +607,11 @@ void PdfViewerPage::buildUi()
         );
     m_view->setDocument(
         m_document
+        );
+    m_view->setPageSpacing(
+        documentPageSpacingPixels(
+            m_documentPageSpacing
+            )
         );
     m_view->setSizePolicy(
         QSizePolicy::Expanding,
