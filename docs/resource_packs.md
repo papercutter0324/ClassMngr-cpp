@@ -51,9 +51,9 @@ rcc --binary campuses.qrc --output campuses-1.1.0.rcc
 sha256sum campuses-1.1.0.rcc
 ```
 
-Pack versions use strict `x.x.x` format. The embedded fallback version is
-currently `1.0.0`; when compiled fallback content changes, update the matching
-definition in `resource_pack_manager.cpp`.
+Pack versions use strict `x.x.x` format. Embedded fallback versions are defined
+per pack in `resource_pack_manager.cpp`; when compiled fallback content changes,
+update the matching definition there.
 
 ## Server manifest
 

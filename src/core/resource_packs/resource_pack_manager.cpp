@@ -87,7 +87,7 @@ ResourcePackManager::ResourcePackManager(
         {
             QStringLiteral("essay"),
             QStringLiteral(":/assets/files/essay"),
-            Version(1, 0, 0)
+            Version(1, 0, 1)
         },
         {
             QStringLiteral("essay-topics"),
@@ -107,7 +107,7 @@ ResourcePackManager::ResourcePackManager(
         {
             QStringLiteral("lessons"),
             QStringLiteral(":/assets/files/lessons"),
-            Version(1, 0, 0)
+            Version(1, 0, 1)
         },
         {
             QStringLiteral("sub-prep"),

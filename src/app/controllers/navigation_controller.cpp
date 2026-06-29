@@ -143,6 +143,33 @@ DocumentRoute documentRouteForKey(
         };
     }
 
+    if (key == QStringLiteral("document_lesson_templates_theseus_paragraph"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("Theseus Paragraph Writing Template.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_online_essay_topic_template"))
+    {
+        return {
+            ResourcePaths::Files::essayDirectory(),
+            QStringLiteral("Essay Topic Template for Students.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_online_essay_brainstorm"))
+    {
+        return {
+            ResourcePaths::Files::essayDirectory(),
+            QStringLiteral("Essay Writing Brainstorm Template.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
     if (key == QStringLiteral("document_training_observation"))
     {
         return {

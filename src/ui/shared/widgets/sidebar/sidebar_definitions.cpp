@@ -124,31 +124,37 @@ QList<TreeNodeSpec> treeStructure()
                     {
                         {
                             "document_lesson_templates_sp_wr",
-                            QObject::tr("SP & WR Lessons"),
+                            QObject::tr("Speaking / Writing"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_skill",
-                            QObject::tr("Skill Lessons"),
+                            QObject::tr("Skill / TBL"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_student_led",
-                            QObject::tr("Student-Led Lessons"),
-                            NodeType::Page
-                        },
-
-                        {
-                            "document_lesson_templates_creo_writing",
-                            QObject::tr("CREO Writing Lessons"),
+                            QObject::tr("Student-Led Activities"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_ms_essay",
-                            QObject::tr("MS Essay Lessons"),
+                            QObject::tr("Middle School OE"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_theseus_paragraph",
+                            QObject::tr("Theseus Paragraph Writing"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_creo_writing",
+                            QObject::tr("CREO"),
                             NodeType::Page
                         }
                     }
@@ -157,7 +163,21 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "document_online_essay",
                     QObject::tr("Online Essay"),
-                    NodeType::Root
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_online_essay_topic_template",
+                            QObject::tr("Essay Topic Template"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_online_essay_brainstorm",
+                            QObject::tr("Essay Brainstorm"),
+                            NodeType::Page
+                        }
+                    }
                 },
 
                 {
