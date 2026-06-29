@@ -119,7 +119,39 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "document_lesson_templates",
                     QObject::tr("Lesson Templates"),
-                    NodeType::Root
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_lesson_templates_sp_wr",
+                            QObject::tr("SP & WR Lessons"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_skill",
+                            QObject::tr("Skill Lessons"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_student_led",
+                            QObject::tr("Student-Led Lessons"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_creo_writing",
+                            QObject::tr("CREO Writing Lessons"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_lesson_templates_ms_essay",
+                            QObject::tr("MS Essay Lessons"),
+                            NodeType::Page
+                        }
+                    }
                 },
 
                 {
@@ -137,7 +169,27 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "document_training",
                     QObject::tr("Training"),
-                    NodeType::Root
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_training_observation",
+                            QObject::tr("Observation"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_training_reflection",
+                            QObject::tr("Reflection"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_training_final_reflection",
+                            QObject::tr("Final Reflection"),
+                            NodeType::Page
+                        }
+                    }
                 }
             }
         },

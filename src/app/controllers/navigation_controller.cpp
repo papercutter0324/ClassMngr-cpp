@@ -48,21 +48,97 @@ QString evaluationNameForKey(
     return QString();
 }
 
-QString guideFileNameForKey(
+struct DocumentRoute
+{
+    QString directory;
+    QString fileName;
+};
+
+DocumentRoute documentRouteForKey(
     const QString& key
     )
 {
     if (key == QStringLiteral("document_guides_lesson_planning"))
     {
-        return QStringLiteral("DYB Lesson Planning Guide (v1.1).pdf");
+        return {
+            ResourcePaths::Files::guidesDirectory(),
+            QStringLiteral("DYB Lesson Planning Guide.pdf")
+        };
     }
 
     if (key == QStringLiteral("document_guides_powerpoint_shortcuts"))
     {
-        return QStringLiteral("PowerPoint Keyboard Shortcuts.pdf");
+        return {
+            ResourcePaths::Files::guidesDirectory(),
+            QStringLiteral("PowerPoint Keyboard Shortcuts.pdf")
+        };
     }
 
-    return QString();
+    if (key == QStringLiteral("document_lesson_templates_sp_wr"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("SP+WR Template.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_lesson_templates_skill"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("Skill Lesson Template.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_lesson_templates_student_led"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("Student-Led Activity Template.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_lesson_templates_creo_writing"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("CREO Creative Writing Lesson Template.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_lesson_templates_ms_essay"))
+    {
+        return {
+            ResourcePaths::Files::lessonsDirectory(),
+            QStringLiteral("Middle School OE Template.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_training_observation"))
+    {
+        return {
+            ResourcePaths::Files::trainingDirectory(),
+            QStringLiteral("Name Surname Observation 0 - By Name .pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_training_reflection"))
+    {
+        return {
+            ResourcePaths::Files::trainingDirectory(),
+            QStringLiteral("Name Surname Reflection 0.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_training_final_reflection"))
+    {
+        return {
+            ResourcePaths::Files::trainingDirectory(),
+            QStringLiteral("Name Surname Reflection 8 (Final Reflection).pdf")
+        };
+    }
+
+    return {};
 }
 }
 
@@ -328,12 +404,15 @@ void NavigationController::handleDocument(
     const NavigationData& data
     )
 {
-    const QString fileName =
-        guideFileNameForKey(
+    const DocumentRoute route =
+        documentRouteForKey(
             data.routeKey
             );
 
-    if (fileName.trimmed().isEmpty())
+    if (
+        route.directory.trimmed().isEmpty()
+        || route.fileName.trimmed().isEmpty()
+        )
     {
         return;
     }
@@ -345,9 +424,9 @@ void NavigationController::handleDocument(
 
     const QString filePath =
         QDir(
-            ResourcePaths::Files::guidesDirectory()
+            route.directory
             ).filePath(
-                fileName
+                route.fileName
                 );
 
     [[maybe_unused]] const bool loaded =
