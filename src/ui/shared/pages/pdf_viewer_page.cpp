@@ -133,13 +133,6 @@ PdfViewerPage::~PdfViewerPage()
             );
     }
 
-    if (m_view)
-    {
-        m_view->setDocument(
-            nullptr
-            );
-    }
-
     if (m_document)
     {
         disconnect(
@@ -148,7 +141,18 @@ PdfViewerPage::~PdfViewerPage()
             this,
             nullptr
             );
+    }
+
+    delete m_view;
+    m_view =
+        nullptr;
+
+    if (m_document)
+    {
         m_document->close();
+        delete m_document;
+        m_document =
+            nullptr;
     }
 }
 
