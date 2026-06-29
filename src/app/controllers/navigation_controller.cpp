@@ -48,10 +48,34 @@ QString evaluationNameForKey(
     return QString();
 }
 
+namespace DocumentActions
+{
+constexpr PdfViewerDocumentActions NoActions{
+    false,
+    false
+};
+
+constexpr PdfViewerDocumentActions ExportOnly{
+    true,
+    false
+};
+
+constexpr PdfViewerDocumentActions PrintOnly{
+    false,
+    true
+};
+
+constexpr PdfViewerDocumentActions ExportAndPrint{
+    true,
+    true
+};
+}
+
 struct DocumentRoute
 {
     QString directory;
     QString fileName;
+    PdfViewerDocumentActions actions = DocumentActions::ExportAndPrint;
 };
 
 DocumentRoute documentRouteForKey(
@@ -78,7 +102,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("SP+WR Template.pdf")
+            QStringLiteral("SP+WR Template.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -86,7 +111,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Skill Lesson Template.pdf")
+            QStringLiteral("Skill Lesson Template.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -94,7 +120,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Student-Led Activity Template.pdf")
+            QStringLiteral("Student-Led Activity Template.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -102,7 +129,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("CREO Creative Writing Lesson Template.pdf")
+            QStringLiteral("CREO Creative Writing Lesson Template.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -110,7 +138,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Middle School OE Template.pdf")
+            QStringLiteral("Middle School OE Template.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -118,7 +147,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Observation 0 - By Name .pdf")
+            QStringLiteral("Name Surname Observation 0 - By Name .pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -126,7 +156,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Reflection 0.pdf")
+            QStringLiteral("Name Surname Reflection 0.pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -134,7 +165,8 @@ DocumentRoute documentRouteForKey(
     {
         return {
             ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Reflection 8 (Final Reflection).pdf")
+            QStringLiteral("Name Surname Reflection 8 (Final Reflection).pdf"),
+            DocumentActions::ExportOnly
         };
     }
 
@@ -431,7 +463,10 @@ void NavigationController::handleDocument(
 
     [[maybe_unused]] const bool loaded =
         m_pages->pdfViewerPage()
-            ->loadPdf(filePath);
+            ->loadPdf(
+                filePath,
+                route.actions
+                );
 
     m_pages->showPage(
         PageType::PdfViewer

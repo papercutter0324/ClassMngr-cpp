@@ -11,6 +11,12 @@ class QPdfDocument;
 class QPdfView;
 class QPushButton;
 
+struct PdfViewerDocumentActions
+{
+    bool exportEnabled = false;
+    bool printEnabled = false;
+};
+
 class PdfViewerPage : public BasePage
 {
     Q_OBJECT
@@ -20,8 +26,11 @@ public:
         QWidget* parent = nullptr
         );
 
+    ~PdfViewerPage() override;
+
     [[nodiscard]] bool loadPdf(
-        const QString& filePath
+        const QString& filePath,
+        PdfViewerDocumentActions actions = {}
         );
 
     [[nodiscard]] QString currentFilePath() const;
@@ -36,6 +45,8 @@ public slots:
 private slots:
     void applyZoomInput();
     void applyPageInput();
+    void exportFile();
+    void showPrintPlaceholder();
     void handleDocumentStatusChanged();
 
 private:
@@ -43,6 +54,13 @@ private:
     void applyZoom();
     void updateZoomDisplay();
     void updatePageDisplay();
+    void updateDocumentActionButtons();
+    [[nodiscard]] QString exportSourcePath() const;
+    [[nodiscard]] bool copyFileTo(
+        const QString& sourcePath,
+        const QString& targetPath,
+        QString* errorMessage
+        ) const;
     void showStatusMessage(
         const QString& message
         );
@@ -53,6 +71,7 @@ private:
         ) const;
 
 private:
+    bool m_tearingDown = false;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;
@@ -66,7 +85,10 @@ private:
     QPushButton* m_zoomInButton = nullptr;
     QPushButton* m_fitWidthButton = nullptr;
     QPushButton* m_fitPageButton = nullptr;
+    QPushButton* m_exportButton = nullptr;
+    QPushButton* m_printButton = nullptr;
 
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;
+    PdfViewerDocumentActions m_documentActions;
 };

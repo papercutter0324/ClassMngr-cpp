@@ -5,16 +5,29 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QCheckBox>
+#include <QDesktopServices>
 #include <QIntValidator>
+#include <QDir>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QObject>
 #include <QPdfDocument>
 #include <QPdfPageNavigator>
 #include <QPdfView>
 #include <QPushButton>
+#include <QSaveFile>
 #include <QSignalBlocker>
 #include <QSizePolicy>
+#include <QStandardPaths>
+#include <QStringList>
 #include <QtGlobal>
+#include <QUrl>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -24,6 +37,7 @@ namespace
 constexpr qreal ZoomStep = 1.2;
 constexpr qreal MinimumZoom = 0.25;
 constexpr qreal MaximumZoom = 3.0;
+constexpr qsizetype CopyBufferSize = 1024 * 1024;
 
 QString zoomText(
     qreal zoom
@@ -32,6 +46,62 @@ QString zoomText(
     return QStringLiteral("%1%").arg(
         qRound(zoom * 100.0)
         );
+}
+
+QString exportFileFilter(
+    const QString& suffix
+    )
+{
+    if (suffix.trimmed().isEmpty())
+    {
+        return QObject::tr("All Files (*)");
+    }
+
+    return QObject::tr("%1 Files (*.%2);;All Files (*)")
+        .arg(
+            suffix.toUpper(),
+            suffix
+            );
+}
+
+QString defaultExportDirectory()
+{
+    QString directory =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DocumentsLocation
+            );
+
+    if (directory.isEmpty())
+    {
+        directory =
+            QDir::homePath();
+    }
+
+    return directory;
+}
+
+int exportSuffixRank(
+    const QString& suffix
+    )
+{
+    const QString normalizedSuffix =
+        suffix.toLower();
+
+    const QStringList preferredSuffixes = {
+        QStringLiteral("pptx"),
+        QStringLiteral("docx"),
+        QStringLiteral("xlsx"),
+        QStringLiteral("ppt"),
+        QStringLiteral("doc"),
+        QStringLiteral("xls")
+    };
+
+    const int index =
+        preferredSuffixes.indexOf(normalizedSuffix);
+
+    return index >= 0
+        ? index
+        : preferredSuffixes.size();
 }
 }
 
@@ -43,12 +113,54 @@ PdfViewerPage::PdfViewerPage(
     buildUi();
 }
 
+PdfViewerPage::~PdfViewerPage()
+{
+    m_tearingDown =
+        true;
+
+    if (
+        m_view
+        && m_view->pageNavigator()
+        )
+    {
+        disconnect(
+            m_view->pageNavigator(),
+            nullptr,
+            this,
+            nullptr
+            );
+    }
+
+    if (m_view)
+    {
+        m_view->setDocument(
+            nullptr
+            );
+    }
+
+    if (m_document)
+    {
+        disconnect(
+            m_document,
+            nullptr,
+            this,
+            nullptr
+            );
+        m_document->close();
+    }
+}
+
 bool PdfViewerPage::loadPdf(
-    const QString& filePath
+    const QString& filePath,
+    PdfViewerDocumentActions actions
     )
 {
     m_currentFilePath =
         filePath;
+    m_documentActions =
+        actions;
+
+    updateDocumentActionButtons();
 
     if (filePath.trimmed().isEmpty())
     {
@@ -179,6 +291,141 @@ void PdfViewerPage::applyZoomInput()
     applyZoom();
 }
 
+void PdfViewerPage::exportFile()
+{
+    const QString sourcePath =
+        exportSourcePath();
+
+    if (sourcePath.trimmed().isEmpty())
+    {
+        QMessageBox::warning(
+            this,
+            tr("Export File"),
+            tr("No file is available to export.")
+            );
+        return;
+    }
+
+    const QFileInfo sourceInfo(sourcePath);
+
+    const QString suggestedPath =
+        QDir(
+            defaultExportDirectory()
+            ).filePath(
+                sourceInfo.fileName()
+                );
+
+    QFileDialog dialog(
+        this,
+        tr("Export File"),
+        QFileInfo(suggestedPath).absolutePath(),
+        exportFileFilter(
+            sourceInfo.suffix()
+            )
+        );
+    dialog.setAcceptMode(
+        QFileDialog::AcceptSave
+        );
+    dialog.setFileMode(
+        QFileDialog::AnyFile
+        );
+    dialog.setOption(
+        QFileDialog::DontUseNativeDialog,
+        true
+        );
+    dialog.setDefaultSuffix(
+        sourceInfo.suffix()
+        );
+    dialog.selectFile(
+        QFileInfo(suggestedPath).fileName()
+        );
+
+    auto* openAfterSavingCheck =
+        new QCheckBox(
+            tr("Open after saving"),
+            &dialog
+            );
+
+    if (auto* gridLayout = qobject_cast<QGridLayout*>(dialog.layout()))
+    {
+        gridLayout->addWidget(
+            openAfterSavingCheck,
+            gridLayout->rowCount(),
+            0,
+            1,
+            gridLayout->columnCount()
+            );
+    }
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QStringList selectedFiles =
+        dialog.selectedFiles();
+
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    QString targetPath =
+        selectedFiles.first();
+
+    if (
+        !sourceInfo.suffix().isEmpty()
+        && QFileInfo(targetPath).suffix().isEmpty()
+        )
+    {
+        targetPath +=
+            QStringLiteral(".%1")
+                .arg(sourceInfo.suffix());
+    }
+
+    QString errorMessage;
+
+    if (
+        !copyFileTo(
+            sourcePath,
+            targetPath,
+            &errorMessage
+            )
+        )
+    {
+        QMessageBox::warning(
+            this,
+            tr("Export File"),
+            errorMessage
+            );
+        return;
+    }
+
+    if (
+        openAfterSavingCheck->isChecked()
+        && !QDesktopServices::openUrl(
+            QUrl::fromLocalFile(targetPath)
+            )
+        )
+    {
+        QMessageBox::warning(
+            this,
+            tr("Open File"),
+            tr("Unable to open the exported file:\n%1")
+                .arg(targetPath)
+            );
+    }
+}
+
+void PdfViewerPage::showPrintPlaceholder()
+{
+    QMessageBox::information(
+        this,
+        tr("Print File"),
+        tr("Printing from the PDF viewer has not been added yet.")
+        );
+}
+
 void PdfViewerPage::applyPageInput()
 {
     const int pageCount =
@@ -223,6 +470,15 @@ void PdfViewerPage::applyPageInput()
 
 void PdfViewerPage::handleDocumentStatusChanged()
 {
+    if (
+        m_tearingDown
+        || !m_document
+        || !m_view
+        )
+    {
+        return;
+    }
+
     if (m_document->status() == QPdfDocument::Status::Ready)
     {
         m_view->setPageMode(
@@ -403,6 +659,37 @@ void PdfViewerPage::buildUi()
         button->setFixedHeight(32);
     }
 
+    m_exportButton =
+        new TextFitPushButton(
+            tr("Export"),
+            this
+            );
+    m_exportButton->setToolTip(
+        tr("Export this file")
+        );
+
+    m_printButton =
+        new TextFitPushButton(
+            tr("Print"),
+            this
+            );
+    m_printButton->setToolTip(
+        tr("Print this file")
+        );
+
+    for (QPushButton* button : {m_exportButton, m_printButton})
+    {
+        RoleStyleRegistry::apply(
+            button,
+            UiRoles::ButtonFooter
+            );
+        button->setSizePolicy(
+            QSizePolicy::Preferred,
+            QSizePolicy::Preferred
+            );
+        button->setFixedHeight(32);
+    }
+
     m_zoomLabel =
         new QLabel(
             tr("Zoom:"),
@@ -459,6 +746,13 @@ void PdfViewerPage::buildUi()
     bottomLayout()->addWidget(
         m_fitPageButton
         );
+    bottomLayout()->addSpacing(20);
+    bottomLayout()->addWidget(
+        m_exportButton
+        );
+    bottomLayout()->addWidget(
+        m_printButton
+        );
     bottomLayout()->addStretch();
 
     connect(
@@ -487,6 +781,20 @@ void PdfViewerPage::buildUi()
         &QPushButton::clicked,
         this,
         &PdfViewerPage::fitPage
+        );
+
+    connect(
+        m_exportButton,
+        &QPushButton::clicked,
+        this,
+        &PdfViewerPage::exportFile
+        );
+
+    connect(
+        m_printButton,
+        &QPushButton::clicked,
+        this,
+        &PdfViewerPage::showPrintPlaceholder
         );
 
     connect(
@@ -539,6 +847,7 @@ void PdfViewerPage::buildUi()
         );
 
     updatePageDisplay();
+    updateDocumentActionButtons();
 }
 
 void PdfViewerPage::applyZoom()
@@ -566,6 +875,19 @@ void PdfViewerPage::updateZoomDisplay()
 
 void PdfViewerPage::updatePageDisplay()
 {
+    if (
+        m_tearingDown
+        || !m_document
+        || !m_view
+        || !m_view->pageNavigator()
+        || !m_pageValidator
+        || !m_pageInput
+        || !m_pageTotalLabel
+        )
+    {
+        return;
+    }
+
     const int pageCount =
         m_document->pageCount();
     const bool hasPages =
@@ -609,6 +931,216 @@ void PdfViewerPage::updatePageDisplay()
     m_pageTotalLabel->setText(
         tr("of %1").arg(pageCount)
         );
+}
+
+void PdfViewerPage::updateDocumentActionButtons()
+{
+    const bool hasFile =
+        !m_currentFilePath.trimmed().isEmpty();
+
+    m_exportButton->setVisible(
+        hasFile
+        && m_documentActions.exportEnabled
+        );
+    m_exportButton->setEnabled(
+        hasFile
+        && m_documentActions.exportEnabled
+        );
+
+    m_printButton->setVisible(
+        hasFile
+        && m_documentActions.printEnabled
+        );
+    m_printButton->setEnabled(
+        hasFile
+        && m_documentActions.printEnabled
+        );
+}
+
+QString PdfViewerPage::exportSourcePath() const
+{
+    if (m_currentFilePath.trimmed().isEmpty())
+    {
+        return QString();
+    }
+
+    const QFileInfo pdfInfo(m_currentFilePath);
+    const QDir directory(
+        pdfInfo.absolutePath()
+        );
+
+    if (!directory.exists())
+    {
+        return m_currentFilePath;
+    }
+
+    QList<QFileInfo> alternatives;
+
+    const QFileInfoList files =
+        directory.entryInfoList(
+            QDir::Files | QDir::NoDotAndDotDot,
+            QDir::Name
+            );
+
+    for (const QFileInfo& fileInfo : files)
+    {
+        if (
+            fileInfo.completeBaseName().compare(
+                pdfInfo.completeBaseName(),
+                Qt::CaseInsensitive
+                ) != 0
+            )
+        {
+            continue;
+        }
+
+        if (
+            fileInfo.suffix().compare(
+                QStringLiteral("pdf"),
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            continue;
+        }
+
+        alternatives.append(fileInfo);
+    }
+
+    if (alternatives.isEmpty())
+    {
+        return m_currentFilePath;
+    }
+
+    std::sort(
+        alternatives.begin(),
+        alternatives.end(),
+        [](const QFileInfo& left, const QFileInfo& right)
+        {
+            const int leftRank =
+                exportSuffixRank(
+                    left.suffix()
+                    );
+            const int rightRank =
+                exportSuffixRank(
+                    right.suffix()
+                    );
+
+            if (leftRank != rightRank)
+            {
+                return leftRank < rightRank;
+            }
+
+            return left.fileName().localeAwareCompare(
+                right.fileName()
+                ) < 0;
+        }
+        );
+
+    return alternatives.first().absoluteFilePath();
+}
+
+bool PdfViewerPage::copyFileTo(
+    const QString& sourcePath,
+    const QString& targetPath,
+    QString* errorMessage
+    ) const
+{
+    QFile sourceFile(sourcePath);
+
+    if (!sourceFile.open(QIODevice::ReadOnly))
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                tr("Unable to read the source file:\n%1")
+                    .arg(sourcePath);
+        }
+
+        return false;
+    }
+
+    const QFileInfo targetInfo(targetPath);
+
+    if (
+        !targetInfo.absolutePath().isEmpty()
+        && !QDir().mkpath(targetInfo.absolutePath())
+        )
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                tr("Unable to create the destination folder:\n%1")
+                    .arg(targetInfo.absolutePath());
+        }
+
+        return false;
+    }
+
+    QSaveFile targetFile(targetPath);
+
+    if (!targetFile.open(QIODevice::WriteOnly))
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                tr("Unable to write the destination file:\n%1")
+                    .arg(targetPath);
+        }
+
+        return false;
+    }
+
+    while (!sourceFile.atEnd())
+    {
+        const QByteArray chunk =
+            sourceFile.read(CopyBufferSize);
+
+        if (
+            chunk.isEmpty()
+            && sourceFile.error() != QFile::NoError
+            )
+        {
+            targetFile.cancelWriting();
+
+            if (errorMessage)
+            {
+                *errorMessage =
+                    tr("Unable to read the source file:\n%1")
+                        .arg(sourcePath);
+            }
+
+            return false;
+        }
+
+        if (targetFile.write(chunk) != chunk.size())
+        {
+            targetFile.cancelWriting();
+
+            if (errorMessage)
+            {
+                *errorMessage =
+                    tr("Unable to write the destination file:\n%1")
+                        .arg(targetPath);
+            }
+
+            return false;
+        }
+    }
+
+    if (!targetFile.commit())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                tr("Unable to save the file:\n%1")
+                    .arg(targetPath);
+        }
+
+        return false;
+    }
+
+    return true;
 }
 
 void PdfViewerPage::showStatusMessage(
