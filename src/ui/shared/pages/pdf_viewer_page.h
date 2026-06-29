@@ -6,6 +6,7 @@
 
 class QLabel;
 class QLineEdit;
+class QIntValidator;
 class QPdfDocument;
 class QPdfView;
 class QPushButton;
@@ -34,12 +35,14 @@ public slots:
 
 private slots:
     void applyZoomInput();
+    void applyPageInput();
     void handleDocumentStatusChanged();
 
 private:
     void buildUi();
     void applyZoom();
     void updateZoomDisplay();
+    void updatePageDisplay();
     void showStatusMessage(
         const QString& message
         );
@@ -53,6 +56,10 @@ private:
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;
+    QLabel* m_pageLabel = nullptr;
+    QLabel* m_pageTotalLabel = nullptr;
+    QLineEdit* m_pageInput = nullptr;
+    QIntValidator* m_pageValidator = nullptr;
     QLabel* m_zoomLabel = nullptr;
     QLineEdit* m_zoomInput = nullptr;
     QPushButton* m_zoomOutButton = nullptr;

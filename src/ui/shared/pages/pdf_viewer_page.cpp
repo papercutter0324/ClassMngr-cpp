@@ -5,11 +5,14 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QIntValidator>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPdfDocument>
+#include <QPdfPageNavigator>
 #include <QPdfView>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QtGlobal>
 #include <QVBoxLayout>
@@ -50,6 +53,7 @@ bool PdfViewerPage::loadPdf(
     if (filePath.trimmed().isEmpty())
     {
         m_document->close();
+        updatePageDisplay();
         showStatusMessage(
             tr("No PDF file selected.")
             );
@@ -63,6 +67,7 @@ bool PdfViewerPage::loadPdf(
 
     if (error != QPdfDocument::Error::None)
     {
+        updatePageDisplay();
         showStatusMessage(
             tr("Failed to load PDF: %1")
                 .arg(
@@ -174,6 +179,48 @@ void PdfViewerPage::applyZoomInput()
     applyZoom();
 }
 
+void PdfViewerPage::applyPageInput()
+{
+    const int pageCount =
+        m_document->pageCount();
+
+    if (pageCount <= 0)
+    {
+        updatePageDisplay();
+        return;
+    }
+
+    bool ok = false;
+    const int requestedPage =
+        m_pageInput->text()
+            .trimmed()
+            .toInt(&ok);
+
+    if (!ok)
+    {
+        updatePageDisplay();
+        return;
+    }
+
+    const int targetPage =
+        std::clamp(
+            requestedPage,
+            1,
+            pageCount
+            );
+
+    QPdfPageNavigator* navigator =
+        m_view->pageNavigator();
+
+    navigator->jump(
+        targetPage - 1,
+        {},
+        navigator->currentZoom()
+        );
+
+    updatePageDisplay();
+}
+
 void PdfViewerPage::handleDocumentStatusChanged()
 {
     if (m_document->status() == QPdfDocument::Status::Ready)
@@ -184,6 +231,7 @@ void PdfViewerPage::handleDocumentStatusChanged()
 
         clearStatusMessage();
         resetZoom();
+        updatePageDisplay();
         return;
     }
 
@@ -194,6 +242,8 @@ void PdfViewerPage::handleDocumentStatusChanged()
                 .arg(documentErrorText())
             );
     }
+
+    updatePageDisplay();
 }
 
 void PdfViewerPage::buildUi()
@@ -232,6 +282,54 @@ void PdfViewerPage::buildUi()
         FontManager::getUiFont(10)
         );
     m_statusLabel->hide();
+
+    m_pageLabel =
+        new QLabel(
+            tr("Page:"),
+            this
+            );
+    m_pageLabel->setObjectName(
+        QStringLiteral("pageSubtitle")
+        );
+    m_pageLabel->setFont(
+        FontManager::getUiFont(10)
+        );
+
+    m_pageInput =
+        new QLineEdit(this);
+    RoleStyleRegistry::apply(
+        m_pageInput,
+        UiRoles::Input
+        );
+    m_pageInput->setFixedWidth(56);
+    m_pageInput->setAlignment(
+        Qt::AlignCenter
+        );
+    m_pageInput->setToolTip(
+        tr("Go to page")
+        );
+
+    m_pageValidator =
+        new QIntValidator(
+            1,
+            1,
+            m_pageInput
+            );
+    m_pageInput->setValidator(
+        m_pageValidator
+        );
+
+    m_pageTotalLabel =
+        new QLabel(
+            tr("of 0"),
+            this
+            );
+    m_pageTotalLabel->setObjectName(
+        QStringLiteral("pageSubtitle")
+        );
+    m_pageTotalLabel->setFont(
+        FontManager::getUiFont(10)
+        );
 
     contentLayout()->setContentsMargins(
         16,
@@ -333,6 +431,16 @@ void PdfViewerPage::buildUi()
 
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(
+        m_pageLabel
+        );
+    bottomLayout()->addWidget(
+        m_pageInput
+        );
+    bottomLayout()->addWidget(
+        m_pageTotalLabel
+        );
+    bottomLayout()->addSpacing(20);
+    bottomLayout()->addWidget(
         m_zoomLabel
         );
     bottomLayout()->addWidget(
@@ -396,11 +504,41 @@ void PdfViewerPage::buildUi()
         );
 
     connect(
+        m_pageInput,
+        &QLineEdit::returnPressed,
+        this,
+        &PdfViewerPage::applyPageInput
+        );
+
+    connect(
+        m_pageInput,
+        &QLineEdit::editingFinished,
+        this,
+        &PdfViewerPage::applyPageInput
+        );
+
+    connect(
         m_document,
         &QPdfDocument::statusChanged,
         this,
         &PdfViewerPage::handleDocumentStatusChanged
         );
+
+    connect(
+        m_document,
+        &QPdfDocument::pageCountChanged,
+        this,
+        &PdfViewerPage::updatePageDisplay
+        );
+
+    connect(
+        m_view->pageNavigator(),
+        &QPdfPageNavigator::currentPageChanged,
+        this,
+        &PdfViewerPage::updatePageDisplay
+        );
+
+    updatePageDisplay();
 }
 
 void PdfViewerPage::applyZoom()
@@ -423,6 +561,53 @@ void PdfViewerPage::updateZoomDisplay()
 {
     m_zoomInput->setText(
         zoomText(m_currentZoom)
+        );
+}
+
+void PdfViewerPage::updatePageDisplay()
+{
+    const int pageCount =
+        m_document->pageCount();
+    const bool hasPages =
+        pageCount > 0;
+
+    m_pageValidator->setRange(
+        1,
+        std::max(
+            1,
+            pageCount
+            )
+        );
+
+    const QSignalBlocker pageInputBlocker(
+        m_pageInput
+        );
+
+    if (!hasPages)
+    {
+        m_pageInput->setText(
+            QStringLiteral("0")
+            );
+        m_pageInput->setEnabled(false);
+        m_pageTotalLabel->setText(
+            tr("of 0")
+            );
+        return;
+    }
+
+    const int currentPage =
+        std::clamp(
+            m_view->pageNavigator()->currentPage(),
+            0,
+            pageCount - 1
+            ) + 1;
+
+    m_pageInput->setText(
+        QString::number(currentPage)
+        );
+    m_pageInput->setEnabled(true);
+    m_pageTotalLabel->setText(
+        tr("of %1").arg(pageCount)
         );
 }
 
