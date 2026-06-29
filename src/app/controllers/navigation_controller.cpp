@@ -170,6 +170,98 @@ DocumentRoute documentRouteForKey(
         };
     }
 
+    if (key == QStringLiteral("document_online_essay_theseus_explained"))
+    {
+        return {
+            ResourcePaths::Files::essayDirectory(),
+            QStringLiteral("Theseus Paragraph Writing Explained.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_tips_one_on_one"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("Speaking Evaluations Explained - 1-on-1.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_tips_presentations"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("Speaking Evaluations Explained - In-class Presentations.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_tips_single_class"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("Speaking Evaluations Explained - One Class Tips.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_topic_options"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("Speaking Evaluation Topic Options.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_regular_template"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("SpeakingEvaluationTemplate-Full.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_athena_songs_template"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("SpeakingEvaluationTemplate_Advanced-Full.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_speaking_evals_winner_certificates"))
+    {
+        return {
+            ResourcePaths::Files::evaluationsDirectory(),
+            QStringLiteral("CertificateTemplate-Full.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_book_reports_grading_rubric"))
+    {
+        return {
+            ResourcePaths::Files::bookReportsDirectory(),
+            QStringLiteral("Book Report Grading Rubric.pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_book_reports_grading_rubric_40"))
+    {
+        return {
+            ResourcePaths::Files::bookReportsDirectory(),
+            QStringLiteral("Book Report Grading Rubric (Sentence Requirements Not Met).pdf")
+        };
+    }
+
+    if (key == QStringLiteral("document_book_reports_student_info_handout"))
+    {
+        return {
+            ResourcePaths::Files::bookReportsDirectory(),
+            QStringLiteral("Book Report Grading.pdf")
+        };
+    }
+
     if (key == QStringLiteral("document_training_observation"))
     {
         return {

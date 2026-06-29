@@ -176,6 +176,62 @@ QList<TreeNodeSpec> treeStructure()
                             "document_online_essay_brainstorm",
                             QObject::tr("Essay Brainstorm"),
                             NodeType::Page
+                        },
+
+                        {
+                            "document_online_essay_theseus_explained",
+                            QObject::tr("Theseus Paragraphs Explained"),
+                            NodeType::Page
+                        }
+                    }
+                },
+
+                {
+                    "document_speaking_evals",
+                    QObject::tr("Speaking Evals"),
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_speaking_evals_tips_one_on_one",
+                            QObject::tr("One-to-One Evaluations"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_tips_presentations",
+                            QObject::tr("In-Class Presentations"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_tips_single_class",
+                            QObject::tr("Finishing in One Class"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_topic_options",
+                            QObject::tr("Topic Options"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_regular_template",
+                            QObject::tr("Regular Template"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_athena_songs_template",
+                            QObject::tr("Athena/Song's Template"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_speaking_evals_winner_certificates",
+                            QObject::tr("Winner Certificates"),
+                            NodeType::Page
                         }
                     }
                 },
@@ -183,7 +239,27 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "document_book_reports",
                     QObject::tr("Book Reports"),
-                    NodeType::Root
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_book_reports_grading_rubric",
+                            QObject::tr("Grading Rubric"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_book_reports_grading_rubric_40",
+                            QObject::tr("Grading Rubric (40%)"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_book_reports_student_info_handout",
+                            QObject::tr("Student Info Handout"),
+                            NodeType::Page
+                        }
+                    }
                 },
 
                 {

@@ -94,9 +94,9 @@ does not currently have an update available.
       "sizeBytes": 456789
     },
     "essay": {
-      "version": "1.0.1",
-      "url": "https://example.com/packs/essay-1.0.1.rcc",
-      "fileName": "essay-1.0.1.rcc",
+      "version": "1.0.2",
+      "url": "https://example.com/packs/essay-1.0.2.rcc",
+      "fileName": "essay-1.0.2.rcc",
       "sha256": "64 lowercase hexadecimal characters",
       "sizeBytes": 567890
     },
@@ -108,9 +108,9 @@ does not currently have an update available.
       "sizeBytes": 678901
     },
     "evaluations": {
-      "version": "1.0.1",
-      "url": "https://example.com/packs/evaluations-1.0.1.rcc",
-      "fileName": "evaluations-1.0.1.rcc",
+      "version": "1.0.2",
+      "url": "https://example.com/packs/evaluations-1.0.2.rcc",
+      "fileName": "evaluations-1.0.2.rcc",
       "sha256": "64 lowercase hexadecimal characters",
       "sizeBytes": 789012
     },

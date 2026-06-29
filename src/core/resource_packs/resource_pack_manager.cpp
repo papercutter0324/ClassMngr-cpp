@@ -82,12 +82,12 @@ ResourcePackManager::ResourcePackManager(
         {
             QStringLiteral("book-reports"),
             QStringLiteral(":/assets/files/book reports"),
-            Version(1, 0, 0)
+            Version(1, 0, 1)
         },
         {
             QStringLiteral("essay"),
             QStringLiteral(":/assets/files/essay"),
-            Version(1, 0, 1)
+            Version(1, 0, 2)
         },
         {
             QStringLiteral("essay-topics"),
@@ -97,7 +97,7 @@ ResourcePackManager::ResourcePackManager(
         {
             QStringLiteral("evaluations"),
             QStringLiteral(":/assets/files/evaluations"),
-            Version(1, 0, 0)
+            Version(1, 0, 2)
         },
         {
             QStringLiteral("guides"),
