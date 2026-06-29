@@ -2,6 +2,7 @@
 
 #include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_service.h"
+#include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/role_style_registry.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -13,6 +14,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -40,14 +42,34 @@ constexpr qreal ZoomStep = 1.2;
 constexpr qreal MinimumZoom = 0.25;
 constexpr qreal MaximumZoom = 3.0;
 constexpr qsizetype CopyBufferSize = 1024 * 1024;
+constexpr int PageTotalReservedDigits = 3;
+constexpr int PageTotalReservedPadding = 8;
 
 QString zoomText(
     qreal zoom
     )
 {
     return QStringLiteral("%1%").arg(
-        qRound(zoom * 100.0)
+        std::clamp(
+            qRound(zoom * 100.0),
+            qRound(MinimumZoom * 100.0),
+            qRound(MaximumZoom * 100.0)
+            )
         );
+}
+
+qreal normalizedZoomFactor(
+    qreal zoom
+    )
+{
+    const int zoomPercent =
+        std::clamp(
+            qRound(zoom * 100.0),
+            qRound(MinimumZoom * 100.0),
+            qRound(MaximumZoom * 100.0)
+            );
+
+    return zoomPercent / 100.0;
 }
 
 QString exportFileFilter(
@@ -253,9 +275,7 @@ void PdfViewerPage::fitWidth()
         QPdfView::ZoomMode::FitToWidth
         );
 
-    m_zoomInput->setText(
-        tr("Fit Width")
-        );
+    applyCalculatedFitZoom();
 }
 
 void PdfViewerPage::fitPage()
@@ -264,9 +284,7 @@ void PdfViewerPage::fitPage()
         QPdfView::ZoomMode::FitInView
         );
 
-    m_zoomInput->setText(
-        tr("Fit Page")
-        );
+    applyCalculatedFitZoom();
 }
 
 void PdfViewerPage::applyZoomInput()
@@ -637,14 +655,32 @@ void PdfViewerPage::buildUi()
     m_pageTotalLabel->setFont(
         FontManager::getUiFont(10)
         );
+    m_pageTotalLabel->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+    m_pageTotalLabel->setMinimumWidth(
+        QFontMetrics(
+            m_pageTotalLabel->font()
+            ).horizontalAdvance(
+                tr("of %1").arg(
+                    QString(
+                        PageTotalReservedDigits,
+                        QLatin1Char('9')
+                        )
+                    )
+                )
+            + PageTotalReservedPadding
+        );
 
     contentLayout()->setContentsMargins(
-        16,
+        UiConstants::Pages::Margin,
         0,
-        16,
+        UiConstants::Pages::Margin,
         0
         );
-    contentLayout()->setSpacing(8);
+    contentLayout()->setSpacing(
+        UiConstants::Pages::Spacing
+        );
     contentLayout()->addWidget(
         m_statusLabel
         );
@@ -741,6 +777,19 @@ void PdfViewerPage::buildUi()
         button->setFixedHeight(32);
     }
 
+    const int documentActionButtonWidth =
+        std::max(
+            m_exportButton->minimumSizeHint().width(),
+            m_printButton->minimumSizeHint().width()
+            );
+
+    for (QPushButton* button : {m_exportButton, m_printButton})
+    {
+        button->setMinimumWidth(
+            documentActionButtonWidth
+            );
+    }
+
     m_zoomLabel =
         new QLabel(
             tr("Zoom:"),
@@ -835,6 +884,28 @@ void PdfViewerPage::buildUi()
         );
 
     connect(
+        m_view,
+        &QPdfView::zoomFactorChanged,
+        this,
+        [this](qreal)
+        {
+            if (
+                m_tearingDown
+                || !m_zoomInput
+                )
+            {
+                return;
+            }
+
+            m_currentZoom =
+                normalizedZoomFactor(
+                    m_view->zoomFactor()
+                    );
+            updateZoomDisplay();
+        }
+        );
+
+    connect(
         m_exportButton,
         &QPushButton::clicked,
         this,
@@ -904,10 +975,8 @@ void PdfViewerPage::buildUi()
 void PdfViewerPage::applyZoom()
 {
     m_currentZoom =
-        std::clamp(
-            m_currentZoom,
-            MinimumZoom,
-            MaximumZoom
+        normalizedZoomFactor(
+            m_currentZoom
             );
 
     m_view->setZoomFactor(
@@ -921,6 +990,134 @@ void PdfViewerPage::updateZoomDisplay()
 {
     m_zoomInput->setText(
         zoomText(m_currentZoom)
+        );
+}
+
+void PdfViewerPage::applyCalculatedFitZoom()
+{
+    if (
+        m_tearingDown
+        || !m_view
+        || !m_zoomInput
+        )
+    {
+        return;
+    }
+
+    m_currentZoom =
+        normalizedZoomFactor(
+            effectiveZoomFactor()
+            );
+
+    m_view->setZoomMode(
+        QPdfView::ZoomMode::Custom
+        );
+    m_view->setZoomFactor(
+        m_currentZoom
+        );
+    updateZoomDisplay();
+}
+
+qreal PdfViewerPage::effectiveZoomFactor() const
+{
+    if (!m_view)
+    {
+        return m_currentZoom;
+    }
+
+    if (m_view->zoomMode() == QPdfView::ZoomMode::Custom)
+    {
+        return m_view->zoomFactor();
+    }
+
+    if (
+        !m_document
+        || m_document->status() != QPdfDocument::Status::Ready
+        || m_document->pageCount() <= 0
+        || !m_view->viewport()
+        )
+    {
+        return m_view->zoomFactor();
+    }
+
+    int pageIndex =
+        0;
+
+    if (m_view->pageNavigator())
+    {
+        pageIndex =
+            std::clamp(
+                m_view->pageNavigator()->currentPage(),
+                0,
+                m_document->pageCount() - 1
+                );
+    }
+
+    const QSizeF pagePointSize =
+        m_document->pagePointSize(pageIndex);
+
+    if (
+        !pagePointSize.isValid()
+        || pagePointSize.isEmpty()
+        )
+    {
+        return m_view->zoomFactor();
+    }
+
+    const QMargins margins =
+        m_view->documentMargins();
+    const QSize viewportSize =
+        m_view->viewport()->size();
+
+    const qreal availableWidth =
+        viewportSize.width()
+        - margins.left()
+        - margins.right();
+    const qreal availableHeight =
+        viewportSize.height()
+        - margins.top()
+        - margins.bottom();
+
+    if (
+        availableWidth <= 0.0
+        || availableHeight <= 0.0
+        )
+    {
+        return m_view->zoomFactor();
+    }
+
+    const qreal horizontalPixelsPerPoint =
+        std::max(
+            m_view->logicalDpiX() / 72.0,
+            0.01
+            );
+    const qreal verticalPixelsPerPoint =
+        std::max(
+            m_view->logicalDpiY() / 72.0,
+            0.01
+            );
+
+    const qreal widthZoom =
+        availableWidth
+        / (pagePointSize.width() * horizontalPixelsPerPoint);
+    const qreal heightZoom =
+        availableHeight
+        / (pagePointSize.height() * verticalPixelsPerPoint);
+
+    if (m_view->zoomMode() == QPdfView::ZoomMode::FitToWidth)
+    {
+        return std::max(
+            widthZoom,
+            0.01
+            );
+    }
+
+    return std::max(
+        std::min(
+            widthZoom,
+            heightZoom
+            ),
+        0.01
         );
 }
 
@@ -988,6 +1185,9 @@ void PdfViewerPage::updateDocumentActionButtons()
 {
     const bool hasFile =
         !m_currentFilePath.trimmed().isEmpty();
+    const bool canExport =
+        hasFile
+        && m_documentActions.exportEnabled;
     const bool canPrint =
         hasFile
         && m_document
@@ -996,20 +1196,27 @@ void PdfViewerPage::updateDocumentActionButtons()
         && m_documentActions.printEnabled;
 
     m_exportButton->setVisible(
-        hasFile
-        && m_documentActions.exportEnabled
+        true
         );
     m_exportButton->setEnabled(
-        hasFile
-        && m_documentActions.exportEnabled
+        canExport
+        );
+    m_exportButton->setToolTip(
+        canExport
+            ? tr("Export this file")
+            : tr("Export is not available for this file")
         );
 
     m_printButton->setVisible(
-        hasFile
-        && m_documentActions.printEnabled
+        true
         );
     m_printButton->setEnabled(
         canPrint
+        );
+    m_printButton->setToolTip(
+        canPrint
+            ? tr("Print this file")
+            : tr("Print is not available for this file")
         );
 }
 

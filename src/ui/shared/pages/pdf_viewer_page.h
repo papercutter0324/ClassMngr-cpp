@@ -53,6 +53,8 @@ private:
     void buildUi();
     void applyZoom();
     void updateZoomDisplay();
+    void applyCalculatedFitZoom();
+    [[nodiscard]] qreal effectiveZoomFactor() const;
     void updatePageDisplay();
     void updateDocumentActionButtons();
     [[nodiscard]] QString exportSourcePath() const;

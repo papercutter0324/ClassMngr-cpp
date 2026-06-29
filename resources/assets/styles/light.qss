@@ -337,6 +337,12 @@ QPushButton[role="button_footer"]:hover {
     background-color: #ebe9e3;
 }
 
+QPushButton[role="button_footer"]:disabled {
+    background-color: #deded8;
+    color: #858f94;
+    border-color: #d2d0c9;
+}
+
 QPushButton[role="icon_button"] {
     background-color: #f5f3ee;
     border: 2px solid #c5c7c3;
@@ -353,6 +359,12 @@ QPushButton[role="icon_button"]:hover {
 
 QPushButton[role="icon_button"]:pressed {
     background-color: #dfdfd9;
+}
+
+QPushButton[role="icon_button"]:disabled {
+    background-color: #deded8;
+    color: #858f94;
+    border-color: #d2d0c9;
 }
 
 QMenuBar {
