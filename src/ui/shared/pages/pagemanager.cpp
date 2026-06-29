@@ -245,6 +245,18 @@ void PageManager::setDocumentPageSpacing(
     }
 }
 
+void PageManager::setDocumentViewerBackground(
+    DocumentViewerBackground background
+    )
+{
+    if (m_pdfViewerPage)
+    {
+        m_pdfViewerPage->setDocumentViewerBackground(
+            background
+            );
+    }
+}
+
 
 
 // =========================================================

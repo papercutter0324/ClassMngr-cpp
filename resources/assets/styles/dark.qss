@@ -26,6 +26,16 @@ QPdfView#pdfViewerView {
     border-radius: 6px;
 }
 
+QPdfView#pdfViewerView[pdfViewerBackground="white"],
+QWidget[pdfViewerBackground="white"] {
+    background-color: #ffffff;
+}
+
+QPdfView#pdfViewerView[pdfViewerBackground="black"],
+QWidget[pdfViewerBackground="black"] {
+    background-color: #000000;
+}
+
 QLabel {
     background: transparent;
 }

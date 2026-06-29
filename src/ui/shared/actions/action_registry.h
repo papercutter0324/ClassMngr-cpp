@@ -27,6 +27,7 @@ public:
     OptionState<Language>* languageState = nullptr;
     OptionState<FontSize>* fontSizeState = nullptr;
     OptionState<DocumentPageSpacing>* documentPageSpacingState = nullptr;
+    OptionState<DocumentViewerBackground>* documentViewerBackgroundState = nullptr;
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;

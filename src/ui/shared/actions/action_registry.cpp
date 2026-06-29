@@ -265,6 +265,25 @@ void ActionRegistry::retranslate()
             );
     }
 
+    if (documentViewerBackgroundState)
+    {
+        updateActionText(
+            documentViewerBackgroundState->action(DocumentViewerBackground::Default),
+            tr("Default"),
+            tr("Use the current theme's PDF viewer background")
+            );
+        updateActionText(
+            documentViewerBackgroundState->action(DocumentViewerBackground::White),
+            tr("White"),
+            tr("Use a white PDF viewer background")
+            );
+        updateActionText(
+            documentViewerBackgroundState->action(DocumentViewerBackground::Black),
+            tr("Black"),
+            tr("Use a black PDF viewer background")
+            );
+    }
+
     updateActionText(
         showSidebarTooltips,
         tr("Show Sidebar Tooltips"),
@@ -632,6 +651,47 @@ void ActionRegistry::createOptionActions()
 
     documentPageSpacingState->loadFromSettings(
         DocumentPageSpacing::Small
+        );
+
+    documentViewerBackgroundState =
+        new OptionState<DocumentViewerBackground>(
+            OptionKeys::DocumentViewerBackground,
+            this
+            );
+
+    auto defaultDocumentViewerBackgroundAction =
+        createCheckableAction(
+            tr("Default"),
+            tr("Use the current theme's PDF viewer background")
+            );
+
+    auto whiteDocumentViewerBackgroundAction =
+        createCheckableAction(
+            tr("White"),
+            tr("Use a white PDF viewer background")
+            );
+
+    auto blackDocumentViewerBackgroundAction =
+        createCheckableAction(
+            tr("Black"),
+            tr("Use a black PDF viewer background")
+            );
+
+    documentViewerBackgroundState->addOption(
+        DocumentViewerBackground::Default,
+        defaultDocumentViewerBackgroundAction
+        );
+    documentViewerBackgroundState->addOption(
+        DocumentViewerBackground::White,
+        whiteDocumentViewerBackgroundAction
+        );
+    documentViewerBackgroundState->addOption(
+        DocumentViewerBackground::Black,
+        blackDocumentViewerBackgroundAction
+        );
+
+    documentViewerBackgroundState->loadFromSettings(
+        DocumentViewerBackground::Default
         );
 
 

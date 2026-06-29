@@ -10,6 +10,9 @@ namespace OptionKeys
     inline constexpr const char* DocumentPageSpacing =
         "options/documentPageSpacing";
 
+    inline constexpr const char* DocumentViewerBackground =
+        "options/documentViewerBackground";
+
     inline constexpr const char* SidebarTooltipsEnabled =
         "options/sidebarTooltipsEnabled";
 

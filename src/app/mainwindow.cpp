@@ -348,6 +348,32 @@ void MainWindow::connectSignals()
             );
     }
 
+    if (m_actions.documentViewerBackgroundState)
+    {
+        const auto previousDocumentViewerBackgroundHandler =
+            m_actions.documentViewerBackgroundState->onChanged;
+
+        m_actions.documentViewerBackgroundState->onChanged =
+            [this, previousDocumentViewerBackgroundHandler](
+                DocumentViewerBackground background
+                )
+        {
+            if (previousDocumentViewerBackgroundHandler)
+            {
+                previousDocumentViewerBackgroundHandler(background);
+            }
+
+            if (m_pages)
+            {
+                m_pages->setDocumentViewerBackground(background);
+            }
+        };
+
+        m_actions.documentViewerBackgroundState->onChanged(
+            m_actions.documentViewerBackgroundState->current()
+            );
+    }
+
     ui->sidebarWidget->setOverflowTooltipsEnabled(
         m_actions.showSidebarTooltips->isChecked()
         );

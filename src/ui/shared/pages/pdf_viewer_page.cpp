@@ -7,7 +7,10 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QApplication>
+#include <QBrush>
 #include <QCheckBox>
+#include <QColor>
 #include <QDesktopServices>
 #include <QIntValidator>
 #include <QDir>
@@ -21,6 +24,7 @@
 #include <QList>
 #include <QMessageBox>
 #include <QObject>
+#include <QPalette>
 #include <QPdfDocument>
 #include <QPdfPageNavigator>
 #include <QPdfView>
@@ -29,6 +33,7 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStandardPaths>
+#include <QStyle>
 #include <QStringList>
 #include <QtGlobal>
 #include <QUrl>
@@ -126,6 +131,87 @@ int exportSuffixRank(
     return index >= 0
         ? index
         : preferredSuffixes.size();
+}
+
+QString documentViewerBackgroundProperty(
+    DocumentViewerBackground background
+    )
+{
+    switch (background)
+    {
+    case DocumentViewerBackground::White:
+        return QStringLiteral("white");
+
+    case DocumentViewerBackground::Black:
+        return QStringLiteral("black");
+
+    case DocumentViewerBackground::Default:
+    default:
+        return QStringLiteral("default");
+    }
+}
+
+void setPdfViewBackgroundColor(
+    QWidget* widget,
+    const QColor& color
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    QPalette palette =
+        widget->palette();
+
+    for (const QPalette::ColorGroup group : {
+             QPalette::Active,
+             QPalette::Inactive,
+             QPalette::Disabled
+         })
+    {
+        palette.setBrush(
+            group,
+            QPalette::Dark,
+            QBrush(color)
+            );
+    }
+
+    widget->setPalette(
+        palette
+        );
+}
+
+void resetPdfViewBackgroundColor(
+    QWidget* widget
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    widget->setPalette(
+        QApplication::palette(widget)
+        );
+}
+
+void refreshStyle(
+    QWidget* widget
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+
+    if (widget->style())
+    {
+        widget->style()->unpolish(widget);
+        widget->style()->polish(widget);
+    }
+
+    widget->update();
 }
 }
 
@@ -250,6 +336,16 @@ void PdfViewerPage::setDocumentPageSpacing(
             m_documentPageSpacing
             )
         );
+}
+
+void PdfViewerPage::setDocumentViewerBackground(
+    DocumentViewerBackground background
+    )
+{
+    m_documentViewerBackground =
+        background;
+
+    applyDocumentViewerBackground();
 }
 
 void PdfViewerPage::zoomIn()
@@ -613,6 +709,7 @@ void PdfViewerPage::buildUi()
             m_documentPageSpacing
             )
         );
+    applyDocumentViewerBackground();
     m_view->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Expanding
@@ -1015,6 +1112,62 @@ void PdfViewerPage::updateZoomDisplay()
     m_zoomInput->setText(
         zoomText(m_currentZoom)
         );
+}
+
+void PdfViewerPage::applyDocumentViewerBackground()
+{
+    if (!m_view)
+    {
+        return;
+    }
+
+    const QString background =
+        documentViewerBackgroundProperty(
+            m_documentViewerBackground
+            );
+
+    m_view->setProperty(
+        "pdfViewerBackground",
+        background
+        );
+    refreshStyle(
+        m_view
+        );
+
+    if (m_documentViewerBackground == DocumentViewerBackground::White)
+    {
+        setPdfViewBackgroundColor(
+            m_view,
+            QColor(Qt::white)
+            );
+    }
+    else if (m_documentViewerBackground == DocumentViewerBackground::Black)
+    {
+        setPdfViewBackgroundColor(
+            m_view,
+            QColor(Qt::black)
+            );
+    }
+    else
+    {
+        resetPdfViewBackgroundColor(
+            m_view
+            );
+    }
+
+    if (m_view->viewport())
+    {
+        m_view->viewport()->setProperty(
+            "pdfViewerBackground",
+            background
+            );
+        refreshStyle(
+            m_view->viewport()
+            );
+        m_view->viewport()->update();
+    }
+
+    m_view->update();
 }
 
 void PdfViewerPage::applyCalculatedFitZoom()

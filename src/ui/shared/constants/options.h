@@ -65,6 +65,13 @@ enum class DocumentPageSpacing
     Large = 3
 };
 
+enum class DocumentViewerBackground
+{
+    Default = 0,
+    White = 1,
+    Black = 2
+};
+
 inline constexpr int DocumentPageSpacingSmallPixels = 8;
 
 constexpr int documentPageSpacingPixels(

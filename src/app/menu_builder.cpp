@@ -204,6 +204,21 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
         }
         );
 
+    QMenu* documentViewerBackgroundMenu =
+        documentsMenu->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Background Color")
+            );
+
+    addOptionMenu<DocumentViewerBackground>(
+        documentViewerBackgroundMenu,
+        actions.documentViewerBackgroundState,
+        {
+            DocumentViewerBackground::Default,
+            DocumentViewerBackground::White,
+            DocumentViewerBackground::Black
+        }
+        );
+
     options->addSeparator();
 
     QMenu* sidebarMenu =

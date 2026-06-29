@@ -39,6 +39,10 @@ public:
         DocumentPageSpacing spacing
         );
 
+    void setDocumentViewerBackground(
+        DocumentViewerBackground background
+        );
+
 public slots:
     void zoomIn();
     void zoomOut();
@@ -58,6 +62,7 @@ private:
     void applyZoom();
     void updateZoomDisplay();
     void applyCalculatedFitZoom();
+    void applyDocumentViewerBackground();
     [[nodiscard]] qreal effectiveZoomFactor() const;
     void updatePageDisplay();
     void updateDocumentActionButtons();
@@ -98,4 +103,6 @@ private:
     qreal m_currentZoom = 1.0;
     PdfViewerDocumentActions m_documentActions;
     DocumentPageSpacing m_documentPageSpacing = DocumentPageSpacing::Small;
+    DocumentViewerBackground m_documentViewerBackground =
+        DocumentViewerBackground::Default;
 };

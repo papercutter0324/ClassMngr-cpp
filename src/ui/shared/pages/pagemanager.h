@@ -94,6 +94,10 @@ public:
         DocumentPageSpacing spacing
         );
 
+    void setDocumentViewerBackground(
+        DocumentViewerBackground background
+        );
+
 
 
     // =====================================================
