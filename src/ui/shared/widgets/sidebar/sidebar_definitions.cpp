@@ -92,7 +92,7 @@ QList<TreeNodeSpec> treeStructure()
 
         {
             "document",
-            QObject::tr("Document"),
+            QObject::tr("Documents"),
             NodeType::Root,
 
             {
