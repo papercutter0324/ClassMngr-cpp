@@ -16,6 +16,7 @@ find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Gui
     Pdf
     PdfWidgets
+    PrintSupport
     Qml
     Quick
     QuickControls2
@@ -209,6 +210,7 @@ target_link_libraries(ClassMngr
         Qt6::Network
         Qt6::Pdf
         Qt6::PdfWidgets
+        Qt6::PrintSupport
         Qt6::Qml
         Qt6::Quick
         Qt6::QuickControls2

@@ -17,6 +17,7 @@ separate Qt installation.
 - A C++23 compiler
 - Ninja for Linux and macOS preset builds
 - Linux only: `patchelf`, used by Qt's deployment tooling
+- Linux only: a configured CUPS or system printer stack for printing
 - Windows only: Visual Studio or Build Tools with the Desktop development with
   C++ workload
 
@@ -66,8 +67,8 @@ Open VS Code and install these extensions:
 Install the Qt Windows desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 MSVC desktop kit matching
 your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Core, Gui,
-Widgets, Network, Sql, Qml, Quick, QuickControls2, QuickWidgets, and
-LinguistTools.
+Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
+QuickControls2, QuickWidgets, and LinguistTools.
 
 Open the project from an x64 Native Tools Command Prompt or Developer
 PowerShell so MSVC is available to VS Code:
@@ -126,8 +127,8 @@ brew install cmake ninja git
 Install the Qt macOS desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 `macos` desktop kit. If you
 use another Qt installation, make sure it is Qt 6.11.1 or newer and includes Qt
-Core, Gui, Widgets, Network, Sql, Qml, Quick, QuickControls2, QuickWidgets, and
-LinguistTools.
+Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
+QuickControls2, QuickWidgets, and LinguistTools.
 
 Point CMake at that Qt kit and build the release app. The macOS release preset
 builds a universal `arm64;x86_64` app bundle.
@@ -251,8 +252,8 @@ Install the Qt Linux desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 `gcc_64` desktop kit,
 because many distro repositories ship an older Qt 6 than this project requires.
 If your distro provides Qt 6.11.1 or newer, distro Qt packages are fine too as
-long as they include Qt Core, Gui, Widgets, Network, Sql, Qml, Quick,
-QuickControls2, QuickWidgets, and LinguistTools.
+long as they include Qt Core, Gui, Widgets, Network, Pdf, PdfWidgets,
+PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools.
 
 Point `QT_LINUX_PREFIX` at the Qt kit directory:
 

@@ -46,7 +46,7 @@ private slots:
     void applyZoomInput();
     void applyPageInput();
     void exportFile();
-    void showPrintPlaceholder();
+    void printFile();
     void handleDocumentStatusChanged();
 
 private:
