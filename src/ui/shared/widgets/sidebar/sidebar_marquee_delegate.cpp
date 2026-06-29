@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QFont>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyle>
@@ -40,7 +41,8 @@ bool containsHangul(const QString& text)
 
 QList<QTextLayout::FormatRange> textFormats(
     const QString& text,
-    const QColor& color
+    const QColor& color,
+    const QFont& baseFont
     )
 {
     QList<QTextLayout::FormatRange> formats;
@@ -54,18 +56,27 @@ QList<QTextLayout::FormatRange> textFormats(
     int start = -1;
 
     const auto appendKoreanRange =
-        [&formats, &color](int rangeStart, int rangeEnd)
+        [&formats, &color, &baseFont](int rangeStart, int rangeEnd)
     {
         if (rangeStart < 0 || rangeEnd <= rangeStart)
         {
             return;
         }
 
+        const int pointSize =
+            baseFont.pointSize() > 0
+                ? baseFont.pointSize()
+                : FontManager::stdKoreanFont;
+
         QTextLayout::FormatRange range;
         range.start = rangeStart;
         range.length = rangeEnd - rangeStart;
         range.format.setFont(
-            FontManager::getKoreanFont()
+            FontManager::getKoreanFont(
+                pointSize,
+                QFont::Normal,
+                baseFont.italic()
+                )
             );
         range.format.setForeground(color);
         formats.append(range);
@@ -99,7 +110,7 @@ qreal formattedTextWidth(
 {
     QTextLayout layout(text, baseFont);
     layout.setFormats(
-        textFormats(text, QColor(Qt::black))
+        textFormats(text, QColor(Qt::black), baseFont)
         );
     layout.beginLayout();
     QTextLine line = layout.createLine();
@@ -127,7 +138,7 @@ void drawFormattedText(
 {
     QTextLayout layout(text, baseFont);
     layout.setFormats(
-        textFormats(text, color)
+        textFormats(text, color, baseFont)
         );
     layout.beginLayout();
     QTextLine line = layout.createLine();

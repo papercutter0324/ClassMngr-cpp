@@ -108,6 +108,23 @@ bool itemContainsCurrentSelection(
 
     return false;
 }
+
+void expandParents(
+    QTreeWidgetItem* item
+    )
+{
+    auto* parent =
+        item
+            ? item->parent()
+            : nullptr;
+
+    while (parent)
+    {
+        parent->setExpanded(true);
+        parent =
+            parent->parent();
+    }
+}
 }
 
 
@@ -630,8 +647,6 @@ void Sidebar::addClassNode(
 
     m_nodes["classes"]->addChild(item);
 
-    m_nodes["classes"]->setExpanded(true);
-
     m_classItems[classId] = item;
 
     updateTreeColumnWidth();
@@ -668,6 +683,8 @@ void Sidebar::selectClass(
 
     auto *item =
         m_classItems[classId];
+
+    expandParents(item);
 
     m_tree->setCurrentItem(item);
 
@@ -757,12 +774,6 @@ void Sidebar::addTeacherNode(
         );
 
     group->addChild(item);
-
-    teachersRoot->setExpanded(true);
-    if (myCoTeacher)
-    {
-        group->setExpanded(true);
-    }
 
     m_teacherItems[teacherId].append(item);
 
@@ -1016,6 +1027,8 @@ void Sidebar::selectTeacher(
 
     auto *item =
         items.first();
+
+    expandParents(item);
 
     m_tree->setCurrentItem(item);
 
