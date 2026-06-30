@@ -577,6 +577,7 @@ QScrollBar::sub-page {
 
 QLabel[role="schedule_cell"],
 QLabel[role="schedule_multi"] {
+    border: 1px solid #000000;
     border-radius: 6px;
     padding: 4px;
 }
@@ -584,6 +585,11 @@ QLabel[role="schedule_multi"] {
 QLabel[role="schedule_empty"] {
     border-radius: 6px;
     padding: 6px;
+}
+
+QLabel[role="schedule_empty"][slot_state="essay"],
+QLabel[role="schedule_empty"][slot_state="lunch"] {
+    border: 1px solid #000000;
 }
 
 QSplitter::handle {
