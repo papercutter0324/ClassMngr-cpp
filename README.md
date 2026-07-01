@@ -79,23 +79,33 @@ code .
 ```
 
 In VS Code, use `CMake: Select Configure Preset` and choose
-`windows-msvc-x64-release`, then run `CMake: Build`. The same build can also be
-run from the terminal:
+`windows-msvc-x64-release`, or `windows-laptop-msvc-x64-release` on the laptop
+Qt layout in this repository. To create a standalone release folder from the
+terminal, run the matching artifact workflow:
 
 ```powershell
-cmake --preset windows-msvc-x64-release `
-  -DCMAKE_PREFIX_PATH="C:/Qt/6.11.1/msvc2022_64"
+cmake --workflow --preset windows-msvc-x64-release-artifacts
 
-cmake --build --preset windows-msvc-x64-release
-
-cmake --install build/windows-msvc-x64-release `
-  --config Release `
-  --prefix dist/ClassMngr-windows-x64
+# Or, on the laptop Qt layout:
+cmake --workflow --preset windows-laptop-msvc-x64-release-artifacts
 ```
 
-The standalone app is installed under `dist/ClassMngr-windows-x64`. Distribute
-the whole installed directory, keeping `ClassMngr.exe` together with the copied
-Qt DLLs, plugins, QML files, and license files.
+The standalone app is installed under `dist/ClassMngr-windows-x64`, with
+`ClassMngr.exe` at the top of that folder. Run and distribute the whole installed
+directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins,
+QML files, and license files.
+
+To package the deployed folder into an Inno Setup installer, install Inno Setup
+6 and run the matching installer artifact workflow:
+
+```powershell
+cmake --workflow --preset windows-msvc-x64-release-installer-artifacts
+
+# Or, on the laptop Qt layout:
+cmake --workflow --preset windows-laptop-msvc-x64-release-installer-artifacts
+```
+
+The installer is written to `dist/ClassMngrSetup-0.5.0-x64.exe`.
 
 The Windows presets use the Visual Studio generator configured in
 `CMakePresets.json`. If CMake reports that the generator is not installed, either

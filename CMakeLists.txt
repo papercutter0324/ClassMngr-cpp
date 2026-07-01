@@ -6,6 +6,7 @@ project(ClassMngr
 )
 
 include(CTest)
+include(GNUInstallDirs)
 
 add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
@@ -106,6 +107,13 @@ if(UNIX AND NOT APPLE)
     )
     string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
         "    POST_INCLUDE_REGEXES [[.*/libQt6.*[.]so([.].*)?$]]\n"
+    )
+endif()
+
+if(WIN32)
+    set(CMAKE_INSTALL_BINDIR ".")
+    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
+        "set(QT_DEPLOY_BIN_DIR .)\n"
     )
 endif()
 
@@ -260,6 +268,61 @@ ${CLASSMNGR_QT_DEPLOY_OPTIONS}
 "
 )
 install(SCRIPT ${deploy_script})
+
+if(WIN32)
+    set(CLASSMNGR_INSTALLER_SOURCE_DIR
+        "${PROJECT_SOURCE_DIR}/dist/ClassMngr-windows-x64"
+        CACHE PATH
+        "Directory packaged by the Windows installer"
+    )
+    set(CLASSMNGR_INSTALLER_OUTPUT_DIR
+        "${PROJECT_SOURCE_DIR}/dist"
+        CACHE PATH
+        "Directory where the Windows installer executable is written"
+    )
+    set(CLASSMNGR_INSTALLER_SCRIPT
+        "${PROJECT_SOURCE_DIR}/scripts/installer/ClassMngr.iss"
+    )
+
+    find_program(CLASSMNGR_ISCC_EXECUTABLE
+        NAMES ISCC.exe iscc.exe iscc
+        PATHS
+            "C:/Program Files (x86)/Inno Setup 6"
+            "C:/Program Files/Inno Setup 6"
+    )
+
+    if(CLASSMNGR_ISCC_EXECUTABLE)
+        add_custom_target(ClassMngrInstaller
+            COMMAND
+                "${CMAKE_COMMAND}"
+                --install "${CMAKE_BINARY_DIR}"
+                --config "$<CONFIG>"
+            COMMAND
+                "${CMAKE_COMMAND}" -E env
+                "CLASSMNGR_APP_VERSION=${PROJECT_VERSION}"
+                "CLASSMNGR_INSTALLER_SOURCE_DIR=${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+                "CLASSMNGR_INSTALLER_OUTPUT_DIR=${CLASSMNGR_INSTALLER_OUTPUT_DIR}"
+                "${CLASSMNGR_ISCC_EXECUTABLE}"
+                "${CLASSMNGR_INSTALLER_SCRIPT}"
+            DEPENDS ClassMngr
+            BYPRODUCTS
+                "${CLASSMNGR_INSTALLER_OUTPUT_DIR}/ClassMngrSetup-${PROJECT_VERSION}-x64.exe"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+            COMMENT "Building ClassMngr Windows installer"
+            VERBATIM
+        )
+    else()
+        add_custom_target(ClassMngrInstaller
+            COMMAND
+                "${CMAKE_COMMAND}" -E echo
+                "Inno Setup Compiler was not found. Install Inno Setup 6 or add ISCC.exe to PATH."
+            COMMAND
+                "${CMAKE_COMMAND}" -E false
+            COMMENT "Inno Setup Compiler is required to build ClassMngrInstaller"
+            VERBATIM
+        )
+    endif()
+endif()
 
 if(BUILD_TESTING)
     find_package(Qt6 6.11.1 REQUIRED COMPONENTS
