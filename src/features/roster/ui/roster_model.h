@@ -91,6 +91,17 @@ public:
         int row
         );
 
+    bool canMoveRow(
+        int sourceRow,
+        int destinationRow,
+        QString* reason = nullptr
+        ) const;
+
+    bool moveRosterRow(
+        int sourceRow,
+        int destinationRow
+        );
+
     bool isDirty() const;
 
     void clearDirty();

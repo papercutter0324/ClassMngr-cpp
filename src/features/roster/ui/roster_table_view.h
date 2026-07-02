@@ -4,6 +4,7 @@
 
 class QEvent;
 class QKeyEvent;
+class QPainter;
 class RosterColumnLayoutController;
 
 class RosterTableView : public QTableView
@@ -19,7 +20,30 @@ public:
         RosterColumnLayoutController* controller
         );
 
+    void requestRowMove(
+        int sourceRow,
+        int destinationRow
+        );
+
+    void setDraggedSourceRow(
+        int row
+        );
+
+    int draggedSourceRow() const;
+
+    void setDraggedDestinationRow(
+        int row
+        );
+
+    int draggedDestinationRow() const;
+
     int contentBottomEdge() const;
+
+signals:
+    void rowMoveRequested(
+        int sourceRow,
+        int destinationRow
+        );
 
 public slots:
     void copy();
@@ -58,6 +82,20 @@ private:
 
     void updateVerticalHeaderTrailingBackground();
 
+    void updateRowIndicator(
+        int row
+        );
+
+    void paintDraggedSourceRow(
+        QPainter& painter
+        ) const;
+
+    void paintDraggedDestinationRow(
+        QPainter& painter
+        ) const;
+
 private:
     RosterColumnLayoutController* m_controller = nullptr;
+    int m_draggedSourceRow = -1;
+    int m_draggedDestinationRow = -1;
 };

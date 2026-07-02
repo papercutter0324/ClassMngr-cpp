@@ -54,6 +54,11 @@ private slots:
 
     void removeStudent();
 
+    void moveStudentRow(
+        int sourceRow,
+        int destinationRow
+        );
+
     void importScores();
 
     void autosave();
@@ -105,6 +110,7 @@ private:
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;
+    bool m_movingRosterRow = false;
     SaveMode m_saveMode = SaveMode::Automatic;
 
     QLabel* m_titleLabel = nullptr;

@@ -517,6 +517,112 @@ bool RosterModel::removeRosterRow(
     return true;
 }
 
+bool RosterModel::canMoveRow(
+    int sourceRow,
+    int destinationRow,
+    QString* reason
+    ) const
+{
+    if (sourceRow < 0 || sourceRow >= m_rows.size())
+    {
+        if (reason)
+        {
+            *reason = tr("Select a student row to move.");
+        }
+
+        return false;
+    }
+
+    if (destinationRow < 0 || destinationRow >= m_rows.size())
+    {
+        if (reason)
+        {
+            *reason = tr("Drop the student on another roster row.");
+        }
+
+        return false;
+    }
+
+    if (sourceRow == destinationRow)
+    {
+        if (reason)
+        {
+            *reason = tr("Drop the student on a different row.");
+        }
+
+        return false;
+    }
+
+    const bool hasData =
+        std::any_of(
+            m_rows[sourceRow].constBegin(),
+            m_rows[sourceRow].constEnd(),
+            [](const QString& value)
+            {
+                return !value.trimmed().isEmpty();
+            }
+            );
+
+    if (!hasData)
+    {
+        if (reason)
+        {
+            *reason = tr("Selected row is empty.");
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+bool RosterModel::moveRosterRow(
+    int sourceRow,
+    int destinationRow
+    )
+{
+    QString reason;
+
+    if (!canMoveRow(sourceRow, destinationRow, &reason))
+    {
+        Q_UNUSED(reason);
+        return false;
+    }
+
+    const QStringList movedRow =
+        m_rows.takeAt(sourceRow);
+
+    m_rows.insert(
+        destinationRow,
+        movedRow
+        );
+
+    validateAll();
+
+    if (!m_columns.isEmpty())
+    {
+        emit dataChanged(
+            index(
+                0,
+                0
+                ),
+            index(
+                m_rows.size() - 1,
+                m_columns.size() - 1
+                ),
+            {
+                Qt::DisplayRole,
+                Qt::EditRole,
+                Qt::ToolTipRole
+            }
+            );
+    }
+
+    setDirty(true);
+
+    return true;
+}
+
 bool RosterModel::isDirty() const
 {
     return m_dirty;

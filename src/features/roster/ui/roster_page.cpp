@@ -442,6 +442,57 @@ void RosterPage::removeStudent()
         );
 }
 
+void RosterPage::moveStudentRow(
+    int sourceRow,
+    int destinationRow
+    )
+{
+    if (!m_model || !m_table)
+    {
+        return;
+    }
+
+    QString reason;
+
+    if (!m_model->canMoveRow(sourceRow, destinationRow, &reason))
+    {
+        Q_UNUSED(reason);
+        return;
+    }
+
+    const int currentColumn =
+        m_table->currentIndex().isValid()
+            ? m_table->currentIndex().column()
+            : 0;
+
+    m_movingRosterRow = true;
+
+    const bool moved =
+        m_model->moveRosterRow(
+            sourceRow,
+            destinationRow
+            );
+
+    m_movingRosterRow = false;
+
+    if (!moved)
+    {
+        return;
+    }
+
+    selectRosterCell(
+        destinationRow,
+        qBound(
+            0,
+            currentColumn,
+            m_model->columnCount() - 1
+            )
+        );
+
+    scheduleAutosave();
+    updateActions();
+}
+
 void RosterPage::importScores()
 {
     if (
@@ -911,6 +962,13 @@ void RosterPage::buildUi()
         );
 
     connect(
+        m_table,
+        &RosterTableView::rowMoveRequested,
+        this,
+        &RosterPage::moveStudentRow
+        );
+
+    connect(
         m_model,
         &RosterModel::dirtyChanged,
         this,
@@ -994,6 +1052,7 @@ void RosterPage::handleNameCellChanged(
         m_loadingRoster
         || m_resolvingDuplicateName
         || m_removingRosterRow
+        || m_movingRosterRow
         || !m_model
         || !topLeft.isValid()
         || !bottomRight.isValid()
