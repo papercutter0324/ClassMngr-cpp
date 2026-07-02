@@ -4,6 +4,7 @@
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/utils/sidebar_node_naming.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "data/data_service.h"
@@ -33,6 +34,37 @@ namespace
 {
 
 inline constexpr int AutosaveDelayMs = 750;
+
+QString sidebarClassDisplayName(
+    DataService* dataService,
+    int classId
+    )
+{
+    if (!dataService || !dataService->isOpen() || classId <= 0)
+    {
+        return {};
+    }
+
+    const ClassInfo classInfo =
+        dataService->loadClassInfo(
+            classId
+            );
+
+    Teacher teacher;
+
+    if (classInfo.teacherId > 0)
+    {
+        teacher =
+            dataService->getTeacher(
+                classInfo.teacherId
+                );
+    }
+
+    return SidebarNodeNaming::formatClassDisplayName(
+        classInfo,
+        teacher
+        );
+}
 
 int findColumn(
     const QStringList& columns,
@@ -954,12 +986,34 @@ void SpeakingEvalPage::updateHeaderText()
             : tr("%1 Speaking Evaluation").arg(m_evaluationName)
         );
 
+    if (m_classroom.id <= 0)
+    {
+        m_subtitleLabel->setText(
+            tr("No class selected")
+            );
+        return;
+    }
+
+    const QString sidebarName =
+        sidebarClassDisplayName(
+            m_services
+                ? m_services->dataService()
+                : nullptr,
+            m_classroom.id
+            );
+
+    if (!sidebarName.isEmpty())
+    {
+        m_subtitleLabel->setText(
+            sidebarName
+            );
+        return;
+    }
+
     m_subtitleLabel->setText(
-        m_classroom.id > 0
-            ? m_classroom.name.trimmed().isEmpty()
-                  ? tr("Class %1").arg(m_classroom.id)
-                  : m_classroom.name
-            : tr("No class selected")
+        m_classroom.name.trimmed().isEmpty()
+            ? tr("Class %1").arg(m_classroom.id)
+            : m_classroom.name.trimmed()
         );
 }
 

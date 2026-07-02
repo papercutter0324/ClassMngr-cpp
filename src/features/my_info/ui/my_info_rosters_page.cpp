@@ -4,6 +4,7 @@
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
@@ -40,6 +41,37 @@ namespace
 
 inline constexpr int AutosaveDelayMs = 750;
 inline constexpr int ClassTabContentTopMargin = 16;
+
+QString sidebarClassDisplayName(
+    DataService* dataService,
+    int classId
+    )
+{
+    if (!dataService || !dataService->isOpen() || classId <= 0)
+    {
+        return {};
+    }
+
+    const ClassInfo classInfo =
+        dataService->loadClassInfo(
+            classId
+            );
+
+    Teacher teacher;
+
+    if (classInfo.teacherId > 0)
+    {
+        teacher =
+            dataService->getTeacher(
+                classInfo.teacherId
+                );
+    }
+
+    return SidebarNodeNaming::formatClassDisplayName(
+        classInfo,
+        teacher
+        );
+}
 
 } // namespace
 
@@ -1627,6 +1659,22 @@ void MyInfoRostersPage::updateHeaderText()
     {
         m_subtitleLabel->setText(
             tr("No classes available")
+            );
+        return;
+    }
+
+    const QString sidebarName =
+        sidebarClassDisplayName(
+            m_services
+                ? m_services->dataService()
+                : nullptr,
+            m_classroom.id
+            );
+
+    if (!sidebarName.isEmpty())
+    {
+        m_subtitleLabel->setText(
+            sidebarName
             );
         return;
     }
