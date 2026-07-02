@@ -79,33 +79,25 @@ code .
 ```
 
 In VS Code, use `CMake: Select Configure Preset` and choose
-`windows-msvc-x64-release`, or `windows-laptop-msvc-x64-release` on the laptop
-Qt layout in this repository. To create a standalone release folder from the
-terminal, run the matching artifact workflow:
+`windows-desktop-release`, or `windows-laptop-release` on the laptop Qt layout
+in this repository. To create a standalone release folder from the terminal,
+configure, build, and install the matching release preset:
 
 ```powershell
-cmake --workflow --preset windows-msvc-x64-release-artifacts
+cmake --preset windows-desktop-release
+cmake --build --preset windows-desktop-release
+cmake --build --preset windows-desktop-release-install
 
 # Or, on the laptop Qt layout:
-cmake --workflow --preset windows-laptop-msvc-x64-release-artifacts
+cmake --preset windows-laptop-release
+cmake --build --preset windows-laptop-release
+cmake --build --preset windows-laptop-release-install
 ```
 
-The standalone app is installed under `dist/ClassMngr-windows-x64`, with
-`ClassMngr.exe` at the top of that folder. Run and distribute the whole installed
-directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins,
-QML files, and license files.
-
-To package the deployed folder into an Inno Setup installer, install Inno Setup
-6 and run the matching installer artifact workflow:
-
-```powershell
-cmake --workflow --preset windows-msvc-x64-release-installer-artifacts
-
-# Or, on the laptop Qt layout:
-cmake --workflow --preset windows-laptop-msvc-x64-release-installer-artifacts
-```
-
-The installer is written to `dist/ClassMngrSetup-0.5.0-x64.exe`.
+Release presets run `windeployqt` after building. The install preset copies the
+standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole
+installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs,
+plugins, QML files, and license files.
 
 The Windows presets use the Visual Studio generator configured in
 `CMakePresets.json`. If CMake reports that the generator is not installed, either

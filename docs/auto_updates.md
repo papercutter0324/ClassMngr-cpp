@@ -24,7 +24,6 @@ ClassMngr/
       windows/
         ClassMngr-0.1.1-win-x64.exe
         ClassMngr-0.1.1-win-arm64.exe
-        ClassMngr-0.1.1-win-x86.exe  # optional
       macos/
         ClassMngr-0.1.1-macos-universal.dmg
       linux/
@@ -48,20 +47,16 @@ cmake --preset macos-clang-release \
 ```
 
 The Windows release presets are intended to run on a Windows MSVC runner or VM.
-For local Windows builds, Qt 6.11.1 is installed at `D:\Development\Qt\6.11.1`:
+For local Windows builds, the desktop preset uses
+`D:\Development\Qt\6.11.1\msvc2022_64`, the laptop preset uses
+`C:\Qt\6.11.1\msvc2022_64`, and ARM64 uses `QT_MSVC_ARM64_PREFIX`:
 
 ```powershell
-$env:QT_MSVC_X64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_64"
 $env:QT_MSVC_ARM64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_arm64"
 ```
 
-VS Code supplies these values automatically, and
-`scripts/build_release_windows.ps1` uses them as defaults. Explicit environment
-variables still take precedence, which allows CI to use its runner-specific Qt
-installation under `C:\Qt`.
-
-`QT_MSVC_X86_PREFIX` is optional and should only be set when a compatible
-32-bit Qt MSVC kit is available.
+`scripts/build_release_windows.ps1` uses the local ARM64 path as a default when
+`QT_MSVC_ARM64_PREFIX` is not already set.
 
 `CLASSMNGR_UPDATE_REQUIRE_SIGNATURE` defaults to `ON`. With that default,
 ClassMngr refuses to parse update URLs unless the manifest signature verifies

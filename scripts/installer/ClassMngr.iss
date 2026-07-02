@@ -1,7 +1,7 @@
 #define AppName "ClassMngr"
 #define AppVersion GetEnv("CLASSMNGR_APP_VERSION")
 #if AppVersion == ""
-  #define AppVersion "0.0.0"
+  #define AppVersion "0.5.0"
 #endif
 #define SourceDir GetEnv("CLASSMNGR_INSTALLER_SOURCE_DIR")
 #if SourceDir == ""

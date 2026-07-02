@@ -37,7 +37,7 @@
       "name": "qt-windows-desktop",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/gcc_64"
+        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/msvc2022_64"
       }
     },
     {
@@ -45,6 +45,13 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_PREFIX_PATH": "C:/Qt/6.11.1/msvc2022_64"
+      }
+    },
+    {
+      "name": "qt-windows-arm64",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_ARM64_PREFIX}"
       }
     },
 
@@ -60,7 +67,7 @@
       "generator": "Visual Studio 18 2026"
     },
     {
-      "name": "windows-msvc-x64-base",
+      "name": "windows-desktop-base",
       "hidden": true,
       "inherits": [
         "windows-msvc-base",
@@ -72,20 +79,21 @@
       }
     },
     {
-      "name": "windows-msvc-x64-debug",
-      "displayName": "Windows MSVC x64 Debug",
-      "inherits": "windows-msvc-x64-base"
+      "name": "windows-desktop-debug",
+      "displayName": "Windows Desktop Debug",
+      "inherits": "windows-desktop-base"
     },
     {
-      "name": "windows-msvc-x64-release",
-      "displayName": "Windows MSVC x64 Release",
-      "inherits": "windows-msvc-x64-base",
+      "name": "windows-desktop-release",
+      "displayName": "Windows Desktop Release",
+      "inherits": "windows-desktop-base",
       "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
+        "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
       }
     },
     {
-      "name": "windows-laptop-msvc-x64-base",
+      "name": "windows-laptop-base",
       "hidden": true,
       "inherits": [
         "windows-msvc-base",
@@ -97,43 +105,43 @@
       }
     },
     {
-      "name": "windows-laptop-msvc-x64-debug",
-      "displayName": "Windows Laptop MSVC x64 Debug",
-      "inherits": "windows-laptop-msvc-x64-base"
+      "name": "windows-laptop-debug",
+      "displayName": "Windows Laptop Debug",
+      "inherits": "windows-laptop-base"
     },
     {
-      "name": "windows-laptop-msvc-x64-release",
-      "displayName": "Windows Laptop MSVC x64 Release",
-      "inherits": "windows-laptop-msvc-x64-base",
+      "name": "windows-laptop-release",
+      "displayName": "Windows Laptop Release",
+      "inherits": "windows-laptop-base",
       "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
+        "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
       }
     },
     {
-      "name": "windows-msvc-arm64-release",
-      "displayName": "Windows MSVC ARM64 Release",
-      "inherits": "windows-msvc-base",
+      "name": "windows-arm64-base",
+      "hidden": true,
+      "inherits": [
+        "windows-msvc-base",
+        "qt-windows-arm64"
+      ],
       "architecture": {
         "value": "ARM64",
         "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_ARM64_PREFIX}",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-arm64"
       }
     },
     {
-      "name": "windows-msvc-x86-release-optional",
-      "displayName": "Windows MSVC x86 Release Optional",
-      "description": "Optional best-effort target. Requires QT_MSVC_X86_PREFIX to point at a compatible 32-bit Qt MSVC installation.",
-      "inherits": "windows-msvc-base",
-      "architecture": {
-        "value": "Win32",
-        "strategy": "set"
-      },
+      "name": "windows-arm64-debug",
+      "displayName": "Windows ARM64 Debug",
+      "inherits": "windows-arm64-base"
+    },
+    {
+      "name": "windows-arm64-release",
+      "displayName": "Windows ARM64 Release",
+      "inherits": "windows-arm64-base",
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X86_PREFIX}",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x86"
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-arm64",
+        "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
       }
     },
 
@@ -191,80 +199,54 @@
 
   "buildPresets": [
     {
-      "name": "windows-msvc-x64-debug",
-      "configurePreset": "windows-msvc-x64-debug",
+      "name": "windows-desktop-debug",
+      "configurePreset": "windows-desktop-debug",
       "configuration": "Debug"
     },
     {
-      "name": "windows-msvc-x64-release",
-      "configurePreset": "windows-msvc-x64-release",
+      "name": "windows-desktop-release",
+      "configurePreset": "windows-desktop-release",
       "configuration": "Release"
     },
     {
-      "name": "windows-msvc-x64-release-install",
-      "configurePreset": "windows-msvc-x64-release",
+      "name": "windows-desktop-release-install",
+      "configurePreset": "windows-desktop-release",
       "configuration": "Release",
       "targets": [
         "INSTALL"
       ]
     },
     {
-      "name": "windows-msvc-x64-release-installer",
-      "displayName": "Windows MSVC x64 Release Installer",
-      "configurePreset": "windows-msvc-x64-release",
-      "configuration": "Release",
-      "targets": [
-        "ClassMngrInstaller"
-      ]
-    },
-    {
-      "name": "windows-laptop-msvc-x64-debug",
-      "configurePreset": "windows-laptop-msvc-x64-debug",
+      "name": "windows-laptop-debug",
+      "configurePreset": "windows-laptop-debug",
       "configuration": "Debug"
     },
     {
-      "name": "windows-laptop-msvc-x64-release",
-      "configurePreset": "windows-laptop-msvc-x64-release",
+      "name": "windows-laptop-release",
+      "configurePreset": "windows-laptop-release",
       "configuration": "Release"
     },
     {
-      "name": "windows-laptop-msvc-x64-release-install",
-      "configurePreset": "windows-laptop-msvc-x64-release",
+      "name": "windows-laptop-release-install",
+      "configurePreset": "windows-laptop-release",
       "configuration": "Release",
       "targets": [
         "INSTALL"
       ]
     },
     {
-      "name": "windows-laptop-msvc-x64-release-installer",
-      "displayName": "Windows Laptop MSVC x64 Release Installer",
-      "configurePreset": "windows-laptop-msvc-x64-release",
-      "configuration": "Release",
-      "targets": [
-        "ClassMngrInstaller"
-      ]
+      "name": "windows-arm64-debug",
+      "configurePreset": "windows-arm64-debug",
+      "configuration": "Debug"
     },
     {
-      "name": "windows-msvc-arm64-release",
-      "configurePreset": "windows-msvc-arm64-release",
+      "name": "windows-arm64-release",
+      "configurePreset": "windows-arm64-release",
       "configuration": "Release"
     },
     {
-      "name": "windows-msvc-arm64-release-install",
-      "configurePreset": "windows-msvc-arm64-release",
-      "configuration": "Release",
-      "targets": [
-        "INSTALL"
-      ]
-    },
-    {
-      "name": "windows-msvc-x86-release-optional",
-      "configurePreset": "windows-msvc-x86-release-optional",
-      "configuration": "Release"
-    },
-    {
-      "name": "windows-msvc-x86-release-optional-install",
-      "configurePreset": "windows-msvc-x86-release-optional",
+      "name": "windows-arm64-release-install",
+      "configurePreset": "windows-arm64-release",
       "configuration": "Release",
       "targets": [
         "INSTALL"
@@ -316,112 +298,6 @@
         {
           "type": "build",
           "name": "macos-clang-release"
-        }
-      ]
-    },
-    {
-      "name": "windows-msvc-x64-release-artifacts",
-      "displayName": "Windows MSVC x64 Release Artifacts",
-      "description": "Configure and build the Windows x64 release artifact.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-x64-release-install"
-        }
-      ]
-    },
-    {
-      "name": "windows-msvc-x64-release-installer-artifacts",
-      "displayName": "Windows MSVC x64 Release Installer Artifacts",
-      "description": "Configure, build, install, and package the Windows x64 release installer.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-x64-release-installer"
-        }
-      ]
-    },
-    {
-      "name": "windows-laptop-msvc-x64-release-artifacts",
-      "displayName": "Windows Laptop MSVC x64 Release Artifacts",
-      "description": "Configure, build, and install the Windows laptop x64 release artifact.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-laptop-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-laptop-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-laptop-msvc-x64-release-install"
-        }
-      ]
-    },
-    {
-      "name": "windows-laptop-msvc-x64-release-installer-artifacts",
-      "displayName": "Windows Laptop MSVC x64 Release Installer Artifacts",
-      "description": "Configure, build, install, and package the Windows laptop x64 release installer.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-laptop-msvc-x64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-laptop-msvc-x64-release-installer"
-        }
-      ]
-    },
-    {
-      "name": "windows-msvc-arm64-release-artifacts",
-      "displayName": "Windows MSVC ARM64 Release Artifacts",
-      "description": "Configure and build the Windows ARM64 release artifact.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-msvc-arm64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-arm64-release"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-arm64-release-install"
-        }
-      ]
-    },
-    {
-      "name": "windows-msvc-x86-release-artifacts",
-      "displayName": "Windows MSVC x86 Release Artifacts",
-      "description": "Optionally configure and build the Windows x86 release artifact when a compatible Qt kit is available.",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "windows-msvc-x86-release-optional"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-x86-release-optional"
-        },
-        {
-          "type": "build",
-          "name": "windows-msvc-x86-release-optional-install"
         }
       ]
     }

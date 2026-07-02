@@ -92,6 +92,8 @@ configure_file(
 
 qt_standard_project_setup()
 
+option(CLASSMNGR_RUN_WINDEPLOYQT "Run windeployqt after building ClassMngr on Windows." OFF)
+
 set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
 set(CLASSMNGR_QT_DEPLOY_QML_PLUGINS "\\$")
@@ -227,7 +229,7 @@ target_link_libraries(ClassMngr
         Qt6::Widgets
 )
 
-if(WIN32)
+if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
     add_custom_command(TARGET ClassMngr POST_BUILD
         COMMAND Qt6::windeployqt
             --qmldir "${PROJECT_SOURCE_DIR}/src/features/my_info/ui/qml"
