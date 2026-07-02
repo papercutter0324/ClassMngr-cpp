@@ -605,12 +605,32 @@ bool settingToBool(
 
 MyInfoPage::MyInfoPage(
     ApplicationServices* services,
+    MyInfoPageMode mode,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
+    , m_mode(mode)
 {
     setProperty("role", UiRoles::MyInfo);
+
+    switch (m_mode)
+    {
+    case MyInfoPageMode::InformationCalendar:
+        m_currentSection =
+            MyInfoSection::MyInformation;
+        break;
+
+    case MyInfoPageMode::Schedule:
+        m_currentSection =
+            MyInfoSection::ClassSchedule;
+        break;
+
+    case MyInfoPageMode::ClassInformation:
+        m_currentSection =
+            MyInfoSection::ClassInformation;
+        break;
+    }
 
     buildUi();
 
@@ -628,7 +648,14 @@ MyInfoPage::MyInfoPage(
         &MyInfoPage::autosave
         );
 
-    loadPageData();
+    if (includesMyInformation())
+    {
+        loadPageData();
+    }
+    else
+    {
+        refreshGeneratedContent();
+    }
 }
 
 void MyInfoPage::refresh()
@@ -655,7 +682,7 @@ void MyInfoPage::refresh()
         m_academicCalendarProvider->reload();
     }
 
-    if (!m_dirty)
+    if (!m_dirty && includesMyInformation())
     {
         loadPageData();
     }
@@ -668,14 +695,14 @@ void MyInfoPage::retranslateUi()
     if (m_titleLabel)
     {
         m_titleLabel->setText(
-            tr("My Info")
+            pageTitle()
             );
     }
 
     if (m_subtitleLabel)
     {
         m_subtitleLabel->setText(
-            tr("Manage your schedule, personal details, and monthly events.")
+            pageSubtitle()
             );
     }
 
@@ -689,7 +716,7 @@ void MyInfoPage::retranslateUi()
     if (m_classScheduleHeading)
     {
         m_classScheduleHeading->setText(
-            tr("Class Schedule")
+            tr("Schedule")
             );
     }
 
@@ -776,11 +803,21 @@ void MyInfoPage::retranslateUi()
 
 void MyInfoPage::saveData()
 {
+    if (!includesMyInformation())
+    {
+        return;
+    }
+
     saveMyInfoInternal();
 }
 
 bool MyInfoPage::saveChanges()
 {
+    if (!includesMyInformation())
+    {
+        return true;
+    }
+
     if (m_autosaveTimer)
     {
         m_autosaveTimer->stop();
@@ -791,11 +828,16 @@ bool MyInfoPage::saveChanges()
 
 bool MyInfoPage::hasUnsavedChanges() const
 {
-    return m_dirty;
+    return includesMyInformation() && m_dirty;
 }
 
 void MyInfoPage::discardChanges()
 {
+    if (!includesMyInformation())
+    {
+        return;
+    }
+
     if (m_autosaveTimer)
     {
         m_autosaveTimer->stop();
@@ -809,6 +851,11 @@ void MyInfoPage::setSaveMode(
     )
 {
     m_saveMode = mode;
+
+    if (!includesMyInformation())
+    {
+        return;
+    }
 
     if (!m_autosaveTimer)
     {
@@ -912,7 +959,7 @@ QString MyInfoPage::currentSectionName() const
     switch (m_currentSection)
     {
     case MyInfoSection::ClassSchedule:
-        return tr("Class Schedule");
+        return tr("Schedule");
 
     case MyInfoSection::ClassInformation:
         return tr("Class Information");
@@ -953,7 +1000,7 @@ void MyInfoPage::showEvent(
 {
     BasePage::showEvent(event);
 
-    if (!m_dirty)
+    if (!m_dirty && includesMyInformation())
     {
         loadPageData();
     }
@@ -1154,7 +1201,7 @@ void MyInfoPage::buildUi()
 
     m_titleLabel =
         new QLabel(
-            tr("My Info"),
+            pageTitle(),
             m_scrollContent
             );
     m_titleLabel->setObjectName("pageTitle");
@@ -1167,7 +1214,7 @@ void MyInfoPage::buildUi()
 
     m_subtitleLabel =
         new QLabel(
-            tr("Manage your schedule, personal details, and monthly events."),
+            pageSubtitle(),
             m_scrollContent
             );
     m_subtitleLabel->setObjectName("pageSubtitle");
@@ -1184,10 +1231,25 @@ void MyInfoPage::buildUi()
         UiConstants::Pages::HeaderContentSpacing
         );
 
-    buildMyInformationSection();
-    buildClassScheduleSection();
-    buildClassInformationSection();
-    buildMonthlyCalendarSection();
+    if (includesMyInformation())
+    {
+        buildMyInformationSection();
+    }
+
+    if (includesClassSchedule())
+    {
+        buildClassScheduleSection();
+    }
+
+    if (includesClassInformation())
+    {
+        buildClassInformationSection();
+    }
+
+    if (includesMonthlyCalendar())
+    {
+        buildMonthlyCalendarSection();
+    }
 
     m_scrollContentLayout->addStretch();
 
@@ -1195,20 +1257,77 @@ void MyInfoPage::buildUi()
     contentLayout()->addWidget(m_scrollArea);
 }
 
+QString MyInfoPage::pageTitle() const
+{
+    switch (m_mode)
+    {
+    case MyInfoPageMode::InformationCalendar:
+        return tr("My Information & Calendar");
+
+    case MyInfoPageMode::Schedule:
+        return tr("Schedule");
+
+    case MyInfoPageMode::ClassInformation:
+        return tr("Class Information");
+    }
+
+    return QString();
+}
+
+QString MyInfoPage::pageSubtitle() const
+{
+    switch (m_mode)
+    {
+    case MyInfoPageMode::InformationCalendar:
+        return tr("Manage your personal details and monthly events.");
+
+    case MyInfoPageMode::Schedule:
+        return tr("View and adjust your class schedule.");
+
+    case MyInfoPageMode::ClassInformation:
+        return tr("Review teacher, class, and roster details.");
+    }
+
+    return QString();
+}
+
+bool MyInfoPage::includesMyInformation() const
+{
+    return m_mode == MyInfoPageMode::InformationCalendar;
+}
+
+bool MyInfoPage::includesClassSchedule() const
+{
+    return m_mode == MyInfoPageMode::Schedule;
+}
+
+bool MyInfoPage::includesClassInformation() const
+{
+    return m_mode == MyInfoPageMode::ClassInformation;
+}
+
+bool MyInfoPage::includesMonthlyCalendar() const
+{
+    return m_mode == MyInfoPageMode::InformationCalendar;
+}
+
 void MyInfoPage::buildClassScheduleSection()
 {
-    m_scrollContentLayout->addSpacing(
-        UiConstants::Pages::MajorSectionSpacing
-        );
-
-    m_classScheduleHeading =
-        createTopLevelHeading(
-            tr("Class Schedule"),
-            m_scrollContent
+    if (m_mode != MyInfoPageMode::Schedule)
+    {
+        m_scrollContentLayout->addSpacing(
+            UiConstants::Pages::MajorSectionSpacing
             );
-    m_scrollContentLayout->addWidget(
-        m_classScheduleHeading
-        );
+
+        m_classScheduleHeading =
+            createTopLevelHeading(
+                tr("Schedule"),
+                m_scrollContent
+                );
+        m_scrollContentLayout->addWidget(
+            m_classScheduleHeading
+            );
+    }
 
     auto* card =
         new QFrame(m_scrollContent);
@@ -1257,18 +1376,21 @@ void MyInfoPage::buildClassScheduleSection()
 
 void MyInfoPage::buildClassInformationSection()
 {
-    m_scrollContentLayout->addSpacing(
-        UiConstants::Pages::MajorSectionSpacing
-        );
-
-    m_classInformationHeading =
-        createTopLevelHeading(
-            tr("Class Information"),
-            m_scrollContent
+    if (m_mode != MyInfoPageMode::ClassInformation)
+    {
+        m_scrollContentLayout->addSpacing(
+            UiConstants::Pages::MajorSectionSpacing
             );
-    m_scrollContentLayout->addWidget(
-        m_classInformationHeading
-        );
+
+        m_classInformationHeading =
+            createTopLevelHeading(
+                tr("Class Information"),
+                m_scrollContent
+                );
+        m_scrollContentLayout->addWidget(
+            m_classInformationHeading
+            );
+    }
 
     m_classInfoSubtitle =
         new QLabel(

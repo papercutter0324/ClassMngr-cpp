@@ -655,10 +655,6 @@ void NavigationController::handleMyInfo(
         return;
     }
 
-    const bool alreadyShowingMyInfo =
-        m_pages->currentWidget()
-        == m_pages->myInfoPage();
-
     const QString sectionKey =
         data.keys.size() >= 2
             ? data.routeKey
@@ -683,32 +679,49 @@ void NavigationController::handleMyInfo(
         return;
     }
 
-    MyInfoSection section =
-        MyInfoSection::MyInformation;
+    PageType targetPageType =
+        PageType::MyInfo;
+    QWidget* targetPage =
+        m_pages->myInfoPage();
+    QString selectedSectionKey =
+        QStringLiteral("my_info_information");
 
     if (sectionKey == QStringLiteral("my_info_schedule"))
     {
-        section =
-            MyInfoSection::ClassSchedule;
+        targetPageType =
+            PageType::MyInfoSchedule;
+        targetPage =
+            m_pages->myInfoSchedulePage();
+        selectedSectionKey =
+            QStringLiteral("my_info_schedule");
     }
     else if (sectionKey == QStringLiteral("my_info_class_information"))
     {
-        section =
-            MyInfoSection::ClassInformation;
+        targetPageType =
+            PageType::MyInfoClassInformation;
+        targetPage =
+            m_pages->myInfoClassInformationPage();
+        selectedSectionKey =
+            QStringLiteral("my_info_class_information");
     }
     else if (sectionKey == QStringLiteral("my_info_calendar"))
     {
-        section =
-            MyInfoSection::MonthlyCalendar;
+        selectedSectionKey =
+            QStringLiteral("my_info_information");
     }
 
     const bool rootClick =
         data.path.size() == 1;
+    const bool alreadyShowingTarget =
+        m_pages->currentWidget()
+        == targetPage;
 
-    if (!alreadyShowingMyInfo && !m_pages->confirmCurrentPageCanLeave())
+    if (!alreadyShowingTarget && !m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
+
+    m_pages->showPage(targetPageType);
 
     if (rootClick)
     {
@@ -716,16 +729,11 @@ void NavigationController::handleMyInfo(
             QStringLiteral("my_info_information")
             );
     }
-
-    m_pages->showPage(PageType::MyInfo);
-    if (rootClick)
-    {
-        m_pages->myInfoPage()->scrollToTop();
-    }
     else
     {
-        m_pages->myInfoPage()
-            ->scrollToSection(section);
+        m_sidebar->selectMyInfoSection(
+            selectedSectionKey
+            );
     }
 }
 

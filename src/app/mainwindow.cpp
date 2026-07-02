@@ -425,6 +425,13 @@ void MainWindow::connectSignals()
         );
 
     connect(
+        m_pages->myInfoSchedulePage(),
+        &MyInfoPage::classInfoSaved,
+        m_sidebarController.get(),
+        &SidebarController::handleClassInfoSaved
+        );
+
+    connect(
         m_pages->teacherPage(),
         &TeacherInfoPage::teacherSaved,
         m_sidebarController.get(),

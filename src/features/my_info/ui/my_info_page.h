@@ -29,6 +29,13 @@ enum class MyInfoSection
     MonthlyCalendar
 };
 
+enum class MyInfoPageMode
+{
+    InformationCalendar,
+    Schedule,
+    ClassInformation
+};
+
 class MyInfoPage : public BasePage
 {
     Q_OBJECT
@@ -36,6 +43,7 @@ class MyInfoPage : public BasePage
 public:
     explicit MyInfoPage(
         ApplicationServices* services,
+        MyInfoPageMode mode = MyInfoPageMode::InformationCalendar,
         QWidget* parent = nullptr
         );
 
@@ -92,6 +100,12 @@ private slots:
 
 private:
     void buildUi();
+    QString pageTitle() const;
+    QString pageSubtitle() const;
+    bool includesMyInformation() const;
+    bool includesClassSchedule() const;
+    bool includesClassInformation() const;
+    bool includesMonthlyCalendar() const;
     void buildClassScheduleSection();
     void buildClassInformationSection();
     void buildMyInformationSection();
@@ -131,6 +145,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    MyInfoPageMode m_mode = MyInfoPageMode::InformationCalendar;
     bool m_loading = false;
     bool m_dirty = false;
     SaveMode m_saveMode = SaveMode::Automatic;

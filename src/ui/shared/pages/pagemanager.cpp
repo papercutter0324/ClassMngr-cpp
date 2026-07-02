@@ -57,6 +57,21 @@ void PageManager::initialize(
     m_myInfoPage =
         new MyInfoPage(
             m_services,
+            MyInfoPageMode::InformationCalendar,
+            this
+            );
+
+    m_myInfoSchedulePage =
+        new MyInfoPage(
+            m_services,
+            MyInfoPageMode::Schedule,
+            this
+            );
+
+    m_myInfoClassInformationPage =
+        new MyInfoPage(
+            m_services,
+            MyInfoPageMode::ClassInformation,
             this
             );
 
@@ -130,6 +145,12 @@ void PageManager::registerPages()
 {
     m_pages[PageType::MyInfo] =
         m_myInfoPage;
+
+    m_pages[PageType::MyInfoSchedule] =
+        m_myInfoSchedulePage;
+
+    m_pages[PageType::MyInfoClassInformation] =
+        m_myInfoClassInformationPage;
 
     m_pages[PageType::Schedule] =
         m_schedulePage;
@@ -309,6 +330,16 @@ SchedulePage* PageManager::schedulePage() const
 MyInfoPage* PageManager::myInfoPage() const
 {
     return m_myInfoPage;
+}
+
+MyInfoPage* PageManager::myInfoSchedulePage() const
+{
+    return m_myInfoSchedulePage;
+}
+
+MyInfoPage* PageManager::myInfoClassInformationPage() const
+{
+    return m_myInfoClassInformationPage;
 }
 
 MyInfoRostersPage* PageManager::myInfoRostersPage() const
