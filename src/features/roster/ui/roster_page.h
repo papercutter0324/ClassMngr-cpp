@@ -7,6 +7,7 @@
 class ApplicationServices;
 class QLabel;
 class QModelIndex;
+class QPoint;
 class QPushButton;
 class QTimer;
 class RosterColumnLayoutController;
@@ -51,11 +52,17 @@ private slots:
 
     void removeColumn();
 
+    void removeStudent();
+
     void importScores();
 
     void autosave();
 
     void updateActions();
+
+    void showRosterContextMenu(
+        const QPoint& position
+        );
 
 private:
     void buildUi();
@@ -83,12 +90,21 @@ private:
         int column
         );
 
+    bool removeRosterRow(
+        int row
+        );
+
+    QString rosterRowLabel(
+        int row
+        ) const;
+
 private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
     bool m_loadingRoster = false;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
+    bool m_removingRosterRow = false;
     SaveMode m_saveMode = SaveMode::Automatic;
 
     QLabel* m_titleLabel = nullptr;
@@ -101,6 +117,7 @@ private:
     RosterItemDelegate* m_delegate = nullptr;
 
     QPushButton* m_importButton = nullptr;
+    QPushButton* m_removeStudentButton = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;

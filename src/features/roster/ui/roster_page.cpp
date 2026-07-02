@@ -14,6 +14,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
+#include <QAction>
 #include <QAbstractButton>
 #include <QHeaderView>
 #include <QHash>
@@ -21,7 +22,9 @@
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
+#include <QPoint>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -204,6 +207,13 @@ void RosterPage::retranslateUi()
     {
         m_addColumnButton->setText(
             tr("Add Column")
+            );
+    }
+
+    if (m_removeStudentButton)
+    {
+        m_removeStudentButton->setText(
+            tr("Remove Student")
             );
     }
 
@@ -417,6 +427,21 @@ void RosterPage::removeColumn()
     updateActions();
 }
 
+void RosterPage::removeStudent()
+{
+    if (!m_table)
+    {
+        return;
+    }
+
+    const QModelIndex current =
+        m_table->currentIndex();
+
+    removeRosterRow(
+        current.row()
+        );
+}
+
 void RosterPage::importScores()
 {
     if (
@@ -610,7 +635,7 @@ void RosterPage::autosave()
 
 void RosterPage::updateActions()
 {
-    if (!m_saveButton || !m_removeColumnButton)
+    if (!m_saveButton || !m_removeStudentButton || !m_removeColumnButton)
     {
         return;
     }
@@ -637,6 +662,68 @@ void RosterPage::updateActions()
             &reason
             )
         );
+
+    m_removeStudentButton->setEnabled(
+        m_model
+        && m_model->canRemoveRow(
+            m_table->currentIndex().row(),
+            &reason
+            )
+        );
+}
+
+void RosterPage::showRosterContextMenu(
+    const QPoint& position
+    )
+{
+    if (!m_table || !m_model)
+    {
+        return;
+    }
+
+    const QModelIndex clicked =
+        m_table->indexAt(position);
+
+    if (!clicked.isValid())
+    {
+        return;
+    }
+
+    m_table->setCurrentIndex(clicked);
+
+    QString reason;
+
+    const bool canRemove =
+        m_model->canRemoveRow(
+            clicked.row(),
+            &reason
+            );
+
+    QMenu menu(this);
+
+    QAction* removeAction =
+        menu.addAction(
+            tr("Remove Student")
+            );
+
+    removeAction->setEnabled(canRemove);
+
+    if (!canRemove && !reason.isEmpty())
+    {
+        removeAction->setToolTip(reason);
+    }
+
+    QAction* selectedAction =
+        menu.exec(
+            m_table->viewport()->mapToGlobal(position)
+            );
+
+    if (selectedAction == removeAction && canRemove)
+    {
+        removeRosterRow(
+            clicked.row()
+            );
+    }
 }
 
 void RosterPage::buildUi()
@@ -717,6 +804,7 @@ void RosterPage::buildUi()
     m_table->setHorizontalHeader(m_header);
     m_table->setModel(m_model);
     m_table->setLayoutController(m_layoutController);
+    m_table->setContextMenuPolicy(Qt::CustomContextMenu);
 
     m_layoutController->attach(
         m_table,
@@ -753,6 +841,12 @@ void RosterPage::buildUi()
             this
             );
 
+    m_removeStudentButton =
+        new TextFitPushButton(
+            tr("Remove Student"),
+            this
+            );
+
     m_removeColumnButton =
         new TextFitPushButton(
             tr("Remove Column"),
@@ -769,6 +863,7 @@ void RosterPage::buildUi()
 
     bottomLayout()->addWidget(m_importButton);
     bottomLayout()->addStretch();
+    bottomLayout()->addWidget(m_removeStudentButton);
     bottomLayout()->addWidget(m_addColumnButton);
     bottomLayout()->addWidget(m_removeColumnButton);
     bottomLayout()->addWidget(m_saveButton);
@@ -778,6 +873,13 @@ void RosterPage::buildUi()
         &QPushButton::clicked,
         this,
         &RosterPage::addColumn
+        );
+
+    connect(
+        m_removeStudentButton,
+        &QPushButton::clicked,
+        this,
+        &RosterPage::removeStudent
         );
 
     connect(
@@ -799,6 +901,13 @@ void RosterPage::buildUi()
         &QPushButton::clicked,
         this,
         &RosterPage::importScores
+        );
+
+    connect(
+        m_table,
+        &QWidget::customContextMenuRequested,
+        this,
+        &RosterPage::showRosterContextMenu
         );
 
     connect(
@@ -884,6 +993,7 @@ void RosterPage::handleNameCellChanged(
     if (
         m_loadingRoster
         || m_resolvingDuplicateName
+        || m_removingRosterRow
         || !m_model
         || !topLeft.isValid()
         || !bottomRight.isValid()
@@ -1099,4 +1209,135 @@ void RosterPage::selectRosterCell(
 
     m_table->setCurrentIndex(index);
     m_table->scrollTo(index);
+}
+
+bool RosterPage::removeRosterRow(
+    int row
+    )
+{
+    if (!m_model || !m_table)
+    {
+        return false;
+    }
+
+    QString reason;
+
+    if (!m_model->canRemoveRow(row, &reason))
+    {
+        QMessageBox::warning(
+            this,
+            tr("Cannot Remove Student"),
+            reason
+            );
+
+        return false;
+    }
+
+    const QString label =
+        rosterRowLabel(row);
+
+    const QString message =
+        label.isEmpty()
+            ? tr("Remove row %1 from the roster?").arg(row + 1)
+            : tr("Remove %1 from the roster?").arg(label);
+
+    const QMessageBox::StandardButton response =
+        QMessageBox::question(
+            this,
+            tr("Remove Student"),
+            message
+            );
+
+    if (response != QMessageBox::Yes)
+    {
+        return false;
+    }
+
+    m_removingRosterRow = true;
+
+    const bool removed =
+        m_model->removeRosterRow(row);
+
+    m_removingRosterRow = false;
+
+    if (!removed)
+    {
+        return false;
+    }
+
+    const int nextRow =
+        row < m_model->rowCount()
+            ? row
+            : m_model->rowCount() - 1;
+
+    if (nextRow >= 0 && m_model->columnCount() > 0)
+    {
+        selectRosterCell(
+            nextRow,
+            0
+            );
+    }
+
+    scheduleAutosave();
+    updateActions();
+
+    return true;
+}
+
+QString RosterPage::rosterRowLabel(
+    int row
+    ) const
+{
+    if (!m_model || row < 0 || row >= m_model->rowCount())
+    {
+        return {};
+    }
+
+    QStringList names;
+
+    const int englishColumn =
+        m_model->englishNameColumn();
+
+    if (englishColumn >= 0)
+    {
+        const QString englishName =
+            m_model
+                ->index(
+                    row,
+                    englishColumn
+                    )
+                .data(Qt::DisplayRole)
+                .toString()
+                .trimmed();
+
+        if (!englishName.isEmpty())
+        {
+            names.append(englishName);
+        }
+    }
+
+    const int koreanColumn =
+        m_model->koreanNameColumn();
+
+    if (koreanColumn >= 0)
+    {
+        const QString koreanName =
+            m_model
+                ->index(
+                    row,
+                    koreanColumn
+                    )
+                .data(Qt::DisplayRole)
+                .toString()
+                .trimmed();
+
+        if (!koreanName.isEmpty())
+        {
+            names.append(koreanName);
+        }
+    }
+
+    return names.join(
+        QStringLiteral(" / ")
+        );
 }

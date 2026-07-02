@@ -82,6 +82,15 @@ public:
         int column
         );
 
+    bool canRemoveRow(
+        int row,
+        QString* reason = nullptr
+        ) const;
+
+    bool removeRosterRow(
+        int row
+        );
+
     bool isDirty() const;
 
     void clearDirty();

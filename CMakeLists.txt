@@ -558,6 +558,34 @@ if(BUILD_TESTING)
         COMMAND ClassMngrUniformWidthTabBarTests
     )
 
+    qt_add_executable(ClassMngrRosterModelTests
+        tests/roster_model_tests.cpp
+        src/domain/models/roster.cpp
+        src/features/roster/ui/roster_model.cpp
+    )
+
+    target_compile_features(ClassMngrRosterModelTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrRosterModelTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrRosterModelTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrRosterModelTests
+        COMMAND ClassMngrRosterModelTests
+    )
+
     qt_add_executable(ClassMngrLanguageServiceTests
         tests/language_service_tests.cpp
         src/core/language_service.cpp
@@ -660,6 +688,7 @@ if(BUILD_TESTING)
             ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrSubPrepClassNavigationTests
             ClassMngrUniformWidthTabBarTests
+            ClassMngrRosterModelTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
