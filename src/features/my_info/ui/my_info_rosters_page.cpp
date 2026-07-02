@@ -1,4 +1,4 @@
-#include "roster_page.h"
+#include "my_info_rosters_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -11,8 +11,10 @@
 #include "features/roster/ui/roster_item_delegate.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "features/sub_prep/ui/sub_prep_class_navigation.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QAction>
 #include <QAbstractButton>
@@ -26,24 +28,29 @@
 #include <QMessageBox>
 #include <QPoint>
 #include <QPushButton>
+#include <QSizePolicy>
+#include <QTabWidget>
 #include <QTimer>
 #include <QVBoxLayout>
+
+#include <utility>
 
 namespace
 {
 
 inline constexpr int AutosaveDelayMs = 750;
+inline constexpr int ClassTabContentTopMargin = 16;
 
 } // namespace
 
-RosterPage::RosterPage(
+MyInfoRostersPage::MyInfoRostersPage(
     ApplicationServices* services,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
 {
-    setProperty("role", UiRoles::RosterPage);
+    setProperty("role", UiRoles::MyInfoRostersPage);
 
     buildUi();
 
@@ -58,11 +65,68 @@ RosterPage::RosterPage(
         m_autosaveTimer,
         &QTimer::timeout,
         this,
-        &RosterPage::autosave
+        &MyInfoRostersPage::autosave
         );
 }
 
-void RosterPage::loadClass(
+void MyInfoRostersPage::loadClass(
+    const Classroom& classroom
+    )
+{
+    loadRosters(
+        classroom.id
+        );
+}
+
+void MyInfoRostersPage::loadRosters(
+    int selectedClassId
+    )
+{
+    auto* dataService =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    if (!dataService || !dataService->isOpen())
+    {
+        m_rosterClasses.clear();
+        rebuildRosterTabs(-1);
+        loadRosterClass({});
+        setRosterEditorAvailable(false);
+        return;
+    }
+
+    m_rosterClasses =
+        dataService->getClasses();
+
+    int classId =
+        selectedClassId > 0
+            ? selectedClassId
+            : m_classroom.id;
+
+    if (classroomById(classId).id <= 0)
+    {
+        classId =
+            firstRosterClassId();
+    }
+
+    rebuildRosterTabs(
+        classId
+        );
+
+    const Classroom classroom =
+        classroomById(classId);
+
+    loadRosterClass(
+        classroom
+        );
+
+    setRosterEditorAvailable(
+        classroom.id > 0
+        );
+}
+
+void MyInfoRostersPage::loadRosterClass(
     const Classroom& classroom
     )
 {
@@ -140,15 +204,15 @@ void RosterPage::loadClass(
     m_model->clearDirty();
     m_widthsDirty = false;
     m_loadingRoster = false;
-    updateActions();
+    setRosterEditorAvailable(false);
 }
 
-void RosterPage::saveData()
+void MyInfoRostersPage::saveData()
 {
     saveRosterInternal(true);
 }
 
-bool RosterPage::saveChanges()
+bool MyInfoRostersPage::saveChanges()
 {
     if (m_autosaveTimer)
     {
@@ -163,13 +227,13 @@ bool RosterPage::saveChanges()
     return saveRosterInternal(true);
 }
 
-bool RosterPage::hasUnsavedChanges() const
+bool MyInfoRostersPage::hasUnsavedChanges() const
 {
     return m_widthsDirty
         || (m_model && m_model->isDirty());
 }
 
-void RosterPage::discardChanges()
+void MyInfoRostersPage::discardChanges()
 {
     if (m_autosaveTimer)
     {
@@ -179,17 +243,17 @@ void RosterPage::discardChanges()
     loadClass(m_classroom);
 }
 
-QString RosterPage::unsavedChangesTitle() const
+QString MyInfoRostersPage::unsavedChangesTitle() const
 {
     return tr("Unsaved Roster Changes");
 }
 
-QString RosterPage::unsavedChangesMessage() const
+QString MyInfoRostersPage::unsavedChangesMessage() const
 {
     return tr("This roster has unsaved changes.");
 }
 
-void RosterPage::retranslateUi()
+void MyInfoRostersPage::retranslateUi()
 {
     updateHeaderText();
 
@@ -234,7 +298,7 @@ void RosterPage::retranslateUi()
     updateActions();
 }
 
-void RosterPage::setSaveMode(
+void MyInfoRostersPage::setSaveMode(
     SaveMode mode
     )
 {
@@ -262,7 +326,7 @@ void RosterPage::setSaveMode(
     }
 }
 
-bool RosterPage::saveRosterInternal(
+bool MyInfoRostersPage::saveRosterInternal(
     bool showValidationMessages
     )
 {
@@ -316,7 +380,7 @@ bool RosterPage::saveRosterInternal(
     return true;
 }
 
-void RosterPage::addColumn()
+void MyInfoRostersPage::addColumn()
 {
     bool accepted = false;
 
@@ -375,7 +439,7 @@ void RosterPage::addColumn()
     updateActions();
 }
 
-void RosterPage::removeColumn()
+void MyInfoRostersPage::removeColumn()
 {
     const QModelIndex current =
         m_table->currentIndex();
@@ -427,7 +491,7 @@ void RosterPage::removeColumn()
     updateActions();
 }
 
-void RosterPage::removeStudent()
+void MyInfoRostersPage::removeStudent()
 {
     if (!m_table)
     {
@@ -442,7 +506,7 @@ void RosterPage::removeStudent()
         );
 }
 
-void RosterPage::moveStudentRow(
+void MyInfoRostersPage::moveStudentRow(
     int sourceRow,
     int destinationRow
     )
@@ -493,7 +557,7 @@ void RosterPage::moveStudentRow(
     updateActions();
 }
 
-void RosterPage::importScores()
+void MyInfoRostersPage::importScores()
 {
     if (
         !m_services
@@ -674,7 +738,7 @@ void RosterPage::importScores()
     );
 }
 
-void RosterPage::autosave()
+void MyInfoRostersPage::autosave()
 {
     if (!hasUnsavedChanges())
     {
@@ -684,12 +748,21 @@ void RosterPage::autosave()
     saveRosterInternal(false);
 }
 
-void RosterPage::updateActions()
+void MyInfoRostersPage::updateActions()
 {
-    if (!m_saveButton || !m_removeStudentButton || !m_removeColumnButton)
+    if (
+        !m_saveButton
+        || !m_importButton
+        || !m_addColumnButton
+        || !m_removeStudentButton
+        || !m_removeColumnButton
+        )
     {
         return;
     }
+
+    const bool hasActiveClass =
+        m_classroom.id > 0;
 
     const bool showSaveButton =
         m_saveMode != SaveMode::Automatic;
@@ -701,13 +774,22 @@ void RosterPage::updateActions()
     m_saveButton->setEnabled(
         showSaveButton
         && hasUnsavedChanges()
-        && m_classroom.id > 0
+        && hasActiveClass
+        );
+
+    m_importButton->setEnabled(
+        hasActiveClass
+        );
+
+    m_addColumnButton->setEnabled(
+        hasActiveClass
         );
 
     QString reason;
 
     m_removeColumnButton->setEnabled(
-        m_model
+        hasActiveClass
+        && m_model
         && m_model->canRemoveColumn(
             m_table->currentIndex().column(),
             &reason
@@ -715,7 +797,8 @@ void RosterPage::updateActions()
         );
 
     m_removeStudentButton->setEnabled(
-        m_model
+        hasActiveClass
+        && m_model
         && m_model->canRemoveRow(
             m_table->currentIndex().row(),
             &reason
@@ -723,7 +806,7 @@ void RosterPage::updateActions()
         );
 }
 
-void RosterPage::showRosterContextMenu(
+void MyInfoRostersPage::showRosterContextMenu(
     const QPoint& position
     )
 {
@@ -777,7 +860,7 @@ void RosterPage::showRosterContextMenu(
     }
 }
 
-void RosterPage::buildUi()
+void MyInfoRostersPage::buildUi()
 {
     contentLayout()->setContentsMargins(
         24,
@@ -786,7 +869,9 @@ void RosterPage::buildUi()
         0
         );
 
-    contentLayout()->setSpacing(12);
+    contentLayout()->setSpacing(
+        ClassTabContentTopMargin
+        );
 
     auto* headerLayout =
         new QVBoxLayout;
@@ -802,11 +887,12 @@ void RosterPage::buildUi()
 
     m_titleLabel =
         new QLabel(
-            tr("Class Roster"),
+            tr("Rosters"),
             this
             );
 
     m_titleLabel->setObjectName("pageTitle");
+    m_titleLabel->setAlignment(Qt::AlignCenter);
     m_titleLabel->setFont(
         FontManager::getUiFont(
             20,
@@ -821,6 +907,7 @@ void RosterPage::buildUi()
             );
 
     m_subtitleLabel->setObjectName("pageSubtitle");
+    m_subtitleLabel->setAlignment(Qt::AlignCenter);
     m_subtitleLabel->setFont(
         FontManager::getUiFont(11)
         );
@@ -831,6 +918,26 @@ void RosterPage::buildUi()
     contentLayout()->addLayout(headerLayout);
     contentLayout()->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
+        );
+
+    m_tabsContainer =
+        new QWidget(this);
+    m_tabsContainer->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Maximum
+        );
+    m_tabsLayout =
+        new QVBoxLayout(m_tabsContainer);
+    m_tabsLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+    m_tabsLayout->setSpacing(8);
+
+    contentLayout()->addWidget(
+        m_tabsContainer
         );
 
     m_model =
@@ -873,7 +980,24 @@ void RosterPage::buildUi()
 
     m_layoutController->applyWidths({});
 
-    contentLayout()->addWidget(m_table);
+    m_emptyLabel =
+        new QLabel(
+            tr("No classes available"),
+            this
+            );
+    m_emptyLabel->setObjectName("pageSubtitle");
+    m_emptyLabel->setAlignment(Qt::AlignCenter);
+    m_emptyLabel->setFont(
+        FontManager::getUiFont(12)
+        );
+
+    contentLayout()->addWidget(
+        m_emptyLabel
+        );
+    contentLayout()->addWidget(
+        m_table,
+        1
+        );
 
     m_importButton =
         new TextFitPushButton(
@@ -923,49 +1047,49 @@ void RosterPage::buildUi()
         m_addColumnButton,
         &QPushButton::clicked,
         this,
-        &RosterPage::addColumn
+        &MyInfoRostersPage::addColumn
         );
 
     connect(
         m_removeStudentButton,
         &QPushButton::clicked,
         this,
-        &RosterPage::removeStudent
+        &MyInfoRostersPage::removeStudent
         );
 
     connect(
         m_removeColumnButton,
         &QPushButton::clicked,
         this,
-        &RosterPage::removeColumn
+        &MyInfoRostersPage::removeColumn
         );
 
     connect(
         m_saveButton,
         &QPushButton::clicked,
         this,
-        &RosterPage::saveData
+        &MyInfoRostersPage::saveData
         );
 
     connect(
         m_importButton,
         &QPushButton::clicked,
         this,
-        &RosterPage::importScores
+        &MyInfoRostersPage::importScores
         );
 
     connect(
         m_table,
         &QWidget::customContextMenuRequested,
         this,
-        &RosterPage::showRosterContextMenu
+        &MyInfoRostersPage::showRosterContextMenu
         );
 
     connect(
         m_table,
         &RosterTableView::rowMoveRequested,
         this,
-        &RosterPage::moveStudentRow
+        &MyInfoRostersPage::moveStudentRow
         );
 
     connect(
@@ -1002,7 +1126,7 @@ void RosterPage::buildUi()
         m_table->selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
-        &RosterPage::updateActions
+        &MyInfoRostersPage::updateActions
         );
 
     connect(
@@ -1029,21 +1153,492 @@ void RosterPage::buildUi()
     updateActions();
 }
 
-void RosterPage::updateHeaderText()
+void MyInfoRostersPage::rebuildRosterTabs(
+    int selectedClassId
+    )
 {
-    m_titleLabel->setText(
-        tr("Class Roster")
+    if (!m_tabsLayout || !m_tabsContainer)
+    {
+        return;
+    }
+
+    m_rebuildingRosterTabs = true;
+
+    while (QLayoutItem* item = m_tabsLayout->takeAt(0))
+    {
+        if (QWidget* widget = item->widget())
+        {
+            widget->deleteLater();
+        }
+
+        delete item;
+    }
+
+    m_rosterTabs = nullptr;
+
+    auto* dataService =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    QList<SubPrepClassNavigation::ClassEntry> entries;
+
+    if (dataService)
+    {
+        for (const Classroom& classroom : std::as_const(m_rosterClasses))
+        {
+            if (classroom.id <= 0)
+            {
+                continue;
+            }
+
+            const ClassInfo info =
+                dataService->loadClassInfo(
+                    classroom.id
+                    );
+
+            Teacher teacher;
+
+            if (info.teacherId > 0)
+            {
+                teacher =
+                    dataService->getTeacher(
+                        info.teacherId
+                        );
+            }
+
+            SubPrepClassNavigation::ClassEntry entry;
+            entry.classId =
+                classroom.id;
+            entry.classroomName =
+                classroom.name;
+            entry.grade =
+                info.classGrade;
+            entry.level =
+                info.classLevel;
+            entry.regularTimes =
+                info.classTimes;
+            entry.intensiveTimes =
+                info.intensiveTimes;
+            entry.teacherEn =
+                teacher.teacherEn;
+            entry.teacherKr =
+                teacher.teacherKr;
+
+            entries.append(entry);
+        }
+    }
+
+    const SubPrepClassNavigation::Model navigation =
+        SubPrepClassNavigation::build(
+            entries
+            );
+
+    const auto createTabPage =
+        [](QWidget* parent, int classId)
+        {
+            auto* page =
+                new QWidget(parent);
+            page->setProperty(
+                "class_id",
+                classId
+                );
+            return page;
+        };
+
+    const auto connectClassTabs =
+        [this](QTabWidget* tabs)
+        {
+            connect(
+                tabs,
+                &QTabWidget::currentChanged,
+                this,
+                [this, tabs](int)
+                {
+                    if (m_rebuildingRosterTabs || m_restoringRosterTabs)
+                    {
+                        return;
+                    }
+
+                    activateRosterClass(
+                        currentClassIdFromTabs(tabs)
+                        );
+                }
+                );
+        };
+
+    if (navigation.mode == SubPrepClassNavigation::Mode::Flat)
+    {
+        auto* tabs =
+            new UniformWidthTabWidget(
+                UniformWidthTabKind::Class,
+                QStringLiteral("rosterClassTabBar"),
+                m_tabsContainer
+                );
+        tabs->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Maximum
+            );
+        tabs->setObjectName("rosterClassTabs");
+
+        for (const SubPrepClassNavigation::ClassTab& tab
+             : navigation.flatClasses)
+        {
+            tabs->addTab(
+                createTabPage(
+                    tabs,
+                    tab.classId
+                    ),
+                tab.label
+                );
+        }
+
+        connectClassTabs(tabs);
+
+        m_rosterTabs =
+            tabs;
+        m_tabsLayout->addWidget(
+            tabs
+            );
+    }
+    else
+    {
+        auto* gradeTabs =
+            new UniformWidthTabWidget(
+                UniformWidthTabKind::Grade,
+                QStringLiteral("rosterGradeTabBar"),
+                m_tabsContainer
+                );
+        gradeTabs->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Maximum
+            );
+        gradeTabs->setObjectName("rosterGradeTabs");
+
+        for (const SubPrepClassNavigation::GradeGroup& group
+             : navigation.gradeGroups)
+        {
+            auto* gradePage =
+                new QWidget(gradeTabs);
+
+            auto* gradeLayout =
+                new QVBoxLayout(gradePage);
+            gradeLayout->setContentsMargins(0, 0, 0, 0);
+            gradeLayout->setSpacing(8);
+            gradeLayout->setAlignment(Qt::AlignTop);
+
+            auto* classTabs =
+                new UniformWidthTabWidget(
+                    UniformWidthTabKind::Class,
+                    QStringLiteral("rosterClassTabBar"),
+                    gradePage
+                    );
+            classTabs->setSizePolicy(
+                QSizePolicy::Expanding,
+                QSizePolicy::Maximum
+                );
+            classTabs->setObjectName("rosterClassTabs");
+
+            for (const SubPrepClassNavigation::ClassTab& tab
+                 : group.classes)
+            {
+                classTabs->addTab(
+                    createTabPage(
+                        classTabs,
+                        tab.classId
+                        ),
+                    tab.label
+                    );
+            }
+
+            connectClassTabs(classTabs);
+
+            gradeLayout->addWidget(
+                classTabs
+                );
+            gradeTabs->addTab(
+                gradePage,
+                group.label
+                );
+        }
+
+        connect(
+            gradeTabs,
+            &QTabWidget::currentChanged,
+            this,
+            [this, gradeTabs](int)
+            {
+                if (m_rebuildingRosterTabs || m_restoringRosterTabs)
+                {
+                    return;
+                }
+
+                activateRosterClass(
+                    currentClassIdFromTabs(gradeTabs)
+                    );
+            }
+            );
+
+        m_rosterTabs =
+            gradeTabs;
+        m_tabsLayout->addWidget(
+            gradeTabs
+            );
+    }
+
+    m_tabsContainer->setVisible(
+        m_rosterTabs && m_rosterTabs->count() > 0
         );
 
-    const QString className =
-        m_classroom.name.trimmed().isEmpty()
-            ? tr("Class %1").arg(m_classroom.id)
-            : m_classroom.name.trimmed();
+    syncTabWidgetToClass(
+        m_rosterTabs,
+        selectedClassId
+        );
 
-    m_subtitleLabel->setText(className);
+    m_rebuildingRosterTabs = false;
 }
 
-void RosterPage::handleNameCellChanged(
+bool MyInfoRostersPage::activateRosterClass(
+    int classId
+    )
+{
+    if (
+        classId <= 0
+        || m_rebuildingRosterTabs
+        || m_restoringRosterTabs
+        )
+    {
+        return false;
+    }
+
+    if (classId == m_classroom.id)
+    {
+        return true;
+    }
+
+    if (m_classroom.id > 0 && !saveChanges())
+    {
+        restoreRosterTabSelection();
+        return false;
+    }
+
+    const Classroom classroom =
+        classroomById(classId);
+
+    if (classroom.id <= 0)
+    {
+        restoreRosterTabSelection();
+        return false;
+    }
+
+    loadRosterClass(
+        classroom
+        );
+    setRosterEditorAvailable(true);
+
+    return true;
+}
+
+void MyInfoRostersPage::restoreRosterTabSelection()
+{
+    if (!m_rosterTabs)
+    {
+        return;
+    }
+
+    m_restoringRosterTabs = true;
+    syncTabWidgetToClass(
+        m_rosterTabs,
+        m_classroom.id
+        );
+    m_restoringRosterTabs = false;
+}
+
+void MyInfoRostersPage::syncTabWidgetToClass(
+    QTabWidget* tabs,
+    int classId
+    )
+{
+    if (!tabs)
+    {
+        return;
+    }
+
+    for (int index = 0; index < tabs->count(); ++index)
+    {
+        QWidget* page =
+            tabs->widget(index);
+
+        if (
+            page
+            && page->property("class_id").toInt() == classId
+            )
+        {
+            tabs->setCurrentIndex(index);
+            return;
+        }
+
+        auto* nestedTabs =
+            page
+                ? page->findChild<QTabWidget*>(
+                    QStringLiteral("rosterClassTabs")
+                    )
+                : nullptr;
+
+        if (!nestedTabs)
+        {
+            continue;
+        }
+
+        for (int childIndex = 0; childIndex < nestedTabs->count(); ++childIndex)
+        {
+            QWidget* childPage =
+                nestedTabs->widget(childIndex);
+
+            if (
+                childPage
+                && childPage->property("class_id").toInt() == classId
+                )
+            {
+                tabs->setCurrentIndex(index);
+                nestedTabs->setCurrentIndex(childIndex);
+                return;
+            }
+        }
+    }
+
+    if (tabs->count() > 0)
+    {
+        tabs->setCurrentIndex(0);
+
+        if (auto* nestedTabs =
+                tabs->currentWidget()
+                    ? tabs->currentWidget()->findChild<QTabWidget*>(
+                        QStringLiteral("rosterClassTabs")
+                        )
+                    : nullptr)
+        {
+            nestedTabs->setCurrentIndex(0);
+        }
+    }
+}
+
+int MyInfoRostersPage::currentClassIdFromTabs(
+    QTabWidget* tabs
+    ) const
+{
+    if (!tabs || tabs->currentIndex() < 0)
+    {
+        return -1;
+    }
+
+    QWidget* page =
+        tabs->currentWidget();
+
+    const int pageClassId =
+        page
+            ? page->property("class_id").toInt()
+            : -1;
+
+    if (pageClassId > 0)
+    {
+        return pageClassId;
+    }
+
+    auto* nestedTabs =
+        page
+            ? page->findChild<QTabWidget*>(
+                QStringLiteral("rosterClassTabs")
+                )
+            : nullptr;
+
+    if (!nestedTabs || nestedTabs->currentIndex() < 0)
+    {
+        return -1;
+    }
+
+    QWidget* nestedPage =
+        nestedTabs->currentWidget();
+
+    return nestedPage
+        ? nestedPage->property("class_id").toInt()
+        : -1;
+}
+
+Classroom MyInfoRostersPage::classroomById(
+    int classId
+    ) const
+{
+    for (const Classroom& classroom : m_rosterClasses)
+    {
+        if (classroom.id == classId)
+        {
+            return classroom;
+        }
+    }
+
+    return {};
+}
+
+int MyInfoRostersPage::firstRosterClassId() const
+{
+    for (const Classroom& classroom : m_rosterClasses)
+    {
+        if (classroom.id > 0)
+        {
+            return classroom.id;
+        }
+    }
+
+    return -1;
+}
+
+void MyInfoRostersPage::setRosterEditorAvailable(
+    bool available
+    )
+{
+    if (m_emptyLabel)
+    {
+        m_emptyLabel->setVisible(
+            !available
+            );
+    }
+
+    if (m_table)
+    {
+        m_table->setVisible(
+            available
+            );
+        m_table->setEnabled(
+            available
+            );
+    }
+
+    updateActions();
+}
+
+void MyInfoRostersPage::updateHeaderText()
+{
+    m_titleLabel->setText(
+        tr("Rosters")
+        );
+
+    if (m_classroom.id <= 0)
+    {
+        m_subtitleLabel->setText(
+            tr("No classes available")
+            );
+        return;
+    }
+
+    m_subtitleLabel->setText(
+        m_classroom.name.trimmed().isEmpty()
+            ? tr("Class %1").arg(m_classroom.id)
+            : m_classroom.name.trimmed()
+        );
+}
+
+void MyInfoRostersPage::handleNameCellChanged(
     const QModelIndex& topLeft,
     const QModelIndex& bottomRight
     )
@@ -1079,7 +1674,7 @@ void RosterPage::handleNameCellChanged(
     }
 }
 
-void RosterPage::scheduleAutosave()
+void MyInfoRostersPage::scheduleAutosave()
 {
     if (
         m_loadingRoster
@@ -1094,7 +1689,7 @@ void RosterPage::scheduleAutosave()
     m_autosaveTimer->start();
 }
 
-void RosterPage::resolveDuplicateName(
+void MyInfoRostersPage::resolveDuplicateName(
     int row,
     int editedColumn
     )
@@ -1245,7 +1840,7 @@ void RosterPage::resolveDuplicateName(
     updateActions();
 }
 
-void RosterPage::selectRosterCell(
+void MyInfoRostersPage::selectRosterCell(
     int row,
     int column
     )
@@ -1270,7 +1865,7 @@ void RosterPage::selectRosterCell(
     m_table->scrollTo(index);
 }
 
-bool RosterPage::removeRosterRow(
+bool MyInfoRostersPage::removeRosterRow(
     int row
     )
 {
@@ -1343,7 +1938,7 @@ bool RosterPage::removeRosterRow(
     return true;
 }
 
-QString RosterPage::rosterRowLabel(
+QString MyInfoRostersPage::rosterRowLabel(
     int row
     ) const
 {

@@ -16,6 +16,7 @@ class ApplicationServices;
 
 class SchedulePage;
 class MyInfoPage;
+class MyInfoRostersPage;
 class ClassInfoPage;
 class ClassNotesPage;
 class TeacherInfoPage;
@@ -39,6 +40,7 @@ enum class PageType
     TeacherInfo,
     CampusDashboard,
     Roster,
+    MyInfoRosters,
     ClassNotes,
     SpeakingEval,
     SubPrep,
@@ -108,6 +110,8 @@ public:
 
     MyInfoPage* myInfoPage() const;
 
+    MyInfoRostersPage* myInfoRostersPage() const;
+
     SubPrepPage* subPrepPage() const;
 
     ClassInfoPage* classInfoPage() const;
@@ -167,6 +171,8 @@ private:
     SchedulePage* m_schedulePage = nullptr;
 
     MyInfoPage* m_myInfoPage = nullptr;
+
+    MyInfoRostersPage* m_myInfoRostersPage = nullptr;
 
     SubPrepPage* m_subPrepPage = nullptr;
 

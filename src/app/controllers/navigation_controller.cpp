@@ -10,6 +10,7 @@
 #include "features/classes/ui/class_notes_page.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/my_info/ui/my_info_page.h"
+#include "features/my_info/ui/my_info_rosters_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/roster/ui/roster_page.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
@@ -670,10 +671,10 @@ void NavigationController::handleMyInfo(
             return;
         }
 
-        m_pages->rosterPage()
+        m_pages->myInfoRostersPage()
             ->loadRosters();
 
-        m_pages->showPage(PageType::Roster);
+        m_pages->showPage(PageType::MyInfoRosters);
 
         m_sidebar->selectMyInfoSection(
             QStringLiteral("my_info_class_roster")
@@ -846,8 +847,13 @@ void NavigationController::handleRoster(
 
     m_pages->showPage(PageType::Roster);
 
-    m_sidebar->selectMyInfoSection(
-        QStringLiteral("my_info_class_roster")
+    m_sidebar->selectByKeys(
+        {
+            QStringLiteral("classes"),
+            QStringLiteral("class"),
+            QStringLiteral("class_roster")
+        },
+        data.classId
         );
 }
 

@@ -38,7 +38,7 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "my_info_class_roster",
-                    QObject::tr("Class Rosters"),
+                    QObject::tr("Rosters"),
                     NodeType::Page
                 },
 
