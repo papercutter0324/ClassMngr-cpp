@@ -4,12 +4,17 @@
 
 #include "domain/models/classroom.h"
 
+#include <QList>
+
 class ApplicationServices;
 class QLabel;
 class QModelIndex;
 class QPoint;
 class QPushButton;
+class QTabWidget;
 class QTimer;
+class QVBoxLayout;
+class QWidget;
 class RosterColumnLayoutController;
 class RosterHeaderView;
 class RosterItemDelegate;
@@ -28,6 +33,10 @@ public:
 
     void loadClass(
         const Classroom& classroom
+        );
+
+    void loadRosters(
+        int selectedClassId = -1
         );
 
     void saveData() override;
@@ -72,6 +81,39 @@ private slots:
 private:
     void buildUi();
 
+    void rebuildRosterTabs(
+        int selectedClassId
+        );
+
+    void loadRosterClass(
+        const Classroom& classroom
+        );
+
+    bool activateRosterClass(
+        int classId
+        );
+
+    void restoreRosterTabSelection();
+
+    void syncTabWidgetToClass(
+        QTabWidget* tabs,
+        int classId
+        );
+
+    int currentClassIdFromTabs(
+        QTabWidget* tabs
+        ) const;
+
+    Classroom classroomById(
+        int classId
+        ) const;
+
+    int firstRosterClassId() const;
+
+    void setRosterEditorAvailable(
+        bool available
+        );
+
     void updateHeaderText();
 
     bool saveRosterInternal(
@@ -106,7 +148,10 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
+    QList<Classroom> m_rosterClasses;
     bool m_loadingRoster = false;
+    bool m_rebuildingRosterTabs = false;
+    bool m_restoringRosterTabs = false;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;
@@ -115,6 +160,10 @@ private:
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    QLabel* m_emptyLabel = nullptr;
+    QWidget* m_tabsContainer = nullptr;
+    QVBoxLayout* m_tabsLayout = nullptr;
+    QTabWidget* m_rosterTabs = nullptr;
 
     RosterTableView* m_table = nullptr;
     RosterHeaderView* m_header = nullptr;

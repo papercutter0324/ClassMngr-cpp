@@ -53,6 +53,19 @@ UniformWidthTabWidget::UniformWidthTabWidget(
     const QString& tabBarObjectName,
     QWidget* parent
     )
+    : UniformWidthTabWidget(
+        UniformWidthTabKind::Generic,
+        tabBarObjectName,
+        parent
+        )
+{
+}
+
+UniformWidthTabWidget::UniformWidthTabWidget(
+    UniformWidthTabKind kind,
+    const QString& tabBarObjectName,
+    QWidget* parent
+    )
     : QTabWidget(parent)
 {
     auto* uniformTabBar =
@@ -68,6 +81,51 @@ UniformWidthTabWidget::UniformWidthTabWidget(
     setTabBar(
         uniformTabBar
         );
+
+    setTabKind(
+        kind
+        );
+}
+
+UniformWidthTabKind UniformWidthTabWidget::tabKind() const
+{
+    return m_tabKind;
+}
+
+void UniformWidthTabWidget::setTabKind(
+    UniformWidthTabKind kind
+    )
+{
+    m_tabKind =
+        kind;
+
+    const QString value =
+        kindPropertyValue(kind);
+
+    setProperty(
+        "uniformTabKind",
+        value
+        );
+
+    if (tabBar())
+    {
+        tabBar()->setProperty(
+            "uniformTabKind",
+            value
+            );
+    }
+
+    if (kind == UniformWidthTabKind::Generic)
+    {
+        return;
+    }
+
+    setTabShape(
+        QTabWidget::Rounded
+        );
+    setDocumentMode(true);
+    setElideMode(Qt::ElideRight);
+    setUsesScrollButtons(true);
 }
 
 bool UniformWidthTabWidget::eventFilter(
@@ -185,4 +243,23 @@ void UniformWidthTabWidget::centerTabBar()
     bar->setGeometry(
         geometry
         );
+}
+
+QString UniformWidthTabWidget::kindPropertyValue(
+    UniformWidthTabKind kind
+    )
+{
+    switch (kind)
+    {
+    case UniformWidthTabKind::Grade:
+        return QStringLiteral("grade");
+
+    case UniformWidthTabKind::Class:
+        return QStringLiteral("class");
+
+    case UniformWidthTabKind::Generic:
+        break;
+    }
+
+    return QStringLiteral("generic");
 }

@@ -663,6 +663,25 @@ void NavigationController::handleMyInfo(
             ? data.routeKey
             : QStringLiteral("my_info_information");
 
+    if (sectionKey == QStringLiteral("my_info_class_roster"))
+    {
+        if (!m_pages->confirmCurrentPageCanLeave())
+        {
+            return;
+        }
+
+        m_pages->rosterPage()
+            ->loadRosters();
+
+        m_pages->showPage(PageType::Roster);
+
+        m_sidebar->selectMyInfoSection(
+            QStringLiteral("my_info_class_roster")
+            );
+
+        return;
+    }
+
     MyInfoSection section =
         MyInfoSection::MyInformation;
 
@@ -826,6 +845,10 @@ void NavigationController::handleRoster(
         ->loadClass(classroom);
 
     m_pages->showPage(PageType::Roster);
+
+    m_sidebar->selectMyInfoSection(
+        QStringLiteral("my_info_class_roster")
+        );
 }
 
 void NavigationController::handleClass(

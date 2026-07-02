@@ -9,6 +9,13 @@ class QEvent;
 class QObject;
 class QWheelEvent;
 
+enum class UniformWidthTabKind
+{
+    Generic,
+    Grade,
+    Class
+};
+
 class UniformWidthTabBar : public QTabBar
 {
     Q_OBJECT
@@ -38,6 +45,18 @@ public:
         QWidget* parent = nullptr
         );
 
+    explicit UniformWidthTabWidget(
+        UniformWidthTabKind kind,
+        const QString& tabBarObjectName,
+        QWidget* parent = nullptr
+        );
+
+    UniformWidthTabKind tabKind() const;
+
+    void setTabKind(
+        UniformWidthTabKind kind
+        );
+
 protected:
     bool eventFilter(
         QObject* watched,
@@ -61,5 +80,12 @@ protected:
         ) override;
 
 private:
+    static QString kindPropertyValue(
+        UniformWidthTabKind kind
+        );
+
     void centerTabBar();
+
+private:
+    UniformWidthTabKind m_tabKind = UniformWidthTabKind::Generic;
 };

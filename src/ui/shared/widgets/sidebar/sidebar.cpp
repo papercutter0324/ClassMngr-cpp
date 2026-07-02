@@ -14,6 +14,7 @@
 #include <QPalette>
 #include <QProxyStyle>
 #include <QResizeEvent>
+#include <QSignalBlocker>
 #include <QStyleOption>
 #include <QTreeWidget>
 #include <QUrl>
@@ -804,55 +805,6 @@ void Sidebar::addClassNode(
     updateTreeColumnWidth();
 }
 
-void Sidebar::addClassRosterNode(
-    const QString& displayName,
-    int classId
-    )
-{
-    auto* myInfoRoot =
-        m_nodes.value(
-            QStringLiteral("my_info"),
-            nullptr
-            );
-
-    auto* rosterRoot =
-        myInfoRoot
-            ? childWithKey(
-                myInfoRoot,
-                QStringLiteral("my_info_class_roster")
-                )
-            : nullptr;
-
-    if (!rosterRoot)
-    {
-        return;
-    }
-
-    auto* item =
-        createItem(
-            displayName,
-            NodeType::Page,
-            true,
-            QStringLiteral("class_roster")
-            );
-
-    item->setData(
-        0,
-        Qt::UserRole + 2,
-        classId
-        );
-
-    rosterRoot->addChild(item);
-
-    updateTreeColumnWidth();
-}
-
-
-
-// =========================================================
-// Clear Classes
-// =========================================================
-
 void Sidebar::clearClasses()
 {
     if (!m_nodes.contains("classes"))
@@ -863,44 +815,6 @@ void Sidebar::clearClasses()
     m_nodes["classes"]->takeChildren();
 
     m_classItems.clear();
-
-    updateTreeColumnWidth();
-}
-
-void Sidebar::clearClassRosters()
-{
-    auto* myInfoRoot =
-        m_nodes.value(
-            QStringLiteral("my_info"),
-            nullptr
-            );
-
-    auto* rosterRoot =
-        myInfoRoot
-            ? childWithKey(
-                myInfoRoot,
-                QStringLiteral("my_info_class_roster")
-                )
-            : nullptr;
-
-    if (!rosterRoot)
-    {
-        return;
-    }
-
-    if (
-        itemContainsCurrentSelection(
-            rosterRoot,
-            m_tree->currentItem()
-            )
-        )
-    {
-        m_tree->clearSelection();
-    }
-
-    qDeleteAll(
-        rosterRoot->takeChildren()
-        );
 
     updateTreeColumnWidth();
 }
@@ -1622,6 +1536,7 @@ void Sidebar::selectMyInfoSection(
         return;
     }
 
+    const QSignalBlocker blocker(m_tree);
     m_tree->setCurrentItem(sectionItem);
     m_tree->scrollToItem(sectionItem);
 }

@@ -10,6 +10,7 @@ class UniformWidthTabBarTests : public QObject
 private slots:
     void tabSizeHintsUseWidestTabWidth();
     void tabWidgetCentersTabBarWhenTabsFit();
+    void tabWidgetAppliesReusableKindProperties();
 };
 
 void UniformWidthTabBarTests::tabSizeHintsUseWidestTabWidth()
@@ -83,6 +84,43 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
         tabBar->geometry().x(),
         (tabs.width() - tabBar->width()) / 2
         );
+}
+
+void UniformWidthTabBarTests::tabWidgetAppliesReusableKindProperties()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("testClassTabBar")
+        );
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("testClassTabBar")
+            );
+
+    QVERIFY(tabBar);
+    QCOMPARE(
+        tabs.tabKind(),
+        UniformWidthTabKind::Class
+        );
+    QCOMPARE(
+        tabs.property("uniformTabKind").toString(),
+        QStringLiteral("class")
+        );
+    QCOMPARE(
+        tabBar->property("uniformTabKind").toString(),
+        QStringLiteral("class")
+        );
+    QCOMPARE(
+        tabs.tabShape(),
+        QTabWidget::Rounded
+        );
+    QVERIFY(tabs.documentMode());
+    QCOMPARE(
+        tabs.elideMode(),
+        Qt::ElideRight
+        );
+    QVERIFY(tabs.usesScrollButtons());
 }
 
 int main(

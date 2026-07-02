@@ -1927,20 +1927,6 @@ void MyInfoPage::rebuildClassInformation()
             return nullptr;
         };
 
-    auto configureTabs =
-        [](QTabWidget* tabs)
-        {
-            if (!tabs)
-            {
-                return;
-            }
-
-            tabs->setTabShape(QTabWidget::Rounded);
-            tabs->setDocumentMode(true);
-            tabs->setElideMode(Qt::ElideRight);
-            tabs->setUsesScrollButtons(true);
-        };
-
     auto tabIndexForClass =
         [](QTabWidget* tabs, int classId)
         {
@@ -2282,11 +2268,11 @@ void MyInfoPage::rebuildClassInformation()
     {
         auto* tabs =
             new UniformWidthTabWidget(
+                UniformWidthTabKind::Class,
                 QStringLiteral("myInfoClassTabBar"),
                 m_classInformationContent
                 );
         tabs->setObjectName("myInfoClassTabs");
-        configureTabs(tabs);
 
         for (const SubPrepClassNavigation::ClassTab& tab
              : navigation.flatClasses)
@@ -2345,11 +2331,11 @@ void MyInfoPage::rebuildClassInformation()
 
     auto* gradeTabs =
         new UniformWidthTabWidget(
+            UniformWidthTabKind::Grade,
             QStringLiteral("myInfoGradeTabBar"),
             m_classInformationContent
             );
     gradeTabs->setObjectName("myInfoGradeTabs");
-    configureTabs(gradeTabs);
 
     int selectedGradeIndex = -1;
     int selectedClassIndex = -1;
@@ -2370,11 +2356,11 @@ void MyInfoPage::rebuildClassInformation()
 
         auto* classTabs =
             new UniformWidthTabWidget(
+                UniformWidthTabKind::Class,
                 QStringLiteral("myInfoClassTabBar"),
                 gradePage
                 );
         classTabs->setObjectName("myInfoClassTabs");
-        configureTabs(classTabs);
 
         for (const SubPrepClassNavigation::ClassTab& tab
              : group.classes)

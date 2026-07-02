@@ -684,7 +684,6 @@ void SidebarController::refreshClassSidebar()
     }
 
     m_sidebar->clearClasses();
-    m_sidebar->clearClassRosters();
 
     auto* ds =
         m_services
@@ -748,11 +747,6 @@ void SidebarController::refreshClassSidebar()
     for (const SidebarClassNode& node : std::as_const(classNodes))
     {
         m_sidebar->addClassNode(
-            node.displayName,
-            node.classId
-            );
-
-        m_sidebar->addClassRosterNode(
             node.displayName,
             node.classId
             );

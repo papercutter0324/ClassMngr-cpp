@@ -40,14 +40,7 @@ public:
         int classId
         );
 
-    void addClassRosterNode(
-        const QString& displayName,
-        int classId
-        );
-
     void clearClasses();
-
-    void clearClassRosters();
 
     void selectClass(
         int classId
