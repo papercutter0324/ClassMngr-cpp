@@ -94,7 +94,11 @@ int main(
     {
         qputenv(
             "QT_QPA_PLATFORM",
+#if defined(Q_OS_WIN)
+            QByteArray("windows")
+#else
             QByteArray("offscreen")
+#endif
             );
     }
 

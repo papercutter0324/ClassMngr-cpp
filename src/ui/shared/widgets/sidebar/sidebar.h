@@ -40,7 +40,14 @@ public:
         int classId
         );
 
+    void addClassRosterNode(
+        const QString& displayName,
+        int classId
+        );
+
     void clearClasses();
+
+    void clearClassRosters();
 
     void selectClass(
         int classId
@@ -222,6 +229,12 @@ private:
     QTreeWidgetItem* childWithKey(
         QTreeWidgetItem* item,
         const QString& key
+        ) const;
+
+    QTreeWidgetItem* childWithKeyAndClassId(
+        QTreeWidgetItem* item,
+        const QString& key,
+        int classId
         ) const;
 
     void updateTreeColumnWidth();

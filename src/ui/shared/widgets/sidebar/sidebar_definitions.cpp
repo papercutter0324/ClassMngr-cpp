@@ -37,6 +37,12 @@ QList<TreeNodeSpec> treeStructure()
                 },
 
                 {
+                    "my_info_class_roster",
+                    QObject::tr("Class Rosters"),
+                    NodeType::Root
+                },
+
+                {
                     "my_info_calendar",
                     QObject::tr("Monthly Calendar"),
                     NodeType::Page

@@ -46,6 +46,10 @@ private:
         const NavigationData& data
         );
 
+    void handleRoster(
+        const NavigationData& data
+        );
+
     void handleClass(
         const NavigationData& data
         );

@@ -621,6 +621,26 @@ void Sidebar::selectByKeys(
             item =
                 m_classItems.value(classId, nullptr);
         }
+        else if (
+            key == QStringLiteral("class_roster")
+            && classId > 0
+            )
+        {
+            auto* rosterItem =
+                childWithKeyAndClassId(
+                    item,
+                    key,
+                    classId
+                    );
+
+            item =
+                rosterItem
+                    ? rosterItem
+                    : childWithKey(
+                        item,
+                        key
+                        );
+        }
         else
         {
             item =
@@ -784,6 +804,49 @@ void Sidebar::addClassNode(
     updateTreeColumnWidth();
 }
 
+void Sidebar::addClassRosterNode(
+    const QString& displayName,
+    int classId
+    )
+{
+    auto* myInfoRoot =
+        m_nodes.value(
+            QStringLiteral("my_info"),
+            nullptr
+            );
+
+    auto* rosterRoot =
+        myInfoRoot
+            ? childWithKey(
+                myInfoRoot,
+                QStringLiteral("my_info_class_roster")
+                )
+            : nullptr;
+
+    if (!rosterRoot)
+    {
+        return;
+    }
+
+    auto* item =
+        createItem(
+            displayName,
+            NodeType::Page,
+            true,
+            QStringLiteral("class_roster")
+            );
+
+    item->setData(
+        0,
+        Qt::UserRole + 2,
+        classId
+        );
+
+    rosterRoot->addChild(item);
+
+    updateTreeColumnWidth();
+}
+
 
 
 // =========================================================
@@ -800,6 +863,44 @@ void Sidebar::clearClasses()
     m_nodes["classes"]->takeChildren();
 
     m_classItems.clear();
+
+    updateTreeColumnWidth();
+}
+
+void Sidebar::clearClassRosters()
+{
+    auto* myInfoRoot =
+        m_nodes.value(
+            QStringLiteral("my_info"),
+            nullptr
+            );
+
+    auto* rosterRoot =
+        myInfoRoot
+            ? childWithKey(
+                myInfoRoot,
+                QStringLiteral("my_info_class_roster")
+                )
+            : nullptr;
+
+    if (!rosterRoot)
+    {
+        return;
+    }
+
+    if (
+        itemContainsCurrentSelection(
+            rosterRoot,
+            m_tree->currentItem()
+            )
+        )
+    {
+        m_tree->clearSelection();
+    }
+
+    qDeleteAll(
+        rosterRoot->takeChildren()
+        );
 
     updateTreeColumnWidth();
 }
@@ -836,6 +937,17 @@ int Sidebar::getSelectedClassId() const
 
     while (item)
     {
+        const int itemClassId =
+            item->data(
+                    0,
+                    Qt::UserRole + 2
+                    ).toInt();
+
+        if (itemClassId > 0)
+        {
+            return itemClassId;
+        }
+
         NodeType type =
             static_cast<NodeType>(
                 item->data(
@@ -1416,7 +1528,19 @@ void Sidebar::onItemClicked(
     // Class ID
     // =====================================================
 
-    if (type == NodeType::Class)
+    const int directClassId =
+        item->data(
+                0,
+                Qt::UserRole + 2
+                ).toInt();
+
+    if (directClassId > 0)
+    {
+        data.classId =
+            directClassId;
+    }
+
+    if (data.classId <= 0 && type == NodeType::Class)
     {
         data.classId =
             item->data(
@@ -1424,7 +1548,7 @@ void Sidebar::onItemClicked(
                     Qt::UserRole + 2
                            ).toInt();
     }
-    else
+    else if (data.classId <= 0)
     {
         auto* parent =
             item->parent();
@@ -1717,6 +1841,41 @@ QTreeWidgetItem* Sidebar::childWithKey(
                     0,
                     Qt::UserRole + 4
                     ).toString() == key
+            )
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
+}
+
+QTreeWidgetItem* Sidebar::childWithKeyAndClassId(
+    QTreeWidgetItem* item,
+    const QString& key,
+    int classId
+    ) const
+{
+    if (!item || classId <= 0)
+    {
+        return nullptr;
+    }
+
+    for (int index = 0; index < item->childCount(); ++index)
+    {
+        auto* child =
+            item->child(index);
+
+        if (
+            child
+            && child->data(
+                    0,
+                    Qt::UserRole + 4
+                    ).toString() == key
+            && child->data(
+                    0,
+                    Qt::UserRole + 2
+                    ).toInt() == classId
             )
         {
             return child;

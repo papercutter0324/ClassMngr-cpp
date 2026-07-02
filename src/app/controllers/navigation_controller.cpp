@@ -414,6 +414,15 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (
+            data.classId > 0
+            && data.routeKey == QStringLiteral("class_roster")
+            )
+        {
+            handleRoster(data);
+            return;
+        }
+
         if (data.keys.first() == QStringLiteral("my_info"))
         {
             handleMyInfo(data);
@@ -457,25 +466,7 @@ void NavigationController::handleNavigation(
 
             if (data.routeKey == QStringLiteral("class_roster"))
             {
-                Classroom classroom =
-                    m_services
-                        ->dataService()
-                        ->getClassById(data.classId);
-
-                if (classroom.id < 0)
-                {
-                    return;
-                }
-
-                if (!m_pages->confirmCurrentPageCanLeave())
-                {
-                    return;
-                }
-
-                m_pages->rosterPage()
-                    ->loadClass(classroom);
-
-                m_pages->showPage(PageType::Roster);
+                handleRoster(data);
                 return;
             }
 
@@ -800,6 +791,41 @@ void NavigationController::handleCampus(
         m_pages->campusDashboard()->showMap();
         return;
     }
+}
+
+void NavigationController::handleRoster(
+    const NavigationData& data
+    )
+{
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        || data.classId <= 0
+        )
+    {
+        return;
+    }
+
+    Classroom classroom =
+        m_services
+            ->dataService()
+            ->getClassById(data.classId);
+
+    if (classroom.id <= 0)
+    {
+        return;
+    }
+
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    m_pages->rosterPage()
+        ->loadClass(classroom);
+
+    m_pages->showPage(PageType::Roster);
 }
 
 void NavigationController::handleClass(
