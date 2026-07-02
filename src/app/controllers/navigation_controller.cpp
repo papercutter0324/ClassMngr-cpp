@@ -707,7 +707,7 @@ void NavigationController::handleMyInfo(
     else if (sectionKey == QStringLiteral("my_info_calendar"))
     {
         selectedSectionKey =
-            QStringLiteral("my_info_information");
+            QStringLiteral("my_info_calendar");
     }
 
     const bool rootClick =
@@ -728,12 +728,25 @@ void NavigationController::handleMyInfo(
         m_sidebar->selectMyInfoSection(
             QStringLiteral("my_info_information")
             );
+        m_pages->myInfoPage()->scrollToTop();
     }
     else
     {
         m_sidebar->selectMyInfoSection(
             selectedSectionKey
             );
+
+        if (sectionKey == QStringLiteral("my_info_calendar"))
+        {
+            m_pages->myInfoPage()
+                ->scrollToSection(
+                    MyInfoSection::MonthlyCalendar
+                    );
+        }
+        else if (sectionKey == QStringLiteral("my_info_information"))
+        {
+            m_pages->myInfoPage()->scrollToTop();
+        }
     }
 }
 

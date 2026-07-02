@@ -159,7 +159,6 @@ private:
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_classScheduleHeading = nullptr;
     QLabel* m_classInformationHeading = nullptr;
-    QLabel* m_classInfoSubtitle = nullptr;
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;
 

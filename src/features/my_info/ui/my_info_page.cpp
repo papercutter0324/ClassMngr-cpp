@@ -727,13 +727,6 @@ void MyInfoPage::retranslateUi()
             );
     }
 
-    if (m_classInfoSubtitle)
-    {
-        m_classInfoSubtitle->setText(
-            tr("Select a class")
-            );
-    }
-
     if (m_monthlyCalendarHeading)
     {
         m_monthlyCalendarHeading->setText(
@@ -1392,22 +1385,6 @@ void MyInfoPage::buildClassInformationSection()
             );
     }
 
-    m_classInfoSubtitle =
-        new QLabel(
-            tr("Select a class"),
-            m_scrollContent
-            );
-    m_classInfoSubtitle->setObjectName("pageSubtitle");
-    m_classInfoSubtitle->setAlignment(Qt::AlignCenter);
-    m_classInfoSubtitle->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
-        );
-    m_scrollContentLayout->addWidget(
-        m_classInfoSubtitle
-        );
-
     m_classInformationContent =
         new QWidget(m_scrollContent);
     m_classInformationLayout =
@@ -1974,13 +1951,6 @@ void MyInfoPage::rebuildClassInformation()
     {
         m_selectedClassId = -1;
 
-        if (m_classInfoSubtitle)
-        {
-            m_classInfoSubtitle->setText(
-                tr("Select a class")
-                );
-        }
-
         auto* emptyLabel =
             new QLabel(
                 tr("No classes available."),
@@ -2022,15 +1992,6 @@ void MyInfoPage::rebuildClassInformation()
         SubPrepClassNavigation::build(
             navigationEntries
             );
-
-    if (m_classInfoSubtitle)
-    {
-        m_classInfoSubtitle->setText(
-            navigation.mode == SubPrepClassNavigation::Mode::GradeGrouped
-                ? tr("Grouped by grade")
-                : tr("Select a class")
-            );
-    }
 
     const int previousClassId =
         m_selectedClassId;
