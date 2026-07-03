@@ -37,11 +37,13 @@ MainWindow::MainWindow(
     std::function<void(const QString&)> progressCallback,
     bool isAdmin,
     LanguageService* languageService,
+    MainWindowStartupOptions startupOptions,
     QWidget* parent
     )
     : QMainWindow(parent)
     , ui(new Ui::MainWindow())
     , m_isAdmin(isAdmin)
+    , m_startupOptions(startupOptions)
     , m_languageService(languageService)
 {
     ui->setupUi(this);
@@ -70,7 +72,14 @@ MainWindow::MainWindow(
     connectSignals();
 
     progressCallback(tr("Loading recent file..."));
-    m_fileController->loadMostRecentDatabase();
+    if (m_startupOptions.loadMostRecentDatabase)
+    {
+        m_fileController->loadMostRecentDatabase();
+    }
+    else
+    {
+        applyNoDatabaseState();
+    }
 
     QTimer::singleShot(
         0,
@@ -490,6 +499,7 @@ void MainWindow::showEvent(QShowEvent* event)
         !m_startupFontSizeRefreshQueued
         && m_fontSizeController
         && m_actions.fontSizeState
+        && m_startupOptions.runPostShowStartupTasks
         )
     {
         m_startupFontSizeRefreshQueued =
@@ -505,6 +515,7 @@ void MainWindow::showEvent(QShowEvent* event)
     if (
         !m_startupUpdateCheckQueued
         && m_updateController
+        && m_startupOptions.runPostShowStartupTasks
         )
     {
         m_startupUpdateCheckQueued =

@@ -43,6 +43,12 @@ class LanguageController;
 class FontSizeController;
 class LanguageService;
 
+struct MainWindowStartupOptions
+{
+    bool loadMostRecentDatabase = true;
+    bool runPostShowStartupTasks = true;
+};
+
 // =========================================================
 // Main Window
 // =========================================================
@@ -57,6 +63,7 @@ public:
         std::function<void(const QString&)> progressCallback,
         bool isAdmin,
         LanguageService* languageService,
+        MainWindowStartupOptions startupOptions = {},
         QWidget *parent = nullptr
         );
 
@@ -157,6 +164,7 @@ private:
     bool m_isAdmin = false;
     bool m_startupUpdateCheckQueued = false;
     bool m_startupFontSizeRefreshQueued = false;
+    MainWindowStartupOptions m_startupOptions;
     LanguageService* m_languageService = nullptr;
 };
 

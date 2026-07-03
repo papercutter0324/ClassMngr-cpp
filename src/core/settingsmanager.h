@@ -4,6 +4,7 @@
 #include <QString>
 #include <QStringList>
 #include <QByteArray>
+#include <memory>
 #include <optional>
 
 class SettingsManager
@@ -205,5 +206,5 @@ private:
     // State
     // =====================================================
 
-    QSettings m_settings;
+    std::unique_ptr<QSettings> m_settings;
 };

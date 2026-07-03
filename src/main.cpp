@@ -12,7 +12,10 @@
 #include "core/utils/platform.h"
 
 #include <QApplication>
+#include <QFile>
 #include <QIcon>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QTimer>
 #include <QElapsedTimer>
 #include <QDebug>
@@ -41,6 +44,88 @@ bool isAdminMode(const QStringList &args)
     return args.contains(AppSettings::AdminModeArgument);
 }
 
+struct StartupPerformanceMode
+{
+    bool enabled = false;
+    QString outputPath;
+};
+
+StartupPerformanceMode startupPerformanceMode(
+    const QStringList& args
+    )
+{
+    StartupPerformanceMode mode;
+
+    mode.enabled =
+        args.contains(
+            QStringLiteral("--startup-performance-test")
+            );
+
+    const int outputIndex =
+        args.indexOf(
+            QStringLiteral("--startup-performance-output")
+            );
+
+    if (
+        outputIndex >= 0
+        && outputIndex + 1 < args.size()
+        )
+    {
+        mode.outputPath =
+            args.at(outputIndex + 1);
+    }
+
+    return mode;
+}
+
+bool writeStartupPerformanceMetrics(
+    const QString& outputPath,
+    qint64 processStartToWindowConstructedMs,
+    qint64 processStartToReadyMs,
+    int progressUpdates
+    )
+{
+    if (outputPath.trimmed().isEmpty())
+    {
+        qWarning()
+            << "Startup performance output path was not provided.";
+        return false;
+    }
+
+    QFile file(outputPath);
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        qWarning().noquote()
+            << QStringLiteral(
+                "Unable to write startup performance metrics to %1: %2"
+                )
+                .arg(outputPath, file.errorString());
+        return false;
+    }
+
+    QJsonObject metrics;
+
+    metrics.insert(
+        QStringLiteral("processStartToWindowConstructedMs"),
+        static_cast<double>(processStartToWindowConstructedMs)
+        );
+    metrics.insert(
+        QStringLiteral("processStartToReadyMs"),
+        static_cast<double>(processStartToReadyMs)
+        );
+    metrics.insert(
+        QStringLiteral("progressUpdates"),
+        progressUpdates
+        );
+
+    file.write(
+        QJsonDocument(metrics).toJson(QJsonDocument::Indented)
+        );
+
+    return file.error() == QFile::NoError;
+}
+
 
 
 // =========================================================
@@ -49,7 +134,16 @@ bool isAdminMode(const QStringList &args)
 
 int main(int argc, char *argv[])
 {
+    QElapsedTimer processStartupTimer;
+
+    processStartupTimer.start();
+
     QApplication app(argc, argv);
+
+    const StartupPerformanceMode startupPerformance =
+        startupPerformanceMode(
+            app.arguments()
+            );
 
     app.setApplicationName(AppSettings::ApplicationName);
     app.setOrganizationName(AppSettings::OrganizationName);
@@ -124,6 +218,7 @@ int main(int argc, char *argv[])
     // =====================================================
 
     int progress = 0;
+    int progressUpdates = 0;
 
     const double step =
         100.0 / AppSettings::StartupProgressSteps;
@@ -131,6 +226,8 @@ int main(int argc, char *argv[])
     auto updateProgress =
         [&](const QString &message)
     {
+        ++progressUpdates;
+
         progress = qMin(
             static_cast<int>(progress + step),
             100
@@ -161,8 +258,15 @@ int main(int argc, char *argv[])
     MainWindow window(
         updateProgress,
         isAdminMode(app.arguments()),
-        &languageService
+        &languageService,
+        {
+            .loadMostRecentDatabase = !startupPerformance.enabled,
+            .runPostShowStartupTasks = !startupPerformance.enabled
+        }
         );
+
+    const qint64 processStartToWindowConstructedMs =
+        processStartupTimer.elapsed();
 
 
 
@@ -184,10 +288,39 @@ int main(int argc, char *argv[])
     // Finish Startup
     // =====================================================
 
-    auto finish = [&window, &splash]()
+    auto finish =
+        [
+            &app,
+            &window,
+            &splash,
+            &startupPerformance,
+            &processStartupTimer,
+            processStartToWindowConstructedMs,
+            progressUpdates
+        ]()
     {
         window.show();
         splash.close();
+
+        if (startupPerformance.enabled)
+        {
+            const bool metricsWritten =
+                writeStartupPerformanceMetrics(
+                    startupPerformance.outputPath,
+                    processStartToWindowConstructedMs,
+                    processStartupTimer.elapsed(),
+                    progressUpdates
+                    );
+
+            QTimer::singleShot(
+                0,
+                &app,
+                [&app, metricsWritten]()
+                {
+                    app.exit(metricsWritten ? 0 : 2);
+                }
+                );
+        }
     };
 
     auto startFinish = [&splash, &finish]()

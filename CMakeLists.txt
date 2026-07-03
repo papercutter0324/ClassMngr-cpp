@@ -752,6 +752,38 @@ if(BUILD_TESTING)
         COMMAND ClassMngrCampusMapTests
     )
 
+    qt_add_executable(ClassMngrStartupPerformanceTests
+        tests/startup_performance_tests.cpp
+    )
+
+    add_dependencies(
+        ClassMngrStartupPerformanceTests
+        ClassMngr
+    )
+
+    target_compile_features(ClassMngrStartupPerformanceTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_link_libraries(ClassMngrStartupPerformanceTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrStartupPerformanceTests
+        COMMAND ClassMngrStartupPerformanceTests
+    )
+
+    set_tests_properties(
+        ClassMngrStartupPerformanceTests
+        PROPERTIES
+        ENVIRONMENT
+            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>"
+    )
+
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests
@@ -765,6 +797,7 @@ if(BUILD_TESTING)
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
+            ClassMngrStartupPerformanceTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"

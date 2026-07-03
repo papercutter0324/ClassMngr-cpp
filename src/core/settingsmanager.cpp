@@ -1,5 +1,42 @@
 #include "settingsmanager.h"
 
+#include <QDir>
+#include <QtGlobal>
+
+namespace
+{
+std::unique_ptr<QSettings> createSettings()
+{
+    const QString settingsRoot =
+        qEnvironmentVariable("CLASSMNGR_SETTINGS_ROOT");
+
+    if (settingsRoot.trimmed().isEmpty())
+    {
+        return std::make_unique<QSettings>(
+            SettingsManager::ORG,
+            SettingsManager::APP
+            );
+    }
+
+    QDir directory(settingsRoot);
+
+    directory.mkpath(
+        QString::fromUtf8(SettingsManager::ORG)
+        );
+
+    return std::make_unique<QSettings>(
+        directory.filePath(
+            QStringLiteral("%1/%2.ini")
+                .arg(
+                    QString::fromUtf8(SettingsManager::ORG),
+                    QString::fromUtf8(SettingsManager::APP)
+                    )
+            ),
+        QSettings::IniFormat
+        );
+}
+}
+
 // =========================================================
 // Singleton Access
 // =========================================================
@@ -16,7 +53,7 @@ SettingsManager::instance()
 // =========================================================
 
 SettingsManager::SettingsManager()
-    : m_settings(ORG, APP)
+    : m_settings(createSettings())
 {
 }
 
@@ -29,7 +66,7 @@ QVariant SettingsManager::get(
     const QVariant& defaultValue
     ) const
 {
-    return m_settings.value(key, defaultValue);
+    return m_settings->value(key, defaultValue);
 }
 
 void SettingsManager::set(
@@ -37,24 +74,24 @@ void SettingsManager::set(
     const QVariant& value
     )
 {
-    m_settings.setValue(key, value);
+    m_settings->setValue(key, value);
 }
 
 void SettingsManager::remove(
     const QString& key
     )
 {
-    m_settings.remove(key);
+    m_settings->remove(key);
 }
 
 void SettingsManager::clear()
 {
-    m_settings.clear();
+    m_settings->clear();
 }
 
 void SettingsManager::sync()
 {
-    m_settings.sync();
+    m_settings->sync();
 }
 
 // =========================================================
