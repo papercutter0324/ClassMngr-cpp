@@ -22,6 +22,7 @@
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/dialogs/about_dialog.h"
 
+#include <QLayout>
 #include <QMenuBar>
 #include <QScreen>
 #include <QTimer>
@@ -486,6 +487,22 @@ void MainWindow::showEvent(QShowEvent* event)
     QMainWindow::showEvent(event);
 
     if (
+        !m_startupFontSizeRefreshQueued
+        && m_fontSizeController
+        && m_actions.fontSizeState
+        )
+    {
+        m_startupFontSizeRefreshQueued =
+            true;
+
+        QTimer::singleShot(
+            0,
+            this,
+            &MainWindow::reapplyStartupFontSize
+            );
+    }
+
+    if (
         !m_startupUpdateCheckQueued
         && m_updateController
         )
@@ -499,6 +516,37 @@ void MainWindow::showEvent(QShowEvent* event)
             &UpdateController::maybeCheckOnStartup
             );
     }
+}
+
+void MainWindow::reapplyStartupFontSize()
+{
+    if (!m_fontSizeController || !m_actions.fontSizeState)
+    {
+        return;
+    }
+
+    m_fontSizeController->changeFontSize(
+        m_actions.fontSizeState->current()
+        );
+
+    if (m_sidebarController)
+    {
+        m_sidebarController->refreshAllSidebars();
+    }
+
+    if (m_pages)
+    {
+        m_pages->refreshAll();
+    }
+
+    if (QLayout* mainLayout = layout())
+    {
+        mainLayout->invalidate();
+    }
+
+    updateGeometry();
+    update();
+    repaint();
 }
 
 bool MainWindow::confirmCurrentPageCanLeave(

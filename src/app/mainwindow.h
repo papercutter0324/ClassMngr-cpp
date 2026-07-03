@@ -106,6 +106,7 @@ private:
     void connectSignals();
 
     void restoreSplitter();
+    void reapplyStartupFontSize();
 
     void setDatabaseBackedActionsEnabled(
         bool enabled
@@ -155,6 +156,7 @@ private:
 
     bool m_isAdmin = false;
     bool m_startupUpdateCheckQueued = false;
+    bool m_startupFontSizeRefreshQueued = false;
     LanguageService* m_languageService = nullptr;
 };
 
