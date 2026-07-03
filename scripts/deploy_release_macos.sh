@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 QT_DIR="${QT_DIR:-${HOME}/Qt/6.11.1/macos}"
-APP_BUNDLE="${PROJECT_ROOT}/build/macos-clang-release/ClassMngr.app"
+APP_BUNDLE="${PROJECT_ROOT}/dist/ClassMngr-macos/ClassMngr.app"
 QML_DIR="${QML_DIR:-${PROJECT_ROOT}/src/features/my_info/ui/qml}"
 
 if [[ $# -gt 0 && "${1}" != -* ]]; then
@@ -39,6 +39,7 @@ if [[ ! -d "${QML_DIR}" ]]; then
 fi
 
 TEMP_DRIVER_DIR="$(mktemp -d "${TMPDIR:-/tmp}/classmngr-sqldrivers.XXXXXX")"
+VALIDATION_REPORT="${TEMP_DRIVER_DIR}/external-qt-dependencies.txt"
 RESTORE_NEEDED=()
 BAD_SQL_DRIVERS=(
     libqsqlmimer.dylib
@@ -56,6 +57,41 @@ restore_sql_drivers() {
 }
 
 trap restore_sql_drivers EXIT
+
+validate_no_external_qt_dependencies() {
+    : > "${VALIDATION_REPORT}"
+
+    while IFS= read -r -d '' candidate; do
+        if ! otool -L "${candidate}" > "${TEMP_DRIVER_DIR}/otool-libraries.txt" 2>/dev/null; then
+            continue
+        fi
+
+        otool -l "${candidate}" > "${TEMP_DRIVER_DIR}/otool-load-commands.txt" 2>/dev/null || true
+
+        if grep -F "${QT_DIR}/" "${TEMP_DRIVER_DIR}/otool-libraries.txt" > /dev/null \
+            || grep -F "path ${QT_DIR}/" "${TEMP_DRIVER_DIR}/otool-load-commands.txt" > /dev/null; then
+            {
+                echo "${candidate}"
+                grep -F "${QT_DIR}/" "${TEMP_DRIVER_DIR}/otool-libraries.txt" || true
+                grep -F "path ${QT_DIR}/" "${TEMP_DRIVER_DIR}/otool-load-commands.txt" || true
+                echo
+            } >> "${VALIDATION_REPORT}"
+        fi
+    done < <(
+        find "${APP_BUNDLE}/Contents" \
+            -type f \
+            \( -perm -111 -o -name '*.dylib' -o -name '*.so' \) \
+            -print0
+    )
+
+    if [[ -s "${VALIDATION_REPORT}" ]]; then
+        echo "Deployment left references to the external Qt installation." >&2
+        echo "This can make the app load two Qt runtimes and crash while creating the macOS platform plugin." >&2
+        echo "External references:" >&2
+        cat "${VALIDATION_REPORT}" >&2
+        exit 1
+    fi
+}
 
 for driver in "${BAD_SQL_DRIVERS[@]}"; do
     if [[ -e "${SQL_DRIVER_DIR}/${driver}" ]]; then
@@ -86,6 +122,8 @@ if [[ ! -e "${SQL_BUNDLE_DIR}/libqsqlite.dylib" ]]; then
     echo "SQLite SQL driver was not deployed: ${SQL_BUNDLE_DIR}/libqsqlite.dylib" >&2
     exit 1
 fi
+
+validate_no_external_qt_dependencies
 
 echo "Deployment complete: ${APP_BUNDLE}"
 echo "Kept SQL driver: ${SQL_BUNDLE_DIR}/libqsqlite.dylib"

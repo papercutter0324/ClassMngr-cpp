@@ -156,6 +156,13 @@ hdiutil create \
   dist/ClassMngr-macos.dmg
 ```
 
+Do not distribute or launch the release bundle from `build/macos-clang-release`
+after running deployment tools against it. That build-tree app can mix Qt from
+the local Qt installation with plugins copied into the bundle, which can make Qt
+abort while loading the macOS Cocoa platform plugin. Use the installed bundle in
+`dist/ClassMngr-macos`, or run `scripts/deploy_release_macos.sh` to refresh and
+validate that installed bundle.
+
 ## Linux
 
 Install the native build tools and the common X11/OpenGL development libraries
