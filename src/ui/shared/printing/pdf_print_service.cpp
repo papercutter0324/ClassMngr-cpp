@@ -2,10 +2,12 @@
 
 #include "ui/shared/printing/pdf_print_dialog.h"
 
+#include <QFileInfo>
 #include <QImage>
 #include <QObject>
 #include <QPainter>
 #include <QPdfDocument>
+#include <QPrintDialog>
 #include <QPrinter>
 #include <QRectF>
 #include <QSize>
@@ -44,6 +46,113 @@ Result sent()
         Status::Sent,
         QObject::tr("Print job sent.")
     };
+}
+
+QString documentDisplayName(
+    const QString& documentPath
+    )
+{
+    const QString fileName =
+        QFileInfo(documentPath).fileName();
+
+    return fileName.trimmed().isEmpty()
+        ? QObject::tr("PDF Document")
+        : fileName;
+}
+
+QString printJobTitle(
+    const QString& documentPath
+    )
+{
+    return QObject::tr("Print from ClassMngr - %1")
+        .arg(
+            documentDisplayName(documentPath)
+            );
+}
+
+QList<int> allPageIndexes(
+    QPdfDocument* document
+    )
+{
+    QList<int> pages;
+
+    const int pageCount =
+        document ? document->pageCount() : 0;
+    pages.reserve(pageCount);
+
+    for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex)
+    {
+        pages.append(pageIndex);
+    }
+
+    return pages;
+}
+
+QList<int> pageIndexesFromPrinterRange(
+    const QPrinter& printer,
+    QPdfDocument* document,
+    int currentPageIndex
+    )
+{
+    const int pageCount =
+        document ? document->pageCount() : 0;
+
+    if (pageCount <= 0)
+    {
+        return {};
+    }
+
+    if (printer.printRange() == QPrinter::CurrentPage)
+    {
+        return {
+            std::clamp(
+                currentPageIndex,
+                0,
+                pageCount - 1
+                )
+        };
+    }
+
+    if (printer.printRange() != QPrinter::PageRange)
+    {
+        return allPageIndexes(document);
+    }
+
+    const int fromPage =
+        printer.fromPage();
+    const int toPage =
+        printer.toPage();
+
+    if (
+        fromPage < 1
+        || toPage < 1
+        || fromPage > toPage
+        )
+    {
+        return allPageIndexes(document);
+    }
+
+    QList<int> pages;
+    const int firstPage =
+        std::clamp(
+            fromPage,
+            1,
+            pageCount
+            );
+    const int lastPage =
+        std::clamp(
+            toPage,
+            firstPage,
+            pageCount
+            );
+
+    pages.reserve(lastPage - firstPage + 1);
+    for (int pageNumber = firstPage; pageNumber <= lastPage; ++pageNumber)
+    {
+        pages.append(pageNumber - 1);
+    }
+
+    return pages;
 }
 
 QRectF fittedPrintRect(
@@ -305,6 +414,64 @@ Result paintPdfDocumentToPrinter(
 
     return sent();
 }
+
+#ifdef Q_OS_MACOS
+Result printPdfDocumentWithNativeDialog(
+    const Request& request
+    )
+{
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::NativeFormat);
+    printer.setDocName(
+        printJobTitle(request.documentPath)
+        );
+    printer.setCreator(
+        QStringLiteral("ClassMngr")
+        );
+
+    QPrintDialog dialog(
+        &printer,
+        request.parent
+        );
+
+    dialog.setWindowTitle(
+        request.dialogTitle.trimmed().isEmpty()
+            ? printJobTitle(request.documentPath)
+            : request.dialogTitle
+        );
+    dialog.setMinMax(
+        1,
+        request.document->pageCount()
+        );
+    dialog.setFromTo(
+        1,
+        request.document->pageCount()
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return canceled();
+    }
+
+    PdfPrintDialogSupport::RenderOptions options;
+    options.pageIndexes =
+        pageIndexesFromPrinterRange(
+            printer,
+            request.document,
+            request.currentPageIndex
+            );
+    options.grayscale =
+        printer.colorMode() == QPrinter::GrayScale;
+    options.fitToPage =
+        false;
+
+    return paintPdfDocumentToPrinter(
+        request.document,
+        printer,
+        options
+        );
+}
+#endif
 }
 
 Result printPdfDocument(
@@ -322,6 +489,11 @@ Result printPdfDocument(
             );
     }
 
+#ifdef Q_OS_MACOS
+    return printPdfDocumentWithNativeDialog(
+        request
+        );
+#else
     PdfPrintDialog dialog(
         request.parent,
         request.document,
@@ -345,5 +517,6 @@ Result printPdfDocument(
     }
 
     return dialog.printResult();
+#endif
 }
 }
