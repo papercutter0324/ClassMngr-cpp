@@ -133,7 +133,7 @@ Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
 QuickControls2, QuickWidgets, and LinguistTools.
 
 Point CMake at that Qt kit and build the release app. The macOS release preset
-builds a universal `arm64;x86_64` app bundle.
+builds a universal `arm64;x86_64` app bundle targeting macOS 13.0 or newer.
 
 ```sh
 cmake --preset macos-clang-release \
@@ -141,8 +141,7 @@ cmake --preset macos-clang-release \
 
 cmake --build --preset macos-clang-release
 
-cmake --install build/macos-clang-release \
-  --prefix dist/ClassMngr-macos
+cmake --build --preset macos-clang-release-install
 ```
 
 The standalone app bundle is `dist/ClassMngr-macos/ClassMngr.app`. To make a DMG

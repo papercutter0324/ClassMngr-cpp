@@ -13,6 +13,7 @@
 #include <QMenuBar>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QStyle>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QWidget>
@@ -66,7 +67,8 @@ struct TableItemFontSnapshot
 
 void refreshMaterializedInheritedFonts(
     QWidget* widget,
-    const QFont& inheritedFont
+    const QFont& inheritedFont,
+    bool materializeInheritedFonts = false
     )
 {
     if (!widget)
@@ -74,11 +76,21 @@ void refreshMaterializedInheritedFonts(
         return;
     }
 
-    if (widget->property(
+    if (
+        widget->property(
             MaterializedInheritedFontProperty
-            ).toBool())
+            ).toBool()
+        || (
+            materializeInheritedFonts
+            && !widget->testAttribute(Qt::WA_SetFont)
+            )
+        )
     {
         widget->setFont(inheritedFont);
+        widget->setProperty(
+            MaterializedInheritedFontProperty,
+            true
+            );
     }
 
     const QFont childInheritedFont =
@@ -94,8 +106,44 @@ void refreshMaterializedInheritedFonts(
     {
         refreshMaterializedInheritedFonts(
             child,
-            childInheritedFont
+            childInheritedFont,
+            materializeInheritedFonts
             );
+    }
+}
+
+bool isManagedMenuWidget(
+    QWidget* widget
+    )
+{
+    return qobject_cast<QMenuBar*>(widget)
+        || qobject_cast<QMenu*>(widget);
+}
+
+void refreshWidgetStyleAndGeometry(
+    const QWidgetList& widgets
+    )
+{
+    for (QWidget* widget : widgets)
+    {
+        if (!widget)
+        {
+            continue;
+        }
+
+        if (widget->style())
+        {
+            widget->style()->unpolish(widget);
+            widget->style()->polish(widget);
+        }
+
+        widget->updateGeometry();
+        widget->update();
+
+        if (QLayout* layout = widget->layout())
+        {
+            layout->invalidate();
+        }
     }
 }
 
@@ -221,10 +269,7 @@ void applyManagedMenuFont(
 
     for (QWidget* widget : widgets)
     {
-        if (
-            qobject_cast<QMenuBar*>(widget)
-            || qobject_cast<QMenu*>(widget)
-            )
+        if (isManagedMenuWidget(widget))
         {
             applyMenuFontToWidget(
                 widget
@@ -624,6 +669,37 @@ void FontManager::applyFontSize(
 
     if (delta == 0)
     {
+        applyGlobalFont(
+            app,
+            localeName
+            );
+
+        const QFont inheritedFont =
+            localeName.startsWith(
+                QStringLiteral("ko"),
+                Qt::CaseInsensitive
+                )
+                ? getKoreanFont()
+                : getUiFont();
+
+        for (QWidget* topLevelWidget : app.topLevelWidgets())
+        {
+            refreshMaterializedInheritedFonts(
+                topLevelWidget,
+                inheritedFont,
+                true
+                );
+        }
+
+        refreshWidgetStyleAndGeometry(
+            app.allWidgets()
+            );
+
+        applyManagedMenuFont(
+            app,
+            inheritedFont
+            );
+
         return;
     }
 
@@ -641,10 +717,7 @@ void FontManager::applyFontSize(
             continue;
         }
 
-        if (
-            qobject_cast<QMenuBar*>(widget)
-            || qobject_cast<QMenu*>(widget)
-            )
+        if (isManagedMenuWidget(widget))
         {
             continue;
         }
@@ -772,21 +845,9 @@ void FontManager::applyFontSize(
         }
     }
 
-    for (QWidget* widget : widgets)
-    {
-        if (!widget)
-        {
-            continue;
-        }
-
-        widget->updateGeometry();
-        widget->update();
-
-        if (QLayout* layout = widget->layout())
-        {
-            layout->invalidate();
-        }
-    }
+    refreshWidgetStyleAndGeometry(
+        widgets
+        );
 
     const QFont menuFont =
         localeName.startsWith(

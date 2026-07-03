@@ -96,6 +96,8 @@ option(CLASSMNGR_RUN_WINDEPLOYQT "Run windeployqt after building ClassMngr on Wi
 
 set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
+set(CLASSMNGR_QT_DEPLOY_POSTAMBLE "")
+set(CLASSMNGR_QT_DEPLOY_EXECUTABLE "$<TARGET_FILE:ClassMngr>")
 set(CLASSMNGR_QT_DEPLOY_QML_PLUGINS "\\$")
 string(APPEND CLASSMNGR_QT_DEPLOY_QML_PLUGINS "{plugins_found}")
 if(UNIX AND NOT APPLE)
@@ -110,6 +112,54 @@ if(UNIX AND NOT APPLE)
     string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
         "    POST_INCLUDE_REGEXES [[.*/libQt6.*[.]so([.].*)?$]]\n"
     )
+endif()
+
+if(APPLE)
+    set(CLASSMNGR_QT_DEPLOY_EXECUTABLE "ClassMngr.app")
+    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE [=[
+set(CLASSMNGR_BAD_SQL_DRIVERS
+    libqsqlmimer.dylib
+    libqsqlodbc.dylib
+    libqsqlpsql.dylib
+)
+set(CLASSMNGR_STAGED_SQL_DRIVERS "")
+set(CLASSMNGR_QT_SQL_DRIVER_DIR "\${__QT_DEPLOY_QT_INSTALL_PREFIX}/\${__QT_DEPLOY_QT_INSTALL_PLUGINS}/sqldrivers")
+set(CLASSMNGR_SQL_DRIVER_STAGING_DIR "\${CMAKE_CURRENT_LIST_DIR}/classmngr-deploy-sqldrivers")
+file(MAKE_DIRECTORY "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
+foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
+    if(EXISTS "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" AND NOT EXISTS "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+        file(RENAME "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+    endif()
+endforeach()
+foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
+    if(EXISTS "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+        file(RENAME "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}" "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}")
+        list(APPEND CLASSMNGR_STAGED_SQL_DRIVERS "\${driver}")
+    endif()
+endforeach()
+set(CLASSMNGR_APP_SQL_DRIVER_DIR "\${QT_DEPLOY_PREFIX}/ClassMngr.app/Contents/PlugIns/sqldrivers")
+foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
+    if(EXISTS "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+        file(REMOVE "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+    endif()
+endforeach()
+]=])
+    string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
+        "    NO_APP_STORE_COMPLIANCE\n"
+    )
+    string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE [=[
+foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
+    if(EXISTS "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+        file(REMOVE "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+    endif()
+endforeach()
+foreach(driver IN LISTS CLASSMNGR_STAGED_SQL_DRIVERS)
+    if(EXISTS "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}")
+        file(RENAME "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+    endif()
+endforeach()
+file(REMOVE_RECURSE "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
+]=])
 endif()
 
 if(WIN32)
@@ -158,6 +208,26 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/styles/light.qss
         ${CLASSMNGR_EMBEDDED_PACK_FILES}
 )
+
+if(APPLE)
+    set(CLASSMNGR_MACOS_ICON resources/assets/icons/app_icon.icns)
+
+    set_source_files_properties(
+        ${CLASSMNGR_MACOS_ICON}
+        PROPERTIES
+            MACOSX_PACKAGE_LOCATION Resources
+    )
+
+    target_sources(ClassMngr
+        PRIVATE
+            ${CLASSMNGR_MACOS_ICON}
+    )
+
+    set_target_properties(ClassMngr
+        PROPERTIES
+            MACOSX_BUNDLE_ICON_FILE app_icon.icns
+    )
+endif()
 
 set_source_files_properties(
     src/features/my_info/ui/qml/EventCalendar.qml
@@ -262,11 +332,12 @@ qt_generate_deploy_script(
 ${CLASSMNGR_QT_DEPLOY_PREAMBLE}
 qt_deploy_qml_imports(TARGET ClassMngr PLUGINS_FOUND plugins_found)
 qt_deploy_runtime_dependencies(
-    EXECUTABLE \"$<TARGET_FILE:ClassMngr>\"
+    EXECUTABLE \"${CLASSMNGR_QT_DEPLOY_EXECUTABLE}\"
     ADDITIONAL_MODULES ${CLASSMNGR_QT_DEPLOY_QML_PLUGINS}
     GENERATE_QT_CONF
 ${CLASSMNGR_QT_DEPLOY_OPTIONS}
 )
+${CLASSMNGR_QT_DEPLOY_POSTAMBLE}
 "
 )
 install(SCRIPT ${deploy_script})

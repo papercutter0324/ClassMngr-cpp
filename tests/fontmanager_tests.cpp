@@ -272,6 +272,64 @@ private slots:
             );
     }
 
+    void noOpFontSizeReappliesInheritedFonts()
+    {
+        auto* app =
+            qobject_cast<QApplication*>(
+                QCoreApplication::instance()
+                );
+        QVERIFY(app);
+
+        FontManager::setSizeOffset(0);
+        FontManager::applyGlobalFont(
+            *app,
+            QStringLiteral("en_US")
+            );
+
+        QWidget container;
+        QLabel inheritedLabel(&container);
+        QLabel explicitLabel(&container);
+
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::getPlatformFontSize()
+            );
+
+        FontManager::setSizeOffset(
+            fontSizeOffset(FontSize::ExtraLarge)
+            );
+
+        explicitLabel.setFont(
+            FontManager::getUiFont(10)
+            );
+
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::getPlatformFontSize()
+            );
+
+        FontManager::applyFontSize(
+            *app,
+            QStringLiteral("en_US"),
+            fontSizeOffset(FontSize::ExtraLarge)
+            );
+
+        QCOMPARE(
+            app->font().pointSize(),
+            FontManager::getPlatformFontSize()
+                + fontSizeOffset(FontSize::ExtraLarge)
+            );
+        QCOMPARE(
+            inheritedLabel.font().pointSize(),
+            FontManager::getPlatformFontSize()
+                + fontSizeOffset(FontSize::ExtraLarge)
+            );
+        QCOMPARE(
+            explicitLabel.font().pointSize(),
+            10 + fontSizeOffset(FontSize::ExtraLarge)
+            );
+    }
+
     void missingPrimaryFamilyUsesFallback()
     {
         const QString fallbackFamily =
