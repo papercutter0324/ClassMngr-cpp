@@ -254,6 +254,11 @@ Roster RosterModel::toRoster() const
     return roster;
 }
 
+QStringList RosterModel::columnNames() const
+{
+    return m_columns;
+}
+
 QString RosterModel::columnName(
     int column
     ) const
@@ -264,6 +269,31 @@ QString RosterModel::columnName(
     }
 
     return m_columns[column];
+}
+
+QStringList RosterModel::rowValues(
+    int row
+    ) const
+{
+    if (row < 0 || row >= m_rows.size())
+    {
+        return {};
+    }
+
+    return m_rows[row];
+}
+
+int RosterModel::firstEmptyRow() const
+{
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        if (!rowHasData(m_rows[row]))
+        {
+            return row;
+        }
+    }
+
+    return -1;
 }
 
 bool RosterModel::isRequiredColumn(
@@ -623,6 +653,172 @@ bool RosterModel::moveRosterRow(
     return true;
 }
 
+bool RosterModel::hasDuplicateTransferredStudent(
+    const QStringList& sourceColumns,
+    const QStringList& sourceRow,
+    QString* reason
+    ) const
+{
+    const QStringList mappedRow =
+        mappedTransferRow(
+            sourceColumns,
+            sourceRow
+            );
+
+    const int englishColumn =
+        englishNameColumn();
+
+    const int koreanColumn =
+        koreanNameColumn();
+
+    if (
+        englishColumn < 0
+        || koreanColumn < 0
+        || englishColumn >= mappedRow.size()
+        || koreanColumn >= mappedRow.size()
+        )
+    {
+        return false;
+    }
+
+    const QString key =
+        namePairKey(
+            mappedRow[englishColumn],
+            mappedRow[koreanColumn]
+            );
+
+    if (key.isEmpty())
+    {
+        return false;
+    }
+
+    for (const QStringList& existingRow : m_rows)
+    {
+        if (
+            englishColumn < existingRow.size()
+            && koreanColumn < existingRow.size()
+            && namePairKey(
+                existingRow[englishColumn],
+                existingRow[koreanColumn]
+                ) == key
+            )
+        {
+            if (reason)
+            {
+                *reason =
+                    tr("Target roster already contains this student.");
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool RosterModel::canInsertTransferredRow(
+    const QStringList& sourceColumns,
+    const QStringList& sourceRow,
+    QString* reason
+    ) const
+{
+    const QStringList mappedRow =
+        mappedTransferRow(
+            sourceColumns,
+            sourceRow
+            );
+
+    if (!rowHasData(mappedRow))
+    {
+        if (reason)
+        {
+            *reason = tr("Selected row is empty.");
+        }
+
+        return false;
+    }
+
+    if (firstEmptyRow() < 0)
+    {
+        if (reason)
+        {
+            *reason = tr("Target roster is full.");
+        }
+
+        return false;
+    }
+
+    if (
+        hasDuplicateTransferredStudent(
+            sourceColumns,
+            sourceRow,
+            reason
+            )
+        )
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool RosterModel::insertTransferredRow(
+    const QStringList& sourceColumns,
+    const QStringList& sourceRow,
+    QString* reason
+    )
+{
+    if (
+        !canInsertTransferredRow(
+            sourceColumns,
+            sourceRow,
+            reason
+            )
+        )
+    {
+        return false;
+    }
+
+    const int destinationRow =
+        firstEmptyRow();
+
+    if (destinationRow < 0)
+    {
+        return false;
+    }
+
+    m_rows[destinationRow] =
+        mappedTransferRow(
+            sourceColumns,
+            sourceRow
+            );
+
+    validateAll();
+
+    if (!m_columns.isEmpty())
+    {
+        emit dataChanged(
+            index(
+                0,
+                0
+                ),
+            index(
+                m_rows.size() - 1,
+                m_columns.size() - 1
+                ),
+            {
+                Qt::DisplayRole,
+                Qt::EditRole,
+                Qt::ToolTipRole
+            }
+            );
+    }
+
+    setDirty(true);
+
+    return true;
+}
+
 bool RosterModel::isDirty() const
 {
     return m_dirty;
@@ -881,6 +1077,56 @@ int RosterModel::findColumn(
     }
 
     return -1;
+}
+
+QStringList RosterModel::mappedTransferRow(
+    const QStringList& sourceColumns,
+    const QStringList& sourceRow
+    ) const
+{
+    QStringList mappedRow(
+        m_columns.size(),
+        QString()
+        );
+
+    for (int destinationColumn = 0; destinationColumn < m_columns.size(); ++destinationColumn)
+    {
+        const int sourceColumn =
+            findColumn(
+                m_columns[destinationColumn],
+                sourceColumns
+                );
+
+        if (
+            sourceColumn < 0
+            || sourceColumn >= sourceRow.size()
+            )
+        {
+            continue;
+        }
+
+        mappedRow[destinationColumn] =
+            normalizeCell(
+                sourceRow[sourceColumn],
+                destinationColumn
+                );
+    }
+
+    return mappedRow;
+}
+
+bool RosterModel::rowHasData(
+    const QStringList& row
+    ) const
+{
+    return std::any_of(
+        row.constBegin(),
+        row.constEnd(),
+        [](const QString& value)
+        {
+            return !value.trimmed().isEmpty();
+        }
+        );
 }
 
 void RosterModel::rebuildRows(

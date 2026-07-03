@@ -52,9 +52,17 @@ public:
 
     Roster toRoster() const;
 
+    QStringList columnNames() const;
+
     QString columnName(
         int column
         ) const;
+
+    QStringList rowValues(
+        int row
+        ) const;
+
+    int firstEmptyRow() const;
 
     bool isRequiredColumn(
         int column
@@ -102,6 +110,24 @@ public:
         int destinationRow
         );
 
+    bool hasDuplicateTransferredStudent(
+        const QStringList& sourceColumns,
+        const QStringList& sourceRow,
+        QString* reason = nullptr
+        ) const;
+
+    bool canInsertTransferredRow(
+        const QStringList& sourceColumns,
+        const QStringList& sourceRow,
+        QString* reason = nullptr
+        ) const;
+
+    bool insertTransferredRow(
+        const QStringList& sourceColumns,
+        const QStringList& sourceRow,
+        QString* reason = nullptr
+        );
+
     bool isDirty() const;
 
     void clearDirty();
@@ -144,6 +170,15 @@ private:
     int findColumn(
         const QString& name,
         const QStringList& columns
+        ) const;
+
+    QStringList mappedTransferRow(
+        const QStringList& sourceColumns,
+        const QStringList& sourceRow
+        ) const;
+
+    bool rowHasData(
+        const QStringList& row
         ) const;
 
     void rebuildRows(

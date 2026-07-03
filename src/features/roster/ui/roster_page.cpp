@@ -25,15 +25,27 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPair>
 #include <QPoint>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QVariant>
+
+#include <algorithm>
+#include <utility>
 
 namespace
 {
 
 inline constexpr int AutosaveDelayMs = 750;
+
+struct TransferClassTarget
+{
+    int classId = -1;
+    QString label;
+    bool full = false;
+};
 
 QString sidebarClassDisplayName(
     DataService* dataService,
@@ -307,32 +319,13 @@ bool RosterPage::saveRosterInternal(
         return false;
     }
 
-    if (m_model->hasDuplicateNameErrors())
+    if (!validateRosterBeforeSave(showValidationMessages))
     {
-        if (showValidationMessages)
-        {
-            QMessageBox message(this);
-            message.setIcon(QMessageBox::Warning);
-            message.setWindowTitle(
-                tr("Duplicate Student Names")
-                );
-            message.setText(
-                tr("Resolve duplicate English/Korean student name pairs before saving.")
-                );
-            message.setDetailedText(
-                m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
-                );
-            message.exec();
-        }
-
         return false;
     }
 
     Roster roster =
-        m_model->toRoster();
-
-    roster.columnWidths =
-        m_layoutController->currentWidths();
+        currentRosterForSave();
 
     m_services
         ->dataService()
@@ -346,6 +339,34 @@ bool RosterPage::saveRosterInternal(
     updateActions();
 
     return true;
+}
+
+bool RosterPage::validateRosterBeforeSave(
+    bool showValidationMessages
+    )
+{
+    if (!m_model || !m_model->hasDuplicateNameErrors())
+    {
+        return true;
+    }
+
+    if (showValidationMessages)
+    {
+        QMessageBox message(this);
+        message.setIcon(QMessageBox::Warning);
+        message.setWindowTitle(
+            tr("Duplicate Student Names")
+            );
+        message.setText(
+            tr("Resolve duplicate English/Korean student name pairs before saving.")
+            );
+        message.setDetailedText(
+            m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
+            );
+        message.exec();
+    }
+
+    return false;
 }
 
 void RosterPage::addColumn()
@@ -796,6 +817,157 @@ void RosterPage::showRosterContextMenu(
         removeAction->setToolTip(reason);
     }
 
+    QMenu* transferMenu =
+        menu.addMenu(
+            tr("Transfer Class")
+            );
+
+    transferMenu->setEnabled(canRemove);
+
+    QHash<QAction*, int> transferActions;
+
+    auto* dataService =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+
+    const QString currentGrade =
+        dataService && dataService->isOpen() && m_classroom.id > 0
+            ? dataService
+                ->loadClassInfo(
+                    m_classroom.id
+                    )
+                .classGrade
+                .trimmed()
+            : QString();
+
+    QList<TransferClassTarget> targets;
+
+    if (
+        canRemove
+        && dataService
+        && dataService->isOpen()
+        && !currentGrade.isEmpty()
+        )
+    {
+        const QStringList sourceColumns =
+            m_model->columnNames();
+
+        const QStringList sourceRow =
+            m_model->rowValues(
+                clicked.row()
+                );
+
+        for (const Classroom& classroom : dataService->getClasses())
+        {
+            if (
+                classroom.id <= 0
+                || classroom.id == m_classroom.id
+                )
+            {
+                continue;
+            }
+
+            const ClassInfo targetInfo =
+                dataService->loadClassInfo(
+                    classroom.id
+                    );
+
+            if (targetInfo.classGrade.trimmed() != currentGrade)
+            {
+                continue;
+            }
+
+            RosterModel targetModel;
+            targetModel.setRoster(
+                dataService->loadRoster(
+                    classroom.id
+                    )
+                );
+
+            TransferClassTarget target;
+            target.classId =
+                classroom.id;
+            target.label =
+                sidebarClassDisplayName(
+                    dataService,
+                    classroom.id
+                    );
+
+            if (target.label.trimmed().isEmpty())
+            {
+                target.label =
+                    classroom.name.trimmed().isEmpty()
+                        ? tr("Class %1").arg(classroom.id)
+                        : classroom.name.trimmed();
+            }
+
+            target.full =
+                targetModel.firstEmptyRow() < 0;
+
+            targets.append(target);
+        }
+
+        std::sort(
+            targets.begin(),
+            targets.end(),
+            [](const TransferClassTarget& left, const TransferClassTarget& right)
+            {
+                const int comparison =
+                    QString::localeAwareCompare(
+                        left.label,
+                        right.label
+                        );
+
+                if (comparison != 0)
+                {
+                    return comparison < 0;
+                }
+
+                return left.classId < right.classId;
+            }
+            );
+    }
+
+    if (targets.isEmpty())
+    {
+        QAction* emptyAction =
+            transferMenu->addAction(
+                tr("No same-grade classes")
+                );
+        emptyAction->setEnabled(false);
+    }
+    else
+    {
+        for (const TransferClassTarget& target : std::as_const(targets))
+        {
+            QAction* transferAction =
+                transferMenu->addAction(
+                    target.full
+                        ? tr("%1 (full)").arg(target.label)
+                        : target.label
+                    );
+
+            transferAction->setEnabled(
+                !target.full
+                );
+
+            if (target.full)
+            {
+                transferAction->setToolTip(
+                    tr("Target roster is full.")
+                    );
+            }
+            else
+            {
+                transferActions.insert(
+                    transferAction,
+                    target.classId
+                    );
+            }
+        }
+    }
+
     QAction* selectedAction =
         menu.exec(
             m_table->viewport()->mapToGlobal(position)
@@ -805,6 +977,13 @@ void RosterPage::showRosterContextMenu(
     {
         removeRosterRow(
             clicked.row()
+            );
+    }
+    else if (transferActions.contains(selectedAction))
+    {
+        transferRosterRow(
+            clicked.row(),
+            transferActions.value(selectedAction)
             );
     }
 }
@@ -1397,6 +1576,232 @@ bool RosterPage::removeRosterRow(
     updateActions();
 
     return true;
+}
+
+void RosterPage::transferRosterRow(
+    int row,
+    int targetClassId
+    )
+{
+    if (
+        !m_model
+        || !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        || m_classroom.id <= 0
+        || targetClassId <= 0
+        || targetClassId == m_classroom.id
+        )
+    {
+        return;
+    }
+
+    QString reason;
+
+    if (!m_model->canRemoveRow(row, &reason))
+    {
+        QMessageBox::warning(
+            this,
+            tr("Cannot Transfer Student"),
+            reason
+            );
+
+        return;
+    }
+
+    if (!validateRosterBeforeSave(true))
+    {
+        return;
+    }
+
+    auto* dataService =
+        m_services->dataService();
+
+    const QStringList sourceColumns =
+        m_model->columnNames();
+
+    const QStringList sourceRow =
+        m_model->rowValues(row);
+
+    const Roster targetSourceRoster =
+        dataService->loadRoster(
+            targetClassId
+            );
+
+    RosterModel targetModel;
+    targetModel.setRoster(
+        targetSourceRoster
+        );
+
+    reason.clear();
+
+    if (
+        !targetModel.insertTransferredRow(
+            sourceColumns,
+            sourceRow,
+            &reason
+            )
+        )
+    {
+        QMessageBox::warning(
+            this,
+            tr("Cannot Transfer Student"),
+            reason.isEmpty()
+                ? tr("The student could not be transferred.")
+                : reason
+            );
+
+        return;
+    }
+
+    Roster targetRoster =
+        targetModel.toRoster();
+
+    targetRoster.columnWidths =
+        normalizedColumnWidths(
+            targetSourceRoster,
+            targetRoster.columns
+            );
+
+    const Roster sourceRoster =
+        rosterWithRowRemoved(row);
+
+    const bool saved =
+        dataService->saveRosters(
+            {
+                qMakePair(
+                    m_classroom.id,
+                    sourceRoster
+                    ),
+                qMakePair(
+                    targetClassId,
+                    targetRoster
+                    )
+            }
+            );
+
+    if (!saved)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Cannot Transfer Student"),
+            tr("The roster changes could not be saved.")
+            );
+
+        return;
+    }
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    m_removingRosterRow = true;
+    m_model->removeRosterRow(row);
+    m_removingRosterRow = false;
+
+    m_model->clearDirty();
+    m_widthsDirty = false;
+
+    const int nextRow =
+        row < m_model->rowCount()
+            ? row
+            : m_model->rowCount() - 1;
+
+    if (nextRow >= 0 && m_model->columnCount() > 0)
+    {
+        selectRosterCell(
+            nextRow,
+            0
+            );
+    }
+
+    updateActions();
+}
+
+Roster RosterPage::currentRosterForSave() const
+{
+    Roster roster =
+        m_model
+            ? m_model->toRoster()
+            : Roster();
+
+    roster.columnWidths =
+        m_layoutController
+            ? m_layoutController->currentWidths()
+            : QVector<int>();
+
+    return roster;
+}
+
+Roster RosterPage::rosterWithRowRemoved(
+    int row
+    ) const
+{
+    Roster roster =
+        currentRosterForSave();
+
+    if (row < 0 || row >= roster.rows.size())
+    {
+        return roster;
+    }
+
+    const int lastRow =
+        roster.rows.size() - 1;
+
+    for (int sourceRow = row + 1; sourceRow <= lastRow; ++sourceRow)
+    {
+        roster.rows[sourceRow - 1] =
+            roster.rows[sourceRow];
+    }
+
+    roster.rows[lastRow] =
+        QStringList(
+            roster.columns.size(),
+            QString()
+            );
+
+    return roster;
+}
+
+QVector<int> RosterPage::normalizedColumnWidths(
+    const Roster& roster,
+    const QStringList& columns
+    ) const
+{
+    QVector<int> widths;
+    widths.reserve(
+        columns.size()
+        );
+
+    for (const QString& columnName : columns)
+    {
+        int sourceColumn = -1;
+
+        for (int index = 0; index < roster.columns.size(); ++index)
+        {
+            const bool exactMatch =
+                roster.columns[index].compare(columnName, Qt::CaseInsensitive) == 0;
+
+            const bool legacyFallMatch =
+                columnName.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) == 0
+                && roster.columns[index].compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0;
+
+            if (exactMatch || legacyFallMatch)
+            {
+                sourceColumn = index;
+                break;
+            }
+        }
+
+        widths.append(
+            sourceColumn >= 0 && sourceColumn < roster.columnWidths.size()
+                ? roster.columnWidths[sourceColumn]
+                : 0
+            );
+    }
+
+    return widths;
 }
 
 QString RosterPage::rosterRowLabel(

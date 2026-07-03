@@ -947,6 +947,20 @@ void DataService::saveRoster(
     }
 }
 
+bool DataService::saveRosters(
+    const QList<QPair<int, Roster>>& rosters
+    )
+{
+    if (!m_rosterRepository)
+    {
+        return false;
+    }
+
+    return m_rosterRepository->saveRosters(
+        rosters
+        );
+}
+
 Roster DataService::loadRoster(
     int classId
     )

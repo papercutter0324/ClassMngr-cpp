@@ -2,6 +2,8 @@
 
 #include "domain/models/roster.h"
 
+#include <QList>
+#include <QPair>
 #include <QSqlDatabase>
 
 class RosterRepository
@@ -16,6 +18,10 @@ public:
         const Roster& roster
         );
 
+    bool saveRosters(
+        const QList<QPair<int, Roster>>& rosters
+        );
+
     Roster loadRoster(
         int classId
         );
@@ -25,5 +31,10 @@ public:
         );
 
 private:
+    bool writeRoster(
+        int classId,
+        const Roster& roster
+        );
+
     QSqlDatabase& m_database;
 };

@@ -3,6 +3,9 @@
 #include "ui/shared/pages/basepage.h"
 
 #include "domain/models/classroom.h"
+#include "domain/models/roster.h"
+
+#include <QVector>
 
 class ApplicationServices;
 class QLabel;
@@ -78,6 +81,10 @@ private:
         bool showValidationMessages
         );
 
+    bool validateRosterBeforeSave(
+        bool showValidationMessages
+        );
+
     void scheduleAutosave();
 
     void handleNameCellChanged(
@@ -98,6 +105,22 @@ private:
     bool removeRosterRow(
         int row
         );
+
+    void transferRosterRow(
+        int row,
+        int targetClassId
+        );
+
+    Roster currentRosterForSave() const;
+
+    Roster rosterWithRowRemoved(
+        int row
+        ) const;
+
+    QVector<int> normalizedColumnWidths(
+        const Roster& roster,
+        const QStringList& columns
+        ) const;
 
     QString rosterRowLabel(
         int row

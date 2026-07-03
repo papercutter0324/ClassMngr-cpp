@@ -13,6 +13,7 @@
 #include "core/result.h"
 
 #include <QList>
+#include <QPair>
 #include <QSqlDatabase>
 #include <QString>
 #include <QVariantMap>
@@ -217,6 +218,10 @@ public:
     void saveRoster(
         int classId,
         const Roster& roster
+        );
+
+    [[nodiscard]] bool saveRosters(
+        const QList<QPair<int, Roster>>& rosters
         );
 
     Roster loadRoster(

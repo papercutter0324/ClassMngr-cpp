@@ -30,25 +30,96 @@ void RosterRepository::saveRoster(
         return;
     }
 
-    QSqlQuery query(m_database);
-
-    auto rollbackOnFailure =
-        [this, &query](const QString& operation)
+    if (!writeRoster(classId, roster))
+    {
+        if (!m_database.rollback())
         {
             qWarning()
-                << operation
-                << "failed while saving roster:"
-                << query.lastError().text();
+                << "Failed to roll back roster save transaction:"
+                << m_database.lastError().text();
+        }
 
+        return;
+    }
+
+    if (!m_database.commit())
+    {
+        qWarning()
+            << "Failed to commit roster save transaction:"
+            << m_database.lastError().text();
+
+        if (!m_database.rollback())
+        {
+            qWarning()
+                << "Failed to roll back failed roster save commit:"
+                << m_database.lastError().text();
+        }
+    }
+}
+
+bool RosterRepository::saveRosters(
+    const QList<QPair<int, Roster>>& rosters
+    )
+{
+    if (rosters.isEmpty())
+    {
+        return true;
+    }
+
+    if (!m_database.transaction())
+    {
+        qWarning()
+            << "Failed to start roster batch save transaction:"
+            << m_database.lastError().text();
+
+        return false;
+    }
+
+    for (const auto& roster : rosters)
+    {
+        if (!writeRoster(roster.first, roster.second))
+        {
             if (!m_database.rollback())
             {
                 qWarning()
-                    << "Failed to roll back roster save transaction:"
+                    << "Failed to roll back roster batch save transaction:"
                     << m_database.lastError().text();
             }
 
-            return;
-        };
+            return false;
+        }
+    }
+
+    if (!m_database.commit())
+    {
+        qWarning()
+            << "Failed to commit roster batch save transaction:"
+            << m_database.lastError().text();
+
+        if (!m_database.rollback())
+        {
+            qWarning()
+                << "Failed to roll back failed roster batch save commit:"
+                << m_database.lastError().text();
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+bool RosterRepository::writeRoster(
+    int classId,
+    const Roster& roster
+    )
+{
+    if (classId <= 0)
+    {
+        return false;
+    }
+
+    QSqlQuery query(m_database);
 
     query.prepare(
         "DELETE FROM roster_columns WHERE class_id=?"
@@ -58,11 +129,11 @@ void RosterRepository::saveRoster(
 
     if (!query.exec())
     {
-        rollbackOnFailure(
-            "Deleting roster_columns"
-            );
+        qWarning()
+            << "Deleting roster_columns failed while saving roster:"
+            << query.lastError().text();
 
-        return;
+        return false;
     }
 
     query.prepare(
@@ -73,11 +144,11 @@ void RosterRepository::saveRoster(
 
     if (!query.exec())
     {
-        rollbackOnFailure(
-            "Deleting roster_data"
-            );
+        qWarning()
+            << "Deleting roster_data failed while saving roster:"
+            << query.lastError().text();
 
-        return;
+        return false;
     }
 
     for (int column = 0; column < roster.columns.size(); ++column)
@@ -104,11 +175,11 @@ void RosterRepository::saveRoster(
 
         if (!query.exec())
         {
-            rollbackOnFailure(
-                "Inserting roster_columns"
-                );
+            qWarning()
+                << "Inserting roster_columns failed while saving roster:"
+                << query.lastError().text();
 
-            return;
+            return false;
         }
     }
 
@@ -146,28 +217,16 @@ void RosterRepository::saveRoster(
 
             if (!query.exec())
             {
-                rollbackOnFailure(
-                    "Inserting roster_data"
-                    );
+                qWarning()
+                    << "Inserting roster_data failed while saving roster:"
+                    << query.lastError().text();
 
-                return;
+                return false;
             }
         }
     }
 
-    if (!m_database.commit())
-    {
-        qWarning()
-            << "Failed to commit roster save transaction:"
-            << m_database.lastError().text();
-
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back failed roster save commit:"
-                << m_database.lastError().text();
-        }
-    }
+    return true;
 }
 
 Roster RosterRepository::loadRoster(
