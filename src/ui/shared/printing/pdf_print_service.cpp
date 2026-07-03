@@ -1,15 +1,11 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
-#include <QAbstractPrintDialog>
-#include <QDialog>
-#include <QFileInfo>
+#include "ui/shared/printing/pdf_print_dialog.h"
+
 #include <QImage>
-#include <QList>
 #include <QObject>
-#include <QPageRanges>
 #include <QPainter>
 #include <QPdfDocument>
-#include <QPrintDialog>
 #include <QPrinter>
 #include <QRectF>
 #include <QSize>
@@ -50,136 +46,6 @@ Result sent()
     };
 }
 
-QList<int> allPageIndexes(
-    int pageCount
-    )
-{
-    QList<int> pages;
-    pages.reserve(pageCount);
-
-    for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex)
-    {
-        pages.append(pageIndex);
-    }
-
-    return pages;
-}
-
-QList<int> rangePageIndexes(
-    const QPrinter& printer,
-    int pageCount
-    )
-{
-    const QPageRanges pageRanges =
-        printer.pageRanges();
-
-    QList<int> pages;
-
-    if (!pageRanges.isEmpty())
-    {
-        pages.reserve(pageCount);
-
-        for (int pageNumber = 1; pageNumber <= pageCount; ++pageNumber)
-        {
-            if (pageRanges.contains(pageNumber))
-            {
-                pages.append(pageNumber - 1);
-            }
-        }
-
-        return pages;
-    }
-
-    int fromPage =
-        printer.fromPage();
-    int toPage =
-        printer.toPage();
-
-    if (fromPage <= 0)
-    {
-        fromPage =
-            1;
-    }
-
-    if (toPage <= 0)
-    {
-        toPage =
-            pageCount;
-    }
-
-    fromPage =
-        std::clamp(
-            fromPage,
-            1,
-            pageCount
-            );
-    toPage =
-        std::clamp(
-            toPage,
-            1,
-            pageCount
-            );
-
-    if (fromPage > toPage)
-    {
-        std::swap(
-            fromPage,
-            toPage
-            );
-    }
-
-    pages.reserve(
-        toPage - fromPage + 1
-        );
-
-    for (int pageNumber = fromPage; pageNumber <= toPage; ++pageNumber)
-    {
-        pages.append(pageNumber - 1);
-    }
-
-    return pages;
-}
-
-QList<int> selectedPrintPageIndexes(
-    const QPrinter& printer,
-    int pageCount,
-    int currentPageIndex
-    )
-{
-    if (pageCount <= 0)
-    {
-        return {};
-    }
-
-    switch (printer.printRange())
-    {
-    case QPrinter::CurrentPage:
-    {
-        QList<int> pages;
-        pages.append(
-            std::clamp(
-                currentPageIndex,
-                0,
-                pageCount - 1
-                )
-            );
-        return pages;
-    }
-
-    case QPrinter::PageRange:
-        return rangePageIndexes(
-            printer,
-            pageCount
-            );
-
-    case QPrinter::AllPages:
-    case QPrinter::Selection:
-        break;
-    }
-
-    return allPageIndexes(pageCount);
-}
-
 QRectF fittedPrintRect(
     const QSizeF& sourceSize,
     const QRectF& bounds
@@ -202,11 +68,44 @@ QRectF fittedPrintRect(
         );
 }
 
+QRectF naturalPrintRect(
+    const QSizeF& sourcePointSize,
+    const QRectF& bounds,
+    const QPrinter& printer
+    )
+{
+    const qreal horizontalPixelsPerPoint =
+        std::max(
+            printer.logicalDpiX() / 72.0,
+            0.01
+            );
+    const qreal verticalPixelsPerPoint =
+        std::max(
+            printer.logicalDpiY() / 72.0,
+            0.01
+            );
+
+    const QSizeF targetSize(
+        sourcePointSize.width() * horizontalPixelsPerPoint,
+        sourcePointSize.height() * verticalPixelsPerPoint
+        );
+
+    return QRectF(
+        bounds.x()
+            + (bounds.width() - targetSize.width()) / 2.0,
+        bounds.y()
+            + (bounds.height() - targetSize.height()) / 2.0,
+        targetSize.width(),
+        targetSize.height()
+        );
+}
+
 bool renderPdfPageToPrinter(
     QPdfDocument* document,
     int pageIndex,
     QPrinter& printer,
-    QPainter& painter
+    QPainter& painter,
+    const PdfPrintDialogSupport::RenderOptions& options
     )
 {
     if (!document)
@@ -251,10 +150,16 @@ bool renderPdfPageToPrinter(
     }
 
     const QRectF targetRect =
-        fittedPrintRect(
-            pagePointSize,
-            printableRect
-            );
+        options.fitToPage
+            ? fittedPrintRect(
+                pagePointSize,
+                printableRect
+                )
+            : naturalPrintRect(
+                pagePointSize,
+                printableRect,
+                printer
+                );
 
     const int printerDpi =
         std::max(
@@ -280,7 +185,7 @@ bool renderPdfPageToPrinter(
             )
         );
 
-    const QImage image =
+    QImage image =
         document->render(
             pageIndex,
             renderSize
@@ -289,6 +194,14 @@ bool renderPdfPageToPrinter(
     if (image.isNull())
     {
         return false;
+    }
+
+    if (options.grayscale)
+    {
+        image =
+            image.convertToFormat(
+                QImage::Format_Grayscale8
+                );
     }
 
     painter.save();
@@ -308,16 +221,17 @@ bool renderPdfPageToPrinter(
 
     return true;
 }
-}
 
-Result printPdfDocument(
-    const Request& request
+Result paintPdfDocumentToPrinter(
+    QPdfDocument* document,
+    QPrinter& printer,
+    const PdfPrintDialogSupport::RenderOptions& options
     )
 {
     if (
-        !request.document
-        || request.document->status() != QPdfDocument::Status::Ready
-        || request.document->pageCount() <= 0
+        !document
+        || document->status() != QPdfDocument::Status::Ready
+        || document->pageCount() <= 0
         )
     {
         return failed(
@@ -325,68 +239,7 @@ Result printPdfDocument(
             );
     }
 
-    const int pageCount =
-        request.document->pageCount();
-
-    QPrinter printer(QPrinter::HighResolution);
-    printer.setDocName(
-        QFileInfo(request.documentPath).fileName()
-        );
-    printer.setFromTo(
-        1,
-        pageCount
-        );
-    printer.setPrintRange(
-        QPrinter::AllPages
-        );
-
-    QPrintDialog dialog(
-        &printer,
-        request.parent
-        );
-    dialog.setWindowTitle(
-        request.dialogTitle.isEmpty()
-            ? QObject::tr("Print File")
-            : request.dialogTitle
-        );
-    dialog.setOptions(
-        QAbstractPrintDialog::PrintPageRange
-        | QAbstractPrintDialog::PrintCurrentPage
-        | QAbstractPrintDialog::PrintCollateCopies
-        | QAbstractPrintDialog::PrintToFile
-        );
-    dialog.setMinMax(
-        1,
-        pageCount
-        );
-    dialog.setFromTo(
-        1,
-        pageCount
-        );
-    dialog.setPrintRange(
-        QAbstractPrintDialog::AllPages
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return canceled();
-    }
-
-    if (!printer.isValid())
-    {
-        return failed(
-            QObject::tr("No valid printer is available.")
-            );
-    }
-
-    const QList<int> pages =
-        selectedPrintPageIndexes(
-            printer,
-            pageCount,
-            request.currentPageIndex
-            );
-
-    if (pages.isEmpty())
+    if (options.pageIndexes.isEmpty())
     {
         return failed(
             QObject::tr("No pages were selected to print.")
@@ -402,7 +255,7 @@ Result printPdfDocument(
             );
     }
 
-    for (qsizetype index = 0; index < pages.size(); ++index)
+    for (qsizetype index = 0; index < options.pageIndexes.size(); ++index)
     {
         if (
             index > 0
@@ -416,14 +269,15 @@ Result printPdfDocument(
         }
 
         const int pageIndex =
-            pages.at(index);
+            options.pageIndexes.at(index);
 
         if (
             !renderPdfPageToPrinter(
-                request.document,
+                document,
                 pageIndex,
                 printer,
-                painter
+                painter,
+                options
                 )
             )
         {
@@ -450,5 +304,46 @@ Result printPdfDocument(
     }
 
     return sent();
+}
+}
+
+Result printPdfDocument(
+    const Request& request
+    )
+{
+    if (
+        !request.document
+        || request.document->status() != QPdfDocument::Status::Ready
+        || request.document->pageCount() <= 0
+        )
+    {
+        return failed(
+            QObject::tr("No PDF file is available to print.")
+            );
+    }
+
+    PdfPrintDialog dialog(
+        request.parent,
+        request.document,
+        request.documentPath,
+        [document = request.document](
+            QPrinter& printer,
+            const PdfPrintDialogSupport::RenderOptions& options
+            )
+        {
+            return paintPdfDocumentToPrinter(
+                document,
+                printer,
+                options
+                );
+        }
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return canceled();
+    }
+
+    return dialog.printResult();
 }
 }
