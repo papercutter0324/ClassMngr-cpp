@@ -184,6 +184,7 @@ void AboutDialog::buildUi()
     auto* headerLayout =
         new QHBoxLayout;
     headerLayout->setSpacing(14);
+    headerLayout->setAlignment(Qt::AlignTop);
 
     auto* iconLabel =
         new QLabel(this);
@@ -230,11 +231,12 @@ void AboutDialog::buildUi()
             );
     version->setObjectName("pageSubtitle");
 
-    titleLayout->addWidget(title);
-    titleLayout->addWidget(version);
+    titleLayout->addWidget(title, 0, Qt::AlignTop);
+    titleLayout->addWidget(version, 0, Qt::AlignTop);
     titleLayout->addStretch();
+    titleLayout->setAlignment(Qt::AlignTop);
 
-    headerLayout->addWidget(iconLabel);
+    headerLayout->addWidget(iconLabel, 0, Qt::AlignTop);
     headerLayout->addLayout(titleLayout, 1);
 
     auto* description =
@@ -371,6 +373,7 @@ void AboutDialog::buildUi()
     dialogButtonLayout->addWidget(closeButton);
 
     layout->addLayout(headerLayout);
+    layout->setAlignment(headerLayout, Qt::AlignTop);
     layout->addWidget(description);
     layout->addWidget(sourceLinks);
     layout->addSpacing(4);
