@@ -3,6 +3,13 @@
 #include "domain/models/calendar_event.h"
 #include "ui/shared/pages/basepage.h"
 
+#include <array>
+
+#include <QColor>
+#include <QDate>
+#include <QHash>
+#include <QStringList>
+
 class ApplicationServices;
 class AcademicCalendarProvider;
 class CalendarEventModel;
@@ -11,6 +18,7 @@ class QCheckBox;
 class QComboBox;
 class QEvent;
 class QLineEdit;
+class QPushButton;
 class QQuickWidget;
 class QScrollArea;
 class QShowEvent;
@@ -20,6 +28,15 @@ class QTimer;
 class QVBoxLayout;
 class QWidget;
 class ScheduleSectionWidget;
+
+enum class UpcomingEventsScope
+{
+    CurrentMonth = 0,
+    Next30Days,
+    Next10Events
+};
+
+constexpr int UpcomingEventsScopeCount = 3;
 
 enum class MyInfoSection
 {
@@ -97,6 +114,10 @@ private slots:
         int year,
         int month
         );
+    void handleCalendarDisplayedMonthChanged(
+        int year,
+        int month
+        );
 
 private:
     void buildUi();
@@ -110,6 +131,17 @@ private:
     void buildClassInformationSection();
     void buildMyInformationSection();
     void buildMonthlyCalendarSection();
+    void buildUpcomingEventsPanel(
+        QVBoxLayout* cardLayout,
+        QWidget* parent
+        );
+    QWidget* createUpcomingEventsPage(
+        QVBoxLayout** pageLayout,
+        QWidget* parent
+        );
+    QWidget* createEventTypeFilterRow(
+        QWidget* parent
+        );
     void loadPageData();
     void loadStoredSettings();
     bool saveMyInfoInternal();
@@ -127,6 +159,43 @@ private:
     void openCalendarDialog(
         const CalendarEvent& event,
         bool existingEvent
+        );
+    void refreshUpcomingEvents();
+    void renderUpcomingEvents(
+        UpcomingEventsScope scope,
+        const QList<CalendarEvent>& events
+        );
+    QList<CalendarEvent> upcomingEventsForScope(
+        UpcomingEventsScope scope
+        ) const;
+    QStringList activeCalendarEventTypes() const;
+    QColor calendarEventTypeColor(
+        const QString& eventType
+        ) const;
+    void saveCalendarEventTypeColor(
+        const QString& eventType,
+        const QColor& color
+        );
+    void chooseCalendarEventTypeColor(
+        const QString& eventType
+        );
+    QString eventTypeBadgeStyle(
+        const QString& eventType
+        ) const;
+    QString eventTypeFilterButtonStyle(
+        const QString& eventType,
+        bool checked
+        ) const;
+    void syncEventTypeFilterButtons();
+    QString upcomingEventDateText(
+        const CalendarEvent& event
+        ) const;
+    QString upcomingEventTimeText(
+        const CalendarEvent& event
+        ) const;
+    QWidget* createUpcomingEventRow(
+        const CalendarEvent& event,
+        QWidget* parent
         );
 
     QLabel* createTopLevelHeading(
@@ -161,6 +230,7 @@ private:
     QLabel* m_classInformationHeading = nullptr;
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;
+    QLabel* m_upcomingEventsHeading = nullptr;
 
     QLabel* m_nameLabel = nullptr;
     QLabel* m_campusLabel = nullptr;
@@ -184,6 +254,11 @@ private:
     CalendarEventModel* m_calendarModel = nullptr;
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;
     QQuickWidget* m_calendarView = nullptr;
+    QTabWidget* m_upcomingEventsTabs = nullptr;
+    std::array<QVBoxLayout*, UpcomingEventsScopeCount> m_upcomingEventLayouts{};
+    QList<QPushButton*> m_eventTypeFilterButtons;
+    QHash<QString, bool> m_eventTypeFilterStates;
+    QDate m_calendarVisibleMonth;
 
     QTimer* m_autosaveTimer = nullptr;
 };

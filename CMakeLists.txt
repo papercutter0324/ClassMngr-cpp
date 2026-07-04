@@ -576,6 +576,33 @@ if(BUILD_TESTING)
         COMMAND ClassMngrIntensiveSlotStateRepositoryTests
     )
 
+    qt_add_executable(ClassMngrCalendarEventRepositoryTests
+        tests/calendar_event_repository_tests.cpp
+        src/data/repositories/calendar_event_repository.cpp
+    )
+
+    target_compile_features(ClassMngrCalendarEventRepositoryTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrCalendarEventRepositoryTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrCalendarEventRepositoryTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrCalendarEventRepositoryTests
+        COMMAND ClassMngrCalendarEventRepositoryTests
+    )
+
     qt_add_executable(ClassMngrSubPrepClassNavigationTests
         tests/sub_prep_class_navigation_tests.cpp
         src/features/classes/config/class_info_config.cpp
@@ -791,6 +818,7 @@ if(BUILD_TESTING)
             ClassMngrFontManagerTests
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
+            ClassMngrCalendarEventRepositoryTests
             ClassMngrSubPrepClassNavigationTests
             ClassMngrUniformWidthTabBarTests
             ClassMngrRosterModelTests

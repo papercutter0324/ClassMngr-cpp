@@ -17,9 +17,9 @@ CalendarEvent eventFromQuery(
     event.title =
         query.value("title").toString();
     event.eventType =
-        query.value("event_type").toString().trimmed().isEmpty()
-            ? QStringLiteral("Other")
-            : query.value("event_type").toString().trimmed();
+        normalizedCalendarEventType(
+            query.value("event_type").toString()
+            );
     event.allDay =
         query.value("all_day").toBool();
     event.startDate =
@@ -108,6 +108,123 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
     return events;
 }
 
+QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    QList<CalendarEvent> events;
+
+    if (
+        !startDate.isValid()
+        || !endDate.isValid()
+        || endDate < startDate
+        )
+    {
+        return events;
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            event_type,
+            all_day,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE end_date >= ?
+        AND start_date <= ?
+        ORDER BY start_date, start_time, title
+    )");
+
+    query.addBindValue(
+        startDate.toString(Qt::ISODate)
+        );
+    query.addBindValue(
+        endDate.toString(Qt::ISODate)
+        );
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load calendar events in range:"
+            << query.lastError().text();
+
+        return events;
+    }
+
+    while (query.next())
+    {
+        events.append(
+            eventFromQuery(query)
+            );
+    }
+
+    return events;
+}
+
+QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
+    const QDate& fromDate,
+    int limit
+    )
+{
+    QList<CalendarEvent> events;
+
+    if (
+        !fromDate.isValid()
+        || limit <= 0
+        )
+    {
+        return events;
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            event_type,
+            all_day,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE end_date >= ?
+        ORDER BY start_date, start_time, title
+        LIMIT ?
+    )");
+
+    query.addBindValue(
+        fromDate.toString(Qt::ISODate)
+        );
+    query.addBindValue(limit);
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load upcoming calendar events:"
+            << query.lastError().text();
+
+        return events;
+    }
+
+    while (query.next())
+    {
+        events.append(
+            eventFromQuery(query)
+            );
+    }
+
+    return events;
+}
+
 CalendarEvent CalendarEventRepository::getCalendarEvent(
     int eventId
     )
@@ -160,9 +277,9 @@ int CalendarEventRepository::saveCalendarEvent(
 {
     QSqlQuery query(m_database);
     const QString eventType =
-        event.eventType.trimmed().isEmpty()
-            ? QStringLiteral("Other")
-            : event.eventType.trimmed();
+        normalizedCalendarEventType(
+            event.eventType
+            );
 
     if (event.id > 0)
     {

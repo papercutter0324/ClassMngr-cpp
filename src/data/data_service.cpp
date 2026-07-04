@@ -599,6 +599,11 @@ void DataService::createTables()
         )
     )");
 
+    query.exec(R"(
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_dates
+        ON calendar_events (start_date, end_date, start_time, title)
+    )");
+
     ensureTableColumn(
         m_db,
         QStringLiteral("calendar_events"),
@@ -872,6 +877,38 @@ QList<CalendarEvent> DataService::loadCalendarEventsForDate(
 
     return m_calendarEventRepository->loadCalendarEventsForDate(
         date
+        );
+}
+
+QList<CalendarEvent> DataService::loadCalendarEventsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return {};
+    }
+
+    return m_calendarEventRepository->loadCalendarEventsInRange(
+        startDate,
+        endDate
+        );
+}
+
+QList<CalendarEvent> DataService::loadUpcomingCalendarEvents(
+    const QDate& fromDate,
+    int limit
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return {};
+    }
+
+    return m_calendarEventRepository->loadUpcomingCalendarEvents(
+        fromDate,
+        limit
         );
 }
 

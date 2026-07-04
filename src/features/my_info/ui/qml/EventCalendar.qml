@@ -41,6 +41,7 @@ Item {
     signal dayActivated(int year, int month, int day)
     signal eventActivated(int eventId)
     signal configureRequested(int year, int month)
+    signal displayedMonthChanged(int year, int month)
 
     function moveMonth(delta) {
         const next = new Date(shownDate.getFullYear(), shownDate.getMonth() + delta, 1)
@@ -53,6 +54,11 @@ Item {
     Component.onCompleted: {
         if (shownDate.getFullYear() < 2026)
             shownDate = new Date(2026, 0, 1)
+        root.displayedMonthChanged(shownDate.getFullYear(), shownDate.getMonth() + 1)
+    }
+
+    onShownDateChanged: {
+        root.displayedMonthChanged(shownDate.getFullYear(), shownDate.getMonth() + 1)
     }
 
     Rectangle {

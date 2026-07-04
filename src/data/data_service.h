@@ -182,6 +182,16 @@ public:
         const QDate& date
         );
 
+    QList<CalendarEvent> loadCalendarEventsInRange(
+        const QDate& startDate,
+        const QDate& endDate
+        );
+
+    QList<CalendarEvent> loadUpcomingCalendarEvents(
+        const QDate& fromDate,
+        int limit
+        );
+
     CalendarEvent getCalendarEvent(
         int eventId
         );

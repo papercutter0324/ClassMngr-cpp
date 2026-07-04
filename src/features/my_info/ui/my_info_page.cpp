@@ -25,6 +25,7 @@
 #include <utility>
 
 #include <QCheckBox>
+#include <QColorDialog>
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
@@ -32,9 +33,11 @@
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QQuickItem>
@@ -45,6 +48,7 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStringList>
+#include <QTabWidget>
 #include <QTimer>
 #include <QTextEdit>
 #include <QUrl>
@@ -58,6 +62,8 @@ constexpr int UntitledCardTopMargin = 4;
 constexpr int CompactFieldWidth = 170;
 constexpr int TextEditVerticalPadding = 24;
 constexpr int ClassTabContentTopMargin = 16;
+constexpr int UpcomingEventsNext30Days = 30;
+constexpr int UpcomingEventsLimit = 10;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
@@ -82,6 +88,72 @@ DataService* openDataService(
     return dataService && dataService->isOpen()
         ? dataService
         : nullptr;
+}
+
+int scopeIndex(
+    UpcomingEventsScope scope
+    )
+{
+    return static_cast<int>(scope);
+}
+
+QColor defaultCalendarEventTypeColor(
+    const QString& eventType
+    )
+{
+    const QString normalized =
+        normalizedCalendarEventType(
+            eventType
+            );
+
+    QColor color =
+        QColor(QStringLiteral("#66727a"));
+
+    if (normalized == QStringLiteral("Vacation"))
+    {
+        color = QColor(QStringLiteral("#4b6f91"));
+    }
+    else if (normalized == QStringLiteral("Holiday"))
+    {
+        color = QColor(QStringLiteral("#7a5f9e"));
+    }
+    else if (normalized == QStringLiteral("Workshop"))
+    {
+        color = QColor(QStringLiteral("#5f7f52"));
+    }
+    else if (normalized == QStringLiteral("CM"))
+    {
+        color = QColor(QStringLiteral("#9a6b3f"));
+    }
+    else if (normalized == QStringLiteral("Meeting"))
+    {
+        color = QColor(QStringLiteral("#8a4f5d"));
+    }
+
+    return color;
+}
+
+QString calendarEventTypeColorSettingKey(
+    const QString& eventType
+    )
+{
+    return QStringLiteral("calendar/eventTypeColor/%1").arg(
+        normalizedCalendarEventType(eventType)
+        );
+}
+
+QString readableTextColor(
+    const QColor& color
+    )
+{
+    const int brightness =
+        (color.red() * 299
+         + color.green() * 587
+         + color.blue() * 114) / 1000;
+
+    return brightness > 145
+        ? QStringLiteral("#27313a")
+        : QStringLiteral("#ffffff");
 }
 
 CampusJsonRepository campusRepository()
@@ -682,6 +754,8 @@ void MyInfoPage::refresh()
         m_academicCalendarProvider->reload();
     }
 
+    refreshUpcomingEvents();
+
     if (!m_dirty && includesMyInformation())
     {
         loadPageData();
@@ -731,6 +805,29 @@ void MyInfoPage::retranslateUi()
     {
         m_monthlyCalendarHeading->setText(
             tr("Monthly Calendar")
+            );
+    }
+
+    if (m_upcomingEventsHeading)
+    {
+        m_upcomingEventsHeading->setText(
+            tr("Upcoming Events")
+            );
+    }
+
+    if (m_upcomingEventsTabs && m_upcomingEventsTabs->count() >= 3)
+    {
+        m_upcomingEventsTabs->setTabText(
+            0,
+            tr("Current Month")
+            );
+        m_upcomingEventsTabs->setTabText(
+            1,
+            tr("Next 30 Days")
+            );
+        m_upcomingEventsTabs->setTabText(
+            2,
+            tr("Next 10 Events")
             );
     }
 
@@ -790,6 +887,8 @@ void MyInfoPage::retranslateUi()
     {
         m_academicCalendarProvider->reload();
     }
+
+    refreshUpcomingEvents();
 
     refreshGeneratedContent();
 }
@@ -1021,6 +1120,24 @@ bool MyInfoPage::eventFilter(
     QEvent* event
     )
 {
+    if (
+        event
+        && event->type() == QEvent::MouseButtonRelease
+        && watched
+        )
+    {
+        const int eventId =
+            watched
+                ->property("calendarEventId")
+                .toInt();
+
+        if (eventId > 0)
+        {
+            handleCalendarEventActivated(eventId);
+            return true;
+        }
+    }
+
     return BasePage::eventFilter(
         watched,
         event
@@ -1149,6 +1266,28 @@ void MyInfoPage::handleCalendarConfigureRequested(
         this
         );
     dialog.exec();
+}
+
+void MyInfoPage::handleCalendarDisplayedMonthChanged(
+    int year,
+    int month
+    )
+{
+    const QDate firstOfMonth(
+        year,
+        month,
+        1
+        );
+
+    if (!firstOfMonth.isValid())
+    {
+        return;
+    }
+
+    m_calendarVisibleMonth =
+        firstOfMonth;
+
+    refreshUpcomingEvents();
 }
 
 void MyInfoPage::buildUi()
@@ -1648,6 +1787,15 @@ void MyInfoPage::buildMonthlyCalendarSection()
             this
             );
 
+    const QDate today =
+        QDate::currentDate();
+    m_calendarVisibleMonth =
+        QDate(
+            qMax(today.year(), 2026),
+            today.year() < 2026 ? 1 : today.month(),
+            1
+            );
+
     m_calendarView =
         new QQuickWidget(card);
     m_calendarView->setResizeMode(
@@ -1698,15 +1846,748 @@ void MyInfoPage::buildMonthlyCalendarSection()
             this,
             SLOT(handleCalendarConfigureRequested(int,int))
             );
+        connect(
+            root,
+            SIGNAL(displayedMonthChanged(int,int)),
+            this,
+            SLOT(handleCalendarDisplayedMonthChanged(int,int))
+            );
     }
 
     cardLayout->addWidget(
         m_calendarView
         );
 
+    buildUpcomingEventsPanel(
+        cardLayout,
+        card
+        );
+
     m_scrollContentLayout->addWidget(
         card
         );
+}
+
+void MyInfoPage::buildUpcomingEventsPanel(
+    QVBoxLayout* cardLayout,
+    QWidget* parent
+    )
+{
+    m_upcomingEventsHeading =
+        new QLabel(
+            tr("Upcoming Events"),
+            parent
+            );
+    m_upcomingEventsHeading->setProperty(
+        "role",
+        QStringLiteral("section_header")
+        );
+    m_upcomingEventsHeading->setFont(
+        FontManager::getUiFont(
+            12,
+            QFont::DemiBold
+            )
+        );
+
+    cardLayout->addSpacing(8);
+    cardLayout->addWidget(m_upcomingEventsHeading);
+
+    for (const QString& eventType : calendarEventTypes())
+    {
+        m_eventTypeFilterStates.insert(
+            eventType,
+            true
+            );
+    }
+
+    m_upcomingEventsTabs =
+        new UniformWidthTabWidget(
+            UniformWidthTabKind::Class,
+            QStringLiteral("calendarUpcomingTabBar"),
+            parent
+            );
+    m_upcomingEventsTabs->setObjectName(
+        QStringLiteral("calendarUpcomingTabs")
+        );
+    m_upcomingEventsTabs->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Maximum
+        );
+
+    m_upcomingEventsTabs->addTab(
+        createUpcomingEventsPage(
+            &m_upcomingEventLayouts[scopeIndex(UpcomingEventsScope::CurrentMonth)],
+            m_upcomingEventsTabs
+            ),
+        tr("Current Month")
+        );
+    m_upcomingEventsTabs->addTab(
+        createUpcomingEventsPage(
+            &m_upcomingEventLayouts[scopeIndex(UpcomingEventsScope::Next30Days)],
+            m_upcomingEventsTabs
+            ),
+        tr("Next 30 Days")
+        );
+    m_upcomingEventsTabs->addTab(
+        createUpcomingEventsPage(
+            &m_upcomingEventLayouts[scopeIndex(UpcomingEventsScope::Next10Events)],
+            m_upcomingEventsTabs
+            ),
+        tr("Next 10 Events")
+        );
+
+    connect(
+        m_upcomingEventsTabs,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int)
+        {
+            refreshUpcomingEvents();
+        }
+        );
+
+    cardLayout->addWidget(
+        m_upcomingEventsTabs
+        );
+
+    syncEventTypeFilterButtons();
+    refreshUpcomingEvents();
+}
+
+QWidget* MyInfoPage::createUpcomingEventsPage(
+    QVBoxLayout** pageLayout,
+    QWidget* parent
+    )
+{
+    auto* page =
+        new QWidget(parent);
+
+    auto* layout =
+        new QVBoxLayout(page);
+    layout->setContentsMargins(8, 8, 8, 8);
+    layout->setSpacing(6);
+    layout->setAlignment(Qt::AlignTop);
+
+    layout->addWidget(
+        createEventTypeFilterRow(page)
+        );
+
+    auto* list =
+        new QWidget(page);
+    auto* listLayout =
+        new QVBoxLayout(list);
+    listLayout->setContentsMargins(0, 0, 0, 0);
+    listLayout->setSpacing(6);
+    listLayout->setAlignment(Qt::AlignTop);
+
+    if (pageLayout)
+    {
+        *pageLayout =
+            listLayout;
+    }
+
+    layout->addWidget(list);
+
+    return page;
+}
+
+QWidget* MyInfoPage::createEventTypeFilterRow(
+    QWidget* parent
+    )
+{
+    auto* container =
+        new QWidget(parent);
+
+    auto* layout =
+        new QHBoxLayout(container);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(8);
+    layout->addStretch(1);
+
+    for (const QString& eventType : calendarEventTypes())
+    {
+        auto* button =
+            new QPushButton(
+                eventType,
+                container
+                );
+        button->setCheckable(true);
+        button->setProperty(
+            "eventType",
+            eventType
+            );
+        button->setMinimumHeight(28);
+        button->setCursor(
+            Qt::PointingHandCursor
+            );
+
+        connect(
+            button,
+            &QPushButton::toggled,
+            this,
+            [this, button](bool checked)
+            {
+                const QString eventType =
+                    normalizedCalendarEventType(
+                        button->property("eventType").toString()
+                        );
+
+                if (m_eventTypeFilterStates.value(eventType, true) == checked)
+                {
+                    button->setStyleSheet(
+                        eventTypeFilterButtonStyle(eventType, checked)
+                        );
+                    return;
+                }
+
+                m_eventTypeFilterStates.insert(
+                    eventType,
+                    checked
+                    );
+                syncEventTypeFilterButtons();
+                refreshUpcomingEvents();
+            }
+            );
+
+        m_eventTypeFilterButtons.append(button);
+        layout->addWidget(button);
+    }
+
+    layout->addStretch(1);
+
+    return container;
+}
+
+void MyInfoPage::refreshUpcomingEvents()
+{
+    if (!m_upcomingEventsTabs)
+    {
+        return;
+    }
+
+    syncEventTypeFilterButtons();
+
+    const QList<UpcomingEventsScope> scopes{
+        UpcomingEventsScope::CurrentMonth,
+        UpcomingEventsScope::Next30Days,
+        UpcomingEventsScope::Next10Events
+    };
+
+    for (UpcomingEventsScope scope : scopes)
+    {
+        renderUpcomingEvents(
+            scope,
+            upcomingEventsForScope(scope)
+            );
+    }
+}
+
+void MyInfoPage::renderUpcomingEvents(
+    UpcomingEventsScope scope,
+    const QList<CalendarEvent>& events
+    )
+{
+    QVBoxLayout* layout =
+        m_upcomingEventLayouts[scopeIndex(scope)];
+
+    if (!layout)
+    {
+        return;
+    }
+
+    while (QLayoutItem* item = layout->takeAt(0))
+    {
+        if (QWidget* widget = item->widget())
+        {
+            delete widget;
+        }
+
+        delete item;
+    }
+
+    const QStringList activeTypes =
+        activeCalendarEventTypes();
+
+    QList<CalendarEvent> filteredEvents;
+    for (const CalendarEvent& event : events)
+    {
+        if (
+            activeTypes.contains(
+                normalizedCalendarEventType(event.eventType)
+                )
+            )
+        {
+            filteredEvents.append(event);
+        }
+    }
+
+    if (scope == UpcomingEventsScope::Next10Events)
+    {
+        while (filteredEvents.size() > UpcomingEventsLimit)
+        {
+            filteredEvents.removeLast();
+        }
+    }
+
+    if (filteredEvents.isEmpty())
+    {
+        auto* empty =
+            new QLabel(
+                tr("No upcoming events."),
+                layout->parentWidget()
+                );
+        empty->setObjectName(
+            QStringLiteral("sectionSubtitle")
+            );
+        empty->setAlignment(
+            Qt::AlignCenter
+            );
+        layout->addWidget(empty);
+        return;
+    }
+
+    for (const CalendarEvent& event : filteredEvents)
+    {
+        layout->addWidget(
+            createUpcomingEventRow(
+                event,
+                layout->parentWidget()
+                )
+            );
+    }
+}
+
+QList<CalendarEvent> MyInfoPage::upcomingEventsForScope(
+    UpcomingEventsScope scope
+    ) const
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        return {};
+    }
+
+    const QDate today =
+        QDate::currentDate();
+
+    switch (scope)
+    {
+    case UpcomingEventsScope::CurrentMonth:
+    {
+        const QDate firstOfMonth =
+            m_calendarVisibleMonth.isValid()
+                ? m_calendarVisibleMonth
+                : QDate(today.year(), today.month(), 1);
+        return dataService->loadCalendarEventsInRange(
+            firstOfMonth,
+            firstOfMonth.addMonths(1).addDays(-1)
+            );
+    }
+
+    case UpcomingEventsScope::Next30Days:
+        return dataService->loadCalendarEventsInRange(
+            today,
+            today.addDays(UpcomingEventsNext30Days)
+            );
+
+    case UpcomingEventsScope::Next10Events:
+        return dataService->loadUpcomingCalendarEvents(
+            today,
+            100
+            );
+    }
+
+    return {};
+}
+
+QStringList MyInfoPage::activeCalendarEventTypes() const
+{
+    QStringList activeTypes;
+
+    for (const QString& eventType : calendarEventTypes())
+    {
+        if (m_eventTypeFilterStates.value(eventType, true))
+        {
+            activeTypes.append(
+                eventType
+                );
+        }
+    }
+
+    return activeTypes;
+}
+
+QColor MyInfoPage::calendarEventTypeColor(
+    const QString& eventType
+    ) const
+{
+    const QString normalized =
+        normalizedCalendarEventType(eventType);
+
+    auto* dataService =
+        openDataService(m_services);
+
+    if (dataService)
+    {
+        const QColor storedColor(
+            dataService
+                ->loadSetting(
+                    calendarEventTypeColorSettingKey(normalized),
+                    QString()
+                    )
+                .toString()
+            );
+
+        if (storedColor.isValid())
+        {
+            return storedColor;
+        }
+    }
+
+    return defaultCalendarEventTypeColor(normalized);
+}
+
+void MyInfoPage::saveCalendarEventTypeColor(
+    const QString& eventType,
+    const QColor& color
+    )
+{
+    if (!color.isValid())
+    {
+        return;
+    }
+
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        return;
+    }
+
+    dataService->saveSetting(
+        calendarEventTypeColorSettingKey(eventType),
+        color.name(QColor::HexRgb)
+        );
+}
+
+void MyInfoPage::chooseCalendarEventTypeColor(
+    const QString& eventType
+    )
+{
+    const QString normalized =
+        normalizedCalendarEventType(eventType);
+
+    const QColor selected =
+        QColorDialog::getColor(
+            calendarEventTypeColor(normalized),
+            this,
+            tr("Choose %1 Color").arg(normalized)
+            );
+
+    if (!selected.isValid())
+    {
+        return;
+    }
+
+    saveCalendarEventTypeColor(
+        normalized,
+        selected
+        );
+    syncEventTypeFilterButtons();
+    refreshUpcomingEvents();
+}
+
+QString MyInfoPage::eventTypeBadgeStyle(
+    const QString& eventType
+    ) const
+{
+    const QColor color =
+        calendarEventTypeColor(eventType);
+
+    return QStringLiteral(
+        "QPushButton {"
+        " background-color: %1;"
+        " color: %2;"
+        " border: none;"
+        " border-radius: 4px;"
+        " padding: 2px 7px;"
+        "}"
+        "QPushButton:hover {"
+        " border: 1px solid rgba(255, 255, 255, 160);"
+        " padding: 1px 6px;"
+        "}"
+        ).arg(
+            color.name(QColor::HexRgb),
+            readableTextColor(color)
+            );
+}
+
+QString MyInfoPage::eventTypeFilterButtonStyle(
+    const QString& eventType,
+    bool checked
+    ) const
+{
+    const QColor color =
+        calendarEventTypeColor(eventType);
+    const QString textColor =
+        checked
+            ? readableTextColor(color)
+            : QStringLiteral("#66727a");
+
+    return QStringLiteral(
+        "QPushButton {"
+        " background-color: %1;"
+        " color: %2;"
+        " border: 1px solid %3;"
+        " border-radius: 6px;"
+        " padding: 4px 10px;"
+        "}"
+        "QPushButton:hover {"
+        " border-color: %4;"
+        "}"
+        ).arg(
+            checked ? color.name(QColor::HexRgb) : QStringLiteral("transparent"),
+            textColor,
+            checked ? color.name(QColor::HexRgb) : QStringLiteral("#a8b2b8"),
+            color.name(QColor::HexRgb)
+            );
+}
+
+void MyInfoPage::syncEventTypeFilterButtons()
+{
+    for (QPushButton* button : m_eventTypeFilterButtons)
+    {
+        if (!button)
+        {
+            continue;
+        }
+
+        const QString eventType =
+            normalizedCalendarEventType(
+                button->property("eventType").toString()
+                );
+        const bool checked =
+            m_eventTypeFilterStates.value(
+                eventType,
+                true
+                );
+
+        const QSignalBlocker blocker(button);
+        button->setChecked(checked);
+        button->setStyleSheet(
+            eventTypeFilterButtonStyle(
+                eventType,
+                checked
+                )
+            );
+    }
+}
+
+QString MyInfoPage::upcomingEventDateText(
+    const CalendarEvent& event
+    ) const
+{
+    if (!event.startDate.isValid())
+    {
+        return QStringLiteral("-");
+    }
+
+    if (
+        !event.endDate.isValid()
+        || event.endDate == event.startDate
+        )
+    {
+        return event.startDate.toString(
+            QStringLiteral("MMM d")
+            );
+    }
+
+    const QString startFormat =
+        event.startDate.year() == event.endDate.year()
+            ? QStringLiteral("MMM d")
+            : QStringLiteral("MMM d yyyy");
+
+    return QStringLiteral("%1 - %2")
+        .arg(
+            event.startDate.toString(startFormat),
+            event.endDate.toString(QStringLiteral("MMM d yyyy"))
+            );
+}
+
+QString MyInfoPage::upcomingEventTimeText(
+    const CalendarEvent& event
+    ) const
+{
+    if (event.allDay)
+    {
+        return tr("All day");
+    }
+
+    if (!event.startTime.isValid())
+    {
+        return QString();
+    }
+
+    auto* dataService =
+        openDataService(m_services);
+    const bool use24h =
+        dataService
+        && settingToBool(
+            dataService->loadSetting(
+                QStringLiteral("schedule_use_24h"),
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    const QString format =
+        use24h
+            ? QStringLiteral("HH:mm")
+            : QStringLiteral("h:mm AP");
+
+    if (!event.endTime.isValid())
+    {
+        return event.startTime.toString(format);
+    }
+
+    return QStringLiteral("%1 - %2")
+        .arg(
+            event.startTime.toString(format),
+            event.endTime.toString(format)
+            );
+}
+
+QWidget* MyInfoPage::createUpcomingEventRow(
+    const CalendarEvent& event,
+    QWidget* parent
+    )
+{
+    auto* row =
+        new QFrame(parent);
+    row->setObjectName(
+        QStringLiteral("upcomingCalendarEventRow")
+        );
+    row->setCursor(
+        Qt::PointingHandCursor
+        );
+    row->setMinimumHeight(38);
+    row->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Maximum
+        );
+    row->setStyleSheet(
+        QStringLiteral(
+            "QFrame#upcomingCalendarEventRow {"
+            " background: transparent;"
+            " border: 1px solid transparent;"
+            " border-radius: 6px;"
+            "}"
+            "QFrame#upcomingCalendarEventRow:hover {"
+            " background-color: rgba(83, 111, 138, 35);"
+            " border-color: rgba(83, 111, 138, 120);"
+            "}"
+            )
+        );
+    row->setProperty(
+        "calendarEventId",
+        event.id
+        );
+    row->installEventFilter(this);
+
+    auto* layout =
+        new QHBoxLayout(row);
+    layout->setContentsMargins(8, 4, 8, 4);
+    layout->setSpacing(10);
+
+    auto* date =
+        new QLabel(
+            upcomingEventDateText(event),
+            row
+            );
+    date->setMinimumWidth(96);
+    date->setCursor(
+        Qt::PointingHandCursor
+        );
+    date->setProperty(
+        "calendarEventId",
+        event.id
+        );
+    date->installEventFilter(this);
+
+    auto* time =
+        new QLabel(
+            upcomingEventTimeText(event),
+            row
+            );
+    time->setMinimumWidth(116);
+    time->setCursor(
+        Qt::PointingHandCursor
+        );
+    time->setProperty(
+        "calendarEventId",
+        event.id
+        );
+    time->installEventFilter(this);
+
+    auto* title =
+        new QLabel(
+            event.title,
+            row
+            );
+    title->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+    title->setTextInteractionFlags(
+        Qt::NoTextInteraction
+        );
+    title->setCursor(
+        Qt::PointingHandCursor
+        );
+    title->setProperty(
+        "calendarEventId",
+        event.id
+        );
+    title->installEventFilter(this);
+
+    auto* type =
+        new QPushButton(
+            normalizedCalendarEventType(event.eventType),
+            row
+            );
+    type->setCursor(
+        Qt::PointingHandCursor
+        );
+    type->setToolTip(
+        tr("Choose %1 color").arg(
+            normalizedCalendarEventType(event.eventType)
+            )
+        );
+    type->setStyleSheet(
+        eventTypeBadgeStyle(event.eventType)
+        );
+
+    layout->addWidget(date);
+    layout->addWidget(time);
+    layout->addWidget(title);
+    layout->addWidget(type);
+
+    connect(
+        type,
+        &QPushButton::clicked,
+        this,
+        [this, event]()
+        {
+            chooseCalendarEventTypeColor(
+                event.eventType
+                );
+        }
+        );
+
+    return row;
 }
 
 void MyInfoPage::loadPageData()
@@ -2718,6 +3599,8 @@ void MyInfoPage::openCalendarDialog(
     {
         m_calendarModel->reload();
     }
+
+    refreshUpcomingEvents();
 }
 
 QLabel* MyInfoPage::createTopLevelHeading(

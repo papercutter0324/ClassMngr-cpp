@@ -18,40 +18,13 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSpacerItem>
-#include <QStringList>
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
 namespace
 {
-
 constexpr int DateTimeFieldWidth = 140;
-
-QStringList eventTypes()
-{
-    return {
-        QStringLiteral("Vacation"),
-        QStringLiteral("Holiday"),
-        QStringLiteral("Workshop"),
-        QStringLiteral("CM"),
-        QStringLiteral("Meeting"),
-        QStringLiteral("Other")
-    };
 }
-
-QString normalizedEventType(
-    const QString& eventType
-    )
-{
-    const QString trimmed =
-        eventType.trimmed();
-
-    return eventTypes().contains(trimmed)
-        ? trimmed
-        : QStringLiteral("Other");
-}
-
-} // namespace
 
 CalendarEventDialog::CalendarEventDialog(
     const CalendarEvent& event,
@@ -386,7 +359,7 @@ void CalendarEventDialog::buildUi()
     eventTypeLayout->setVerticalSpacing(8);
 
     int eventTypeIndex = 0;
-    for (const QString& eventType : eventTypes())
+    for (const QString& eventType : calendarEventTypes())
     {
         auto* button =
             new QRadioButton(
@@ -486,7 +459,7 @@ void CalendarEventDialog::loadEvent()
     updateTimeFieldAvailability();
 
     const QString selectedEventType =
-        normalizedEventType(
+        normalizedCalendarEventType(
             m_event.eventType
             );
 
