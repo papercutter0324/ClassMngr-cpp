@@ -28,6 +28,8 @@ find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     LinguistTools
 )
 
+find_package(ZLIB REQUIRED)
+
 set(CLASSMNGR_UPDATE_MANIFEST_URL "" CACHE STRING
     "HTTPS URL for the stable auto-update manifest"
 )
@@ -297,6 +299,7 @@ target_link_libraries(ClassMngr
         Qt6::QuickWidgets
         Qt6::Sql
         Qt6::Widgets
+        ZLIB::ZLIB
 )
 
 if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)

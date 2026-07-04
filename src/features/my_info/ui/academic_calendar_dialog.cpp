@@ -2,14 +2,17 @@
 
 #include "academic_calendar_provider.h"
 #include "core/fontmanager.h"
+#include "features/my_info/calendar_event_import_service.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
 #include <QDialogButtonBox>
 #include <QFont>
+#include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -39,11 +42,18 @@ AcademicTerm academicTerm(int index)
 
 AcademicCalendarDialog::AcademicCalendarDialog(
     AcademicCalendarProvider* provider,
+    DataService* dataService,
     int termYear,
     QWidget* parent
     )
     : QDialog(parent)
     , m_provider(provider)
+    , m_importService(
+        new CalendarEventImportService(
+            dataService,
+            this
+            )
+        )
     , m_termYear(
         qMax(termYear, AcademicCalendarSchedule::FirstTermYear)
         )
@@ -168,10 +178,66 @@ void AcademicCalendarDialog::linkWinterSpring(bool linked)
     updateLinkedFieldAvailability();
 }
 
+void AcademicCalendarDialog::importCalendarEvents()
+{
+    if (!m_importService || m_importService->isImporting())
+    {
+        return;
+    }
+
+    m_importButton->setEnabled(false);
+    m_importStatusLabel->setText(
+        tr("Importing events...")
+        );
+    m_importService->importFromDefaultSource();
+}
+
+void AcademicCalendarDialog::handleImportFinished(
+    int importedCount,
+    int skippedCount
+    )
+{
+    if (m_importButton)
+    {
+        m_importButton->setEnabled(true);
+    }
+
+    if (m_importStatusLabel)
+    {
+        m_importStatusLabel->setText(
+            tr("Imported %1 event(s). Skipped %2 existing or ignored item(s).")
+                .arg(importedCount)
+                .arg(skippedCount)
+            );
+    }
+
+    if (importedCount > 0)
+    {
+        emit calendarEventsImported();
+    }
+}
+
+void AcademicCalendarDialog::handleImportFailed(
+    const QString& message
+    )
+{
+    if (m_importButton)
+    {
+        m_importButton->setEnabled(true);
+    }
+
+    if (m_importStatusLabel)
+    {
+        m_importStatusLabel->setText(
+            tr("Import failed: %1").arg(message)
+            );
+    }
+}
+
 void AcademicCalendarDialog::buildUi()
 {
     setWindowTitle(tr("Academic Calendar Settings"));
-    setMinimumWidth(760);
+    setMinimumWidth(820);
 
     auto* mainLayout =
         new QVBoxLayout(this);
@@ -296,6 +362,51 @@ void AcademicCalendarDialog::buildUi()
         Qt::AlignHCenter
         );
 
+    auto* separator =
+        new QFrame(this);
+    separator->setFrameShape(QFrame::HLine);
+    separator->setFrameShadow(QFrame::Sunken);
+    mainLayout->addWidget(separator);
+
+    auto* importHeader =
+        new QLabel(
+            tr("Import Events"),
+            this
+            );
+    importHeader->setAlignment(Qt::AlignCenter);
+    importHeader->setFont(
+        FontManager::getUiFont(12, QFont::DemiBold)
+        );
+    mainLayout->addWidget(importHeader);
+
+    auto* importLayout =
+        new QHBoxLayout;
+    importLayout->setSpacing(8);
+
+    m_importUrlEdit =
+        new QLineEdit(
+            CalendarEventImportService::defaultImportUrl(),
+            this
+            );
+    m_importUrlEdit->setReadOnly(true);
+    m_importUrlEdit->setMinimumWidth(420);
+
+    m_importButton =
+        new QPushButton(
+            tr("Import Events"),
+            this
+            );
+
+    importLayout->addWidget(m_importUrlEdit, 1);
+    importLayout->addWidget(m_importButton);
+    mainLayout->addLayout(importLayout);
+
+    m_importStatusLabel =
+        new QLabel(this);
+    m_importStatusLabel->setObjectName(QStringLiteral("sectionSubtitle"));
+    m_importStatusLabel->setWordWrap(true);
+    mainLayout->addWidget(m_importStatusLabel);
+
     m_buttons =
         new QDialogButtonBox(
             QDialogButtonBox::Save | QDialogButtonBox::Cancel,
@@ -312,6 +423,24 @@ void AcademicCalendarDialog::buildUi()
         &QCheckBox::toggled,
         this,
         &AcademicCalendarDialog::linkWinterSpring
+        );
+    connect(
+        m_importButton,
+        &QPushButton::clicked,
+        this,
+        &AcademicCalendarDialog::importCalendarEvents
+        );
+    connect(
+        m_importService,
+        &CalendarEventImportService::importFinished,
+        this,
+        &AcademicCalendarDialog::handleImportFinished
+        );
+    connect(
+        m_importService,
+        &CalendarEventImportService::importFailed,
+        this,
+        &AcademicCalendarDialog::handleImportFailed
         );
     connect(
         m_restoreButton,

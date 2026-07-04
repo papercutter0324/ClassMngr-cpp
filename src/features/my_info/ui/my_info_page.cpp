@@ -1262,9 +1262,26 @@ void MyInfoPage::handleCalendarConfigureRequested(
 
     AcademicCalendarDialog dialog(
         m_academicCalendarProvider,
+        openDataService(m_services),
         termYear,
         this
         );
+
+    connect(
+        &dialog,
+        &AcademicCalendarDialog::calendarEventsImported,
+        this,
+        [this]()
+        {
+            if (m_calendarModel)
+            {
+                m_calendarModel->reload();
+            }
+
+            refreshUpcomingEvents();
+        }
+        );
+
     dialog.exec();
 }
 
