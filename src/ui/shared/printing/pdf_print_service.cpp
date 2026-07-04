@@ -508,7 +508,8 @@ Result printPdfDocument(
                 printer,
                 options
                 );
-        }
+        },
+        request.currentPageIndex
         );
 
     if (dialog.exec() != QDialog::Accepted)

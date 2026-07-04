@@ -7,6 +7,7 @@
 #include <QPageSize>
 #include <QPrinter>
 #include <QString>
+#include <QtGlobal>
 
 #include <functional>
 
@@ -39,7 +40,8 @@ public:
         QWidget* parent,
         QPdfDocument* document,
         const QString& documentPath,
-        PdfPrintDialogSupport::RenderFunction renderFunction
+        PdfPrintDialogSupport::RenderFunction renderFunction,
+        int currentPageIndex = 0
         );
 
     [[nodiscard]] PdfPrintService::Result printResult() const;
@@ -60,6 +62,9 @@ private:
     void updateValidation();
     void updatePreview();
     void printDocument();
+#ifdef Q_OS_WIN
+    void printWithNativeSystem();
+#endif
     void handlePreviewPaintRequested(
         QPrinter* printer
         );
@@ -67,6 +72,11 @@ private:
     [[nodiscard]] QString documentDisplayName() const;
     [[nodiscard]] QString printJobTitle() const;
     [[nodiscard]] QList<int> allPageIndexes() const;
+#ifdef Q_OS_WIN
+    [[nodiscard]] QList<int> pageIndexesFromNativePrinterRange(
+        const QPrinter& printer
+        ) const;
+#endif
     [[nodiscard]] QList<int> selectedPageIndexes(
         bool* ok,
         QString* errorMessage
@@ -79,6 +89,7 @@ private:
 
     QPdfDocument* m_document = nullptr;
     QString m_documentPath;
+    int m_currentPageIndex = 0;
     PdfPrintDialogSupport::RenderFunction m_renderFunction;
     PdfPrintService::Result m_printResult;
     QPrinter m_printer;
@@ -94,6 +105,9 @@ private:
     QLabel* m_statusLabel = nullptr;
     QPrintPreviewWidget* m_previewWidget = nullptr;
     QPushButton* m_printButton = nullptr;
+#ifdef Q_OS_WIN
+    QPushButton* m_nativePrintButton = nullptr;
+#endif
     QPushButton* m_cancelButton = nullptr;
 
     bool m_hasPrinters = false;

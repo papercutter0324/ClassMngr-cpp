@@ -14,6 +14,9 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPdfDocument>
+#ifdef Q_OS_WIN
+#include <QPrintDialog>
+#endif
 #include <QPrintPreviewWidget>
 #include <QPrinterInfo>
 #include <QPushButton>
@@ -87,11 +90,13 @@ PdfPrintDialog::PdfPrintDialog(
     QWidget* parent,
     QPdfDocument* document,
     const QString& documentPath,
-    PdfPrintDialogSupport::RenderFunction renderFunction
+    PdfPrintDialogSupport::RenderFunction renderFunction,
+    int currentPageIndex
     )
     : QDialog(parent)
     , m_document(document)
     , m_documentPath(documentPath)
+    , m_currentPageIndex(currentPageIndex)
     , m_renderFunction(std::move(renderFunction))
     , m_printResult{
           PdfPrintService::Status::Canceled,
@@ -352,6 +357,16 @@ void PdfPrintDialog::buildUi()
         UiRoles::Primary
         );
 
+#ifdef Q_OS_WIN
+    m_nativePrintButton =
+        new TextFitPushButton(
+            tr("Use Windows Print Dialog"),
+            optionsPanel
+            );
+    optionsLayout->addWidget(m_nativePrintButton);
+    optionsLayout->addSpacing(8);
+#endif
+
     m_cancelButton =
         new TextFitPushButton(
             tr("Cancel"),
@@ -485,6 +500,15 @@ void PdfPrintDialog::connectSignals()
         &PdfPrintDialog::printDocument
         );
 
+#ifdef Q_OS_WIN
+    connect(
+        m_nativePrintButton,
+        &QPushButton::clicked,
+        this,
+        &PdfPrintDialog::printWithNativeSystem
+        );
+#endif
+
     connect(
         m_cancelButton,
         &QPushButton::clicked,
@@ -613,6 +637,13 @@ void PdfPrintDialog::updatePageRangeControls()
 
 void PdfPrintDialog::updateValidation()
 {
+#ifdef Q_OS_WIN
+    if (m_nativePrintButton)
+    {
+        m_nativePrintButton->setEnabled(m_hasPrinters);
+    }
+#endif
+
     bool ok = false;
     QString errorMessage;
     [[maybe_unused]] const QList<int> selectedPages =
@@ -693,6 +724,105 @@ void PdfPrintDialog::printDocument()
     accept();
 }
 
+#ifdef Q_OS_WIN
+void PdfPrintDialog::printWithNativeSystem()
+{
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::NativeFormat);
+
+    if (m_hasPrinters)
+    {
+        printer.setPrinterName(
+            m_printerCombo->currentData().toString()
+            );
+    }
+
+    if (!printer.isValid())
+    {
+        m_statusLabel->setText(
+            tr("No valid printer is available.")
+            );
+        return;
+    }
+
+    printer.setDocName(
+        printJobTitle()
+        );
+    printer.setCreator(
+        QStringLiteral("ClassMngr")
+        );
+    printer.setCopyCount(
+        m_copiesSpin->value()
+        );
+    printer.setColorMode(
+        m_colorCombo->currentData().toInt() == ColorModeBlackAndWhite
+            ? QPrinter::GrayScale
+            : QPrinter::Color
+        );
+    printer.setDuplex(
+        m_twoSidedCheck->isChecked()
+            ? QPrinter::DuplexLongSide
+            : QPrinter::DuplexNone
+        );
+
+    const auto pageSizeId =
+        static_cast<QPageSize::PageSizeId>(
+            m_paperSizeCombo->currentData().toInt()
+            );
+    printer.setPageSize(
+        QPageSize(pageSizeId)
+        );
+
+    const int pageCount =
+        m_document ? m_document->pageCount() : 0;
+
+    QPrintDialog dialog(
+        &printer,
+        this
+        );
+    dialog.setWindowTitle(
+        printJobTitle()
+        );
+    dialog.setMinMax(
+        1,
+        pageCount
+        );
+    dialog.setFromTo(
+        1,
+        pageCount
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    PdfPrintDialogSupport::RenderOptions options;
+    options.pageIndexes =
+        pageIndexesFromNativePrinterRange(
+            printer
+            );
+    options.grayscale =
+        printer.colorMode() == QPrinter::GrayScale;
+    options.fitToPage =
+        m_fitToPageCheck->isChecked();
+
+    m_printResult =
+        m_renderFunction(
+            printer,
+            options
+            );
+
+    if (m_printResult.status == PdfPrintService::Status::Failed)
+    {
+        m_statusLabel->setText(m_printResult.message);
+        return;
+    }
+
+    accept();
+}
+#endif
+
 void PdfPrintDialog::handlePreviewPaintRequested(
     QPrinter* printer
     )
@@ -766,6 +896,73 @@ QList<int> PdfPrintDialog::allPageIndexes() const
 
     return pages;
 }
+
+#ifdef Q_OS_WIN
+QList<int> PdfPrintDialog::pageIndexesFromNativePrinterRange(
+    const QPrinter& printer
+    ) const
+{
+    const int pageCount =
+        m_document ? m_document->pageCount() : 0;
+
+    if (pageCount <= 0)
+    {
+        return {};
+    }
+
+    if (printer.printRange() == QPrinter::CurrentPage)
+    {
+        return {
+            std::clamp(
+                m_currentPageIndex,
+                0,
+                pageCount - 1
+                )
+        };
+    }
+
+    if (printer.printRange() != QPrinter::PageRange)
+    {
+        return allPageIndexes();
+    }
+
+    const int fromPage =
+        printer.fromPage();
+    const int toPage =
+        printer.toPage();
+
+    if (
+        fromPage < 1
+        || toPage < 1
+        || fromPage > toPage
+        )
+    {
+        return allPageIndexes();
+    }
+
+    QList<int> pages;
+    const int firstPage =
+        std::clamp(
+            fromPage,
+            1,
+            pageCount
+            );
+    const int lastPage =
+        std::clamp(
+            toPage,
+            firstPage,
+            pageCount
+            );
+
+    pages.reserve(lastPage - firstPage + 1);
+    for (int pageNumber = firstPage; pageNumber <= lastPage; ++pageNumber)
+    {
+        pages.append(pageNumber - 1);
+    }
+
+    return pages;
+}
+#endif
 
 QList<int> PdfPrintDialog::selectedPageIndexes(
     bool* ok,
