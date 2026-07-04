@@ -1,7 +1,8 @@
 #include "calendar_event_model.h"
 
-#include "domain/models/calendar_event.h"
 #include "data/data_service.h"
+#include "domain/models/calendar_event.h"
+#include "features/my_info/calendar_event_campus_filter.h"
 
 #include <QDateTime>
 #include <QVariantMap>
@@ -54,6 +55,18 @@ QVariantList CalendarEventModel::eventsForDate(
 
     for (const CalendarEvent& event : events)
     {
+        if (
+            !CalendarEventCampusFilter::eventMatchesCampus(
+                event,
+                m_currentCampusCodes,
+                m_allCampusCodes,
+                m_showAllCampuses
+                )
+            )
+        {
+            continue;
+        }
+
         QVariantMap value;
 
         value.insert(
@@ -67,6 +80,10 @@ QVariantList CalendarEventModel::eventsForDate(
         value.insert(
             QStringLiteral("eventType"),
             event.eventType
+            );
+        value.insert(
+            QStringLiteral("timeStatus"),
+            event.timeStatus
             );
         value.insert(
             QStringLiteral("allDay"),
@@ -85,6 +102,31 @@ QVariantList CalendarEventModel::eventsForDate(
     }
 
     return values;
+}
+
+void CalendarEventModel::setCampusFilter(
+    const QStringList& currentCampusCodes,
+    const QStringList& allCampusCodes,
+    bool showAllCampuses
+    )
+{
+    if (
+        m_currentCampusCodes == currentCampusCodes
+        && m_allCampusCodes == allCampusCodes
+        && m_showAllCampuses == showAllCampuses
+        )
+    {
+        return;
+    }
+
+    m_currentCampusCodes =
+        currentCampusCodes;
+    m_allCampusCodes =
+        allCampusCodes;
+    m_showAllCampuses =
+        showAllCampuses;
+
+    reload();
 }
 
 void CalendarEventModel::reload()

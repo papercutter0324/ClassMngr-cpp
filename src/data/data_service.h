@@ -204,6 +204,8 @@ public:
         int eventId
         );
 
+    void deleteAllCalendarEvents();
+
 
 
     // =====================================================

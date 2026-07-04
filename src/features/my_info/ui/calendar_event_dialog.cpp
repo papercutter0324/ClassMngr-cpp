@@ -17,6 +17,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSignalBlocker>
 #include <QSpacerItem>
 #include <QTimeEdit>
 #include <QVBoxLayout>
@@ -59,6 +60,12 @@ CalendarEvent CalendarEventDialog::eventData() const
     event.allDay =
         m_allDayCheck
         && m_allDayCheck->isChecked();
+    event.timeStatus =
+        !event.allDay
+        && m_unconfirmedTimeCheck
+        && m_unconfirmedTimeCheck->isChecked()
+            ? QStringLiteral("Unconfirmed")
+            : QStringLiteral("Timed");
 
     if (event.allDay)
     {
@@ -66,6 +73,13 @@ CalendarEvent CalendarEventDialog::eventData() const
             QTime(0, 0);
         event.endTime =
             QTime(23, 59);
+    }
+    else if (event.timeStatus == QStringLiteral("Unconfirmed"))
+    {
+        event.startTime =
+            QTime();
+        event.endTime =
+            QTime();
     }
 
     event.eventType =
@@ -181,6 +195,11 @@ void CalendarEventDialog::buildUi()
     m_allDayCheck =
         new QCheckBox(
             tr("All Day Event"),
+            this
+            );
+    m_unconfirmedTimeCheck =
+        new QCheckBox(
+            tr("Uncomfirmed Time"),
             this
             );
     m_eventTypeGroup =
@@ -329,6 +348,13 @@ void CalendarEventDialog::buildUi()
         1,
         3
         );
+    timeLayout->addWidget(
+        m_unconfirmedTimeCheck,
+        3,
+        0,
+        1,
+        3
+        );
 
     timeLayout->setColumnMinimumWidth(
         1,
@@ -421,6 +447,12 @@ void CalendarEventDialog::buildUi()
         this,
         &CalendarEventDialog::updateTimeFieldAvailability
         );
+    connect(
+        m_unconfirmedTimeCheck,
+        &QCheckBox::toggled,
+        this,
+        &CalendarEventDialog::updateTimeFieldAvailability
+        );
 
     mainLayout->addWidget(m_buttons);
 }
@@ -456,6 +488,11 @@ void CalendarEventDialog::loadEvent()
     m_allDayCheck->setChecked(
         m_event.allDay
         );
+    m_unconfirmedTimeCheck->setChecked(
+        !m_event.allDay
+        && normalizedCalendarEventTimeStatus(m_event.timeStatus)
+            == QStringLiteral("Unconfirmed")
+        );
     updateTimeFieldAvailability();
 
     const QString selectedEventType =
@@ -483,8 +520,35 @@ void CalendarEventDialog::updateTimeFieldAvailability()
     const bool allDay =
         m_allDayCheck
         && m_allDayCheck->isChecked();
+    const bool unconfirmed =
+        m_unconfirmedTimeCheck
+        && m_unconfirmedTimeCheck->isChecked();
 
-    if (allDay)
+    if (allDay && unconfirmed)
+    {
+        const auto* senderObject =
+            sender();
+
+        if (senderObject == m_allDayCheck)
+        {
+            const QSignalBlocker blocker(m_unconfirmedTimeCheck);
+            m_unconfirmedTimeCheck->setChecked(false);
+        }
+        else
+        {
+            const QSignalBlocker blocker(m_allDayCheck);
+            m_allDayCheck->setChecked(false);
+        }
+    }
+
+    const bool effectiveAllDay =
+        m_allDayCheck
+        && m_allDayCheck->isChecked();
+    const bool effectiveUnconfirmed =
+        m_unconfirmedTimeCheck
+        && m_unconfirmedTimeCheck->isChecked();
+
+    if (effectiveAllDay)
     {
         m_startTimeEdit->setTime(
             QTime(0, 0)
@@ -495,9 +559,11 @@ void CalendarEventDialog::updateTimeFieldAvailability()
     }
 
     m_startTimeEdit->setEnabled(
-        !allDay
+        !effectiveAllDay
+        && !effectiveUnconfirmed
         );
     m_endTimeEdit->setEnabled(
-        !allDay
+        !effectiveAllDay
+        && !effectiveUnconfirmed
         );
 }

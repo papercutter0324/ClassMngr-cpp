@@ -38,6 +38,8 @@ public:
         int eventId
         );
 
+    void deleteAllCalendarEvents();
+
 private:
     QSqlDatabase& m_database;
 };

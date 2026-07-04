@@ -161,6 +161,7 @@ private:
         bool existingEvent
         );
     void refreshUpcomingEvents();
+    void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,
         const QList<CalendarEvent>& events
@@ -193,6 +194,12 @@ private:
     QString upcomingEventTimeText(
         const CalendarEvent& event
         ) const;
+    bool calendarEventVisibleForCampus(
+        const CalendarEvent& event
+        ) const;
+    bool showAllCalendarCampuses() const;
+    QStringList currentCampusCodes() const;
+    QStringList allCampusCodes() const;
     QWidget* createUpcomingEventRow(
         const CalendarEvent& event,
         QWidget* parent

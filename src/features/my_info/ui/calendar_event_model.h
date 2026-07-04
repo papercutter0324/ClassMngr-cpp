@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QStringList>
 #include <QVariantList>
 
 class DataService;
@@ -24,6 +25,12 @@ public:
         int day
         ) const;
 
+    void setCampusFilter(
+        const QStringList& currentCampusCodes,
+        const QStringList& allCampusCodes,
+        bool showAllCampuses
+        );
+
     void reload();
 
 signals:
@@ -31,5 +38,8 @@ signals:
 
 private:
     DataService* m_dataService = nullptr;
+    QStringList m_currentCampusCodes;
+    QStringList m_allCampusCodes;
+    bool m_showAllCampuses = false;
     int m_revision = 0;
 };

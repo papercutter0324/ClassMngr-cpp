@@ -528,13 +528,14 @@ QString calendarEventImportSignature(
     const CalendarEvent& event
     )
 {
-    return QStringLiteral("%1|%2|%3|%4|%5")
+    return QStringLiteral("%1|%2|%3|%4|%5|%6")
         .arg(
             event.title.simplified(),
             normalizedCalendarEventType(event.eventType),
             event.startDate.toString(Qt::ISODate),
             event.endDate.toString(Qt::ISODate),
-            event.allDay ? QStringLiteral("1") : QStringLiteral("0")
+            event.allDay ? QStringLiteral("1") : QStringLiteral("0"),
+            normalizedCalendarEventTimeStatus(event.timeStatus)
             );
 }
 
@@ -550,7 +551,13 @@ CalendarEvent calendarEvent(
     event.eventType =
         normalizedCalendarEventType(eventType);
     event.allDay =
-        true;
+        event.eventType == QStringLiteral("Holiday")
+        || event.eventType == QStringLiteral("Vacation")
+        || event.eventType == QStringLiteral("Meeting");
+    event.timeStatus =
+        event.allDay
+            ? QStringLiteral("Timed")
+            : QStringLiteral("Unknown");
     event.startDate =
         date;
     event.endDate =

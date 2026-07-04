@@ -591,6 +591,7 @@ void DataService::createTables()
 
             title TEXT NOT NULL,
             event_type TEXT DEFAULT 'Other',
+            time_status TEXT DEFAULT 'Timed',
             all_day INTEGER DEFAULT 0,
             start_date TEXT,
             start_time TEXT,
@@ -609,6 +610,13 @@ void DataService::createTables()
         QStringLiteral("calendar_events"),
         QStringLiteral("event_type"),
         QStringLiteral("TEXT DEFAULT 'Other'")
+        );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("calendar_events"),
+        QStringLiteral("time_status"),
+        QStringLiteral("TEXT DEFAULT 'Timed'")
         );
 
     ensureTableColumn(
@@ -949,6 +957,14 @@ void DataService::deleteCalendarEvent(
         m_calendarEventRepository->deleteCalendarEvent(
             eventId
             );
+    }
+}
+
+void DataService::deleteAllCalendarEvents()
+{
+    if (m_calendarEventRepository)
+    {
+        m_calendarEventRepository->deleteAllCalendarEvents();
     }
 }
 

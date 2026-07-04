@@ -20,6 +20,10 @@ CalendarEvent eventFromQuery(
         normalizedCalendarEventType(
             query.value("event_type").toString()
             );
+    event.timeStatus =
+        normalizedCalendarEventTimeStatus(
+            query.value("time_status").toString()
+            );
     event.allDay =
         query.value("all_day").toBool();
     event.startDate =
@@ -72,6 +76,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
             id,
             title,
             event_type,
+            time_status,
             all_day,
             start_date,
             start_time,
@@ -131,6 +136,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
             id,
             title,
             event_type,
+            time_status,
             all_day,
             start_date,
             start_time,
@@ -190,6 +196,7 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
             id,
             title,
             event_type,
+            time_status,
             all_day,
             start_date,
             start_time,
@@ -243,6 +250,7 @@ CalendarEvent CalendarEventRepository::getCalendarEvent(
             id,
             title,
             event_type,
+            time_status,
             all_day,
             start_date,
             start_time,
@@ -280,6 +288,12 @@ int CalendarEventRepository::saveCalendarEvent(
         normalizedCalendarEventType(
             event.eventType
             );
+    const QString timeStatus =
+        event.allDay
+            ? QStringLiteral("Timed")
+            : normalizedCalendarEventTimeStatus(
+                event.timeStatus
+                );
 
     if (event.id > 0)
     {
@@ -288,6 +302,7 @@ int CalendarEventRepository::saveCalendarEvent(
             SET
                 title=?,
                 event_type=?,
+                time_status=?,
                 all_day=?,
                 start_date=?,
                 start_time=?,
@@ -298,6 +313,7 @@ int CalendarEventRepository::saveCalendarEvent(
 
         query.addBindValue(event.title);
         query.addBindValue(eventType);
+        query.addBindValue(timeStatus);
         query.addBindValue(event.allDay ? 1 : 0);
         query.addBindValue(event.startDate.toString(Qt::ISODate));
         query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
@@ -321,17 +337,19 @@ int CalendarEventRepository::saveCalendarEvent(
         INSERT INTO calendar_events (
             title,
             event_type,
+            time_status,
             all_day,
             start_date,
             start_time,
             end_date,
             end_time
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(event.title);
     query.addBindValue(eventType);
+    query.addBindValue(timeStatus);
     query.addBindValue(event.allDay ? 1 : 0);
     query.addBindValue(event.startDate.toString(Qt::ISODate));
     query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
@@ -372,6 +390,18 @@ void CalendarEventRepository::deleteCalendarEvent(
     {
         qWarning()
             << "Failed to delete calendar event:"
+            << query.lastError().text();
+    }
+}
+
+void CalendarEventRepository::deleteAllCalendarEvents()
+{
+    QSqlQuery query(m_database);
+
+    if (!query.exec(QStringLiteral("DELETE FROM calendar_events")))
+    {
+        qWarning()
+            << "Failed to delete calendar events:"
             << query.lastError().text();
     }
 }

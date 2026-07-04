@@ -18,6 +18,7 @@ void createCalendarEventsTable(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
                 event_type TEXT DEFAULT 'Other',
+                time_status TEXT DEFAULT 'Timed',
                 all_day INTEGER DEFAULT 0,
                 start_date TEXT,
                 start_time TEXT,

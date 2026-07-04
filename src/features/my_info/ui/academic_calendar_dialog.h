@@ -16,6 +16,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
+class QTabWidget;
 
 class AcademicCalendarDialog : public QDialog
 {
@@ -35,6 +36,7 @@ signals:
 private slots:
     void accept() override;
     void restoreDefaults();
+    void resetCalendarEvents();
     void linkWinterSpring(bool linked);
     void importCalendarEvents();
     void handleImportFinished(
@@ -49,7 +51,12 @@ private:
     static constexpr int SchoolCount = 2;
 
     void buildUi();
+    QWidget* buildOptionsTab();
+    QWidget* buildTermSchedulesTab();
+    QWidget* buildImportTab();
     void loadSchedules();
+    void loadOptions();
+    void saveOptions();
     void refreshFields();
     void commitDate(int schoolIndex, int termIndex);
     void clearDate(int schoolIndex, int termIndex);
@@ -59,6 +66,7 @@ private:
     [[nodiscard]] QString termName(int termIndex) const;
 
     AcademicCalendarProvider* m_provider = nullptr;
+    DataService* m_dataService = nullptr;
     CalendarEventImportService* m_importService = nullptr;
     int m_termYear = AcademicCalendarSchedule::FirstTermYear;
     bool m_refreshing = false;
@@ -66,10 +74,12 @@ private:
     std::array<AcademicYearSchedule, SchoolCount> m_schedules;
     std::array<std::array<QDateEdit*, AcademicTermCount>, SchoolCount> m_dateEdits{};
     std::array<std::array<QSpinBox*, AcademicTermCount>, SchoolCount> m_weekEdits{};
+    QCheckBox* m_showAllCampusesCheck = nullptr;
     QCheckBox* m_linkCheck = nullptr;
     QLineEdit* m_importUrlEdit = nullptr;
     QLabel* m_importStatusLabel = nullptr;
     QPushButton* m_importButton = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_restoreButton = nullptr;
+    QPushButton* m_resetEventsButton = nullptr;
 };

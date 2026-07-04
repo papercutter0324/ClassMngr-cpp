@@ -10,6 +10,7 @@ struct CalendarEvent
     int id = -1;
     QString title;
     QString eventType = QStringLiteral("Other");
+    QString timeStatus = QStringLiteral("Timed");
     bool allDay = false;
     QDate startDate;
     QTime startTime;
@@ -39,4 +40,25 @@ inline QString normalizedCalendarEventType(
     return calendarEventTypes().contains(trimmed)
         ? trimmed
         : QStringLiteral("Other");
+}
+
+inline QStringList calendarEventTimeStatuses()
+{
+    return {
+        QStringLiteral("Timed"),
+        QStringLiteral("Unknown"),
+        QStringLiteral("Unconfirmed")
+    };
+}
+
+inline QString normalizedCalendarEventTimeStatus(
+    const QString& timeStatus
+    )
+{
+    const QString trimmed =
+        timeStatus.trimmed();
+
+    return calendarEventTimeStatuses().contains(trimmed)
+        ? trimmed
+        : QStringLiteral("Timed");
 }

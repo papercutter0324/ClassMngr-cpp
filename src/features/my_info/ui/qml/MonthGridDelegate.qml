@@ -16,14 +16,46 @@ Item {
     required property int month
     required property int day
     required property int visibleMonth
+    required property int gridRow
+    required property int gridColumn
+    required property int rowCount
+    required property int columnCount
     required property color cellBackground
+    required property color gridLineColor
     required property color textColor
     required property color inactiveTextColor
     required property color accentColor
     required property color accentTextColor
 
     readonly property bool activeMonth: month === visibleMonth
+    readonly property bool nextCellActive: {
+        if (root.gridColumn >= root.columnCount - 1)
+            return false
+
+        const next = new Date(root.year, root.month, root.day + 1)
+        return next.getMonth() === root.visibleMonth
+    }
+    readonly property bool lowerCellActive: {
+        if (root.gridRow >= root.rowCount - 1)
+            return false
+
+        const lower = new Date(root.year, root.month, root.day + 7)
+        return lower.getMonth() === root.visibleMonth
+    }
     readonly property int eventRevision: eventProvider ? eventProvider.revision : 0
+    readonly property var dayEvents: {
+        root.eventRevision
+        return root.activeMonth && root.eventProvider
+            ? root.eventProvider.eventsForDate(root.year, root.month + 1, root.day)
+            : []
+    }
+    readonly property bool redDay: {
+        for (let index = 0; index < root.dayEvents.length; ++index) {
+            if (root.dayEvents[index].eventType === "Holiday")
+                return true
+        }
+        return false
+    }
 
     signal dayActivated(int year, int month, int day)
     signal eventActivated(int eventId)
@@ -67,6 +99,13 @@ Item {
                 z: -1
                 visible: root.today
             }
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#cf3f35"
+                opacity: root.redDay && !root.today ? 0.16 : 0
+                z: -2
+            }
         }
 
         ListView {
@@ -81,23 +120,29 @@ Item {
 
             model: {
                 root.eventRevision
-                return root.activeMonth && root.eventProvider
-                    ? root.eventProvider.eventsForDate(root.year, root.month + 1, root.day)
-                    : []
+                return root.dayEvents
             }
 
             delegate: ItemDelegate {
                 id: itemDelegate
 
                 required property var modelData
+                readonly property bool marqueeActive: hovered
+                                                       && eventText.implicitWidth > eventClip.width
 
                 width: listView.width
+                implicitHeight: Math.max(
+                                    20,
+                                    eventText.implicitHeight
+                                    + topPadding
+                                    + bottomPadding)
+                height: implicitHeight
                 text: modelData.title
                 font.pixelSize: Qt.application.font.pixelSize * 0.8
                 leftPadding: 4
                 rightPadding: 4
-                topPadding: 4
-                bottomPadding: 4
+                topPadding: 3
+                bottomPadding: 3
 
                 onClicked: root.eventActivated(modelData.id)
 
@@ -106,15 +151,96 @@ Item {
                     radius: 3
                 }
 
-                contentItem: Text {
-                    text: itemDelegate.text
-                    color: root.accentTextColor
-                    elide: Text.ElideRight
-                    font: itemDelegate.font
-                    verticalAlignment: Text.AlignVCenter
+                contentItem: Item {
+                    Item {
+                        id: eventClip
+                        anchors.fill: parent
+                        clip: true
+
+                        Text {
+                            id: eventText
+                            text: itemDelegate.text
+                            color: root.accentTextColor
+                            elide: itemDelegate.marqueeActive ? Text.ElideNone : Text.ElideRight
+                            font: itemDelegate.font
+                            verticalAlignment: Text.AlignVCenter
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: itemDelegate.marqueeActive
+                                   ? implicitWidth
+                                   : eventClip.width
+                            height: eventClip.height
+                            x: itemDelegate.marqueeActive ? -marqueeAnimation.offset : 0
+
+                        }
+
+                        SequentialAnimation {
+                            id: marqueeAnimation
+                            property real offset: 0
+                            running: itemDelegate.marqueeActive
+                            loops: Animation.Infinite
+
+                            PauseAnimation { duration: 250 }
+                            NumberAnimation {
+                                target: marqueeAnimation
+                                property: "offset"
+                                from: 0
+                                to: Math.max(0, eventText.implicitWidth - eventClip.width + 24)
+                                duration: Math.max(1200, (eventText.implicitWidth - eventClip.width) * 42)
+                            }
+                            PauseAnimation { duration: 350 }
+                            ScriptAction { script: marqueeAnimation.offset = 0 }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: root.redDay ? "#f5d7d2" : root.cellBackground
+        opacity: root.activeMonth ? 1 : 0
+        z: -1
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 1
+        color: root.gridLineColor
+        visible: root.activeMonth
+        z: 2
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: 1
+        color: root.gridLineColor
+        visible: root.activeMonth
+        z: 2
+    }
+
+    Rectangle {
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: 1
+        color: root.gridLineColor
+        visible: root.activeMonth && !root.nextCellActive
+        z: 2
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 1
+        color: root.gridLineColor
+        visible: root.activeMonth && !root.lowerCellActive
+        z: 2
     }
 
     MouseArea {

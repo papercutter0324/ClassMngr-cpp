@@ -12,6 +12,8 @@
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
+#include "features/my_info/calendar_event_campus_filter.h"
+#include "features/my_info/calendar_settings_keys.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_class_navigation.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -25,10 +27,12 @@
 #include <utility>
 
 #include <QCheckBox>
+#include <QBasicTimer>
 #include <QColorDialog>
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
+#include <QEnterEvent>
 #include <QEvent>
 #include <QFont>
 #include <QFrame>
@@ -37,6 +41,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
+#include <QPainter>
 #include <QPushButton>
 #include <QQmlContext>
 #include <QQmlEngine>
@@ -50,6 +55,7 @@
 #include <QStringList>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTimerEvent>
 #include <QTextEdit>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -74,6 +80,159 @@ struct ClassSummary
     Teacher teacher;
     QString displayName;
     int studentCount = 0;
+};
+
+class HoverMarqueeLabel : public QLabel
+{
+public:
+    explicit HoverMarqueeLabel(
+        QWidget* parent = nullptr
+        )
+        : QLabel(parent)
+    {
+        setMouseTracking(true);
+    }
+
+    QSize minimumSizeHint() const override
+    {
+        return QSize(
+            0,
+            QLabel::minimumSizeHint().height()
+            );
+    }
+
+    QSize sizeHint() const override
+    {
+        return QSize(
+            160,
+            QLabel::sizeHint().height()
+            );
+    }
+
+    void setMarqueeActive(bool active)
+    {
+        if (m_hovered == active)
+        {
+            return;
+        }
+
+        m_hovered = active;
+
+        if (!m_hovered)
+        {
+            m_offset = 0;
+            m_timer.stop();
+            update();
+            return;
+        }
+
+        updateMarqueeState();
+    }
+
+protected:
+    void enterEvent(
+        QEnterEvent* event
+        ) override
+    {
+        QLabel::enterEvent(event);
+        setMarqueeActive(true);
+    }
+
+    void leaveEvent(
+        QEvent* event
+        ) override
+    {
+        QLabel::leaveEvent(event);
+        setMarqueeActive(false);
+    }
+
+    void resizeEvent(
+        QResizeEvent* event
+        ) override
+    {
+        QLabel::resizeEvent(event);
+        updateMarqueeState();
+    }
+
+    void timerEvent(
+        QTimerEvent* event
+        ) override
+    {
+        if (event->timerId() != m_timer.timerId())
+        {
+            QLabel::timerEvent(event);
+            return;
+        }
+
+        const int textWidth =
+            fontMetrics().horizontalAdvance(text());
+        const int gap = 32;
+
+        m_offset =
+            (m_offset + 1) % qMax(1, textWidth + gap);
+        update();
+    }
+
+    void paintEvent(
+        QPaintEvent* event
+        ) override
+    {
+        const int textWidth =
+            fontMetrics().horizontalAdvance(text());
+
+        if (!m_hovered || textWidth <= contentsRect().width())
+        {
+            QLabel::paintEvent(event);
+            return;
+        }
+
+        QPainter painter(this);
+        painter.setFont(font());
+        painter.setPen(palette().color(QPalette::WindowText));
+        painter.setClipRect(contentsRect());
+
+        const QRect rect =
+            contentsRect();
+        const int baseline =
+            rect.y()
+            + (rect.height() + fontMetrics().ascent() - fontMetrics().descent()) / 2;
+        const int gap = 32;
+        const int x =
+            rect.x() - m_offset;
+
+        painter.drawText(
+            x,
+            baseline,
+            text()
+            );
+        painter.drawText(
+            x + textWidth + gap,
+            baseline,
+            text()
+            );
+    }
+
+private:
+    void updateMarqueeState()
+    {
+        const bool shouldRun =
+            m_hovered
+            && fontMetrics().horizontalAdvance(text()) > contentsRect().width();
+
+        if (shouldRun && !m_timer.isActive())
+        {
+            m_timer.start(35, this);
+        }
+        else if (!shouldRun && m_timer.isActive())
+        {
+            m_timer.stop();
+            m_offset = 0;
+        }
+    }
+
+    QBasicTimer m_timer;
+    bool m_hovered = false;
+    int m_offset = 0;
 };
 
 DataService* openDataService(
@@ -1122,6 +1281,30 @@ bool MyInfoPage::eventFilter(
 {
     if (
         event
+        && watched
+        && (
+            event->type() == QEvent::Enter
+            || event->type() == QEvent::Leave
+            )
+        )
+    {
+        auto* title =
+            dynamic_cast<HoverMarqueeLabel*>(
+                watched
+                    ->property("calendarEventTitleLabel")
+                    .value<QObject*>()
+                );
+
+        if (title)
+        {
+            title->setMarqueeActive(
+                event->type() == QEvent::Enter
+                );
+        }
+    }
+
+    if (
+        event
         && event->type() == QEvent::MouseButtonRelease
         && watched
         )
@@ -1150,6 +1333,8 @@ void MyInfoPage::handleEditableChanged()
     {
         return;
     }
+
+    updateCalendarCampusFilter();
 
     m_dirty = true;
 
@@ -1282,7 +1467,10 @@ void MyInfoPage::handleCalendarConfigureRequested(
         }
         );
 
-    dialog.exec();
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        updateCalendarCampusFilter();
+    }
 }
 
 void MyInfoPage::handleCalendarDisplayedMonthChanged(
@@ -1818,7 +2006,7 @@ void MyInfoPage::buildMonthlyCalendarSection()
     m_calendarView->setResizeMode(
         QQuickWidget::SizeRootObjectToView
         );
-    m_calendarView->setMinimumHeight(560);
+    m_calendarView->setMinimumHeight(840);
     m_calendarView->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Expanding
@@ -2099,6 +2287,21 @@ void MyInfoPage::refreshUpcomingEvents()
     }
 }
 
+void MyInfoPage::updateCalendarCampusFilter()
+{
+    if (!m_calendarModel)
+    {
+        return;
+    }
+
+    m_calendarModel->setCampusFilter(
+        currentCampusCodes(),
+        allCampusCodes(),
+        showAllCalendarCampuses()
+        );
+    refreshUpcomingEvents();
+}
+
 void MyInfoPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
     const QList<CalendarEvent>& events
@@ -2132,6 +2335,7 @@ void MyInfoPage::renderUpcomingEvents(
             activeTypes.contains(
                 normalizedCalendarEventType(event.eventType)
                 )
+            && calendarEventVisibleForCampus(event)
             )
         {
             filteredEvents.append(event);
@@ -2443,6 +2647,19 @@ QString MyInfoPage::upcomingEventTimeText(
         return tr("All day");
     }
 
+    const QString timeStatus =
+        normalizedCalendarEventTimeStatus(event.timeStatus);
+
+    if (timeStatus == QStringLiteral("Unknown"))
+    {
+        return tr("Unknown Time");
+    }
+
+    if (timeStatus == QStringLiteral("Unconfirmed"))
+    {
+        return tr("Uncomfirmed Time");
+    }
+
     if (!event.startTime.isValid())
     {
         return QString();
@@ -2477,6 +2694,97 @@ QString MyInfoPage::upcomingEventTimeText(
             );
 }
 
+bool MyInfoPage::calendarEventVisibleForCampus(
+    const CalendarEvent& event
+    ) const
+{
+    return CalendarEventCampusFilter::eventMatchesCampus(
+        event,
+        currentCampusCodes(),
+        allCampusCodes(),
+        showAllCalendarCampuses()
+        );
+}
+
+bool MyInfoPage::showAllCalendarCampuses() const
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    return dataService
+        && settingToBool(
+            dataService->loadSetting(
+                CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                false
+                ),
+            false
+            );
+}
+
+QStringList MyInfoPage::currentCampusCodes() const
+{
+    QStringList codes;
+
+    if (m_campusCombo && m_campusCombo->currentIndex() >= 0)
+    {
+        codes.append(
+            m_campusCombo->currentData().toString()
+            );
+        codes.append(
+            m_campusCombo->currentText()
+            );
+    }
+
+    const QString currentId =
+        m_campusCombo
+        && m_campusCombo->currentIndex() >= 0
+            ? m_campusCombo->currentData().toString()
+            : QString();
+    const QString currentName =
+        m_campusCombo
+        && m_campusCombo->currentIndex() >= 0
+            ? m_campusCombo->currentText()
+            : QString();
+
+    const QList<CampusInfo> campuses =
+        campusRepository().loadCampuses();
+
+    for (const CampusInfo& campus : campuses)
+    {
+        if (
+            campus.id.compare(currentId, Qt::CaseInsensitive) == 0
+            || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
+            || campus.campusName.compare(currentName, Qt::CaseInsensitive) == 0
+            )
+        {
+            codes.append(campus.campusCode);
+            codes.append(campus.id);
+            codes.append(campusDisplayName(campus));
+        }
+    }
+
+    codes.removeAll(QString());
+    codes.removeDuplicates();
+    return codes;
+}
+
+QStringList MyInfoPage::allCampusCodes() const
+{
+    QStringList codes;
+    const QList<CampusInfo> campuses =
+        campusRepository().loadCampuses();
+
+    for (const CampusInfo& campus : campuses)
+    {
+        codes.append(campus.campusCode);
+        codes.append(campus.id);
+    }
+
+    codes.removeAll(QString());
+    codes.removeDuplicates();
+    return codes;
+}
+
 QWidget* MyInfoPage::createUpcomingEventRow(
     const CalendarEvent& event,
     QWidget* parent
@@ -2490,6 +2798,7 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     row->setCursor(
         Qt::PointingHandCursor
         );
+    row->setMouseTracking(true);
     row->setMinimumHeight(38);
     row->setSizePolicy(
         QSizePolicy::Expanding,
@@ -2524,7 +2833,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             upcomingEventDateText(event),
             row
             );
-    date->setMinimumWidth(96);
+    date->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Preferred
+        );
     date->setCursor(
         Qt::PointingHandCursor
         );
@@ -2539,7 +2851,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             upcomingEventTimeText(event),
             row
             );
-    time->setMinimumWidth(116);
+    time->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Preferred
+        );
     time->setCursor(
         Qt::PointingHandCursor
         );
@@ -2550,14 +2865,13 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     time->installEventFilter(this);
 
     auto* title =
-        new QLabel(
-            event.title,
-            row
-            );
+        new HoverMarqueeLabel(row);
+    title->setText(event.title);
     title->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Preferred
         );
+    title->setMinimumWidth(0);
     title->setTextInteractionFlags(
         Qt::NoTextInteraction
         );
@@ -2587,9 +2901,14 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         eventTypeBadgeStyle(event.eventType)
         );
 
+    row->setProperty(
+        "calendarEventTitleLabel",
+        QVariant::fromValue<QObject*>(title)
+        );
+
     layout->addWidget(date);
     layout->addWidget(time);
-    layout->addWidget(title);
+    layout->addWidget(title, 1);
     layout->addWidget(type);
 
     connect(
@@ -2742,6 +3061,7 @@ void MyInfoPage::loadStoredSettings()
 
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
+    updateCalendarCampusFilter();
 }
 
 bool MyInfoPage::saveMyInfoInternal()

@@ -15,6 +15,7 @@ Item {
     property var eventProvider: calendarEventProvider
     property var termProvider: academicCalendarProvider
     // qmllint enable unqualified
+
     property date shownDate: new Date()
     property color toolbarColor: "#536f8a"
     property color toolbarTextColor: "#fbfaf7"
@@ -27,15 +28,49 @@ Item {
     property color gridLineColor: "#cbc9c2"
     property color accentColor: toolbarColor
     property color accentTextColor: toolbarTextColor
+
+    readonly property int weekColumnWidth: 54
+    readonly property int dayHeaderHeight: 40
+
     readonly property int termRevision: termProvider ? termProvider.revision : 0
+    readonly property var calendarLocale: Qt.locale()
+
+    readonly property int visibleRowCount: monthRowCount(
+                                               shownDate.getFullYear(),
+                                               shownDate.getMonth(),
+                                               calendarLocale.firstDayOfWeek)
+
+    readonly property var monthCells: monthCellModel(
+                                         shownDate.getFullYear(),
+                                         shownDate.getMonth(),
+                                         calendarLocale.firstDayOfWeek,
+                                         visibleRowCount)
+
     readonly property bool atFirstMonth: shownDate.getFullYear() < 2026
                                          || (shownDate.getFullYear() === 2026
                                              && shownDate.getMonth() === 0)
+
     readonly property var academicRows: {
         root.termRevision
-        return termProvider
-            ? termProvider.weekRows(grid.year, grid.month, grid.locale.firstDayOfWeek)
-            : []
+
+        if (!termProvider)
+            return []
+
+        const rows =
+            termProvider.weekRows(
+                root.shownDate.getFullYear(),
+                root.shownDate.getMonth(),
+                root.calendarLocale.firstDayOfWeek)
+
+        const visibleRows = []
+
+        for (let index = 0;
+             index < root.visibleRowCount && index < rows.length;
+             ++index) {
+            visibleRows.push(rows[index])
+        }
+
+        return visibleRows
     }
 
     signal dayActivated(int year, int month, int day)
@@ -44,21 +79,60 @@ Item {
     signal displayedMonthChanged(int year, int month)
 
     function moveMonth(delta) {
-        const next = new Date(shownDate.getFullYear(), shownDate.getMonth() + delta, 1)
+        const next = new Date(
+            shownDate.getFullYear(),
+            shownDate.getMonth() + delta,
+            1)
+
         if (next.getFullYear() < 2026)
             shownDate = new Date(2026, 0, 1)
         else
             shownDate = next
     }
 
+    function monthRowCount(year, month, firstDayOfWeek) {
+        const first = new Date(year, month, 1)
+        const last = new Date(year, month + 1, 0)
+        const firstOffset = (first.getDay() - firstDayOfWeek + 7) % 7
+
+        return Math.ceil((firstOffset + last.getDate()) / 7)
+    }
+
+    function monthCellModel(year, month, firstDayOfWeek, rowCount) {
+        const first = new Date(year, month, 1)
+        const firstOffset = (first.getDay() - firstDayOfWeek + 7) % 7
+        const cells = []
+        const today = new Date()
+
+        for (let index = 0; index < rowCount * 7; ++index) {
+            const date = new Date(year, month, 1 - firstOffset + index)
+
+            cells.push({
+                year: date.getFullYear(),
+                month: date.getMonth(),
+                day: date.getDate(),
+                today: date.getFullYear() === today.getFullYear()
+                       && date.getMonth() === today.getMonth()
+                       && date.getDate() === today.getDate()
+            })
+        }
+
+        return cells
+    }
+
     Component.onCompleted: {
         if (shownDate.getFullYear() < 2026)
             shownDate = new Date(2026, 0, 1)
-        root.displayedMonthChanged(shownDate.getFullYear(), shownDate.getMonth() + 1)
+
+        root.displayedMonthChanged(
+            shownDate.getFullYear(),
+            shownDate.getMonth() + 1)
     }
 
     onShownDateChanged: {
-        root.displayedMonthChanged(shownDate.getFullYear(), shownDate.getMonth() + 1)
+        root.displayedMonthChanged(
+            shownDate.getFullYear(),
+            shownDate.getMonth() + 1)
     }
 
     Rectangle {
@@ -72,8 +146,10 @@ Item {
 
         ToolBar {
             id: toolbar
+
             implicitHeight: 48
             Layout.fillWidth: true
+
             palette.buttonText: root.toolbarTextColor
             palette.windowText: root.toolbarTextColor
 
@@ -99,12 +175,14 @@ Item {
                 Label {
                     text: {
                         root.termRevision
+
                         return root.termProvider
                             ? root.termProvider.monthTitle(
                                   root.shownDate.getFullYear(),
                                   root.shownDate.getMonth())
                             : root.shownDate.toLocaleString(Qt.locale(), "MMMM yyyy")
                     }
+
                     color: root.toolbarTextColor
                     font.pixelSize: toolbar.font.pixelSize * 1.12
                     horizontalAlignment: Text.AlignHCenter
@@ -126,14 +204,18 @@ Item {
 
                 ToolButton {
                     id: settingsButton
+
                     text: "\u2699"
                     font.pixelSize: toolbar.font.pixelSize * 1.65
                     palette.buttonText: root.toolbarTextColor
+
                     Layout.preferredWidth: 48
                     Layout.fillHeight: true
+
                     Accessible.name: qsTr("Configure academic terms")
                     ToolTip.text: qsTr("Configure academic terms")
                     ToolTip.visible: hovered
+
                     onClicked: root.configureRequested(
                                    root.shownDate.getFullYear(),
                                    root.shownDate.getMonth() + 1)
@@ -159,13 +241,17 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            // =========================================================
+            // Header row
+            // =========================================================
+
             Rectangle {
                 color: root.headerBackground
+
                 Layout.column: 0
                 Layout.row: 0
-
-                implicitWidth: 54
-                Layout.fillHeight: true
+                Layout.preferredWidth: root.weekColumnWidth
+                Layout.preferredHeight: root.dayHeaderHeight
 
                 Label {
                     anchors.fill: parent
@@ -175,6 +261,14 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                     ToolTip.text: qsTr("Elementary academic week")
                     ToolTip.visible: elementaryHeaderMouse.containsMouse
+                }
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    width: 1
+                    color: root.gridLineColor
                 }
 
                 MouseArea {
@@ -187,7 +281,8 @@ Item {
 
             DayOfWeekRow {
                 id: dayOfWeekRow
-                locale: grid.locale
+
+                locale: root.calendarLocale
                 font.bold: false
 
                 background: Rectangle {
@@ -207,14 +302,16 @@ Item {
                 Layout.column: 1
                 Layout.row: 0
                 Layout.fillWidth: true
+                Layout.preferredHeight: root.dayHeaderHeight
             }
 
             Rectangle {
                 color: root.headerBackground
+
                 Layout.column: 2
                 Layout.row: 0
-                implicitWidth: 54
-                Layout.fillHeight: true
+                Layout.preferredWidth: root.weekColumnWidth
+                Layout.preferredHeight: root.dayHeaderHeight
 
                 Label {
                     anchors.fill: parent
@@ -226,6 +323,14 @@ Item {
                     ToolTip.visible: middleHeaderMouse.containsMouse
                 }
 
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    width: 1
+                    color: root.gridLineColor
+                }
+
                 MouseArea {
                     id: middleHeaderMouse
                     anchors.fill: parent
@@ -234,15 +339,28 @@ Item {
                 }
             }
 
+            // =========================================================
+            // Calendar body row
+            // =========================================================
+
             Item {
                 Layout.column: 0
                 Layout.row: 1
-                implicitWidth: 54
+                Layout.preferredWidth: root.weekColumnWidth
+                Layout.preferredHeight: 1
                 Layout.fillHeight: true
 
                 Rectangle {
                     anchors.fill: parent
                     color: root.calendarBackground
+                }
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    width: 1
+                    color: root.gridLineColor
                 }
 
                 Column {
@@ -253,10 +371,11 @@ Item {
 
                         Item {
                             id: elementaryRow
+
                             required property var modelData
 
                             width: parent.width
-                            height: parent.height / 6
+                            height: parent.height / root.visibleRowCount
 
                             Label {
                                 anchors.fill: parent
@@ -281,63 +400,63 @@ Item {
                 }
             }
 
-            MonthGrid {
+            Item {
                 id: grid
-                month: root.shownDate.getMonth()
-                year: root.shownDate.getFullYear()
-                spacing: 0
 
-                readonly property int gridLineThickness: 1
+                readonly property int month: root.shownDate.getMonth()
+                readonly property int year: root.shownDate.getFullYear()
+                readonly property var locale: root.calendarLocale
 
-                Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.column: 1
                 Layout.row: 1
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredHeight: 1
 
-                delegate: MonthGridDelegate {
-                    visibleMonth: grid.month
-                    eventProvider: root.eventProvider
-                    cellBackground: root.cellBackground
-                    textColor: root.textColor
-                    inactiveTextColor: root.inactiveTextColor
-                    accentColor: root.accentColor
-                    accentTextColor: root.accentTextColor
-                    onDayActivated: function(year, month, day) {
-                        root.dayActivated(year, month, day)
-                    }
-                    onEventActivated: function(eventId) {
-                        root.eventActivated(eventId)
-                    }
+                Rectangle {
+                    anchors.fill: parent
+                    color: root.calendarBackground
                 }
 
-                background: Item {
-                    x: grid.leftPadding
-                    y: grid.topPadding
-                    width: grid.availableWidth
-                    height: grid.availableHeight
+                Grid {
+                    anchors.fill: parent
+                    columns: 7
+                    spacing: 0
 
-                    Row {
-                        Repeater {
-                            model: 7
+                    Repeater {
+                        model: root.monthCells
 
-                            Rectangle {
-                                width: grid.availableWidth / 7
-                                height: grid.availableHeight
-                                color: root.cellBackground
-                                border.color: root.gridLineColor
+                        MonthGridDelegate {
+                            required property int index
+                            required property var modelData
+
+                            width: grid.width / 7
+                            height: grid.height / root.visibleRowCount
+
+                            today: modelData.today
+                            year: modelData.year
+                            month: modelData.month
+                            day: modelData.day
+                            visibleMonth: grid.month
+                            gridRow: Math.floor(index / 7)
+                            gridColumn: index % 7
+                            rowCount: root.visibleRowCount
+                            columnCount: 7
+
+                            eventProvider: root.eventProvider
+                            cellBackground: root.cellBackground
+                            gridLineColor: root.gridLineColor
+                            textColor: root.textColor
+                            inactiveTextColor: root.inactiveTextColor
+                            accentColor: root.accentColor
+                            accentTextColor: root.accentTextColor
+
+                            onDayActivated: function(year, month, day) {
+                                root.dayActivated(year, month, day)
                             }
-                        }
-                    }
 
-                    Column {
-                        Repeater {
-                            model: 6
-
-                            Rectangle {
-                                width: grid.availableWidth
-                                height: grid.availableHeight / 6
-                                color: "transparent"
-                                border.color: root.gridLineColor
+                            onEventActivated: function(eventId) {
+                                root.eventActivated(eventId)
                             }
                         }
                     }
@@ -347,12 +466,21 @@ Item {
             Item {
                 Layout.column: 2
                 Layout.row: 1
-                implicitWidth: 54
+                Layout.preferredWidth: root.weekColumnWidth
+                Layout.preferredHeight: 1
                 Layout.fillHeight: true
 
                 Rectangle {
                     anchors.fill: parent
                     color: root.calendarBackground
+                }
+
+                Rectangle {
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.left: parent.left
+                    width: 1
+                    color: root.gridLineColor
                 }
 
                 Column {
@@ -363,10 +491,11 @@ Item {
 
                         Item {
                             id: middleRow
+
                             required property var modelData
 
                             width: parent.width
-                            height: parent.height / 6
+                            height: parent.height / root.visibleRowCount
 
                             Label {
                                 anchors.fill: parent

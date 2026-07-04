@@ -48,6 +48,7 @@ private:
     QDateEdit* m_endDateEdit = nullptr;
     QTimeEdit* m_endTimeEdit = nullptr;
     QCheckBox* m_allDayCheck = nullptr;
+    QCheckBox* m_unconfirmedTimeCheck = nullptr;
     QButtonGroup* m_eventTypeGroup = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_deleteButton = nullptr;

@@ -2,7 +2,9 @@
 
 #include "academic_calendar_provider.h"
 #include "core/fontmanager.h"
+#include "data/data_service.h"
 #include "features/my_info/calendar_event_import_service.h"
+#include "features/my_info/calendar_settings_keys.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -17,6 +19,7 @@
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
 namespace
@@ -48,6 +51,7 @@ AcademicCalendarDialog::AcademicCalendarDialog(
     )
     : QDialog(parent)
     , m_provider(provider)
+    , m_dataService(dataService)
     , m_importService(
         new CalendarEventImportService(
             dataService,
@@ -59,6 +63,7 @@ AcademicCalendarDialog::AcademicCalendarDialog(
         )
 {
     buildUi();
+    loadOptions();
     loadSchedules();
 }
 
@@ -136,6 +141,7 @@ void AcademicCalendarDialog::accept()
         m_schedules[0],
         m_schedules[1]
         );
+    saveOptions();
     QDialog::accept();
 }
 
@@ -159,6 +165,38 @@ void AcademicCalendarDialog::restoreDefaults()
     synchronizeLinkedTerms();
     m_dirty = true;
     refreshFields();
+}
+
+void AcademicCalendarDialog::resetCalendarEvents()
+{
+    if (!m_dataService || !m_dataService->isOpen())
+    {
+        return;
+    }
+
+    const auto answer =
+        QMessageBox::warning(
+            this,
+            tr("Reset Calendar?"),
+            tr("This will permanently delete all calendar events and restore the calendar event list to defaults. This cannot be undone."),
+            QMessageBox::Reset | QMessageBox::Cancel,
+            QMessageBox::Cancel
+            );
+
+    if (answer != QMessageBox::Reset)
+    {
+        return;
+    }
+
+    m_dataService->deleteAllCalendarEvents();
+    emit calendarEventsImported();
+
+    if (m_importStatusLabel)
+    {
+        m_importStatusLabel->setText(
+            tr("Calendar events reset to defaults.")
+            );
+    }
 }
 
 void AcademicCalendarDialog::linkWinterSpring(bool linked)
@@ -255,6 +293,92 @@ void AcademicCalendarDialog::buildUi()
         FontManager::getUiFont(16, QFont::DemiBold)
         );
     mainLayout->addWidget(title);
+
+    auto* tabs =
+        new QTabWidget(this);
+    tabs->addTab(
+        buildOptionsTab(),
+        tr("Options")
+        );
+    tabs->addTab(
+        buildTermSchedulesTab(),
+        tr("Term Schedules")
+        );
+    tabs->addTab(
+        buildImportTab(),
+        tr("Import")
+        );
+    mainLayout->addWidget(tabs);
+
+    m_buttons =
+        new QDialogButtonBox(
+            QDialogButtonBox::Save | QDialogButtonBox::Cancel,
+            this
+            );
+
+    connect(
+        m_buttons,
+        &QDialogButtonBox::accepted,
+        this,
+        &AcademicCalendarDialog::accept
+        );
+    connect(
+        m_buttons,
+        &QDialogButtonBox::rejected,
+        this,
+        &AcademicCalendarDialog::reject
+        );
+
+    mainLayout->addWidget(m_buttons);
+}
+
+QWidget* AcademicCalendarDialog::buildOptionsTab()
+{
+    auto* page =
+        new QWidget(this);
+    auto* layout =
+        new QVBoxLayout(page);
+    layout->setContentsMargins(16, 16, 16, 16);
+    layout->setSpacing(14);
+
+    m_showAllCampusesCheck =
+        new QCheckBox(
+            tr("Show Events at All Campuses"),
+            page
+            );
+    layout->addWidget(m_showAllCampusesCheck);
+
+    m_resetEventsButton =
+        new QPushButton(
+            tr("Reset Calendar to Defaults"),
+            page
+            );
+    m_resetEventsButton->setMinimumHeight(32);
+    layout->addWidget(
+        m_resetEventsButton,
+        0,
+        Qt::AlignLeft
+        );
+    layout->addStretch(1);
+
+    connect(
+        m_resetEventsButton,
+        &QPushButton::clicked,
+        this,
+        &AcademicCalendarDialog::resetCalendarEvents
+        );
+
+    return page;
+}
+
+QWidget* AcademicCalendarDialog::buildTermSchedulesTab()
+{
+    auto* page =
+        new QWidget(this);
+    auto* mainLayout =
+        new QVBoxLayout(page);
+    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setSpacing(14);
 
     auto* fields =
         new QGridLayout;
@@ -354,7 +478,7 @@ void AcademicCalendarDialog::buildUi()
     m_linkCheck =
         new QCheckBox(
             tr("Elementary and Middle School follow the same Winter and Spring term schedules."),
-            this
+            page
             );
     mainLayout->addWidget(
         m_linkCheck,
@@ -362,16 +486,47 @@ void AcademicCalendarDialog::buildUi()
         Qt::AlignHCenter
         );
 
-    auto* separator =
-        new QFrame(this);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setFrameShadow(QFrame::Sunken);
-    mainLayout->addWidget(separator);
+    m_restoreButton =
+        new QPushButton(
+            tr("Restore Term Defaults"),
+            page
+            );
+    mainLayout->addWidget(
+        m_restoreButton,
+        0,
+        Qt::AlignHCenter
+        );
+    mainLayout->addStretch(1);
+
+    connect(
+        m_linkCheck,
+        &QCheckBox::toggled,
+        this,
+        &AcademicCalendarDialog::linkWinterSpring
+        );
+    connect(
+        m_restoreButton,
+        &QPushButton::clicked,
+        this,
+        &AcademicCalendarDialog::restoreDefaults
+        );
+
+    return page;
+}
+
+QWidget* AcademicCalendarDialog::buildImportTab()
+{
+    auto* page =
+        new QWidget(this);
+    auto* mainLayout =
+        new QVBoxLayout(page);
+    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setSpacing(14);
 
     auto* importHeader =
         new QLabel(
             tr("Import Events"),
-            this
+            page
             );
     importHeader->setAlignment(Qt::AlignCenter);
     importHeader->setFont(
@@ -386,7 +541,7 @@ void AcademicCalendarDialog::buildUi()
     m_importUrlEdit =
         new QLineEdit(
             CalendarEventImportService::defaultImportUrl(),
-            this
+            page
             );
     m_importUrlEdit->setReadOnly(true);
     m_importUrlEdit->setMinimumWidth(420);
@@ -394,7 +549,7 @@ void AcademicCalendarDialog::buildUi()
     m_importButton =
         new QPushButton(
             tr("Import Events"),
-            this
+            page
             );
 
     importLayout->addWidget(m_importUrlEdit, 1);
@@ -402,28 +557,11 @@ void AcademicCalendarDialog::buildUi()
     mainLayout->addLayout(importLayout);
 
     m_importStatusLabel =
-        new QLabel(this);
+        new QLabel(page);
     m_importStatusLabel->setObjectName(QStringLiteral("sectionSubtitle"));
     m_importStatusLabel->setWordWrap(true);
     mainLayout->addWidget(m_importStatusLabel);
 
-    m_buttons =
-        new QDialogButtonBox(
-            QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-            this
-            );
-    m_restoreButton =
-        m_buttons->addButton(
-            tr("Restore Defaults"),
-            QDialogButtonBox::ResetRole
-            );
-
-    connect(
-        m_linkCheck,
-        &QCheckBox::toggled,
-        this,
-        &AcademicCalendarDialog::linkWinterSpring
-        );
     connect(
         m_importButton,
         &QPushButton::clicked,
@@ -442,26 +580,10 @@ void AcademicCalendarDialog::buildUi()
         this,
         &AcademicCalendarDialog::handleImportFailed
         );
-    connect(
-        m_restoreButton,
-        &QPushButton::clicked,
-        this,
-        &AcademicCalendarDialog::restoreDefaults
-        );
-    connect(
-        m_buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &AcademicCalendarDialog::accept
-        );
-    connect(
-        m_buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &AcademicCalendarDialog::reject
-        );
 
-    mainLayout->addWidget(m_buttons);
+    mainLayout->addStretch(1);
+
+    return page;
 }
 
 void AcademicCalendarDialog::loadSchedules()
@@ -492,6 +614,36 @@ void AcademicCalendarDialog::loadSchedules()
     m_refreshing = false;
     m_dirty = false;
     refreshFields();
+}
+
+void AcademicCalendarDialog::loadOptions()
+{
+    if (!m_dataService || !m_showAllCampusesCheck)
+    {
+        return;
+    }
+
+    m_showAllCampusesCheck->setChecked(
+        m_dataService
+            ->loadSetting(
+                CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                false
+                )
+            .toBool()
+        );
+}
+
+void AcademicCalendarDialog::saveOptions()
+{
+    if (!m_dataService || !m_showAllCampusesCheck)
+    {
+        return;
+    }
+
+    m_dataService->saveSetting(
+        CalendarSettingsKeys::ShowEventsAtAllCampuses,
+        m_showAllCampusesCheck->isChecked()
+        );
 }
 
 void AcademicCalendarDialog::refreshFields()
