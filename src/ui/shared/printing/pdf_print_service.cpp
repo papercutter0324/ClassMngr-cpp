@@ -7,8 +7,10 @@
 #include <QObject>
 #include <QPainter>
 #include <QPdfDocument>
+#include <QAbstractPrintDialog>
 #include <QPrintDialog>
 #include <QPrinter>
+#include <QPrinterInfo>
 #include <QRectF>
 #include <QSize>
 #include <QSizeF>
@@ -415,11 +417,50 @@ Result paintPdfDocumentToPrinter(
     return sent();
 }
 
-#ifdef Q_OS_MACOS
-Result printPdfDocumentWithNativeDialog(
+Result printPdfDocumentWithCustomPreview(
     const Request& request
     )
 {
+    PdfPrintDialog dialog(
+        request.parent,
+        request.document,
+        request.documentPath,
+        [document = request.document](
+            QPrinter& printer,
+            const PdfPrintDialogSupport::RenderOptions& options
+            )
+        {
+            return paintPdfDocumentToPrinter(
+                document,
+                printer,
+                options
+                );
+        },
+        request.currentPageIndex
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return canceled();
+    }
+
+    return dialog.printResult();
+}
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+Result printPdfDocumentWithSystemDialog(
+    const Request& request
+    )
+{
+#ifdef Q_OS_LINUX
+    if (QPrinterInfo::availablePrinterNames().isEmpty())
+    {
+        return failed(
+            QObject::tr("No printers are available.")
+            );
+    }
+#endif
+
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::NativeFormat);
     printer.setDocName(
@@ -434,6 +475,14 @@ Result printPdfDocumentWithNativeDialog(
         request.parent
         );
 
+#ifdef Q_OS_LINUX
+    dialog.setOptions(
+        QAbstractPrintDialog::PrintPageRange
+        | QAbstractPrintDialog::PrintCurrentPage
+        | QAbstractPrintDialog::PrintCollateCopies
+        | QAbstractPrintDialog::PrintShowPageSize
+        );
+#endif
     dialog.setWindowTitle(
         request.dialogTitle.trimmed().isEmpty()
             ? printJobTitle(request.documentPath)
@@ -463,7 +512,11 @@ Result printPdfDocumentWithNativeDialog(
     options.grayscale =
         printer.colorMode() == QPrinter::GrayScale;
     options.fitToPage =
+#ifdef Q_OS_LINUX
+        true;
+#else
         false;
+#endif
 
     return paintPdfDocumentToPrinter(
         request.document,
@@ -489,35 +542,14 @@ Result printPdfDocument(
             );
     }
 
-#ifdef Q_OS_MACOS
-    return printPdfDocumentWithNativeDialog(
+#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+    return printPdfDocumentWithSystemDialog(
         request
         );
 #else
-    PdfPrintDialog dialog(
-        request.parent,
-        request.document,
-        request.documentPath,
-        [document = request.document](
-            QPrinter& printer,
-            const PdfPrintDialogSupport::RenderOptions& options
-            )
-        {
-            return paintPdfDocumentToPrinter(
-                document,
-                printer,
-                options
-                );
-        },
-        request.currentPageIndex
+    return printPdfDocumentWithCustomPreview(
+        request
         );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return canceled();
-    }
-
-    return dialog.printResult();
 #endif
 }
 }
