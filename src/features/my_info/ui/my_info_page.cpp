@@ -430,6 +430,56 @@ int findCampusIndex(
     return -1;
 }
 
+void matchFieldHeights(
+    QWidget* first,
+    QWidget* second,
+    QWidget* third,
+    QWidget* fourth
+    )
+{
+    int fieldHeight = 0;
+
+    const auto includeField =
+        [&fieldHeight](QWidget* field)
+        {
+            if (!field)
+            {
+                return;
+            }
+
+            fieldHeight =
+                qMax(
+                    fieldHeight,
+                    qMax(
+                        field->sizeHint().height(),
+                        field->minimumSizeHint().height()
+                        )
+                    );
+        };
+
+    includeField(first);
+    includeField(second);
+    includeField(third);
+    includeField(fourth);
+
+    const auto applyHeight =
+        [fieldHeight](QWidget* field)
+        {
+            if (!field || fieldHeight <= 0)
+            {
+                return;
+            }
+
+            field->setMinimumHeight(fieldHeight);
+            field->updateGeometry();
+        };
+
+    applyHeight(first);
+    applyHeight(second);
+    applyHeight(third);
+    applyHeight(fourth);
+}
+
 QString valueOrNa(
     const QString& value
     )
@@ -1911,6 +1961,12 @@ void MyInfoPage::buildMyInformationSection()
     WidgetSizing::installTextAwareFieldWidth(
         m_zoomPasswordEdit,
         UiConstants::Forms::FieldMinimumWidth
+        );
+    matchFieldHeights(
+        m_nameEdit,
+        m_campusCombo,
+        m_zoomLoginIdEdit,
+        m_zoomPasswordEdit
         );
 
     m_zoomLoginIdEdit->installEventFilter(this);
