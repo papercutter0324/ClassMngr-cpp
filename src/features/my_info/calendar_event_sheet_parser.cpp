@@ -51,6 +51,18 @@ bool isMeaningfulFontColor(
         && normalized != QStringLiteral("FFFFFF");
 }
 
+QString comparableFontColor(
+    const QString& color
+    )
+{
+    const QString normalized =
+        normalizedColor(color);
+
+    return normalized.isEmpty()
+        ? QStringLiteral("000000")
+        : normalized;
+}
+
 QString cellText(
     const QHash<int, Cell>& cellsByPosition,
     int row,
@@ -177,6 +189,7 @@ QVector<MonthBlock> monthBlocks(
 
 QDate gridDate(
     const MonthBlock& block,
+    int gridStartRow,
     int row,
     int column
     )
@@ -198,10 +211,92 @@ QDate gridDate(
             );
 
     return firstGridDate.addDays(
-        (row - (block.row + 2)) * 7
+        (row - gridStartRow) * 7
         + column
         - block.column
         );
+}
+
+bool hasDisplayedDayInRow(
+    const QHash<int, Cell>& cellsByPosition,
+    const MonthBlock& block,
+    int row
+    )
+{
+    for (int column = block.column;
+         column < block.column + CalendarGridColumns;
+         ++column)
+    {
+        bool dayOk = false;
+        const double displayedDay =
+            cellsByPosition
+                .value(row * 100 + column)
+                .value
+                .toDouble(&dayOk);
+
+        if (dayOk && displayedDay > 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool cellDisplaysDay(
+    const QHash<int, Cell>& cellsByPosition,
+    int row,
+    int column,
+    int day
+    )
+{
+    bool dayOk = false;
+    const int displayedDay =
+        cellsByPosition
+            .value(row * 100 + column)
+            .value
+            .toDouble(&dayOk);
+
+    return dayOk && displayedDay == day;
+}
+
+int gridStartRow(
+    const QHash<int, Cell>& cellsByPosition,
+    const MonthBlock& block
+    )
+{
+    const int assumedStartRow =
+        block.row + 2;
+    const QDate firstOfMonth(
+        block.year,
+        block.month,
+        1
+        );
+
+    if (!firstOfMonth.isValid())
+    {
+        return assumedStartRow;
+    }
+
+    const int firstDayColumn =
+        block.column
+        + firstOfMonth.dayOfWeek()
+        - Qt::Monday;
+
+    if (
+        !hasDisplayedDayInRow(cellsByPosition, block, assumedStartRow)
+        && cellDisplaysDay(
+            cellsByPosition,
+            assumedStartRow + 1,
+            firstDayColumn,
+            1
+            )
+        )
+    {
+        return assumedStartRow + 1;
+    }
+
+    return assumedStartRow;
 }
 
 QString cleanedLegendLabel(
@@ -217,6 +312,16 @@ QString cleanedLegendLabel(
     }
 
     return label.simplified();
+}
+
+bool isWeekendLegend(
+    const QString& label
+    )
+{
+    return cleanedLegendLabel(label).compare(
+        QStringLiteral("Weekend"),
+        Qt::CaseInsensitive
+        ) == 0;
 }
 
 bool shouldIgnoreLegend(
@@ -311,10 +416,7 @@ QHash<QString, QString> fontLegend(
         const Style style =
             cellStyle(workbook, cell);
 
-        if (
-            isMeaningfulFill(style.fillColor)
-            || !isMeaningfulFontColor(style.fontColor)
-            )
+        if (!isMeaningfulFontColor(style.fontColor))
         {
             continue;
         }
@@ -326,6 +428,24 @@ QHash<QString, QString> fontLegend(
     }
 
     return legend;
+}
+
+Style weekendLegendStyle(
+    const Workbook& workbook
+    )
+{
+    for (const Cell& cell : workbook.cells)
+    {
+        if (
+            cell.column == LegendColumn
+            && isWeekendLegend(cell.value)
+            )
+        {
+            return cellStyle(workbook, cell);
+        }
+    }
+
+    return {};
 }
 
 QList<QDate> noteDates(
@@ -522,6 +642,69 @@ QHash<QDate, QStringList> noteTitlesByDate(
     return titlesByDate;
 }
 
+QStringList campusCodesInNote(
+    const QString& note
+    )
+{
+    static const QRegularExpression campusCodePattern(
+        QStringLiteral("(^|[^A-Z])([A-Z]{3})(?=[^A-Z]|$)")
+        );
+
+    QStringList codes;
+    QRegularExpressionMatchIterator matches =
+        campusCodePattern.globalMatch(note);
+
+    while (matches.hasNext())
+    {
+        codes.append(
+            matches.next().captured(2)
+            );
+    }
+
+    codes.removeDuplicates();
+    return codes;
+}
+
+QString titleWithCampusCodes(
+    const QString& title,
+    const QString& note
+    )
+{
+    QString normalizedTitle =
+        title.simplified();
+    QStringList codes =
+        campusCodesInNote(note);
+
+    codes.erase(
+        std::remove_if(
+            codes.begin(),
+            codes.end(),
+            [&normalizedTitle](const QString& code)
+            {
+                const QRegularExpression pattern(
+                    QStringLiteral("(^|[^A-Z0-9])%1([^A-Z0-9]|$)")
+                        .arg(QRegularExpression::escape(code)),
+                    QRegularExpression::CaseInsensitiveOption
+                    );
+
+                return pattern.match(normalizedTitle).hasMatch();
+            }
+            ),
+        codes.end()
+        );
+
+    if (codes.isEmpty())
+    {
+        return normalizedTitle;
+    }
+
+    return QStringLiteral("%1 (%2)")
+        .arg(
+            normalizedTitle,
+            codes.join(QStringLiteral(", "))
+            );
+}
+
 }
 
 QString calendarEventImportSignature(
@@ -595,12 +778,24 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
         fillLegend(workbook);
     const QHash<QString, QString> labelsByFont =
         fontLegend(workbook);
+    const Style weekendStyle =
+        weekendLegendStyle(workbook);
+    const QString weekendFill =
+        normalizedColor(weekendStyle.fillColor);
+    const QString weekendFont =
+        comparableFontColor(weekendStyle.fontColor);
     QSet<QString> emitted;
 
     for (const MonthBlock& block : blocks)
     {
-        for (int row = block.row + 2;
-             row < block.row + 2 + CalendarGridRows;
+        const int startRow =
+            gridStartRow(
+                cellsByPosition,
+                block
+                );
+
+        for (int row = startRow;
+             row < startRow + CalendarGridRows;
              ++row)
         {
             for (int column = block.column;
@@ -625,7 +820,12 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                 }
 
                 const QDate date =
-                    gridDate(block, row, column);
+                    gridDate(
+                        block,
+                        startRow,
+                        row,
+                        column
+                        );
 
                 if (
                     !date.isValid()
@@ -642,6 +842,9 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
 
                 const QString fill =
                     normalizedColor(style.fillColor);
+                const bool isWeekendFill =
+                    isMeaningfulFill(weekendFill)
+                    && fill == weekendFill;
                 if (labelsByFill.contains(fill))
                 {
                     labels.append(
@@ -651,7 +854,23 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
 
                 const QString font =
                     normalizedColor(style.fontColor);
-                if (labelsByFont.contains(font))
+                const bool matchesWeekendFont =
+                    comparableFontColor(font) == weekendFont;
+                const bool shouldMatchFont =
+                    (
+                        isWeekendFill
+                        && !matchesWeekendFont
+                    )
+                    || (
+                        date.dayOfWeek() >= Qt::Monday
+                        && date.dayOfWeek() <= Qt::Friday
+                        && !isMeaningfulFill(fill)
+                        && isMeaningfulFontColor(font)
+                    );
+                if (
+                    labelsByFont.contains(font)
+                    && shouldMatchFont
+                    )
                 {
                     labels.append(
                         labelsByFont.value(font)
@@ -682,10 +901,15 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
 
                     for (const QString& title : titles)
                     {
+                        const QString importTitle =
+                            titleWithCampusCodes(
+                                title,
+                                cell.note
+                                );
                         const CalendarEvent event =
                             calendarEvent(
                                 date,
-                                title,
+                                importTitle,
                                 eventType
                                 );
                         const QString signature =

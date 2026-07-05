@@ -512,7 +512,8 @@ QVector<Style> parseStyles(
 
 QVector<Cell> parseSheet(
     const QByteArray& xmlData,
-    const QStringList& sharedStrings
+    const QStringList& sharedStrings,
+    const QHash<int, QString>& notesByPosition
     )
 {
     QVector<Cell> cells;
@@ -536,6 +537,10 @@ QVector<Cell> parseSheet(
             spreadsheetRow(reference);
         cell.column =
             spreadsheetColumn(reference);
+        cell.note =
+            notesByPosition
+                .value(cell.row * 100 + cell.column)
+                .trimmed();
 
         if (
             cell.row <= 0
@@ -609,6 +614,247 @@ QVector<Cell> parseSheet(
 
     return cells;
 }
+
+QHash<int, QString> parseCellNotes(
+    const QByteArray& xmlData
+    )
+{
+    QHash<int, QString> notes;
+    QXmlStreamReader xml(xmlData);
+    QString currentElement;
+    int currentPosition = 0;
+    QString currentText;
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+
+        if (xml.isStartElement())
+        {
+            const QStringView name =
+                xml.name();
+
+            if (
+                name == QStringLiteral("comment")
+                || name == QStringLiteral("threadedComment")
+                )
+            {
+                const QString reference =
+                    xml.attributes()
+                        .value(QStringLiteral("ref"))
+                        .toString();
+                const int row =
+                    spreadsheetRow(reference);
+                const int column =
+                    spreadsheetColumn(reference);
+
+                currentElement =
+                    name.toString();
+                currentPosition =
+                    row > 0 && column > 0
+                        ? row * 100 + column
+                        : 0;
+                currentText.clear();
+            }
+            else if (
+                currentPosition > 0
+                && (
+                    name == QStringLiteral("t")
+                    || (
+                        currentElement == QStringLiteral("threadedComment")
+                        && name == QStringLiteral("text")
+                        )
+                    )
+                )
+            {
+                currentText.append(
+                    xml.readElementText(
+                        QXmlStreamReader::IncludeChildElements
+                        )
+                    );
+            }
+        }
+        else if (xml.isEndElement())
+        {
+            const QStringView name =
+                xml.name();
+
+            if (
+                !currentElement.isEmpty()
+                && name == currentElement
+                )
+            {
+                const QString note =
+                    currentText.simplified();
+
+                if (currentPosition > 0 && !note.isEmpty())
+                {
+                    notes.insert(
+                        currentPosition,
+                        note
+                        );
+                }
+
+                currentElement.clear();
+                currentPosition = 0;
+                currentText.clear();
+            }
+        }
+    }
+
+    return notes;
+}
+
+QString resolvedWorksheetRelationshipTarget(
+    QString target
+    )
+{
+    target =
+        target.trimmed();
+
+    if (target.startsWith(QLatin1Char('/')))
+    {
+        target.remove(0, 1);
+        return target;
+    }
+
+    while (target.startsWith(QStringLiteral("../")))
+    {
+        target.remove(0, 3);
+        target.prepend(QStringLiteral("xl/"));
+    }
+
+    if (!target.startsWith(QStringLiteral("xl/")))
+    {
+        target.prepend(QStringLiteral("xl/worksheets/"));
+    }
+
+    return target;
+}
+
+QStringList worksheetNoteEntryNames(
+    const QByteArray& xmlData
+    )
+{
+    QStringList entryNames;
+    QXmlStreamReader xml(xmlData);
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+
+        if (
+            !xml.isStartElement()
+            || xml.name() != QStringLiteral("Relationship")
+            )
+        {
+            continue;
+        }
+
+        const QXmlStreamAttributes attributes =
+            xml.attributes();
+        const QString type =
+            attributes.value(QStringLiteral("Type")).toString();
+
+        if (
+            !type.endsWith(QStringLiteral("/comments"))
+            && !type.endsWith(QStringLiteral("/threadedComment"))
+            )
+        {
+            continue;
+        }
+
+        entryNames.append(
+            resolvedWorksheetRelationshipTarget(
+                attributes.value(QStringLiteral("Target")).toString()
+                )
+            );
+    }
+
+    entryNames.removeDuplicates();
+    return entryNames;
+}
+
+QStringList worksheetNoteEntryNames(
+    const QByteArray& data,
+    const QHash<QString, ZipEntry>& entries
+    )
+{
+    const QString relationshipsName =
+        QStringLiteral("xl/worksheets/_rels/sheet1.xml.rels");
+
+    if (entries.contains(relationshipsName))
+    {
+        return worksheetNoteEntryNames(
+            zipFileData(
+                data,
+                entries.value(relationshipsName)
+                )
+            );
+    }
+
+    QStringList entryNames;
+
+    for (auto iterator = entries.cbegin();
+         iterator != entries.cend();
+         ++iterator)
+    {
+        const QString& name =
+            iterator.key();
+
+        if (
+            (
+                name.startsWith(QStringLiteral("xl/comments"))
+                && name.endsWith(QStringLiteral(".xml"))
+                )
+            || (
+                name.startsWith(QStringLiteral("xl/threadedComments/"))
+                && name.endsWith(QStringLiteral(".xml"))
+                )
+            )
+        {
+            entryNames.append(name);
+        }
+    }
+
+    entryNames.removeDuplicates();
+    return entryNames;
+}
+
+QHash<int, QString> workbookCellNotes(
+    const QByteArray& data,
+    const QHash<QString, ZipEntry>& entries
+    )
+{
+    QHash<int, QString> notes;
+    const QStringList entryNames =
+        worksheetNoteEntryNames(data, entries);
+
+    for (const QString& name : entryNames)
+    {
+        if (!entries.contains(name))
+        {
+            continue;
+        }
+
+        const QHash<int, QString> parsed =
+            parseCellNotes(
+                zipFileData(data, entries.value(name))
+                );
+
+        for (auto note = parsed.cbegin();
+             note != parsed.cend();
+             ++note)
+        {
+            notes.insert(
+                note.key(),
+                note.value()
+                );
+        }
+    }
+
+    return notes;
+}
 }
 
 Workbook parseWorkbook(
@@ -660,7 +906,8 @@ Workbook parseWorkbook(
                 data,
                 entries.value(QStringLiteral("xl/worksheets/sheet1.xml"))
                 ),
-            workbook.sharedStrings
+            workbook.sharedStrings,
+            workbookCellNotes(data, entries)
             );
 
     if (workbook.cells.isEmpty() || workbook.styles.isEmpty())

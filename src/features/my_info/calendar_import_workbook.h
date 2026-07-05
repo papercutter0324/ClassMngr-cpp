@@ -13,6 +13,7 @@ struct Cell
     int column = 0;
     int style = 0;
     QString value;
+    QString note;
 };
 
 struct Style
