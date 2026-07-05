@@ -31,6 +31,7 @@ Item {
 
     readonly property int weekColumnWidth: 54
     readonly property int dayHeaderHeight: 40
+    readonly property int sectionDividerWidth: 3
 
     readonly property int termRevision: termProvider ? termProvider.revision : 0
     readonly property var calendarLocale: Qt.locale()
@@ -50,10 +51,14 @@ Item {
                                          || (shownDate.getFullYear() === 2026
                                              && shownDate.getMonth() === 0)
 
-    readonly property var academicRows: {
-        root.termRevision
+    readonly property var academicRows: academicRowsForRevision(root.termRevision)
 
+    function academicRowsForRevision(revision) {
         if (!termProvider)
+            return []
+
+        const hasProviderRevision = revision >= 0
+        if (!hasProviderRevision)
             return []
 
         const rows =
@@ -71,6 +76,16 @@ Item {
         }
 
         return visibleRows
+    }
+
+    function monthTitleForRevision(revision) {
+        if (revision >= 0 && root.termProvider) {
+            return root.termProvider.monthTitle(
+                root.shownDate.getFullYear(),
+                root.shownDate.getMonth())
+        }
+
+        return root.shownDate.toLocaleString(Qt.locale(), "MMMM yyyy")
     }
 
     signal dayActivated(int year, int month, int day)
@@ -118,6 +133,14 @@ Item {
         }
 
         return cells
+    }
+
+    function integerSegmentSize(totalSize, segmentCount, segmentIndex) {
+        const snappedSize = Math.floor(totalSize)
+        const baseSize = Math.floor(snappedSize / segmentCount)
+        const remainder = snappedSize % segmentCount
+
+        return baseSize + (segmentIndex < remainder ? 1 : 0)
     }
 
     Component.onCompleted: {
@@ -173,15 +196,7 @@ Item {
                 }
 
                 Label {
-                    text: {
-                        root.termRevision
-
-                        return root.termProvider
-                            ? root.termProvider.monthTitle(
-                                  root.shownDate.getFullYear(),
-                                  root.shownDate.getMonth())
-                            : root.shownDate.toLocaleString(Qt.locale(), "MMMM yyyy")
-                    }
+                    text: root.monthTitleForRevision(root.termRevision)
 
                     color: root.toolbarTextColor
                     font.pixelSize: toolbar.font.pixelSize * 1.12
@@ -267,7 +282,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right
-                    width: 1
+                    width: root.sectionDividerWidth
                     color: root.gridLineColor
                 }
 
@@ -327,7 +342,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
-                    width: 1
+                    width: root.sectionDividerWidth
                     color: root.gridLineColor
                 }
 
@@ -359,7 +374,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.right: parent.right
-                    width: 1
+                    width: root.sectionDividerWidth
                     color: root.gridLineColor
                 }
 
@@ -372,10 +387,14 @@ Item {
                         Item {
                             id: elementaryRow
 
+                            required property int index
                             required property var modelData
 
                             width: parent.width
-                            height: parent.height / root.visibleRowCount
+                            height: root.integerSegmentSize(
+                                        parent.height,
+                                        root.visibleRowCount,
+                                        index)
 
                             Label {
                                 anchors.fill: parent
@@ -430,8 +449,14 @@ Item {
                             required property int index
                             required property var modelData
 
-                            width: grid.width / 7
-                            height: grid.height / root.visibleRowCount
+                            width: root.integerSegmentSize(
+                                       grid.width,
+                                       7,
+                                       gridColumn)
+                            height: root.integerSegmentSize(
+                                        grid.height,
+                                        root.visibleRowCount,
+                                        gridRow)
 
                             today: modelData.today
                             year: modelData.year
@@ -479,7 +504,7 @@ Item {
                     anchors.top: parent.top
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left
-                    width: 1
+                    width: root.sectionDividerWidth
                     color: root.gridLineColor
                 }
 
@@ -492,10 +517,14 @@ Item {
                         Item {
                             id: middleRow
 
+                            required property int index
                             required property var modelData
 
                             width: parent.width
-                            height: parent.height / root.visibleRowCount
+                            height: root.integerSegmentSize(
+                                        parent.height,
+                                        root.visibleRowCount,
+                                        index)
 
                             Label {
                                 anchors.fill: parent

@@ -28,8 +28,10 @@ Item {
     required property color accentTextColor
 
     readonly property bool activeMonth: month === visibleMonth
+    readonly property bool firstColumn: gridColumn <= 0
+    readonly property bool lastColumn: gridColumn >= columnCount - 1
     readonly property bool nextCellActive: {
-        if (root.gridColumn >= root.columnCount - 1)
+        if (root.lastColumn)
             return false
 
         const next = new Date(root.year, root.month, root.day + 1)
@@ -43,11 +45,13 @@ Item {
         return lower.getMonth() === root.visibleMonth
     }
     readonly property int eventRevision: eventProvider ? eventProvider.revision : 0
-    readonly property var dayEvents: {
-        root.eventRevision
-        return root.activeMonth && root.eventProvider
-            ? root.eventProvider.eventsForDate(root.year, root.month + 1, root.day)
-            : []
+    readonly property var dayEvents: dayEventsForRevision(root.eventRevision)
+
+    function dayEventsForRevision(revision) {
+        if (revision < 0 || !root.activeMonth || !root.eventProvider)
+            return []
+
+        return root.eventProvider.eventsForDate(root.year, root.month + 1, root.day)
     }
     readonly property bool redDay: {
         for (let index = 0; index < root.dayEvents.length; ++index) {
@@ -118,10 +122,7 @@ Item {
             Layout.fillHeight: true
             Layout.topMargin: 4
 
-            model: {
-                root.eventRevision
-                return root.dayEvents
-            }
+            model: root.dayEvents
 
             delegate: ItemDelegate {
                 id: itemDelegate
@@ -209,7 +210,7 @@ Item {
         anchors.bottom: parent.bottom
         width: 1
         color: root.gridLineColor
-        visible: root.activeMonth
+        visible: root.activeMonth && !root.firstColumn
         z: 2
     }
 
@@ -229,7 +230,7 @@ Item {
         anchors.bottom: parent.bottom
         width: 1
         color: root.gridLineColor
-        visible: root.activeMonth && !root.nextCellActive
+        visible: root.activeMonth && !root.lastColumn && !root.nextCellActive
         z: 2
     }
 
