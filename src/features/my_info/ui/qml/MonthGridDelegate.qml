@@ -188,6 +188,9 @@ Item {
                             color: itemDelegate.eventForegroundColor
                             elide: itemDelegate.marqueeActive ? Text.ElideNone : Text.ElideRight
                             font: itemDelegate.font
+                            horizontalAlignment: itemDelegate.marqueeActive
+                                                 ? Text.AlignLeft
+                                                 : Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             anchors.verticalCenter: parent.verticalCenter
                             width: itemDelegate.marqueeActive
