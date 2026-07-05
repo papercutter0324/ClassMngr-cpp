@@ -202,6 +202,8 @@ private:
     QStringList allCampusCodes() const;
     QWidget* createUpcomingEventRow(
         const CalendarEvent& event,
+        int dateColumnWidth,
+        int timeColumnWidth,
         QWidget* parent
         );
 

@@ -35,6 +35,7 @@
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFont>
+#include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -70,6 +71,7 @@ constexpr int TextEditVerticalPadding = 24;
 constexpr int ClassTabContentTopMargin = 16;
 constexpr int UpcomingEventsNext30Days = 30;
 constexpr int UpcomingEventsLimit = 10;
+constexpr int UpcomingEventColumnSpacing = 16;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
@@ -2367,11 +2369,39 @@ void MyInfoPage::renderUpcomingEvents(
         return;
     }
 
+    int dateColumnWidth = 0;
+    int timeColumnWidth = 0;
+    const QFontMetrics eventTextMetrics(
+        layout->parentWidget()
+            ? layout->parentWidget()->font()
+            : font()
+        );
+
+    for (const CalendarEvent& event : filteredEvents)
+    {
+        dateColumnWidth =
+            qMax(
+                dateColumnWidth,
+                eventTextMetrics.horizontalAdvance(
+                    upcomingEventDateText(event)
+                    )
+                );
+        timeColumnWidth =
+            qMax(
+                timeColumnWidth,
+                eventTextMetrics.horizontalAdvance(
+                    upcomingEventTimeText(event)
+                    )
+                );
+    }
+
     for (const CalendarEvent& event : filteredEvents)
     {
         layout->addWidget(
             createUpcomingEventRow(
                 event,
+                dateColumnWidth,
+                timeColumnWidth,
                 layout->parentWidget()
                 )
             );
@@ -2787,6 +2817,8 @@ QStringList MyInfoPage::allCampusCodes() const
 
 QWidget* MyInfoPage::createUpcomingEventRow(
     const CalendarEvent& event,
+    int dateColumnWidth,
+    int timeColumnWidth,
     QWidget* parent
     )
 {
@@ -2826,7 +2858,7 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     auto* layout =
         new QHBoxLayout(row);
     layout->setContentsMargins(8, 4, 8, 4);
-    layout->setSpacing(10);
+    layout->setSpacing(UpcomingEventColumnSpacing);
 
     auto* date =
         new QLabel(
@@ -2836,6 +2868,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     date->setSizePolicy(
         QSizePolicy::Fixed,
         QSizePolicy::Preferred
+        );
+    date->setFixedWidth(dateColumnWidth);
+    date->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
         );
     date->setCursor(
         Qt::PointingHandCursor
@@ -2855,6 +2891,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         QSizePolicy::Fixed,
         QSizePolicy::Preferred
         );
+    time->setFixedWidth(timeColumnWidth);
+    time->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
     time->setCursor(
         Qt::PointingHandCursor
         );
@@ -2872,6 +2912,9 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         QSizePolicy::Preferred
         );
     title->setMinimumWidth(0);
+    title->setAlignment(
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
     title->setTextInteractionFlags(
         Qt::NoTextInteraction
         );
