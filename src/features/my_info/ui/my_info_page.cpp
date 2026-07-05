@@ -69,6 +69,7 @@ namespace
 constexpr int AutosaveDelayMs = 750;
 constexpr int UntitledCardTopMargin = 4;
 constexpr int CompactFieldWidth = 170;
+constexpr int MyInformationFieldVerticalPadding = 14;
 constexpr int TextEditVerticalPadding = 24;
 constexpr int ClassTabContentTopMargin = 16;
 constexpr int UpcomingEventsNext30Days = 30;
@@ -430,6 +431,24 @@ int findCampusIndex(
     return -1;
 }
 
+int readableFieldHeight(
+    const QWidget* field
+    )
+{
+    if (!field)
+    {
+        return 0;
+    }
+
+    const QFontMetrics metrics(field->font());
+
+    return metrics.lineSpacing()
+        + qMax(
+            MyInformationFieldVerticalPadding,
+            (metrics.descent() * 2) + 8
+            );
+}
+
 void matchFieldHeights(
     QWidget* first,
     QWidget* second,
@@ -451,8 +470,11 @@ void matchFieldHeights(
                 qMax(
                     fieldHeight,
                     qMax(
-                        field->sizeHint().height(),
-                        field->minimumSizeHint().height()
+                        qMax(
+                            field->sizeHint().height(),
+                            field->minimumSizeHint().height()
+                            ),
+                        readableFieldHeight(field)
                         )
                     );
         };
@@ -1397,6 +1419,33 @@ bool MyInfoPage::eventFilter(
 {
     if (
         event
+        && (
+            watched == m_nameEdit
+            || watched == m_campusCombo
+            || watched == m_zoomLoginIdEdit
+            || watched == m_zoomPasswordEdit
+            )
+        && (
+            event->type() == QEvent::FontChange
+            || event->type() == QEvent::ApplicationFontChange
+            || event->type() == QEvent::Polish
+            || event->type() == QEvent::Show
+            || event->type() == QEvent::StyleChange
+            )
+        )
+    {
+        QTimer::singleShot(
+            0,
+            this,
+            [this]()
+            {
+                updateMyInformationFieldWidths();
+            }
+            );
+    }
+
+    if (
+        event
         && watched == m_calendarView
         && (
             event->type() == QEvent::FontChange
@@ -1969,6 +2018,8 @@ void MyInfoPage::buildMyInformationSection()
         m_zoomPasswordEdit
         );
 
+    m_nameEdit->installEventFilter(this);
+    m_campusCombo->installEventFilter(this);
     m_zoomLoginIdEdit->installEventFilter(this);
     m_zoomPasswordEdit->installEventFilter(this);
 
@@ -4277,6 +4328,13 @@ void MyInfoPage::updateMyInformationFieldWidths()
     WidgetSizing::updateTextAwareFieldWidth(
         m_zoomPasswordEdit,
         UiConstants::Forms::FieldMinimumWidth
+        );
+
+    matchFieldHeights(
+        m_nameEdit,
+        m_campusCombo,
+        m_zoomLoginIdEdit,
+        m_zoomPasswordEdit
         );
 }
 
