@@ -94,6 +94,7 @@ Item {
     ColumnLayout {
         id: contentLayout
         anchors.fill: parent
+        z: 1
 
         Label {
             id: dayText
@@ -225,7 +226,6 @@ Item {
         width: 1
         color: root.gridLineColor
         visible: root.activeMonth && !root.firstColumn
-        z: 2
     }
 
     Rectangle {
@@ -235,7 +235,6 @@ Item {
         height: 1
         color: root.gridLineColor
         visible: root.activeMonth
-        z: 2
     }
 
     Rectangle {
@@ -245,7 +244,6 @@ Item {
         width: 1
         color: root.gridLineColor
         visible: root.activeMonth && !root.lastColumn && !root.nextCellActive
-        z: 2
     }
 
     Rectangle {
@@ -255,7 +253,6 @@ Item {
         height: 1
         color: root.gridLineColor
         visible: root.activeMonth && !root.lowerCellActive
-        z: 2
     }
 
     MouseArea {
