@@ -33,6 +33,7 @@ private slots:
     void ignoresWeekdayFontColorWithFill();
     void importsShiftedFirstCalendarRow();
     void appendsCampusCodesFromCellNotes();
+    void appendsVariableLengthCampusCodesFromCellNotes();
 };
 
 void CalendarImportTests::ignoresWeekendLegendEntries()
@@ -165,7 +166,10 @@ void CalendarImportTests::appendsCampusCodesFromCellNotes()
         );
 
     const CalendarImport::ParsedCalendarImport parsed =
-        CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+        CalendarImport::parseCalendarEventsFromWorkbook(
+            workbook,
+            {QStringLiteral("BDG")}
+            );
 
     QCOMPARE(parsed.events.size(), 1);
     QCOMPARE(
@@ -185,6 +189,46 @@ void CalendarImportTests::appendsCampusCodesFromCellNotes()
             parsed.events.first(),
             {QStringLiteral("SNU")},
             {QStringLiteral("BDG"), QStringLiteral("SNU")},
+            false
+            )
+        );
+}
+
+void CalendarImportTests::appendsVariableLengthCampusCodesFromCellNotes()
+{
+    CalendarImport::Workbook workbook =
+        baseWorkbook();
+    workbook.cells.append(
+        {20, 26, 1, QStringLiteral("DYB Workshop"), QString()}
+        );
+    workbook.cells.append(
+        {4, 1, 1, QStringLiteral("6"), QStringLiteral("Campus: S2")}
+        );
+
+    const CalendarImport::ParsedCalendarImport parsed =
+        CalendarImport::parseCalendarEventsFromWorkbook(
+            workbook,
+            {QStringLiteral("S2")}
+            );
+
+    QCOMPARE(parsed.events.size(), 1);
+    QCOMPARE(
+        parsed.events.first().title,
+        QStringLiteral("DYB Workshop (S2)")
+        );
+    QVERIFY(
+        CalendarEventCampusFilter::eventMatchesCampus(
+            parsed.events.first(),
+            {QStringLiteral("S2")},
+            {QStringLiteral("BDG"), QStringLiteral("S2")},
+            false
+            )
+        );
+    QVERIFY(
+        !CalendarEventCampusFilter::eventMatchesCampus(
+            parsed.events.first(),
+            {QStringLiteral("BDG")},
+            {QStringLiteral("BDG"), QStringLiteral("S2")},
             false
             )
         );

@@ -642,23 +642,59 @@ QHash<QDate, QStringList> noteTitlesByDate(
     return titlesByDate;
 }
 
-QStringList campusCodesInNote(
-    const QString& note
+QStringList normalizedCampusCodes(
+    const QStringList& campusCodes
     )
 {
-    static const QRegularExpression campusCodePattern(
-        QStringLiteral("(^|[^A-Z])([A-Z]{3})(?=[^A-Z]|$)")
+    QStringList codes;
+
+    for (const QString& code : campusCodes)
+    {
+        const QString normalized =
+            code.trimmed();
+
+        if (!normalized.isEmpty())
+        {
+            codes.append(normalized);
+        }
+    }
+
+    codes.removeDuplicates();
+    return codes;
+}
+
+bool containsCampusCode(
+    const QString& text,
+    const QString& code
+    )
+{
+    if (code.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    const QRegularExpression pattern(
+        QStringLiteral("(^|[^A-Z0-9])%1([^A-Z0-9]|$)")
+            .arg(QRegularExpression::escape(code.trimmed())),
+        QRegularExpression::CaseInsensitiveOption
         );
 
-    QStringList codes;
-    QRegularExpressionMatchIterator matches =
-        campusCodePattern.globalMatch(note);
+    return pattern.match(text).hasMatch();
+}
 
-    while (matches.hasNext())
+QStringList campusCodesInNote(
+    const QString& note,
+    const QStringList& knownCampusCodes
+    )
+{
+    QStringList codes;
+
+    for (const QString& code : knownCampusCodes)
     {
-        codes.append(
-            matches.next().captured(2)
-            );
+        if (containsCampusCode(note, code))
+        {
+            codes.append(code.trimmed());
+        }
     }
 
     codes.removeDuplicates();
@@ -667,13 +703,14 @@ QStringList campusCodesInNote(
 
 QString titleWithCampusCodes(
     const QString& title,
-    const QString& note
+    const QString& note,
+    const QStringList& knownCampusCodes
     )
 {
     QString normalizedTitle =
         title.simplified();
     QStringList codes =
-        campusCodesInNote(note);
+        campusCodesInNote(note, knownCampusCodes);
 
     codes.erase(
         std::remove_if(
@@ -681,13 +718,10 @@ QString titleWithCampusCodes(
             codes.end(),
             [&normalizedTitle](const QString& code)
             {
-                const QRegularExpression pattern(
-                    QStringLiteral("(^|[^A-Z0-9])%1([^A-Z0-9]|$)")
-                        .arg(QRegularExpression::escape(code)),
-                    QRegularExpression::CaseInsensitiveOption
+                return containsCampusCode(
+                    normalizedTitle,
+                    code
                     );
-
-                return pattern.match(normalizedTitle).hasMatch();
             }
             ),
         codes.end()
@@ -750,10 +784,13 @@ CalendarEvent calendarEvent(
 }
 
 ParsedCalendarImport parseCalendarEventsFromWorkbook(
-    const Workbook& workbook
+    const Workbook& workbook,
+    const QStringList& campusCodes
     )
 {
     ParsedCalendarImport result;
+    const QStringList knownCampusCodes =
+        normalizedCampusCodes(campusCodes);
     const QVector<MonthBlock> blocks =
         monthBlocks(workbook);
 
@@ -904,7 +941,8 @@ ParsedCalendarImport parseCalendarEventsFromWorkbook(
                         const QString importTitle =
                             titleWithCampusCodes(
                                 title,
-                                cell.note
+                                cell.note,
+                                knownCampusCodes
                                 );
                         const CalendarEvent event =
                             calendarEvent(

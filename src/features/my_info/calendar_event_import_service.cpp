@@ -2,7 +2,9 @@
 
 #include "calendar_event_sheet_parser.h"
 #include "calendar_import_workbook.h"
+#include "core/resource_paths.h"
 #include "data/data_service.h"
+#include "features/campus/data/campus_json_repository.h"
 
 #include <QDate>
 #include <QNetworkAccessManager>
@@ -19,6 +21,28 @@ const QString ImportUrl =
         "18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/"
         "export?format=xlsx&gid=570696063"
         );
+
+QStringList campusCodesFromDirectory()
+{
+    QStringList codes;
+    const CampusJsonRepository repository(
+        ResourcePaths::Campuses::directory()
+        );
+
+    for (const CampusInfo& campus : repository.loadCampuses())
+    {
+        const QString code =
+            campus.campusCode.trimmed();
+
+        if (!code.isEmpty())
+        {
+            codes.append(code);
+        }
+    }
+
+    codes.removeDuplicates();
+    return codes;
+}
 }
 
 CalendarEventImportService::CalendarEventImportService(
@@ -103,7 +127,10 @@ void CalendarEventImportService::handleFinished(
     }
 
     CalendarImport::ParsedCalendarImport parsed =
-        CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+        CalendarImport::parseCalendarEventsFromWorkbook(
+            workbook,
+            campusCodesFromDirectory()
+            );
 
     if (parsed.events.isEmpty())
     {

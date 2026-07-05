@@ -3,6 +3,7 @@
 #include "domain/models/calendar_event.h"
 
 #include <QList>
+#include <QStringList>
 
 namespace CalendarImport
 {
@@ -15,7 +16,8 @@ struct ParsedCalendarImport
 };
 
 ParsedCalendarImport parseCalendarEventsFromWorkbook(
-    const Workbook& workbook
+    const Workbook& workbook,
+    const QStringList& campusCodes = {}
     );
 
 QString calendarEventImportSignature(
