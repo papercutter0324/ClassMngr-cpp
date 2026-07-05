@@ -1,0 +1,163 @@
+{
+    "address": "[Recipient's Name]",
+    "arrival_info": "",
+    "building_name": "",
+    "campus_code": "DGT1",
+    "campus_name": "Dongtan 1",
+    "directions": {
+        "addr_note": "",
+        "en": {
+            "address_system": "modern",
+            "building_name": "",
+            "city": "",
+            "city_district": "",
+            "classic": {
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "postal_code": "",
+                "province": ""
+            },
+            "district": "",
+            "line1": "",
+            "line2": "",
+            "modern": {
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "postal_code": "",
+                "province": ""
+            },
+            "postal_code": "",
+            "province": ""
+        },
+        "kr": {
+            "address_system": "modern",
+            "building_name": "",
+            "city": "",
+            "city_district": "",
+            "classic": {
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "postal_code": "",
+                "province": ""
+            },
+            "district": "",
+            "line1": "",
+            "line2": "",
+            "modern": {
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "postal_code": "",
+                "province": ""
+            },
+            "postal_code": "",
+            "province": ""
+        }
+    },
+    "housing_locations": [
+        {
+            "addr_note": "",
+            "en": {
+                "address_system": "modern",
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "classic": {
+                    "building_name": "",
+                    "city": "",
+                    "city_district": "",
+                    "district": "",
+                    "line1": "",
+                    "line2": "",
+                    "postal_code": "",
+                    "province": ""
+                },
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "modern": {
+                    "building_name": "",
+                    "city": "",
+                    "city_district": "",
+                    "district": "",
+                    "line1": "",
+                    "line2": "",
+                    "postal_code": "",
+                    "province": ""
+                },
+                "postal_code": "",
+                "province": ""
+            },
+            "kr": {
+                "address_system": "modern",
+                "building_name": "",
+                "city": "",
+                "city_district": "",
+                "classic": {
+                    "building_name": "",
+                    "city": "",
+                    "city_district": "",
+                    "district": "",
+                    "line1": "",
+                    "line2": "",
+                    "postal_code": "",
+                    "province": ""
+                },
+                "district": "",
+                "line1": "",
+                "line2": "",
+                "modern": {
+                    "building_name": "",
+                    "city": "",
+                    "city_district": "",
+                    "district": "",
+                    "line1": "",
+                    "line2": "",
+                    "postal_code": "",
+                    "province": ""
+                },
+                "postal_code": "",
+                "province": ""
+            },
+            "map": {
+            },
+            "name": ""
+        }
+    ],
+    "id": "dongtan",
+    "image_main": "",
+    "map": {
+        "images": [
+        ],
+        "links": {
+            "kakao": "",
+            "naver": ""
+        }
+    },
+    "office_number": "",
+    "office_wifi": "",
+    "office_wifi_password": "",
+    "phone_number": "",
+    "photocopier_code": "",
+    "printer_driver_url": "",
+    "printer_driver_url_unavailable": true,
+    "printer_name": "",
+    "printer_steps": "",
+    "transit_steps": [
+    ]
+}
