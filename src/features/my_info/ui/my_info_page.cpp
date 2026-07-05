@@ -72,6 +72,9 @@ constexpr int ClassTabContentTopMargin = 16;
 constexpr int UpcomingEventsNext30Days = 30;
 constexpr int UpcomingEventsLimit = 10;
 constexpr int UpcomingEventColumnSpacing = 16;
+constexpr int UpcomingEventDateColumnMinimumWidth = 72;
+constexpr int UpcomingEventTimeColumnMinimumWidth = 104;
+constexpr int UpcomingEventColumnTextPadding = 8;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
@@ -1291,11 +1294,17 @@ bool MyInfoPage::eventFilter(
         )
     {
         auto* title =
-            dynamic_cast<HoverMarqueeLabel*>(
-                watched
-                    ->property("calendarEventTitleLabel")
-                    .value<QObject*>()
-                );
+            dynamic_cast<HoverMarqueeLabel*>(watched);
+
+        if (!title)
+        {
+            title =
+                dynamic_cast<HoverMarqueeLabel*>(
+                    watched
+                        ->property("calendarEventTitleLabel")
+                        .value<QObject*>()
+                    );
+        }
 
         if (title)
         {
@@ -2369,8 +2378,8 @@ void MyInfoPage::renderUpcomingEvents(
         return;
     }
 
-    int dateColumnWidth = 0;
-    int timeColumnWidth = 0;
+    int dateColumnWidth = UpcomingEventDateColumnMinimumWidth;
+    int timeColumnWidth = UpcomingEventTimeColumnMinimumWidth;
     const QFontMetrics eventTextMetrics(
         layout->parentWidget()
             ? layout->parentWidget()->font()
@@ -2384,14 +2393,14 @@ void MyInfoPage::renderUpcomingEvents(
                 dateColumnWidth,
                 eventTextMetrics.horizontalAdvance(
                     upcomingEventDateText(event)
-                    )
+                    ) + UpcomingEventColumnTextPadding
                 );
         timeColumnWidth =
             qMax(
                 timeColumnWidth,
                 eventTextMetrics.horizontalAdvance(
                     upcomingEventTimeText(event)
-                    )
+                    ) + UpcomingEventColumnTextPadding
                 );
     }
 
@@ -2866,10 +2875,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             row
             );
     date->setSizePolicy(
-        QSizePolicy::Fixed,
+        QSizePolicy::Minimum,
         QSizePolicy::Preferred
         );
-    date->setFixedWidth(dateColumnWidth);
+    date->setMinimumWidth(dateColumnWidth);
     date->setAlignment(
         Qt::AlignLeft | Qt::AlignVCenter
         );
@@ -2880,7 +2889,6 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         "calendarEventId",
         event.id
         );
-    date->installEventFilter(this);
 
     auto* time =
         new QLabel(
@@ -2888,10 +2896,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             row
             );
     time->setSizePolicy(
-        QSizePolicy::Fixed,
+        QSizePolicy::Minimum,
         QSizePolicy::Preferred
         );
-    time->setFixedWidth(timeColumnWidth);
+    time->setMinimumWidth(timeColumnWidth);
     time->setAlignment(
         Qt::AlignLeft | Qt::AlignVCenter
         );
@@ -2902,7 +2910,6 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         "calendarEventId",
         event.id
         );
-    time->installEventFilter(this);
 
     auto* title =
         new HoverMarqueeLabel(row);
@@ -2925,7 +2932,6 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         "calendarEventId",
         event.id
         );
-    title->installEventFilter(this);
 
     auto* type =
         new QPushButton(
@@ -2948,6 +2954,27 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         "calendarEventTitleLabel",
         QVariant::fromValue<QObject*>(title)
         );
+    date->setProperty(
+        "calendarEventTitleLabel",
+        QVariant::fromValue<QObject*>(title)
+        );
+    time->setProperty(
+        "calendarEventTitleLabel",
+        QVariant::fromValue<QObject*>(title)
+        );
+    title->setProperty(
+        "calendarEventTitleLabel",
+        QVariant::fromValue<QObject*>(title)
+        );
+    type->setProperty(
+        "calendarEventTitleLabel",
+        QVariant::fromValue<QObject*>(title)
+        );
+
+    date->installEventFilter(this);
+    time->installEventFilter(this);
+    title->installEventFilter(this);
+    type->installEventFilter(this);
 
     layout->addWidget(date);
     layout->addWidget(time);
