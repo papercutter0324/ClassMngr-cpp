@@ -49,6 +49,59 @@ void CampusDashboardPage::buildUi()
 
     if (m_adminMode)
     {
+        auto* campusNameLabel =
+            createTranslatableLabel(
+                QT_TR_NOOP("Campus Name:"),
+                this
+                );
+
+        m_campusNameEdit =
+            new QLineEdit(this);
+
+        m_campusNameEdit->setMinimumWidth(180);
+        m_campusNameEdit->setMaximumWidth(260);
+        m_lineEdits.append(m_campusNameEdit);
+
+        selectorLayout->addWidget(campusNameLabel);
+        selectorLayout->addWidget(m_campusNameEdit);
+
+        connect(
+            m_campusNameEdit,
+            &QLineEdit::textEdited,
+            this,
+            [this](const QString& text)
+            {
+                if (m_nameEdit)
+                {
+                    const QSignalBlocker blocker(m_nameEdit);
+                    m_nameEdit->setText(text);
+                }
+
+                if (
+                    m_campusCombo
+                    && m_campusCombo->currentIndex() >= 0
+                    )
+                {
+                    const QSignalBlocker blocker(m_campusCombo);
+
+                    m_campusCombo->setItemText(
+                        m_campusCombo->currentIndex(),
+                        text
+                        );
+                    updateCampusSelectorWidth();
+                }
+
+                handleFieldEdited();
+            }
+            );
+
+        connect(
+            m_campusNameEdit,
+            &QLineEdit::editingFinished,
+            this,
+            &CampusDashboardPage::normalizeCampusNameField
+            );
+
         auto* campusCodeLabel =
             createTranslatableLabel(
                 QT_TR_NOOP("Campus Code:"),

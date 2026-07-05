@@ -335,6 +335,7 @@ private:
     QVBoxLayout* m_mapSectionsLayout = nullptr;
 
     QLineEdit* m_nameEdit = nullptr;
+    QLineEdit* m_campusNameEdit = nullptr;
     QLineEdit* m_campusCodeEdit = nullptr;
     QLineEdit* m_buildingEdit = nullptr;
     QLineEdit* m_buildingKrEdit = nullptr;

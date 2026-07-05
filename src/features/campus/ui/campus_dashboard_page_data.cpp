@@ -127,6 +127,12 @@ void CampusDashboardPage::populateFields(
 
     m_nameEdit->setText(campus.campusName);
 
+    if (m_campusNameEdit)
+    {
+        const QSignalBlocker blocker(m_campusNameEdit);
+        m_campusNameEdit->setText(campus.campusName);
+    }
+
     if (m_campusCodeEdit)
     {
         m_campusCodeEdit->setText(campus.campusCode);
@@ -260,12 +266,38 @@ void CampusDashboardPage::updatePhotocopierCodeState()
 
 void CampusDashboardPage::normalizeCampusNameField()
 {
-    if (!m_nameEdit || !m_nameEdit->text().trimmed().isEmpty())
+    QLineEdit* nameEdit =
+        m_campusNameEdit
+            ? m_campusNameEdit
+            : m_nameEdit;
+
+    if (!nameEdit || !nameEdit->text().trimmed().isEmpty())
     {
         return;
     }
 
-    m_nameEdit->setText(tr("Default"));
+    nameEdit->setText(tr("Default"));
+
+    if (m_nameEdit && m_nameEdit != nameEdit)
+    {
+        const QSignalBlocker blocker(m_nameEdit);
+        m_nameEdit->setText(nameEdit->text());
+    }
+
+    if (
+        m_campusCombo
+        && m_campusCombo->currentIndex() >= 0
+        )
+    {
+        const QSignalBlocker blocker(m_campusCombo);
+
+        m_campusCombo->setItemText(
+            m_campusCombo->currentIndex(),
+            nameEdit->text()
+            );
+        updateCampusSelectorWidth();
+    }
+
     handleFieldEdited();
 }
 
@@ -343,10 +375,15 @@ Status CampusDashboardPage::readFieldsIntoCampus(
     CampusInfo updated =
         m_currentCampus;
 
-    updated.campusName =
-        m_nameEdit->text().trimmed().isEmpty()
-            ? tr("Default")
+    const QString campusName =
+        m_campusNameEdit
+            ? m_campusNameEdit->text()
             : m_nameEdit->text();
+
+    updated.campusName =
+        campusName.trimmed().isEmpty()
+            ? tr("Default")
+            : campusName;
     updated.campusCode =
         m_campusCodeEdit
             ? m_campusCodeEdit->text().trimmed()
