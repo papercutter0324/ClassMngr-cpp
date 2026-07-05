@@ -61,6 +61,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QVariant>
+#include <QVariantMap>
 
 namespace
 {
@@ -2044,6 +2045,8 @@ void MyInfoPage::buildMonthlyCalendarSection()
 
     if (auto* root = m_calendarView->rootObject())
     {
+        syncCalendarEventTypeColors();
+
         connect(
             root,
             SIGNAL(dayActivated(int,int,int)),
@@ -2557,6 +2560,7 @@ void MyInfoPage::chooseCalendarEventTypeColor(
         selected
         );
     syncEventTypeFilterButtons();
+    syncCalendarEventTypeColors();
     refreshUpcomingEvents();
 }
 
@@ -2644,6 +2648,51 @@ void MyInfoPage::syncEventTypeFilterButtons()
                 )
             );
     }
+}
+
+void MyInfoPage::syncCalendarEventTypeColors()
+{
+    if (!m_calendarView)
+    {
+        return;
+    }
+
+    auto* root =
+        m_calendarView->rootObject();
+
+    if (!root)
+    {
+        return;
+    }
+
+    QVariantMap colors;
+    QVariantMap textColors;
+
+    for (const QString& eventType : calendarEventTypes())
+    {
+        const QString normalized =
+            normalizedCalendarEventType(eventType);
+        const QColor color =
+            calendarEventTypeColor(normalized);
+
+        colors.insert(
+            normalized,
+            color.name(QColor::HexRgb)
+            );
+        textColors.insert(
+            normalized,
+            readableTextColor(color)
+            );
+    }
+
+    root->setProperty(
+        "eventTypeColors",
+        colors
+        );
+    root->setProperty(
+        "eventTypeTextColors",
+        textColors
+        );
 }
 
 QString MyInfoPage::upcomingEventDateText(

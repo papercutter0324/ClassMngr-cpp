@@ -26,6 +26,8 @@ Item {
     required property color inactiveTextColor
     required property color accentColor
     required property color accentTextColor
+    required property var eventTypeColors
+    required property var eventTypeTextColors
 
     readonly property bool activeMonth: month === visibleMonth
     readonly property bool firstColumn: gridColumn <= 0
@@ -79,6 +81,16 @@ Item {
             || listView.indexAt(mapped.x, mapped.y + listView.contentY) >= 0
     }
 
+    function eventColor(eventType) {
+        const color = root.eventTypeColors[eventType]
+        return color ? color : root.accentColor
+    }
+
+    function eventTextColor(eventType) {
+        const color = root.eventTypeTextColors[eventType]
+        return color ? color : root.accentTextColor
+    }
+
     ColumnLayout {
         id: contentLayout
         anchors.fill: parent
@@ -130,6 +142,8 @@ Item {
                 required property var modelData
                 readonly property bool marqueeActive: hovered
                                                        && eventText.implicitWidth > eventClip.width
+                readonly property color eventBackgroundColor: root.eventColor(modelData.eventType)
+                readonly property color eventForegroundColor: root.eventTextColor(modelData.eventType)
 
                 width: listView.width
                 implicitHeight: Math.max(
@@ -148,7 +162,7 @@ Item {
                 onClicked: root.eventActivated(modelData.id)
 
                 background: Rectangle {
-                    color: root.accentColor
+                    color: itemDelegate.eventBackgroundColor
                     radius: 3
                 }
 
@@ -161,7 +175,7 @@ Item {
                         Text {
                             id: eventText
                             text: itemDelegate.text
-                            color: root.accentTextColor
+                            color: itemDelegate.eventForegroundColor
                             elide: itemDelegate.marqueeActive ? Text.ElideNone : Text.ElideRight
                             font: itemDelegate.font
                             verticalAlignment: Text.AlignVCenter

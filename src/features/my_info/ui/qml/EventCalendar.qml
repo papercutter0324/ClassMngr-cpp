@@ -28,6 +28,8 @@ Item {
     property color gridLineColor: "#cbc9c2"
     property color accentColor: toolbarColor
     property color accentTextColor: toolbarTextColor
+    property var eventTypeColors: ({})
+    property var eventTypeTextColors: ({})
 
     readonly property int weekColumnWidth: 54
     readonly property int dayHeaderHeight: 40
@@ -475,6 +477,8 @@ Item {
                             inactiveTextColor: root.inactiveTextColor
                             accentColor: root.accentColor
                             accentTextColor: root.accentTextColor
+                            eventTypeColors: root.eventTypeColors
+                            eventTypeTextColors: root.eventTypeTextColors
 
                             onDayActivated: function(year, month, day) {
                                 root.dayActivated(year, month, day)

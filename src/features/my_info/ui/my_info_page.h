@@ -188,6 +188,7 @@ private:
         bool checked
         ) const;
     void syncEventTypeFilterButtons();
+    void syncCalendarEventTypeColors();
     QString upcomingEventDateText(
         const CalendarEvent& event
         ) const;
