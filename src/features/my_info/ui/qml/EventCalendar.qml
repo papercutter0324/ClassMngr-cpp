@@ -32,7 +32,13 @@ Item {
     property var eventTypeTextColors: ({})
     property int baseFontPixelSize: 14
 
-    readonly property int weekColumnWidth: 54
+    readonly property int minimumWeekColumnWidth: 54
+    readonly property int weekColumnHorizontalPadding: 16
+    readonly property int weekColumnWidth: Math.max(
+                                             minimumWeekColumnWidth,
+                                             Math.ceil(elemHeaderMetrics.advanceWidth)
+                                             + weekColumnHorizontalPadding
+                                             + sectionDividerWidth)
     readonly property int dayHeaderHeight: 40
     readonly property int sectionDividerWidth: 3
 
@@ -144,6 +150,13 @@ Item {
         const remainder = snappedSize % segmentCount
 
         return baseSize + (segmentIndex < remainder ? 1 : 0)
+    }
+
+    TextMetrics {
+        id: elemHeaderMetrics
+
+        font.pixelSize: root.baseFontPixelSize
+        text: qsTr("Elem")
     }
 
     Component.onCompleted: {
@@ -271,6 +284,7 @@ Item {
 
                 Layout.column: 0
                 Layout.row: 0
+                Layout.minimumWidth: root.weekColumnWidth
                 Layout.preferredWidth: root.weekColumnWidth
                 Layout.preferredHeight: root.dayHeaderHeight
 
@@ -333,6 +347,7 @@ Item {
 
                 Layout.column: 2
                 Layout.row: 0
+                Layout.minimumWidth: root.weekColumnWidth
                 Layout.preferredWidth: root.weekColumnWidth
                 Layout.preferredHeight: root.dayHeaderHeight
 
@@ -370,6 +385,7 @@ Item {
             Item {
                 Layout.column: 0
                 Layout.row: 1
+                Layout.minimumWidth: root.weekColumnWidth
                 Layout.preferredWidth: root.weekColumnWidth
                 Layout.preferredHeight: 1
                 Layout.fillHeight: true
@@ -504,6 +520,7 @@ Item {
             Item {
                 Layout.column: 2
                 Layout.row: 1
+                Layout.minimumWidth: root.weekColumnWidth
                 Layout.preferredWidth: root.weekColumnWidth
                 Layout.preferredHeight: 1
                 Layout.fillHeight: true
