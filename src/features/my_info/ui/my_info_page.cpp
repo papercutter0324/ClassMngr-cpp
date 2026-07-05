@@ -35,6 +35,7 @@
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFont>
+#include <QFontInfo>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
@@ -75,9 +76,68 @@ constexpr int UpcomingEventsLimit = 10;
 constexpr int UpcomingEventColumnSpacing = 16;
 constexpr int UpcomingEventDateColumnMinimumWidth = 72;
 constexpr int UpcomingEventTimeColumnMinimumWidth = 104;
+constexpr int UpcomingEventTypeColumnMinimumWidth = 82;
 constexpr int UpcomingEventColumnTextPadding = 8;
+constexpr int UpcomingEventTagMinimumHeight = 28;
+constexpr int UpcomingEventRowMinimumHeight = 38;
 const QString NotAvailableText =
     QStringLiteral("N/A");
+
+int upcomingEventTagVerticalPadding(
+    const QFont& font
+    )
+{
+    return qMax(
+        6,
+        QFontMetrics(font).height() / 3
+        );
+}
+
+int upcomingEventTagHorizontalPadding(
+    const QFont& font
+    )
+{
+    return qMax(
+        8,
+        QFontMetrics(font).height() / 2
+        );
+}
+
+int upcomingEventTagHeight(
+    const QFont& font
+    )
+{
+    const QFontMetrics metrics(font);
+
+    return qMax(
+        UpcomingEventTagMinimumHeight,
+        metrics.lineSpacing()
+            + (upcomingEventTagVerticalPadding(font) * 2)
+            + 4
+        );
+}
+
+int upcomingEventTagWidth(
+    const QString& text,
+    const QFont& font
+    )
+{
+    const QFontMetrics metrics(font);
+
+    return metrics.horizontalAdvance(text)
+        + (upcomingEventTagHorizontalPadding(font) * 2)
+        + 2;
+}
+
+int upcomingEventRowHeight(
+    const QFont& font
+    )
+{
+    return qMax(
+        UpcomingEventRowMinimumHeight,
+        upcomingEventTagHeight(font) + 10
+        );
+}
 
 struct ClassSummary
 {
@@ -1287,6 +1347,26 @@ bool MyInfoPage::eventFilter(
 {
     if (
         event
+        && watched == m_calendarView
+        && (
+            event->type() == QEvent::FontChange
+            || event->type() == QEvent::ApplicationFontChange
+            )
+        )
+    {
+        QTimer::singleShot(
+            0,
+            this,
+            [this]()
+            {
+                syncCalendarFontSize();
+                refreshUpcomingEvents();
+            }
+            );
+    }
+
+    if (
+        event
         && watched
         && (
             event->type() == QEvent::Enter
@@ -2015,6 +2095,7 @@ void MyInfoPage::buildMonthlyCalendarSection()
 
     m_calendarView =
         new QQuickWidget(card);
+    m_calendarView->installEventFilter(this);
     m_calendarView->setResizeMode(
         QQuickWidget::SizeRootObjectToView
         );
@@ -2045,6 +2126,7 @@ void MyInfoPage::buildMonthlyCalendarSection()
 
     if (auto* root = m_calendarView->rootObject())
     {
+        syncCalendarFontSize();
         syncCalendarEventTypeColors();
 
         connect(
@@ -2223,6 +2305,12 @@ QWidget* MyInfoPage::createEventTypeFilterRow(
     layout->setSpacing(8);
     layout->addStretch(1);
 
+    const QFont tagFont =
+        FontManager::getUiFont();
+    container->setFixedHeight(
+        upcomingEventTagHeight(tagFont)
+        );
+
     for (const QString& eventType : calendarEventTypes())
     {
         auto* button =
@@ -2235,7 +2323,15 @@ QWidget* MyInfoPage::createEventTypeFilterRow(
             "eventType",
             eventType
             );
-        button->setMinimumHeight(28);
+        button->setFont(tagFont);
+        button->setFixedSize(
+            upcomingEventTagWidth(eventType, tagFont),
+            upcomingEventTagHeight(tagFont)
+            );
+        button->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Fixed
+            );
         button->setCursor(
             Qt::PointingHandCursor
             );
@@ -2254,7 +2350,11 @@ QWidget* MyInfoPage::createEventTypeFilterRow(
                 if (m_eventTypeFilterStates.value(eventType, true) == checked)
                 {
                     button->setStyleSheet(
-                        eventTypeFilterButtonStyle(eventType, checked)
+                        eventTypeFilterButtonStyle(
+                            eventType,
+                            checked,
+                            button->font()
+                            )
                         );
                     return;
                 }
@@ -2292,11 +2392,88 @@ void MyInfoPage::refreshUpcomingEvents()
         UpcomingEventsScope::Next10Events
     };
 
+    std::array<QList<CalendarEvent>, UpcomingEventsScopeCount> eventsByScope;
+    for (UpcomingEventsScope scope : scopes)
+    {
+        eventsByScope[scopeIndex(scope)] =
+            upcomingEventsForScope(scope);
+    }
+
+    int dateColumnWidth = UpcomingEventDateColumnMinimumWidth;
+    int timeColumnWidth = UpcomingEventTimeColumnMinimumWidth;
+    int eventTypeColumnWidth = UpcomingEventTypeColumnMinimumWidth;
+    const QFont eventTextFont =
+        FontManager::getUiFont();
+    const QFontMetrics eventTextMetrics(
+        eventTextFont
+        );
+
+    for (const QString& eventType : calendarEventTypes())
+    {
+        eventTypeColumnWidth =
+            qMax(
+                eventTypeColumnWidth,
+                upcomingEventTagWidth(
+                    normalizedCalendarEventType(eventType),
+                    eventTextFont
+                    )
+                );
+    }
+
+    const QStringList activeTypes =
+        activeCalendarEventTypes();
+
+    for (UpcomingEventsScope scope : scopes)
+    {
+        QList<CalendarEvent> filteredEvents;
+        for (const CalendarEvent& event : eventsByScope[scopeIndex(scope)])
+        {
+            if (
+                activeTypes.contains(
+                    normalizedCalendarEventType(event.eventType)
+                    )
+                && calendarEventVisibleForCampus(event)
+                )
+            {
+                filteredEvents.append(event);
+            }
+        }
+
+        if (scope == UpcomingEventsScope::Next10Events)
+        {
+            while (filteredEvents.size() > UpcomingEventsLimit)
+            {
+                filteredEvents.removeLast();
+            }
+        }
+
+        for (const CalendarEvent& event : filteredEvents)
+        {
+            dateColumnWidth =
+                qMax(
+                    dateColumnWidth,
+                    eventTextMetrics.horizontalAdvance(
+                        upcomingEventDateText(event)
+                        ) + UpcomingEventColumnTextPadding
+                    );
+            timeColumnWidth =
+                qMax(
+                    timeColumnWidth,
+                    eventTextMetrics.horizontalAdvance(
+                        upcomingEventTimeText(event)
+                        ) + UpcomingEventColumnTextPadding
+                    );
+        }
+    }
+
     for (UpcomingEventsScope scope : scopes)
     {
         renderUpcomingEvents(
             scope,
-            upcomingEventsForScope(scope)
+            eventsByScope[scopeIndex(scope)],
+            dateColumnWidth,
+            timeColumnWidth,
+            eventTypeColumnWidth
             );
     }
 }
@@ -2318,7 +2495,10 @@ void MyInfoPage::updateCalendarCampusFilter()
 
 void MyInfoPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
-    const QList<CalendarEvent>& events
+    const QList<CalendarEvent>& events,
+    int dateColumnWidth,
+    int timeColumnWidth,
+    int eventTypeColumnWidth
     )
 {
     QVBoxLayout* layout =
@@ -2381,32 +2561,6 @@ void MyInfoPage::renderUpcomingEvents(
         return;
     }
 
-    int dateColumnWidth = UpcomingEventDateColumnMinimumWidth;
-    int timeColumnWidth = UpcomingEventTimeColumnMinimumWidth;
-    const QFontMetrics eventTextMetrics(
-        layout->parentWidget()
-            ? layout->parentWidget()->font()
-            : font()
-        );
-
-    for (const CalendarEvent& event : filteredEvents)
-    {
-        dateColumnWidth =
-            qMax(
-                dateColumnWidth,
-                eventTextMetrics.horizontalAdvance(
-                    upcomingEventDateText(event)
-                    ) + UpcomingEventColumnTextPadding
-                );
-        timeColumnWidth =
-            qMax(
-                timeColumnWidth,
-                eventTextMetrics.horizontalAdvance(
-                    upcomingEventTimeText(event)
-                    ) + UpcomingEventColumnTextPadding
-                );
-    }
-
     for (const CalendarEvent& event : filteredEvents)
     {
         layout->addWidget(
@@ -2414,6 +2568,7 @@ void MyInfoPage::renderUpcomingEvents(
                 event,
                 dateColumnWidth,
                 timeColumnWidth,
+                eventTypeColumnWidth,
                 layout->parentWidget()
                 )
             );
@@ -2565,33 +2720,40 @@ void MyInfoPage::chooseCalendarEventTypeColor(
 }
 
 QString MyInfoPage::eventTypeBadgeStyle(
-    const QString& eventType
+    const QString& eventType,
+    const QFont& font
     ) const
 {
     const QColor color =
         calendarEventTypeColor(eventType);
+    const int horizontalPadding =
+        upcomingEventTagHorizontalPadding(font);
+    const int verticalPadding =
+        upcomingEventTagVerticalPadding(font);
 
     return QStringLiteral(
         "QPushButton {"
         " background-color: %1;"
         " color: %2;"
-        " border: none;"
+        " border: 1px solid transparent;"
         " border-radius: 4px;"
-        " padding: 2px 7px;"
+        " padding: %3px %4px;"
         "}"
         "QPushButton:hover {"
         " border: 1px solid rgba(255, 255, 255, 160);"
-        " padding: 1px 6px;"
         "}"
         ).arg(
             color.name(QColor::HexRgb),
-            readableTextColor(color)
+            readableTextColor(color),
+            QString::number(verticalPadding),
+            QString::number(horizontalPadding)
             );
 }
 
 QString MyInfoPage::eventTypeFilterButtonStyle(
     const QString& eventType,
-    bool checked
+    bool checked,
+    const QFont& font
     ) const
 {
     const QColor color =
@@ -2600,6 +2762,10 @@ QString MyInfoPage::eventTypeFilterButtonStyle(
         checked
             ? readableTextColor(color)
             : QStringLiteral("#66727a");
+    const int horizontalPadding =
+        upcomingEventTagHorizontalPadding(font);
+    const int verticalPadding =
+        upcomingEventTagVerticalPadding(font);
 
     return QStringLiteral(
         "QPushButton {"
@@ -2607,15 +2773,17 @@ QString MyInfoPage::eventTypeFilterButtonStyle(
         " color: %2;"
         " border: 1px solid %3;"
         " border-radius: 6px;"
-        " padding: 4px 10px;"
+        " padding: %4px %5px;"
         "}"
         "QPushButton:hover {"
-        " border-color: %4;"
+        " border-color: %6;"
         "}"
         ).arg(
             checked ? color.name(QColor::HexRgb) : QStringLiteral("transparent"),
             textColor,
             checked ? color.name(QColor::HexRgb) : QStringLiteral("#a8b2b8"),
+            QString::number(verticalPadding),
+            QString::number(horizontalPadding),
             color.name(QColor::HexRgb)
             );
 }
@@ -2638,13 +2806,25 @@ void MyInfoPage::syncEventTypeFilterButtons()
                 eventType,
                 true
                 );
+        const QFont tagFont =
+            FontManager::getUiFont();
 
         const QSignalBlocker blocker(button);
+        button->setFont(tagFont);
+        button->setFixedSize(
+            upcomingEventTagWidth(eventType, tagFont),
+            upcomingEventTagHeight(tagFont)
+            );
+        button->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Fixed
+            );
         button->setChecked(checked);
         button->setStyleSheet(
             eventTypeFilterButtonStyle(
                 eventType,
-                checked
+                checked,
+                tagFont
                 )
             );
     }
@@ -2692,6 +2872,35 @@ void MyInfoPage::syncCalendarEventTypeColors()
     root->setProperty(
         "eventTypeTextColors",
         textColors
+        );
+}
+
+void MyInfoPage::syncCalendarFontSize()
+{
+    if (!m_calendarView)
+    {
+        return;
+    }
+
+    auto* root =
+        m_calendarView->rootObject();
+
+    if (!root)
+    {
+        return;
+    }
+
+    const int pixelSize =
+        qMax(
+            1,
+            QFontInfo(
+                m_calendarView->font()
+                ).pixelSize()
+            );
+
+    root->setProperty(
+        "baseFontPixelSize",
+        pixelSize
         );
 }
 
@@ -2877,9 +3086,17 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     const CalendarEvent& event,
     int dateColumnWidth,
     int timeColumnWidth,
+    int eventTypeColumnWidth,
     QWidget* parent
     )
 {
+    const QFont eventFont =
+        FontManager::getUiFont();
+    const int tagHeight =
+        upcomingEventTagHeight(eventFont);
+    const int rowHeight =
+        upcomingEventRowHeight(eventFont);
+
     auto* row =
         new QFrame(parent);
     row->setObjectName(
@@ -2889,10 +3106,12 @@ QWidget* MyInfoPage::createUpcomingEventRow(
         Qt::PointingHandCursor
         );
     row->setMouseTracking(true);
-    row->setMinimumHeight(38);
+    row->setFixedHeight(
+        rowHeight
+        );
     row->setSizePolicy(
         QSizePolicy::Expanding,
-        QSizePolicy::Maximum
+        QSizePolicy::Fixed
         );
     row->setStyleSheet(
         QStringLiteral(
@@ -2923,11 +3142,12 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             upcomingEventDateText(event),
             row
             );
+    date->setFont(eventFont);
     date->setSizePolicy(
-        QSizePolicy::Minimum,
+        QSizePolicy::Fixed,
         QSizePolicy::Preferred
         );
-    date->setMinimumWidth(dateColumnWidth);
+    date->setFixedWidth(dateColumnWidth);
     date->setAlignment(
         Qt::AlignLeft | Qt::AlignVCenter
         );
@@ -2944,11 +3164,12 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             upcomingEventTimeText(event),
             row
             );
+    time->setFont(eventFont);
     time->setSizePolicy(
-        QSizePolicy::Minimum,
+        QSizePolicy::Fixed,
         QSizePolicy::Preferred
         );
-    time->setMinimumWidth(timeColumnWidth);
+    time->setFixedWidth(timeColumnWidth);
     time->setAlignment(
         Qt::AlignLeft | Qt::AlignVCenter
         );
@@ -2963,6 +3184,7 @@ QWidget* MyInfoPage::createUpcomingEventRow(
     auto* title =
         new HoverMarqueeLabel(row);
     title->setText(event.title);
+    title->setFont(eventFont);
     title->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Preferred
@@ -2987,6 +3209,15 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             normalizedCalendarEventType(event.eventType),
             row
             );
+    type->setFont(eventFont);
+    type->setFixedSize(
+        eventTypeColumnWidth,
+        tagHeight
+        );
+    type->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Fixed
+        );
     type->setCursor(
         Qt::PointingHandCursor
         );
@@ -2996,7 +3227,10 @@ QWidget* MyInfoPage::createUpcomingEventRow(
             )
         );
     type->setStyleSheet(
-        eventTypeBadgeStyle(event.eventType)
+        eventTypeBadgeStyle(
+            event.eventType,
+            eventFont
+            )
         );
 
     row->setProperty(

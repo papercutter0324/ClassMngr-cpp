@@ -30,6 +30,7 @@ Item {
     property color accentTextColor: toolbarTextColor
     property var eventTypeColors: ({})
     property var eventTypeTextColors: ({})
+    property int baseFontPixelSize: 14
 
     readonly property int weekColumnWidth: 54
     readonly property int dayHeaderHeight: 40
@@ -174,6 +175,7 @@ Item {
 
             implicitHeight: 48
             Layout.fillWidth: true
+            font.pixelSize: root.baseFontPixelSize
 
             palette.buttonText: root.toolbarTextColor
             palette.windowText: root.toolbarTextColor
@@ -189,6 +191,7 @@ Item {
                 ToolButton {
                     text: "\u2039"
                     enabled: !root.atFirstMonth
+                    font.pixelSize: root.baseFontPixelSize
                     palette.buttonText: root.toolbarTextColor
                     onClicked: root.moveMonth(-1)
 
@@ -211,6 +214,7 @@ Item {
 
                 ToolButton {
                     text: "\u203a"
+                    font.pixelSize: root.baseFontPixelSize
                     palette.buttonText: root.toolbarTextColor
                     onClicked: root.moveMonth(1)
 
@@ -274,6 +278,7 @@ Item {
                     anchors.fill: parent
                     text: qsTr("Elem")
                     color: root.mutedTextColor
+                    font.pixelSize: root.baseFontPixelSize
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     ToolTip.text: qsTr("Elementary academic week")
@@ -301,6 +306,7 @@ Item {
 
                 locale: root.calendarLocale
                 font.bold: false
+                font.pixelSize: root.baseFontPixelSize
 
                 background: Rectangle {
                     color: root.headerBackground
@@ -334,6 +340,7 @@ Item {
                     anchors.fill: parent
                     text: qsTr("MS")
                     color: root.mutedTextColor
+                    font.pixelSize: root.baseFontPixelSize
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     ToolTip.text: qsTr("Middle School academic week")
@@ -404,6 +411,7 @@ Item {
                                       ? elementaryRow.modelData.elementaryWeek
                                       : "\u2014"
                                 color: root.mutedTextColor
+                                font.pixelSize: root.baseFontPixelSize
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 ToolTip.text: elementaryRow.modelData.elementaryTooltip
@@ -479,6 +487,7 @@ Item {
                             accentTextColor: root.accentTextColor
                             eventTypeColors: root.eventTypeColors
                             eventTypeTextColors: root.eventTypeTextColors
+                            fontPixelSize: root.baseFontPixelSize
 
                             onDayActivated: function(year, month, day) {
                                 root.dayActivated(year, month, day)
@@ -536,6 +545,7 @@ Item {
                                       ? middleRow.modelData.middleWeek
                                       : "\u2014"
                                 color: root.mutedTextColor
+                                font.pixelSize: root.baseFontPixelSize
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 ToolTip.text: middleRow.modelData.middleTooltip

@@ -13,6 +13,7 @@
 class ApplicationServices;
 class AcademicCalendarProvider;
 class CalendarEventModel;
+class QFont;
 class QLabel;
 class QCheckBox;
 class QComboBox;
@@ -164,7 +165,10 @@ private:
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,
-        const QList<CalendarEvent>& events
+        const QList<CalendarEvent>& events,
+        int dateColumnWidth,
+        int timeColumnWidth,
+        int eventTypeColumnWidth
         );
     QList<CalendarEvent> upcomingEventsForScope(
         UpcomingEventsScope scope
@@ -181,14 +185,17 @@ private:
         const QString& eventType
         );
     QString eventTypeBadgeStyle(
-        const QString& eventType
+        const QString& eventType,
+        const QFont& font
         ) const;
     QString eventTypeFilterButtonStyle(
         const QString& eventType,
-        bool checked
+        bool checked,
+        const QFont& font
         ) const;
     void syncEventTypeFilterButtons();
     void syncCalendarEventTypeColors();
+    void syncCalendarFontSize();
     QString upcomingEventDateText(
         const CalendarEvent& event
         ) const;
@@ -205,6 +212,7 @@ private:
         const CalendarEvent& event,
         int dateColumnWidth,
         int timeColumnWidth,
+        int eventTypeColumnWidth,
         QWidget* parent
         );
 

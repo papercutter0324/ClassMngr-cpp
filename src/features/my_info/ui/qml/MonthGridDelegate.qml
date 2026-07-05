@@ -28,6 +28,7 @@ Item {
     required property color accentTextColor
     required property var eventTypeColors
     required property var eventTypeTextColors
+    required property int fontPixelSize
 
     readonly property bool activeMonth: month === visibleMonth
     readonly property bool firstColumn: gridColumn <= 0
@@ -48,6 +49,17 @@ Item {
     }
     readonly property int eventRevision: eventProvider ? eventProvider.revision : 0
     readonly property var dayEvents: dayEventsForRevision(root.eventRevision)
+    readonly property int eventFontPixelSize: Math.max(
+                                                   1,
+                                                   Math.round(root.fontPixelSize * 0.8))
+    readonly property int eventVerticalPadding: Math.max(
+                                                     4,
+                                                     Math.ceil(root.eventFontPixelSize / 3))
+    readonly property int eventDelegateHeight: Math.max(
+                                                   22,
+                                                   root.eventFontPixelSize
+                                                   + (root.eventVerticalPadding * 2)
+                                                   + 8)
 
     function dayEventsForRevision(revision) {
         if (revision < 0 || !root.activeMonth || !root.eventProvider)
@@ -101,6 +113,7 @@ Item {
             text: root.day
             color: root.today ? root.accentTextColor
                               : (root.activeMonth ? root.textColor : root.inactiveTextColor)
+            font.pixelSize: root.fontPixelSize
             topPadding: 4
             horizontalAlignment: Text.AlignHCenter
             opacity: root.activeMonth ? 1 : 0
@@ -147,18 +160,14 @@ Item {
                 readonly property color eventForegroundColor: root.eventTextColor(modelData.eventType)
 
                 width: listView.width
-                implicitHeight: Math.max(
-                                    20,
-                                    eventText.implicitHeight
-                                    + topPadding
-                                    + bottomPadding)
+                implicitHeight: root.eventDelegateHeight
                 height: implicitHeight
                 text: modelData.title
-                font.pixelSize: Qt.application.font.pixelSize * 0.8
+                font.pixelSize: root.eventFontPixelSize
                 leftPadding: 4
                 rightPadding: 4
-                topPadding: 3
-                bottomPadding: 3
+                topPadding: root.eventVerticalPadding
+                bottomPadding: root.eventVerticalPadding
 
                 onClicked: root.eventActivated(modelData.id)
 
@@ -184,7 +193,9 @@ Item {
                             width: itemDelegate.marqueeActive
                                    ? implicitWidth
                                    : eventClip.width
-                            height: eventClip.height
+                            height: Math.min(
+                                        eventClip.height,
+                                        Math.ceil(implicitHeight) + 4)
                             x: itemDelegate.marqueeActive ? -marqueeAnimation.offset : 0
 
                         }
