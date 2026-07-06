@@ -91,6 +91,9 @@ void PdfPrintDialog::configurePrinterFromUi()
     m_printer.setPageSize(
         QPageSize(pageSizeId)
         );
+    m_printer.setPageOrientation(
+        m_pageOrientation
+        );
 }
 
 void PdfPrintDialog::updatePrinterCapabilities()

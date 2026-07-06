@@ -235,15 +235,26 @@ bool renderPdfPageToPrinter(
         return false;
     }
 
-    QRectF printableRect =
-        printer.pageRect(QPrinter::DevicePixel);
+    QRectF printBounds =
+        options.fitToPage
+            ? printer.pageRect(QPrinter::DevicePixel)
+            : printer.paperRect(QPrinter::DevicePixel);
 
     if (
-        printableRect.width() <= 0.0
-        || printableRect.height() <= 0.0
+        printBounds.width() <= 0.0
+        || printBounds.height() <= 0.0
         )
     {
-        printableRect =
+        printBounds =
+            printer.pageRect(QPrinter::DevicePixel);
+    }
+
+    if (
+        printBounds.width() <= 0.0
+        || printBounds.height() <= 0.0
+        )
+    {
+        printBounds =
             QRectF(
                 0.0,
                 0.0,
@@ -253,8 +264,8 @@ bool renderPdfPageToPrinter(
     }
 
     if (
-        printableRect.width() <= 0.0
-        || printableRect.height() <= 0.0
+        printBounds.width() <= 0.0
+        || printBounds.height() <= 0.0
         )
     {
         return false;
@@ -264,11 +275,11 @@ bool renderPdfPageToPrinter(
         options.fitToPage
             ? fittedPrintRect(
                 pagePointSize,
-                printableRect
+                printBounds
                 )
             : naturalPrintRect(
                 pagePointSize,
-                printableRect,
+                printBounds,
                 printer
                 );
 
@@ -357,6 +368,10 @@ Result paintPdfDocumentToPrinter(
             );
     }
 
+    printer.setFullPage(
+        !options.fitToPage
+        );
+
     QPainter painter;
 
     if (!painter.begin(&printer))
@@ -436,7 +451,11 @@ Result printPdfDocumentWithCustomPreview(
                 options
                 );
         },
-        request.currentPageIndex
+        request.currentPageIndex,
+        request.pageOrientation,
+        request.fitToPageByDefault,
+        request.preferredPageSize,
+        request.lockPreferredPageSize
         );
 
     if (dialog.exec() != QDialog::Accepted)
@@ -469,6 +488,15 @@ Result printPdfDocumentWithSystemDialog(
     printer.setCreator(
         QStringLiteral("ClassMngr")
         );
+    printer.setPageOrientation(
+        request.pageOrientation
+        );
+    if (request.preferredPageSize)
+    {
+        printer.setPageSize(
+            QPageSize(*request.preferredPageSize)
+            );
+    }
 
     QPrintDialog dialog(
         &printer,
@@ -502,6 +530,19 @@ Result printPdfDocumentWithSystemDialog(
         return canceled();
     }
 
+    if (
+        request.lockPreferredPageSize
+        && request.preferredPageSize
+        )
+    {
+        printer.setPageSize(
+            QPageSize(*request.preferredPageSize)
+            );
+        printer.setPageOrientation(
+            request.pageOrientation
+            );
+    }
+
     PdfPrintDialogSupport::RenderOptions options;
     options.pageIndexes =
         pageIndexesFromPrinterRange(
@@ -512,11 +553,7 @@ Result printPdfDocumentWithSystemDialog(
     options.grayscale =
         printer.colorMode() == QPrinter::GrayScale;
     options.fitToPage =
-#ifdef Q_OS_LINUX
-        true;
-#else
-        false;
-#endif
+        request.fitToPageByDefault;
 
     return paintPdfDocumentToPrinter(
         request.document,

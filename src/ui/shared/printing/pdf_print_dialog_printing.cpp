@@ -154,6 +154,9 @@ void PdfPrintDialog::printWithNativeSystem()
     printer.setPageSize(
         QPageSize(pageSizeId)
         );
+    printer.setPageOrientation(
+        m_pageOrientation
+        );
 
     const int pageCount =
         m_document ? m_document->pageCount() : 0;
@@ -177,6 +180,19 @@ void PdfPrintDialog::printWithNativeSystem()
     if (dialog.exec() != QDialog::Accepted)
     {
         return;
+    }
+
+    if (
+        m_lockPreferredPageSize
+        && m_preferredPageSize
+        )
+    {
+        printer.setPageSize(
+            QPageSize(*m_preferredPageSize)
+            );
+        printer.setPageOrientation(
+            m_pageOrientation
+            );
     }
 
     PdfPrintDialogSupport::RenderOptions options;

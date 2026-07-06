@@ -745,6 +745,38 @@ if(BUILD_TESTING)
         COMMAND ClassMngrSchedulePrintModelTests
     )
 
+    qt_add_executable(ClassMngrSchedulePrintPdfTests
+        tests/schedule_print_pdf_tests.cpp
+        src/core/fontmanager.cpp
+        src/features/schedule/ui/schedule_print_service.cpp
+        src/features/schedule/ui/schedule_time_formatter.cpp
+        src/features/schedule/ui/schedule_view_model.cpp
+    )
+
+    target_compile_features(ClassMngrSchedulePrintPdfTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSchedulePrintPdfTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSchedulePrintPdfTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrSchedulePrintPdfTests
+        COMMAND ClassMngrSchedulePrintPdfTests
+    )
+
     qt_add_executable(ClassMngrRosterModelTests
         tests/roster_model_tests.cpp
         src/domain/models/roster.cpp
@@ -910,6 +942,7 @@ if(BUILD_TESTING)
             ClassMngrSubPrepClassNavigationTests
             ClassMngrUniformWidthTabBarTests
             ClassMngrSchedulePrintModelTests
+            ClassMngrSchedulePrintPdfTests
             ClassMngrRosterModelTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests

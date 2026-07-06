@@ -333,6 +333,8 @@ void SchedulePage::printSchedule()
         buildScheduleModel();
     request.style =
         dialog.selectedStyle();
+    request.pageOrientation =
+        dialog.selectedOrientation();
 
     if (m_services && m_services->themeService())
     {

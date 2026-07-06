@@ -1,6 +1,10 @@
 #pragma once
 
+#include <QPageLayout>
+#include <QPageSize>
 #include <QString>
+
+#include <optional>
 
 class QPdfDocument;
 class QWidget;
@@ -21,6 +25,10 @@ struct Request
     QString documentPath;
     int currentPageIndex = 0;
     QString dialogTitle;
+    QPageLayout::Orientation pageOrientation = QPageLayout::Portrait;
+    bool fitToPageByDefault = false;
+    std::optional<QPageSize::PageSizeId> preferredPageSize;
+    bool lockPreferredPageSize = false;
 };
 
 struct Result

@@ -226,6 +226,23 @@ void PdfPrintDialog::buildUi()
         tr("B5"),
         static_cast<int>(QPageSize::B5)
         );
+    if (m_preferredPageSize)
+    {
+        const int preferredPaperIndex =
+            m_paperSizeCombo->findData(
+                static_cast<int>(*m_preferredPageSize)
+                );
+
+        if (preferredPaperIndex >= 0)
+        {
+            m_paperSizeCombo->setCurrentIndex(
+                preferredPaperIndex
+                );
+        }
+    }
+    m_paperSizeCombo->setEnabled(
+        !m_lockPreferredPageSize
+        );
     addOptionWidget(
         optionsLayout,
         createOptionLabel(
@@ -249,7 +266,7 @@ void PdfPrintDialog::buildUi()
             tr("Fit to Page"),
             optionsPanel
             );
-    m_fitToPageCheck->setChecked(false);
+    m_fitToPageCheck->setChecked(m_fitToPageByDefault);
     optionsLayout->addWidget(m_fitToPageCheck);
     optionsLayout->addSpacing(12);
 

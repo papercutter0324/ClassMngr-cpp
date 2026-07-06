@@ -4,6 +4,7 @@
 #include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/constants/options.h"
 
+#include <QPageLayout>
 #include <QString>
 
 class QWidget;
@@ -24,6 +25,7 @@ struct Request
     SchedulePrintStyle style = SchedulePrintStyle::CurrentAppearance;
     Theme currentTheme = Theme::Dark;
     QString userName;
+    QPageLayout::Orientation pageOrientation = QPageLayout::Landscape;
 };
 
 struct Result
@@ -34,5 +36,10 @@ struct Result
 
 [[nodiscard]] Result printSchedule(
     const Request& request
+    );
+
+[[nodiscard]] Result saveSchedulePdf(
+    const Request& request,
+    const QString& documentPath
     );
 }

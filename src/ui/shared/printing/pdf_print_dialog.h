@@ -4,12 +4,14 @@
 
 #include <QDialog>
 #include <QList>
+#include <QPageLayout>
 #include <QPageSize>
 #include <QPrinter>
 #include <QString>
 #include <QtGlobal>
 
 #include <functional>
+#include <optional>
 
 class QCheckBox;
 class QComboBox;
@@ -41,7 +43,11 @@ public:
         QPdfDocument* document,
         const QString& documentPath,
         PdfPrintDialogSupport::RenderFunction renderFunction,
-        int currentPageIndex = 0
+        int currentPageIndex = 0,
+        QPageLayout::Orientation pageOrientation = QPageLayout::Portrait,
+        bool fitToPageByDefault = false,
+        std::optional<QPageSize::PageSizeId> preferredPageSize = std::nullopt,
+        bool lockPreferredPageSize = false
         );
 
     [[nodiscard]] PdfPrintService::Result printResult() const;
@@ -90,6 +96,10 @@ private:
     QPdfDocument* m_document = nullptr;
     QString m_documentPath;
     int m_currentPageIndex = 0;
+    QPageLayout::Orientation m_pageOrientation = QPageLayout::Portrait;
+    bool m_fitToPageByDefault = false;
+    std::optional<QPageSize::PageSizeId> m_preferredPageSize;
+    bool m_lockPreferredPageSize = false;
     PdfPrintDialogSupport::RenderFunction m_renderFunction;
     PdfPrintService::Result m_printResult;
     QPrinter m_printer;

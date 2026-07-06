@@ -13,12 +13,20 @@ PdfPrintDialog::PdfPrintDialog(
     QPdfDocument* document,
     const QString& documentPath,
     PdfPrintDialogSupport::RenderFunction renderFunction,
-    int currentPageIndex
+    int currentPageIndex,
+    QPageLayout::Orientation pageOrientation,
+    bool fitToPageByDefault,
+    std::optional<QPageSize::PageSizeId> preferredPageSize,
+    bool lockPreferredPageSize
     )
     : QDialog(parent)
     , m_document(document)
     , m_documentPath(documentPath)
     , m_currentPageIndex(currentPageIndex)
+    , m_pageOrientation(pageOrientation)
+    , m_fitToPageByDefault(fitToPageByDefault)
+    , m_preferredPageSize(preferredPageSize)
+    , m_lockPreferredPageSize(lockPreferredPageSize)
     , m_renderFunction(std::move(renderFunction))
     , m_printResult{
           PdfPrintService::Status::Canceled,

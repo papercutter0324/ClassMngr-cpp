@@ -1,19 +1,20 @@
 #include "schedule_print_service.h"
 
 #include "core/fontmanager.h"
+#include "ui/shared/printing/pdf_print_service.h"
 
 #include <algorithm>
 
-#include <QAbstractPrintDialog>
-#include <QDialog>
+#include <QMarginsF>
 #include <QObject>
 #include <QPainter>
 #include <QPageLayout>
+#include <QPageSize>
 #include <QPen>
-#include <QPrintDialog>
-#include <QPrinter>
-#include <QPrinterInfo>
+#include <QPdfDocument>
+#include <QPdfWriter>
 #include <QRectF>
+#include <QTemporaryDir>
 #include <QTime>
 
 namespace SchedulePrintService
@@ -26,6 +27,9 @@ constexpr qreal HeaderHeight = 52.0;
 constexpr qreal RowHeight = 58.0;
 constexpr qreal FooterHeight = 52.0;
 constexpr qreal CellPadding = 5.0;
+constexpr QPageSize::PageSizeId SchedulePdfPageSize = QPageSize::A4;
+constexpr qreal SchedulePdfMarginInches = 0.5;
+constexpr int SchedulePdfResolutionDpi = 300;
 
 struct PrintPalette
 {
@@ -115,33 +119,33 @@ PrintPalette paletteFor(
     if (resolvedTheme(style, currentTheme) == Theme::Light)
     {
         return {
-            QColor(QStringLiteral("#f5f3ee")),
-            QColor(QStringLiteral("#f5f3ee")),
+            Qt::white,
+            Qt::white,
             QColor(QStringLiteral("#deded8")),
             QColor(QStringLiteral("#546169")),
             QColor(QStringLiteral("#e9e8e3")),
             QColor(QStringLiteral("#27313a")),
             QColor(QStringLiteral("#c5c7c3")),
-            QColor(QStringLiteral("#f5f3ee")),
+            Qt::white,
             Qt::white,
             QColor(QStringLiteral("#DCDCDC")),
-            QColor(QStringLiteral("#27313a")),
+            Qt::black,
             false
         };
     }
 
     return {
-        QColor(QStringLiteral("#1e1e1e")),
-        QColor(QStringLiteral("#1e1e1e")),
+        Qt::white,
+        Qt::white,
         QColor(QStringLiteral("#303030")),
         QColor(QStringLiteral("#c8c8c8")),
         QColor(QStringLiteral("#2b2b2b")),
         QColor(QStringLiteral("#f0f0f0")),
         QColor(QStringLiteral("#454545")),
-        QColor(QStringLiteral("#1e1e1e")),
+        Qt::white,
         Qt::white,
         QColor(QStringLiteral("#DCDCDC")),
-        QColor(QStringLiteral("#f0f0f0")),
+        Qt::black,
         false
     };
 }
@@ -274,9 +278,97 @@ QRectF targetRectFor(
 
     return QRectF(
         bounds.x() + ((bounds.width() - targetSize.width()) / 2.0),
-        bounds.y() + ((bounds.height() - targetSize.height()) / 2.0),
+        bounds.y(),
         targetSize.width(),
         targetSize.height()
+        );
+}
+
+QMarginsF schedulePdfMargins()
+{
+    return QMarginsF(
+        0.0,
+        0.0,
+        0.0,
+        0.0
+        );
+}
+
+QPageLayout schedulePdfPageLayout(
+    QPageLayout::Orientation orientation
+    )
+{
+    return QPageLayout(
+        QPageSize(SchedulePdfPageSize),
+        orientation,
+        schedulePdfMargins(),
+        QPageLayout::Inch
+        );
+}
+
+bool configureSchedulePdfWriter(
+    QPdfWriter& writer,
+    QPageLayout::Orientation orientation
+    )
+{
+    writer.setCreator(
+        QStringLiteral("ClassMngr")
+        );
+    writer.setTitle(
+        QObject::tr("Schedule")
+        );
+    writer.setResolution(SchedulePdfResolutionDpi);
+
+    return writer.setPageLayout(
+        schedulePdfPageLayout(orientation)
+        );
+}
+
+QRectF schedulePdfPageRect(
+    const QPdfWriter& writer
+    )
+{
+    const QRect pageRect =
+        writer.pageLayout().fullRectPixels(
+            std::max(
+                1,
+                writer.resolution()
+                )
+            );
+
+    if (
+        pageRect.width() > 0
+        && pageRect.height() > 0
+        )
+    {
+        return QRectF(pageRect);
+    }
+
+    return QRectF(
+        0.0,
+        0.0,
+        writer.width(),
+        writer.height()
+        );
+}
+
+QRectF schedulePdfContentRect(
+    const QRectF& pageRect,
+    int resolutionDpi
+    )
+{
+    const qreal margin =
+        SchedulePdfMarginInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+
+    return pageRect.adjusted(
+        margin,
+        margin,
+        -margin,
+        -margin
         );
 }
 
@@ -861,102 +953,79 @@ void paintSchedule(
         }
     }
 
-    drawFooter(
-        painter,
-        tableRect,
-        model,
-        palette,
-        HeaderHeight + (rowCount * RowHeight)
-        );
+    if (palette.excel)
+    {
+        drawFooter(
+            painter,
+            tableRect,
+            model,
+            palette,
+            HeaderHeight + (rowCount * RowHeight)
+            );
+    }
 
     painter.restore();
 }
 }
 
-Result printSchedule(
-    const Request& request
+Result saveSchedulePdf(
+    const Request& request,
+    const QString& documentPath
     )
 {
-#ifdef Q_OS_LINUX
-    if (QPrinterInfo::availablePrinterNames().isEmpty())
+    if (documentPath.trimmed().isEmpty())
     {
         return failed(
-            QObject::tr("No printers are available.")
+            QObject::tr("No schedule print file path was provided.")
             );
     }
-#endif
 
-    QPrinter printer(QPrinter::HighResolution);
-    printer.setOutputFormat(QPrinter::NativeFormat);
-    printer.setDocName(
-        QObject::tr("Print from ClassMngr - Schedule")
-        );
-    printer.setCreator(
-        QStringLiteral("ClassMngr")
-        );
-    QPageLayout pageLayout =
-        printer.pageLayout();
-    pageLayout.setOrientation(
-        QPageLayout::Landscape
-        );
-    printer.setPageLayout(
-        pageLayout
-        );
-
-    QPrintDialog dialog(
-        &printer,
-        request.parent
-        );
-
-    dialog.setWindowTitle(
-        QObject::tr("Print Schedule")
-        );
-    dialog.setOptions(
-        QAbstractPrintDialog::PrintCollateCopies
-        | QAbstractPrintDialog::PrintShowPageSize
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
+    QPdfWriter writer(documentPath);
+    if (!configureSchedulePdfWriter(
+            writer,
+            request.pageOrientation
+            ))
     {
-        return canceled();
+        return failed(
+            QObject::tr("Unable to configure the schedule print file.")
+            );
     }
 
     QPainter painter;
-
-    if (!painter.begin(&printer))
+    if (!painter.begin(&writer))
     {
         return failed(
-            QObject::tr("Unable to start the print job.")
+            QObject::tr("Unable to create the schedule print file.")
             );
     }
 
-    QRectF printableRect =
-        printer.pageRect(QPrinter::DevicePixel);
+    const QRectF pageRect =
+        schedulePdfPageRect(
+            writer
+            );
+    const QRectF printableRect =
+        schedulePdfContentRect(
+            pageRect,
+            writer.resolution()
+            );
 
     if (
-        printableRect.width() <= 0.0
-        || printableRect.height() <= 0.0
-        )
-    {
-        printableRect =
-            QRectF(
-                0.0,
-                0.0,
-                printer.width(),
-                printer.height()
-                );
-    }
-
-    if (
-        printableRect.width() <= 0.0
+        pageRect.width() <= 0.0
+        || pageRect.height() <= 0.0
+        || printableRect.width() <= 0.0
         || printableRect.height() <= 0.0
         )
     {
         painter.end();
         return failed(
-            QObject::tr("The selected printer does not provide a printable page area.")
+            QObject::tr("Unable to determine the schedule print area.")
             );
     }
+
+    painter.fillRect(
+        pageRect,
+        Qt::white
+        );
 
     paintSchedule(
         painter,
@@ -970,17 +1039,88 @@ Result printSchedule(
     if (!painter.end())
     {
         return failed(
-            QObject::tr("The print job could not be completed.")
+            QObject::tr("The schedule print file could not be completed.")
             );
     }
 
-    if (printer.printerState() == QPrinter::Error)
+    return {
+        Status::Sent,
+        QObject::tr("Schedule PDF created.")
+    };
+}
+
+Result printSchedule(
+    const Request& request
+    )
+{
+    QTemporaryDir temporaryDirectory;
+
+    if (!temporaryDirectory.isValid())
     {
         return failed(
-            QObject::tr("The printer reported an error while printing.")
+            QObject::tr("Unable to create a temporary print file.")
             );
     }
 
-    return sent();
+    const QString documentPath =
+        temporaryDirectory.filePath(
+            QStringLiteral("Schedule.pdf")
+            );
+
+    {
+        const Result saveResult =
+            saveSchedulePdf(
+                request,
+                documentPath
+                );
+
+        if (saveResult.status != Status::Sent)
+        {
+            return saveResult;
+        }
+    }
+
+    QPdfDocument document;
+    const QPdfDocument::Error loadError =
+        document.load(documentPath);
+
+    if (
+        loadError != QPdfDocument::Error::None
+        || document.status() != QPdfDocument::Status::Ready
+        || document.pageCount() <= 0
+        )
+    {
+        return failed(
+            QObject::tr("Unable to load the schedule print file.")
+            );
+    }
+
+    const PdfPrintService::Result result =
+        PdfPrintService::printPdfDocument(
+            {
+                request.parent,
+                &document,
+                documentPath,
+                0,
+                QObject::tr("Print Schedule"),
+                request.pageOrientation,
+                false,
+                SchedulePdfPageSize,
+                true
+            }
+            );
+
+    switch (result.status)
+    {
+    case PdfPrintService::Status::Sent:
+        return sent();
+
+    case PdfPrintService::Status::Canceled:
+        return canceled();
+
+    case PdfPrintService::Status::Failed:
+    default:
+        return failed(result.message);
+    }
 }
 }
