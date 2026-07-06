@@ -55,8 +55,10 @@ For local Windows builds, the desktop preset uses
 $env:QT_MSVC_ARM64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_arm64"
 ```
 
-`scripts/build_release_windows.ps1` uses the local ARM64 path as a default when
-`QT_MSVC_ARM64_PREFIX` is not already set.
+`scripts/build_release_windows.ps1` auto-selects the desktop or laptop x64
+preset based on the Qt prefix that exists locally. It uses the desktop ARM64
+path as a default only when that directory exists; otherwise set
+`QT_MSVC_ARM64_PREFIX` before running the script to build ARM64.
 
 `CLASSMNGR_UPDATE_REQUIRE_SIGNATURE` defaults to `ON`. With that default,
 ClassMngr refuses to parse update URLs unless the manifest signature verifies
