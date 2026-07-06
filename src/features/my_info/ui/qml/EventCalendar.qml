@@ -25,6 +25,7 @@ Item {
     property color calendarBackground: "#f5f3ee"
     property color headerBackground: "#e2e1dc"
     property color cellBackground: calendarBackground
+    property color weekendBackground: "#e8edf1"
     property color gridLineColor: "#cbc9c2"
     property color accentColor: toolbarColor
     property color accentTextColor: toolbarTextColor
@@ -496,6 +497,7 @@ Item {
 
                             eventProvider: root.eventProvider
                             cellBackground: root.cellBackground
+                            weekendBackground: root.weekendBackground
                             gridLineColor: root.gridLineColor
                             textColor: root.textColor
                             inactiveTextColor: root.inactiveTextColor

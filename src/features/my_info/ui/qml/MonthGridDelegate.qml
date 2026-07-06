@@ -21,6 +21,7 @@ Item {
     required property int rowCount
     required property int columnCount
     required property color cellBackground
+    required property color weekendBackground
     required property color gridLineColor
     required property color textColor
     required property color inactiveTextColor
@@ -31,6 +32,10 @@ Item {
     required property int fontPixelSize
 
     readonly property bool activeMonth: month === visibleMonth
+    readonly property bool weekend: {
+        const dayOfWeek = new Date(root.year, root.month, root.day).getDay()
+        return dayOfWeek === 0 || dayOfWeek === 6
+    }
     readonly property bool firstColumn: gridColumn <= 0
     readonly property bool lastColumn: gridColumn >= columnCount - 1
     readonly property bool nextCellActive: {
@@ -101,6 +106,16 @@ Item {
     function eventTextColor(eventType) {
         const color = root.eventTypeTextColors[eventType]
         return color ? color : root.accentTextColor
+    }
+
+    function backgroundColor() {
+        if (!root.activeMonth)
+            return root.gridLineColor
+
+        if (root.redDay)
+            return "#f5d7d2"
+
+        return root.weekend ? root.weekendBackground : root.cellBackground
     }
 
     ColumnLayout {
@@ -228,8 +243,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: root.redDay ? "#f5d7d2" : root.cellBackground
-        opacity: root.activeMonth ? 1 : 0
+        color: root.backgroundColor()
         z: -1
     }
 
