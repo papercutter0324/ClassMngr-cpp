@@ -28,7 +28,19 @@ find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     LinguistTools
 )
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB QUIET)
+if(NOT ZLIB_FOUND AND WIN32)
+    find_package(Qt6ZlibPrivate 6.11.1 QUIET)
+    if(TARGET Qt6::ZlibPrivate)
+        add_library(ZLIB::ZLIB ALIAS Qt6::ZlibPrivate)
+        set(ZLIB_FOUND TRUE)
+        message(STATUS "Using Qt bundled zlib fallback")
+    endif()
+endif()
+
+if(NOT ZLIB_FOUND)
+    find_package(ZLIB REQUIRED)
+endif()
 
 set(CLASSMNGR_UPDATE_MANIFEST_URL "" CACHE STRING
     "HTTPS URL for the stable auto-update manifest"
