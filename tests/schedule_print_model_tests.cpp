@@ -1,0 +1,353 @@
+#include "features/schedule/ui/schedule_view_model.h"
+
+#include <QtTest>
+
+namespace
+{
+ScheduleEntry entry(
+    int classId = 1
+    )
+{
+    ScheduleEntry scheduleEntry;
+    scheduleEntry.classId = classId;
+    scheduleEntry.teacherKr = QStringLiteral("박지혜");
+    scheduleEntry.roomNumber = QStringLiteral("413");
+    scheduleEntry.classGrade = QStringLiteral("E5");
+    scheduleEntry.classLevel = QStringLiteral("Zeus");
+    scheduleEntry.classColor = QStringLiteral("#C9D8A6");
+    scheduleEntry.fontColor = QStringLiteral("#000000");
+
+    return scheduleEntry;
+}
+
+ScheduleBuildResult blankResult(
+    const QStringList& days,
+    const QStringList& rowLabels
+    )
+{
+    ScheduleBuildResult result;
+    result.days = days;
+
+    for (const QString& day : days)
+    {
+        result.schedule.insert(
+            day,
+            {}
+            );
+    }
+
+    for (const QString& rowLabel : rowLabels)
+    {
+        result.rows.append(
+            { rowLabel }
+            );
+    }
+
+    return result;
+}
+
+ScheduleViewRequest requestFor(
+    const QStringList& days,
+    bool useIntensive = false
+    )
+{
+    ScheduleViewRequest request;
+    request.days = days;
+    request.useIntensive = useIntensive;
+
+    return request;
+}
+}
+
+class SchedulePrintModelTests : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void visibleDaysCanIncludeWeekends();
+    void slotDefaultsMatchRegularAndIntensiveModes();
+    void persistedOverridesRespectTogglingRules();
+    void intensiveFilteringCanHideFullyEmptyRows();
+    void intensiveTrimmingKeepsInteriorEmptyRows();
+    void footerTotalsMatchExcelScreenshotConvention();
+};
+
+void SchedulePrintModelTests::visibleDaysCanIncludeWeekends()
+{
+    QCOMPARE(
+        visibleScheduleDays(false),
+        QStringList({
+            QStringLiteral("Monday"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("Wednesday"),
+            QStringLiteral("Thursday"),
+            QStringLiteral("Friday")
+        })
+        );
+
+    QCOMPARE(
+        visibleScheduleDays(true),
+        QStringList({
+            QStringLiteral("Monday"),
+            QStringLiteral("Tuesday"),
+            QStringLiteral("Wednesday"),
+            QStringLiteral("Thursday"),
+            QStringLiteral("Friday"),
+            QStringLiteral("Saturday"),
+            QStringLiteral("Sunday")
+        })
+        );
+}
+
+void SchedulePrintModelTests::slotDefaultsMatchRegularAndIntensiveModes()
+{
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
+            QStringLiteral("15:00"),
+            false
+            ),
+        scheduleEmptySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00"),
+            false
+            ),
+        scheduleEssaySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Saturday"),
+            QStringLiteral("16:00"),
+            false
+            ),
+        scheduleEmptySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Monday"),
+            QStringLiteral("09:00"),
+            true
+            ),
+        scheduleEssaySlotState()
+        );
+}
+
+void SchedulePrintModelTests::persistedOverridesRespectTogglingRules()
+{
+    const QStringList days{
+        QStringLiteral("Monday"),
+        QStringLiteral("Saturday")
+    };
+    ScheduleBuildResult result =
+        blankResult(
+            days,
+            { QStringLiteral("16:00") }
+            );
+
+    ScheduleViewRequest request =
+        requestFor(
+            days,
+            false
+            );
+    request.slotStateOverrides.insert(
+        scheduleSlotKey(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            ),
+        scheduleLunchSlotState()
+        );
+    request.slotStateOverrides.insert(
+        scheduleSlotKey(
+            QStringLiteral("Saturday"),
+            QStringLiteral("16:00")
+            ),
+        scheduleLunchSlotState()
+        );
+
+    ScheduleViewModel model =
+        buildScheduleViewModel(
+            result,
+            request
+            );
+
+    QCOMPARE(
+        model.rows.first().cells.at(0).slotState,
+        scheduleEssaySlotState()
+        );
+    QCOMPARE(
+        model.rows.first().cells.at(1).slotState,
+        scheduleLunchSlotState()
+        );
+
+    request.useIntensive = true;
+    model =
+        buildScheduleViewModel(
+            result,
+            request
+            );
+
+    QCOMPARE(
+        model.rows.first().cells.at(0).slotState,
+        scheduleLunchSlotState()
+        );
+}
+
+void SchedulePrintModelTests::intensiveFilteringCanHideFullyEmptyRows()
+{
+    const QStringList days =
+        visibleScheduleDays(false);
+    ScheduleBuildResult result =
+        blankResult(
+            days,
+            {
+                QStringLiteral("09:00"),
+                QStringLiteral("10:00"),
+                QStringLiteral("11:00")
+            }
+            );
+
+    result.schedule[QStringLiteral("Monday")][QStringLiteral("10:00")]
+        .append(entry());
+
+    ScheduleViewRequest request =
+        requestFor(
+            days,
+            true
+            );
+    request.rowFilter =
+        ScheduleRowFilter::HideEmptyRows;
+
+    for (const QString& rowLabel :
+         { QStringLiteral("09:00"), QStringLiteral("11:00") })
+    {
+        for (const QString& day : days)
+        {
+            request.slotStateOverrides.insert(
+                scheduleSlotKey(
+                    day,
+                    rowLabel
+                    ),
+                scheduleEmptySlotState()
+                );
+        }
+    }
+
+    const ScheduleViewModel model =
+        buildScheduleViewModel(
+            result,
+            request
+            );
+
+    QCOMPARE(model.rows.size(), 1);
+    QCOMPARE(model.rows.first().timeLabel, QStringLiteral("10:00"));
+}
+
+void SchedulePrintModelTests::intensiveTrimmingKeepsInteriorEmptyRows()
+{
+    const QStringList days =
+        visibleScheduleDays(false);
+    ScheduleBuildResult result =
+        blankResult(
+            days,
+            {
+                QStringLiteral("09:00"),
+                QStringLiteral("10:00"),
+                QStringLiteral("11:00"),
+                QStringLiteral("12:00")
+            }
+            );
+
+    result.schedule[QStringLiteral("Monday")][QStringLiteral("10:00")]
+        .append(entry(1));
+    result.schedule[QStringLiteral("Friday")][QStringLiteral("12:00")]
+        .append(entry(2));
+
+    ScheduleViewRequest request =
+        requestFor(
+            days,
+            true
+            );
+    request.rowFilter =
+        ScheduleRowFilter::TrimEmptyOuterRows;
+
+    for (const QString& rowLabel :
+         {
+             QStringLiteral("09:00"),
+             QStringLiteral("11:00")
+         })
+    {
+        for (const QString& day : days)
+        {
+            request.slotStateOverrides.insert(
+                scheduleSlotKey(
+                    day,
+                    rowLabel
+                    ),
+                scheduleEmptySlotState()
+                );
+        }
+    }
+
+    const ScheduleViewModel model =
+        buildScheduleViewModel(
+            result,
+            request
+            );
+
+    QCOMPARE(model.rows.size(), 3);
+    QCOMPARE(model.rows.first().timeLabel, QStringLiteral("10:00"));
+    QCOMPARE(model.rows.at(1).timeLabel, QStringLiteral("11:00"));
+    QCOMPARE(model.rows.last().timeLabel, QStringLiteral("12:00"));
+}
+
+void SchedulePrintModelTests::footerTotalsMatchExcelScreenshotConvention()
+{
+    const QStringList days =
+        visibleScheduleDays(false);
+    ScheduleBuildResult result =
+        blankResult(
+            days,
+            {
+                QStringLiteral("16:00"),
+                QStringLiteral("17:00"),
+                QStringLiteral("18:00"),
+                QStringLiteral("19:00"),
+                QStringLiteral("20:00"),
+                QStringLiteral("21:00")
+            }
+            );
+
+    int classId = 1;
+    int classCells = 0;
+
+    for (int row = 0; row < result.rows.size(); ++row)
+    {
+        for (int day = 0; day < days.size(); ++day)
+        {
+            if (classCells >= 15)
+            {
+                break;
+            }
+
+            result.schedule[days.at(day)][result.rows.at(row).label]
+                .append(entry(classId++));
+            ++classCells;
+        }
+    }
+
+    const ScheduleViewModel model =
+        buildScheduleViewModel(
+            result,
+            requestFor(days)
+            );
+
+    QCOMPARE(model.summary.essayBlocks, 15);
+    QCOMPARE(model.summary.scheduledBlocks, 30);
+}
+
+QTEST_MAIN(SchedulePrintModelTests)
+
+#include "schedule_print_model_tests.moc"

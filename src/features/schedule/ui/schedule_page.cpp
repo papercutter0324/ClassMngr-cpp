@@ -4,20 +4,23 @@
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/theme_service.h"
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
-#include "features/schedule/ui/schedule_time_formatter.h"
+#include "features/schedule/ui/schedule_print_dialog.h"
+#include "features/schedule/ui/schedule_print_service.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
+#include <QDialog>
 #include <QFrame>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QShowEvent>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include <QTime>
 #include <QVBoxLayout>
 
 namespace
@@ -25,61 +28,6 @@ namespace
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
-constexpr int RegularEarlyEmptyFinalHour = 15;
-
-QString emptySlotState()
-{
-    return QStringLiteral("empty");
-}
-
-QString essaySlotState()
-{
-    return QStringLiteral("essay");
-}
-
-QString lunchSlotState()
-{
-    return QStringLiteral("lunch");
-}
-
-bool isWeekendDay(
-    const QString& day
-    )
-{
-    return day == QStringLiteral("Saturday")
-        || day == QStringLiteral("Sunday");
-}
-
-bool isRegularEarlyEmptySlot(
-    const QString& timeLabel
-    )
-{
-    const QTime time =
-        QTime::fromString(
-            timeLabel,
-            QStringLiteral("HH:mm")
-            );
-
-    return time.isValid()
-        && time.hour() <= RegularEarlyEmptyFinalHour;
-}
-
-QString nextSlotState(
-    const QString& currentState
-    )
-{
-    if (currentState == essaySlotState())
-    {
-        return lunchSlotState();
-    }
-
-    if (currentState == lunchSlotState())
-    {
-        return emptySlotState();
-    }
-
-    return essaySlotState();
-}
 
 DataService* openDataService(
     ApplicationServices* services
@@ -310,26 +258,19 @@ void SchedulePage::onCellClicked(
         const QString timeLabel =
             widget->property("time_label").toString();
 
-        if (!slotTogglingEnabled(day))
+        if (!widget->property("slot_toggling_enabled").toBool())
         {
             return;
         }
 
         const QString defaultState =
-            defaultSlotState(
-                day,
-                timeLabel
-                );
+            widget->property("default_slot_state").toString();
 
         const QString currentState =
-            slotState(
-                day,
-                timeLabel,
-                defaultState
-                );
+            widget->property("slot_state").toString();
 
         const QString newState =
-            nextSlotState(
+            nextScheduleSlotState(
                 currentState
                 );
 
@@ -375,6 +316,54 @@ void SchedulePage::onCellClicked(
         );
 
     dialog.exec();
+}
+
+void SchedulePage::printSchedule()
+{
+    SchedulePrintDialog dialog(this);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    SchedulePrintService::Request request;
+    request.parent = this;
+    request.model =
+        buildScheduleModel();
+    request.style =
+        dialog.selectedStyle();
+
+    if (m_services && m_services->themeService())
+    {
+        request.currentTheme =
+            m_services->themeService()->currentTheme();
+    }
+
+    if (auto* dataService = openDataService(m_services))
+    {
+        request.userName =
+            dataService
+                ->loadSetting(
+                    QStringLiteral("myInfo/name"),
+                    QString()
+                    )
+                .toString();
+    }
+
+    const SchedulePrintService::Result result =
+        SchedulePrintService::printSchedule(
+            request
+            );
+
+    if (result.status == SchedulePrintService::Status::Failed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Print Schedule"),
+            result.message
+            );
+    }
 }
 
 void SchedulePage::buildUi()
@@ -469,11 +458,18 @@ void SchedulePage::buildUi()
     m_scheduleModeButton->setObjectName("primaryButton");
     m_scheduleModeButton->setMinimumWidth(200);
 
+    m_printButton =
+        new TextFitPushButton(this);
+
+    m_printButton->setObjectName("primaryButton");
+    m_printButton->setMinimumWidth(120);
+
     bottomLayout()->addWidget(m_timeFormatButton);
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_weekendButton);
     bottomLayout()->addWidget(m_hideEmptyButton);
     bottomLayout()->addWidget(m_scheduleModeButton);
+    bottomLayout()->addWidget(m_printButton);
 
     connect(
         m_timeFormatButton,
@@ -501,6 +497,13 @@ void SchedulePage::buildUi()
         &QPushButton::clicked,
         this,
         &SchedulePage::toggleScheduleMode
+        );
+
+    connect(
+        m_printButton,
+        &QPushButton::clicked,
+        this,
+        &SchedulePage::printSchedule
         );
 
     connect(
@@ -549,89 +552,28 @@ void SchedulePage::loadSchedule()
         return;
     }
 
-    reloadSlotStates();
+    m_scheduleModel =
+        buildScheduleModel();
 
-    const QStringList days =
-        visibleDays();
-
-    configureColumns(days);
-
-    ScheduleBuilder builder(
-        openDataService(m_services)
+    configureColumns(
+        m_scheduleModel.days
         );
-
-    ScheduleBuildResult result =
-        builder.build(
-            m_showIntensive,
-            days
-            );
-
-    QList<ScheduleRow> rows =
-        result.rows;
-
-    if (m_showIntensive && m_hideEmptyBlocks)
-    {
-        QList<ScheduleRow> filteredRows;
-
-        for (const ScheduleRow& scheduleRow : rows)
-        {
-            bool hasRealClass = false;
-
-            for (const QString& day : days)
-            {
-                const QList<ScheduleEntry> entries =
-                    result.schedule
-                        .value(day)
-                        .value(scheduleRow.label);
-
-                if (!entries.isEmpty())
-                {
-                    hasRealClass = true;
-                    break;
-                }
-
-                if (
-                    slotState(
-                        day,
-                        scheduleRow.label,
-                        defaultSlotState(
-                            day,
-                            scheduleRow.label
-                            )
-                        )
-                    != emptySlotState()
-                    )
-                {
-                    hasRealClass = true;
-                    break;
-                }
-            }
-
-            if (hasRealClass)
-            {
-                filteredRows.append(scheduleRow);
-            }
-        }
-
-        rows = filteredRows;
-    }
 
     clearTableWidgets();
     m_table->clearContents();
     m_table->clearSpans();
-    m_table->setRowCount(rows.size());
+    m_table->setRowCount(
+        m_scheduleModel.rows.size()
+        );
 
-    for (int rowIndex = 0; rowIndex < rows.size(); ++rowIndex)
+    for (int rowIndex = 0; rowIndex < m_scheduleModel.rows.size(); ++rowIndex)
     {
-        const ScheduleRow& scheduleRow =
-            rows[rowIndex];
+        const ScheduleRowView& scheduleRow =
+            m_scheduleModel.rows[rowIndex];
 
         auto* timeItem =
             new QTableWidgetItem(
-                buildTimeRangeLabel(
-                    scheduleRow.label,
-                    result.uses55Endings
-                    )
+                scheduleRow.timeRangeLabel
                 );
 
         timeItem->setFlags(Qt::ItemIsEnabled);
@@ -651,27 +593,21 @@ void SchedulePage::loadSchedule()
 
         int maxEntryCount = 1;
 
-        for (int dayIndex = 0; dayIndex < days.size(); ++dayIndex)
+        for (int dayIndex = 0; dayIndex < scheduleRow.cells.size(); ++dayIndex)
         {
-            const QString& day =
-                days[dayIndex];
-
-            const QList<ScheduleEntry> entries =
-                result.schedule
-                    .value(day)
-                    .value(scheduleRow.label);
+            const ScheduleCellView& cell =
+                scheduleRow.cells[dayIndex];
 
             const int column =
                 dayIndex + 1;
 
-            if (entries.isEmpty())
+            if (cell.entries.isEmpty())
             {
                 m_table->setCellWidget(
                     rowIndex,
                     column,
                     createSlotLabel(
-                        day,
-                        scheduleRow.label
+                        cell
                         )
                     );
 
@@ -681,16 +617,16 @@ void SchedulePage::loadSchedule()
             maxEntryCount =
                 std::max(
                     maxEntryCount,
-                    static_cast<int>(entries.size())
+                    static_cast<int>(cell.entries.size())
                     );
 
-            if (entries.size() == 1)
+            if (cell.entries.size() == 1)
             {
                 m_table->setCellWidget(
                     rowIndex,
                     column,
                     createScheduleLabel(
-                        entries.first()
+                        cell.entries.first()
                         )
                     );
             }
@@ -699,7 +635,7 @@ void SchedulePage::loadSchedule()
                 m_table->setCellWidget(
                     rowIndex,
                     column,
-                    createMultiScheduleLabel(entries)
+                    createMultiScheduleLabel(cell.entries)
                     );
             }
         }
@@ -713,7 +649,7 @@ void SchedulePage::loadSchedule()
             );
     }
 
-    if (rows.isEmpty())
+    if (m_scheduleModel.rows.isEmpty())
     {
         m_table->setRowCount(1);
 
@@ -752,6 +688,7 @@ void SchedulePage::updateButtons()
         || !m_weekendButton
         || !m_hideEmptyButton
         || !m_scheduleModeButton
+        || !m_printButton
         )
     {
         return;
@@ -783,6 +720,10 @@ void SchedulePage::updateButtons()
         m_showIntensive
             ? tr("Show Regular Schedule")
             : tr("Show Intensive Schedule")
+        );
+
+    m_printButton->setText(
+        tr("Print...")
         );
 }
 
@@ -848,30 +789,6 @@ void SchedulePage::clearTableWidgets()
     }
 }
 
-QStringList SchedulePage::visibleDays() const
-{
-    QStringList days{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday")
-    };
-
-    if (m_showWeekends)
-    {
-        days.append(
-            QStringLiteral("Saturday")
-            );
-
-        days.append(
-            QStringLiteral("Sunday")
-            );
-    }
-
-    return days;
-}
-
 void SchedulePage::reloadSlotStates()
 {
     m_intensiveSlotStates.clear();
@@ -890,7 +807,7 @@ void SchedulePage::reloadSlotStates()
     for (const IntensiveSlotState& state : states)
     {
         m_intensiveSlotStates.insert(
-            slotKey(
+            scheduleSlotKey(
                 state.day,
                 state.startTime
                 ),
@@ -899,91 +816,49 @@ void SchedulePage::reloadSlotStates()
     }
 }
 
-QString SchedulePage::slotKey(
-    const QString& day,
-    const QString& timeLabel
-    ) const
+ScheduleViewRequest SchedulePage::buildScheduleViewRequest() const
 {
-    return day + QLatin1Char('\x1f') + timeLabel;
+    ScheduleViewRequest request;
+    request.days =
+        visibleScheduleDays(
+            m_showWeekends
+            );
+    request.slotStateOverrides =
+        m_intensiveSlotStates;
+    request.use24h =
+        m_use24h;
+    request.useIntensive =
+        m_showIntensive;
+    request.regularWeekdaySlotTogglingEnabled =
+        m_regularWeekdaySlotTogglingEnabled;
+    request.rowFilter =
+        m_showIntensive && m_hideEmptyBlocks
+            ? ScheduleRowFilter::HideEmptyRows
+            : ScheduleRowFilter::None;
+
+    return request;
 }
 
-QString SchedulePage::slotState(
-    const QString& day,
-    const QString& timeLabel,
-    const QString& defaultState
-    ) const
+ScheduleViewModel SchedulePage::buildScheduleModel()
 {
-    return m_intensiveSlotStates.value(
-        slotKey(
-            day,
-            timeLabel
-            ),
-        defaultState
+    reloadSlotStates();
+
+    const ScheduleViewRequest request =
+        buildScheduleViewRequest();
+
+    ScheduleBuilder builder(
+        openDataService(m_services)
         );
-}
 
-QString SchedulePage::defaultSlotState(
-    const QString& day,
-    const QString& timeLabel
-    ) const
-{
-    if (isWeekendDay(day))
-    {
-        return emptySlotState();
-    }
+    const ScheduleBuildResult result =
+        builder.build(
+            request.useIntensive,
+            request.days
+            );
 
-    if (m_showIntensive)
-    {
-        return essaySlotState();
-    }
-
-    if (isRegularEarlyEmptySlot(timeLabel))
-    {
-        return emptySlotState();
-    }
-
-    return essaySlotState();
-}
-
-bool SchedulePage::regularSlotTogglingEnabled(
-    const QString& day
-    ) const
-{
-    if (isWeekendDay(day))
-    {
-        return true;
-    }
-
-    return m_regularWeekdaySlotTogglingEnabled;
-}
-
-bool SchedulePage::slotTogglingEnabled(
-    const QString& day
-    ) const
-{
-    return m_showIntensive
-        || regularSlotTogglingEnabled(day);
-}
-
-QString SchedulePage::formatDisplayTime(
-    const QString& timeLabel
-    ) const
-{
-    return ScheduleTimeFormatter::displayTime(
-        timeLabel,
-        m_use24h
-        );
-}
-
-QString SchedulePage::buildTimeRangeLabel(
-    const QString& startLabel,
-    bool uses55Endings
-    ) const
-{
-    return ScheduleTimeFormatter::rangeLabel(
-        startLabel,
-        uses55Endings,
-        m_use24h
+    return buildScheduleViewModel(
+        result,
+        request
         );
 }
 
@@ -1123,37 +998,23 @@ QWidget* SchedulePage::createMultiScheduleLabel(
 }
 
 QWidget* SchedulePage::createSlotLabel(
-    const QString& day,
-    const QString& timeLabel
+    const ScheduleCellView& cell
     )
 {
-    const QString defaultState =
-        defaultSlotState(
-            day,
-            timeLabel
-            );
-
-    const QString state =
-        slotTogglingEnabled(day)
-            ? slotState(
-                day,
-                timeLabel,
-                defaultState
-                )
-            : defaultState;
-
     auto* label =
         new QLabel(this);
 
     label->setAlignment(Qt::AlignCenter);
     label->setProperty("role", UiRoles::ScheduleEmpty);
     label->setProperty("is_slot_cell", true);
-    label->setProperty("day", day);
-    label->setProperty("time_label", timeLabel);
-    label->setProperty("slot_state", state);
+    label->setProperty("day", cell.day);
+    label->setProperty("time_label", cell.timeLabel);
+    label->setProperty("default_slot_state", cell.defaultSlotState);
+    label->setProperty("slot_state", cell.slotState);
+    label->setProperty("slot_toggling_enabled", cell.slotTogglingEnabled);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
-    if (state == essaySlotState())
+    if (cell.slotState == scheduleEssaySlotState())
     {
         label->setText(
             tr("Essay")
@@ -1178,7 +1039,7 @@ QWidget* SchedulePage::createSlotLabel(
                 )
             );
     }
-    else if (state == lunchSlotState())
+    else if (cell.slotState == scheduleLunchSlotState())
     {
         label->setText(
             tr("Lunch")

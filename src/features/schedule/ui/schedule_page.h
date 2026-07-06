@@ -2,8 +2,7 @@
 
 #include "ui/shared/pages/basepage.h"
 
-#include "domain/models/intensive_slot_state.h"
-#include "features/schedule/ui/schedule_builder.h"
+#include "features/schedule/ui/schedule_view_model.h"
 
 #include <QMap>
 
@@ -46,6 +45,8 @@ private slots:
 
     void toggleWeekends();
 
+    void printSchedule();
+
     void onCellClicked(
         int row,
         int column
@@ -66,42 +67,11 @@ private:
 
     void clearTableWidgets();
 
-    QStringList visibleDays() const;
-
     void reloadSlotStates();
 
-    QString slotKey(
-        const QString& day,
-        const QString& timeLabel
-        ) const;
+    ScheduleViewRequest buildScheduleViewRequest() const;
 
-    QString slotState(
-        const QString& day,
-        const QString& timeLabel,
-        const QString& defaultState
-        ) const;
-
-    QString defaultSlotState(
-        const QString& day,
-        const QString& timeLabel
-        ) const;
-
-    bool regularSlotTogglingEnabled(
-        const QString& day
-        ) const;
-
-    bool slotTogglingEnabled(
-        const QString& day
-        ) const;
-
-    QString formatDisplayTime(
-        const QString& timeLabel
-        ) const;
-
-    QString buildTimeRangeLabel(
-        const QString& startLabel,
-        bool uses55Endings
-        ) const;
+    ScheduleViewModel buildScheduleModel();
 
     QWidget* createScheduleLabel(
         const ScheduleEntry& entry
@@ -112,8 +82,7 @@ private:
         );
 
     QWidget* createSlotLabel(
-        const QString& day,
-        const QString& timeLabel
+        const ScheduleCellView& cell
         );
 
 private:
@@ -126,6 +95,7 @@ private:
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
     QMap<QString, QString> m_intensiveSlotStates;
+    ScheduleViewModel m_scheduleModel;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
@@ -134,4 +104,5 @@ private:
     QPushButton* m_weekendButton = nullptr;
     QPushButton* m_hideEmptyButton = nullptr;
     QPushButton* m_scheduleModeButton = nullptr;
+    QPushButton* m_printButton = nullptr;
 };
