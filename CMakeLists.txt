@@ -28,14 +28,30 @@ find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     LinguistTools
 )
 
-find_package(ZLIB QUIET)
-if(NOT ZLIB_FOUND AND WIN32)
+option(CLASSMNGR_PREFER_QT_ZLIB_FALLBACK
+    "Prefer Qt's bundled zlib fallback on Windows before searching for system zlib"
+    OFF
+)
+
+macro(classmngr_try_qt_zlib_fallback)
     find_package(Qt6ZlibPrivate 6.11.1 QUIET)
-    if(TARGET Qt6::ZlibPrivate)
+    if(TARGET Qt6::ZlibPrivate AND NOT TARGET ZLIB::ZLIB)
         add_library(ZLIB::ZLIB ALIAS Qt6::ZlibPrivate)
         set(ZLIB_FOUND TRUE)
         message(STATUS "Using Qt bundled zlib fallback")
     endif()
+endmacro()
+
+if(WIN32 AND CLASSMNGR_PREFER_QT_ZLIB_FALLBACK)
+    classmngr_try_qt_zlib_fallback()
+endif()
+
+if(NOT ZLIB_FOUND)
+    find_package(ZLIB QUIET)
+endif()
+
+if(NOT ZLIB_FOUND AND WIN32)
+    classmngr_try_qt_zlib_fallback()
 endif()
 
 if(NOT ZLIB_FOUND)

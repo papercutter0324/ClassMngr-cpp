@@ -76,6 +76,9 @@
       "architecture": {
         "value": "x64",
         "strategy": "set"
+      },
+      "cacheVariables": {
+        "CLASSMNGR_PREFER_QT_ZLIB_FALLBACK": "ON"
       }
     },
     {
