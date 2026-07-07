@@ -15,6 +15,7 @@ private slots:
     void termLookupResetsWeeksAtBoundaries();
     void providerFormatsCompactAndDualTitles();
     void providerBuildsLocaleAlignedWeekRows();
+    void providerOverridesFirstDayOfWeek();
     void customizedYearShiftsRolloverButFutureUsesDefaults();
     void winterEditKeepsPreviousFallContinuous();
     void replacingEarlierYearInvalidatesLaterCustomization();
@@ -119,6 +120,40 @@ void AcademicCalendarTests::providerBuildsLocaleAlignedWeekRows()
     const QVariantMap mondayRow = mondayFirst.first().toMap();
     QCOMPARE(mondayRow.value(QStringLiteral("elementaryWeek")).toInt(), 6);
     QCOMPARE(mondayRow.value(QStringLiteral("middleWeek")).toInt(), 2);
+}
+
+void AcademicCalendarTests::providerOverridesFirstDayOfWeek()
+{
+    QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+    AcademicCalendarProvider provider(nullptr);
+
+    provider.setFirstDayOfWeek(0);
+    QCOMPARE(provider.firstDayOfWeek(), 0);
+
+    const QVariantMap sundayRow =
+        provider
+            .weekRows(
+                2026,
+                2,
+                provider.firstDayOfWeek()
+                )
+            .first()
+            .toMap();
+    QCOMPARE(sundayRow.value(QStringLiteral("elementaryWeek")).toInt(), 10);
+
+    provider.setFirstDayOfWeek(1);
+    QCOMPARE(provider.firstDayOfWeek(), 1);
+
+    const QVariantMap mondayRow =
+        provider
+            .weekRows(
+                2026,
+                2,
+                provider.firstDayOfWeek()
+                )
+            .first()
+            .toMap();
+    QCOMPARE(mondayRow.value(QStringLiteral("elementaryWeek")).toInt(), 9);
 }
 
 void AcademicCalendarTests::customizedYearShiftsRolloverButFutureUsesDefaults()

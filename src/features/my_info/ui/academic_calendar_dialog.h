@@ -75,6 +75,7 @@ private:
     std::array<std::array<QDateEdit*, AcademicTermCount>, SchoolCount> m_dateEdits{};
     std::array<std::array<QSpinBox*, AcademicTermCount>, SchoolCount> m_weekEdits{};
     QCheckBox* m_showAllCampusesCheck = nullptr;
+    QCheckBox* m_startWeekOnMondayCheck = nullptr;
     QCheckBox* m_linkCheck = nullptr;
     QLineEdit* m_importUrlEdit = nullptr;
     QLabel* m_importStatusLabel = nullptr;

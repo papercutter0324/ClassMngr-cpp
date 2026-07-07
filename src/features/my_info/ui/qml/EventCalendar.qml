@@ -45,16 +45,19 @@ Item {
 
     readonly property int termRevision: termProvider ? termProvider.revision : 0
     readonly property var calendarLocale: Qt.locale()
+    readonly property int firstDayOfWeek: termProvider
+                                          ? termProvider.firstDayOfWeek
+                                          : calendarLocale.firstDayOfWeek
 
     readonly property int visibleRowCount: monthRowCount(
                                                shownDate.getFullYear(),
                                                shownDate.getMonth(),
-                                               calendarLocale.firstDayOfWeek)
+                                               firstDayOfWeek)
 
     readonly property var monthCells: monthCellModel(
                                          shownDate.getFullYear(),
                                          shownDate.getMonth(),
-                                         calendarLocale.firstDayOfWeek,
+                                         firstDayOfWeek,
                                          visibleRowCount)
 
     readonly property bool atFirstMonth: shownDate.getFullYear() < 2026
@@ -75,7 +78,7 @@ Item {
             termProvider.weekRows(
                 root.shownDate.getFullYear(),
                 root.shownDate.getMonth(),
-                root.calendarLocale.firstDayOfWeek)
+                root.firstDayOfWeek)
 
         const visibleRows = []
 
@@ -151,6 +154,33 @@ Item {
         const remainder = snappedSize % segmentCount
 
         return baseSize + (segmentIndex < remainder ? 1 : 0)
+    }
+
+    function dayShortName(column) {
+        const names = [
+            qsTr("Sun"),
+            qsTr("Mon"),
+            qsTr("Tue"),
+            qsTr("Wed"),
+            qsTr("Thu"),
+            qsTr("Fri"),
+            qsTr("Sat")
+        ]
+        return names[(root.firstDayOfWeek + column) % 7]
+    }
+
+    function dayHeaderWidth(column) {
+        return root.integerSegmentSize(dayHeader.width, 7, column)
+    }
+
+    function dayHeaderX(column) {
+        let x = 0
+
+        for (let index = 0; index < column; ++index) {
+            x += root.dayHeaderWidth(index)
+        }
+
+        return x
     }
 
     TextMetrics {
@@ -316,23 +346,97 @@ Item {
                 }
             }
 
-            DayOfWeekRow {
-                id: dayOfWeekRow
+            Item {
+                id: dayHeader
 
-                locale: root.calendarLocale
-                font.bold: false
-                font.pixelSize: root.baseFontPixelSize
+                clip: true
 
-                background: Rectangle {
+                Rectangle {
+                    anchors.fill: parent
                     color: root.headerBackground
+                    z: -1
                 }
 
-                delegate: Label {
-                    required property var model
-
-                    text: model.shortName
+                Label {
+                    x: root.dayHeaderX(0)
+                    width: root.dayHeaderWidth(0)
+                    height: dayHeader.height
+                    text: root.dayShortName(0)
                     color: root.mutedTextColor
-                    font: dayOfWeekRow.font
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(1)
+                    width: root.dayHeaderWidth(1)
+                    height: dayHeader.height
+                    text: root.dayShortName(1)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(2)
+                    width: root.dayHeaderWidth(2)
+                    height: dayHeader.height
+                    text: root.dayShortName(2)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(3)
+                    width: root.dayHeaderWidth(3)
+                    height: dayHeader.height
+                    text: root.dayShortName(3)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(4)
+                    width: root.dayHeaderWidth(4)
+                    height: dayHeader.height
+                    text: root.dayShortName(4)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(5)
+                    width: root.dayHeaderWidth(5)
+                    height: dayHeader.height
+                    text: root.dayShortName(5)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Label {
+                    x: root.dayHeaderX(6)
+                    width: root.dayHeaderWidth(6)
+                    height: dayHeader.height
+                    text: root.dayShortName(6)
+                    color: root.mutedTextColor
+                    font.bold: false
+                    font.pixelSize: root.baseFontPixelSize
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }

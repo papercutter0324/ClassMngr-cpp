@@ -348,6 +348,13 @@ QWidget* AcademicCalendarDialog::buildOptionsTab()
             );
     layout->addWidget(m_showAllCampusesCheck);
 
+    m_startWeekOnMondayCheck =
+        new QCheckBox(
+            tr("Start Calendar Weeks on Monday"),
+            page
+            );
+    layout->addWidget(m_startWeekOnMondayCheck);
+
     m_resetEventsButton =
         new QPushButton(
             tr("Reset Calendar to Defaults"),
@@ -618,32 +625,48 @@ void AcademicCalendarDialog::loadSchedules()
 
 void AcademicCalendarDialog::loadOptions()
 {
-    if (!m_dataService || !m_showAllCampusesCheck)
+    if (m_showAllCampusesCheck)
     {
-        return;
+        m_showAllCampusesCheck->setChecked(
+            m_dataService && m_dataService->isOpen()
+                ? m_dataService
+                    ->loadSetting(
+                        CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                        false
+                        )
+                    .toBool()
+                : false
+            );
     }
 
-    m_showAllCampusesCheck->setChecked(
-        m_dataService
-            ->loadSetting(
-                CalendarSettingsKeys::ShowEventsAtAllCampuses,
-                false
-                )
-            .toBool()
-        );
+    if (m_startWeekOnMondayCheck && m_provider)
+    {
+        m_startWeekOnMondayCheck->setChecked(
+            m_provider->firstDayOfWeek() == 1
+            );
+    }
 }
 
 void AcademicCalendarDialog::saveOptions()
 {
-    if (!m_dataService || !m_showAllCampusesCheck)
+    if (
+        m_dataService
+        && m_dataService->isOpen()
+        && m_showAllCampusesCheck
+        )
     {
-        return;
+        m_dataService->saveSetting(
+            CalendarSettingsKeys::ShowEventsAtAllCampuses,
+            m_showAllCampusesCheck->isChecked()
+            );
     }
 
-    m_dataService->saveSetting(
-        CalendarSettingsKeys::ShowEventsAtAllCampuses,
-        m_showAllCampusesCheck->isChecked()
-        );
+    if (m_provider && m_startWeekOnMondayCheck)
+    {
+        m_provider->setFirstDayOfWeek(
+            m_startWeekOnMondayCheck->isChecked() ? 1 : 0
+            );
+    }
 }
 
 void AcademicCalendarDialog::refreshFields()

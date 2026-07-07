@@ -1,6 +1,7 @@
 #include "academic_calendar_provider.h"
 
 #include "data/data_service.h"
+#include "features/my_info/calendar_settings_keys.h"
 
 #include <QDateTime>
 #include <QJsonDocument>
@@ -31,6 +32,36 @@ int qtDayOfWeek(int qmlLocaleDay)
         ? Qt::Sunday
         : qmlLocaleDay;
 }
+
+int qmlDayOfWeek(Qt::DayOfWeek qtDay)
+{
+    return qtDay == Qt::Sunday
+        ? 0
+        : static_cast<int>(qtDay);
+}
+
+int defaultFirstDayOfWeek()
+{
+    return qmlDayOfWeek(QLocale().firstDayOfWeek());
+}
+
+int normalizedFirstDayOfWeek(const QVariant& value)
+{
+    if (!value.isValid())
+    {
+        return defaultFirstDayOfWeek();
+    }
+
+    bool ok = false;
+    const int day = value.toInt(&ok);
+
+    if (ok && day >= 0 && day <= 6)
+    {
+        return day;
+    }
+
+    return defaultFirstDayOfWeek();
+}
 }
 
 AcademicCalendarProvider::AcademicCalendarProvider(
@@ -46,6 +77,11 @@ AcademicCalendarProvider::AcademicCalendarProvider(
 int AcademicCalendarProvider::revision() const
 {
     return m_revision;
+}
+
+int AcademicCalendarProvider::firstDayOfWeek() const
+{
+    return m_firstDayOfWeek;
 }
 
 const AcademicCalendarSchedule& AcademicCalendarProvider::schedule() const
@@ -190,9 +226,27 @@ void AcademicCalendarProvider::saveYearSchedules(
     emit revisionChanged();
 }
 
+void AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
+{
+    const int normalized =
+        firstDayOfWeek == 1 ? 1 : 0;
+
+    if (m_firstDayOfWeek == normalized)
+    {
+        return;
+    }
+
+    m_firstDayOfWeek = normalized;
+    persistFirstDayOfWeek();
+    ++m_revision;
+    emit firstDayOfWeekChanged();
+    emit revisionChanged();
+}
+
 void AcademicCalendarProvider::reload()
 {
     m_schedule.clear();
+    loadOptions();
 
     if (m_dataService && m_dataService->isOpen())
     {
@@ -221,7 +275,21 @@ void AcademicCalendarProvider::reload()
     }
 
     ++m_revision;
+    emit firstDayOfWeekChanged();
     emit revisionChanged();
+}
+
+void AcademicCalendarProvider::loadOptions()
+{
+    m_firstDayOfWeek =
+        m_dataService && m_dataService->isOpen()
+            ? normalizedFirstDayOfWeek(
+                m_dataService->loadSetting(
+                    CalendarSettingsKeys::FirstDayOfWeek,
+                    defaultFirstDayOfWeek()
+                    )
+                )
+            : defaultFirstDayOfWeek();
 }
 
 QString AcademicCalendarProvider::termName(AcademicTerm term) const
@@ -305,5 +373,18 @@ void AcademicCalendarProvider::persist()
     m_dataService->saveSetting(
         AcademicCalendarSettingsKey,
         json
+        );
+}
+
+void AcademicCalendarProvider::persistFirstDayOfWeek()
+{
+    if (!m_dataService || !m_dataService->isOpen())
+    {
+        return;
+    }
+
+    m_dataService->saveSetting(
+        CalendarSettingsKeys::FirstDayOfWeek,
+        m_firstDayOfWeek
         );
 }

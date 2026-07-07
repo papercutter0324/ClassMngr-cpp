@@ -12,6 +12,7 @@ class AcademicCalendarProvider : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
+    Q_PROPERTY(int firstDayOfWeek READ firstDayOfWeek NOTIFY firstDayOfWeekChanged)
 
 public:
     explicit AcademicCalendarProvider(
@@ -20,6 +21,7 @@ public:
         );
 
     [[nodiscard]] int revision() const;
+    [[nodiscard]] int firstDayOfWeek() const;
     [[nodiscard]] const AcademicCalendarSchedule& schedule() const;
 
     Q_INVOKABLE QString monthTitle(
@@ -42,10 +44,12 @@ public:
         const AcademicYearSchedule& elementary,
         const AcademicYearSchedule& middle
         );
+    void setFirstDayOfWeek(int firstDayOfWeek);
     void reload();
 
 signals:
     void revisionChanged();
+    void firstDayOfWeekChanged();
 
 private:
     [[nodiscard]] QString termName(AcademicTerm term) const;
@@ -56,9 +60,12 @@ private:
         SchoolLevel level,
         const AcademicTermPosition& position
         ) const;
+    void loadOptions();
     void persist();
+    void persistFirstDayOfWeek();
 
     DataService* m_dataService = nullptr;
     AcademicCalendarSchedule m_schedule;
     int m_revision = 0;
+    int m_firstDayOfWeek = 0;
 };
