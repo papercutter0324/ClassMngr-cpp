@@ -490,22 +490,12 @@ void MyInfoPage::buildUpcomingEventsPanel(
     )
 {
     m_upcomingEventsHeading =
-        new QLabel(
+        createTopLevelHeading(
             tr("Upcoming Events"),
             parent
             );
-    m_upcomingEventsHeading->setProperty(
-        "role",
-        QStringLiteral("section_header")
-        );
-    m_upcomingEventsHeading->setFont(
-        FontManager::getUiFont(
-            12,
-            QFont::DemiBold
-            )
-        );
 
-    cardLayout->addSpacing(8);
+    cardLayout->addSpacing(24);
     cardLayout->addWidget(m_upcomingEventsHeading);
 
     for (const QString& eventType : calendarEventTypes())
