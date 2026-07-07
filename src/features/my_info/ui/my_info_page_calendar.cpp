@@ -20,6 +20,7 @@
 #include <QQuickWidget>
 #include <QSizePolicy>
 #include <QUrl>
+#include <QUuid>
 #include <QVariant>
 #include <QVBoxLayout>
 
@@ -65,6 +66,152 @@ bool settingToBool(
     }
 
     return value.toBool();
+}
+
+QDate nextRepeatDate(
+    const QDate& date,
+    CalendarEventRepeatFrequency frequency
+    )
+{
+    switch (frequency)
+    {
+    case CalendarEventRepeatFrequency::Daily:
+        return date.addDays(1);
+
+    case CalendarEventRepeatFrequency::Monthly:
+        return date.addMonths(1);
+
+    case CalendarEventRepeatFrequency::Weekly:
+        return date.addDays(7);
+    }
+
+    return date.addDays(7);
+}
+
+QList<CalendarEvent> repeatedCalendarEvents(
+    const CalendarEvent& event,
+    CalendarEventRepeatFrequency frequency,
+    const QDate& untilDate
+    )
+{
+    QList<CalendarEvent> events;
+
+    if (
+        !event.startDate.isValid()
+        || !event.endDate.isValid()
+        || !untilDate.isValid()
+        || untilDate < event.startDate
+        )
+    {
+        events.append(event);
+        return events;
+    }
+
+    const int durationDays =
+        event.startDate.daysTo(
+            event.endDate
+            );
+
+    for (
+        QDate occurrenceDate = event.startDate;
+        occurrenceDate.isValid() && occurrenceDate <= untilDate;
+        occurrenceDate = nextRepeatDate(occurrenceDate, frequency)
+        )
+    {
+        CalendarEvent occurrence =
+            event;
+        occurrence.id =
+            -1;
+        occurrence.startDate =
+            occurrenceDate;
+        occurrence.endDate =
+            occurrenceDate.addDays(durationDays);
+
+        events.append(occurrence);
+    }
+
+    return events;
+}
+
+bool isRepeatSeriesEvent(
+    const CalendarEvent& event
+    )
+{
+    return !event.repeatSeriesId.trimmed().isEmpty();
+}
+
+QString newRepeatSeriesId()
+{
+    return QUuid::createUuid().toString(
+        QUuid::WithoutBraces
+        );
+}
+
+void saveRepeatSeriesFromDate(
+    DataService* dataService,
+    const CalendarEvent& originalEvent,
+    const CalendarEvent& editedEvent
+    )
+{
+    if (
+        !dataService
+        || !isRepeatSeriesEvent(originalEvent)
+        || !originalEvent.startDate.isValid()
+        || !editedEvent.startDate.isValid()
+        || !editedEvent.endDate.isValid()
+        )
+    {
+        return;
+    }
+
+    const QString repeatSeriesId =
+        originalEvent.repeatSeriesId.trimmed();
+    const int startDateOffset =
+        originalEvent.startDate.daysTo(
+            editedEvent.startDate
+            );
+    const int durationDays =
+        editedEvent.startDate.daysTo(
+            editedEvent.endDate
+            );
+    const QList<CalendarEvent> seriesEvents =
+        dataService->loadCalendarEventsForRepeatSeriesFromDate(
+            repeatSeriesId,
+            originalEvent.startDate
+            );
+
+    for (const CalendarEvent& seriesEvent : seriesEvents)
+    {
+        CalendarEvent updatedEvent =
+            seriesEvent;
+
+        updatedEvent.title =
+            editedEvent.title;
+        updatedEvent.eventType =
+            editedEvent.eventType;
+        updatedEvent.timeStatus =
+            editedEvent.timeStatus;
+        updatedEvent.allDay =
+            editedEvent.allDay;
+        updatedEvent.startTime =
+            editedEvent.startTime;
+        updatedEvent.endTime =
+            editedEvent.endTime;
+        updatedEvent.repeatSeriesId =
+            repeatSeriesId;
+        updatedEvent.startDate =
+            seriesEvent.startDate.addDays(
+                startDateOffset
+                );
+        updatedEvent.endDate =
+            updatedEvent.startDate.addDays(
+                durationDays
+                );
+
+        dataService->saveCalendarEvent(
+            updatedEvent
+            );
+    }
 }
 }
 
@@ -403,17 +550,71 @@ void MyInfoPage::openCalendarDialog(
         return;
     }
 
+    const bool repeatSeriesEvent =
+        existingEvent
+        && isRepeatSeriesEvent(event);
+    const bool thisAndFollowing =
+        repeatSeriesEvent
+        && dialog.seriesEditScope()
+            == CalendarEventSeriesEditScope::ThisAndFollowingEvents;
+
     if (dialog.deleteRequested())
     {
-        dataService->deleteCalendarEvent(
-            event.id
-            );
+        if (thisAndFollowing)
+        {
+            dataService->deleteCalendarEventsForRepeatSeriesFromDate(
+                event.repeatSeriesId,
+                event.startDate
+                );
+        }
+        else
+        {
+            dataService->deleteCalendarEvent(
+                event.id
+                );
+        }
     }
     else
     {
-        dataService->saveCalendarEvent(
-            dialog.eventData()
-            );
+        CalendarEvent savedEvent =
+            dialog.eventData();
+
+        if (thisAndFollowing)
+        {
+            saveRepeatSeriesFromDate(
+                dataService,
+                event,
+                savedEvent
+                );
+        }
+        else
+        {
+            if (repeatSeriesEvent)
+            {
+                savedEvent.repeatSeriesId.clear();
+            }
+            else if (dialog.repeatEnabled())
+            {
+                savedEvent.repeatSeriesId =
+                    newRepeatSeriesId();
+            }
+
+            const QList<CalendarEvent> eventsToSave =
+                dialog.repeatEnabled()
+                    ? repeatedCalendarEvents(
+                        savedEvent,
+                        dialog.repeatFrequency(),
+                        dialog.repeatUntilDate()
+                        )
+                    : QList<CalendarEvent>{savedEvent};
+
+            for (const CalendarEvent& eventToSave : eventsToSave)
+            {
+                dataService->saveCalendarEvent(
+                    eventToSave
+                    );
+            }
+        }
     }
 
     if (m_calendarModel)

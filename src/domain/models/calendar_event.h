@@ -11,6 +11,7 @@ struct CalendarEvent
     QString title;
     QString eventType = QStringLiteral("Other");
     QString timeStatus = QStringLiteral("Timed");
+    QString repeatSeriesId;
     bool allDay = false;
     QDate startDate;
     QTime startTime;

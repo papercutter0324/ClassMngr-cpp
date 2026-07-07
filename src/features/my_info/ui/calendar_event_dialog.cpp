@@ -7,12 +7,14 @@
 #include <QAbstractButton>
 #include <QButtonGroup>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDateEdit>
 #include <QDialogButtonBox>
 #include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
@@ -25,6 +27,81 @@
 namespace
 {
 constexpr int DateTimeFieldWidth = 140;
+constexpr int RepeatFieldWidth = 180;
+constexpr int RepeatOptionToFieldsSpacing = 24;
+constexpr int MaximumRepeatOccurrences = 366;
+
+int repeatIntervalDays(
+    CalendarEventRepeatFrequency frequency
+    )
+{
+    switch (frequency)
+    {
+    case CalendarEventRepeatFrequency::Daily:
+        return 1;
+
+    case CalendarEventRepeatFrequency::Weekly:
+        return 7;
+
+    case CalendarEventRepeatFrequency::Monthly:
+        return 31;
+    }
+
+    return 7;
+}
+
+int estimatedRepeatOccurrences(
+    const QDate& startDate,
+    const QDate& untilDate,
+    CalendarEventRepeatFrequency frequency
+    )
+{
+    if (
+        !startDate.isValid()
+        || !untilDate.isValid()
+        || untilDate < startDate
+        )
+    {
+        return 0;
+    }
+
+    const int intervalDays =
+        qMax(
+            1,
+            repeatIntervalDays(frequency)
+            );
+
+    return (startDate.daysTo(untilDate) / intervalDays) + 1;
+}
+
+QDate finalMatchingWeekdayInYear(
+    const QDate& date
+    )
+{
+    if (!date.isValid())
+    {
+        return QDate::currentDate();
+    }
+
+    const QDate finalDay(
+        date.year(),
+        12,
+        31
+        );
+    const int daysBack =
+        (finalDay.dayOfWeek() - date.dayOfWeek() + 7) % 7;
+
+    return finalDay.addDays(
+        -daysBack
+        );
+}
+
+bool isRepeatSeriesEvent(
+    const CalendarEvent& event
+    )
+{
+    return !event.repeatSeriesId.trimmed().isEmpty();
+}
 }
 
 CalendarEventDialog::CalendarEventDialog(
@@ -105,6 +182,49 @@ bool CalendarEventDialog::deleteRequested() const
     return m_deleteRequested;
 }
 
+bool CalendarEventDialog::repeatEnabled() const
+{
+    return !m_existingEvent
+        && m_repeatCheck
+        && m_repeatCheck->isChecked();
+}
+
+CalendarEventRepeatFrequency CalendarEventDialog::repeatFrequency() const
+{
+    if (!m_repeatFrequencyCombo)
+    {
+        return CalendarEventRepeatFrequency::Weekly;
+    }
+
+    return static_cast<CalendarEventRepeatFrequency>(
+        m_repeatFrequencyCombo->currentData().toInt()
+        );
+}
+
+QDate CalendarEventDialog::repeatUntilDate() const
+{
+    return m_repeatUntilDateEdit
+        ? m_repeatUntilDateEdit->date()
+        : QDate();
+}
+
+CalendarEventSeriesEditScope CalendarEventDialog::seriesEditScope() const
+{
+    if (!m_seriesScopeGroup)
+    {
+        return CalendarEventSeriesEditScope::ThisEventOnly;
+    }
+
+    if (m_seriesScopeGroup->checkedId() < 0)
+    {
+        return CalendarEventSeriesEditScope::ThisEventOnly;
+    }
+
+    return static_cast<CalendarEventSeriesEditScope>(
+        m_seriesScopeGroup->checkedId()
+        );
+}
+
 void CalendarEventDialog::accept()
 {
     const CalendarEvent event =
@@ -139,6 +259,43 @@ void CalendarEventDialog::accept()
         return;
     }
 
+    if (repeatEnabled())
+    {
+        const QDate untilDate =
+            repeatUntilDate();
+
+        if (
+            !untilDate.isValid()
+            || untilDate < event.startDate
+            )
+        {
+            QMessageBox::warning(
+                this,
+                tr("Invalid Repeat Range"),
+                tr("The repeat end date must be on or after the event start date.")
+                );
+            return;
+        }
+
+        const int occurrenceCount =
+            estimatedRepeatOccurrences(
+                event.startDate,
+                untilDate,
+                repeatFrequency()
+                );
+
+        if (occurrenceCount > MaximumRepeatOccurrences)
+        {
+            QMessageBox::warning(
+                this,
+                tr("Too Many Events"),
+                tr("Choose a shorter repeat range. Repeating events can create up to %1 events at once.")
+                    .arg(MaximumRepeatOccurrences)
+                );
+            return;
+        }
+    }
+
     QDialog::accept();
 }
 
@@ -155,9 +312,13 @@ void CalendarEventDialog::buildUi()
             ? tr("Edit Event")
             : tr("Add Event")
         );
+    setSizeGripEnabled(false);
 
     auto* mainLayout =
         new QVBoxLayout(this);
+    mainLayout->setSizeConstraint(
+        QLayout::SetFixedSize
+        );
 
     mainLayout->setContentsMargins(
         20,
@@ -199,9 +360,20 @@ void CalendarEventDialog::buildUi()
             );
     m_unconfirmedTimeCheck =
         new QCheckBox(
-            tr("Uncomfirmed Time"),
+            tr("Unconfirmed Time"),
             this
             );
+    m_repeatCheck =
+        new QCheckBox(
+            tr("Repeating"),
+            this
+            );
+    m_repeatFrequencyCombo =
+        new QComboBox(this);
+    m_repeatUntilDateEdit =
+        new QDateEdit(this);
+    m_seriesScopeGroup =
+        new QButtonGroup(this);
     m_eventTypeGroup =
         new QButtonGroup(this);
 
@@ -218,6 +390,36 @@ void CalendarEventDialog::buildUi()
             true
             );
     }
+
+    m_repeatFrequencyCombo->addItem(
+        tr("Daily"),
+        static_cast<int>(CalendarEventRepeatFrequency::Daily)
+        );
+    m_repeatFrequencyCombo->addItem(
+        tr("Weekly"),
+        static_cast<int>(CalendarEventRepeatFrequency::Weekly)
+        );
+    m_repeatFrequencyCombo->addItem(
+        tr("Monthly"),
+        static_cast<int>(CalendarEventRepeatFrequency::Monthly)
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_repeatFrequencyCombo,
+        RepeatFieldWidth,
+        QSizePolicy::Maximum,
+        true
+        );
+
+    m_repeatUntilDateEdit->setCalendarPopup(true);
+    m_repeatUntilDateEdit->setDisplayFormat(
+        QStringLiteral("yyyy-MM-dd")
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_repeatUntilDateEdit,
+        RepeatFieldWidth,
+        QSizePolicy::Maximum,
+        true
+        );
 
     for (auto* edit : {m_startTimeEdit, m_endTimeEdit})
     {
@@ -342,18 +544,18 @@ void CalendarEventDialog::buildUi()
         );
 
     timeLayout->addWidget(
-        m_allDayCheck,
+        m_unconfirmedTimeCheck,
         2,
         0,
         1,
-        3
+        1
         );
     timeLayout->addWidget(
-        m_unconfirmedTimeCheck,
-        3,
-        0,
+        m_allDayCheck,
+        2,
+        2,
         1,
-        3
+        1
         );
 
     timeLayout->setColumnMinimumWidth(
@@ -369,6 +571,122 @@ void CalendarEventDialog::buildUi()
     fieldsLayout->addLayout(dateLayout);
     fieldsLayout->addSpacing(6);
     fieldsLayout->addLayout(timeLayout);
+
+    if (!m_existingEvent)
+    {
+        auto* repeatLayout =
+            new QGridLayout;
+        repeatLayout->setHorizontalSpacing(
+            UiConstants::ClassInfo::Form::HorizontalSpacing
+            );
+        repeatLayout->setVerticalSpacing(4);
+
+        repeatLayout->addWidget(
+            m_repeatCheck,
+            0,
+            0,
+            1,
+            3
+            );
+        repeatLayout->addItem(
+            new QSpacerItem(
+                0,
+                qMax(
+                    0,
+                    RepeatOptionToFieldsSpacing
+                        - (repeatLayout->verticalSpacing() * 2)
+                    ),
+                QSizePolicy::Minimum,
+                QSizePolicy::Fixed
+                ),
+            1,
+            0,
+            1,
+            3
+            );
+        repeatLayout->addWidget(
+            createLabel(
+                tr("Repeats")
+                ),
+            2,
+            0
+            );
+        repeatLayout->addWidget(
+            createLabel(
+                tr("Until")
+                ),
+            2,
+            2
+            );
+        repeatLayout->addWidget(
+            m_repeatFrequencyCombo,
+            3,
+            0
+            );
+        repeatLayout->addWidget(
+            m_repeatUntilDateEdit,
+            3,
+            2
+            );
+        repeatLayout->setColumnMinimumWidth(
+            1,
+            32
+            );
+        repeatLayout->setColumnStretch(
+            1,
+            1
+            );
+
+        fieldsLayout->addSpacing(6);
+        fieldsLayout->addLayout(repeatLayout);
+    }
+
+    if (
+        m_existingEvent
+        && isRepeatSeriesEvent(m_event)
+        )
+    {
+        auto* seriesScopeLayout =
+            new QVBoxLayout;
+        seriesScopeLayout->setSpacing(4);
+        seriesScopeLayout->addWidget(
+            createLabel(
+                tr("Apply To")
+                )
+            );
+
+        auto* thisEventOnlyButton =
+            new QRadioButton(
+                tr("This event only"),
+                this
+                );
+        auto* thisAndFollowingButton =
+            new QRadioButton(
+                tr("This and following events"),
+                this
+                );
+
+        m_seriesScopeGroup->addButton(
+            thisEventOnlyButton,
+            static_cast<int>(
+                CalendarEventSeriesEditScope::ThisEventOnly
+                )
+            );
+        m_seriesScopeGroup->addButton(
+            thisAndFollowingButton,
+            static_cast<int>(
+                CalendarEventSeriesEditScope::ThisAndFollowingEvents
+                )
+            );
+
+        thisEventOnlyButton->setChecked(true);
+
+        seriesScopeLayout->addWidget(thisEventOnlyButton);
+        seriesScopeLayout->addWidget(thisAndFollowingButton);
+
+        fieldsLayout->addSpacing(6);
+        fieldsLayout->addLayout(seriesScopeLayout);
+    }
 
     mainLayout->addLayout(fieldsLayout);
     mainLayout->addStretch(1);
@@ -453,6 +771,34 @@ void CalendarEventDialog::buildUi()
         this,
         &CalendarEventDialog::updateTimeFieldAvailability
         );
+    connect(
+        m_repeatCheck,
+        &QCheckBox::toggled,
+        this,
+        &CalendarEventDialog::updateRepeatFieldAvailability
+        );
+    connect(
+        m_startDateEdit,
+        &QDateEdit::dateChanged,
+        this,
+        [this](const QDate& date)
+        {
+            if (!m_repeatUntilDateEdit)
+            {
+                return;
+            }
+
+            if (
+                !repeatEnabled()
+                || m_repeatUntilDateEdit->date() < date
+                )
+            {
+                m_repeatUntilDateEdit->setDate(
+                    finalMatchingWeekdayInYear(date)
+                    );
+            }
+        }
+        );
 
     mainLayout->addWidget(m_buttons);
 }
@@ -493,7 +839,15 @@ void CalendarEventDialog::loadEvent()
         && normalizedCalendarEventTimeStatus(m_event.timeStatus)
             == QStringLiteral("Unconfirmed")
         );
+    m_repeatFrequencyCombo->setCurrentIndex(1);
+    m_repeatUntilDateEdit->setDate(
+        finalMatchingWeekdayInYear(
+            m_startDateEdit->date()
+            )
+        );
+    m_repeatCheck->setChecked(false);
     updateTimeFieldAvailability();
+    updateRepeatFieldAvailability();
 
     const QString selectedEventType =
         normalizedCalendarEventType(
@@ -566,4 +920,25 @@ void CalendarEventDialog::updateTimeFieldAvailability()
         !effectiveAllDay
         && !effectiveUnconfirmed
         );
+}
+
+void CalendarEventDialog::updateRepeatFieldAvailability()
+{
+    const bool repeat =
+        repeatEnabled();
+
+    if (m_repeatFrequencyCombo)
+    {
+        m_repeatFrequencyCombo->setEnabled(repeat);
+    }
+
+    if (m_repeatUntilDateEdit)
+    {
+        m_repeatUntilDateEdit->setEnabled(repeat);
+        m_repeatUntilDateEdit->setMinimumDate(
+            m_startDateEdit
+                ? m_startDateEdit->date()
+                : QDate::currentDate()
+            );
+    }
 }

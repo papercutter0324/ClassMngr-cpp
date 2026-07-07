@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QVariant>
 
 namespace
 {
@@ -24,6 +25,8 @@ CalendarEvent eventFromQuery(
         normalizedCalendarEventTimeStatus(
             query.value("time_status").toString()
             );
+    event.repeatSeriesId =
+        query.value("repeat_series_id").toString().trimmed();
     event.allDay =
         query.value("all_day").toBool();
     event.startDate =
@@ -77,6 +80,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
             title,
             event_type,
             time_status,
+            repeat_series_id,
             all_day,
             start_date,
             start_time,
@@ -137,6 +141,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
             title,
             event_type,
             time_status,
+            repeat_series_id,
             all_day,
             start_date,
             start_time,
@@ -197,6 +202,7 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
             title,
             event_type,
             time_status,
+            repeat_series_id,
             all_day,
             start_date,
             start_time,
@@ -251,6 +257,7 @@ CalendarEvent CalendarEventRepository::getCalendarEvent(
             title,
             event_type,
             time_status,
+            repeat_series_id,
             all_day,
             start_date,
             start_time,
@@ -279,6 +286,68 @@ CalendarEvent CalendarEventRepository::getCalendarEvent(
     return eventFromQuery(query);
 }
 
+QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
+    const QString& repeatSeriesId,
+    const QDate& startDate
+    )
+{
+    QList<CalendarEvent> events;
+
+    const QString normalizedRepeatSeriesId =
+        repeatSeriesId.trimmed();
+
+    if (
+        normalizedRepeatSeriesId.isEmpty()
+        || !startDate.isValid()
+        )
+    {
+        return events;
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        SELECT
+            id,
+            title,
+            event_type,
+            time_status,
+            repeat_series_id,
+            all_day,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE repeat_series_id=?
+        AND start_date >= ?
+        ORDER BY start_date, start_time, title, id
+    )");
+
+    query.addBindValue(normalizedRepeatSeriesId);
+    query.addBindValue(
+        startDate.toString(Qt::ISODate)
+        );
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to load calendar repeat series events:"
+            << query.lastError().text();
+
+        return events;
+    }
+
+    while (query.next())
+    {
+        events.append(
+            eventFromQuery(query)
+            );
+    }
+
+    return events;
+}
+
 int CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )
@@ -294,6 +363,12 @@ int CalendarEventRepository::saveCalendarEvent(
             : normalizedCalendarEventTimeStatus(
                 event.timeStatus
                 );
+    const QString repeatSeriesId =
+        event.repeatSeriesId.trimmed();
+    const QVariant repeatSeriesValue =
+        repeatSeriesId.isEmpty()
+            ? QVariant()
+            : QVariant(repeatSeriesId);
 
     if (event.id > 0)
     {
@@ -303,6 +378,7 @@ int CalendarEventRepository::saveCalendarEvent(
                 title=?,
                 event_type=?,
                 time_status=?,
+                repeat_series_id=?,
                 all_day=?,
                 start_date=?,
                 start_time=?,
@@ -314,6 +390,7 @@ int CalendarEventRepository::saveCalendarEvent(
         query.addBindValue(event.title);
         query.addBindValue(eventType);
         query.addBindValue(timeStatus);
+        query.addBindValue(repeatSeriesValue);
         query.addBindValue(event.allDay ? 1 : 0);
         query.addBindValue(event.startDate.toString(Qt::ISODate));
         query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
@@ -338,18 +415,20 @@ int CalendarEventRepository::saveCalendarEvent(
             title,
             event_type,
             time_status,
+            repeat_series_id,
             all_day,
             start_date,
             start_time,
             end_date,
             end_time
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(event.title);
     query.addBindValue(eventType);
     query.addBindValue(timeStatus);
+    query.addBindValue(repeatSeriesValue);
     query.addBindValue(event.allDay ? 1 : 0);
     query.addBindValue(event.startDate.toString(Qt::ISODate));
     query.addBindValue(event.startTime.toString(QStringLiteral("HH:mm")));
@@ -390,6 +469,43 @@ void CalendarEventRepository::deleteCalendarEvent(
     {
         qWarning()
             << "Failed to delete calendar event:"
+            << query.lastError().text();
+    }
+}
+
+void CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
+    const QString& repeatSeriesId,
+    const QDate& startDate
+    )
+{
+    const QString normalizedRepeatSeriesId =
+        repeatSeriesId.trimmed();
+
+    if (
+        normalizedRepeatSeriesId.isEmpty()
+        || !startDate.isValid()
+        )
+    {
+        return;
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        DELETE FROM calendar_events
+        WHERE repeat_series_id=?
+        AND start_date >= ?
+    )");
+
+    query.addBindValue(normalizedRepeatSeriesId);
+    query.addBindValue(
+        startDate.toString(Qt::ISODate)
+        );
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to delete calendar repeat series events:"
             << query.lastError().text();
     }
 }

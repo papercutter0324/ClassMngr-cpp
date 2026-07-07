@@ -19,6 +19,7 @@ void createCalendarEventsTable(
                 title TEXT NOT NULL,
                 event_type TEXT DEFAULT 'Other',
                 time_status TEXT DEFAULT 'Timed',
+                repeat_series_id TEXT,
                 all_day INTEGER DEFAULT 0,
                 start_date TEXT,
                 start_time TEXT,
@@ -35,12 +36,14 @@ CalendarEvent makeEvent(
     const QTime& startTime,
     const QDate& endDate,
     const QTime& endTime,
-    const QString& eventType = QStringLiteral("Other")
+    const QString& eventType = QStringLiteral("Other"),
+    const QString& repeatSeriesId = QString()
     )
 {
     CalendarEvent calendarEvent;
     calendarEvent.title = title;
     calendarEvent.eventType = eventType;
+    calendarEvent.repeatSeriesId = repeatSeriesId;
     calendarEvent.startDate = startDate;
     calendarEvent.startTime = startTime;
     calendarEvent.endDate = endDate;
@@ -71,6 +74,9 @@ private slots:
     void rangeQueryIncludesEventsThatOverlapRange();
     void rangeQuerySortsByDateTimeAndTitle();
     void upcomingQueryExcludesPastEventsAndLimitsResults();
+    void savesAndLoadsRepeatSeriesId();
+    void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
+    void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
 };
 
 void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
@@ -283,6 +289,243 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
         QVERIFY(!titles(upcoming).contains(QStringLiteral("Past")));
         QCOMPARE(upcoming.first().title, QStringLiteral("Ongoing"));
         QCOMPARE(upcoming.last().title, QStringLiteral("Future 9"));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_series_save_tests");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(
+            QStringLiteral(":memory:")
+            );
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        const int eventId =
+            repository.saveCalendarEvent(
+                makeEvent(
+                    QStringLiteral("Series Event"),
+                    QDate(2026, 7, 10),
+                    QTime(9, 0),
+                    QDate(2026, 7, 10),
+                    QTime(10, 0),
+                    QStringLiteral("Meeting"),
+                    QStringLiteral("series-1")
+                    )
+                );
+
+        const CalendarEvent loaded =
+            repository.getCalendarEvent(eventId);
+
+        QCOMPARE(loaded.repeatSeriesId, QStringLiteral("series-1"));
+
+        CalendarEvent detached =
+            loaded;
+        detached.repeatSeriesId.clear();
+        repository.saveCalendarEvent(detached);
+
+        QCOMPARE(
+            repository.getCalendarEvent(eventId).repeatSeriesId,
+            QString()
+            );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnly()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_series_query_tests");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(
+            QStringLiteral(":memory:")
+            );
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 1"),
+                QDate(2026, 7, 1),
+                QTime(9, 0),
+                QDate(2026, 7, 1),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 2"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 3"),
+                QDate(2026, 7, 15),
+                QTime(9, 0),
+                QDate(2026, 7, 15),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Other Series"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-2")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Standalone"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0)
+                )
+            );
+
+        QCOMPARE(
+            titles(
+                repository.loadCalendarEventsForRepeatSeriesFromDate(
+                    QStringLiteral("series-1"),
+                    QDate(2026, 7, 8)
+                    )
+                ),
+            QStringList({
+                QStringLiteral("Series 2"),
+                QStringLiteral("Series 3")
+            })
+            );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowingOnly()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_series_delete_tests");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(
+            QStringLiteral(":memory:")
+            );
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 1"),
+                QDate(2026, 7, 1),
+                QTime(9, 0),
+                QDate(2026, 7, 1),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 2"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Series 3"),
+                QDate(2026, 7, 15),
+                QTime(9, 0),
+                QDate(2026, 7, 15),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-1")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Other Series"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0),
+                QStringLiteral("Other"),
+                QStringLiteral("series-2")
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Standalone"),
+                QDate(2026, 7, 8),
+                QTime(9, 0),
+                QDate(2026, 7, 8),
+                QTime(10, 0)
+                )
+            );
+
+        repository.deleteCalendarEventsForRepeatSeriesFromDate(
+            QStringLiteral("series-1"),
+            QDate(2026, 7, 8)
+            );
+
+        QCOMPARE(
+            titles(
+                repository.loadCalendarEventsInRange(
+                    QDate(2026, 7, 1),
+                    QDate(2026, 7, 31)
+                    )
+                ),
+            QStringList({
+                QStringLiteral("Series 1"),
+                QStringLiteral("Other Series"),
+                QStringLiteral("Standalone")
+            })
+            );
     }
 
     QSqlDatabase::removeDatabase(connectionName);

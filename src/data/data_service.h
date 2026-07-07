@@ -196,12 +196,22 @@ public:
         int eventId
         );
 
+    QList<CalendarEvent> loadCalendarEventsForRepeatSeriesFromDate(
+        const QString& repeatSeriesId,
+        const QDate& startDate
+        );
+
     int saveCalendarEvent(
         const CalendarEvent& event
         );
 
     void deleteCalendarEvent(
         int eventId
+        );
+
+    void deleteCalendarEventsForRepeatSeriesFromDate(
+        const QString& repeatSeriesId,
+        const QDate& startDate
         );
 
     void deleteAllCalendarEvents();

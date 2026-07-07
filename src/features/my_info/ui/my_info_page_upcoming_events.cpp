@@ -1210,7 +1210,7 @@ QString MyInfoPage::upcomingEventTimeText(
 
     if (timeStatus == QStringLiteral("Unconfirmed"))
     {
-        return tr("Uncomfirmed Time");
+        return tr("Unconfirmed Time");
     }
 
     if (!event.startTime.isValid())

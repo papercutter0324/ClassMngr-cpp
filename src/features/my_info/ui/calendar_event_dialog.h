@@ -8,9 +8,23 @@ class QDateEdit;
 class QDialogButtonBox;
 class QButtonGroup;
 class QCheckBox;
+class QComboBox;
 class QLineEdit;
 class QPushButton;
 class QTimeEdit;
+
+enum class CalendarEventRepeatFrequency
+{
+    Daily,
+    Weekly,
+    Monthly
+};
+
+enum class CalendarEventSeriesEditScope
+{
+    ThisEventOnly,
+    ThisAndFollowingEvents
+};
 
 class CalendarEventDialog : public QDialog
 {
@@ -26,6 +40,10 @@ public:
 
     CalendarEvent eventData() const;
     bool deleteRequested() const;
+    bool repeatEnabled() const;
+    CalendarEventRepeatFrequency repeatFrequency() const;
+    QDate repeatUntilDate() const;
+    CalendarEventSeriesEditScope seriesEditScope() const;
 
 private slots:
     void accept() override;
@@ -35,6 +53,7 @@ private:
     void buildUi();
     void loadEvent();
     void updateTimeFieldAvailability();
+    void updateRepeatFieldAvailability();
 
 private:
     CalendarEvent m_event;
@@ -49,6 +68,10 @@ private:
     QTimeEdit* m_endTimeEdit = nullptr;
     QCheckBox* m_allDayCheck = nullptr;
     QCheckBox* m_unconfirmedTimeCheck = nullptr;
+    QCheckBox* m_repeatCheck = nullptr;
+    QComboBox* m_repeatFrequencyCombo = nullptr;
+    QDateEdit* m_repeatUntilDateEdit = nullptr;
+    QButtonGroup* m_seriesScopeGroup = nullptr;
     QButtonGroup* m_eventTypeGroup = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_deleteButton = nullptr;

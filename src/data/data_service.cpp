@@ -592,6 +592,7 @@ void DataService::createTables()
             title TEXT NOT NULL,
             event_type TEXT DEFAULT 'Other',
             time_status TEXT DEFAULT 'Timed',
+            repeat_series_id TEXT,
             all_day INTEGER DEFAULT 0,
             start_date TEXT,
             start_time TEXT,
@@ -625,6 +626,18 @@ void DataService::createTables()
         QStringLiteral("all_day"),
         QStringLiteral("INTEGER DEFAULT 0")
         );
+
+    ensureTableColumn(
+        m_db,
+        QStringLiteral("calendar_events"),
+        QStringLiteral("repeat_series_id"),
+        QStringLiteral("TEXT")
+        );
+
+    query.exec(R"(
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_repeat_series
+        ON calendar_events (repeat_series_id, start_date, id)
+    )");
 }
 
 void DataService::saveSetting(
@@ -934,6 +947,22 @@ CalendarEvent DataService::getCalendarEvent(
         );
 }
 
+QList<CalendarEvent> DataService::loadCalendarEventsForRepeatSeriesFromDate(
+    const QString& repeatSeriesId,
+    const QDate& startDate
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return {};
+    }
+
+    return m_calendarEventRepository->loadCalendarEventsForRepeatSeriesFromDate(
+        repeatSeriesId,
+        startDate
+        );
+}
+
 int DataService::saveCalendarEvent(
     const CalendarEvent& event
     )
@@ -956,6 +985,20 @@ void DataService::deleteCalendarEvent(
     {
         m_calendarEventRepository->deleteCalendarEvent(
             eventId
+            );
+    }
+}
+
+void DataService::deleteCalendarEventsForRepeatSeriesFromDate(
+    const QString& repeatSeriesId,
+    const QDate& startDate
+    )
+{
+    if (m_calendarEventRepository)
+    {
+        m_calendarEventRepository->deleteCalendarEventsForRepeatSeriesFromDate(
+            repeatSeriesId,
+            startDate
             );
     }
 }
