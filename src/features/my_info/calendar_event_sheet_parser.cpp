@@ -332,7 +332,6 @@ bool shouldIgnoreLegend(
         cleanedLegendLabel(label).toLower();
 
     return normalized == QStringLiteral("weekend")
-        || normalized == QStringLiteral("new semester")
         || normalized == QStringLiteral("creo fixed days")
         || normalized == QStringLiteral("creo workshop")
         || normalized == QStringLiteral("date confirmed")

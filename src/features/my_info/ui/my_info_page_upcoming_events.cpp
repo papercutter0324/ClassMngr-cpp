@@ -744,7 +744,7 @@ void MyInfoPage::refreshUpcomingEvents()
                 activeTypes.contains(
                     normalizedCalendarEventType(event.eventType)
                     )
-                && calendarEventVisibleForCampus(event)
+                && calendarEventVisible(event)
                 )
             {
                 filteredEvents.append(event);
@@ -825,7 +825,7 @@ void MyInfoPage::renderUpcomingEvents(
             activeTypes.contains(
                 normalizedCalendarEventType(event.eventType)
                 )
-            && calendarEventVisibleForCampus(event)
+            && calendarEventVisible(event)
             )
         {
             filteredEvents.append(event);
@@ -1246,10 +1246,18 @@ QString MyInfoPage::upcomingEventTimeText(
             event.endTime.toString(format)
             );
 }
-bool MyInfoPage::calendarEventVisibleForCampus(
+bool MyInfoPage::calendarEventVisible(
     const CalendarEvent& event
     ) const
 {
+    if (
+        hideStartOfTermEvents()
+        && isStartOfTermCalendarEvent(event)
+        )
+    {
+        return false;
+    }
+
     return CalendarEventCampusFilter::eventMatchesCampus(
         event,
         currentCampusCodes(),
@@ -1266,6 +1274,20 @@ bool MyInfoPage::showAllCalendarCampuses() const
         && settingToBool(
             dataService->loadSetting(
                 CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                false
+                ),
+            false
+            );
+}
+bool MyInfoPage::hideStartOfTermEvents() const
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    return dataService
+        && settingToBool(
+            dataService->loadSetting(
+                CalendarSettingsKeys::HideStartOfTermEvents,
                 false
                 ),
             false

@@ -28,7 +28,8 @@ public:
     void setCampusFilter(
         const QStringList& currentCampusCodes,
         const QStringList& allCampusCodes,
-        bool showAllCampuses
+        bool showAllCampuses,
+        bool hideStartOfTermEvents
         );
 
     void reload();
@@ -41,5 +42,6 @@ private:
     QStringList m_currentCampusCodes;
     QStringList m_allCampusCodes;
     bool m_showAllCampuses = false;
+    bool m_hideStartOfTermEvents = false;
     int m_revision = 0;
 };

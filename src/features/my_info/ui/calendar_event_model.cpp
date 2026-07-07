@@ -56,6 +56,14 @@ QVariantList CalendarEventModel::eventsForDate(
     for (const CalendarEvent& event : events)
     {
         if (
+            m_hideStartOfTermEvents
+            && isStartOfTermCalendarEvent(event)
+            )
+        {
+            continue;
+        }
+
+        if (
             !CalendarEventCampusFilter::eventMatchesCampus(
                 event,
                 m_currentCampusCodes,
@@ -107,13 +115,15 @@ QVariantList CalendarEventModel::eventsForDate(
 void CalendarEventModel::setCampusFilter(
     const QStringList& currentCampusCodes,
     const QStringList& allCampusCodes,
-    bool showAllCampuses
+    bool showAllCampuses,
+    bool hideStartOfTermEvents
     )
 {
     if (
         m_currentCampusCodes == currentCampusCodes
         && m_allCampusCodes == allCampusCodes
         && m_showAllCampuses == showAllCampuses
+        && m_hideStartOfTermEvents == hideStartOfTermEvents
         )
     {
         return;
@@ -125,6 +135,8 @@ void CalendarEventModel::setCampusFilter(
         allCampusCodes;
     m_showAllCampuses =
         showAllCampuses;
+    m_hideStartOfTermEvents =
+        hideStartOfTermEvents;
 
     reload();
 }

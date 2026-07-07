@@ -348,6 +348,13 @@ QWidget* AcademicCalendarDialog::buildOptionsTab()
             );
     layout->addWidget(m_showAllCampusesCheck);
 
+    m_hideStartOfTermEventsCheck =
+        new QCheckBox(
+            tr("Hide Start of Term Events"),
+            page
+            );
+    layout->addWidget(m_hideStartOfTermEventsCheck);
+
     m_startWeekOnMondayCheck =
         new QCheckBox(
             tr("Start Calendar Weeks on Monday"),
@@ -645,6 +652,20 @@ void AcademicCalendarDialog::loadOptions()
             m_provider->firstDayOfWeek() == 1
             );
     }
+
+    if (m_hideStartOfTermEventsCheck)
+    {
+        m_hideStartOfTermEventsCheck->setChecked(
+            m_dataService && m_dataService->isOpen()
+                ? m_dataService
+                    ->loadSetting(
+                        CalendarSettingsKeys::HideStartOfTermEvents,
+                        false
+                        )
+                    .toBool()
+                : false
+            );
+    }
 }
 
 void AcademicCalendarDialog::saveOptions()
@@ -658,6 +679,18 @@ void AcademicCalendarDialog::saveOptions()
         m_dataService->saveSetting(
             CalendarSettingsKeys::ShowEventsAtAllCampuses,
             m_showAllCampusesCheck->isChecked()
+            );
+    }
+
+    if (
+        m_dataService
+        && m_dataService->isOpen()
+        && m_hideStartOfTermEventsCheck
+        )
+    {
+        m_dataService->saveSetting(
+            CalendarSettingsKeys::HideStartOfTermEvents,
+            m_hideStartOfTermEventsCheck->isChecked()
             );
     }
 

@@ -28,6 +28,7 @@ class CalendarImportTests : public QObject
 
 private slots:
     void ignoresWeekendLegendEntries();
+    void importsNewSemesterLegendEntries();
     void importsWeekendFontColorOverrides();
     void importsWeekdayFontColorWithoutFill();
     void ignoresWeekdayFontColorWithFill();
@@ -51,6 +52,28 @@ void CalendarImportTests::ignoresWeekendLegendEntries()
         CalendarImport::parseCalendarEventsFromWorkbook(workbook);
 
     QCOMPARE(parsed.events.size(), 0);
+}
+
+void CalendarImportTests::importsNewSemesterLegendEntries()
+{
+    CalendarImport::Workbook workbook =
+        baseWorkbook();
+    workbook.cells.append(
+        {20, 26, 1, QStringLiteral("New Semester"), QString()}
+        );
+    workbook.cells.append(
+        {4, 1, 1, QStringLiteral("6"), QString()}
+        );
+
+    const CalendarImport::ParsedCalendarImport parsed =
+        CalendarImport::parseCalendarEventsFromWorkbook(workbook);
+
+    QCOMPARE(parsed.skippedCount, 0);
+    QCOMPARE(parsed.events.size(), 1);
+    QCOMPARE(parsed.events.first().title, QStringLiteral("New Semester"));
+    QCOMPARE(parsed.events.first().eventType, QStringLiteral("Other"));
+    QVERIFY(isStartOfTermCalendarEvent(parsed.events.first()));
+    QCOMPARE(parsed.events.first().startDate, QDate(2026, 7, 6));
 }
 
 void CalendarImportTests::importsWeekendFontColorOverrides()

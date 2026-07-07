@@ -202,10 +202,11 @@ private:
     QString upcomingEventTimeText(
         const CalendarEvent& event
         ) const;
-    bool calendarEventVisibleForCampus(
+    bool calendarEventVisible(
         const CalendarEvent& event
         ) const;
     bool showAllCalendarCampuses() const;
+    bool hideStartOfTermEvents() const;
     QStringList currentCampusCodes() const;
     QStringList allCampusCodes() const;
     QWidget* createUpcomingEventRow(

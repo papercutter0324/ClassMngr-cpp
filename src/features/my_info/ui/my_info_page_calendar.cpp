@@ -473,6 +473,8 @@ void MyInfoPage::buildMonthlyCalendarSection()
         card
         );
 
+    updateCalendarCampusFilter();
+
     m_scrollContentLayout->addWidget(
         card
         );
@@ -487,7 +489,8 @@ void MyInfoPage::updateCalendarCampusFilter()
     m_calendarModel->setCampusFilter(
         currentCampusCodes(),
         allCampusCodes(),
-        showAllCalendarCampuses()
+        showAllCalendarCampuses(),
+        hideStartOfTermEvents()
         );
     refreshUpcomingEvents();
 }
