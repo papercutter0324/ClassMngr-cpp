@@ -421,6 +421,13 @@ void CalendarEventDialog::buildUi()
         true
         );
 
+    if (m_existingEvent)
+    {
+        m_repeatCheck->hide();
+        m_repeatFrequencyCombo->hide();
+        m_repeatUntilDateEdit->hide();
+    }
+
     for (auto* edit : {m_startTimeEdit, m_endTimeEdit})
     {
         edit->setDisplayFormat(
