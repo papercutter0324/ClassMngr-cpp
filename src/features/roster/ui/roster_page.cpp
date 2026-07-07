@@ -11,7 +11,9 @@
 #include "features/roster/ui/roster_header_view.h"
 #include "features/roster/ui/roster_item_delegate.h"
 #include "features/roster/ui/roster_model.h"
+#include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "features/roster/ui/roster_template_print_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
@@ -244,6 +246,16 @@ void RosterPage::retranslateUi()
             );
         m_importButton->setToolTip(
             tr("Import final grades from speaking evaluations.")
+            );
+    }
+
+    if (m_printButton)
+    {
+        m_printButton->setText(
+            tr("Print Rosters")
+            );
+        m_printButton->setToolTip(
+            tr("Print rosters from a spreadsheet template.")
             );
     }
 
@@ -727,6 +739,47 @@ void RosterPage::importScores()
     );
 }
 
+void RosterPage::printRosters()
+{
+    if (hasUnsavedChanges() && !saveChanges())
+    {
+        return;
+    }
+
+    RosterPrintDialog dialog(
+        m_services,
+        m_classroom.id,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::printRosters(
+            {
+                this,
+                m_services,
+                dialog.templatePath(),
+                m_classroom.id,
+                dialog.selectedScope(),
+                dialog.selectedClassIds()
+            }
+            );
+
+    if (result.status == RosterTemplatePrintService::Status::Failed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Print Rosters"),
+            result.message
+            );
+    }
+}
+
 void RosterPage::autosave()
 {
     if (!hasUnsavedChanges())
@@ -774,6 +827,13 @@ void RosterPage::updateActions()
             &reason
             )
         );
+
+    if (m_printButton)
+    {
+        m_printButton->setEnabled(
+            m_classroom.id > 0
+            );
+    }
 }
 
 void RosterPage::showRosterContextMenu(
@@ -1097,6 +1157,16 @@ void RosterPage::buildUi()
         tr("Import final grades from speaking evaluations.")
         );
 
+    m_printButton =
+        new TextFitPushButton(
+            tr("Print Rosters"),
+            this
+            );
+
+    m_printButton->setToolTip(
+        tr("Print rosters from a spreadsheet template.")
+        );
+
     m_addColumnButton =
         new TextFitPushButton(
             tr("Add Column"),
@@ -1124,6 +1194,7 @@ void RosterPage::buildUi()
     m_saveButton->setObjectName("primaryButton");
 
     bottomLayout()->addWidget(m_importButton);
+    bottomLayout()->addWidget(m_printButton);
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_removeStudentButton);
     bottomLayout()->addWidget(m_addColumnButton);
@@ -1163,6 +1234,13 @@ void RosterPage::buildUi()
         &QPushButton::clicked,
         this,
         &RosterPage::importScores
+        );
+
+    connect(
+        m_printButton,
+        &QPushButton::clicked,
+        this,
+        &RosterPage::printRosters
         );
 
     connect(

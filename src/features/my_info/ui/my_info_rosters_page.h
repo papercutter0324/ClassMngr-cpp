@@ -72,6 +72,8 @@ private slots:
 
     void importScores();
 
+    void printRosters();
+
     void autosave();
 
     void updateActions();
@@ -194,6 +196,7 @@ private:
     RosterItemDelegate* m_delegate = nullptr;
 
     QPushButton* m_importButton = nullptr;
+    QPushButton* m_printButton = nullptr;
     QPushButton* m_removeStudentButton = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
