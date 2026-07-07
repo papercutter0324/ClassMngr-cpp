@@ -290,6 +290,60 @@ DocumentRoute documentRouteForKey(
         };
     }
 
+    if (key == QStringLiteral("document_vacation_sub_prep_applying"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("1 - How to Apply for Vacation.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_vacation_sub_prep_guidelines"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("2 - Vacation Guidelines.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_vacation_sub_prep_request_form"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("3 - Vacation Request Form.pdf"),
+            DocumentActions::ExportAndPrint
+        };
+    }
+
+    if (key == QStringLiteral("document_vacation_sub_prep_procedures"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("DYB Sub Procedures.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
+    if (key == QStringLiteral("document_vacation_sub_prep_checklist"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("DYB Sub Prep Checklist.pdf"),
+            DocumentActions::ExportAndPrint
+        };
+    }
+
+    if (key == QStringLiteral("document_vacation_sub_prep_template"))
+    {
+        return {
+            ResourcePaths::Files::vacationDirectory(),
+            QStringLiteral("DYB Sub Prep Template.pdf"),
+            DocumentActions::ExportOnly
+        };
+    }
+
     return {};
 }
 }

@@ -292,6 +292,50 @@ QList<TreeNodeSpec> treeStructure()
                             NodeType::Page
                         }
                     }
+                },
+
+                {
+                    "document_vacation_sub_prep",
+                    QObject::tr("Vacation / Sub Prep"),
+                    NodeType::Root,
+
+                    {
+                        {
+                            "document_vacation_sub_prep_applying",
+                            QObject::tr("Applying for Vacation"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_vacation_sub_prep_guidelines",
+                            QObject::tr("Vacation Guidelines"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_vacation_sub_prep_request_form",
+                            QObject::tr("Vacacation Request Form"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_vacation_sub_prep_procedures",
+                            QObject::tr("Sub Prep Procedures"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_vacation_sub_prep_checklist",
+                            QObject::tr("Sub Prep Checklist"),
+                            NodeType::Page
+                        },
+
+                        {
+                            "document_vacation_sub_prep_template",
+                            QObject::tr("Sub Prep Template"),
+                            NodeType::Page
+                        }
+                    }
                 }
             }
         },

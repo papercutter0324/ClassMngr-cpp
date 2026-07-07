@@ -23,7 +23,8 @@ QStringList expectedPackIds()
         QStringLiteral("guides"),
         QStringLiteral("lessons"),
         QStringLiteral("sub-prep"),
-        QStringLiteral("training")
+        QStringLiteral("training"),
+        QStringLiteral("vacation")
     };
 }
 
@@ -118,6 +119,10 @@ void ResourcePackTests::knowsConfiguredPacks()
     QCOMPARE(
         manager.embeddedRoot(QStringLiteral("sub-prep")),
         QStringLiteral(":/assets/files/sub prep")
+        );
+    QCOMPARE(
+        manager.embeddedRoot(QStringLiteral("vacation")),
+        QStringLiteral(":/assets/files/vacation")
         );
 }
 

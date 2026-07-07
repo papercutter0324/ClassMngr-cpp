@@ -396,6 +396,13 @@ inline QString trainingDirectory()
         QStringLiteral("training")
         );
 }
+
+inline QString vacationDirectory()
+{
+    return directory(
+        QStringLiteral("vacation")
+        );
+}
 }
 
 namespace ResourcePaths::Styles

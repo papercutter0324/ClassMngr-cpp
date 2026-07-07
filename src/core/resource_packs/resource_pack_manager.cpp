@@ -118,6 +118,11 @@ ResourcePackManager::ResourcePackManager(
             QStringLiteral("training"),
             QStringLiteral(":/assets/files/training"),
             Version(1, 0, 0)
+        },
+        {
+            QStringLiteral("vacation"),
+            QStringLiteral(":/assets/files/vacation"),
+            Version(1, 0, 1)
         }
     })
 {
