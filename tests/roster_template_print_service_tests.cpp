@@ -77,15 +77,18 @@ namespace
 constexpr int RenderDpi = 300;
 constexpr qreal PointsPerInch = 72.0;
 constexpr qreal MarginInches = 0.5;
-constexpr qreal ColumnWidthInches = 0.7047;
-constexpr qreal TitleRowHeightInches = 0.2736;
-constexpr qreal NormalRowHeightInches = 0.2083;
-constexpr int RowCount = 32;
+constexpr qreal ColumnWidthInches = 0.6833;
+constexpr qreal TitleRowHeightInches = 0.3000;
+constexpr qreal NormalRowHeightInches = 0.2000;
+constexpr qreal SectionEndRowHeightInches = 0.2083;
+constexpr qreal BorderWidthPoints = 2.0;
+constexpr int RowCount = 33;
 constexpr int ColumnCount = 13;
 constexpr int LevelRow = 3;
 constexpr int TeacherRoomRow = 4;
-constexpr int FirstStudentRow = 6;
-constexpr int WifiRow = 29;
+constexpr int FirstStudentRow = 5;
+constexpr int LastStudentRow = 29;
+constexpr int WifiRow = 30;
 
 RosterTemplatePrintService::RosterClassData sampleRosterClass(
     int classId,
@@ -359,12 +362,25 @@ qreal baseRowHeight(
     int row
     )
 {
-    return (
-        row == 1
-            ? TitleRowHeightInches
-            : NormalRowHeightInches
+    qreal inches =
+        NormalRowHeightInches;
+
+    if (row == 1)
+    {
+        inches =
+            TitleRowHeightInches;
+    }
+    else if (
+        row == TeacherRoomRow
+        || row == LastStudentRow
+        || row == RowCount
         )
-        * RenderDpi;
+    {
+        inches =
+            SectionEndRowHeightInches;
+    }
+
+    return inches * RenderDpi;
 }
 
 qreal adjustedRowHeight(
@@ -428,8 +444,14 @@ QPoint emptyStudentCellBorderPoint(
     const QImage& image
     )
 {
+    const qreal borderWidth =
+        BorderWidthPoints * RenderDpi / PointsPerInch;
+
     return QPoint(
-        qRound(adjustedColumnLeft(image, 4)),
+        qRound(
+            adjustedColumnLeft(image, 4)
+            + (borderWidth / 2.0)
+            ),
         qRound(
             adjustedRowTop(image, FirstStudentRow)
             + (adjustedRowHeight(image, FirstStudentRow) / 2.0)
@@ -460,6 +482,47 @@ bool hasNonWhitePixelNear(
 
     return false;
 }
+
+QPoint cellInteriorPoint(
+    const QImage& image,
+    int row,
+    int column,
+    int columnSpan = 1,
+    qreal xFraction = 0.5,
+    qreal yFraction = 0.5
+    )
+{
+    qreal width = 0.0;
+    for (int index = 0; index < columnSpan; ++index)
+    {
+        width += adjustedColumnWidth(
+            image,
+            column + index
+            );
+    }
+
+    return QPoint(
+        qRound(
+            adjustedColumnLeft(image, column)
+            + (width * xFraction)
+            ),
+        qRound(
+            adjustedRowTop(image, row)
+            + (adjustedRowHeight(image, row) * yFraction)
+            )
+        );
+}
+
+bool colorNear(
+    const QColor& color,
+    const QColor& expected,
+    int tolerance = 8
+    )
+{
+    return std::abs(color.red() - expected.red()) <= tolerance
+        && std::abs(color.green() - expected.green()) <= tolerance
+        && std::abs(color.blue() - expected.blue()) <= tolerance;
+}
 }
 
 class RosterTemplatePrintServiceTests : public QObject
@@ -469,6 +532,7 @@ class RosterTemplatePrintServiceTests : public QObject
 private slots:
     void resolveClassIdsUsesRequestedScope();
     void buildByDayCellValuesMapsClassToTimeBlock();
+    void buildByDayCellValuesWritesTwentyFiveStudentRows();
     void buildByDayCellValuesUsesTeacherFallback();
     void buildByDayCellValuesRejectsDuplicateSlots();
     void generatedPdfUsesA4LandscapeAndFilledWeekdayPages();
@@ -537,6 +601,39 @@ void RosterTemplatePrintServiceTests::buildByDayCellValuesMapsClassToTimeBlock()
     QVERIFY(hasCellValue(values, QStringLiteral("Monday"), FirstStudentRow + 1, 2, QStringLiteral("Jay")));
     QVERIFY(hasCellValue(values, QStringLiteral("Monday"), FirstStudentRow + 1, 3, QStringLiteral("Jay KR")));
     QVERIFY(hasCellValue(values, QStringLiteral("Monday"), WifiRow, 2, QStringLiteral("DYB")));
+}
+
+void RosterTemplatePrintServiceTests::buildByDayCellValuesWritesTwentyFiveStudentRows()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    data.roster.rows.clear();
+
+    for (int index = 1; index <= 26; ++index)
+    {
+        data.roster.rows.append(
+            {
+                QStringLiteral("Student %1").arg(index),
+                QStringLiteral("Korean %1").arg(index)
+            }
+            );
+    }
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildByDayCellValues(
+            {data},
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), FirstStudentRow, 2, QStringLiteral("Student 1")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), LastStudentRow, 2, QStringLiteral("Student 25")));
+    QVERIFY(!hasCellValue(values, QStringLiteral("Monday"), LastStudentRow + 1, 2, QStringLiteral("Student 26")));
 }
 
 void RosterTemplatePrintServiceTests::buildByDayCellValuesUsesTeacherFallback()
@@ -651,7 +748,7 @@ void RosterTemplatePrintServiceTests::
 
     const int marginPixels =
         qRound(MarginInches * RenderDpi);
-    constexpr int TolerancePixels = 4;
+    constexpr int TolerancePixels = 6;
 
     QVERIFY(std::abs(bounds.left() - marginPixels) <= TolerancePixels);
     QVERIFY(std::abs(bounds.top() - marginPixels) <= TolerancePixels);
@@ -676,6 +773,31 @@ void RosterTemplatePrintServiceTests::
             image,
             emptyStudentCellBorderPoint(image),
             3
+            )
+        );
+
+    QVERIFY(
+        colorNear(
+            image.pixelColor(
+                cellInteriorPoint(image, 2, 4, 2, 0.2)
+                ),
+            QColor(QStringLiteral("#95B3D7"))
+            )
+        );
+    QVERIFY(
+        colorNear(
+            image.pixelColor(
+                cellInteriorPoint(image, LevelRow, 4, 2)
+                ),
+            QColor(QStringLiteral("#B8CCE4"))
+            )
+        );
+    QVERIFY(
+        colorNear(
+            image.pixelColor(
+                cellInteriorPoint(image, WifiRow, 4, 2)
+                ),
+            QColor(QStringLiteral("#DCE6F1"))
             )
         );
 }

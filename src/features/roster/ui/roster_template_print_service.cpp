@@ -33,20 +33,20 @@ constexpr int DayTitleRow = 1;
 constexpr int TimeRow = 2;
 constexpr int LevelRow = 3;
 constexpr int TeacherRoomRow = 4;
-constexpr int NamesRow = 5;
-constexpr int FirstStudentRow = 6;
-constexpr int LastStudentRow = 28;
-constexpr int WifiRow = 29;
-constexpr int WifiPasswordRow = 30;
-constexpr int ZoomRow = 31;
-constexpr int ZoomPasswordRow = 32;
+constexpr int FirstStudentRow = 5;
+constexpr int LastStudentRow = 29;
+constexpr int WifiRow = 30;
+constexpr int WifiPasswordRow = 31;
+constexpr int ZoomRow = 32;
+constexpr int ZoomPasswordRow = 33;
 constexpr int RowCount = ZoomPasswordRow;
 constexpr int ColumnCount = 13;
 constexpr int MaxStudentsPerClass = LastStudentRow - FirstStudentRow + 1;
 
-constexpr qreal ColumnWidthInches = 0.7047;
-constexpr qreal TitleRowHeightInches = 0.2736;
-constexpr qreal NormalRowHeightInches = 0.2083;
+constexpr qreal ColumnWidthInches = 0.6833;
+constexpr qreal TitleRowHeightInches = 0.3000;
+constexpr qreal NormalRowHeightInches = 0.2000;
+constexpr qreal SectionEndRowHeightInches = 0.2083;
 constexpr qreal RosterPdfMarginInches = 0.5;
 constexpr int RosterPdfResolutionDpi = 300;
 constexpr QPageSize::PageSizeId RosterPdfPageSize = QPageSize::A4;
@@ -62,12 +62,12 @@ const QStringList DaySheets{
 const QList<int> SlotColumns{2, 4, 6, 8, 10, 12};
 
 const QStringList TimeLabels{
-    QStringLiteral("4-5pm"),
-    QStringLiteral("5-6pm"),
-    QStringLiteral("6-7pm"),
-    QStringLiteral("7-8pm"),
-    QStringLiteral("8-9pm"),
-    QStringLiteral("9-10pm")
+    QStringLiteral("4pm"),
+    QStringLiteral("5pm"),
+    QStringLiteral("6pm"),
+    QStringLiteral("7pm"),
+    QStringLiteral("8pm"),
+    QStringLiteral("9pm")
 };
 
 struct RosterPdfPalette
@@ -75,10 +75,18 @@ struct RosterPdfPalette
     QColor pageBackground = Qt::white;
     QColor cellBackground = Qt::white;
     QColor timeBackground = QColor(QStringLiteral("#95B3D7"));
-    QColor infoBackground = QColor(QStringLiteral("#DCE6F1"));
-    QColor nameHeaderBackground = QColor(QStringLiteral("#B9CDE5"));
+    QColor classInfoBackground = QColor(QStringLiteral("#B8CCE4"));
+    QColor footerBackground = QColor(QStringLiteral("#DCE6F1"));
     QColor grid = Qt::black;
     QColor text = Qt::black;
+};
+
+struct CellBorders
+{
+    bool top = false;
+    bool right = false;
+    bool bottom = false;
+    bool left = false;
 };
 
 struct RosterPrintLayout
@@ -386,10 +394,20 @@ qreal baseRowHeight(
     int resolutionDpi
     )
 {
-    const qreal inches =
-        row == DayTitleRow
-            ? TitleRowHeightInches
-            : NormalRowHeightInches;
+    qreal inches = NormalRowHeightInches;
+
+    if (row == DayTitleRow)
+    {
+        inches = TitleRowHeightInches;
+    }
+    else if (
+        row == TeacherRoomRow
+        || row == LastStudentRow
+        || row == ZoomPasswordRow
+        )
+    {
+        inches = SectionEndRowHeightInches;
+    }
 
     return inches
         * std::max(
@@ -540,6 +558,20 @@ QRectF sourceCellRect(
         );
 }
 
+qreal borderWidth(
+    int resolutionDpi
+    )
+{
+    constexpr qreal BorderWidthPoints = 2.0;
+
+    return BorderWidthPoints
+        * std::max(
+            1,
+            resolutionDpi
+            )
+        / 72.0;
+}
+
 QFont printUiFont(
     qreal pointSize,
     int resolutionDpi,
@@ -618,6 +650,81 @@ QFont fittedFont(
     return font;
 }
 
+void drawCellBorders(
+    QPainter& painter,
+    const QRectF& rect,
+    const CellBorders& borders,
+    const QColor& color,
+    qreal width
+    )
+{
+    if (
+        !borders.top
+        && !borders.right
+        && !borders.bottom
+        && !borders.left
+        )
+    {
+        return;
+    }
+
+    painter.save();
+    painter.setPen(
+        QPen(
+            color,
+            width,
+            Qt::SolidLine,
+            Qt::SquareCap,
+            Qt::MiterJoin
+            )
+        );
+
+    const qreal inset =
+        width / 2.0;
+    const qreal left =
+        rect.left() + inset;
+    const qreal right =
+        rect.left() + rect.width() - inset;
+    const qreal top =
+        rect.top() + inset;
+    const qreal bottom =
+        rect.top() + rect.height() - inset;
+
+    if (borders.top)
+    {
+        painter.drawLine(
+            QPointF(left, top),
+            QPointF(right, top)
+            );
+    }
+
+    if (borders.right)
+    {
+        painter.drawLine(
+            QPointF(right, top),
+            QPointF(right, bottom)
+            );
+    }
+
+    if (borders.bottom)
+    {
+        painter.drawLine(
+            QPointF(left, bottom),
+            QPointF(right, bottom)
+            );
+    }
+
+    if (borders.left)
+    {
+        painter.drawLine(
+            QPointF(left, top),
+            QPointF(left, bottom)
+            );
+    }
+
+    painter.restore();
+}
+
 void drawCell(
     QPainter& painter,
     const QRectF& rect,
@@ -625,6 +732,8 @@ void drawCell(
     const QFont& font,
     const QColor& fill,
     const RosterPdfPalette& palette,
+    const CellBorders& borders,
+    qreal borderLineWidth,
     int alignment = Qt::AlignCenter
     )
 {
@@ -634,13 +743,13 @@ void drawCell(
         rect,
         fill
         );
-    painter.setPen(
-        QPen(
-            palette.grid,
-            1.2
-            )
+    drawCellBorders(
+        painter,
+        rect,
+        borders,
+        palette.grid,
+        borderLineWidth
         );
-    painter.drawRect(rect);
 
     if (!text.trimmed().isEmpty())
     {
@@ -683,6 +792,86 @@ void drawCell(
     }
 
     painter.restore();
+}
+
+CellBorders allBorders()
+{
+    return {
+        true,
+        true,
+        true,
+        true
+    };
+}
+
+CellBorders verticalBorders()
+{
+    return {
+        false,
+        true,
+        false,
+        true
+    };
+}
+
+CellBorders topVerticalBorders()
+{
+    return {
+        true,
+        true,
+        false,
+        true
+    };
+}
+
+CellBorders bottomVerticalBorders()
+{
+    return {
+        false,
+        true,
+        true,
+        true
+    };
+}
+
+CellBorders leftBorder()
+{
+    return {
+        false,
+        false,
+        false,
+        true
+    };
+}
+
+CellBorders leftBottomBorder()
+{
+    return {
+        false,
+        false,
+        true,
+        true
+    };
+}
+
+CellBorders rightBorder()
+{
+    return {
+        false,
+        true,
+        false,
+        false
+    };
+}
+
+CellBorders rightBottomBorder()
+{
+    return {
+        false,
+        true,
+        true,
+        false
+    };
 }
 
 QString cellKey(
@@ -786,22 +975,18 @@ void paintRosterDay(
             9.0,
             resolutionDpi
             );
+    const qreal heavyBorderWidth =
+        borderWidth(resolutionDpi);
 
     drawCell(
         painter,
-        sourceCellRect(DayTitleRow, 1, 1, 1, layout),
-        QString(),
-        bodyFont,
-        palette.cellBackground,
-        palette
-        );
-    drawCell(
-        painter,
-        sourceCellRect(DayTitleRow, 2, 1, 12, layout),
+        sourceCellRect(DayTitleRow, 1, 1, 13, layout),
         day,
         titleFont,
         palette.cellBackground,
-        palette
+        palette,
+        allBorders(),
+        heavyBorderWidth
         );
 
     drawCell(
@@ -809,8 +994,10 @@ void paintRosterDay(
         sourceCellRect(TimeRow, 1, 1, 1, layout),
         QObject::tr("Time"),
         labelFont,
-        palette.cellBackground,
-        palette
+        palette.timeBackground,
+        palette,
+        topVerticalBorders(),
+        heavyBorderWidth
         );
 
     for (int index = 0; index < SlotColumns.size(); ++index)
@@ -823,7 +1010,9 @@ void paintRosterDay(
             TimeLabels.at(index),
             labelFont,
             palette.timeBackground,
-            palette
+            palette,
+            topVerticalBorders(),
+            heavyBorderWidth
             );
     }
 
@@ -832,24 +1021,20 @@ void paintRosterDay(
         sourceCellRect(LevelRow, 1, 1, 1, layout),
         QObject::tr("Level"),
         labelFont,
-        palette.cellBackground,
-        palette
+        palette.classInfoBackground,
+        palette,
+        verticalBorders(),
+        heavyBorderWidth
         );
     drawCell(
         painter,
         sourceCellRect(TeacherRoomRow, 1, 1, 1, layout),
         QObject::tr("KT / Rm"),
         labelFont,
-        palette.cellBackground,
-        palette
-        );
-    drawCell(
-        painter,
-        sourceCellRect(NamesRow, 1, 1, 1, layout),
-        QObject::tr("Names"),
-        labelFont,
-        palette.cellBackground,
-        palette
+        palette.classInfoBackground,
+        palette,
+        bottomVerticalBorders(),
+        heavyBorderWidth
         );
 
     for (int column : SlotColumns)
@@ -859,51 +1044,47 @@ void paintRosterDay(
             sourceCellRect(LevelRow, column, 1, 2, layout),
             cellValue(values, LevelRow, column),
             labelFont,
-            palette.infoBackground,
-            palette
+            palette.classInfoBackground,
+            palette,
+            verticalBorders(),
+            heavyBorderWidth
             );
         drawCell(
             painter,
             sourceCellRect(TeacherRoomRow, column, 1, 2, layout),
             cellValue(values, TeacherRoomRow, column),
             labelFont,
-            palette.infoBackground,
-            palette
-            );
-
-        drawCell(
-            painter,
-            sourceCellRect(NamesRow, column, 1, 1, layout),
-            QObject::tr("English"),
-            labelFont,
-            palette.nameHeaderBackground,
-            palette
-            );
-        drawCell(
-            painter,
-            sourceCellRect(NamesRow, column + 1, 1, 1, layout),
-            QObject::tr("Korean"),
-            labelFont,
-            palette.nameHeaderBackground,
-            palette
+            palette.classInfoBackground,
+            palette,
+            bottomVerticalBorders(),
+            heavyBorderWidth
             );
     }
 
     for (int row = FirstStudentRow; row <= LastStudentRow; ++row)
     {
+        const bool lastStudentRow =
+            row == LastStudentRow;
+
         drawCell(
             painter,
             sourceCellRect(row, 1, 1, 1, layout),
             QString::number(row - FirstStudentRow + 1),
             bodyFont,
             palette.cellBackground,
-            palette
+            palette,
+            lastStudentRow ? bottomVerticalBorders() : verticalBorders(),
+            heavyBorderWidth
             );
 
         for (int column = 2; column <= ColumnCount; ++column)
         {
             const bool koreanColumn =
                 (column % 2) == 1;
+            const CellBorders borders =
+                koreanColumn
+                    ? (lastStudentRow ? rightBottomBorder() : rightBorder())
+                    : (lastStudentRow ? leftBottomBorder() : leftBorder());
 
             drawCell(
                 painter,
@@ -912,6 +1093,8 @@ void paintRosterDay(
                 koreanColumn ? koreanFont : bodyFont,
                 palette.cellBackground,
                 palette,
+                borders,
+                heavyBorderWidth,
                 Qt::AlignCenter
                 );
         }
@@ -931,8 +1114,14 @@ void paintRosterDay(
             sourceCellRect(rowLabel.first, 1, 1, 1, layout),
             rowLabel.second,
             labelFont,
-            palette.cellBackground,
-            palette
+            palette.footerBackground,
+            palette,
+            rowLabel.first == WifiRow
+                ? topVerticalBorders()
+                : rowLabel.first == ZoomPasswordRow
+                    ? bottomVerticalBorders()
+                    : verticalBorders(),
+            heavyBorderWidth
             );
 
         for (int column : SlotColumns)
@@ -942,8 +1131,14 @@ void paintRosterDay(
                 sourceCellRect(rowLabel.first, column, 1, 2, layout),
                 cellValue(values, rowLabel.first, column),
                 bodyFont,
-                palette.cellBackground,
-                palette
+                palette.footerBackground,
+                palette,
+                rowLabel.first == WifiRow
+                    ? topVerticalBorders()
+                    : rowLabel.first == ZoomPasswordRow
+                        ? bottomVerticalBorders()
+                        : verticalBorders(),
+                heavyBorderWidth
                 );
         }
     }

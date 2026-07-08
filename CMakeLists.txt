@@ -986,6 +986,7 @@ if(BUILD_TESTING)
             ClassMngrSchedulePrintModelTests
             ClassMngrSchedulePrintPdfTests
             ClassMngrRosterModelTests
+            ClassMngrRosterTemplatePrintServiceTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
