@@ -80,6 +80,8 @@ constexpr qreal MarginInches = 0.5;
 constexpr qreal ColumnWidthInches = 0.7047;
 constexpr qreal TitleRowHeightInches = 0.2736;
 constexpr qreal NormalRowHeightInches = 0.2083;
+constexpr int RowCount = 32;
+constexpr int ColumnCount = 13;
 constexpr int LevelRow = 3;
 constexpr int TeacherRoomRow = 4;
 constexpr int FirstStudentRow = 6;
@@ -304,27 +306,121 @@ QRectF rosterContentRect(
         );
 }
 
+qreal baseColumnWidth()
+{
+    return ColumnWidthInches * RenderDpi;
+}
+
+qreal adjustedColumnWidth(
+    const QImage& image,
+    int column
+    )
+{
+    const qreal extraWidthPerEnglishColumn =
+        std::max(
+            0.0,
+            rosterContentRect(image).width()
+                - (ColumnCount * baseColumnWidth())
+            )
+        / 6.0;
+
+    const bool englishColumn =
+        column == 2
+        || column == 4
+        || column == 6
+        || column == 8
+        || column == 10
+        || column == 12;
+
+    return baseColumnWidth()
+        + (englishColumn ? extraWidthPerEnglishColumn : 0.0);
+}
+
+qreal adjustedColumnLeft(
+    const QImage& image,
+    int column
+    )
+{
+    qreal left =
+        rosterContentRect(image).left();
+
+    for (int index = 1; index < column; ++index)
+    {
+        left += adjustedColumnWidth(
+            image,
+            index
+            );
+    }
+
+    return left;
+}
+
+qreal baseRowHeight(
+    int row
+    )
+{
+    return (
+        row == 1
+            ? TitleRowHeightInches
+            : NormalRowHeightInches
+        )
+        * RenderDpi;
+}
+
+qreal adjustedRowHeight(
+    const QImage& image,
+    int row
+    )
+{
+    qreal baseTableHeight = 0.0;
+
+    for (int index = 1; index <= RowCount; ++index)
+    {
+        baseTableHeight += baseRowHeight(index);
+    }
+
+    const qreal extraHeightPerRow =
+        std::max(
+            0.0,
+            rosterContentRect(image).height() - baseTableHeight
+            )
+        / RowCount;
+
+    return baseRowHeight(row) + extraHeightPerRow;
+}
+
+qreal adjustedRowTop(
+    const QImage& image,
+    int row
+    )
+{
+    qreal top =
+        rosterContentRect(image).top();
+
+    for (int index = 1; index < row; ++index)
+    {
+        top += adjustedRowHeight(
+            image,
+            index
+            );
+    }
+
+    return top;
+}
+
 QPoint emptyStudentCellCenter(
     const QImage& image
     )
 {
-    const QRectF contentRect =
-        rosterContentRect(image);
-    const qreal tableWidth =
-        13.0 * ColumnWidthInches * RenderDpi;
-    const qreal tableLeft =
-        contentRect.left()
-        + ((contentRect.width() - tableWidth) / 2.0);
-    const qreal tableTop =
-        contentRect.top();
-    const qreal rowTop =
-        tableTop
-        + (TitleRowHeightInches * RenderDpi)
-        + (4.0 * NormalRowHeightInches * RenderDpi);
-
     return QPoint(
-        qRound(tableLeft + (3.5 * ColumnWidthInches * RenderDpi)),
-        qRound(rowTop + ((NormalRowHeightInches * RenderDpi) / 2.0))
+        qRound(
+            adjustedColumnLeft(image, 4)
+            + (adjustedColumnWidth(image, 4) / 2.0)
+            ),
+        qRound(
+            adjustedRowTop(image, FirstStudentRow)
+            + (adjustedRowHeight(image, FirstStudentRow) / 2.0)
+            )
         );
 }
 
@@ -332,23 +428,12 @@ QPoint emptyStudentCellBorderPoint(
     const QImage& image
     )
 {
-    const QRectF contentRect =
-        rosterContentRect(image);
-    const qreal tableWidth =
-        13.0 * ColumnWidthInches * RenderDpi;
-    const qreal tableLeft =
-        contentRect.left()
-        + ((contentRect.width() - tableWidth) / 2.0);
-    const qreal tableTop =
-        contentRect.top();
-    const qreal rowTop =
-        tableTop
-        + (TitleRowHeightInches * RenderDpi)
-        + (4.0 * NormalRowHeightInches * RenderDpi);
-
     return QPoint(
-        qRound(tableLeft + (3.0 * ColumnWidthInches * RenderDpi)),
-        qRound(rowTop + ((NormalRowHeightInches * RenderDpi) / 2.0))
+        qRound(adjustedColumnLeft(image, 4)),
+        qRound(
+            adjustedRowTop(image, FirstStudentRow)
+            + (adjustedRowHeight(image, FirstStudentRow) / 2.0)
+            )
         );
 }
 
@@ -568,10 +653,16 @@ void RosterTemplatePrintServiceTests::
         qRound(MarginInches * RenderDpi);
     constexpr int TolerancePixels = 4;
 
-    QVERIFY(bounds.left() >= marginPixels - TolerancePixels);
-    QVERIFY(bounds.top() >= marginPixels - TolerancePixels);
-    QVERIFY(bounds.right() <= image.width() - marginPixels + TolerancePixels);
-    QVERIFY(bounds.bottom() <= image.height() - marginPixels + TolerancePixels);
+    QVERIFY(std::abs(bounds.left() - marginPixels) <= TolerancePixels);
+    QVERIFY(std::abs(bounds.top() - marginPixels) <= TolerancePixels);
+    QVERIFY(
+        std::abs(bounds.right() - (image.width() - marginPixels))
+            <= TolerancePixels
+        );
+    QVERIFY(
+        std::abs(bounds.bottom() - (image.height() - marginPixels))
+            <= TolerancePixels
+        );
 
     QVERIFY(
         isWhitePixel(

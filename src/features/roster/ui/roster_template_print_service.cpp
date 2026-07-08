@@ -21,6 +21,7 @@
 #include <QSet>
 #include <QTemporaryDir>
 #include <QTime>
+#include <QVector>
 
 #include <algorithm>
 
@@ -78,6 +79,12 @@ struct RosterPdfPalette
     QColor nameHeaderBackground = QColor(QStringLiteral("#B9CDE5"));
     QColor grid = Qt::black;
     QColor text = Qt::black;
+};
+
+struct RosterPrintLayout
+{
+    QVector<qreal> columnWidths;
+    QVector<qreal> rowHeights;
 };
 
 Result failed(
@@ -374,7 +381,7 @@ qreal columnWidth(
             );
 }
 
-qreal rowHeight(
+qreal baseRowHeight(
     int row,
     int resolutionDpi
     )
@@ -393,19 +400,128 @@ qreal rowHeight(
 
 qreal rowTop(
     int row,
+    const RosterPrintLayout& layout
+    )
+{
+    qreal top = 0.0;
+
+    for (int index = 0; index < row - 1 && index < layout.rowHeights.size(); ++index)
+    {
+        top += layout.rowHeights.at(index);
+    }
+
+    return top;
+}
+
+qreal columnLeft(
+    int column,
+    const RosterPrintLayout& layout
+    )
+{
+    qreal left = 0.0;
+
+    for (int index = 0;
+         index < column - 1 && index < layout.columnWidths.size();
+         ++index)
+    {
+        left += layout.columnWidths.at(index);
+    }
+
+    return left;
+}
+
+qreal spannedColumnWidth(
+    int column,
+    int columnSpan,
+    const RosterPrintLayout& layout
+    )
+{
+    qreal width = 0.0;
+
+    for (int index = column - 1;
+         index < column - 1 + columnSpan && index < layout.columnWidths.size();
+         ++index)
+    {
+        width += layout.columnWidths.at(index);
+    }
+
+    return width;
+}
+
+qreal spannedRowHeight(
+    int row,
+    int rowSpan,
+    const RosterPrintLayout& layout
+    )
+{
+    qreal height = 0.0;
+
+    for (int index = row - 1;
+         index < row - 1 + rowSpan && index < layout.rowHeights.size();
+         ++index)
+    {
+        height += layout.rowHeights.at(index);
+    }
+
+    return height;
+}
+
+bool isEnglishNameColumn(
+    int column
+    )
+{
+    return SlotColumns.contains(column);
+}
+
+RosterPrintLayout rosterPrintLayout(
+    const QRectF& contentRect,
     int resolutionDpi
     )
 {
-    if (row <= DayTitleRow)
+    RosterPrintLayout layout;
+    layout.columnWidths.reserve(ColumnCount);
+    layout.rowHeights.reserve(RowCount);
+
+    const qreal baseColumnWidth =
+        columnWidth(resolutionDpi);
+    const qreal baseTableWidth =
+        ColumnCount * baseColumnWidth;
+    const qreal extraWidthPerEnglishColumn =
+        std::max(
+            0.0,
+            contentRect.width() - baseTableWidth
+            )
+        / SlotColumns.size();
+
+    for (int column = 1; column <= ColumnCount; ++column)
     {
-        return 0.0;
+        layout.columnWidths.append(
+            baseColumnWidth
+            + (isEnglishNameColumn(column) ? extraWidthPerEnglishColumn : 0.0)
+            );
     }
 
-    return rowHeight(
-        DayTitleRow,
-        resolutionDpi
-        )
-        + ((row - 2) * rowHeight(2, resolutionDpi));
+    qreal baseTableHeight = 0.0;
+    for (int row = 1; row <= RowCount; ++row)
+    {
+        baseTableHeight += baseRowHeight(row, resolutionDpi);
+    }
+
+    const qreal extraHeightPerRow =
+        std::max(
+            0.0,
+            contentRect.height() - baseTableHeight
+            )
+        / RowCount;
+
+    for (int row = 1; row <= RowCount; ++row)
+    {
+        layout.rowHeights.append(
+            baseRowHeight(row, resolutionDpi) + extraHeightPerRow
+            );
+    }
+
+    return layout;
 }
 
 QRectF sourceCellRect(
@@ -413,14 +529,14 @@ QRectF sourceCellRect(
     int column,
     int rowSpan,
     int columnSpan,
-    int resolutionDpi
+    const RosterPrintLayout& layout
     )
 {
     return QRectF(
-        (column - 1) * columnWidth(resolutionDpi),
-        rowTop(row, resolutionDpi),
-        columnSpan * columnWidth(resolutionDpi),
-        rowSpan * rowHeight(row, resolutionDpi)
+        columnLeft(column, layout),
+        rowTop(row, layout),
+        spannedColumnWidth(column, columnSpan, layout),
+        spannedRowHeight(row, rowSpan, layout)
         );
 }
 
@@ -629,12 +745,14 @@ void paintRosterDay(
     )
 {
     const RosterPdfPalette palette;
-    const qreal tableWidth =
-        ColumnCount * columnWidth(resolutionDpi);
+    const RosterPrintLayout layout =
+        rosterPrintLayout(
+            contentRect,
+            resolutionDpi
+            );
 
     const QPointF tableOrigin(
-        contentRect.left()
-            + ((contentRect.width() - tableWidth) / 2.0),
+        contentRect.left(),
         contentRect.top()
         );
 
@@ -671,7 +789,7 @@ void paintRosterDay(
 
     drawCell(
         painter,
-        sourceCellRect(DayTitleRow, 1, 1, 1, resolutionDpi),
+        sourceCellRect(DayTitleRow, 1, 1, 1, layout),
         QString(),
         bodyFont,
         palette.cellBackground,
@@ -679,7 +797,7 @@ void paintRosterDay(
         );
     drawCell(
         painter,
-        sourceCellRect(DayTitleRow, 2, 1, 12, resolutionDpi),
+        sourceCellRect(DayTitleRow, 2, 1, 12, layout),
         day,
         titleFont,
         palette.cellBackground,
@@ -688,7 +806,7 @@ void paintRosterDay(
 
     drawCell(
         painter,
-        sourceCellRect(TimeRow, 1, 1, 1, resolutionDpi),
+        sourceCellRect(TimeRow, 1, 1, 1, layout),
         QObject::tr("Time"),
         labelFont,
         palette.cellBackground,
@@ -701,7 +819,7 @@ void paintRosterDay(
             SlotColumns.at(index);
         drawCell(
             painter,
-            sourceCellRect(TimeRow, column, 1, 2, resolutionDpi),
+            sourceCellRect(TimeRow, column, 1, 2, layout),
             TimeLabels.at(index),
             labelFont,
             palette.timeBackground,
@@ -711,7 +829,7 @@ void paintRosterDay(
 
     drawCell(
         painter,
-        sourceCellRect(LevelRow, 1, 1, 1, resolutionDpi),
+        sourceCellRect(LevelRow, 1, 1, 1, layout),
         QObject::tr("Level"),
         labelFont,
         palette.cellBackground,
@@ -719,7 +837,7 @@ void paintRosterDay(
         );
     drawCell(
         painter,
-        sourceCellRect(TeacherRoomRow, 1, 1, 1, resolutionDpi),
+        sourceCellRect(TeacherRoomRow, 1, 1, 1, layout),
         QObject::tr("KT / Rm"),
         labelFont,
         palette.cellBackground,
@@ -727,7 +845,7 @@ void paintRosterDay(
         );
     drawCell(
         painter,
-        sourceCellRect(NamesRow, 1, 1, 1, resolutionDpi),
+        sourceCellRect(NamesRow, 1, 1, 1, layout),
         QObject::tr("Names"),
         labelFont,
         palette.cellBackground,
@@ -738,7 +856,7 @@ void paintRosterDay(
     {
         drawCell(
             painter,
-            sourceCellRect(LevelRow, column, 1, 2, resolutionDpi),
+            sourceCellRect(LevelRow, column, 1, 2, layout),
             cellValue(values, LevelRow, column),
             labelFont,
             palette.infoBackground,
@@ -746,7 +864,7 @@ void paintRosterDay(
             );
         drawCell(
             painter,
-            sourceCellRect(TeacherRoomRow, column, 1, 2, resolutionDpi),
+            sourceCellRect(TeacherRoomRow, column, 1, 2, layout),
             cellValue(values, TeacherRoomRow, column),
             labelFont,
             palette.infoBackground,
@@ -755,7 +873,7 @@ void paintRosterDay(
 
         drawCell(
             painter,
-            sourceCellRect(NamesRow, column, 1, 1, resolutionDpi),
+            sourceCellRect(NamesRow, column, 1, 1, layout),
             QObject::tr("English"),
             labelFont,
             palette.nameHeaderBackground,
@@ -763,7 +881,7 @@ void paintRosterDay(
             );
         drawCell(
             painter,
-            sourceCellRect(NamesRow, column + 1, 1, 1, resolutionDpi),
+            sourceCellRect(NamesRow, column + 1, 1, 1, layout),
             QObject::tr("Korean"),
             labelFont,
             palette.nameHeaderBackground,
@@ -775,7 +893,7 @@ void paintRosterDay(
     {
         drawCell(
             painter,
-            sourceCellRect(row, 1, 1, 1, resolutionDpi),
+            sourceCellRect(row, 1, 1, 1, layout),
             QString::number(row - FirstStudentRow + 1),
             bodyFont,
             palette.cellBackground,
@@ -789,7 +907,7 @@ void paintRosterDay(
 
             drawCell(
                 painter,
-                sourceCellRect(row, column, 1, 1, resolutionDpi),
+                sourceCellRect(row, column, 1, 1, layout),
                 cellValue(values, row, column),
                 koreanColumn ? koreanFont : bodyFont,
                 palette.cellBackground,
@@ -810,7 +928,7 @@ void paintRosterDay(
     {
         drawCell(
             painter,
-            sourceCellRect(rowLabel.first, 1, 1, 1, resolutionDpi),
+            sourceCellRect(rowLabel.first, 1, 1, 1, layout),
             rowLabel.second,
             labelFont,
             palette.cellBackground,
@@ -821,7 +939,7 @@ void paintRosterDay(
         {
             drawCell(
                 painter,
-                sourceCellRect(rowLabel.first, column, 1, 2, resolutionDpi),
+                sourceCellRect(rowLabel.first, column, 1, 2, layout),
                 cellValue(values, rowLabel.first, column),
                 bodyFont,
                 palette.cellBackground,
