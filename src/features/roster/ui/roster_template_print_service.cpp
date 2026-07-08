@@ -1,39 +1,54 @@
 #include "features/roster/ui/roster_template_print_service.h"
 
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "data/data_service.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QMessageBox>
+#include <QColor>
+#include <QFontMetricsF>
+#include <QHash>
+#include <QMarginsF>
+#include <QObject>
+#include <QPageLayout>
+#include <QPageSize>
+#include <QPainter>
 #include <QPdfDocument>
-#include <QProcess>
-#include <QRegularExpression>
-#include <QSaveFile>
+#include <QPdfWriter>
+#include <QPen>
+#include <QRect>
+#include <QRectF>
+#include <QSet>
 #include <QTemporaryDir>
-#include <QTextStream>
 #include <QTime>
-#include <QXmlStreamReader>
 
-#include <zlib.h>
+#include <algorithm>
 
 namespace RosterTemplatePrintService
 {
 namespace
 {
-constexpr int FirstStudentRow = 7;
-constexpr int LastStudentRow = 29;
+constexpr int DayTitleRow = 1;
+constexpr int TimeRow = 2;
+constexpr int LevelRow = 3;
+constexpr int TeacherRoomRow = 4;
+constexpr int NamesRow = 5;
+constexpr int FirstStudentRow = 6;
+constexpr int LastStudentRow = 28;
+constexpr int WifiRow = 29;
+constexpr int WifiPasswordRow = 30;
+constexpr int ZoomRow = 31;
+constexpr int ZoomPasswordRow = 32;
+constexpr int RowCount = ZoomPasswordRow;
+constexpr int ColumnCount = 13;
 constexpr int MaxStudentsPerClass = LastStudentRow - FirstStudentRow + 1;
 
-constexpr auto XlsxTemplateResource =
-    ":/assets/files/rosters/Roster Template 1 - By Day.xlsx";
-constexpr auto OdsTemplateResource =
-    ":/assets/files/rosters/Roster Template 1 - By Day.ods";
+constexpr qreal ColumnWidthInches = 0.7047;
+constexpr qreal TitleRowHeightInches = 0.2736;
+constexpr qreal NormalRowHeightInches = 0.2083;
+constexpr qreal RosterPdfMarginInches = 0.5;
+constexpr int RosterPdfResolutionDpi = 300;
+constexpr QPageSize::PageSizeId RosterPdfPageSize = QPageSize::A4;
 
 const QStringList DaySheets{
     QStringLiteral("Monday"),
@@ -43,304 +58,54 @@ const QStringList DaySheets{
     QStringLiteral("Friday")
 };
 
-const QStringList ClearSheets{
-    QStringLiteral("Monday"),
-    QStringLiteral("Tuesday"),
-    QStringLiteral("Wednesday"),
-    QStringLiteral("Thursday"),
-    QStringLiteral("Friday"),
-    QStringLiteral("(Alt 1)"),
-    QStringLiteral("(Alt 2)")
-};
-
 const QList<int> SlotColumns{2, 4, 6, 8, 10, 12};
 
-struct ZipEntry
-{
-    QString name;
-    quint16 method = 0;
-    quint32 compressedSize = 0;
-    quint32 uncompressedSize = 0;
-    quint32 localHeaderOffset = 0;
+const QStringList TimeLabels{
+    QStringLiteral("4-5pm"),
+    QStringLiteral("5-6pm"),
+    QStringLiteral("6-7pm"),
+    QStringLiteral("7-8pm"),
+    QStringLiteral("8-9pm"),
+    QStringLiteral("9-10pm")
 };
 
-quint16 readLe16(
-    const QByteArray& data,
-    qsizetype offset
+struct RosterPdfPalette
+{
+    QColor pageBackground = Qt::white;
+    QColor cellBackground = Qt::white;
+    QColor timeBackground = QColor(QStringLiteral("#95B3D7"));
+    QColor infoBackground = QColor(QStringLiteral("#DCE6F1"));
+    QColor nameHeaderBackground = QColor(QStringLiteral("#B9CDE5"));
+    QColor grid = Qt::black;
+    QColor text = Qt::black;
+};
+
+Result failed(
+    const QString& message
     )
 {
-    if (offset < 0 || offset + 2 > data.size())
-    {
-        return 0;
-    }
-
-    const auto* bytes =
-        reinterpret_cast<const uchar*>(data.constData() + offset);
-
-    return static_cast<quint16>(
-        bytes[0]
-        | (bytes[1] << 8)
-        );
+    return {
+        Status::Failed,
+        message.trimmed().isEmpty()
+            ? QObject::tr("Roster printing failed.")
+            : message
+    };
 }
 
-quint32 readLe32(
-    const QByteArray& data,
-    qsizetype offset
-    )
+Result canceled()
 {
-    if (offset < 0 || offset + 4 > data.size())
-    {
-        return 0;
-    }
-
-    const auto* bytes =
-        reinterpret_cast<const uchar*>(data.constData() + offset);
-
-    return static_cast<quint32>(
-        bytes[0]
-        | (bytes[1] << 8)
-        | (bytes[2] << 16)
-        | (bytes[3] << 24)
-        );
+    return {
+        Status::Canceled,
+        QString()
+    };
 }
 
-QByteArray inflateRawDeflate(
-    const QByteArray& compressed,
-    quint32 uncompressedSize
-    )
+Result sent()
 {
-    QByteArray output;
-    output.resize(static_cast<qsizetype>(uncompressedSize));
-
-    if (uncompressedSize == 0)
-    {
-        return output;
-    }
-
-    z_stream stream{};
-    stream.next_in =
-        reinterpret_cast<Bytef*>(
-            const_cast<char*>(compressed.constData())
-            );
-    stream.avail_in =
-        static_cast<uInt>(compressed.size());
-    stream.next_out =
-        reinterpret_cast<Bytef*>(output.data());
-    stream.avail_out =
-        static_cast<uInt>(output.size());
-
-    if (inflateInit2(&stream, -MAX_WBITS) != Z_OK)
-    {
-        return {};
-    }
-
-    const int result =
-        inflate(&stream, Z_FINISH);
-    inflateEnd(&stream);
-
-    if (result != Z_STREAM_END)
-    {
-        return {};
-    }
-
-    output.truncate(static_cast<qsizetype>(stream.total_out));
-    return output;
-}
-
-QHash<QString, ZipEntry> zipEntries(
-    const QByteArray& zipData
-    )
-{
-    constexpr int MinZipEocdSize = 22;
-    constexpr int MaxZipCommentSize = 0xffff;
-    constexpr quint32 ZipEocdSignature = 0x06054b50;
-    constexpr quint32 ZipCentralFileSignature = 0x02014b50;
-
-    QHash<QString, ZipEntry> entries;
-
-    const qsizetype searchStart =
-        qMax<qsizetype>(
-            0,
-            zipData.size() - MinZipEocdSize - MaxZipCommentSize
-            );
-
-    qsizetype eocdOffset = -1;
-    for (qsizetype offset = zipData.size() - MinZipEocdSize;
-         offset >= searchStart;
-         --offset)
-    {
-        if (readLe32(zipData, offset) == ZipEocdSignature)
-        {
-            eocdOffset = offset;
-            break;
-        }
-    }
-
-    if (eocdOffset < 0)
-    {
-        return entries;
-    }
-
-    const quint16 entryCount =
-        readLe16(zipData, eocdOffset + 10);
-    const quint32 centralDirectoryOffset =
-        readLe32(zipData, eocdOffset + 16);
-
-    qsizetype offset =
-        static_cast<qsizetype>(centralDirectoryOffset);
-
-    for (int index = 0; index < entryCount; ++index)
-    {
-        if (
-            offset + 46 > zipData.size()
-            || readLe32(zipData, offset) != ZipCentralFileSignature
-            )
-        {
-            return {};
-        }
-
-        const quint16 method =
-            readLe16(zipData, offset + 10);
-        const quint32 compressedSize =
-            readLe32(zipData, offset + 20);
-        const quint32 uncompressedSize =
-            readLe32(zipData, offset + 24);
-        const quint16 fileNameLength =
-            readLe16(zipData, offset + 28);
-        const quint16 extraLength =
-            readLe16(zipData, offset + 30);
-        const quint16 commentLength =
-            readLe16(zipData, offset + 32);
-        const quint32 localHeaderOffset =
-            readLe32(zipData, offset + 42);
-
-        if (offset + 46 + fileNameLength > zipData.size())
-        {
-            return {};
-        }
-
-        ZipEntry entry;
-        entry.name =
-            QString::fromUtf8(
-                zipData.mid(offset + 46, fileNameLength)
-                );
-        entry.method = method;
-        entry.compressedSize = compressedSize;
-        entry.uncompressedSize = uncompressedSize;
-        entry.localHeaderOffset = localHeaderOffset;
-
-        entries.insert(entry.name, entry);
-
-        offset += 46 + fileNameLength + extraLength + commentLength;
-    }
-
-    return entries;
-}
-
-QByteArray zipFileData(
-    const QByteArray& zipData,
-    const ZipEntry& entry
-    )
-{
-    constexpr quint32 ZipLocalFileSignature = 0x04034b50;
-
-    const qsizetype localOffset =
-        static_cast<qsizetype>(entry.localHeaderOffset);
-
-    if (
-        localOffset + 30 > zipData.size()
-        || readLe32(zipData, localOffset) != ZipLocalFileSignature
-        )
-    {
-        return {};
-    }
-
-    const quint16 fileNameLength =
-        readLe16(zipData, localOffset + 26);
-    const quint16 extraLength =
-        readLe16(zipData, localOffset + 28);
-
-    const qsizetype dataOffset =
-        localOffset + 30 + fileNameLength + extraLength;
-
-    if (
-        dataOffset < 0
-        || dataOffset + entry.compressedSize > zipData.size()
-        )
-    {
-        return {};
-    }
-
-    const QByteArray compressed =
-        zipData.mid(
-            dataOffset,
-            static_cast<qsizetype>(entry.compressedSize)
-            );
-
-    if (entry.method == 0)
-    {
-        return compressed;
-    }
-
-    if (entry.method == 8)
-    {
-        return inflateRawDeflate(
-            compressed,
-            entry.uncompressedSize
-            );
-    }
-
-    return {};
-}
-
-QString workbookTextEntry(
-    const QString& path,
-    const QString& entryName
-    )
-{
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly))
-    {
-        return {};
-    }
-
-    const QByteArray data =
-        file.readAll();
-    const QHash<QString, ZipEntry> entries =
-        zipEntries(data);
-
-    if (!entries.contains(entryName))
-    {
-        return {};
-    }
-
-    return QString::fromUtf8(
-        zipFileData(
-            data,
-            entries.value(entryName)
-            )
-        );
-}
-
-QString columnName(
-    int column
-    )
-{
-    QString name;
-
-    while (column > 0)
-    {
-        --column;
-        name.prepend(
-            QChar(
-                QLatin1Char('A').unicode()
-                + (column % 26)
-                )
-            );
-        column /= 26;
-    }
-
-    return name;
+    return {
+        Status::Sent,
+        QObject::tr("Roster print job sent.")
+    };
 }
 
 int columnForStartTime(
@@ -450,560 +215,648 @@ QString classLabel(
         : label;
 }
 
-QString teacherLabel(
+QString teacherRoomLabel(
     const ClassInfo& info
     )
 {
-    QStringList parts;
+    QString teacher =
+        info.teacherEn.trimmed();
 
-    if (!info.teacherEn.trimmed().isEmpty())
+    if (teacher.isEmpty())
     {
-        parts.append(info.teacherEn.trimmed());
+        teacher =
+            info.teacherKr.trimmed();
     }
 
-    if (!info.teacherKr.trimmed().isEmpty())
+    const QString room =
+        info.roomNumber.trimmed();
+
+    if (teacher.isEmpty())
     {
-        parts.append(info.teacherKr.trimmed());
+        return room.isEmpty()
+            ? QString()
+            : QStringLiteral("(%1)").arg(room);
     }
 
-    return parts.join(QStringLiteral(" / "));
+    return room.isEmpty()
+        ? teacher
+        : QStringLiteral("%1 (%2)").arg(teacher, room);
 }
 
-void appendOperation(
-    QList<FillOperation>& operations,
-    const QString& sheet,
+void appendCellValue(
+    QList<RosterCellValue>& values,
+    const QString& day,
     int column,
     int row,
     const QString& value
     )
 {
-    operations.append(
+    const QString trimmed =
+        value.trimmed();
+
+    if (trimmed.isEmpty())
+    {
+        return;
+    }
+
+    values.append(
         {
-            sheet,
-            columnName(column) + QString::number(row),
-            value
+            day,
+            row,
+            column,
+            trimmed
         }
         );
 }
 
-QJsonDocument operationsDocument(
-    const QList<FillOperation>& operations
-    )
-{
-    QJsonArray array;
-
-    for (const FillOperation& operation : operations)
-    {
-        QJsonObject object;
-        object.insert(QStringLiteral("sheet"), operation.sheet);
-        object.insert(QStringLiteral("cell"), operation.cell);
-        object.insert(QStringLiteral("value"), operation.value);
-        array.append(object);
-    }
-
-    return QJsonDocument(array);
-}
-
-bool writeTextFile(
-    const QString& path,
-    const QString& contents,
-    QString* errorMessage
-    )
-{
-    QSaveFile file(path);
-
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Unable to create %1.").arg(path);
-        }
-        return false;
-    }
-
-    QTextStream stream(&file);
-    stream << contents;
-
-    if (!file.commit())
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Unable to save %1.").arg(path);
-        }
-        return false;
-    }
-
-    return true;
-}
-
-QString jsString(
-    const QString& value
-    )
-{
-    return QString::fromUtf8(
-        QJsonDocument(
-            QJsonArray{value}
-            ).toJson(QJsonDocument::Compact)
-        ).mid(1).chopped(1);
-}
-
-QString powershellScript(
-    const QString& workbookPath,
-    const QString& operationsPath,
-    const QString& pdfPath
-    )
-{
-    return QStringLiteral(R"ps1(
-$ErrorActionPreference = "Stop"
-$excel = New-Object -ComObject Excel.Application
-$excel.Visible = $false
-$excel.DisplayAlerts = $false
-$workbook = $null
-try {
-    $workbook = $excel.Workbooks.Open(%1)
-    $ops = Get-Content -Raw -LiteralPath %2 | ConvertFrom-Json
-    foreach ($op in $ops) {
-        try {
-            $sheet = $workbook.Worksheets.Item($op.sheet)
-            $sheet.Range($op.cell).Value2 = [string]$op.value
-        } catch {
-            throw "Unable to fill $($op.sheet)!$($op.cell): $($_.Exception.Message)"
-        }
-    }
-    $workbook.ExportAsFixedFormat(0, %3)
-} finally {
-    if ($workbook -ne $null) {
-        $workbook.Close($false)
-    }
-    $excel.Quit()
-    [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
-}
-)ps1")
-        .arg(
-            jsString(workbookPath),
-            jsString(operationsPath),
-            jsString(pdfPath)
-            );
-}
-
-QString linuxUnoScript(
-    const QString& workbookPath,
-    const QString& operationsPath,
-    const QString& pdfPath,
-    const QString& profilePath
-    )
-{
-    return QStringLiteral(R"py(
-import json
-import os
-import subprocess
-import sys
-import time
-
-try:
-    import uno
-    from com.sun.star.beans import PropertyValue
-except Exception as exc:
-    raise SystemExit("LibreOffice UNO Python support is not available: %s" % exc)
-
-workbook_path = %1
-operations_path = %2
-pdf_path = %3
-profile_path = %4
-
-def prop(name, value):
-    item = PropertyValue()
-    item.Name = name
-    item.Value = value
-    return item
-
-soffice = os.environ.get("CLASSMNGR_SOFFICE", "soffice")
-accept = "socket,host=127.0.0.1,port=2002;urp;StarOffice.ComponentContext"
-process = subprocess.Popen([
-    soffice,
-    "-env:UserInstallation=file://" + profile_path,
-    "--headless",
-    "--nologo",
-    "--nofirststartwizard",
-    "--norestore",
-    "--accept=" + accept,
-])
-
-doc = None
-try:
-    local_context = uno.getComponentContext()
-    resolver = local_context.ServiceManager.createInstanceWithContext(
-        "com.sun.star.bridge.UnoUrlResolver",
-        local_context,
-    )
-
-    context = None
-    last_error = None
-    for _ in range(80):
-        try:
-            context = resolver.resolve("uno:" + accept)
-            break
-        except Exception as exc:
-            last_error = exc
-            time.sleep(0.25)
-
-    if context is None:
-        raise RuntimeError("Unable to start LibreOffice: %s" % last_error)
-
-    desktop = context.ServiceManager.createInstanceWithContext(
-        "com.sun.star.frame.Desktop",
-        context,
-    )
-
-    workbook_url = uno.systemPathToFileUrl(workbook_path)
-    pdf_url = uno.systemPathToFileUrl(pdf_path)
-    doc = desktop.loadComponentFromURL(
-        workbook_url,
-        "_blank",
-        0,
-        (prop("Hidden", True), prop("ReadOnly", False)),
-    )
-
-    if doc is None:
-        raise RuntimeError("LibreOffice could not open the roster template.")
-
-    with open(operations_path, "r", encoding="utf-8") as handle:
-        operations = json.load(handle)
-
-    sheets = doc.getSheets()
-    for operation in operations:
-        sheet = sheets.getByName(operation["sheet"])
-        sheet.getCellRangeByName(operation["cell"]).String = operation["value"]
-
-    doc.storeToURL(
-        pdf_url,
-        (prop("FilterName", "calc_pdf_Export"), prop("Overwrite", True)),
-    )
-finally:
-    if doc is not None:
-        doc.close(True)
-    process.terminate()
-    try:
-        process.wait(timeout=10)
-    except Exception:
-        process.kill()
-)py")
-        .arg(
-            jsString(workbookPath),
-            jsString(operationsPath),
-            jsString(pdfPath),
-            jsString(profilePath)
-            );
-}
-
-QString macExcelScript(
-    const QString& workbookPath,
-    const QString& operationsPath,
-    const QString& pdfPath
-    )
-{
-    Q_UNUSED(operationsPath);
-
-    QString script;
-    QTextStream stream(&script);
-
-    stream
-        << "tell application \"Microsoft Excel\"\n"
-        << "set display alerts to false\n"
-        << "open workbook workbook file name "
-        << jsString(workbookPath)
-        << "\n"
-        << "set wb to active workbook\n";
-
-    QFile operationsFile(operationsPath);
-    if (operationsFile.open(QIODevice::ReadOnly))
-    {
-        const QJsonDocument document =
-            QJsonDocument::fromJson(operationsFile.readAll());
-
-        for (const QJsonValue& value : document.array())
-        {
-            const QJsonObject object =
-                value.toObject();
-            stream
-                << "set value of range "
-                << jsString(object.value(QStringLiteral("cell")).toString())
-                << " of worksheet "
-                << jsString(object.value(QStringLiteral("sheet")).toString())
-                << " of wb to "
-                << jsString(object.value(QStringLiteral("value")).toString())
-                << "\n";
-        }
-    }
-
-    stream
-        << "save workbook as wb filename "
-        << jsString(pdfPath)
-        << " file format PDF file format\n"
-        << "close wb saving no\n"
-        << "end tell\n";
-
-    return script;
-}
-
-QString macNumbersScript(
-    const QString& workbookPath,
-    const QString& operationsPath,
-    const QString& pdfPath
-    )
-{
-    Q_UNUSED(operationsPath);
-
-    return QStringLiteral(R"applescript(
-tell application "Numbers"
-    open %1
-    set theDocument to front document
-    export theDocument to %2 as PDF
-    close theDocument saving no
-end tell
-)applescript")
-        .arg(
-            jsString(workbookPath),
-            jsString(pdfPath)
-            );
-}
-
-bool runProcess(
-    const QString& program,
-    const QStringList& arguments,
-    QString* errorMessage
-    )
-{
-    QProcess process;
-    process.start(program, arguments);
-
-    if (!process.waitForStarted(15000))
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Unable to start %1.").arg(program);
-        }
-        return false;
-    }
-
-    if (!process.waitForFinished(120000))
-    {
-        process.kill();
-        process.waitForFinished();
-
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("%1 did not finish exporting the roster PDF.")
-                    .arg(program);
-        }
-        return false;
-    }
-
-    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
-    {
-        if (errorMessage)
-        {
-            const QString output =
-                QString::fromUtf8(process.readAllStandardError()).trimmed();
-
-            *errorMessage =
-                output.isEmpty()
-                    ? QObject::tr("%1 could not export the roster PDF.")
-                        .arg(program)
-                    : output;
-        }
-        return false;
-    }
-
-    return true;
-}
-
-bool renderPdf(
-    const QString& workbookPath,
-    const QList<FillOperation>& operations,
-    const QString& pdfPath,
-    const QString& workingDirectory,
-    QString* errorMessage
-    )
-{
-    const QString operationsPath =
-        QDir(workingDirectory).filePath(QStringLiteral("roster-ops.json"));
-    const QString scriptPath =
-        QDir(workingDirectory).filePath(QStringLiteral("render-rosters"));
-
-    if (
-        !writeTextFile(
-            operationsPath,
-            QString::fromUtf8(
-                operationsDocument(operations).toJson(QJsonDocument::Indented)
-                ),
-            errorMessage
-            )
-        )
-    {
-        return false;
-    }
-
-    if (isWindows())
-    {
-        const QString powerShellPath =
-            scriptPath + QStringLiteral(".ps1");
-
-        if (
-            !writeTextFile(
-                powerShellPath,
-                powershellScript(workbookPath, operationsPath, pdfPath),
-                errorMessage
-                )
-            )
-        {
-            return false;
-        }
-
-        return runProcess(
-            QStringLiteral("powershell"),
-            {
-                QStringLiteral("-NoProfile"),
-                QStringLiteral("-ExecutionPolicy"),
-                QStringLiteral("Bypass"),
-                QStringLiteral("-File"),
-                powerShellPath
-            },
-            errorMessage
-            );
-    }
-
-    if (isMac())
-    {
-        const QString appleScriptPath =
-            scriptPath + QStringLiteral(".applescript");
-        const bool hasExcel =
-            QFileInfo::exists(QStringLiteral("/Applications/Microsoft Excel.app"));
-
-        const QString contents =
-            hasExcel
-                ? macExcelScript(workbookPath, operationsPath, pdfPath)
-                : macNumbersScript(workbookPath, operationsPath, pdfPath);
-
-        if (!writeTextFile(appleScriptPath, contents, errorMessage))
-        {
-            return false;
-        }
-
-        return runProcess(
-            QStringLiteral("osascript"),
-            {appleScriptPath},
-            errorMessage
-            );
-    }
-
-    const QString pythonPath =
-        scriptPath + QStringLiteral(".py");
-    const QString profilePath =
-        QDir(workingDirectory).filePath(QStringLiteral("libreoffice-profile"));
-
-    QDir().mkpath(profilePath);
-
-    if (
-        !writeTextFile(
-            pythonPath,
-            linuxUnoScript(workbookPath, operationsPath, pdfPath, profilePath),
-            errorMessage
-            )
-        )
-    {
-        return false;
-    }
-
-    return runProcess(
-        QStringLiteral("python3"),
-        {pythonPath},
-        errorMessage
-        );
-}
-
-QString failedMessage(
+QString failedPdfMessage(
     const QString& message
     )
 {
     return message.trimmed().isEmpty()
-        ? QObject::tr("Roster printing failed.")
+        ? QObject::tr("Unable to create the roster print file.")
         : message;
 }
 
-Result failed(
-    const QString& message
+QMarginsF rosterPdfMargins()
+{
+    return QMarginsF(
+        0.0,
+        0.0,
+        0.0,
+        0.0
+        );
+}
+
+QPageLayout rosterPdfPageLayout()
+{
+    return QPageLayout(
+        QPageSize(RosterPdfPageSize),
+        QPageLayout::Landscape,
+        rosterPdfMargins(),
+        QPageLayout::Inch
+        );
+}
+
+bool configureRosterPdfWriter(
+    QPdfWriter& writer
     )
 {
-    return {
-        Status::Failed,
-        failedMessage(message)
-    };
+    writer.setCreator(
+        QStringLiteral("ClassMngr")
+        );
+    writer.setTitle(
+        QObject::tr("Rosters")
+        );
+    writer.setResolution(RosterPdfResolutionDpi);
+
+    return writer.setPageLayout(
+        rosterPdfPageLayout()
+        );
 }
 
-Result canceled()
-{
-    return {
-        Status::Canceled,
-        QString()
-    };
-}
-
-Result sent()
-{
-    return {
-        Status::Sent,
-        QObject::tr("Roster print job sent.")
-    };
-}
-
-QString selectedTemplatePath(
-    const QString& requestedPath
+QRectF rosterPdfPageRect(
+    const QPdfWriter& writer
     )
 {
-    if (!requestedPath.trimmed().isEmpty())
+    const QRect pageRect =
+        writer.pageLayout().fullRectPixels(
+            std::max(
+                1,
+                writer.resolution()
+                )
+            );
+
+    if (
+        pageRect.width() > 0
+        && pageRect.height() > 0
+        )
     {
-        return requestedPath;
+        return QRectF(pageRect);
     }
 
-    return preferredBundledTemplatePath(getPlatform());
+    return QRectF(
+        0.0,
+        0.0,
+        writer.width(),
+        writer.height()
+        );
 }
 
-QString tempWorkbookFileName(
-    const QString& templatePath
+QRectF rosterPdfContentRect(
+    const QRectF& pageRect,
+    int resolutionDpi
     )
 {
-    const QString suffix =
-        QFileInfo(templatePath).suffix().toLower();
+    const qreal margin =
+        RosterPdfMarginInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
 
-    return QStringLiteral("Roster Template.")
-        + (suffix.isEmpty() ? QStringLiteral("xlsx") : suffix);
+    return pageRect.adjusted(
+        margin,
+        margin,
+        -margin,
+        -margin
+        );
 }
 
-bool copyTemplateToTemp(
-    const QString& templatePath,
-    const QString& destinationPath,
-    QString* errorMessage
+qreal columnWidth(
+    int resolutionDpi
     )
 {
-    QFile::remove(destinationPath);
+    return ColumnWidthInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+}
 
-    if (QFile::copy(templatePath, destinationPath))
+qreal rowHeight(
+    int row,
+    int resolutionDpi
+    )
+{
+    const qreal inches =
+        row == DayTitleRow
+            ? TitleRowHeightInches
+            : NormalRowHeightInches;
+
+    return inches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+}
+
+qreal rowTop(
+    int row,
+    int resolutionDpi
+    )
+{
+    if (row <= DayTitleRow)
     {
-        return true;
+        return 0.0;
     }
 
-    if (errorMessage)
+    return rowHeight(
+        DayTitleRow,
+        resolutionDpi
+        )
+        + ((row - 2) * rowHeight(2, resolutionDpi));
+}
+
+QRectF sourceCellRect(
+    int row,
+    int column,
+    int rowSpan,
+    int columnSpan,
+    int resolutionDpi
+    )
+{
+    return QRectF(
+        (column - 1) * columnWidth(resolutionDpi),
+        rowTop(row, resolutionDpi),
+        columnSpan * columnWidth(resolutionDpi),
+        rowSpan * rowHeight(row, resolutionDpi)
+        );
+}
+
+QFont printUiFont(
+    qreal pointSize,
+    int resolutionDpi,
+    int weight = QFont::Normal
+    )
+{
+    QFont font =
+        FontManager::getUiFont(
+            -1,
+            weight
+            );
+    font.setPixelSize(
+        std::max(
+            1,
+            qRound(pointSize * resolutionDpi / 72.0)
+            )
+        );
+    return font;
+}
+
+QFont printKoreanFont(
+    qreal pointSize,
+    int resolutionDpi,
+    int weight = QFont::Normal
+    )
+{
+    QFont font =
+        FontManager::getKoreanFont(
+            -1,
+            weight
+            );
+    font.setPixelSize(
+        std::max(
+            1,
+            qRound(pointSize * resolutionDpi / 72.0)
+            )
+        );
+    return font;
+}
+
+QFont fittedFont(
+    const QString& text,
+    const QFont& baseFont,
+    const QRectF& rect
+    )
+{
+    QFont font =
+        baseFont;
+
+    if (text.trimmed().isEmpty())
     {
-        *errorMessage =
-            QObject::tr("Unable to copy the roster template for printing.");
+        return font;
     }
 
-    return false;
+    const qreal minimumPixelSize =
+        std::max(
+            6.0,
+            baseFont.pixelSize() * 0.72
+            );
+
+    while (font.pixelSize() > minimumPixelSize)
+    {
+        const QFontMetricsF metrics(font);
+
+        if (
+            metrics.horizontalAdvance(text) <= rect.width()
+            && metrics.height() <= rect.height()
+            )
+        {
+            return font;
+        }
+
+        font.setPixelSize(font.pixelSize() - 1);
+    }
+
+    return font;
+}
+
+void drawCell(
+    QPainter& painter,
+    const QRectF& rect,
+    const QString& text,
+    const QFont& font,
+    const QColor& fill,
+    const RosterPdfPalette& palette,
+    int alignment = Qt::AlignCenter
+    )
+{
+    painter.save();
+
+    painter.fillRect(
+        rect,
+        fill
+        );
+    painter.setPen(
+        QPen(
+            palette.grid,
+            1.2
+            )
+        );
+    painter.drawRect(rect);
+
+    if (!text.trimmed().isEmpty())
+    {
+        constexpr qreal CellPadding = 5.0;
+
+        const QRectF textRect =
+            rect.adjusted(
+                CellPadding,
+                1.5,
+                -CellPadding,
+                -1.5
+                );
+        QFont displayFont =
+            fittedFont(
+                text,
+                font,
+                textRect
+                );
+        QFontMetricsF metrics(displayFont);
+        QString displayText =
+            text;
+
+        if (metrics.horizontalAdvance(displayText) > textRect.width())
+        {
+            displayText =
+                metrics.elidedText(
+                    displayText,
+                    Qt::ElideRight,
+                    textRect.width()
+                    );
+        }
+
+        painter.setPen(palette.text);
+        painter.setFont(displayFont);
+        painter.drawText(
+            textRect,
+            alignment,
+            displayText
+            );
+    }
+
+    painter.restore();
+}
+
+QString cellKey(
+    int row,
+    int column
+    )
+{
+    return QStringLiteral("%1:%2")
+        .arg(row)
+        .arg(column);
+}
+
+QHash<QString, QString> valuesForDay(
+    const QList<RosterCellValue>& values,
+    const QString& day
+    )
+{
+    QHash<QString, QString> result;
+
+    for (const RosterCellValue& value : values)
+    {
+        if (value.day != day)
+        {
+            continue;
+        }
+
+        result.insert(
+            cellKey(
+                value.row,
+                value.column
+                ),
+            value.value
+            );
+    }
+
+    return result;
+}
+
+QString cellValue(
+    const QHash<QString, QString>& values,
+    int row,
+    int column
+    )
+{
+    return values.value(
+        cellKey(
+            row,
+            column
+            )
+        );
+}
+
+void paintRosterDay(
+    QPainter& painter,
+    const QString& day,
+    const QHash<QString, QString>& values,
+    const QRectF& pageRect,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    const RosterPdfPalette palette;
+    const qreal tableWidth =
+        ColumnCount * columnWidth(resolutionDpi);
+
+    const QPointF tableOrigin(
+        contentRect.left()
+            + ((contentRect.width() - tableWidth) / 2.0),
+        contentRect.top()
+        );
+
+    painter.fillRect(
+        pageRect,
+        palette.pageBackground
+        );
+
+    painter.save();
+    painter.translate(tableOrigin);
+
+    const QFont titleFont =
+        printUiFont(
+            16.0,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont labelFont =
+        printUiFont(
+            10.0,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont bodyFont =
+        printUiFont(
+            9.0,
+            resolutionDpi
+            );
+    const QFont koreanFont =
+        printKoreanFont(
+            9.0,
+            resolutionDpi
+            );
+
+    drawCell(
+        painter,
+        sourceCellRect(DayTitleRow, 1, 1, 1, resolutionDpi),
+        QString(),
+        bodyFont,
+        palette.cellBackground,
+        palette
+        );
+    drawCell(
+        painter,
+        sourceCellRect(DayTitleRow, 2, 1, 12, resolutionDpi),
+        day,
+        titleFont,
+        palette.cellBackground,
+        palette
+        );
+
+    drawCell(
+        painter,
+        sourceCellRect(TimeRow, 1, 1, 1, resolutionDpi),
+        QObject::tr("Time"),
+        labelFont,
+        palette.cellBackground,
+        palette
+        );
+
+    for (int index = 0; index < SlotColumns.size(); ++index)
+    {
+        const int column =
+            SlotColumns.at(index);
+        drawCell(
+            painter,
+            sourceCellRect(TimeRow, column, 1, 2, resolutionDpi),
+            TimeLabels.at(index),
+            labelFont,
+            palette.timeBackground,
+            palette
+            );
+    }
+
+    drawCell(
+        painter,
+        sourceCellRect(LevelRow, 1, 1, 1, resolutionDpi),
+        QObject::tr("Level"),
+        labelFont,
+        palette.cellBackground,
+        palette
+        );
+    drawCell(
+        painter,
+        sourceCellRect(TeacherRoomRow, 1, 1, 1, resolutionDpi),
+        QObject::tr("KT / Rm"),
+        labelFont,
+        palette.cellBackground,
+        palette
+        );
+    drawCell(
+        painter,
+        sourceCellRect(NamesRow, 1, 1, 1, resolutionDpi),
+        QObject::tr("Names"),
+        labelFont,
+        palette.cellBackground,
+        palette
+        );
+
+    for (int column : SlotColumns)
+    {
+        drawCell(
+            painter,
+            sourceCellRect(LevelRow, column, 1, 2, resolutionDpi),
+            cellValue(values, LevelRow, column),
+            labelFont,
+            palette.infoBackground,
+            palette
+            );
+        drawCell(
+            painter,
+            sourceCellRect(TeacherRoomRow, column, 1, 2, resolutionDpi),
+            cellValue(values, TeacherRoomRow, column),
+            labelFont,
+            palette.infoBackground,
+            palette
+            );
+
+        drawCell(
+            painter,
+            sourceCellRect(NamesRow, column, 1, 1, resolutionDpi),
+            QObject::tr("English"),
+            labelFont,
+            palette.nameHeaderBackground,
+            palette
+            );
+        drawCell(
+            painter,
+            sourceCellRect(NamesRow, column + 1, 1, 1, resolutionDpi),
+            QObject::tr("Korean"),
+            labelFont,
+            palette.nameHeaderBackground,
+            palette
+            );
+    }
+
+    for (int row = FirstStudentRow; row <= LastStudentRow; ++row)
+    {
+        drawCell(
+            painter,
+            sourceCellRect(row, 1, 1, 1, resolutionDpi),
+            QString::number(row - FirstStudentRow + 1),
+            bodyFont,
+            palette.cellBackground,
+            palette
+            );
+
+        for (int column = 2; column <= ColumnCount; ++column)
+        {
+            const bool koreanColumn =
+                (column % 2) == 1;
+
+            drawCell(
+                painter,
+                sourceCellRect(row, column, 1, 1, resolutionDpi),
+                cellValue(values, row, column),
+                koreanColumn ? koreanFont : bodyFont,
+                palette.cellBackground,
+                palette,
+                Qt::AlignCenter
+                );
+        }
+    }
+
+    const QList<QPair<int, QString>> footerRows{
+        {WifiRow, QObject::tr("Wi-Fi")},
+        {WifiPasswordRow, QObject::tr("Wi-Fi PW")},
+        {ZoomRow, QObject::tr("Zoom")},
+        {ZoomPasswordRow, QObject::tr("Zoom PW")}
+    };
+
+    for (const auto& rowLabel : footerRows)
+    {
+        drawCell(
+            painter,
+            sourceCellRect(rowLabel.first, 1, 1, 1, resolutionDpi),
+            rowLabel.second,
+            labelFont,
+            palette.cellBackground,
+            palette
+            );
+
+        for (int column : SlotColumns)
+        {
+            drawCell(
+                painter,
+                sourceCellRect(rowLabel.first, column, 1, 2, resolutionDpi),
+                cellValue(values, rowLabel.first, column),
+                bodyFont,
+                palette.cellBackground,
+                palette
+                );
+        }
+    }
+
+    painter.restore();
+}
+
+QStringList daysWithValues(
+    const QList<RosterCellValue>& values
+    )
+{
+    QSet<QString> included;
+
+    for (const RosterCellValue& value : values)
+    {
+        if (DaySheets.contains(value.day))
+        {
+            included.insert(value.day);
+        }
+    }
+
+    QStringList days;
+    for (const QString& day : DaySheets)
+    {
+        if (included.contains(day))
+        {
+            days.append(day);
+        }
+    }
+
+    return days;
 }
 
 QList<RosterClassData> loadRosterClassData(
@@ -1037,51 +890,6 @@ QList<RosterClassData> loadRosterClassData(
     return result;
 }
 } // namespace
-
-QStringList preferredTemplateSuffixes(
-    Platform platform
-    )
-{
-    switch (platform)
-    {
-    case Platform::LINUX:
-        return {
-            QStringLiteral("ods"),
-            QStringLiteral("xlsx")
-        };
-
-    case Platform::WINDOWS:
-    case Platform::MAC:
-    default:
-        return {
-            QStringLiteral("xlsx"),
-            QStringLiteral("ods")
-        };
-    }
-}
-
-QString preferredBundledTemplatePath(
-    Platform platform
-    )
-{
-    const QStringList suffixes =
-        preferredTemplateSuffixes(platform);
-
-    for (const QString& suffix : suffixes)
-    {
-        const QString path =
-            suffix == QStringLiteral("ods")
-                ? QString::fromLatin1(OdsTemplateResource)
-                : QString::fromLatin1(XlsxTemplateResource);
-
-        if (QFile::exists(path))
-        {
-            return path;
-        }
-    }
-
-    return {};
-}
 
 QList<int> resolveClassIds(
     Scope scope,
@@ -1126,33 +934,12 @@ QList<int> resolveClassIds(
     return ids;
 }
 
-QList<FillOperation> buildByDayFillOperations(
+QList<RosterCellValue> buildByDayCellValues(
     const QList<RosterClassData>& classes,
     QString* errorMessage
     )
 {
-    QList<FillOperation> operations;
-
-    for (const QString& sheet : ClearSheets)
-    {
-        for (int column : SlotColumns)
-        {
-            appendOperation(operations, sheet, column, 3, QString());
-            appendOperation(operations, sheet, column, 4, QString());
-            appendOperation(operations, sheet, column, 5, QString());
-            appendOperation(operations, sheet, column, 30, QString());
-            appendOperation(operations, sheet, column, 31, QString());
-            appendOperation(operations, sheet, column, 32, QString());
-            appendOperation(operations, sheet, column, 33, QString());
-
-            for (int row = FirstStudentRow; row <= LastStudentRow; ++row)
-            {
-                appendOperation(operations, sheet, column, row, QString());
-                appendOperation(operations, sheet, column + 1, row, QString());
-            }
-        }
-    }
-
+    QList<RosterCellValue> values;
     QSet<QString> occupiedSlots;
 
     for (const RosterClassData& data : classes)
@@ -1164,10 +951,10 @@ QList<FillOperation> buildByDayFillOperations(
 
         for (const ClassTime& time : data.info.classTimes)
         {
-            const QString sheet =
+            const QString day =
                 time.day.trimmed();
 
-            if (!DaySheets.contains(sheet))
+            if (!DaySheets.contains(day))
             {
                 continue;
             }
@@ -1181,7 +968,7 @@ QList<FillOperation> buildByDayFillOperations(
             }
 
             const QString slotKey =
-                sheet + QLatin1Char('|') + QString::number(column);
+                day + QLatin1Char('|') + QString::number(column);
 
             if (occupiedSlots.contains(slotKey))
             {
@@ -1191,20 +978,19 @@ QList<FillOperation> buildByDayFillOperations(
                         QObject::tr(
                             "Multiple selected classes use the %1 %2 slot."
                             )
-                            .arg(sheet, time.startTime);
+                            .arg(day, time.startTime);
                 }
                 return {};
             }
 
             occupiedSlots.insert(slotKey);
 
-            appendOperation(operations, sheet, column, 3, classLabel(data));
-            appendOperation(operations, sheet, column, 4, teacherLabel(data.info));
-            appendOperation(operations, sheet, column, 5, data.info.roomNumber.trimmed());
-            appendOperation(operations, sheet, column, 30, data.info.wifiName.trimmed());
-            appendOperation(operations, sheet, column, 31, data.info.wifiPassword.trimmed());
-            appendOperation(operations, sheet, column, 32, data.info.zoomId.trimmed());
-            appendOperation(operations, sheet, column, 33, data.info.zoomPassword.trimmed());
+            appendCellValue(values, day, column, LevelRow, classLabel(data));
+            appendCellValue(values, day, column, TeacherRoomRow, teacherRoomLabel(data.info));
+            appendCellValue(values, day, column, WifiRow, data.info.wifiName);
+            appendCellValue(values, day, column, WifiPasswordRow, data.info.wifiPassword);
+            appendCellValue(values, day, column, ZoomRow, data.info.zoomId);
+            appendCellValue(values, day, column, ZoomPasswordRow, data.info.zoomPassword);
 
             int writtenStudentCount = 0;
             for (const QStringList& row : data.roster.rows)
@@ -1227,74 +1013,126 @@ QList<FillOperation> buildByDayFillOperations(
                 const int outputRow =
                     FirstStudentRow + writtenStudentCount;
 
-                appendOperation(operations, sheet, column, outputRow, english);
-                appendOperation(operations, sheet, column + 1, outputRow, korean);
+                appendCellValue(values, day, column, outputRow, english);
+                appendCellValue(values, day, column + 1, outputRow, korean);
                 ++writtenStudentCount;
             }
         }
     }
 
-    return operations;
+    return values;
 }
 
-bool isSupportedByDayTemplate(
-    const QString& templatePath,
-    QString* errorMessage
+Result saveRostersPdf(
+    const QList<RosterClassData>& classes,
+    const QString& documentPath
     )
 {
-    const QString suffix =
-        QFileInfo(templatePath).suffix().toLower();
-
-    if (suffix != QStringLiteral("xlsx") && suffix != QStringLiteral("ods"))
+    if (documentPath.trimmed().isEmpty())
     {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Roster templates must be .xlsx or .ods files.");
-        }
-        return false;
+        return failed(
+            QObject::tr("No roster print file path was provided.")
+            );
     }
 
-    if (!QFile::exists(templatePath))
+    QString errorMessage;
+    const QList<RosterCellValue> values =
+        buildByDayCellValues(
+            classes,
+            &errorMessage
+            );
+
+    if (!errorMessage.isEmpty())
     {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("The roster template could not be found.");
-        }
-        return false;
+        return failed(errorMessage);
     }
 
-    const QString workbookXml =
-        suffix == QStringLiteral("xlsx")
-            ? workbookTextEntry(templatePath, QStringLiteral("xl/workbook.xml"))
-            : workbookTextEntry(templatePath, QStringLiteral("content.xml"));
+    const QStringList days =
+        daysWithValues(values);
 
-    if (workbookXml.isEmpty())
+    if (days.isEmpty())
     {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("The roster template could not be read.");
-        }
-        return false;
+        return failed(
+            QObject::tr("No selected classes match the roster print layout.")
+            );
     }
 
-    for (const QString& day : DaySheets)
+    QPdfWriter writer(documentPath);
+    if (!configureRosterPdfWriter(writer))
     {
-        if (!workbookXml.contains(day))
-        {
-            if (errorMessage)
-            {
-                *errorMessage =
-                    QObject::tr("The roster template is missing the %1 sheet.")
-                        .arg(day);
-            }
-            return false;
-        }
+        return failed(
+            QObject::tr("Unable to configure the roster print file.")
+            );
     }
 
-    return true;
+    QPainter painter;
+    if (!painter.begin(&writer))
+    {
+        return failed(
+            QObject::tr("Unable to create the roster print file.")
+            );
+    }
+
+    const QRectF pageRect =
+        rosterPdfPageRect(writer);
+    const QRectF contentRect =
+        rosterPdfContentRect(
+            pageRect,
+            writer.resolution()
+            );
+
+    if (
+        pageRect.width() <= 0.0
+        || pageRect.height() <= 0.0
+        || contentRect.width() <= 0.0
+        || contentRect.height() <= 0.0
+        )
+    {
+        painter.end();
+        return failed(
+            QObject::tr("Unable to determine the roster print area.")
+            );
+    }
+
+    for (int index = 0; index < days.size(); ++index)
+    {
+        if (
+            index > 0
+            && !writer.newPage()
+            )
+        {
+            painter.end();
+            return failed(
+                QObject::tr("Unable to add a roster print page.")
+                );
+        }
+
+        const QString& day =
+            days.at(index);
+        paintRosterDay(
+            painter,
+            day,
+            valuesForDay(
+                values,
+                day
+                ),
+            pageRect,
+            contentRect,
+            writer.resolution()
+            );
+    }
+
+    if (!painter.end())
+    {
+        return failed(
+            QObject::tr("The roster print file could not be completed.")
+            );
+    }
+
+    return {
+        Status::Sent,
+        QObject::tr("Roster PDF created.")
+    };
 }
 
 Result printRosters(
@@ -1314,15 +1152,6 @@ Result printRosters(
         return failed(QObject::tr("Roster data is not available."));
     }
 
-    const QString templatePath =
-        selectedTemplatePath(request.templatePath);
-
-    QString errorMessage;
-    if (!isSupportedByDayTemplate(templatePath, &errorMessage))
-    {
-        return failed(errorMessage);
-    }
-
     const QList<Classroom> classes =
         dataService->getClasses();
     const QList<int> classIds =
@@ -1340,13 +1169,6 @@ Result printRosters(
 
     const QList<RosterClassData> rosterClasses =
         loadRosterClassData(dataService, classIds);
-    const QList<FillOperation> operations =
-        buildByDayFillOperations(rosterClasses, &errorMessage);
-
-    if (operations.isEmpty() && !errorMessage.isEmpty())
-    {
-        return failed(errorMessage);
-    }
 
     QTemporaryDir temporaryDirectory;
     if (!temporaryDirectory.isValid())
@@ -1354,27 +1176,22 @@ Result printRosters(
         return failed(QObject::tr("Unable to create a temporary print folder."));
     }
 
-    const QString workbookPath =
-        temporaryDirectory.filePath(tempWorkbookFileName(templatePath));
     const QString pdfPath =
         temporaryDirectory.filePath(QStringLiteral("Rosters.pdf"));
 
-    if (!copyTemplateToTemp(templatePath, workbookPath, &errorMessage))
     {
-        return failed(errorMessage);
-    }
+        const Result saveResult =
+            saveRostersPdf(
+                rosterClasses,
+                pdfPath
+                );
 
-    if (
-        !renderPdf(
-            workbookPath,
-            operations,
-            pdfPath,
-            temporaryDirectory.path(),
-            &errorMessage
-            )
-        )
-    {
-        return failed(errorMessage);
+        if (saveResult.status != Status::Sent)
+        {
+            return failed(
+                failedPdfMessage(saveResult.message)
+                );
+        }
     }
 
     QPdfDocument document;
@@ -1400,8 +1217,8 @@ Result printRosters(
                 QObject::tr("Print Rosters"),
                 QPageLayout::Landscape,
                 false,
-                QPageSize::Letter,
-                false
+                RosterPdfPageSize,
+                true
             }
             );
 

@@ -807,7 +807,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrRosterTemplatePrintServiceTests
         tests/roster_template_print_service_tests.cpp
-        src/core/utils/platform.cpp
+        src/core/fontmanager.cpp
         src/domain/models/classroom.cpp
         src/features/roster/ui/roster_template_print_service.cpp
     )
@@ -832,11 +832,9 @@ if(BUILD_TESTING)
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
-            Qt6::PrintSupport
             Qt6::Sql
             Qt6::Test
             Qt6::Widgets
-            ZLIB::ZLIB
     )
 
     add_test(

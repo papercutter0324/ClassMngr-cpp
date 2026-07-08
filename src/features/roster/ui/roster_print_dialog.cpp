@@ -4,16 +4,9 @@
 #include "data/data_service.h"
 
 #include <QButtonGroup>
-#include <QCheckBox>
 #include <QDialogButtonBox>
-#include <QFileDialog>
-#include <QFormLayout>
 #include <QGroupBox>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
 #include <QListWidget>
-#include <QPushButton>
 #include <QRadioButton>
 #include <QVBoxLayout>
 
@@ -57,13 +50,6 @@ RosterPrintDialog::RosterPrintDialog(
     loadClasses();
     retranslateUi();
     updateClassListEnabled();
-}
-
-QString RosterPrintDialog::templatePath() const
-{
-    return m_templatePathEdit
-        ? m_templatePathEdit->text().trimmed()
-        : QString();
 }
 
 RosterTemplatePrintService::Scope RosterPrintDialog::selectedScope() const
@@ -110,22 +96,6 @@ QList<int> RosterPrintDialog::selectedClassIds() const
     return ids;
 }
 
-void RosterPrintDialog::browseTemplate()
-{
-    const QString path =
-        QFileDialog::getOpenFileName(
-            this,
-            tr("Choose Roster Template"),
-            QString(),
-            tr("Spreadsheet Templates (*.xlsx *.ods)")
-            );
-
-    if (!path.isEmpty() && m_templatePathEdit)
-    {
-        m_templatePathEdit->setText(path);
-    }
-}
-
 void RosterPrintDialog::updateClassListEnabled()
 {
     if (!m_classList)
@@ -141,36 +111,11 @@ void RosterPrintDialog::updateClassListEnabled()
 void RosterPrintDialog::buildUi()
 {
     setModal(true);
-    resize(520, 520);
+    resize(520, 420);
 
     auto* rootLayout =
         new QVBoxLayout(this);
     rootLayout->setSpacing(12);
-
-    auto* templateGroup =
-        new QGroupBox(this);
-    auto* templateLayout =
-        new QVBoxLayout(templateGroup);
-
-    m_templateHintLabel =
-        new QLabel(templateGroup);
-    m_templateHintLabel->setWordWrap(true);
-
-    auto* templatePathLayout =
-        new QHBoxLayout();
-
-    m_templatePathEdit =
-        new QLineEdit(templateGroup);
-    m_templatePathEdit->setClearButtonEnabled(true);
-
-    m_browseButton =
-        new QPushButton(templateGroup);
-
-    templatePathLayout->addWidget(m_templatePathEdit, 1);
-    templatePathLayout->addWidget(m_browseButton);
-
-    templateLayout->addWidget(m_templateHintLabel);
-    templateLayout->addLayout(templatePathLayout);
 
     auto* scopeGroupBox =
         new QGroupBox(this);
@@ -215,16 +160,8 @@ void RosterPrintDialog::buildUi()
             this
             );
 
-    rootLayout->addWidget(templateGroup);
     rootLayout->addWidget(scopeGroupBox, 1);
     rootLayout->addWidget(buttons);
-
-    connect(
-        m_browseButton,
-        &QPushButton::clicked,
-        this,
-        &RosterPrintDialog::browseTemplate
-        );
 
     connect(
         m_scopeGroup,
@@ -284,30 +221,6 @@ void RosterPrintDialog::loadClasses()
 void RosterPrintDialog::retranslateUi()
 {
     setWindowTitle(tr("Print Rosters"));
-
-    if (auto* group = qobject_cast<QGroupBox*>(m_templateHintLabel->parentWidget()))
-    {
-        group->setTitle(tr("Template"));
-    }
-
-    if (m_templateHintLabel)
-    {
-        m_templateHintLabel->setText(
-            tr("Leave this blank to use the bundled roster template for this platform.")
-            );
-    }
-
-    if (m_templatePathEdit)
-    {
-        m_templatePathEdit->setPlaceholderText(
-            tr("Bundled roster template")
-            );
-    }
-
-    if (m_browseButton)
-    {
-        m_browseButton->setText(tr("Browse..."));
-    }
 
     if (m_scopeGroup)
     {

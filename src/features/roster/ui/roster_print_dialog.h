@@ -7,10 +7,7 @@
 
 class ApplicationServices;
 class QButtonGroup;
-class QLabel;
-class QLineEdit;
 class QListWidget;
-class QPushButton;
 
 class RosterPrintDialog : public QDialog
 {
@@ -24,12 +21,10 @@ public:
         QWidget* parent = nullptr
         );
 
-    QString templatePath() const;
     RosterTemplatePrintService::Scope selectedScope() const;
     QList<int> selectedClassIds() const;
 
 private slots:
-    void browseTemplate();
     void updateClassListEnabled();
 
 private:
@@ -42,9 +37,6 @@ private:
     RosterTemplatePrintService::Scope m_defaultScope =
         RosterTemplatePrintService::Scope::AllClasses;
 
-    QLabel* m_templateHintLabel = nullptr;
-    QLineEdit* m_templatePathEdit = nullptr;
-    QPushButton* m_browseButton = nullptr;
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;
 };

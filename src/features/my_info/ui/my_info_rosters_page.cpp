@@ -314,7 +314,7 @@ void MyInfoRostersPage::retranslateUi()
             tr("Print Rosters")
             );
         m_printButton->setToolTip(
-            tr("Print rosters from a spreadsheet template.")
+            tr("Print rosters as an A4 PDF.")
             );
     }
 
@@ -822,7 +822,6 @@ void MyInfoRostersPage::printRosters()
             {
                 this,
                 m_services,
-                dialog.templatePath(),
                 m_classroom.id,
                 dialog.selectedScope(),
                 dialog.selectedClassIds()
@@ -1277,7 +1276,7 @@ void MyInfoRostersPage::buildUi()
             );
 
     m_printButton->setToolTip(
-        tr("Print rosters from a spreadsheet template.")
+        tr("Print rosters as an A4 PDF.")
         );
 
     m_addColumnButton =
