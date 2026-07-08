@@ -7,6 +7,7 @@
 #include <QtTest>
 
 #include <QColor>
+#include <QHash>
 #include <QImage>
 #include <QPageSize>
 #include <QPdfDocument>
@@ -16,26 +17,74 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
+
+namespace
+{
+bool g_hasOpenDatabase = false;
+bool g_hasDataService = false;
+QList<Classroom> g_classes;
+QHash<int, ClassInfo> g_classInfo;
+QHash<int, Roster> g_rosters;
+
+alignas(ApplicationServices) unsigned char
+    g_fakeApplicationServicesStorage[sizeof(ApplicationServices)];
+alignas(DataService) unsigned char
+    g_fakeDataServiceStorage[sizeof(DataService)];
+
+ApplicationServices* fakeApplicationServices()
+{
+    return reinterpret_cast<ApplicationServices*>(
+        g_fakeApplicationServicesStorage
+        );
+}
+
+DataService* fakeDataService()
+{
+    return reinterpret_cast<DataService*>(
+        g_fakeDataServiceStorage
+        );
+}
+
+void resetServiceStubs()
+{
+    g_hasOpenDatabase = false;
+    g_hasDataService = false;
+    g_classes.clear();
+    g_classInfo.clear();
+    g_rosters.clear();
+}
+}
 
 bool ApplicationServices::hasOpenDatabase() const
 {
-    return false;
+    return g_hasOpenDatabase;
 }
 
 DataService* ApplicationServices::dataService() const
 {
-    return nullptr;
+    return g_hasDataService
+        ? fakeDataService()
+        : nullptr;
 }
 
 QList<Classroom> DataService::getClasses()
 {
-    return {};
+    return g_classes;
 }
 
 Classroom DataService::getClassById(
     int classId
     )
 {
+    for (const Classroom& classroom : std::as_const(g_classes))
+    {
+        if (classroom.id == classId)
+        {
+            return classroom;
+        }
+    }
+
     Classroom classroom;
     classroom.id = classId;
     return classroom;
@@ -45,6 +94,11 @@ ClassInfo DataService::loadClassInfo(
     int classId
     )
 {
+    if (g_classInfo.contains(classId))
+    {
+        return g_classInfo.value(classId);
+    }
+
     ClassInfo info;
     info.classId = classId;
     return info;
@@ -54,8 +108,7 @@ Roster DataService::loadRoster(
     int classId
     )
 {
-    Q_UNUSED(classId);
-    return {};
+    return g_rosters.value(classId);
 }
 
 namespace PdfPrintService
@@ -531,6 +584,9 @@ class RosterTemplatePrintServiceTests : public QObject
 
 private slots:
     void resolveClassIdsUsesRequestedScope();
+    void requestSaveRostersPdfRejectsEmptyPath();
+    void requestSaveRostersPdfRejectsMissingDatabase();
+    void requestSaveRostersPdfUsesSelectedClassScope();
     void buildByDayCellValuesMapsClassToTimeBlock();
     void buildByDayCellValuesWritesTwentyFiveStudentRows();
     void buildByDayCellValuesUsesTeacherFallback();
@@ -575,6 +631,123 @@ void RosterTemplatePrintServiceTests::resolveClassIdsUsesRequestedScope()
             classes
             ),
         QList<int>({30, 10})
+        );
+}
+
+void RosterTemplatePrintServiceTests::requestSaveRostersPdfRejectsEmptyPath()
+{
+    resetServiceStubs();
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            RosterTemplatePrintService::Request(),
+            QString()
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
+    QVERIFY(
+        result.message.contains(
+            QStringLiteral("No roster print file path")
+            )
+        );
+}
+
+void RosterTemplatePrintServiceTests::requestSaveRostersPdfRejectsMissingDatabase()
+{
+    resetServiceStubs();
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::Request request;
+    request.services =
+        fakeApplicationServices();
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            temporaryDirectory.filePath(QStringLiteral("rosters.pdf"))
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
+    QVERIFY(result.message.contains(QStringLiteral("No database")));
+}
+
+void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScope()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasDataService = true;
+
+    Classroom currentClass;
+    currentClass.id = 10;
+    currentClass.name = QStringLiteral("Current");
+
+    const RosterTemplatePrintService::RosterClassData selectedClass =
+        sampleRosterClass(
+            20,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    const RosterTemplatePrintService::RosterClassData duplicateClass =
+        sampleRosterClass(
+            30,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+
+    g_classes = {
+        currentClass,
+        selectedClass.classroom,
+        duplicateClass.classroom
+    };
+    g_classInfo.insert(
+        selectedClass.classroom.id,
+        selectedClass.info
+        );
+    g_classInfo.insert(
+        duplicateClass.classroom.id,
+        duplicateClass.info
+        );
+    g_rosters.insert(
+        selectedClass.classroom.id,
+        selectedClass.roster
+        );
+    g_rosters.insert(
+        duplicateClass.classroom.id,
+        duplicateClass.roster
+        );
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("selected-roster.pdf"));
+
+    RosterTemplatePrintService::Request request;
+    request.services =
+        fakeApplicationServices();
+    request.currentClassId =
+        currentClass.id;
+    request.scope =
+        RosterTemplatePrintService::Scope::SelectedClasses;
+    request.selectedClassIds = {
+        selectedClass.classroom.id
+    };
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            path
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(
+        document,
+        path,
+        1
         );
 }
 

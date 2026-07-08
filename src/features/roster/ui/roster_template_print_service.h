@@ -74,6 +74,11 @@ QList<RosterCellValue> buildByDayCellValues(
     const QString& documentPath
     );
 
+[[nodiscard]] Result saveRostersPdf(
+    const Request& request,
+    const QString& documentPath
+    );
+
 [[nodiscard]] Result printRosters(
     const Request& request
     );

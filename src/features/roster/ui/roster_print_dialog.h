@@ -14,6 +14,12 @@ class RosterPrintDialog : public QDialog
     Q_OBJECT
 
 public:
+    enum class Action
+    {
+        Print,
+        SaveAs
+    };
+
     explicit RosterPrintDialog(
         ApplicationServices* services,
         int currentClassId,
@@ -21,10 +27,14 @@ public:
         QWidget* parent = nullptr
         );
 
+    Action selectedAction() const;
+    QString selectedSavePath() const;
     RosterTemplatePrintService::Scope selectedScope() const;
     QList<int> selectedClassIds() const;
 
 private slots:
+    void acceptPrint();
+    void chooseSavePath();
     void updateClassListVisibility();
 
 private:
@@ -37,6 +47,8 @@ private:
     RosterTemplatePrintService::Scope m_defaultScope =
         RosterTemplatePrintService::Scope::AllClasses;
     QString m_currentClassDisplayName;
+    Action m_selectedAction = Action::Print;
+    QString m_selectedSavePath;
 
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;

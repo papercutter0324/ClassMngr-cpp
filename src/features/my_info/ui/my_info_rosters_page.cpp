@@ -817,16 +817,34 @@ void MyInfoRostersPage::printRosters()
         return;
     }
 
-    const RosterTemplatePrintService::Result result =
-        RosterTemplatePrintService::printRosters(
-            {
-                this,
-                m_services,
-                m_classroom.id,
-                dialog.selectedScope(),
-                dialog.selectedClassIds()
-            }
-            );
+    const RosterTemplatePrintService::Request request{
+        this,
+        m_services,
+        m_classroom.id,
+        dialog.selectedScope(),
+        dialog.selectedClassIds()
+    };
+
+    RosterTemplatePrintService::Result result;
+
+    switch (dialog.selectedAction())
+    {
+    case RosterPrintDialog::Action::SaveAs:
+        result =
+            RosterTemplatePrintService::saveRostersPdf(
+                request,
+                dialog.selectedSavePath()
+                );
+        break;
+
+    case RosterPrintDialog::Action::Print:
+    default:
+        result =
+            RosterTemplatePrintService::printRosters(
+                request
+                );
+        break;
+    }
 
     if (result.status == RosterTemplatePrintService::Status::Failed)
     {

@@ -8,14 +8,17 @@
 
 #include <QApplication>
 #include <QButtonGroup>
-#include <QDialogButtonBox>
 #include <QEvent>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLayout>
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPersistentModelIndex>
+#include <QPushButton>
 #include <QRadioButton>
 #include <QSizePolicy>
 #include <QStyle>
@@ -419,6 +422,16 @@ RosterPrintDialog::RosterPrintDialog(
     updateClassListVisibility();
 }
 
+RosterPrintDialog::Action RosterPrintDialog::selectedAction() const
+{
+    return m_selectedAction;
+}
+
+QString RosterPrintDialog::selectedSavePath() const
+{
+    return m_selectedSavePath;
+}
+
 RosterTemplatePrintService::Scope RosterPrintDialog::selectedScope() const
 {
     if (!m_scopeGroup)
@@ -461,6 +474,70 @@ QList<int> RosterPrintDialog::selectedClassIds() const
     }
 
     return ids;
+}
+
+void RosterPrintDialog::acceptPrint()
+{
+    m_selectedAction =
+        Action::Print;
+    m_selectedSavePath.clear();
+
+    accept();
+}
+
+void RosterPrintDialog::chooseSavePath()
+{
+    QFileDialog dialog(
+        this,
+        tr("Save Rosters As"),
+        QString(),
+        tr("PDF Documents (*.pdf)")
+        );
+    dialog.setAcceptMode(
+        QFileDialog::AcceptSave
+        );
+    dialog.setFileMode(
+        QFileDialog::AnyFile
+        );
+    dialog.setOption(
+        QFileDialog::DontUseNativeDialog,
+        true
+        );
+    dialog.setDefaultSuffix(
+        QStringLiteral("pdf")
+        );
+    dialog.selectFile(
+        QStringLiteral("Rosters.pdf")
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QStringList selectedFiles =
+        dialog.selectedFiles();
+
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    QString savePath =
+        selectedFiles.first();
+
+    if (QFileInfo(savePath).suffix().isEmpty())
+    {
+        savePath +=
+            QStringLiteral(".pdf");
+    }
+
+    m_selectedAction =
+        Action::SaveAs;
+    m_selectedSavePath =
+        savePath;
+
+    accept();
 }
 
 void RosterPrintDialog::updateClassListVisibility()
@@ -567,14 +644,39 @@ void RosterPrintDialog::buildUi()
         );
     scopeLayout->addWidget(m_classList);
 
-    auto* buttons =
-        new QDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+    auto* buttonLayout =
+        new QHBoxLayout();
+    buttonLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    auto* cancelButton =
+        new QPushButton(
+            tr("Cancel"),
             this
             );
+    auto* saveAsButton =
+        new QPushButton(
+            tr("Save As"),
+            this
+            );
+    auto* printButton =
+        new QPushButton(
+            tr("Print"),
+            this
+            );
+    printButton->setDefault(true);
+
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(saveAsButton);
+    buttonLayout->addWidget(printButton);
 
     rootLayout->addWidget(scopeGroupBox);
-    rootLayout->addWidget(buttons);
+    rootLayout->addLayout(buttonLayout);
 
     connect(
         m_scopeGroup,
@@ -584,15 +686,22 @@ void RosterPrintDialog::buildUi()
         );
 
     connect(
-        buttons,
-        &QDialogButtonBox::accepted,
+        printButton,
+        &QPushButton::clicked,
         this,
-        &QDialog::accept
+        &RosterPrintDialog::acceptPrint
         );
 
     connect(
-        buttons,
-        &QDialogButtonBox::rejected,
+        saveAsButton,
+        &QPushButton::clicked,
+        this,
+        &RosterPrintDialog::chooseSavePath
+        );
+
+    connect(
+        cancelButton,
+        &QPushButton::clicked,
         this,
         &QDialog::reject
         );

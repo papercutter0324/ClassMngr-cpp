@@ -1202,6 +1202,51 @@ QList<RosterClassData> loadRosterClassData(
 
     return result;
 }
+
+Result loadRosterClassesForRequest(
+    const Request& request,
+    QList<RosterClassData>* rosterClasses
+    )
+{
+    if (!request.services || !request.services->hasOpenDatabase())
+    {
+        return failed(QObject::tr("No database is open."));
+    }
+
+    DataService* dataService =
+        request.services->dataService();
+
+    if (!dataService)
+    {
+        return failed(QObject::tr("Roster data is not available."));
+    }
+
+    const QList<Classroom> classes =
+        dataService->getClasses();
+    const QList<int> classIds =
+        resolveClassIds(
+            request.scope,
+            request.currentClassId,
+            request.selectedClassIds,
+            classes
+            );
+
+    if (classIds.isEmpty())
+    {
+        return failed(QObject::tr("No classes were selected for printing."));
+    }
+
+    if (rosterClasses)
+    {
+        *rosterClasses =
+            loadRosterClassData(
+                dataService,
+                classIds
+                );
+    }
+
+    return sent();
+}
 } // namespace
 
 QList<int> resolveClassIds(
@@ -1448,40 +1493,52 @@ Result saveRostersPdf(
     };
 }
 
+Result saveRostersPdf(
+    const Request& request,
+    const QString& documentPath
+    )
+{
+    if (documentPath.trimmed().isEmpty())
+    {
+        return saveRostersPdf(
+            QList<RosterClassData>(),
+            documentPath
+            );
+    }
+
+    QList<RosterClassData> rosterClasses;
+    const Result loadResult =
+        loadRosterClassesForRequest(
+            request,
+            &rosterClasses
+            );
+
+    if (loadResult.status != Status::Sent)
+    {
+        return loadResult;
+    }
+
+    return saveRostersPdf(
+        rosterClasses,
+        documentPath
+        );
+}
+
 Result printRosters(
     const Request& request
     )
 {
-    if (!request.services || !request.services->hasOpenDatabase())
-    {
-        return failed(QObject::tr("No database is open."));
-    }
-
-    DataService* dataService =
-        request.services->dataService();
-
-    if (!dataService)
-    {
-        return failed(QObject::tr("Roster data is not available."));
-    }
-
-    const QList<Classroom> classes =
-        dataService->getClasses();
-    const QList<int> classIds =
-        resolveClassIds(
-            request.scope,
-            request.currentClassId,
-            request.selectedClassIds,
-            classes
+    QList<RosterClassData> rosterClasses;
+    const Result loadResult =
+        loadRosterClassesForRequest(
+            request,
+            &rosterClasses
             );
 
-    if (classIds.isEmpty())
+    if (loadResult.status != Status::Sent)
     {
-        return failed(QObject::tr("No classes were selected for printing."));
+        return loadResult;
     }
-
-    const QList<RosterClassData> rosterClasses =
-        loadRosterClassData(dataService, classIds);
 
     QTemporaryDir temporaryDirectory;
     if (!temporaryDirectory.isValid())
