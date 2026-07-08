@@ -25,7 +25,7 @@ public:
     QList<int> selectedClassIds() const;
 
 private slots:
-    void updateClassListEnabled();
+    void updateClassListVisibility();
 
 private:
     void buildUi();
@@ -36,6 +36,7 @@ private:
     int m_currentClassId = -1;
     RosterTemplatePrintService::Scope m_defaultScope =
         RosterTemplatePrintService::Scope::AllClasses;
+    QString m_currentClassDisplayName;
 
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;

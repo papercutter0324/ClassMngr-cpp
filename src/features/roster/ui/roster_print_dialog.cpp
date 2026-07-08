@@ -1,13 +1,26 @@
 #include "features/roster/ui/roster_print_dialog.h"
 
 #include "core/application_services.h"
+#include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
+#include "domain/models/class_info.h"
+#include "domain/models/teacher.h"
 
+#include <QApplication>
 #include <QButtonGroup>
 #include <QDialogButtonBox>
+#include <QEvent>
 #include <QGroupBox>
+#include <QLayout>
 #include <QListWidget>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPersistentModelIndex>
 #include <QRadioButton>
+#include <QSizePolicy>
+#include <QStyle>
+#include <QStyledItemDelegate>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace
@@ -15,6 +28,360 @@ namespace
 constexpr int AllClassesId = 0;
 constexpr int CurrentClassId = 1;
 constexpr int SelectedClassesId = 2;
+constexpr int DialogWidth = 520;
+constexpr int DialogExpandedHeight = 420;
+
+class RosterClassListMarqueeDelegate : public QStyledItemDelegate
+{
+public:
+    explicit RosterClassListMarqueeDelegate(
+        QListWidget* list,
+        QObject* parent = nullptr
+        )
+        : QStyledItemDelegate(parent)
+        , m_list(list)
+    {
+        m_timer.setInterval(30);
+
+        connect(
+            &m_timer,
+            &QTimer::timeout,
+            this,
+            &RosterClassListMarqueeDelegate::advanceMarquee
+            );
+
+        if (m_list && m_list->viewport())
+        {
+            m_list->viewport()->setMouseTracking(true);
+            m_list->viewport()->installEventFilter(this);
+        }
+    }
+
+    void paint(
+        QPainter* painter,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        QStyleOptionViewItem opt(option);
+        initStyleOption(&opt, index);
+
+        const bool scrolling =
+            m_hoveredIndex == index
+            && isOverflowing(opt);
+
+        if (!scrolling)
+        {
+            QStyledItemDelegate::paint(
+                painter,
+                option,
+                index
+                );
+            return;
+        }
+
+        const QWidget* widget =
+            opt.widget;
+
+        QStyle* style =
+            widget
+                ? widget->style()
+                : QApplication::style();
+
+        QStyleOptionViewItem backgroundOpt(opt);
+        backgroundOpt.text.clear();
+        backgroundOpt.features &=
+            ~QStyleOptionViewItem::HasDisplay;
+
+        style->drawControl(
+            QStyle::CE_ItemViewItem,
+            &backgroundOpt,
+            painter,
+            widget
+            );
+
+        const QRect textRect =
+            style->subElementRect(
+                QStyle::SE_ItemViewItemText,
+                &opt,
+                widget
+                );
+
+        const QRect visibleTextRect =
+            clippedTextRect(textRect);
+
+        if (!visibleTextRect.isValid())
+        {
+            return;
+        }
+
+        const QFontMetrics metrics(opt.font);
+        const int textWidth =
+            metrics.horizontalAdvance(opt.text);
+        const int cycleWidth =
+            textWidth + ScrollGap;
+
+        if (cycleWidth <= 0)
+        {
+            return;
+        }
+
+        painter->save();
+        painter->setClipRect(visibleTextRect);
+
+        const QPalette::ColorGroup colorGroup =
+            (opt.state & QStyle::State_Enabled)
+                ? ((opt.state & QStyle::State_Active)
+                       ? QPalette::Active
+                       : QPalette::Inactive)
+                : QPalette::Disabled;
+
+        const QPalette::ColorRole colorRole =
+            (opt.state & QStyle::State_Selected)
+                ? QPalette::HighlightedText
+                : QPalette::Text;
+
+        painter->setPen(
+            opt.palette.color(
+                colorGroup,
+                colorRole
+                )
+            );
+        painter->setFont(opt.font);
+
+        const int offset =
+            m_offset % cycleWidth;
+        const int baseline =
+            textRect.top()
+            + (textRect.height() + metrics.ascent() - metrics.descent()) / 2;
+
+        int x =
+            textRect.left() - offset;
+
+        do
+        {
+            painter->drawText(
+                QPoint(x, baseline),
+                opt.text
+                );
+
+            x += cycleWidth;
+        }
+        while (x < visibleTextRect.right());
+
+        painter->restore();
+    }
+
+protected:
+    bool eventFilter(
+        QObject* watched,
+        QEvent* event
+        ) override
+    {
+        if (
+            m_list
+            && watched == m_list->viewport()
+            )
+        {
+            if (event->type() == QEvent::MouseMove)
+            {
+                auto* mouseEvent =
+                    static_cast<QMouseEvent*>(event);
+
+                setHoveredIndex(
+                    m_list->indexAt(
+                        mouseEvent->pos()
+                        )
+                    );
+            }
+            else if (event->type() == QEvent::Leave)
+            {
+                setHoveredIndex(
+                    QModelIndex()
+                    );
+            }
+        }
+
+        return QStyledItemDelegate::eventFilter(
+            watched,
+            event
+            );
+    }
+
+private:
+    static constexpr int ScrollGap = 32;
+
+    void setHoveredIndex(
+        const QModelIndex& index
+        )
+    {
+        const QModelIndex oldIndex =
+            m_hoveredIndex;
+
+        if (oldIndex == index)
+        {
+            return;
+        }
+
+        m_hoveredIndex =
+            index;
+        m_offset = 0;
+
+        updateIndex(oldIndex);
+        updateIndex(index);
+        updateTimer();
+    }
+
+    void advanceMarquee()
+    {
+        if (
+            !m_hoveredIndex.isValid()
+            || !isIndexOverflowing(m_hoveredIndex)
+            )
+        {
+            m_timer.stop();
+            m_offset = 0;
+            updateIndex(m_hoveredIndex);
+            return;
+        }
+
+        ++m_offset;
+
+        if (m_offset > 100000)
+        {
+            m_offset = 0;
+        }
+
+        updateIndex(m_hoveredIndex);
+    }
+
+    void updateTimer()
+    {
+        if (
+            m_hoveredIndex.isValid()
+            && isIndexOverflowing(m_hoveredIndex)
+            )
+        {
+            if (!m_timer.isActive())
+            {
+                m_timer.start();
+            }
+        }
+        else
+        {
+            m_timer.stop();
+        }
+    }
+
+    void updateIndex(
+        const QModelIndex& index
+        ) const
+    {
+        if (
+            !m_list
+            || !m_list->viewport()
+            || !index.isValid()
+            )
+        {
+            return;
+        }
+
+        m_list->viewport()->update(
+            m_list->visualRect(index)
+            );
+    }
+
+    bool isIndexOverflowing(
+        const QModelIndex& index
+        ) const
+    {
+        if (
+            !m_list
+            || !index.isValid()
+            )
+        {
+            return false;
+        }
+
+        QStyleOptionViewItem option;
+        option.initFrom(
+            m_list->viewport()
+            );
+        option.widget =
+            m_list->viewport();
+        option.rect =
+            m_list->visualRect(index);
+
+        initStyleOption(
+            &option,
+            index
+            );
+
+        return isOverflowing(option);
+    }
+
+    bool isOverflowing(
+        const QStyleOptionViewItem& option
+        ) const
+    {
+        if (
+            !m_list
+            || !m_list->viewport()
+            || option.text.isEmpty()
+            )
+        {
+            return false;
+        }
+
+        const QWidget* widget =
+            option.widget;
+
+        QStyle* style =
+            widget
+                ? widget->style()
+                : QApplication::style();
+
+        const QRect textRect =
+            style->subElementRect(
+                QStyle::SE_ItemViewItemText,
+                &option,
+                widget
+                );
+
+        const QRect visibleTextRect =
+            clippedTextRect(textRect);
+
+        if (!visibleTextRect.isValid())
+        {
+            return false;
+        }
+
+        return QFontMetrics(option.font).horizontalAdvance(option.text)
+            > visibleTextRect.width();
+    }
+
+    QRect clippedTextRect(
+        const QRect& textRect
+        ) const
+    {
+        if (
+            !m_list
+            || !m_list->viewport()
+            )
+        {
+            return textRect;
+        }
+
+        return textRect.intersected(
+            m_list->viewport()->rect()
+            );
+    }
+
+    QListWidget* m_list = nullptr;
+    QTimer m_timer;
+    QPersistentModelIndex m_hoveredIndex;
+    int m_offset = 0;
+};
 
 int scopeId(
     RosterTemplatePrintService::Scope scope
@@ -49,7 +416,7 @@ RosterPrintDialog::RosterPrintDialog(
     buildUi();
     loadClasses();
     retranslateUi();
-    updateClassListEnabled();
+    updateClassListVisibility();
 }
 
 RosterTemplatePrintService::Scope RosterPrintDialog::selectedScope() const
@@ -96,22 +463,53 @@ QList<int> RosterPrintDialog::selectedClassIds() const
     return ids;
 }
 
-void RosterPrintDialog::updateClassListEnabled()
+void RosterPrintDialog::updateClassListVisibility()
 {
     if (!m_classList)
     {
         return;
     }
 
-    m_classList->setEnabled(
-        selectedScope() == RosterTemplatePrintService::Scope::SelectedClasses
-        );
+    const bool showClassList =
+        selectedScope() == RosterTemplatePrintService::Scope::SelectedClasses;
+    const int currentWidth =
+        width();
+
+    m_classList->setVisible(showClassList);
+    m_classList->setEnabled(showClassList);
+
+    if (QWidget* parent = m_classList->parentWidget())
+    {
+        if (QLayout* parentLayout = parent->layout())
+        {
+            parentLayout->invalidate();
+            parentLayout->activate();
+        }
+    }
+
+    if (QLayout* rootLayout = layout())
+    {
+        rootLayout->invalidate();
+        rootLayout->activate();
+    }
+
+    if (showClassList)
+    {
+        resize(
+            currentWidth,
+            qMax(height(), DialogExpandedHeight)
+            );
+    }
+    else
+    {
+        adjustSize();
+    }
 }
 
 void RosterPrintDialog::buildUi()
 {
     setModal(true);
-    resize(520, 420);
+    resize(DialogWidth, DialogExpandedHeight);
 
     auto* rootLayout =
         new QVBoxLayout(this);
@@ -152,7 +550,22 @@ void RosterPrintDialog::buildUi()
     m_classList =
         new QListWidget(scopeGroupBox);
     m_classList->setSelectionMode(QAbstractItemView::NoSelection);
-    scopeLayout->addWidget(m_classList, 1);
+    m_classList->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_classList->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_classList->setTextElideMode(Qt::ElideNone);
+    m_classList->setWordWrap(false);
+    m_classList->setMinimumWidth(0);
+    m_classList->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Expanding
+        );
+    m_classList->setItemDelegate(
+        new RosterClassListMarqueeDelegate(
+            m_classList,
+            m_classList
+            )
+        );
+    scopeLayout->addWidget(m_classList);
 
     auto* buttons =
         new QDialogButtonBox(
@@ -160,14 +573,14 @@ void RosterPrintDialog::buildUi()
             this
             );
 
-    rootLayout->addWidget(scopeGroupBox, 1);
+    rootLayout->addWidget(scopeGroupBox);
     rootLayout->addWidget(buttons);
 
     connect(
         m_scopeGroup,
         &QButtonGroup::idClicked,
         this,
-        &RosterPrintDialog::updateClassListEnabled
+        &RosterPrintDialog::updateClassListVisibility
         );
 
     connect(
@@ -197,11 +610,36 @@ void RosterPrintDialog::loadClasses()
 
     for (const Classroom& classroom : classes)
     {
+        const ClassInfo classInfo =
+            m_services->dataService()->loadClassInfo(
+                classroom.id
+                );
+
+        Teacher teacher;
+
+        if (classInfo.teacherId > 0)
+        {
+            teacher =
+                m_services->dataService()->getTeacher(
+                    classInfo.teacherId
+                    );
+        }
+
+        const QString displayName =
+            SidebarNodeNaming::formatClassDisplayName(
+                classInfo,
+                teacher
+                );
+
+        if (classroom.id == m_currentClassId)
+        {
+            m_currentClassDisplayName =
+                displayName;
+        }
+
         auto* item =
             new QListWidgetItem(
-                classroom.name.trimmed().isEmpty()
-                    ? tr("Class %1").arg(classroom.id)
-                    : classroom.name.trimmed(),
+                displayName,
                 m_classList
                 );
 
@@ -226,17 +664,21 @@ void RosterPrintDialog::retranslateUi()
     {
         if (auto* button = m_scopeGroup->button(AllClassesId))
         {
-            button->setText(tr("All classes"));
+            button->setText(tr("All Classes"));
         }
 
         if (auto* button = m_scopeGroup->button(CurrentClassId))
         {
-            button->setText(tr("Current class"));
+            button->setText(
+                m_currentClassDisplayName.trimmed().isEmpty()
+                    ? tr("Current Class")
+                    : tr("Current Class (%1)").arg(m_currentClassDisplayName)
+                );
         }
 
         if (auto* button = m_scopeGroup->button(SelectedClassesId))
         {
-            button->setText(tr("Selected classes"));
+            button->setText(tr("Selected Classes"));
         }
     }
 
