@@ -822,7 +822,8 @@ void MyInfoRostersPage::printRosters()
         m_services,
         m_classroom.id,
         dialog.selectedScope(),
-        dialog.selectedClassIds()
+        dialog.selectedClassIds(),
+        dialog.selectedTemplateId()
     };
 
     RosterTemplatePrintService::Result result;

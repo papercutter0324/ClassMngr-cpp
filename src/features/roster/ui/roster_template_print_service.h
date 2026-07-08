@@ -5,6 +5,10 @@
 #include "domain/models/roster.h"
 
 #include <QList>
+#include <QImage>
+#include <QPageLayout>
+#include <QPageSize>
+#include <QSize>
 #include <QString>
 
 class ApplicationServices;
@@ -27,6 +31,12 @@ enum class Scope
     SelectedClasses
 };
 
+enum class TemplateId
+{
+    ByDay,
+    ClassRegister
+};
+
 struct Result
 {
     Status status = Status::Failed;
@@ -40,6 +50,7 @@ struct Request
     int currentClassId = -1;
     Scope scope = Scope::AllClasses;
     QList<int> selectedClassIds;
+    TemplateId templateId = TemplateId::ByDay;
 };
 
 struct RosterCellValue
@@ -69,9 +80,41 @@ QList<RosterCellValue> buildByDayCellValues(
     QString* errorMessage = nullptr
     );
 
+QList<RosterCellValue> buildClassRegisterCellValues(
+    const QList<RosterClassData>& classes,
+    QString* errorMessage = nullptr
+    );
+
+QList<TemplateId> availableTemplateIds();
+
+QString templateDisplayName(
+    TemplateId templateId
+    );
+
+QPageLayout::Orientation templateOrientation(
+    TemplateId templateId
+    );
+
+QPageSize::PageSizeId templatePageSize(
+    TemplateId templateId
+    );
+
+QImage renderTemplatePreview(
+    TemplateId templateId,
+    const QSize& requestedSize
+    );
+
+QImage renderTemplatePreview(
+    const Request& request,
+    const QSize& requestedSize,
+    bool liveData,
+    QString* errorMessage = nullptr
+    );
+
 [[nodiscard]] Result saveRostersPdf(
     const QList<RosterClassData>& classes,
-    const QString& documentPath
+    const QString& documentPath,
+    TemplateId templateId = TemplateId::ByDay
     );
 
 [[nodiscard]] Result saveRostersPdf(

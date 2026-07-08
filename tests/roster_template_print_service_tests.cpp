@@ -134,6 +134,8 @@ constexpr qreal ColumnWidthInches = 0.6833;
 constexpr qreal TitleRowHeightInches = 0.3000;
 constexpr qreal NormalRowHeightInches = 0.2000;
 constexpr qreal SectionEndRowHeightInches = 0.2083;
+constexpr qreal RegisterHorizontalMarginInches = 0.3902;
+constexpr qreal RegisterVerticalMarginInches = 0.2298;
 constexpr qreal BorderWidthPoints = 2.0;
 constexpr int RowCount = 33;
 constexpr int ColumnCount = 13;
@@ -142,6 +144,31 @@ constexpr int TeacherRoomRow = 4;
 constexpr int FirstStudentRow = 5;
 constexpr int LastStudentRow = 29;
 constexpr int WifiRow = 30;
+constexpr int RegisterTimeRowTop = 2;
+constexpr int RegisterWifiRowBottom = 29;
+constexpr int RegisterFirstStudentRowBottom = 32;
+constexpr int RegisterFirstStudentRowTop = 6;
+constexpr int RegisterLastStudentRowTop = 27;
+constexpr int RegisterNameHeaderRowTop = 5;
+constexpr int RegisterRowCount = 53;
+
+const QList<qreal> RegisterColumnWidthInches{
+    0.2340,
+    0.3833,
+    0.6173,
+    0.6173,
+    0.6173,
+    0.2645,
+    0.3527,
+    0.6173,
+    0.6173,
+    0.6180,
+    0.2319,
+    0.3854,
+    0.6173,
+    0.6173,
+    0.6180
+};
 
 RosterTemplatePrintService::RosterClassData sampleRosterClass(
     int classId,
@@ -219,7 +246,9 @@ bool hasCellValue(
 QString savePdf(
     QTemporaryDir& temporaryDirectory,
     const QList<RosterTemplatePrintService::RosterClassData>& classes,
-    const QString& fileName
+    const QString& fileName,
+    RosterTemplatePrintService::TemplateId templateId =
+        RosterTemplatePrintService::TemplateId::ByDay
     )
 {
     const QString path =
@@ -227,7 +256,8 @@ QString savePdf(
     const RosterTemplatePrintService::Result result =
         RosterTemplatePrintService::saveRostersPdf(
             classes,
-            path
+            path,
+            templateId
             );
 
     return result.status == RosterTemplatePrintService::Status::Sent
@@ -576,6 +606,162 @@ bool colorNear(
         && std::abs(color.green() - expected.green()) <= tolerance
         && std::abs(color.blue() - expected.blue()) <= tolerance;
 }
+
+qreal registerTableWidth()
+{
+    qreal width = 0.0;
+
+    for (qreal inches : RegisterColumnWidthInches)
+    {
+        width += inches * RenderDpi;
+    }
+
+    return width;
+}
+
+QRectF registerTableRect(
+    const QImage& image
+    )
+{
+    const qreal horizontalMargin =
+        RegisterHorizontalMarginInches * RenderDpi;
+    const qreal verticalMargin =
+        RegisterVerticalMarginInches * RenderDpi;
+    const qreal tableWidth =
+        registerTableWidth();
+    const qreal contentWidth =
+        image.width() - (2.0 * horizontalMargin);
+
+    return QRectF(
+        horizontalMargin + ((contentWidth - tableWidth) / 2.0),
+        verticalMargin,
+        tableWidth,
+        image.height() - (2.0 * verticalMargin)
+        );
+}
+
+bool isAutoRegisterRow(
+    int row
+    )
+{
+    return row == 3
+        || row == 4
+        || row == 5
+        || row == 28
+        || row == 29
+        || row == 30
+        || row == 31;
+}
+
+qreal registerExplicitRowHeight(
+    int row
+    )
+{
+    if (row == 1)
+    {
+        return 0.2798 * RenderDpi;
+    }
+
+    if (row == RegisterTimeRowTop)
+    {
+        return 0.0715 * RenderDpi;
+    }
+
+    if (row == 8)
+    {
+        return 0.2111 * RenderDpi;
+    }
+
+    return 0.2 * RenderDpi;
+}
+
+qreal registerRowHeight(
+    const QImage& image,
+    int row
+    )
+{
+    if (!isAutoRegisterRow(row))
+    {
+        return registerExplicitRowHeight(row);
+    }
+
+    qreal explicitHeight = 0.0;
+    int autoRowCount = 0;
+
+    for (int index = 1; index <= RegisterRowCount; ++index)
+    {
+        if (isAutoRegisterRow(index))
+        {
+            ++autoRowCount;
+        }
+        else
+        {
+            explicitHeight += registerExplicitRowHeight(index);
+        }
+    }
+
+    return (
+        registerTableRect(image).height()
+        - explicitHeight
+        )
+        / autoRowCount;
+}
+
+qreal registerRowTop(
+    const QImage& image,
+    int row
+    )
+{
+    qreal top =
+        registerTableRect(image).top();
+
+    for (int index = 1; index < row; ++index)
+    {
+        top += registerRowHeight(
+            image,
+            index
+            );
+    }
+
+    return top;
+}
+
+qreal registerColumnLeft(
+    const QImage& image,
+    int column
+    )
+{
+    qreal left =
+        registerTableRect(image).left();
+
+    for (int index = 1; index < column; ++index)
+    {
+        left += RegisterColumnWidthInches.at(index - 1) * RenderDpi;
+    }
+
+    return left;
+}
+
+QPoint registerCellInteriorPoint(
+    const QImage& image,
+    int row,
+    int column,
+    int columnSpan = 1,
+    qreal xFraction = 0.5,
+    qreal yFraction = 0.5
+    )
+{
+    qreal width = 0.0;
+    for (int index = 0; index < columnSpan; ++index)
+    {
+        width += RegisterColumnWidthInches.at(column + index - 1) * RenderDpi;
+    }
+
+    return QPoint(
+        qRound(registerColumnLeft(image, column) + (width * xFraction)),
+        qRound(registerRowTop(image, row) + (registerRowHeight(image, row) * yFraction))
+        );
+}
 }
 
 class RosterTemplatePrintServiceTests : public QObject
@@ -593,6 +779,11 @@ private slots:
     void buildByDayCellValuesRejectsDuplicateSlots();
     void generatedPdfUsesA4LandscapeAndFilledWeekdayPages();
     void generatedPdfStaysInsideHalfInchMarginsAndKeepsEmptyCells();
+    void buildClassRegisterCellValuesMapsClassToTimeBlock();
+    void buildClassRegisterCellValuesWritesTwentyTwoStudentRows();
+    void buildClassRegisterCellValuesRejectsDuplicateSlots();
+    void requestSaveRostersPdfUsesSelectedTemplate();
+    void classRegisterPdfUsesA4PortraitAndStaysInsideMargins();
 };
 
 void RosterTemplatePrintServiceTests::resolveClassIdsUsesRequestedScope()
@@ -971,6 +1162,233 @@ void RosterTemplatePrintServiceTests::
                 cellInteriorPoint(image, WifiRow, 4, 2)
                 ),
             QColor(QStringLiteral("#DCE6F1"))
+            )
+        );
+}
+
+void RosterTemplatePrintServiceTests::
+    buildClassRegisterCellValuesMapsClassToTimeBlock()
+{
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildClassRegisterCellValues(
+            {
+                sampleRosterClass(
+                    1,
+                    QStringLiteral("Monday"),
+                    QStringLiteral("7:00 PM")
+                    )
+            },
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), 28, 3, QStringLiteral("E4 Hercules")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), 28, 4, QStringLiteral("Emma")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), 28, 5, QStringLiteral("506")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), RegisterWifiRowBottom, 1, QStringLiteral("DYB")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), RegisterFirstStudentRowBottom, 2, QStringLiteral("Lily")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), RegisterFirstStudentRowBottom, 4, QStringLiteral("Lily KR")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildClassRegisterCellValuesWritesTwentyTwoStudentRows()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    data.roster.rows.clear();
+
+    for (int index = 1; index <= 23; ++index)
+    {
+        data.roster.rows.append(
+            {
+                QStringLiteral("Student %1").arg(index),
+                QStringLiteral("Korean %1").arg(index)
+            }
+            );
+    }
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildClassRegisterCellValues(
+            {data},
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), RegisterFirstStudentRowTop, 2, QStringLiteral("Student 1")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), RegisterLastStudentRowTop, 2, QStringLiteral("Student 22")));
+    QVERIFY(!hasCellValue(values, QStringLiteral("Monday"), RegisterLastStudentRowTop + 1, 2, QStringLiteral("Student 23")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildClassRegisterCellValuesRejectsDuplicateSlots()
+{
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildClassRegisterCellValues(
+            {
+                sampleRosterClass(1, QStringLiteral("Monday"), QStringLiteral("8:00 PM")),
+                sampleRosterClass(2, QStringLiteral("Monday"), QStringLiteral("8:30 PM"))
+            },
+            &error
+            );
+
+    QVERIFY(values.isEmpty());
+    QVERIFY(error.contains(QStringLiteral("Multiple selected classes")));
+}
+
+void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasDataService = true;
+
+    const RosterTemplatePrintService::RosterClassData selectedClass =
+        sampleRosterClass(
+            20,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+
+    g_classes = {
+        selectedClass.classroom
+    };
+    g_classInfo.insert(
+        selectedClass.classroom.id,
+        selectedClass.info
+        );
+    g_rosters.insert(
+        selectedClass.classroom.id,
+        selectedClass.roster
+        );
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("class-register.pdf"));
+
+    RosterTemplatePrintService::Request request;
+    request.services =
+        fakeApplicationServices();
+    request.currentClassId =
+        selectedClass.classroom.id;
+    request.scope =
+        RosterTemplatePrintService::Scope::CurrentClass;
+    request.templateId =
+        RosterTemplatePrintService::TemplateId::ClassRegister;
+
+    const RosterTemplatePrintService::Result result =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            path
+            );
+
+    QCOMPARE(result.status, RosterTemplatePrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(
+        document,
+        path,
+        1
+        );
+
+    const QSizeF a4Points =
+        QPageSize(QPageSize::A4).size(
+            QPageSize::Point
+            );
+    const QSizeF pageSize =
+        document.pagePointSize(0);
+
+    QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
+    QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+}
+
+void RosterTemplatePrintServiceTests::
+    classRegisterPdfUsesA4PortraitAndStaysInsideMargins()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString path =
+        savePdf(
+            temporaryDirectory,
+            {
+                sampleRosterClass(1, QStringLiteral("Monday"), QStringLiteral("4:00 PM")),
+                sampleRosterClass(2, QStringLiteral("Monday"), QStringLiteral("9:00 PM"))
+            },
+            QStringLiteral("class-register.pdf"),
+            RosterTemplatePrintService::TemplateId::ClassRegister
+            );
+    QVERIFY(!path.isEmpty());
+
+    QPdfDocument document;
+    loadDocument(
+        document,
+        path,
+        1
+        );
+
+    const QSizeF a4Points =
+        QPageSize(QPageSize::A4).size(
+            QPageSize::Point
+            );
+    const QSizeF pageSize =
+        document.pagePointSize(0);
+
+    QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
+    QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+
+    const QImage image =
+        renderPage(document);
+    QVERIFY(!image.isNull());
+
+    const QRect bounds =
+        nonWhiteBounds(image);
+    QVERIFY(!bounds.isNull());
+
+    const QRectF tableRect =
+        registerTableRect(image);
+    constexpr int TolerancePixels = 8;
+
+    QVERIFY(std::abs(bounds.left() - qRound(tableRect.left())) <= TolerancePixels);
+    QVERIFY(std::abs(bounds.top() - qRound(tableRect.top())) <= TolerancePixels);
+    QVERIFY(std::abs(bounds.right() - qRound(tableRect.right())) <= TolerancePixels);
+    QVERIFY(std::abs(bounds.bottom() - qRound(tableRect.bottom())) <= TolerancePixels);
+
+    QVERIFY(
+        colorNear(
+            image.pixelColor(
+                registerCellInteriorPoint(
+                    image,
+                    RegisterNameHeaderRowTop,
+                    1,
+                    3,
+                    0.08,
+                    0.25
+                    )
+                ),
+            QColor(QStringLiteral("#D9D9D9"))
+            )
+        );
+    QVERIFY(
+        colorNear(
+            image.pixelColor(
+                registerCellInteriorPoint(
+                    image,
+                    RegisterFirstStudentRowTop + 5,
+                    2,
+                    2,
+                    0.08,
+                    0.25
+                    )
+                ),
+            Qt::white
             )
         );
 }

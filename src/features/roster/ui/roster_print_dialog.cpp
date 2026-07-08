@@ -5,18 +5,24 @@
 #include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QApplication>
 #include <QButtonGroup>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFrame>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLayout>
+#include <QLabel>
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPixmap>
 #include <QPersistentModelIndex>
 #include <QPushButton>
 #include <QRadioButton>
@@ -25,6 +31,7 @@
 #include <QStyledItemDelegate>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QVariant>
 
 namespace
 {
@@ -32,7 +39,8 @@ constexpr int AllClassesId = 0;
 constexpr int CurrentClassId = 1;
 constexpr int SelectedClassesId = 2;
 constexpr int DialogWidth = 520;
-constexpr int DialogExpandedHeight = 420;
+constexpr int DialogExpandedHeight = 620;
+constexpr int PreviewHeight = 190;
 
 class RosterClassListMarqueeDelegate : public QStyledItemDelegate
 {
@@ -453,6 +461,18 @@ RosterTemplatePrintService::Scope RosterPrintDialog::selectedScope() const
     }
 }
 
+RosterTemplatePrintService::TemplateId RosterPrintDialog::selectedTemplateId() const
+{
+    if (!m_templateCombo)
+    {
+        return RosterTemplatePrintService::TemplateId::ByDay;
+    }
+
+    return static_cast<RosterTemplatePrintService::TemplateId>(
+        m_templateCombo->currentData().toInt()
+        );
+}
+
 QList<int> RosterPrintDialog::selectedClassIds() const
 {
     QList<int> ids;
@@ -581,6 +601,87 @@ void RosterPrintDialog::updateClassListVisibility()
     {
         adjustSize();
     }
+
+    updatePreview();
+}
+
+void RosterPrintDialog::updatePreview()
+{
+    if (!m_previewLabel)
+    {
+        return;
+    }
+
+    const QSize previewSize(
+        qMax(
+            1,
+            m_previewLabel->width() - 16
+            ),
+        qMax(
+            1,
+            m_previewLabel->height() - 16
+            )
+        );
+    const bool livePreview =
+        m_livePreviewCheckBox
+        && m_livePreviewCheckBox->isChecked();
+
+    QImage preview;
+    QString errorMessage;
+
+    if (livePreview)
+    {
+        const RosterTemplatePrintService::Request request{
+            this,
+            m_services,
+            m_currentClassId,
+            selectedScope(),
+            selectedClassIds(),
+            selectedTemplateId()
+        };
+
+        preview =
+            RosterTemplatePrintService::renderTemplatePreview(
+                request,
+                previewSize,
+                true,
+                &errorMessage
+                );
+    }
+
+    if (preview.isNull())
+    {
+        preview =
+            RosterTemplatePrintService::renderTemplatePreview(
+                selectedTemplateId(),
+                previewSize
+                );
+    }
+
+    if (preview.isNull())
+    {
+        m_previewLabel->clear();
+    }
+    else
+    {
+        m_previewLabel->setPixmap(
+            QPixmap::fromImage(preview)
+            );
+    }
+
+    if (m_previewStatusLabel)
+    {
+        m_previewStatusLabel->setVisible(
+            livePreview
+            && !errorMessage.trimmed().isEmpty()
+            );
+        m_previewStatusLabel->setText(
+            errorMessage.trimmed().isEmpty()
+                ? QString()
+                : tr("Live preview unavailable.")
+            );
+        m_previewStatusLabel->setToolTip(errorMessage);
+    }
 }
 
 void RosterPrintDialog::buildUi()
@@ -591,6 +692,49 @@ void RosterPrintDialog::buildUi()
     auto* rootLayout =
         new QVBoxLayout(this);
     rootLayout->setSpacing(12);
+
+    auto* templateGroupBox =
+        new QGroupBox(this);
+    auto* templateLayout =
+        new QVBoxLayout(templateGroupBox);
+
+    m_templateCombo =
+        new NoWheelComboBox(templateGroupBox);
+    m_templateCombo->setObjectName(QStringLiteral("templateCombo"));
+
+    for (RosterTemplatePrintService::TemplateId templateId
+         : RosterTemplatePrintService::availableTemplateIds())
+    {
+        m_templateCombo->addItem(
+            RosterTemplatePrintService::templateDisplayName(templateId),
+            static_cast<int>(templateId)
+            );
+    }
+
+    m_previewLabel =
+        new QLabel(templateGroupBox);
+    m_previewLabel->setObjectName(QStringLiteral("templatePreview"));
+    m_previewLabel->setAlignment(Qt::AlignCenter);
+    m_previewLabel->setFrameShape(QFrame::StyledPanel);
+    m_previewLabel->setMinimumHeight(PreviewHeight);
+    m_previewLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+
+    m_livePreviewCheckBox =
+        new QCheckBox(templateGroupBox);
+    m_livePreviewCheckBox->setObjectName(QStringLiteral("livePreviewCheckBox"));
+
+    m_previewStatusLabel =
+        new QLabel(templateGroupBox);
+    m_previewStatusLabel->setObjectName(QStringLiteral("previewStatusLabel"));
+    m_previewStatusLabel->setVisible(false);
+
+    templateLayout->addWidget(m_templateCombo);
+    templateLayout->addWidget(m_previewLabel);
+    templateLayout->addWidget(m_livePreviewCheckBox);
+    templateLayout->addWidget(m_previewStatusLabel);
 
     auto* scopeGroupBox =
         new QGroupBox(this);
@@ -644,6 +788,13 @@ void RosterPrintDialog::buildUi()
         );
     scopeLayout->addWidget(m_classList);
 
+    connect(
+        m_classList,
+        &QListWidget::itemChanged,
+        this,
+        &RosterPrintDialog::updatePreview
+        );
+
     auto* buttonLayout =
         new QHBoxLayout();
     buttonLayout->setContentsMargins(
@@ -675,8 +826,23 @@ void RosterPrintDialog::buildUi()
     buttonLayout->addWidget(saveAsButton);
     buttonLayout->addWidget(printButton);
 
+    rootLayout->addWidget(templateGroupBox);
     rootLayout->addWidget(scopeGroupBox);
     rootLayout->addLayout(buttonLayout);
+
+    connect(
+        m_templateCombo,
+        &QComboBox::currentIndexChanged,
+        this,
+        &RosterPrintDialog::updatePreview
+        );
+
+    connect(
+        m_livePreviewCheckBox,
+        &QCheckBox::toggled,
+        this,
+        &RosterPrintDialog::updatePreview
+        );
 
     connect(
         m_scopeGroup,
@@ -769,6 +935,31 @@ void RosterPrintDialog::retranslateUi()
 {
     setWindowTitle(tr("Print Rosters"));
 
+    if (m_templateCombo)
+    {
+        if (auto* group = qobject_cast<QGroupBox*>(m_templateCombo->parentWidget()))
+        {
+            group->setTitle(tr("Template"));
+        }
+
+        for (int index = 0; index < m_templateCombo->count(); ++index)
+        {
+            const auto templateId =
+                static_cast<RosterTemplatePrintService::TemplateId>(
+                    m_templateCombo->itemData(index).toInt()
+                    );
+            m_templateCombo->setItemText(
+                index,
+                RosterTemplatePrintService::templateDisplayName(templateId)
+                );
+        }
+    }
+
+    if (m_livePreviewCheckBox)
+    {
+        m_livePreviewCheckBox->setText(tr("Live Preview"));
+    }
+
     if (m_scopeGroup)
     {
         if (auto* button = m_scopeGroup->button(AllClassesId))
@@ -798,4 +989,6 @@ void RosterPrintDialog::retranslateUi()
             group->setTitle(tr("Classes"));
         }
     }
+
+    updatePreview();
 }

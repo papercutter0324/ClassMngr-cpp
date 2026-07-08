@@ -8,6 +8,7 @@
 #include <QColor>
 #include <QFontMetricsF>
 #include <QHash>
+#include <QImage>
 #include <QMarginsF>
 #include <QObject>
 #include <QPageLayout>
@@ -51,6 +52,28 @@ constexpr qreal RosterPdfMarginInches = 0.5;
 constexpr int RosterPdfResolutionDpi = 300;
 constexpr QPageSize::PageSizeId RosterPdfPageSize = QPageSize::A4;
 
+constexpr qreal A4WidthInches = 8.268;
+constexpr qreal A4HeightInches = 11.693;
+
+constexpr int RegisterTimeRowTop = 2;
+constexpr int RegisterWifiRowTop = 3;
+constexpr int RegisterZoomRowTop = 4;
+constexpr int RegisterNameHeaderRowTop = 5;
+constexpr int RegisterFirstStudentRowTop = 6;
+constexpr int RegisterLastStudentRowTop = 27;
+constexpr int RegisterTimeRowBottom = 28;
+constexpr int RegisterWifiRowBottom = 29;
+constexpr int RegisterZoomRowBottom = 30;
+constexpr int RegisterNameHeaderRowBottom = 31;
+constexpr int RegisterFirstStudentRowBottom = 32;
+constexpr int RegisterLastStudentRowBottom = 53;
+constexpr int RegisterRowCount = 53;
+constexpr int RegisterColumnCount = 15;
+constexpr int RegisterMaxStudentsPerClass =
+    RegisterLastStudentRowTop - RegisterFirstStudentRowTop + 1;
+constexpr qreal RegisterMarginHorizontalInches = 0.3902;
+constexpr qreal RegisterMarginVerticalInches = 0.2298;
+
 const QStringList DaySheets{
     QStringLiteral("Monday"),
     QStringLiteral("Tuesday"),
@@ -61,6 +84,8 @@ const QStringList DaySheets{
 
 const QList<int> SlotColumns{2, 4, 6, 8, 10, 12};
 
+const QList<int> RegisterSlotStartColumns{1, 6, 11, 1, 6, 11};
+
 const QStringList TimeLabels{
     QStringLiteral("4pm"),
     QStringLiteral("5pm"),
@@ -69,6 +94,34 @@ const QStringList TimeLabels{
     QStringLiteral("8pm"),
     QStringLiteral("9pm")
 };
+
+const QList<qreal> RegisterColumnWidthInches{
+    0.2340,
+    0.3833,
+    0.6173,
+    0.6173,
+    0.6173,
+    0.2645,
+    0.3527,
+    0.6173,
+    0.6173,
+    0.6180,
+    0.2319,
+    0.3854,
+    0.6173,
+    0.6173,
+    0.6180
+};
+
+constexpr qreal RegisterBorderHeavyInches = 0.0312;
+constexpr qreal RegisterBorderMediumInches = 0.0208;
+constexpr qreal RegisterBorderInnerInches = 0.0104;
+constexpr qreal RegisterBorderThinInches = 0.0069;
+constexpr qreal RegisterBorderHairlineInches = 0.0034;
+constexpr qreal RegisterCellPaddingInches = 0.0201;
+
+const QColor RegisterHeaderTextColor(QStringLiteral("#0070C0"));
+const QColor RegisterHeaderFillColor(QStringLiteral("#D9D9D9"));
 
 struct RosterPdfPalette
 {
@@ -87,6 +140,14 @@ struct CellBorders
     bool right = false;
     bool bottom = false;
     bool left = false;
+};
+
+struct CellBorderWidths
+{
+    qreal top = 0.0;
+    qreal right = 0.0;
+    qreal bottom = 0.0;
+    qreal left = 0.0;
 };
 
 struct RosterPrintLayout
@@ -121,6 +182,21 @@ Result sent()
         Status::Sent,
         QObject::tr("Roster print job sent.")
     };
+}
+
+QString templateTitle(
+    TemplateId templateId
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        return QObject::tr("Class Register");
+
+    case TemplateId::ByDay:
+    default:
+        return QObject::tr("By Day");
+    }
 }
 
 int columnForStartTime(
@@ -258,6 +334,18 @@ QString teacherRoomLabel(
         : QStringLiteral("%1 (%2)").arg(teacher, room);
 }
 
+QString teacherLabel(
+    const ClassInfo& info
+    )
+{
+    const QString teacher =
+        info.teacherEn.trimmed();
+
+    return teacher.isEmpty()
+        ? info.teacherKr.trimmed()
+        : teacher;
+}
+
 void appendCellValue(
     QList<RosterCellValue>& values,
     const QString& day,
@@ -293,28 +381,118 @@ QString failedPdfMessage(
         : message;
 }
 
-QMarginsF rosterPdfMargins()
+QMarginsF rosterPdfMargins(
+    TemplateId templateId
+    )
 {
-    return QMarginsF(
-        0.0,
-        0.0,
-        0.0,
-        0.0
-        );
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        return QMarginsF(
+            0.0,
+            0.0,
+            0.0,
+            0.0
+            );
+
+    case TemplateId::ByDay:
+    default:
+        return QMarginsF(
+            0.0,
+            0.0,
+            0.0,
+            0.0
+            );
+    }
 }
 
-QPageLayout rosterPdfPageLayout()
+QPageLayout rosterPdfPageLayout(
+    TemplateId templateId
+    )
 {
     return QPageLayout(
-        QPageSize(RosterPdfPageSize),
-        QPageLayout::Landscape,
-        rosterPdfMargins(),
+        QPageSize(templatePageSize(templateId)),
+        templateOrientation(templateId),
+        rosterPdfMargins(templateId),
         QPageLayout::Inch
         );
 }
 
+int registerSlotIndexForStartTime(
+    const QString& startTime
+    )
+{
+    const int byDayColumn =
+        columnForStartTime(startTime);
+
+    if (byDayColumn < 0)
+    {
+        return -1;
+    }
+
+    return (byDayColumn - 2) / 2;
+}
+
+int registerSlotStartColumn(
+    int slotIndex
+    )
+{
+    if (slotIndex < 0 || slotIndex >= RegisterSlotStartColumns.size())
+    {
+        return -1;
+    }
+
+    return RegisterSlotStartColumns.at(slotIndex);
+}
+
+int registerTimeRow(
+    int slotIndex
+    )
+{
+    return slotIndex < 3
+        ? RegisterTimeRowTop
+        : RegisterTimeRowBottom;
+}
+
+int registerWifiRow(
+    int slotIndex
+    )
+{
+    return slotIndex < 3
+        ? RegisterWifiRowTop
+        : RegisterWifiRowBottom;
+}
+
+int registerZoomRow(
+    int slotIndex
+    )
+{
+    return slotIndex < 3
+        ? RegisterZoomRowTop
+        : RegisterZoomRowBottom;
+}
+
+int registerNameHeaderRow(
+    int slotIndex
+    )
+{
+    return slotIndex < 3
+        ? RegisterNameHeaderRowTop
+        : RegisterNameHeaderRowBottom;
+}
+
+int registerFirstStudentRow(
+    int slotIndex
+    )
+{
+    return slotIndex < 3
+        ? RegisterFirstStudentRowTop
+        : RegisterFirstStudentRowBottom;
+}
+
 bool configureRosterPdfWriter(
-    QPdfWriter& writer
+    QPdfWriter& writer,
+    TemplateId templateId
     )
 {
     writer.setCreator(
@@ -326,7 +504,7 @@ bool configureRosterPdfWriter(
     writer.setResolution(RosterPdfResolutionDpi);
 
     return writer.setPageLayout(
-        rosterPdfPageLayout()
+        rosterPdfPageLayout(templateId)
         );
 }
 
@@ -376,6 +554,55 @@ QRectF rosterPdfContentRect(
         -margin,
         -margin
         );
+}
+
+QRectF registerPdfContentRect(
+    const QRectF& pageRect,
+    int resolutionDpi
+    )
+{
+    const qreal horizontalMargin =
+        RegisterMarginHorizontalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+    const qreal verticalMargin =
+        RegisterMarginVerticalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+
+    return pageRect.adjusted(
+        horizontalMargin,
+        verticalMargin,
+        -horizontalMargin,
+        -verticalMargin
+        );
+}
+
+QRectF templateContentRect(
+    TemplateId templateId,
+    const QRectF& pageRect,
+    int resolutionDpi
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        return registerPdfContentRect(
+            pageRect,
+            resolutionDpi
+            );
+
+    case TemplateId::ByDay:
+    default:
+        return rosterPdfContentRect(
+            pageRect,
+            resolutionDpi
+            );
+    }
 }
 
 qreal columnWidth(
@@ -542,6 +769,142 @@ RosterPrintLayout rosterPrintLayout(
     return layout;
 }
 
+qreal registerBaseRowHeight(
+    int row,
+    int resolutionDpi
+    )
+{
+    qreal inches = 0.2000;
+
+    if (row == DayTitleRow)
+    {
+        inches = 0.2798;
+    }
+    else if (row == RegisterTimeRowTop)
+    {
+        inches = 0.0715;
+    }
+    else if (row == 8)
+    {
+        inches = 0.2111;
+    }
+
+    return inches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+}
+
+bool isAutoRegisterRow(
+    int row
+    )
+{
+    return row == RegisterWifiRowTop
+        || row == RegisterZoomRowTop
+        || row == RegisterNameHeaderRowTop
+        || row == RegisterTimeRowBottom
+        || row == RegisterWifiRowBottom
+        || row == RegisterZoomRowBottom
+        || row == RegisterNameHeaderRowBottom;
+}
+
+RosterPrintLayout registerPrintLayout(
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    RosterPrintLayout layout;
+    layout.columnWidths.reserve(RegisterColumnCount);
+    layout.rowHeights.reserve(RegisterRowCount);
+
+    qreal baseTableWidth = 0.0;
+    for (qreal inches : RegisterColumnWidthInches)
+    {
+        baseTableWidth +=
+            inches
+            * std::max(
+                1,
+                resolutionDpi
+                );
+    }
+
+    const qreal widthScale =
+        baseTableWidth > 0.0 && baseTableWidth > contentRect.width()
+            ? contentRect.width() / baseTableWidth
+            : 1.0;
+
+    for (qreal inches : RegisterColumnWidthInches)
+    {
+        layout.columnWidths.append(
+            inches
+            * std::max(
+                1,
+                resolutionDpi
+                )
+            * widthScale
+            );
+    }
+
+    qreal explicitTableHeight = 0.0;
+    int autoRowCount = 0;
+    for (int row = 1; row <= RegisterRowCount; ++row)
+    {
+        if (isAutoRegisterRow(row))
+        {
+            ++autoRowCount;
+            continue;
+        }
+
+        explicitTableHeight +=
+            registerBaseRowHeight(
+                row,
+                resolutionDpi
+                );
+    }
+
+    const qreal fallbackAutoRowHeight =
+        registerBaseRowHeight(
+            RegisterFirstStudentRowTop,
+            resolutionDpi
+            );
+    const qreal autoRowHeight =
+        autoRowCount > 0
+            ? std::max(
+                fallbackAutoRowHeight,
+                (contentRect.height() - explicitTableHeight) / autoRowCount
+                )
+            : fallbackAutoRowHeight;
+
+    for (int row = 1; row <= RegisterRowCount; ++row)
+    {
+        layout.rowHeights.append(
+            isAutoRegisterRow(row)
+                ? autoRowHeight
+                : registerBaseRowHeight(
+                    row,
+                    resolutionDpi
+                    )
+            );
+    }
+
+    return layout;
+}
+
+qreal layoutWidth(
+    const RosterPrintLayout& layout
+    )
+{
+    qreal width = 0.0;
+
+    for (qreal columnWidth : layout.columnWidths)
+    {
+        width += columnWidth;
+    }
+
+    return width;
+}
+
 QRectF sourceCellRect(
     int row,
     int column,
@@ -609,6 +972,24 @@ QFont printKoreanFont(
             qRound(pointSize * resolutionDpi / 72.0)
             )
         );
+    return font;
+}
+
+QFont printRegisterFont(
+    qreal pointSize,
+    int resolutionDpi,
+    int weight = QFont::Normal
+    )
+{
+    QFont font(QStringLiteral("Malgun Gothic"));
+    font.setWeight(static_cast<QFont::Weight>(weight));
+    font.setPixelSize(
+        std::max(
+            1,
+            qRound(pointSize * resolutionDpi / 72.0)
+            )
+        );
+
     return font;
 }
 
@@ -1146,6 +1527,618 @@ void paintRosterDay(
     painter.restore();
 }
 
+qreal registerBorderWidth(
+    qreal inches,
+    int resolutionDpi
+    )
+{
+    return std::max(
+        0.5,
+        inches
+        * std::max(
+            1,
+            resolutionDpi
+            )
+        );
+}
+
+CellBorderWidths registerBorders(
+    qreal top,
+    qreal right,
+    qreal bottom,
+    qreal left,
+    int resolutionDpi
+    )
+{
+    return {
+        registerBorderWidth(
+            top,
+            resolutionDpi
+            ),
+        registerBorderWidth(
+            right,
+            resolutionDpi
+            ),
+        registerBorderWidth(
+            bottom,
+            resolutionDpi
+            ),
+        registerBorderWidth(
+            left,
+            resolutionDpi
+            )
+    };
+}
+
+void drawRegisterLine(
+    QPainter& painter,
+    const QPointF& start,
+    const QPointF& end,
+    qreal width,
+    const QColor& color
+    )
+{
+    if (width <= 0.0)
+    {
+        return;
+    }
+
+    painter.setPen(
+        QPen(
+            color,
+            width,
+            Qt::SolidLine,
+            Qt::SquareCap,
+            Qt::MiterJoin
+            )
+        );
+    painter.drawLine(
+        start,
+        end
+        );
+}
+
+void drawRegisterCellBorders(
+    QPainter& painter,
+    const QRectF& rect,
+    const CellBorderWidths& borders,
+    const QColor& color
+    )
+{
+    drawRegisterLine(
+        painter,
+        QPointF(rect.left(), rect.top() + borders.top / 2.0),
+        QPointF(rect.right(), rect.top() + borders.top / 2.0),
+        borders.top,
+        color
+        );
+    drawRegisterLine(
+        painter,
+        QPointF(rect.right() - borders.right / 2.0, rect.top()),
+        QPointF(rect.right() - borders.right / 2.0, rect.bottom()),
+        borders.right,
+        color
+        );
+    drawRegisterLine(
+        painter,
+        QPointF(rect.left(), rect.bottom() - borders.bottom / 2.0),
+        QPointF(rect.right(), rect.bottom() - borders.bottom / 2.0),
+        borders.bottom,
+        color
+        );
+    drawRegisterLine(
+        painter,
+        QPointF(rect.left() + borders.left / 2.0, rect.top()),
+        QPointF(rect.left() + borders.left / 2.0, rect.bottom()),
+        borders.left,
+        color
+        );
+}
+
+void drawRegisterCell(
+    QPainter& painter,
+    const QRectF& rect,
+    const QString& text,
+    const QFont& font,
+    const QColor& fill,
+    const QColor& textColor,
+    const CellBorderWidths& borders,
+    int resolutionDpi,
+    int alignment = Qt::AlignCenter
+    )
+{
+    painter.save();
+    painter.fillRect(
+        rect,
+        fill
+        );
+    drawRegisterCellBorders(
+        painter,
+        rect,
+        borders,
+        Qt::black
+        );
+
+    if (!text.trimmed().isEmpty())
+    {
+        const qreal padding =
+            RegisterCellPaddingInches
+            * std::max(
+                1,
+                resolutionDpi
+                );
+        const QRectF textRect =
+            rect.adjusted(
+                padding,
+                0.0,
+                -padding,
+                0.0
+                );
+        QFont displayFont =
+            fittedFont(
+                text,
+                font,
+                textRect
+                );
+        QFontMetricsF metrics(displayFont);
+        QString displayText =
+            text;
+
+        if (metrics.horizontalAdvance(displayText) > textRect.width())
+        {
+            displayText =
+                metrics.elidedText(
+                    displayText,
+                    Qt::ElideRight,
+                    textRect.width()
+                    );
+        }
+
+        painter.setPen(textColor);
+        painter.setFont(displayFont);
+        painter.drawText(
+            textRect,
+            alignment,
+            displayText
+            );
+    }
+
+    painter.restore();
+}
+
+QString labelValue(
+    const QString& label,
+    const QString& value
+    )
+{
+    const QString trimmed =
+        value.trimmed();
+
+    return trimmed.isEmpty()
+        ? label
+        : QStringLiteral("%1 %2").arg(label, trimmed);
+}
+
+QString valueOrLabel(
+    const QString& label,
+    const QString& value
+    )
+{
+    const QString trimmed =
+        value.trimmed();
+
+    return trimmed.isEmpty()
+        ? label
+        : trimmed;
+}
+
+CellBorderWidths registerBlockBorders(
+    int columnOffset,
+    qreal top,
+    qreal bottom,
+    qreal firstInner,
+    qreal secondInner,
+    int resolutionDpi
+    )
+{
+    qreal left = firstInner;
+    qreal right = secondInner;
+
+    if (columnOffset == 0)
+    {
+        left =
+            RegisterBorderHeavyInches;
+    }
+
+    if (columnOffset == 4)
+    {
+        right =
+            RegisterBorderHeavyInches;
+    }
+
+    return registerBorders(
+        top,
+        right,
+        bottom,
+        left,
+        resolutionDpi
+        );
+}
+
+void paintRegisterBlock(
+    QPainter& painter,
+    int slotIndex,
+    const QHash<QString, QString>& values,
+    const RosterPrintLayout& layout,
+    int resolutionDpi
+    )
+{
+    const RosterPdfPalette palette;
+    const int column =
+        registerSlotStartColumn(slotIndex);
+
+    if (column < 0)
+    {
+        return;
+    }
+
+    const int timeRow =
+        registerTimeRow(slotIndex);
+    const int wifiRow =
+        registerWifiRow(slotIndex);
+    const int zoomRow =
+        registerZoomRow(slotIndex);
+    const int nameHeaderRow =
+        registerNameHeaderRow(slotIndex);
+    const int firstStudentRow =
+        registerFirstStudentRow(slotIndex);
+
+    const QFont tinyLabelFont =
+        printRegisterFont(
+            8.0,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont labelFont =
+        printRegisterFont(
+            10.0,
+            resolutionDpi
+            );
+    const QFont bodyFont =
+        printRegisterFont(
+            8.0,
+            resolutionDpi
+            );
+
+    drawRegisterCell(
+        painter,
+        sourceCellRect(timeRow, column, 1, 2, layout),
+        TimeLabels.value(slotIndex),
+        tinyLabelFont,
+        palette.cellBackground,
+        RegisterHeaderTextColor,
+        registerBorders(
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(timeRow, column + 2, 1, 1, layout),
+        valueOrLabel(
+            QObject::tr("Level"),
+            cellValue(values, timeRow, column + 2)
+            ),
+        tinyLabelFont,
+        palette.cellBackground,
+        RegisterHeaderTextColor,
+        registerBlockBorders(
+            2,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(timeRow, column + 3, 1, 1, layout),
+        valueOrLabel(
+            QObject::tr("KT"),
+            cellValue(values, timeRow, column + 3)
+            ),
+        tinyLabelFont,
+        palette.cellBackground,
+        RegisterHeaderTextColor,
+        registerBlockBorders(
+            3,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(timeRow, column + 4, 1, 1, layout),
+        valueOrLabel(
+            QObject::tr("Room"),
+            cellValue(values, timeRow, column + 4)
+            ),
+        tinyLabelFont,
+        palette.cellBackground,
+        RegisterHeaderTextColor,
+        registerBorders(
+            RegisterBorderHeavyInches,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+
+    drawRegisterCell(
+        painter,
+        sourceCellRect(wifiRow, column, 1, 3, layout),
+        labelValue(
+            QObject::tr("Wifi:"),
+            cellValue(values, wifiRow, column)
+            ),
+        labelFont,
+        palette.cellBackground,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            resolutionDpi
+            ),
+        resolutionDpi,
+        Qt::AlignVCenter | Qt::AlignLeft
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(wifiRow, column + 3, 1, 2, layout),
+        labelValue(
+            QObject::tr("PW:"),
+            cellValue(values, wifiRow, column + 3)
+            ),
+        labelFont,
+        palette.cellBackground,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            resolutionDpi
+            ),
+        resolutionDpi,
+        Qt::AlignVCenter | Qt::AlignLeft
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(zoomRow, column, 1, 3, layout),
+        labelValue(
+            QObject::tr("Zoom:"),
+            cellValue(values, zoomRow, column)
+            ),
+        labelFont,
+        palette.cellBackground,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            resolutionDpi
+            ),
+        resolutionDpi,
+        Qt::AlignVCenter | Qt::AlignLeft
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(zoomRow, column + 3, 1, 2, layout),
+        labelValue(
+            QObject::tr("PW:"),
+            cellValue(values, zoomRow, column + 3)
+            ),
+        labelFont,
+        palette.cellBackground,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderMediumInches,
+            resolutionDpi
+            ),
+        resolutionDpi,
+        Qt::AlignVCenter | Qt::AlignLeft
+        );
+
+    drawRegisterCell(
+        painter,
+        sourceCellRect(nameHeaderRow, column, 1, 3, layout),
+        QObject::tr("English"),
+        labelFont,
+        RegisterHeaderFillColor,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderHairlineInches,
+            RegisterBorderHairlineInches,
+            RegisterBorderHeavyInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+    drawRegisterCell(
+        painter,
+        sourceCellRect(nameHeaderRow, column + 3, 1, 2, layout),
+        QObject::tr("Korean"),
+        labelFont,
+        RegisterHeaderFillColor,
+        palette.text,
+        registerBorders(
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            RegisterBorderHairlineInches,
+            RegisterBorderHairlineInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+
+    for (int studentIndex = 0; studentIndex < RegisterMaxStudentsPerClass; ++studentIndex)
+    {
+        const int row =
+            firstStudentRow + studentIndex;
+        const bool firstStudent =
+            studentIndex == 0;
+        const bool lastStudent =
+            studentIndex == RegisterMaxStudentsPerClass - 1;
+        const qreal topBorder =
+            firstStudent
+                ? RegisterBorderHairlineInches
+                : RegisterBorderThinInches;
+        const qreal bottomBorder =
+            lastStudent
+                ? RegisterBorderHeavyInches
+                : RegisterBorderThinInches;
+
+        drawRegisterCell(
+            painter,
+            sourceCellRect(row, column, 1, 1, layout),
+            QString::number(studentIndex + 1),
+            bodyFont,
+            palette.cellBackground,
+            palette.text,
+            registerBorders(
+                topBorder,
+                RegisterBorderHairlineInches,
+                bottomBorder,
+                RegisterBorderHeavyInches,
+                resolutionDpi
+                ),
+            resolutionDpi
+            );
+        drawRegisterCell(
+            painter,
+            sourceCellRect(row, column + 1, 1, 2, layout),
+            cellValue(values, row, column + 1),
+            bodyFont,
+            palette.cellBackground,
+            palette.text,
+            registerBorders(
+                topBorder,
+                RegisterBorderHairlineInches,
+                bottomBorder,
+                RegisterBorderHairlineInches,
+                resolutionDpi
+                ),
+            resolutionDpi
+            );
+        drawRegisterCell(
+            painter,
+            sourceCellRect(row, column + 3, 1, 2, layout),
+            cellValue(values, row, column + 3),
+            bodyFont,
+            palette.cellBackground,
+            palette.text,
+            registerBorders(
+                topBorder,
+                RegisterBorderHeavyInches,
+                bottomBorder,
+                RegisterBorderHairlineInches,
+                resolutionDpi
+                ),
+            resolutionDpi
+            );
+    }
+}
+
+void paintClassRegisterDay(
+    QPainter& painter,
+    const QString& day,
+    const QHash<QString, QString>& values,
+    const QRectF& pageRect,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    const RosterPdfPalette palette;
+    const RosterPrintLayout layout =
+        registerPrintLayout(
+            contentRect,
+            resolutionDpi
+            );
+    const qreal tableWidth =
+        layoutWidth(layout);
+    const QPointF tableOrigin(
+        contentRect.left()
+            + std::max(
+                0.0,
+                (contentRect.width() - tableWidth) / 2.0
+                ),
+        contentRect.top()
+        );
+
+    painter.fillRect(
+        pageRect,
+        palette.pageBackground
+        );
+
+    painter.save();
+    painter.translate(tableOrigin);
+
+    const QFont titleFont =
+        printRegisterFont(
+            10.0,
+            resolutionDpi
+            );
+
+    drawRegisterCell(
+        painter,
+        sourceCellRect(DayTitleRow, 1, 1, RegisterColumnCount, layout),
+        day.toUpper(),
+        titleFont,
+        palette.cellBackground,
+        palette.text,
+        registerBorders(
+            RegisterBorderHeavyInches,
+            RegisterBorderHeavyInches,
+            RegisterBorderMediumInches,
+            RegisterBorderHeavyInches,
+            resolutionDpi
+            ),
+        resolutionDpi
+        );
+
+    for (int slotIndex = 0; slotIndex < TimeLabels.size(); ++slotIndex)
+    {
+        paintRegisterBlock(
+            painter,
+            slotIndex,
+            values,
+            layout,
+            resolutionDpi
+            );
+    }
+
+    painter.restore();
+}
+
 QStringList daysWithValues(
     const QList<RosterCellValue>& values
     )
@@ -1247,7 +2240,301 @@ Result loadRosterClassesForRequest(
 
     return sent();
 }
+
+QList<RosterCellValue> buildTemplateCellValues(
+    TemplateId templateId,
+    const QList<RosterClassData>& classes,
+    QString* errorMessage
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        return buildClassRegisterCellValues(
+            classes,
+            errorMessage
+            );
+
+    case TemplateId::ByDay:
+    default:
+        return buildByDayCellValues(
+            classes,
+            errorMessage
+            );
+    }
+}
+
+void paintTemplateDay(
+    TemplateId templateId,
+    QPainter& painter,
+    const QString& day,
+    const QHash<QString, QString>& values,
+    const QRectF& pageRect,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        paintClassRegisterDay(
+            painter,
+            day,
+            values,
+            pageRect,
+            contentRect,
+            resolutionDpi
+            );
+        break;
+
+    case TemplateId::ByDay:
+    default:
+        paintRosterDay(
+            painter,
+            day,
+            values,
+            pageRect,
+            contentRect,
+            resolutionDpi
+            );
+        break;
+    }
+}
+
+QSize previewPagePixelSize(
+    TemplateId templateId,
+    const QSize& requestedSize
+    )
+{
+    const QSize fallbackSize(
+        420,
+        260
+        );
+    const QSize boundedSize =
+        requestedSize.isValid()
+            ? requestedSize
+            : fallbackSize;
+
+    const bool landscape =
+        templateOrientation(templateId) == QPageLayout::Landscape;
+    const qreal pageWidth =
+        landscape
+            ? A4HeightInches
+            : A4WidthInches;
+    const qreal pageHeight =
+        landscape
+            ? A4WidthInches
+            : A4HeightInches;
+    const qreal scale =
+        std::min(
+            boundedSize.width() / pageWidth,
+            boundedSize.height() / pageHeight
+            );
+
+    return QSize(
+        std::max(
+            1,
+            qRound(pageWidth * scale)
+            ),
+        std::max(
+            1,
+            qRound(pageHeight * scale)
+            )
+        );
+}
+
+QImage renderPreviewImage(
+    TemplateId templateId,
+    const QSize& requestedSize,
+    const QString& day,
+    const QHash<QString, QString>& values
+    )
+{
+    const QSize pageSize =
+        previewPagePixelSize(
+            templateId,
+            requestedSize
+            );
+    QImage image(
+        pageSize,
+        QImage::Format_ARGB32_Premultiplied
+        );
+    image.fill(Qt::white);
+
+    QPainter painter(&image);
+    painter.setRenderHint(
+        QPainter::Antialiasing,
+        false
+        );
+    painter.setRenderHint(
+        QPainter::TextAntialiasing,
+        true
+        );
+
+    const bool landscape =
+        templateOrientation(templateId) == QPageLayout::Landscape;
+    const qreal pageWidthInches =
+        landscape
+            ? A4HeightInches
+            : A4WidthInches;
+    const int resolutionDpi =
+        std::max(
+            1,
+            qRound(image.width() / pageWidthInches)
+            );
+    const QRectF pageRect(
+        0.0,
+        0.0,
+        image.width(),
+        image.height()
+        );
+    const QRectF contentRect =
+        templateContentRect(
+            templateId,
+            pageRect,
+            resolutionDpi
+            );
+
+    paintTemplateDay(
+        templateId,
+        painter,
+        day,
+        values,
+        pageRect,
+        contentRect,
+        resolutionDpi
+        );
+
+    painter.end();
+    return image;
+}
 } // namespace
+
+QList<TemplateId> availableTemplateIds()
+{
+    return {
+        TemplateId::ByDay,
+        TemplateId::ClassRegister
+    };
+}
+
+QString templateDisplayName(
+    TemplateId templateId
+    )
+{
+    return templateTitle(templateId);
+}
+
+QPageLayout::Orientation templateOrientation(
+    TemplateId templateId
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::ClassRegister:
+        return QPageLayout::Portrait;
+
+    case TemplateId::ByDay:
+    default:
+        return QPageLayout::Landscape;
+    }
+}
+
+QPageSize::PageSizeId templatePageSize(
+    TemplateId templateId
+    )
+{
+    Q_UNUSED(templateId);
+    return RosterPdfPageSize;
+}
+
+QImage renderTemplatePreview(
+    TemplateId templateId,
+    const QSize& requestedSize
+    )
+{
+    return renderPreviewImage(
+        templateId,
+        requestedSize,
+        DaySheets.first(),
+        {}
+        );
+}
+
+QImage renderTemplatePreview(
+    const Request& request,
+    const QSize& requestedSize,
+    bool liveData,
+    QString* errorMessage
+    )
+{
+    if (!liveData)
+    {
+        return renderTemplatePreview(
+            request.templateId,
+            requestedSize
+            );
+    }
+
+    QList<RosterClassData> rosterClasses;
+    const Result loadResult =
+        loadRosterClassesForRequest(
+            request,
+            &rosterClasses
+            );
+
+    if (loadResult.status != Status::Sent)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = loadResult.message;
+        }
+        return {};
+    }
+
+    QString valueError;
+    const QList<RosterCellValue> values =
+        buildTemplateCellValues(
+            request.templateId,
+            rosterClasses,
+            &valueError
+            );
+
+    if (!valueError.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = valueError;
+        }
+        return {};
+    }
+
+    const QStringList days =
+        daysWithValues(values);
+
+    if (days.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QObject::tr("No selected classes match this roster layout.");
+        }
+        return {};
+    }
+
+    const QString day =
+        days.first();
+
+    return renderPreviewImage(
+        request.templateId,
+        requestedSize,
+        day,
+        valuesForDay(
+            values,
+            day
+            )
+        );
+}
 
 QList<int> resolveClassIds(
     Scope scope,
@@ -1381,9 +2668,111 @@ QList<RosterCellValue> buildByDayCellValues(
     return values;
 }
 
+QList<RosterCellValue> buildClassRegisterCellValues(
+    const QList<RosterClassData>& classes,
+    QString* errorMessage
+    )
+{
+    QList<RosterCellValue> values;
+    QSet<QString> occupiedSlots;
+
+    for (const RosterClassData& data : classes)
+    {
+        const int englishColumn =
+            rosterColumnIndex(data.roster, QStringLiteral("English"));
+        const int koreanColumn =
+            rosterColumnIndex(data.roster, QStringLiteral("Korean"));
+
+        for (const ClassTime& time : data.info.classTimes)
+        {
+            const QString day =
+                time.day.trimmed();
+
+            if (!DaySheets.contains(day))
+            {
+                continue;
+            }
+
+            const int slotIndex =
+                registerSlotIndexForStartTime(time.startTime);
+
+            if (slotIndex < 0)
+            {
+                continue;
+            }
+
+            const QString slotKey =
+                day + QLatin1Char('|') + QString::number(slotIndex);
+
+            if (occupiedSlots.contains(slotKey))
+            {
+                if (errorMessage)
+                {
+                    *errorMessage =
+                        QObject::tr(
+                            "Multiple selected classes use the %1 %2 slot."
+                            )
+                            .arg(day, time.startTime);
+                }
+                return {};
+            }
+
+            occupiedSlots.insert(slotKey);
+
+            const int column =
+                registerSlotStartColumn(slotIndex);
+            const int timeRow =
+                registerTimeRow(slotIndex);
+            const int wifiRow =
+                registerWifiRow(slotIndex);
+            const int zoomRow =
+                registerZoomRow(slotIndex);
+            const int firstStudentRow =
+                registerFirstStudentRow(slotIndex);
+
+            appendCellValue(values, day, column + 2, timeRow, classLabel(data));
+            appendCellValue(values, day, column + 3, timeRow, teacherLabel(data.info));
+            appendCellValue(values, day, column + 4, timeRow, data.info.roomNumber);
+            appendCellValue(values, day, column, wifiRow, data.info.wifiName);
+            appendCellValue(values, day, column + 3, wifiRow, data.info.wifiPassword);
+            appendCellValue(values, day, column, zoomRow, data.info.zoomId);
+            appendCellValue(values, day, column + 3, zoomRow, data.info.zoomPassword);
+
+            int writtenStudentCount = 0;
+            for (const QStringList& row : data.roster.rows)
+            {
+                if (writtenStudentCount >= RegisterMaxStudentsPerClass)
+                {
+                    break;
+                }
+
+                const QString english =
+                    rosterCell(row, englishColumn);
+                const QString korean =
+                    rosterCell(row, koreanColumn);
+
+                if (english.isEmpty() && korean.isEmpty())
+                {
+                    continue;
+                }
+
+                const int outputRow =
+                    firstStudentRow + writtenStudentCount;
+
+                appendCellValue(values, day, column + 1, outputRow, english);
+                appendCellValue(values, day, column + 3, outputRow, korean);
+                ++writtenStudentCount;
+            }
+        }
+    }
+
+    return values;
+}
+
 Result saveRostersPdf(
     const QList<RosterClassData>& classes,
-    const QString& documentPath
+    const QString& documentPath,
+    TemplateId templateId
     )
 {
     if (documentPath.trimmed().isEmpty())
@@ -1395,7 +2784,8 @@ Result saveRostersPdf(
 
     QString errorMessage;
     const QList<RosterCellValue> values =
-        buildByDayCellValues(
+        buildTemplateCellValues(
+            templateId,
             classes,
             &errorMessage
             );
@@ -1416,7 +2806,10 @@ Result saveRostersPdf(
     }
 
     QPdfWriter writer(documentPath);
-    if (!configureRosterPdfWriter(writer))
+    if (!configureRosterPdfWriter(
+            writer,
+            templateId
+            ))
     {
         return failed(
             QObject::tr("Unable to configure the roster print file.")
@@ -1434,7 +2827,8 @@ Result saveRostersPdf(
     const QRectF pageRect =
         rosterPdfPageRect(writer);
     const QRectF contentRect =
-        rosterPdfContentRect(
+        templateContentRect(
+            templateId,
             pageRect,
             writer.resolution()
             );
@@ -1467,7 +2861,8 @@ Result saveRostersPdf(
 
         const QString& day =
             days.at(index);
-        paintRosterDay(
+        paintTemplateDay(
+            templateId,
             painter,
             day,
             valuesForDay(
@@ -1502,7 +2897,8 @@ Result saveRostersPdf(
     {
         return saveRostersPdf(
             QList<RosterClassData>(),
-            documentPath
+            documentPath,
+            request.templateId
             );
     }
 
@@ -1520,7 +2916,8 @@ Result saveRostersPdf(
 
     return saveRostersPdf(
         rosterClasses,
-        documentPath
+        documentPath,
+        request.templateId
         );
 }
 
@@ -1553,7 +2950,8 @@ Result printRosters(
         const Result saveResult =
             saveRostersPdf(
                 rosterClasses,
-                pdfPath
+                pdfPath,
+                request.templateId
                 );
 
         if (saveResult.status != Status::Sent)
@@ -1585,9 +2983,9 @@ Result printRosters(
                 pdfPath,
                 0,
                 QObject::tr("Print Rosters"),
-                QPageLayout::Landscape,
+                templateOrientation(request.templateId),
                 false,
-                RosterPdfPageSize,
+                templatePageSize(request.templateId),
                 true
             }
             );

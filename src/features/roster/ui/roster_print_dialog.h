@@ -7,6 +7,9 @@
 
 class ApplicationServices;
 class QButtonGroup;
+class QCheckBox;
+class QComboBox;
+class QLabel;
 class QListWidget;
 
 class RosterPrintDialog : public QDialog
@@ -30,12 +33,14 @@ public:
     Action selectedAction() const;
     QString selectedSavePath() const;
     RosterTemplatePrintService::Scope selectedScope() const;
+    RosterTemplatePrintService::TemplateId selectedTemplateId() const;
     QList<int> selectedClassIds() const;
 
 private slots:
     void acceptPrint();
     void chooseSavePath();
     void updateClassListVisibility();
+    void updatePreview();
 
 private:
     void buildUi();
@@ -50,6 +55,10 @@ private:
     Action m_selectedAction = Action::Print;
     QString m_selectedSavePath;
 
+    QComboBox* m_templateCombo = nullptr;
+    QCheckBox* m_livePreviewCheckBox = nullptr;
+    QLabel* m_previewLabel = nullptr;
+    QLabel* m_previewStatusLabel = nullptr;
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;
 };
