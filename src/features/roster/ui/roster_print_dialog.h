@@ -11,6 +11,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QListWidget;
+class QResizeEvent;
 
 class RosterPrintDialog : public QDialog
 {
@@ -35,6 +36,9 @@ public:
     RosterTemplatePrintService::Scope selectedScope() const;
     RosterTemplatePrintService::TemplateId selectedTemplateId() const;
     QList<int> selectedClassIds() const;
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private slots:
     void acceptPrint();

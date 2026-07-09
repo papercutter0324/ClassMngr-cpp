@@ -8,6 +8,7 @@
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QApplication>
+#include <QBoxLayout>
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
@@ -26,6 +27,7 @@
 #include <QPersistentModelIndex>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QResizeEvent>
 #include <QSizePolicy>
 #include <QStyle>
 #include <QStyledItemDelegate>
@@ -496,6 +498,18 @@ QList<int> RosterPrintDialog::selectedClassIds() const
     return ids;
 }
 
+void RosterPrintDialog::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QDialog::resizeEvent(event);
+    QTimer::singleShot(
+        0,
+        this,
+        &RosterPrintDialog::updatePreview
+        );
+}
+
 void RosterPrintDialog::acceptPrint()
 {
     m_selectedAction =
@@ -588,6 +602,25 @@ void RosterPrintDialog::updateClassListVisibility()
     {
         rootLayout->invalidate();
         rootLayout->activate();
+    }
+
+    if (auto* rootBox = static_cast<QBoxLayout*>(layout()))
+    {
+        if (m_previewLabel && m_previewLabel->parentWidget())
+        {
+            rootBox->setStretchFactor(
+                m_previewLabel->parentWidget(),
+                1
+                );
+        }
+
+        if (m_classList->parentWidget())
+        {
+            rootBox->setStretchFactor(
+                m_classList->parentWidget(),
+                showClassList ? 1 : 0
+                );
+        }
     }
 
     if (showClassList)
@@ -719,7 +752,7 @@ void RosterPrintDialog::buildUi()
     m_previewLabel->setMinimumHeight(PreviewHeight);
     m_previewLabel->setSizePolicy(
         QSizePolicy::Expanding,
-        QSizePolicy::Fixed
+        QSizePolicy::Expanding
         );
 
     m_livePreviewCheckBox =
@@ -732,7 +765,7 @@ void RosterPrintDialog::buildUi()
     m_previewStatusLabel->setVisible(false);
 
     templateLayout->addWidget(m_templateCombo);
-    templateLayout->addWidget(m_previewLabel);
+    templateLayout->addWidget(m_previewLabel, 1);
     templateLayout->addWidget(m_livePreviewCheckBox);
     templateLayout->addWidget(m_previewStatusLabel);
 
@@ -826,7 +859,7 @@ void RosterPrintDialog::buildUi()
     buttonLayout->addWidget(saveAsButton);
     buttonLayout->addWidget(printButton);
 
-    rootLayout->addWidget(templateGroupBox);
+    rootLayout->addWidget(templateGroupBox, 1);
     rootLayout->addWidget(scopeGroupBox);
     rootLayout->addLayout(buttonLayout);
 
