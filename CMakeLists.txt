@@ -801,6 +801,10 @@ if(BUILD_TESTING)
         tests/roster_model_tests.cpp
         src/domain/models/roster.cpp
         src/features/roster/ui/roster_model.cpp
+        src/features/roster/ui/roster_model_columns.cpp
+        src/features/roster/ui/roster_model_names.cpp
+        src/features/roster/ui/roster_model_rows.cpp
+        src/features/roster/ui/roster_model_validation.cpp
     )
 
     target_compile_features(ClassMngrRosterModelTests
