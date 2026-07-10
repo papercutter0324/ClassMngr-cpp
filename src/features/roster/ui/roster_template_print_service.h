@@ -34,7 +34,6 @@ enum class Scope
 enum class TemplateId
 {
     ByDay,
-    ClassRegister,
     Daily,
     PerClassWithExtraInfo
 };
@@ -81,11 +80,6 @@ QList<int> resolveClassIds(
     );
 
 QList<RosterCellValue> buildByDayCellValues(
-    const QList<RosterClassData>& classes,
-    QString* errorMessage = nullptr
-    );
-
-QList<RosterCellValue> buildClassRegisterCellValues(
     const QList<RosterClassData>& classes,
     QString* errorMessage = nullptr
     );
