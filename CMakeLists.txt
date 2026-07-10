@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
+if(POLICY CMP0219)
+    cmake_policy(SET CMP0219 NEW)
+endif()
 
 project(ClassMngr
     VERSION 0.6.0
@@ -123,6 +126,21 @@ configure_file(
 qt_standard_project_setup()
 
 option(CLASSMNGR_RUN_WINDEPLOYQT "Run windeployqt after building ClassMngr on Windows." OFF)
+
+set(CLASSMNGR_WINDEPLOYQT_ENV "")
+if(WIN32 AND MSVC)
+    set(CLASSMNGR_MSVC_INSTALL_DIR "")
+
+    if(DEFINED ENV{VCINSTALLDIR} AND NOT "$ENV{VCINSTALLDIR}" STREQUAL "")
+        file(TO_CMAKE_PATH "$ENV{VCINSTALLDIR}" CLASSMNGR_MSVC_INSTALL_DIR)
+    elseif(CMAKE_CXX_COMPILER MATCHES "/VC/Tools/MSVC/.*/bin/")
+        string(REGEX REPLACE "/VC/Tools/MSVC/.*$" "/VC/" CLASSMNGR_MSVC_INSTALL_DIR "${CMAKE_CXX_COMPILER}")
+    endif()
+
+    if(CLASSMNGR_MSVC_INSTALL_DIR)
+        list(APPEND CLASSMNGR_WINDEPLOYQT_ENV "VCINSTALLDIR=${CLASSMNGR_MSVC_INSTALL_DIR}")
+    endif()
+endif()
 
 set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
@@ -332,7 +350,9 @@ target_link_libraries(ClassMngr
 
 if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
     add_custom_command(TARGET ClassMngr POST_BUILD
-        COMMAND Qt6::windeployqt
+        COMMAND "${CMAKE_COMMAND}" -E env
+            ${CLASSMNGR_WINDEPLOYQT_ENV}
+            "$<TARGET_FILE:Qt6::windeployqt>"
             --qmldir "${PROJECT_SOURCE_DIR}/src/features/my_info/ui/qml"
             --dir "$<TARGET_FILE_DIR:ClassMngr>"
             "$<TARGET_FILE:ClassMngr>"
