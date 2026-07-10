@@ -155,6 +155,11 @@ constexpr int PerClassIndexColumn = 1;
 constexpr int PerClassEnglishColumn = 2;
 constexpr int PerClassKoreanColumn = 3;
 constexpr int PerClassFirstExtraColumn = 4;
+constexpr int PerClassStudentRowCount = 23;
+constexpr qreal PerClassInfoRowHeightInches = 0.2700;
+constexpr qreal PerClassInfoTableGapInches = 0.2500;
+constexpr qreal PerClassHeaderRowHeightInches = 0.2800;
+constexpr qreal PerClassStudentRowHeightInches = 0.2300;
 
 RosterTemplatePrintService::RosterClassData sampleRosterClass(
     int classId,
@@ -1602,6 +1607,25 @@ void RosterTemplatePrintServiceTests::
         5
         );
 
+    const int portraitNotesTopY =
+        qRound(
+            (MarginInches
+             + (4.0 * PerClassInfoRowHeightInches)
+             + PerClassInfoTableGapInches
+             + PerClassHeaderRowHeightInches
+             + (PerClassStudentRowCount * PerClassStudentRowHeightInches)
+             + PerClassInfoTableGapInches)
+            * RenderDpi
+            );
+    QVERIFY(
+        !isWhitePixel(
+            portraitImage.pixelColor(
+                qRound(4.0 * RenderDpi),
+                portraitNotesTopY
+                )
+            )
+        );
+
     const QString landscapePath =
         savePdf(
             temporaryDirectory,
@@ -1632,6 +1656,16 @@ void RosterTemplatePrintServiceTests::
 
     QVERIFY(std::abs(landscapeSize.width() - expectedLandscape.width()) < 1.0);
     QVERIFY(std::abs(landscapeSize.height() - expectedLandscape.height()) < 1.0);
+
+    const QImage landscapeImage = renderPage(landscapeDocument);
+    QVERIFY(
+        !isWhitePixel(
+            landscapeImage.pixelColor(
+                qRound(4.0 * RenderDpi),
+                qRound(MarginInches * RenderDpi)
+                )
+            )
+        );
 }
 
 QTEST_MAIN(RosterTemplatePrintServiceTests)

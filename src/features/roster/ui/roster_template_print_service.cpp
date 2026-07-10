@@ -2437,12 +2437,41 @@ void paintPerClassWithExtraInfoPage(
             PerClassInfoTableGapInches,
             resolutionDpi
             );
-    const QRectF notesRect(
-        notesLeft,
-        contentRect.top(),
-        std::max(0.0, contentRect.right() - notesLeft),
-        infoRowHeight * 4.0
-        );
+    const bool portraitLayout =
+        pageRect.height() > pageRect.width();
+    const qreal studentTableBottom =
+        tableTop
+        + perClassInches(
+            PerClassHeaderRowHeightInches
+            + (PerClassStudentRowHeightInches * PerClassStudentRowCount),
+            resolutionDpi
+            );
+    const QRectF notesRect =
+        portraitLayout
+            ? QRectF(
+                contentRect.left(),
+                studentTableBottom
+                    + perClassInches(
+                        PerClassInfoTableGapInches,
+                        resolutionDpi
+                        ),
+                contentRect.width(),
+                std::max(
+                    0.0,
+                    contentRect.bottom()
+                    - studentTableBottom
+                    - perClassInches(
+                        PerClassInfoTableGapInches,
+                        resolutionDpi
+                        )
+                    )
+                )
+            : QRectF(
+                notesLeft,
+                contentRect.top(),
+                std::max(0.0, contentRect.right() - notesLeft),
+                infoRowHeight * 4.0
+                );
 
     for (int row = 1; row <= 4; ++row)
     {

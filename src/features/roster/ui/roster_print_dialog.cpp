@@ -1049,6 +1049,7 @@ void RosterPrintDialog::buildUi()
     m_livePreviewCheckBox =
         new QCheckBox(templateGroupBox);
     m_livePreviewCheckBox->setObjectName(QStringLiteral("livePreviewCheckBox"));
+    m_livePreviewCheckBox->setChecked(true);
 
     m_previewStatusLabel =
         new QLabel(templateGroupBox);
