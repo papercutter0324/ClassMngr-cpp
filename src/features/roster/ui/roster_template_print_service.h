@@ -34,7 +34,9 @@ enum class Scope
 enum class TemplateId
 {
     ByDay,
-    ClassRegister
+    ClassRegister,
+    Daily,
+    PerClassWithExtraInfo
 };
 
 struct Result
@@ -51,6 +53,9 @@ struct Request
     Scope scope = Scope::AllClasses;
     QList<int> selectedClassIds;
     TemplateId templateId = TemplateId::ByDay;
+    QStringList selectedExtraColumns;
+    QPageLayout::Orientation perClassExtraInfoOrientation =
+        QPageLayout::Portrait;
 };
 
 struct RosterCellValue
@@ -85,6 +90,26 @@ QList<RosterCellValue> buildClassRegisterCellValues(
     QString* errorMessage = nullptr
     );
 
+QList<RosterCellValue> buildDailyCellValues(
+    const QList<RosterClassData>& classes,
+    QString* errorMessage = nullptr
+    );
+
+int perClassExtraInfoMaxExtraColumns(
+    QPageLayout::Orientation orientation
+    );
+
+QStringList availablePerClassExtraInfoColumns(
+    const QList<RosterClassData>& classes
+    );
+
+QList<RosterCellValue> buildPerClassExtraInfoCellValues(
+    const QList<RosterClassData>& classes,
+    const QStringList& selectedExtraColumns,
+    QPageLayout::Orientation orientation,
+    QString* errorMessage = nullptr
+    );
+
 QList<TemplateId> availableTemplateIds();
 
 QString templateDisplayName(
@@ -114,7 +139,10 @@ QImage renderTemplatePreview(
 [[nodiscard]] Result saveRostersPdf(
     const QList<RosterClassData>& classes,
     const QString& documentPath,
-    TemplateId templateId = TemplateId::ByDay
+    TemplateId templateId = TemplateId::ByDay,
+    const QStringList& selectedExtraColumns = {},
+    QPageLayout::Orientation perClassExtraInfoOrientation =
+        QPageLayout::Portrait
     );
 
 [[nodiscard]] Result saveRostersPdf(

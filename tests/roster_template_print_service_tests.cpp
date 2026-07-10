@@ -151,6 +151,18 @@ constexpr int RegisterFirstStudentRowTop = 6;
 constexpr int RegisterLastStudentRowTop = 27;
 constexpr int RegisterNameHeaderRowTop = 5;
 constexpr int RegisterRowCount = 53;
+constexpr int DailyFirstSectionRow = 3;
+constexpr int DailyRowsPerSection = 7;
+constexpr int DailyHeaderColumn = 1;
+constexpr int DailyFirstStudentColumn = 2;
+constexpr int DailyStudentColumnCount = 5;
+constexpr int DailyMaxStudentsPerClass = 25;
+constexpr int DailySectionsPerPage = 6;
+constexpr int PerClassHeaderRow = 5;
+constexpr int PerClassFirstStudentRow = 6;
+constexpr int PerClassEnglishColumn = 1;
+constexpr int PerClassKoreanColumn = 2;
+constexpr int PerClassFirstExtraColumn = 3;
 
 const QList<qreal> RegisterColumnWidthInches{
     0.2340,
@@ -243,12 +255,37 @@ bool hasCellValue(
     return false;
 }
 
+QString dailyPageKey(
+    const QString& day,
+    int pageIndex
+    )
+{
+    return pageIndex <= 0
+        ? day
+        : QStringLiteral("%1|%2")
+            .arg(day)
+            .arg(pageIndex);
+}
+
+QString perClassPageKey(
+    int pageIndex,
+    int classId
+    )
+{
+    return QStringLiteral("class|%1|%2")
+        .arg(pageIndex)
+        .arg(classId);
+}
+
 QString savePdf(
     QTemporaryDir& temporaryDirectory,
     const QList<RosterTemplatePrintService::RosterClassData>& classes,
     const QString& fileName,
     RosterTemplatePrintService::TemplateId templateId =
-        RosterTemplatePrintService::TemplateId::ByDay
+        RosterTemplatePrintService::TemplateId::ByDay,
+    const QStringList& selectedExtraColumns = {},
+    QPageLayout::Orientation perClassExtraInfoOrientation =
+        QPageLayout::Portrait
     )
 {
     const QString path =
@@ -257,7 +294,9 @@ QString savePdf(
         RosterTemplatePrintService::saveRostersPdf(
             classes,
             path,
-            templateId
+            templateId,
+            selectedExtraColumns,
+            perClassExtraInfoOrientation
             );
 
     return result.status == RosterTemplatePrintService::Status::Sent
@@ -769,6 +808,7 @@ class RosterTemplatePrintServiceTests : public QObject
     Q_OBJECT
 
 private slots:
+    void templateMetadataIncludesDailyTemplate();
     void resolveClassIdsUsesRequestedScope();
     void requestSaveRostersPdfRejectsEmptyPath();
     void requestSaveRostersPdfRejectsMissingDatabase();
@@ -782,9 +822,58 @@ private slots:
     void buildClassRegisterCellValuesMapsClassToTimeBlock();
     void buildClassRegisterCellValuesWritesTwentyTwoStudentRows();
     void buildClassRegisterCellValuesRejectsDuplicateSlots();
+    void buildDailyCellValuesMapsClassSectionsAndFallbackNames();
+    void buildDailyCellValuesWritesTwentyFiveStudentRows();
+    void buildDailyCellValuesOrdersByStartTimeAndAllowsDuplicateSlots();
+    void availablePerClassExtraInfoColumnsFiltersRequiredAndEvaluationColumns();
+    void buildPerClassExtraInfoCellValuesMapsSelectedColumnsAndMissingCells();
+    void buildPerClassExtraInfoCellValuesCapsColumnsByOrientation();
     void requestSaveRostersPdfUsesSelectedTemplate();
+    void dailyPdfUsesA4PortraitAndContinuesOverflowPages();
+    void perClassWithExtraInfoPdfHonorsPortraitAndLandscape();
     void classRegisterPdfUsesA4PortraitAndStaysInsideMargins();
 };
+
+void RosterTemplatePrintServiceTests::templateMetadataIncludesDailyTemplate()
+{
+    const QList<RosterTemplatePrintService::TemplateId> templates =
+        RosterTemplatePrintService::availableTemplateIds();
+
+    QVERIFY(
+        templates.contains(
+            RosterTemplatePrintService::TemplateId::Daily
+            )
+        );
+    QVERIFY(
+        templates.contains(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            )
+        );
+    QCOMPARE(
+        RosterTemplatePrintService::templateDisplayName(
+            RosterTemplatePrintService::TemplateId::Daily
+            ),
+        QStringLiteral("Daily")
+        );
+    QCOMPARE(
+        RosterTemplatePrintService::templateOrientation(
+            RosterTemplatePrintService::TemplateId::Daily
+            ),
+        QPageLayout::Portrait
+        );
+    QCOMPARE(
+        RosterTemplatePrintService::templateDisplayName(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            ),
+        QStringLiteral("Per Class with Extra Info")
+        );
+    QCOMPARE(
+        RosterTemplatePrintService::templateOrientation(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            ),
+        QPageLayout::Portrait
+        );
+}
 
 void RosterTemplatePrintServiceTests::resolveClassIdsUsesRequestedScope()
 {
@@ -1242,6 +1331,314 @@ void RosterTemplatePrintServiceTests::
     QVERIFY(error.contains(QStringLiteral("Multiple selected classes")));
 }
 
+void RosterTemplatePrintServiceTests::
+    buildDailyCellValuesMapsClassSectionsAndFallbackNames()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Friday"),
+            QStringLiteral("2:00 PM"),
+            QStringLiteral("M2"),
+            QStringLiteral("Tigris"),
+            QStringLiteral("Daniel"),
+            QStringLiteral("Teacher KR"),
+            QStringLiteral("407")
+            );
+    data.roster.rows = {
+        {
+            QStringLiteral("Yoongoo"),
+            QStringLiteral("Yoongoo KR")
+        },
+        {
+            QString(),
+            QStringLiteral("Minseo KR")
+        }
+    };
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildDailyCellValues(
+            {data},
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+
+    const QString expectedHeader =
+        QStringLiteral("M2 Tigris (2 p.m. / Daniel / Room 407 / Zoom: zoom");
+    bool headerFound = false;
+    for (const auto& value : values)
+    {
+        if (
+            value.day == QStringLiteral("Friday")
+            && value.row == DailyFirstSectionRow
+            && value.column == DailyHeaderColumn
+            && value.value.contains(expectedHeader)
+            && value.value.contains(QStringLiteral("PW zoom-pw"))
+            )
+        {
+            headerFound = true;
+            break;
+        }
+    }
+
+    QVERIFY(headerFound);
+    QVERIFY(hasCellValue(values, QStringLiteral("Friday"), DailyFirstSectionRow + 1, DailyFirstStudentColumn, QStringLiteral("Yoongoo")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Friday"), DailyFirstSectionRow + 1, DailyFirstStudentColumn + 1, QStringLiteral("Minseo KR")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildDailyCellValuesWritesTwentyFiveStudentRows()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    data.roster.rows.clear();
+
+    for (int index = 1; index <= DailyMaxStudentsPerClass + 1; ++index)
+    {
+        data.roster.rows.append(
+            {
+                QStringLiteral("Student %1").arg(index),
+                QStringLiteral("Korean %1").arg(index)
+            }
+            );
+    }
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildDailyCellValues(
+            {data},
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), DailyFirstSectionRow + 1, DailyFirstStudentColumn, QStringLiteral("Student 1")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Monday"), DailyFirstSectionRow + 5, DailyFirstStudentColumn + 4, QStringLiteral("Student 25")));
+    QVERIFY(!hasCellValue(values, QStringLiteral("Monday"), DailyFirstSectionRow + 6, DailyFirstStudentColumn, QStringLiteral("Student 26")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildDailyCellValuesOrdersByStartTimeAndAllowsDuplicateSlots()
+{
+    RosterTemplatePrintService::RosterClassData later =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("6:00 PM"),
+            QStringLiteral("E6"),
+            QStringLiteral("Poseidon")
+            );
+    RosterTemplatePrintService::RosterClassData earlier =
+        sampleRosterClass(
+            2,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("M2"),
+            QStringLiteral("Tigris")
+            );
+    RosterTemplatePrintService::RosterClassData sameSlot =
+        sampleRosterClass(
+            3,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena")
+            );
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildDailyCellValues(
+            {
+                later,
+                earlier,
+                sameSlot
+            },
+            &error
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow, DailyHeaderColumn, QStringLiteral("E5 Athena (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow + DailyRowsPerSection, DailyHeaderColumn, QStringLiteral("M2 Tigris (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+    QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow + (DailyRowsPerSection * 2), DailyHeaderColumn, QStringLiteral("E6 Poseidon (6 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+}
+
+void RosterTemplatePrintServiceTests::
+    availablePerClassExtraInfoColumnsFiltersRequiredAndEvaluationColumns()
+{
+    RosterTemplatePrintService::RosterClassData first =
+        sampleRosterClass(
+            1,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    first.roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Birthday"),
+        QStringLiteral("Fall"),
+        QStringLiteral("Phone")
+    };
+
+    RosterTemplatePrintService::RosterClassData second =
+        sampleRosterClass(
+            2,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("5:00 PM")
+            );
+    second.roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Phone"),
+        QStringLiteral("School"),
+        QStringLiteral("Speech Contest")
+    };
+
+    QCOMPARE(
+        RosterTemplatePrintService::availablePerClassExtraInfoColumns(
+            {
+                first,
+                second
+            }
+            ),
+        QStringList({
+            QStringLiteral("Birthday"),
+            QStringLiteral("Phone"),
+            QStringLiteral("School")
+        })
+        );
+}
+
+void RosterTemplatePrintServiceTests::
+    buildPerClassExtraInfoCellValuesMapsSelectedColumnsAndMissingCells()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            7,
+            QStringLiteral("Friday"),
+            QStringLiteral("8:00 PM"),
+            QStringLiteral("M3"),
+            QStringLiteral("Major"),
+            QStringLiteral("Hyewon"),
+            QString(),
+            QStringLiteral("414")
+            );
+    data.roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Birthday")
+    };
+    data.roster.rows = {
+        {
+            QStringLiteral("Kaelyn"),
+            QStringLiteral("Kaelyn KR"),
+            QStringLiteral("10/15")
+        }
+    };
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildPerClassExtraInfoCellValues(
+            {data},
+            {
+                QStringLiteral("Birthday"),
+                QStringLiteral("School"),
+                QStringLiteral("Fall")
+            },
+            QPageLayout::Portrait,
+            &error
+            );
+    const QString page =
+        perClassPageKey(
+            0,
+            data.classroom.id
+            );
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(values, page, 1, 1, QStringLiteral("Level")));
+    QVERIFY(hasCellValue(values, page, 1, 2, QStringLiteral("M3 Major")));
+    QVERIFY(hasCellValue(values, page, 1, 3, QStringLiteral("Room")));
+    QVERIFY(hasCellValue(values, page, 1, 4, QStringLiteral("414")));
+    QVERIFY(hasCellValue(values, page, 2, 1, QStringLiteral("Days/Times")));
+    QVERIFY(hasCellValue(values, page, 3, 1, QStringLiteral("Teacher")));
+    QVERIFY(hasCellValue(values, page, 4, 1, QStringLiteral("ZOOM")));
+    QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassEnglishColumn, QStringLiteral("English Name")));
+    QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassKoreanColumn, QStringLiteral("Korean Name")));
+    QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn, QStringLiteral("Birthday")));
+    QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn + 1, QStringLiteral("School")));
+    QVERIFY(!hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn + 2, QStringLiteral("Fall")));
+    QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassEnglishColumn, QStringLiteral("Kaelyn")));
+    QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassKoreanColumn, QStringLiteral("Kaelyn KR")));
+    QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassFirstExtraColumn, QStringLiteral("10/15")));
+    QVERIFY(!hasCellValue(values, page, PerClassFirstStudentRow, PerClassFirstExtraColumn + 1, QStringLiteral("10/15")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildPerClassExtraInfoCellValuesCapsColumnsByOrientation()
+{
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            8,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM")
+            );
+    data.roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("A"),
+        QStringLiteral("B"),
+        QStringLiteral("C"),
+        QStringLiteral("D"),
+        QStringLiteral("E"),
+        QStringLiteral("F"),
+        QStringLiteral("G")
+    };
+    const QStringList requested{
+        QStringLiteral("A"),
+        QStringLiteral("B"),
+        QStringLiteral("C"),
+        QStringLiteral("D"),
+        QStringLiteral("E"),
+        QStringLiteral("F"),
+        QStringLiteral("G")
+    };
+    const QString page =
+        perClassPageKey(
+            0,
+            data.classroom.id
+            );
+
+    const QList<RosterTemplatePrintService::RosterCellValue> portraitValues =
+        RosterTemplatePrintService::buildPerClassExtraInfoCellValues(
+            {data},
+            requested,
+            QPageLayout::Portrait
+            );
+    QVERIFY(hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 2, QStringLiteral("C")));
+    QVERIFY(!hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 3, QStringLiteral("D")));
+
+    const QList<RosterTemplatePrintService::RosterCellValue> landscapeValues =
+        RosterTemplatePrintService::buildPerClassExtraInfoCellValues(
+            {data},
+            requested,
+            QPageLayout::Landscape
+            );
+    QVERIFY(hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 5, QStringLiteral("F")));
+    QVERIFY(!hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 6, QStringLiteral("G")));
+    QCOMPARE(
+        RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(QPageLayout::Portrait),
+        3
+        );
+    QCOMPARE(
+        RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(QPageLayout::Landscape),
+        6
+        );
+}
+
 void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate()
 {
     resetServiceStubs();
@@ -1307,6 +1704,149 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
 
     QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
     QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+}
+
+void RosterTemplatePrintServiceTests::
+    dailyPdfUsesA4PortraitAndContinuesOverflowPages()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    QList<RosterTemplatePrintService::RosterClassData> classes;
+    for (int index = 1; index <= DailySectionsPerPage + 1; ++index)
+    {
+        classes.append(
+            sampleRosterClass(
+                index,
+                QStringLiteral("Monday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("E%1").arg(index),
+                QStringLiteral("Level")
+                )
+            );
+    }
+
+    const QString path =
+        savePdf(
+            temporaryDirectory,
+            classes,
+            QStringLiteral("daily.pdf"),
+            RosterTemplatePrintService::TemplateId::Daily
+            );
+    QVERIFY(!path.isEmpty());
+
+    QPdfDocument document;
+    loadDocument(
+        document,
+        path,
+        2
+        );
+
+    const QSizeF a4Points =
+        QPageSize(QPageSize::A4).size(
+            QPageSize::Point
+            );
+    const QSizeF pageSize =
+        document.pagePointSize(0);
+
+    QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
+    QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildDailyCellValues(
+            classes
+            );
+    QVERIFY(hasCellValue(values, dailyPageKey(QStringLiteral("Monday"), 1), DailyFirstSectionRow, DailyHeaderColumn, QStringLiteral("E7 Level (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+}
+
+void RosterTemplatePrintServiceTests::
+    perClassWithExtraInfoPdfHonorsPortraitAndLandscape()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::RosterClassData data =
+        sampleRosterClass(
+            11,
+            QStringLiteral("Friday"),
+            QStringLiteral("8:00 PM")
+            );
+    data.roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean"),
+        QStringLiteral("Birthday"),
+        QStringLiteral("Phone")
+    };
+    data.roster.rows = {
+        {
+            QStringLiteral("Kaelyn"),
+            QStringLiteral("Kaelyn KR"),
+            QStringLiteral("10/15"),
+            QStringLiteral("010")
+        }
+    };
+
+    const QString portraitPath =
+        savePdf(
+            temporaryDirectory,
+            {data},
+            QStringLiteral("per-class-portrait.pdf"),
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo,
+            {
+                QStringLiteral("Birthday"),
+                QStringLiteral("Phone")
+            },
+            QPageLayout::Portrait
+            );
+    QVERIFY(!portraitPath.isEmpty());
+
+    QPdfDocument portraitDocument;
+    loadDocument(
+        portraitDocument,
+        portraitPath,
+        1
+        );
+
+    const QSizeF a4Points =
+        QPageSize(QPageSize::A4).size(
+            QPageSize::Point
+            );
+    const QSizeF portraitSize =
+        portraitDocument.pagePointSize(0);
+
+    QVERIFY(std::abs(portraitSize.width() - a4Points.width()) < 1.0);
+    QVERIFY(std::abs(portraitSize.height() - a4Points.height()) < 1.0);
+
+    const QString landscapePath =
+        savePdf(
+            temporaryDirectory,
+            {data},
+            QStringLiteral("per-class-landscape.pdf"),
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo,
+            {
+                QStringLiteral("Birthday"),
+                QStringLiteral("Phone")
+            },
+            QPageLayout::Landscape
+            );
+    QVERIFY(!landscapePath.isEmpty());
+
+    QPdfDocument landscapeDocument;
+    loadDocument(
+        landscapeDocument,
+        landscapePath,
+        1
+        );
+
+    const QSizeF landscapeSize =
+        landscapeDocument.pagePointSize(0);
+    const QSizeF expectedLandscape(
+        a4Points.height(),
+        a4Points.width()
+        );
+
+    QVERIFY(std::abs(landscapeSize.width() - expectedLandscape.width()) < 1.0);
+    QVERIFY(std::abs(landscapeSize.height() - expectedLandscape.height()) < 1.0);
 }
 
 void RosterTemplatePrintServiceTests::

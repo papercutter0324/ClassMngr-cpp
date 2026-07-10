@@ -74,6 +74,49 @@ constexpr int RegisterMaxStudentsPerClass =
 constexpr qreal RegisterMarginHorizontalInches = 0.3902;
 constexpr qreal RegisterMarginVerticalInches = 0.2298;
 
+constexpr int DailyTitleRow = 1;
+constexpr int DailyFirstSectionRow = 3;
+constexpr int DailyRowsPerSection = 7;
+constexpr int DailyHeaderColumn = 1;
+constexpr int DailyFirstStudentColumn = 2;
+constexpr int DailyStudentColumnCount = 5;
+constexpr int DailyStudentRowCount = 5;
+constexpr int DailyMaxStudentsPerClass =
+    DailyStudentColumnCount * DailyStudentRowCount;
+constexpr int DailySectionsPerPage = 6;
+constexpr qreal DailyMarginHorizontalInches = 0.2200;
+constexpr qreal DailyMarginVerticalInches = 0.1800;
+constexpr qreal DailyTitleHeightInches = 0.4300;
+constexpr qreal DailyTitleGapInches = 0.2100;
+constexpr qreal DailyHeaderHeightInches = 0.3100;
+constexpr qreal DailyStudentRowHeightInches = 0.2400;
+constexpr qreal DailySectionGapInches = 0.2450;
+constexpr qreal DailyRowMarkerWidthInches = 0.2600;
+constexpr qreal DailyColumnGapInches = 0.1400;
+constexpr qreal DailyCheckboxWidthInches = 0.2450;
+constexpr qreal DailyCheckboxHeightInches = 0.1450;
+constexpr qreal DailyNameGapInches = 0.0650;
+constexpr char DailyPageKeySeparator = '|';
+
+constexpr int PerClassHeaderRow = 5;
+constexpr int PerClassFirstStudentRow = 6;
+constexpr int PerClassEnglishColumn = 1;
+constexpr int PerClassKoreanColumn = 2;
+constexpr int PerClassFirstExtraColumn = 3;
+constexpr int PerClassPortraitMaxExtraColumns = 3;
+constexpr int PerClassLandscapeMaxExtraColumns = 6;
+constexpr int PerClassStudentRowCount = 25;
+constexpr qreal PerClassMarginHorizontalInches = 0.7481;
+constexpr qreal PerClassMarginVerticalInches = 0.4000;
+constexpr qreal PerClassInfoRowHeightInches = 0.2700;
+constexpr qreal PerClassHeaderRowHeightInches = 0.3000;
+constexpr qreal PerClassStudentRowHeightInches = 0.2500;
+constexpr qreal PerClassNameColumnWidthInches = 1.4000;
+constexpr qreal PerClassExtraColumnWidthInches = 0.9700;
+constexpr qreal PerClassCellPaddingInches = 0.0350;
+constexpr qreal PerClassBorderWidthInches = 0.0060;
+constexpr char PerClassPageKeySeparator = '|';
+
 const QStringList DaySheets{
     QStringLiteral("Monday"),
     QStringLiteral("Tuesday"),
@@ -156,6 +199,13 @@ struct RosterPrintLayout
     QVector<qreal> rowHeights;
 };
 
+struct DailyClassSection
+{
+    RosterClassData data;
+    ClassTime time;
+    int inputIndex = 0;
+};
+
 Result failed(
     const QString& message
     )
@@ -190,6 +240,12 @@ QString templateTitle(
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        return QObject::tr("Per Class with Extra Info");
+
+    case TemplateId::Daily:
+        return QObject::tr("Daily");
+
     case TemplateId::ClassRegister:
         return QObject::tr("Class Register");
 
@@ -199,7 +255,7 @@ QString templateTitle(
     }
 }
 
-int columnForStartTime(
+QTime parsedStartTime(
     const QString& startTime
     )
 {
@@ -220,6 +276,96 @@ int columnForStartTime(
         time =
             QTime::fromString(trimmed, QStringLiteral("H:mm"));
     }
+
+    return time;
+}
+
+QString dailyPageKey(
+    const QString& day,
+    int pageIndex
+    )
+{
+    return pageIndex <= 0
+        ? day
+        : QStringLiteral("%1%2%3")
+            .arg(day)
+            .arg(QLatin1Char(DailyPageKeySeparator))
+            .arg(pageIndex);
+}
+
+QString baseDayName(
+    const QString& day
+    )
+{
+    const int separatorIndex =
+        day.indexOf(QLatin1Char(DailyPageKeySeparator));
+
+    return separatorIndex < 0
+        ? day
+        : day.left(separatorIndex);
+}
+
+int dailyPageIndex(
+    const QString& day
+    )
+{
+    const int separatorIndex =
+        day.indexOf(QLatin1Char(DailyPageKeySeparator));
+
+    if (separatorIndex < 0)
+    {
+        return 0;
+    }
+
+    bool ok = false;
+    const int pageIndex =
+        day.mid(separatorIndex + 1).toInt(&ok);
+
+    return ok
+        ? pageIndex
+        : 0;
+}
+
+QString dailyTimeLabel(
+    const QString& startTime
+    )
+{
+    const QTime time =
+        parsedStartTime(startTime);
+
+    if (!time.isValid())
+    {
+        return startTime.trimmed();
+    }
+
+    const int hour =
+        time.hour() % 12 == 0
+            ? 12
+            : time.hour() % 12;
+    const QString suffix =
+        time.hour() < 12
+            ? QStringLiteral("a.m.")
+            : QStringLiteral("p.m.");
+
+    if (time.minute() == 0)
+    {
+        return QStringLiteral("%1 %2")
+            .arg(hour)
+            .arg(suffix);
+    }
+
+    return QStringLiteral("%1:%2 %3")
+        .arg(hour)
+        .arg(time.minute(), 2, 10, QLatin1Char('0'))
+        .arg(suffix);
+}
+
+int columnForStartTime(
+    const QString& startTime
+    )
+{
+    const QTime time =
+        parsedStartTime(startTime);
 
     if (!time.isValid())
     {
@@ -346,6 +492,209 @@ QString teacherLabel(
         : teacher;
 }
 
+QString fallbackText(
+    const QString& fallback,
+    const QString& value
+    )
+{
+    const QString trimmed =
+        value.trimmed();
+
+    return trimmed.isEmpty()
+        ? fallback
+        : trimmed;
+}
+
+QString dailyClassHeader(
+    const RosterClassData& data,
+    const ClassTime& time
+    )
+{
+    const QString teacher =
+        fallbackText(
+            QStringLiteral("N/A"),
+            teacherLabel(data.info)
+            );
+    const QString room =
+        fallbackText(
+            QStringLiteral("N/A"),
+            data.info.roomNumber
+            );
+    const QString zoom =
+        fallbackText(
+            QStringLiteral("N/A"),
+            data.info.zoomId
+            );
+    const QString password =
+        data.info.zoomPassword.trimmed();
+
+    QString zoomLabel =
+        QStringLiteral("Zoom: %1")
+            .arg(zoom);
+
+    if (!password.isEmpty())
+    {
+        zoomLabel +=
+            QStringLiteral(" ")
+            + QString(QChar(0x2022))
+            + QStringLiteral(" PW %1")
+                .arg(password);
+    }
+
+    return QStringLiteral("%1 (%2 / %3 / Room %4 / %5)")
+        .arg(
+            classLabel(data),
+            dailyTimeLabel(time.startTime),
+            teacher,
+            room,
+            zoomLabel
+            );
+}
+
+QString dailyStudentName(
+    const QStringList& row,
+    int englishColumn,
+    int koreanColumn
+    )
+{
+    const QString english =
+        rosterCell(
+            row,
+            englishColumn
+            );
+
+    return english.isEmpty()
+        ? rosterCell(
+            row,
+            koreanColumn
+            )
+        : english;
+}
+
+QString perClassPageKey(
+    int pageIndex,
+    const RosterClassData& data
+    )
+{
+    return QStringLiteral("class%1%2%3")
+        .arg(QLatin1Char(PerClassPageKeySeparator))
+        .arg(pageIndex)
+        .arg(
+            data.classroom.id > 0
+                ? QStringLiteral("%1%2")
+                    .arg(QLatin1Char(PerClassPageKeySeparator))
+                    .arg(data.classroom.id)
+                : QString()
+            );
+}
+
+bool containsColumnName(
+    const QStringList& columns,
+    const QString& name
+    )
+{
+    for (const QString& column : columns)
+    {
+        if (column.compare(name, Qt::CaseInsensitive) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool isPerClassExtraInfoColumn(
+    const QString& name
+    )
+{
+    const QString trimmed =
+        name.trimmed();
+
+    return !trimmed.isEmpty()
+        && trimmed.compare(QStringLiteral("English"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Winter"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Speech Contest"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Summer"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) != 0
+        && trimmed.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) != 0;
+}
+
+QStringList limitedPerClassExtraColumns(
+    const QStringList& selectedExtraColumns,
+    QPageLayout::Orientation orientation
+    )
+{
+    QStringList columns;
+    const int maxColumns =
+        perClassExtraInfoMaxExtraColumns(orientation);
+
+    for (const QString& column : selectedExtraColumns)
+    {
+        const QString trimmed =
+            column.trimmed();
+
+        if (
+            !isPerClassExtraInfoColumn(trimmed)
+            || containsColumnName(columns, trimmed)
+            )
+        {
+            continue;
+        }
+
+        columns.append(trimmed);
+
+        if (columns.size() >= maxColumns)
+        {
+            break;
+        }
+    }
+
+    return columns;
+}
+
+QStringList perClassTimeLabels(
+    const QList<ClassTime>& classTimes
+    )
+{
+    QStringList labels;
+
+    for (const ClassTime& time : classTimes)
+    {
+        const QString day =
+            time.day.trimmed();
+        const QString timeLabel =
+            dailyTimeLabel(time.startTime);
+
+        if (day.isEmpty() && timeLabel.isEmpty())
+        {
+            continue;
+        }
+
+        if (day.isEmpty())
+        {
+            labels.append(timeLabel);
+        }
+        else if (timeLabel.isEmpty())
+        {
+            labels.append(day);
+        }
+        else
+        {
+            labels.append(
+                QStringLiteral("%1 - %2")
+                    .arg(
+                        day.left(3),
+                        timeLabel
+                        )
+                );
+        }
+    }
+
+    return labels;
+}
+
 void appendCellValue(
     QList<RosterCellValue>& values,
     const QString& day,
@@ -387,6 +736,22 @@ QMarginsF rosterPdfMargins(
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        return QMarginsF(
+            0.0,
+            0.0,
+            0.0,
+            0.0
+            );
+
+    case TemplateId::Daily:
+        return QMarginsF(
+            0.0,
+            0.0,
+            0.0,
+            0.0
+            );
+
     case TemplateId::ClassRegister:
         return QMarginsF(
             0.0,
@@ -407,14 +772,25 @@ QMarginsF rosterPdfMargins(
 }
 
 QPageLayout rosterPdfPageLayout(
-    TemplateId templateId
+    TemplateId templateId,
+    QPageLayout::Orientation orientation
     )
 {
     return QPageLayout(
         QPageSize(templatePageSize(templateId)),
-        templateOrientation(templateId),
+        orientation,
         rosterPdfMargins(templateId),
         QPageLayout::Inch
+        );
+}
+
+QPageLayout rosterPdfPageLayout(
+    TemplateId templateId
+    )
+{
+    return rosterPdfPageLayout(
+        templateId,
+        templateOrientation(templateId)
         );
 }
 
@@ -492,7 +868,8 @@ int registerFirstStudentRow(
 
 bool configureRosterPdfWriter(
     QPdfWriter& writer,
-    TemplateId templateId
+    TemplateId templateId,
+    QPageLayout::Orientation orientation
     )
 {
     writer.setCreator(
@@ -504,7 +881,22 @@ bool configureRosterPdfWriter(
     writer.setResolution(RosterPdfResolutionDpi);
 
     return writer.setPageLayout(
-        rosterPdfPageLayout(templateId)
+        rosterPdfPageLayout(
+            templateId,
+            orientation
+            )
+        );
+}
+
+bool configureRosterPdfWriter(
+    QPdfWriter& writer,
+    TemplateId templateId
+    )
+{
+    return configureRosterPdfWriter(
+        writer,
+        templateId,
+        templateOrientation(templateId)
         );
 }
 
@@ -582,6 +974,58 @@ QRectF registerPdfContentRect(
         );
 }
 
+QRectF dailyPdfContentRect(
+    const QRectF& pageRect,
+    int resolutionDpi
+    )
+{
+    const qreal horizontalMargin =
+        DailyMarginHorizontalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+    const qreal verticalMargin =
+        DailyMarginVerticalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+
+    return pageRect.adjusted(
+        horizontalMargin,
+        verticalMargin,
+        -horizontalMargin,
+        -verticalMargin
+        );
+}
+
+QRectF perClassPdfContentRect(
+    const QRectF& pageRect,
+    int resolutionDpi
+    )
+{
+    const qreal horizontalMargin =
+        PerClassMarginHorizontalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+    const qreal verticalMargin =
+        PerClassMarginVerticalInches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+
+    return pageRect.adjusted(
+        horizontalMargin,
+        verticalMargin,
+        -horizontalMargin,
+        -verticalMargin
+        );
+}
+
 QRectF templateContentRect(
     TemplateId templateId,
     const QRectF& pageRect,
@@ -590,6 +1034,18 @@ QRectF templateContentRect(
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        return perClassPdfContentRect(
+            pageRect,
+            resolutionDpi
+            );
+
+    case TemplateId::Daily:
+        return dailyPdfContentRect(
+            pageRect,
+            resolutionDpi
+            );
+
     case TemplateId::ClassRegister:
         return registerPdfContentRect(
             pageRect,
@@ -1303,6 +1759,445 @@ QString cellValue(
             column
             )
         );
+}
+
+qreal dailyInches(
+    qreal inches,
+    int resolutionDpi
+    )
+{
+    return inches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+}
+
+qreal dailySectionTop(
+    int sectionIndex,
+    int resolutionDpi
+    )
+{
+    return dailyInches(
+        DailyTitleHeightInches
+            + DailyTitleGapInches
+            + (DailyHeaderHeightInches
+               + (DailyStudentRowHeightInches * DailyStudentRowCount)
+               + DailySectionGapInches)
+                * sectionIndex,
+        resolutionDpi
+        );
+}
+
+void drawDailyText(
+    QPainter& painter,
+    const QRectF& rect,
+    const QString& text,
+    const QFont& font,
+    const QColor& color,
+    int alignment,
+    qreal horizontalPadding = 0.0
+    )
+{
+    const QString trimmed =
+        text.trimmed();
+
+    if (trimmed.isEmpty())
+    {
+        return;
+    }
+
+    painter.save();
+
+    const QRectF textRect =
+        rect.adjusted(
+            horizontalPadding,
+            0.0,
+            -horizontalPadding,
+            0.0
+            );
+    QFont displayFont =
+        fittedFont(
+            trimmed,
+            font,
+            textRect
+            );
+    QFontMetricsF metrics(displayFont);
+    QString displayText =
+        trimmed;
+
+    if (metrics.horizontalAdvance(displayText) > textRect.width())
+    {
+        displayText =
+            metrics.elidedText(
+                displayText,
+                Qt::ElideRight,
+                textRect.width()
+                );
+    }
+
+    painter.setPen(color);
+    painter.setFont(displayFont);
+    painter.drawText(
+        textRect,
+        alignment,
+        displayText
+        );
+
+    painter.restore();
+}
+
+void drawDailyCheckbox(
+    QPainter& painter,
+    const QRectF& rect,
+    int resolutionDpi
+    )
+{
+    painter.save();
+    QPen pen(QColor(QStringLiteral("#17325C")));
+    pen.setWidthF(
+        std::max(
+            1.0,
+            dailyInches(
+                0.0045,
+                resolutionDpi
+                )
+            )
+        );
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRect(rect);
+    painter.restore();
+}
+
+QString dailyHeaderLevelText(
+    const QString& header
+    )
+{
+    const QString trimmed =
+        header.trimmed();
+    const int detailsIndex =
+        trimmed.indexOf(QStringLiteral(" ("));
+
+    return detailsIndex < 0
+        ? trimmed
+        : trimmed.left(detailsIndex);
+}
+
+QString dailyHeaderDetailsText(
+    const QString& header,
+    const QString& level
+    )
+{
+    return header.trimmed().mid(level.size()).trimmed();
+}
+
+void drawDailyHeaderText(
+    QPainter& painter,
+    const QRectF& rect,
+    const QString& header,
+    const QFont& levelFont,
+    const QFont& detailsFont,
+    const QColor& color
+    )
+{
+    const QString level =
+        dailyHeaderLevelText(header);
+
+    if (level.isEmpty())
+    {
+        return;
+    }
+
+    painter.save();
+
+    QFont displayLevelFont =
+        fittedFont(
+            level,
+            levelFont,
+            rect
+            );
+    QFontMetricsF levelMetrics(displayLevelFont);
+    QString displayLevel =
+        level;
+
+    if (levelMetrics.horizontalAdvance(displayLevel) > rect.width())
+    {
+        displayLevel =
+            levelMetrics.elidedText(
+                displayLevel,
+                Qt::ElideRight,
+                rect.width()
+                );
+    }
+
+    painter.setPen(color);
+    painter.setFont(displayLevelFont);
+
+    const qreal baseline =
+        rect.center().y()
+        + ((levelMetrics.ascent() - levelMetrics.descent()) / 2.0);
+    painter.drawText(
+        QPointF(
+            rect.left(),
+            baseline
+            ),
+        displayLevel
+        );
+
+    const QString details =
+        dailyHeaderDetailsText(
+            header,
+            level
+            );
+    const qreal detailsLeft =
+        rect.left()
+        + levelMetrics.horizontalAdvance(displayLevel)
+        + (details.isEmpty() ? 0.0 : levelMetrics.horizontalAdvance(QLatin1Char(' ')));
+    const QRectF detailsRect(
+        detailsLeft,
+        rect.top(),
+        std::max(
+            0.0,
+            rect.right() - detailsLeft
+            ),
+        rect.height()
+        );
+
+    if (!details.trimmed().isEmpty() && detailsRect.width() > 0.0)
+    {
+        drawDailyText(
+            painter,
+            detailsRect,
+            details,
+            detailsFont,
+            color,
+            Qt::AlignLeft | Qt::AlignVCenter
+            );
+    }
+
+    painter.restore();
+}
+
+void paintDailySection(
+    QPainter& painter,
+    int sectionIndex,
+    const QHash<QString, QString>& values,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    const int headerRow =
+        DailyFirstSectionRow + (sectionIndex * DailyRowsPerSection);
+    const QString header =
+        cellValue(
+            values,
+            headerRow,
+            DailyHeaderColumn
+            );
+
+    if (header.trimmed().isEmpty())
+    {
+        return;
+    }
+
+    const qreal top =
+        contentRect.top()
+        + dailySectionTop(
+            sectionIndex,
+            resolutionDpi
+            );
+    const qreal markerWidth =
+        dailyInches(
+            DailyRowMarkerWidthInches,
+            resolutionDpi
+            );
+    const qreal columnGap =
+        dailyInches(
+            DailyColumnGapInches,
+            resolutionDpi
+            );
+    const qreal headerHeight =
+        dailyInches(
+            DailyHeaderHeightInches,
+            resolutionDpi
+            );
+    const qreal rowHeight =
+        dailyInches(
+            DailyStudentRowHeightInches,
+            resolutionDpi
+            );
+    const qreal checkboxWidth =
+        dailyInches(
+            DailyCheckboxWidthInches,
+            resolutionDpi
+            );
+    const qreal checkboxHeight =
+        dailyInches(
+            DailyCheckboxHeightInches,
+            resolutionDpi
+            );
+    const qreal nameGap =
+        dailyInches(
+            DailyNameGapInches,
+            resolutionDpi
+            );
+    const qreal nameAreaWidth =
+        contentRect.width() - markerWidth;
+    const qreal columnWidth =
+        (nameAreaWidth - (columnGap * (DailyStudentColumnCount - 1)))
+        / DailyStudentColumnCount;
+
+    const QFont headerLevelFont =
+        printKoreanFont(
+            15.5,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont headerDetailsFont =
+        printKoreanFont(
+            11.5,
+            resolutionDpi
+            );
+    const QFont nameFont =
+        printKoreanFont(
+            12.8,
+            resolutionDpi
+            );
+    const QFont markerFont =
+        printUiFont(
+            7.8,
+            resolutionDpi
+            );
+    const QColor markerColor(QStringLiteral("#7A7A7A"));
+
+    drawDailyHeaderText(
+        painter,
+        QRectF(
+            contentRect.left() + markerWidth,
+            top,
+            contentRect.width() - markerWidth,
+            headerHeight
+            ),
+        header,
+        headerLevelFont,
+        headerDetailsFont,
+        Qt::black
+        );
+
+    const qreal studentTop =
+        top + headerHeight;
+
+    for (int row = 0; row < DailyStudentRowCount; ++row)
+    {
+        const qreal rowTop =
+            studentTop + (row * rowHeight);
+        drawDailyText(
+            painter,
+            QRectF(
+                contentRect.left(),
+                rowTop,
+                markerWidth * 0.72,
+                rowHeight
+                ),
+            QString::number((row * DailyStudentColumnCount) + 1),
+            markerFont,
+            markerColor,
+            Qt::AlignRight | Qt::AlignVCenter
+            );
+
+        for (int column = 0; column < DailyStudentColumnCount; ++column)
+        {
+            const qreal cellLeft =
+                contentRect.left()
+                + markerWidth
+                + (column * (columnWidth + columnGap));
+            const QRectF checkboxRect(
+                cellLeft,
+                rowTop + ((rowHeight - checkboxHeight) / 2.0),
+                checkboxWidth,
+                checkboxHeight
+                );
+            const QRectF nameRect(
+                checkboxRect.right() + nameGap,
+                rowTop,
+                columnWidth - checkboxWidth - nameGap,
+                rowHeight
+                );
+
+            drawDailyCheckbox(
+                painter,
+                checkboxRect,
+                resolutionDpi
+                );
+            drawDailyText(
+                painter,
+                nameRect,
+                cellValue(
+                    values,
+                    headerRow + 1 + row,
+                    DailyFirstStudentColumn + column
+                    ),
+                nameFont,
+                Qt::black,
+                Qt::AlignLeft | Qt::AlignVCenter
+                );
+        }
+    }
+}
+
+void paintDailyDay(
+    QPainter& painter,
+    const QString& day,
+    const QHash<QString, QString>& values,
+    const QRectF& pageRect,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    const RosterPdfPalette palette;
+
+    painter.fillRect(
+        pageRect,
+        palette.pageBackground
+        );
+
+    const QFont titleFont =
+        printUiFont(
+            17.0,
+            resolutionDpi,
+            QFont::Black
+            );
+
+    drawDailyText(
+        painter,
+        QRectF(
+            contentRect.left(),
+            contentRect.top(),
+            contentRect.width(),
+            dailyInches(
+                DailyTitleHeightInches,
+                resolutionDpi
+                )
+            ),
+        baseDayName(day).toUpper(),
+        titleFont,
+        Qt::black,
+        Qt::AlignLeft | Qt::AlignVCenter
+        );
+
+    for (int sectionIndex = 0;
+         sectionIndex < DailySectionsPerPage;
+         ++sectionIndex)
+    {
+        paintDailySection(
+            painter,
+            sectionIndex,
+            values,
+            contentRect,
+            resolutionDpi
+            );
+    }
 }
 
 void paintRosterDay(
@@ -2139,27 +3034,400 @@ void paintClassRegisterDay(
     painter.restore();
 }
 
+qreal perClassInches(
+    qreal inches,
+    int resolutionDpi
+    )
+{
+    return inches
+        * std::max(
+            1,
+            resolutionDpi
+            );
+}
+
+int perClassStudentColumnCount(
+    const QHash<QString, QString>& values
+    )
+{
+    int columnCount =
+        PerClassKoreanColumn;
+
+    for (auto it = values.constBegin(); it != values.constEnd(); ++it)
+    {
+        const QStringList parts =
+            it.key().split(QLatin1Char(':'));
+
+        if (parts.size() != 2)
+        {
+            continue;
+        }
+
+        bool rowOk = false;
+        bool columnOk = false;
+        const int row =
+            parts.at(0).toInt(&rowOk);
+        const int column =
+            parts.at(1).toInt(&columnOk);
+
+        if (
+            rowOk
+            && columnOk
+            && row == PerClassHeaderRow
+            && column > columnCount
+            )
+        {
+            columnCount = column;
+        }
+    }
+
+    return columnCount;
+}
+
+qreal perClassStudentColumnWidth(
+    int column,
+    int resolutionDpi
+    )
+{
+    return perClassInches(
+        column <= PerClassKoreanColumn
+            ? PerClassNameColumnWidthInches
+            : PerClassExtraColumnWidthInches,
+        resolutionDpi
+        );
+}
+
+qreal perClassTableWidth(
+    int columnCount,
+    int resolutionDpi
+    )
+{
+    qreal width = 0.0;
+
+    for (int column = 1; column <= columnCount; ++column)
+    {
+        width +=
+            perClassStudentColumnWidth(
+                column,
+                resolutionDpi
+                );
+    }
+
+    return width;
+}
+
+QRectF perClassStudentCellRect(
+    const QRectF& contentRect,
+    qreal tableTop,
+    int row,
+    int column,
+    int resolutionDpi
+    )
+{
+    qreal left =
+        contentRect.left();
+
+    for (int currentColumn = 1; currentColumn < column; ++currentColumn)
+    {
+        left +=
+            perClassStudentColumnWidth(
+                currentColumn,
+                resolutionDpi
+                );
+    }
+
+    const qreal rowHeight =
+        row == PerClassHeaderRow
+            ? perClassInches(
+                PerClassHeaderRowHeightInches,
+                resolutionDpi
+                )
+            : perClassInches(
+                PerClassStudentRowHeightInches,
+                resolutionDpi
+                );
+    const qreal top =
+        tableTop
+        + perClassInches(
+            PerClassHeaderRowHeightInches,
+            resolutionDpi
+            )
+        + ((row - PerClassFirstStudentRow)
+           * perClassInches(
+                PerClassStudentRowHeightInches,
+                resolutionDpi
+                ));
+
+    return QRectF(
+        left,
+        row == PerClassHeaderRow
+            ? tableTop
+            : top,
+        perClassStudentColumnWidth(
+            column,
+            resolutionDpi
+            ),
+        rowHeight
+        );
+}
+
+void drawPerClassCell(
+    QPainter& painter,
+    const QRectF& rect,
+    const QString& text,
+    const QFont& font,
+    const QColor& background,
+    const QColor& textColor,
+    int alignment,
+    int resolutionDpi
+    )
+{
+    painter.save();
+    painter.fillRect(
+        rect,
+        background
+        );
+
+    QPen pen(QColor(QStringLiteral("#808080")));
+    pen.setWidthF(
+        std::max(
+            1.0,
+            perClassInches(
+                PerClassBorderWidthInches,
+                resolutionDpi
+                )
+            )
+        );
+    painter.setPen(pen);
+    painter.drawRect(rect);
+
+    if (!text.trimmed().isEmpty())
+    {
+        const qreal padding =
+            perClassInches(
+                PerClassCellPaddingInches,
+                resolutionDpi
+                );
+        drawDailyText(
+            painter,
+            rect.adjusted(
+                padding,
+                0.0,
+                -padding,
+                0.0
+                ),
+            text,
+            font,
+            textColor,
+            alignment
+            );
+    }
+
+    painter.restore();
+}
+
+void paintPerClassWithExtraInfoPage(
+    QPainter& painter,
+    const QHash<QString, QString>& values,
+    const QRectF& pageRect,
+    const QRectF& contentRect,
+    int resolutionDpi
+    )
+{
+    const RosterPdfPalette palette;
+    painter.fillRect(
+        pageRect,
+        palette.pageBackground
+        );
+
+    const int columnCount =
+        perClassStudentColumnCount(values);
+    const qreal tableWidth =
+        std::min(
+            contentRect.width(),
+            perClassTableWidth(
+                columnCount,
+                resolutionDpi
+                )
+            );
+    const qreal infoRowHeight =
+        perClassInches(
+            PerClassInfoRowHeightInches,
+            resolutionDpi
+            );
+    const qreal tableTop =
+        contentRect.top()
+        + (infoRowHeight * 4.0);
+    const qreal infoColumnWidth =
+        tableWidth / 4.0;
+
+    const QFont labelFont =
+        printKoreanFont(
+            9.5,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont valueFont =
+        printKoreanFont(
+            9.5,
+            resolutionDpi
+            );
+    const QFont headerFont =
+        printKoreanFont(
+            9.2,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont studentFont =
+        printKoreanFont(
+            9.0,
+            resolutionDpi
+            );
+    const QColor labelBackground(QStringLiteral("#DCE6F1"));
+    const QColor headerBackground(QStringLiteral("#B8CCE4"));
+
+    for (int row = 1; row <= 4; ++row)
+    {
+        for (int column = 1; column <= 4; ++column)
+        {
+            const QRectF rect(
+                contentRect.left() + ((column - 1) * infoColumnWidth),
+                contentRect.top() + ((row - 1) * infoRowHeight),
+                infoColumnWidth,
+                infoRowHeight
+                );
+            const bool labelColumn =
+                column == 1 || column == 3;
+
+            drawPerClassCell(
+                painter,
+                rect,
+                cellValue(
+                    values,
+                    row,
+                    column
+                    ),
+                labelColumn ? labelFont : valueFont,
+                labelColumn ? labelBackground : Qt::white,
+                Qt::black,
+                labelColumn
+                    ? Qt::AlignCenter
+                    : (Qt::AlignLeft | Qt::AlignVCenter),
+                resolutionDpi
+                );
+        }
+    }
+
+    for (int column = 1; column <= columnCount; ++column)
+    {
+        drawPerClassCell(
+            painter,
+            perClassStudentCellRect(
+                contentRect,
+                tableTop,
+                PerClassHeaderRow,
+                column,
+                resolutionDpi
+                ),
+            cellValue(
+                values,
+                PerClassHeaderRow,
+                column
+                ),
+            headerFont,
+            headerBackground,
+            Qt::black,
+            Qt::AlignCenter,
+            resolutionDpi
+            );
+    }
+
+    for (int rowOffset = 0; rowOffset < PerClassStudentRowCount; ++rowOffset)
+    {
+        const int row =
+            PerClassFirstStudentRow + rowOffset;
+
+        for (int column = 1; column <= columnCount; ++column)
+        {
+            drawPerClassCell(
+                painter,
+                perClassStudentCellRect(
+                    contentRect,
+                    tableTop,
+                    row,
+                    column,
+                    resolutionDpi
+                    ),
+                cellValue(
+                    values,
+                    row,
+                    column
+                    ),
+                studentFont,
+                Qt::white,
+                Qt::black,
+                Qt::AlignLeft | Qt::AlignVCenter,
+                resolutionDpi
+                );
+        }
+    }
+}
+
 QStringList daysWithValues(
+    TemplateId templateId,
     const QList<RosterCellValue>& values
     )
 {
-    QSet<QString> included;
+    if (templateId == TemplateId::PerClassWithExtraInfo)
+    {
+        QStringList pages;
+
+        for (const RosterCellValue& value : values)
+        {
+            if (!pages.contains(value.day))
+            {
+                pages.append(value.day);
+            }
+        }
+
+        return pages;
+    }
+
+    QList<QString> included;
 
     for (const RosterCellValue& value : values)
     {
-        if (DaySheets.contains(value.day))
+        if (
+            DaySheets.contains(baseDayName(value.day))
+            && !included.contains(value.day)
+            )
         {
-            included.insert(value.day);
+            included.append(value.day);
         }
     }
 
     QStringList days;
     for (const QString& day : DaySheets)
     {
-        if (included.contains(day))
+        QList<QString> matchingPages;
+        for (const QString& includedDay : std::as_const(included))
         {
-            days.append(day);
+            if (baseDayName(includedDay) == day)
+            {
+                matchingPages.append(includedDay);
+            }
         }
+
+        std::sort(
+            matchingPages.begin(),
+            matchingPages.end(),
+            [](const QString& left, const QString& right)
+            {
+                return dailyPageIndex(left) < dailyPageIndex(right);
+            }
+            );
+
+        days.append(matchingPages);
     }
 
     return days;
@@ -2244,11 +3512,27 @@ Result loadRosterClassesForRequest(
 QList<RosterCellValue> buildTemplateCellValues(
     TemplateId templateId,
     const QList<RosterClassData>& classes,
+    const QStringList& selectedExtraColumns,
+    QPageLayout::Orientation perClassExtraInfoOrientation,
     QString* errorMessage
     )
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        return buildPerClassExtraInfoCellValues(
+            classes,
+            selectedExtraColumns,
+            perClassExtraInfoOrientation,
+            errorMessage
+            );
+
+    case TemplateId::Daily:
+        return buildDailyCellValues(
+            classes,
+            errorMessage
+            );
+
     case TemplateId::ClassRegister:
         return buildClassRegisterCellValues(
             classes,
@@ -2276,6 +3560,28 @@ void paintTemplateDay(
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        Q_UNUSED(day);
+        paintPerClassWithExtraInfoPage(
+            painter,
+            values,
+            pageRect,
+            contentRect,
+            resolutionDpi
+            );
+        break;
+
+    case TemplateId::Daily:
+        paintDailyDay(
+            painter,
+            day,
+            values,
+            pageRect,
+            contentRect,
+            resolutionDpi
+            );
+        break;
+
     case TemplateId::ClassRegister:
         paintClassRegisterDay(
             painter,
@@ -2303,7 +3609,8 @@ void paintTemplateDay(
 
 QSize previewPagePixelSize(
     TemplateId templateId,
-    const QSize& requestedSize
+    const QSize& requestedSize,
+    QPageLayout::Orientation orientation
     )
 {
     const QSize fallbackSize(
@@ -2316,7 +3623,7 @@ QSize previewPagePixelSize(
             : fallbackSize;
 
     const bool landscape =
-        templateOrientation(templateId) == QPageLayout::Landscape;
+        orientation == QPageLayout::Landscape;
     const qreal pageWidth =
         landscape
             ? A4HeightInches
@@ -2347,13 +3654,15 @@ QImage renderPreviewImage(
     TemplateId templateId,
     const QSize& requestedSize,
     const QString& day,
-    const QHash<QString, QString>& values
+    const QHash<QString, QString>& values,
+    QPageLayout::Orientation orientation
     )
 {
     const QSize pageSize =
         previewPagePixelSize(
             templateId,
-            requestedSize
+            requestedSize,
+            orientation
             );
     QImage image(
         pageSize,
@@ -2372,7 +3681,7 @@ QImage renderPreviewImage(
         );
 
     const bool landscape =
-        templateOrientation(templateId) == QPageLayout::Landscape;
+        orientation == QPageLayout::Landscape;
     const qreal pageWidthInches =
         landscape
             ? A4HeightInches
@@ -2414,7 +3723,9 @@ QList<TemplateId> availableTemplateIds()
 {
     return {
         TemplateId::ByDay,
-        TemplateId::ClassRegister
+        TemplateId::ClassRegister,
+        TemplateId::Daily,
+        TemplateId::PerClassWithExtraInfo
     };
 }
 
@@ -2431,6 +3742,12 @@ QPageLayout::Orientation templateOrientation(
 {
     switch (templateId)
     {
+    case TemplateId::PerClassWithExtraInfo:
+        return QPageLayout::Portrait;
+
+    case TemplateId::Daily:
+        return QPageLayout::Portrait;
+
     case TemplateId::ClassRegister:
         return QPageLayout::Portrait;
 
@@ -2456,8 +3773,11 @@ QImage renderTemplatePreview(
     return renderPreviewImage(
         templateId,
         requestedSize,
-        DaySheets.first(),
-        {}
+        templateId == TemplateId::PerClassWithExtraInfo
+            ? QStringLiteral("class|0")
+            : DaySheets.first(),
+        {},
+        templateOrientation(templateId)
         );
 }
 
@@ -2470,9 +3790,16 @@ QImage renderTemplatePreview(
 {
     if (!liveData)
     {
-        return renderTemplatePreview(
+        return renderPreviewImage(
             request.templateId,
-            requestedSize
+            requestedSize,
+            request.templateId == TemplateId::PerClassWithExtraInfo
+                ? QStringLiteral("class|0")
+                : DaySheets.first(),
+            {},
+            request.templateId == TemplateId::PerClassWithExtraInfo
+                ? request.perClassExtraInfoOrientation
+                : templateOrientation(request.templateId)
             );
     }
 
@@ -2497,6 +3824,8 @@ QImage renderTemplatePreview(
         buildTemplateCellValues(
             request.templateId,
             rosterClasses,
+            request.selectedExtraColumns,
+            request.perClassExtraInfoOrientation,
             &valueError
             );
 
@@ -2510,7 +3839,10 @@ QImage renderTemplatePreview(
     }
 
     const QStringList days =
-        daysWithValues(values);
+        daysWithValues(
+            request.templateId,
+            values
+            );
 
     if (days.isEmpty())
     {
@@ -2532,7 +3864,10 @@ QImage renderTemplatePreview(
         valuesForDay(
             values,
             day
-            )
+            ),
+        request.templateId == TemplateId::PerClassWithExtraInfo
+            ? request.perClassExtraInfoOrientation
+            : templateOrientation(request.templateId)
         );
 }
 
@@ -2668,6 +4003,327 @@ QList<RosterCellValue> buildByDayCellValues(
     return values;
 }
 
+QList<RosterCellValue> buildDailyCellValues(
+    const QList<RosterClassData>& classes,
+    QString* errorMessage
+    )
+{
+    Q_UNUSED(errorMessage);
+
+    QList<RosterCellValue> values;
+
+    for (const QString& day : DaySheets)
+    {
+        QList<DailyClassSection> sections;
+        int inputIndex = 0;
+
+        for (const RosterClassData& data : classes)
+        {
+            for (const ClassTime& time : data.info.classTimes)
+            {
+                if (time.day.trimmed() != day)
+                {
+                    continue;
+                }
+
+                sections.append(
+                    {
+                        data,
+                        time,
+                        inputIndex
+                    }
+                    );
+                ++inputIndex;
+            }
+        }
+
+        std::stable_sort(
+            sections.begin(),
+            sections.end(),
+            [](const DailyClassSection& left, const DailyClassSection& right)
+            {
+                const QTime leftTime =
+                    parsedStartTime(left.time.startTime);
+                const QTime rightTime =
+                    parsedStartTime(right.time.startTime);
+
+                if (leftTime.isValid() != rightTime.isValid())
+                {
+                    return leftTime.isValid();
+                }
+
+                if (
+                    leftTime.isValid()
+                    && rightTime.isValid()
+                    && leftTime != rightTime
+                    )
+                {
+                    return leftTime < rightTime;
+                }
+
+                const int labelCompare =
+                    classLabel(left.data).localeAwareCompare(
+                        classLabel(right.data)
+                        );
+
+                if (labelCompare != 0)
+                {
+                    return labelCompare < 0;
+                }
+
+                return left.inputIndex < right.inputIndex;
+            }
+            );
+
+        for (int sectionIndex = 0;
+             sectionIndex < sections.size();
+             ++sectionIndex)
+        {
+            const DailyClassSection& section =
+                sections.at(sectionIndex);
+            const int pageIndex =
+                sectionIndex / DailySectionsPerPage;
+            const int pageSectionIndex =
+                sectionIndex % DailySectionsPerPage;
+            const QString pageKey =
+                dailyPageKey(
+                    day,
+                    pageIndex
+                    );
+            const int headerRow =
+                DailyFirstSectionRow
+                + (pageSectionIndex * DailyRowsPerSection);
+
+            appendCellValue(
+                values,
+                pageKey,
+                DailyHeaderColumn,
+                headerRow,
+                dailyClassHeader(
+                    section.data,
+                    section.time
+                    )
+                );
+
+            const int englishColumn =
+                rosterColumnIndex(
+                    section.data.roster,
+                    QStringLiteral("English")
+                    );
+            const int koreanColumn =
+                rosterColumnIndex(
+                    section.data.roster,
+                    QStringLiteral("Korean")
+                    );
+
+            int writtenStudentCount = 0;
+            for (const QStringList& row : section.data.roster.rows)
+            {
+                if (writtenStudentCount >= DailyMaxStudentsPerClass)
+                {
+                    break;
+                }
+
+                const QString name =
+                    dailyStudentName(
+                        row,
+                        englishColumn,
+                        koreanColumn
+                        );
+
+                if (name.isEmpty())
+                {
+                    continue;
+                }
+
+                appendCellValue(
+                    values,
+                    pageKey,
+                    DailyFirstStudentColumn
+                        + (writtenStudentCount % DailyStudentColumnCount),
+                    headerRow
+                        + 1
+                        + (writtenStudentCount / DailyStudentColumnCount),
+                    name
+                    );
+                ++writtenStudentCount;
+            }
+        }
+    }
+
+    return values;
+}
+
+int perClassExtraInfoMaxExtraColumns(
+    QPageLayout::Orientation orientation
+    )
+{
+    return orientation == QPageLayout::Landscape
+        ? PerClassLandscapeMaxExtraColumns
+        : PerClassPortraitMaxExtraColumns;
+}
+
+QStringList availablePerClassExtraInfoColumns(
+    const QList<RosterClassData>& classes
+    )
+{
+    QStringList columns;
+
+    for (const RosterClassData& data : classes)
+    {
+        for (const QString& column : data.roster.columns)
+        {
+            const QString trimmed =
+                column.trimmed();
+
+            if (
+                isPerClassExtraInfoColumn(trimmed)
+                && !containsColumnName(columns, trimmed)
+                )
+            {
+                columns.append(trimmed);
+            }
+        }
+    }
+
+    return columns;
+}
+
+QList<RosterCellValue> buildPerClassExtraInfoCellValues(
+    const QList<RosterClassData>& classes,
+    const QStringList& selectedExtraColumns,
+    QPageLayout::Orientation orientation,
+    QString* errorMessage
+    )
+{
+    Q_UNUSED(errorMessage);
+
+    const QStringList extraColumns =
+        limitedPerClassExtraColumns(
+            selectedExtraColumns,
+            orientation
+            );
+    QList<RosterCellValue> values;
+
+    for (int classIndex = 0; classIndex < classes.size(); ++classIndex)
+    {
+        const RosterClassData& data =
+            classes.at(classIndex);
+        const QString pageKey =
+            perClassPageKey(
+                classIndex,
+                data
+                );
+
+        appendCellValue(values, pageKey, 1, 1, QStringLiteral("Level"));
+        appendCellValue(values, pageKey, 2, 1, classLabel(data));
+        appendCellValue(values, pageKey, 3, 1, QStringLiteral("Room"));
+        appendCellValue(values, pageKey, 4, 1, data.info.roomNumber);
+
+        appendCellValue(values, pageKey, 1, 2, QStringLiteral("Days/Times"));
+        appendCellValue(
+            values,
+            pageKey,
+            2,
+            2,
+            perClassTimeLabels(data.info.classTimes).join(QStringLiteral("; "))
+            );
+        appendCellValue(values, pageKey, 3, 2, QStringLiteral("Wifi"));
+        appendCellValue(values, pageKey, 4, 2, data.info.wifiName);
+
+        appendCellValue(values, pageKey, 1, 3, QStringLiteral("Teacher"));
+        appendCellValue(values, pageKey, 2, 3, teacherLabel(data.info));
+        appendCellValue(values, pageKey, 3, 3, QStringLiteral("Wifi Password"));
+        appendCellValue(values, pageKey, 4, 3, data.info.wifiPassword);
+
+        appendCellValue(values, pageKey, 1, 4, QStringLiteral("ZOOM"));
+        appendCellValue(values, pageKey, 2, 4, data.info.zoomId);
+        appendCellValue(values, pageKey, 3, 4, QStringLiteral("Zoom Password"));
+        appendCellValue(values, pageKey, 4, 4, data.info.zoomPassword);
+
+        appendCellValue(values, pageKey, PerClassEnglishColumn, PerClassHeaderRow, QStringLiteral("English Name"));
+        appendCellValue(values, pageKey, PerClassKoreanColumn, PerClassHeaderRow, QStringLiteral("Korean Name"));
+
+        for (int index = 0; index < extraColumns.size(); ++index)
+        {
+            appendCellValue(
+                values,
+                pageKey,
+                PerClassFirstExtraColumn + index,
+                PerClassHeaderRow,
+                extraColumns.at(index)
+                );
+        }
+
+        const int englishColumn =
+            rosterColumnIndex(
+                data.roster,
+                QStringLiteral("English")
+                );
+        const int koreanColumn =
+            rosterColumnIndex(
+                data.roster,
+                QStringLiteral("Korean")
+                );
+        QVector<int> extraColumnIndexes;
+        extraColumnIndexes.reserve(extraColumns.size());
+
+        for (const QString& extraColumn : extraColumns)
+        {
+            extraColumnIndexes.append(
+                rosterColumnIndex(
+                    data.roster,
+                    extraColumn
+                    )
+                );
+        }
+
+        for (
+            int rowIndex = 0;
+            rowIndex < data.roster.rows.size()
+                && rowIndex < PerClassStudentRowCount;
+            ++rowIndex
+            )
+        {
+            const QStringList& row =
+                data.roster.rows.at(rowIndex);
+            const int outputRow =
+                PerClassFirstStudentRow + rowIndex;
+
+            appendCellValue(
+                values,
+                pageKey,
+                PerClassEnglishColumn,
+                outputRow,
+                rosterCell(row, englishColumn)
+                );
+            appendCellValue(
+                values,
+                pageKey,
+                PerClassKoreanColumn,
+                outputRow,
+                rosterCell(row, koreanColumn)
+                );
+
+            for (int index = 0; index < extraColumnIndexes.size(); ++index)
+            {
+                appendCellValue(
+                    values,
+                    pageKey,
+                    PerClassFirstExtraColumn + index,
+                    outputRow,
+                    rosterCell(
+                        row,
+                        extraColumnIndexes.at(index)
+                        )
+                    );
+            }
+        }
+    }
+
+    return values;
+}
+
 QList<RosterCellValue> buildClassRegisterCellValues(
     const QList<RosterClassData>& classes,
     QString* errorMessage
@@ -2772,7 +4428,9 @@ QList<RosterCellValue> buildClassRegisterCellValues(
 Result saveRostersPdf(
     const QList<RosterClassData>& classes,
     const QString& documentPath,
-    TemplateId templateId
+    TemplateId templateId,
+    const QStringList& selectedExtraColumns,
+    QPageLayout::Orientation perClassExtraInfoOrientation
     )
 {
     if (documentPath.trimmed().isEmpty())
@@ -2787,6 +4445,8 @@ Result saveRostersPdf(
         buildTemplateCellValues(
             templateId,
             classes,
+            selectedExtraColumns,
+            perClassExtraInfoOrientation,
             &errorMessage
             );
 
@@ -2796,7 +4456,10 @@ Result saveRostersPdf(
     }
 
     const QStringList days =
-        daysWithValues(values);
+        daysWithValues(
+            templateId,
+            values
+            );
 
     if (days.isEmpty())
     {
@@ -2808,7 +4471,10 @@ Result saveRostersPdf(
     QPdfWriter writer(documentPath);
     if (!configureRosterPdfWriter(
             writer,
-            templateId
+            templateId,
+            templateId == TemplateId::PerClassWithExtraInfo
+                ? perClassExtraInfoOrientation
+                : templateOrientation(templateId)
             ))
     {
         return failed(
@@ -2898,7 +4564,9 @@ Result saveRostersPdf(
         return saveRostersPdf(
             QList<RosterClassData>(),
             documentPath,
-            request.templateId
+            request.templateId,
+            request.selectedExtraColumns,
+            request.perClassExtraInfoOrientation
             );
     }
 
@@ -2917,7 +4585,9 @@ Result saveRostersPdf(
     return saveRostersPdf(
         rosterClasses,
         documentPath,
-        request.templateId
+        request.templateId,
+        request.selectedExtraColumns,
+        request.perClassExtraInfoOrientation
         );
 }
 
@@ -2951,7 +4621,9 @@ Result printRosters(
             saveRostersPdf(
                 rosterClasses,
                 pdfPath,
-                request.templateId
+                request.templateId,
+                request.selectedExtraColumns,
+                request.perClassExtraInfoOrientation
                 );
 
         if (saveResult.status != Status::Sent)
@@ -2983,7 +4655,9 @@ Result printRosters(
                 pdfPath,
                 0,
                 QObject::tr("Print Rosters"),
-                templateOrientation(request.templateId),
+                request.templateId == TemplateId::PerClassWithExtraInfo
+                    ? request.perClassExtraInfoOrientation
+                    : templateOrientation(request.templateId),
                 false,
                 templatePageSize(request.templateId),
                 true

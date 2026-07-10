@@ -4,11 +4,13 @@
 
 #include <QDialog>
 #include <QList>
+#include <QStringList>
 
 class ApplicationServices;
 class QButtonGroup;
 class QCheckBox;
 class QComboBox;
+class QGroupBox;
 class QLabel;
 class QListWidget;
 class QResizeEvent;
@@ -35,6 +37,8 @@ public:
     QString selectedSavePath() const;
     RosterTemplatePrintService::Scope selectedScope() const;
     RosterTemplatePrintService::TemplateId selectedTemplateId() const;
+    QStringList selectedExtraColumns() const;
+    QPageLayout::Orientation selectedPerClassExtraInfoOrientation() const;
     QList<int> selectedClassIds() const;
 
 protected:
@@ -44,6 +48,9 @@ private slots:
     void acceptPrint();
     void chooseSavePath();
     void updateClassListVisibility();
+    void updateTemplateOptionsVisibility();
+    void updateExtraInfoColumns();
+    void updateExtraInfoSelectionLimits();
     void updatePreview();
 
 private:
@@ -60,6 +67,9 @@ private:
     QString m_selectedSavePath;
 
     QComboBox* m_templateCombo = nullptr;
+    QGroupBox* m_extraInfoOptionsGroup = nullptr;
+    QButtonGroup* m_extraInfoOrientationGroup = nullptr;
+    QListWidget* m_extraColumnList = nullptr;
     QCheckBox* m_livePreviewCheckBox = nullptr;
     QLabel* m_previewLabel = nullptr;
     QLabel* m_previewStatusLabel = nullptr;

@@ -758,14 +758,16 @@ void RosterPage::printRosters()
         return;
     }
 
-    const RosterTemplatePrintService::Request request{
-        this,
-        m_services,
-        m_classroom.id,
-        dialog.selectedScope(),
-        dialog.selectedClassIds(),
-        dialog.selectedTemplateId()
-    };
+    RosterTemplatePrintService::Request request;
+    request.parent = this;
+    request.services = m_services;
+    request.currentClassId = m_classroom.id;
+    request.scope = dialog.selectedScope();
+    request.selectedClassIds = dialog.selectedClassIds();
+    request.templateId = dialog.selectedTemplateId();
+    request.selectedExtraColumns = dialog.selectedExtraColumns();
+    request.perClassExtraInfoOrientation =
+        dialog.selectedPerClassExtraInfoOrientation();
 
     RosterTemplatePrintService::Result result;
 

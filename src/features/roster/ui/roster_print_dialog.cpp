@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QResizeEvent>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStyle>
 #include <QStyledItemDelegate>
@@ -40,6 +41,8 @@ namespace
 constexpr int AllClassesId = 0;
 constexpr int CurrentClassId = 1;
 constexpr int SelectedClassesId = 2;
+constexpr int PortraitOrientationId = 10;
+constexpr int LandscapeOrientationId = 11;
 constexpr int DialogWidth = 520;
 constexpr int DialogExpandedHeight = 620;
 constexpr int PreviewHeight = 190;
@@ -475,6 +478,46 @@ RosterTemplatePrintService::TemplateId RosterPrintDialog::selectedTemplateId() c
         );
 }
 
+QStringList RosterPrintDialog::selectedExtraColumns() const
+{
+    QStringList columns;
+
+    if (
+        selectedTemplateId()
+            != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+        || !m_extraColumnList
+        )
+    {
+        return columns;
+    }
+
+    for (int index = 0; index < m_extraColumnList->count(); ++index)
+    {
+        const QListWidgetItem* item =
+            m_extraColumnList->item(index);
+
+        if (item && item->checkState() == Qt::Checked)
+        {
+            columns.append(item->text());
+        }
+    }
+
+    return columns;
+}
+
+QPageLayout::Orientation
+RosterPrintDialog::selectedPerClassExtraInfoOrientation() const
+{
+    if (!m_extraInfoOrientationGroup)
+    {
+        return QPageLayout::Portrait;
+    }
+
+    return m_extraInfoOrientationGroup->checkedId() == LandscapeOrientationId
+        ? QPageLayout::Landscape
+        : QPageLayout::Portrait;
+}
+
 QList<int> RosterPrintDialog::selectedClassIds() const
 {
     QList<int> ids;
@@ -635,6 +678,180 @@ void RosterPrintDialog::updateClassListVisibility()
         adjustSize();
     }
 
+    if (
+        selectedTemplateId()
+        == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+        )
+    {
+        updateExtraInfoColumns();
+    }
+    else
+    {
+        updatePreview();
+    }
+}
+
+void RosterPrintDialog::updateTemplateOptionsVisibility()
+{
+    const bool showExtraInfoOptions =
+        selectedTemplateId()
+        == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+
+    if (m_extraInfoOptionsGroup)
+    {
+        m_extraInfoOptionsGroup->setVisible(showExtraInfoOptions);
+        m_extraInfoOptionsGroup->setEnabled(showExtraInfoOptions);
+    }
+
+    if (showExtraInfoOptions)
+    {
+        updateExtraInfoColumns();
+    }
+    else
+    {
+        updatePreview();
+    }
+}
+
+void RosterPrintDialog::updateExtraInfoColumns()
+{
+    if (
+        selectedTemplateId()
+            != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+        ||
+        !m_extraColumnList
+        || !m_services
+        || !m_services->dataService()
+        )
+    {
+        updatePreview();
+        return;
+    }
+
+    QStringList previouslyChecked =
+        selectedExtraColumns();
+
+    const QList<Classroom> classes =
+        m_services->dataService()->getClasses();
+    const QList<int> classIds =
+        RosterTemplatePrintService::resolveClassIds(
+            selectedScope(),
+            m_currentClassId,
+            selectedClassIds(),
+            classes
+            );
+    QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
+    rosterClasses.reserve(classIds.size());
+
+    for (int classId : classIds)
+    {
+        RosterTemplatePrintService::RosterClassData data;
+        data.roster =
+            m_services->dataService()->loadRoster(classId);
+        rosterClasses.append(data);
+    }
+
+    const QStringList columns =
+        RosterTemplatePrintService::availablePerClassExtraInfoColumns(
+            rosterClasses
+            );
+
+    const QSignalBlocker blocker(m_extraColumnList);
+    m_extraColumnList->clear();
+
+    for (const QString& column : columns)
+    {
+        auto* item =
+            new QListWidgetItem(
+                column,
+                m_extraColumnList
+                );
+        item->setFlags(
+            item->flags()
+            | Qt::ItemIsUserCheckable
+            );
+        item->setCheckState(
+            previouslyChecked.contains(column, Qt::CaseInsensitive)
+                ? Qt::Checked
+                : Qt::Unchecked
+            );
+    }
+
+    updateExtraInfoSelectionLimits();
+    updatePreview();
+}
+
+void RosterPrintDialog::updateExtraInfoSelectionLimits()
+{
+    if (!m_extraColumnList)
+    {
+        return;
+    }
+
+    const int maxSelected =
+        RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(
+            selectedPerClassExtraInfoOrientation()
+            );
+    int selectedCount = 0;
+
+    {
+        const QSignalBlocker blocker(m_extraColumnList);
+
+        for (int index = 0; index < m_extraColumnList->count(); ++index)
+        {
+            QListWidgetItem* item =
+                m_extraColumnList->item(index);
+
+            if (!item)
+            {
+                continue;
+            }
+
+            if (item->checkState() == Qt::Checked)
+            {
+                ++selectedCount;
+
+                if (selectedCount > maxSelected)
+                {
+                    item->setCheckState(Qt::Unchecked);
+                    --selectedCount;
+                }
+            }
+        }
+
+        const bool atLimit =
+            selectedCount >= maxSelected;
+
+        for (int index = 0; index < m_extraColumnList->count(); ++index)
+        {
+            QListWidgetItem* item =
+                m_extraColumnList->item(index);
+
+            if (!item)
+            {
+                continue;
+            }
+
+            Qt::ItemFlags flags =
+                item->flags()
+                | Qt::ItemIsUserCheckable;
+
+            if (
+                atLimit
+                && item->checkState() != Qt::Checked
+                )
+            {
+                flags &= ~Qt::ItemIsEnabled;
+            }
+            else
+            {
+                flags |= Qt::ItemIsEnabled;
+            }
+
+            item->setFlags(flags);
+        }
+    }
+
     updatePreview();
 }
 
@@ -661,18 +878,19 @@ void RosterPrintDialog::updatePreview()
 
     QImage preview;
     QString errorMessage;
+    RosterTemplatePrintService::Request request;
+    request.parent = this;
+    request.services = m_services;
+    request.currentClassId = m_currentClassId;
+    request.scope = selectedScope();
+    request.selectedClassIds = selectedClassIds();
+    request.templateId = selectedTemplateId();
+    request.selectedExtraColumns = selectedExtraColumns();
+    request.perClassExtraInfoOrientation =
+        selectedPerClassExtraInfoOrientation();
 
     if (livePreview)
     {
-        const RosterTemplatePrintService::Request request{
-            this,
-            m_services,
-            m_currentClassId,
-            selectedScope(),
-            selectedClassIds(),
-            selectedTemplateId()
-        };
-
         preview =
             RosterTemplatePrintService::renderTemplatePreview(
                 request,
@@ -686,8 +904,9 @@ void RosterPrintDialog::updatePreview()
     {
         preview =
             RosterTemplatePrintService::renderTemplatePreview(
-                selectedTemplateId(),
-                previewSize
+                request,
+                previewSize,
+                false
                 );
     }
 
@@ -744,6 +963,47 @@ void RosterPrintDialog::buildUi()
             );
     }
 
+    m_extraInfoOptionsGroup =
+        new QGroupBox(templateGroupBox);
+    m_extraInfoOptionsGroup->setObjectName(QStringLiteral("extraInfoOptionsGroup"));
+    auto* extraInfoLayout =
+        new QVBoxLayout(m_extraInfoOptionsGroup);
+
+    auto* orientationLayout =
+        new QHBoxLayout();
+    auto* portraitRadio =
+        new QRadioButton(m_extraInfoOptionsGroup);
+    auto* landscapeRadio =
+        new QRadioButton(m_extraInfoOptionsGroup);
+    portraitRadio->setObjectName(QStringLiteral("portraitExtraInfoRadio"));
+    landscapeRadio->setObjectName(QStringLiteral("landscapeExtraInfoRadio"));
+
+    m_extraInfoOrientationGroup =
+        new QButtonGroup(this);
+    m_extraInfoOrientationGroup->addButton(
+        portraitRadio,
+        PortraitOrientationId
+        );
+    m_extraInfoOrientationGroup->addButton(
+        landscapeRadio,
+        LandscapeOrientationId
+        );
+    portraitRadio->setChecked(true);
+
+    orientationLayout->addWidget(portraitRadio);
+    orientationLayout->addWidget(landscapeRadio);
+    orientationLayout->addStretch(1);
+
+    m_extraColumnList =
+        new QListWidget(m_extraInfoOptionsGroup);
+    m_extraColumnList->setObjectName(QStringLiteral("extraColumnList"));
+    m_extraColumnList->setSelectionMode(QAbstractItemView::NoSelection);
+    m_extraColumnList->setMaximumHeight(120);
+
+    extraInfoLayout->addLayout(orientationLayout);
+    extraInfoLayout->addWidget(m_extraColumnList);
+    m_extraInfoOptionsGroup->setVisible(false);
+
     m_previewLabel =
         new QLabel(templateGroupBox);
     m_previewLabel->setObjectName(QStringLiteral("templatePreview"));
@@ -765,6 +1025,7 @@ void RosterPrintDialog::buildUi()
     m_previewStatusLabel->setVisible(false);
 
     templateLayout->addWidget(m_templateCombo);
+    templateLayout->addWidget(m_extraInfoOptionsGroup);
     templateLayout->addWidget(m_previewLabel, 1);
     templateLayout->addWidget(m_livePreviewCheckBox);
     templateLayout->addWidget(m_previewStatusLabel);
@@ -825,7 +1086,14 @@ void RosterPrintDialog::buildUi()
         m_classList,
         &QListWidget::itemChanged,
         this,
-        &RosterPrintDialog::updatePreview
+        &RosterPrintDialog::updateExtraInfoColumns
+        );
+
+    connect(
+        m_extraColumnList,
+        &QListWidget::itemChanged,
+        this,
+        &RosterPrintDialog::updateExtraInfoSelectionLimits
         );
 
     auto* buttonLayout =
@@ -867,7 +1135,14 @@ void RosterPrintDialog::buildUi()
         m_templateCombo,
         &QComboBox::currentIndexChanged,
         this,
-        &RosterPrintDialog::updatePreview
+        &RosterPrintDialog::updateTemplateOptionsVisibility
+        );
+
+    connect(
+        m_extraInfoOrientationGroup,
+        &QButtonGroup::idClicked,
+        this,
+        &RosterPrintDialog::updateExtraInfoSelectionLimits
         );
 
     connect(
@@ -991,6 +1266,24 @@ void RosterPrintDialog::retranslateUi()
     if (m_livePreviewCheckBox)
     {
         m_livePreviewCheckBox->setText(tr("Live Preview"));
+    }
+
+    if (m_extraInfoOptionsGroup)
+    {
+        m_extraInfoOptionsGroup->setTitle(tr("Extra Info Columns"));
+    }
+
+    if (m_extraInfoOrientationGroup)
+    {
+        if (auto* button = m_extraInfoOrientationGroup->button(PortraitOrientationId))
+        {
+            button->setText(tr("Portrait"));
+        }
+
+        if (auto* button = m_extraInfoOrientationGroup->button(LandscapeOrientationId))
+        {
+            button->setText(tr("Landscape"));
+        }
     }
 
     if (m_scopeGroup)
