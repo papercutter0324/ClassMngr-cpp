@@ -468,6 +468,11 @@ RosterTemplatePrintService::Scope RosterPrintDialog::selectedScope() const
 
 RosterTemplatePrintService::TemplateId RosterPrintDialog::selectedTemplateId() const
 {
+    if (m_hasFinalSelection)
+    {
+        return m_finalTemplateId;
+    }
+
     if (!m_templateCombo)
     {
         return RosterTemplatePrintService::TemplateId::ByDay;
@@ -480,6 +485,11 @@ RosterTemplatePrintService::TemplateId RosterPrintDialog::selectedTemplateId() c
 
 QStringList RosterPrintDialog::selectedExtraColumns() const
 {
+    if (m_hasFinalSelection)
+    {
+        return m_finalExtraColumns;
+    }
+
     QStringList columns;
 
     if (
@@ -508,6 +518,11 @@ QStringList RosterPrintDialog::selectedExtraColumns() const
 QPageLayout::Orientation
 RosterPrintDialog::selectedPerClassExtraInfoOrientation() const
 {
+    if (m_hasFinalSelection)
+    {
+        return m_finalPerClassExtraInfoOrientation;
+    }
+
     if (!m_extraInfoOrientationGroup)
     {
         return QPageLayout::Portrait;
@@ -555,6 +570,7 @@ void RosterPrintDialog::resizeEvent(
 
 void RosterPrintDialog::acceptPrint()
 {
+    captureFinalSelection();
     m_selectedAction =
         Action::Print;
     m_selectedSavePath.clear();
@@ -614,7 +630,22 @@ void RosterPrintDialog::chooseSavePath()
     m_selectedSavePath =
         savePath;
 
+    captureFinalSelection();
+
     accept();
+}
+
+void RosterPrintDialog::captureFinalSelection()
+{
+    // The PDF request is assembled after exec() returns. Preserve the exact
+    // column selection that was visible when the user chose Print or Save.
+    m_finalTemplateId =
+        selectedTemplateId();
+    m_finalExtraColumns =
+        selectedExtraColumns();
+    m_finalPerClassExtraInfoOrientation =
+        selectedPerClassExtraInfoOrientation();
+    m_hasFinalSelection = true;
 }
 
 void RosterPrintDialog::updateClassListVisibility()

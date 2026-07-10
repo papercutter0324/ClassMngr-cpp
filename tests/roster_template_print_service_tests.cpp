@@ -160,9 +160,10 @@ constexpr int DailyMaxStudentsPerClass = 25;
 constexpr int DailySectionsPerPage = 6;
 constexpr int PerClassHeaderRow = 5;
 constexpr int PerClassFirstStudentRow = 6;
-constexpr int PerClassEnglishColumn = 1;
-constexpr int PerClassKoreanColumn = 2;
-constexpr int PerClassFirstExtraColumn = 3;
+constexpr int PerClassIndexColumn = 1;
+constexpr int PerClassEnglishColumn = 2;
+constexpr int PerClassKoreanColumn = 3;
+constexpr int PerClassFirstExtraColumn = 4;
 
 const QList<qreal> RegisterColumnWidthInches{
     0.2340,
@@ -352,6 +353,39 @@ bool isWhitePixel(
     return color.red() >= 245
         && color.green() >= 245
         && color.blue() >= 245;
+}
+
+bool isPerClassHeaderPixel(
+    const QColor& color
+    )
+{
+    return std::abs(color.red() - 184) <= 4
+        && std::abs(color.green() - 204) <= 4
+        && std::abs(color.blue() - 228) <= 4;
+}
+
+int perClassHeaderCellCount(
+    const QImage& image,
+    int y
+    )
+{
+    int count = 0;
+    bool inCell = false;
+
+    for (int x = 0; x < image.width(); ++x)
+    {
+        const bool isHeader =
+            isPerClassHeaderPixel(image.pixelColor(x, y));
+
+        if (isHeader && !inCell)
+        {
+            ++count;
+        }
+
+        inCell = isHeader;
+    }
+
+    return count;
 }
 
 QRect nonWhiteBounds(
@@ -1566,12 +1600,15 @@ void RosterTemplatePrintServiceTests::
     QVERIFY(hasCellValue(values, page, 2, 1, QStringLiteral("Days/Times")));
     QVERIFY(hasCellValue(values, page, 3, 1, QStringLiteral("Teacher")));
     QVERIFY(hasCellValue(values, page, 4, 1, QStringLiteral("ZOOM")));
+    QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassIndexColumn, QStringLiteral("No.")));
     QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassEnglishColumn, QStringLiteral("English Name")));
     QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassKoreanColumn, QStringLiteral("Korean Name")));
     QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn, QStringLiteral("Birthday")));
     QVERIFY(hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn + 1, QStringLiteral("School")));
     QVERIFY(!hasCellValue(values, page, PerClassHeaderRow, PerClassFirstExtraColumn + 2, QStringLiteral("Fall")));
     QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassEnglishColumn, QStringLiteral("Kaelyn")));
+    QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassIndexColumn, QStringLiteral("1")));
+    QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow + 22, PerClassIndexColumn, QStringLiteral("23")));
     QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassKoreanColumn, QStringLiteral("Kaelyn KR")));
     QVERIFY(hasCellValue(values, page, PerClassFirstStudentRow, PerClassFirstExtraColumn, QStringLiteral("10/15")));
     QVERIFY(!hasCellValue(values, page, PerClassFirstStudentRow, PerClassFirstExtraColumn + 1, QStringLiteral("10/15")));
@@ -1816,6 +1853,16 @@ void RosterTemplatePrintServiceTests::
 
     QVERIFY(std::abs(portraitSize.width() - a4Points.width()) < 1.0);
     QVERIFY(std::abs(portraitSize.height() - a4Points.height()) < 1.0);
+
+    // The saved PDF must include the selected Birthday and Phone columns,
+    // not only the on-screen preview.
+    const QImage portraitImage = renderPage(portraitDocument);
+    const int headerTopY =
+        qRound((0.5 + (4.0 * 0.27) + 0.25 + 0.02) * RenderDpi);
+    QCOMPARE(
+        perClassHeaderCellCount(portraitImage, headerTopY),
+        5
+        );
 
     const QString landscapePath =
         savePdf(

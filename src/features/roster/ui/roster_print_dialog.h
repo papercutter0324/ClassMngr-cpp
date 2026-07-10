@@ -55,6 +55,7 @@ private slots:
 
 private:
     void buildUi();
+    void captureFinalSelection();
     void loadClasses();
     void retranslateUi();
 
@@ -65,6 +66,12 @@ private:
     QString m_currentClassDisplayName;
     Action m_selectedAction = Action::Print;
     QString m_selectedSavePath;
+    bool m_hasFinalSelection = false;
+    RosterTemplatePrintService::TemplateId m_finalTemplateId =
+        RosterTemplatePrintService::TemplateId::ByDay;
+    QStringList m_finalExtraColumns;
+    QPageLayout::Orientation m_finalPerClassExtraInfoOrientation =
+        QPageLayout::Portrait;
 
     QComboBox* m_templateCombo = nullptr;
     QGroupBox* m_extraInfoOptionsGroup = nullptr;

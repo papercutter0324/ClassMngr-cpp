@@ -100,20 +100,23 @@ constexpr char DailyPageKeySeparator = '|';
 
 constexpr int PerClassHeaderRow = 5;
 constexpr int PerClassFirstStudentRow = 6;
-constexpr int PerClassEnglishColumn = 1;
-constexpr int PerClassKoreanColumn = 2;
-constexpr int PerClassFirstExtraColumn = 3;
+constexpr int PerClassIndexColumn = 1;
+constexpr int PerClassEnglishColumn = 2;
+constexpr int PerClassKoreanColumn = 3;
+constexpr int PerClassFirstExtraColumn = 4;
 constexpr int PerClassPortraitMaxExtraColumns = 3;
 constexpr int PerClassLandscapeMaxExtraColumns = 6;
-constexpr int PerClassStudentRowCount = 25;
-constexpr qreal PerClassMarginHorizontalInches = 0.7481;
-constexpr qreal PerClassMarginVerticalInches = 0.4000;
+constexpr int PerClassStudentRowCount = 23;
+constexpr qreal PerClassMarginHorizontalInches = 0.5000;
+constexpr qreal PerClassMarginVerticalInches = 0.5000;
 constexpr qreal PerClassInfoRowHeightInches = 0.2700;
-constexpr qreal PerClassHeaderRowHeightInches = 0.3000;
-constexpr qreal PerClassStudentRowHeightInches = 0.2500;
-constexpr qreal PerClassNameColumnWidthInches = 1.4000;
+constexpr qreal PerClassInfoTableGapInches = 0.2500;
+constexpr qreal PerClassHeaderRowHeightInches = 0.2800;
+constexpr qreal PerClassStudentRowHeightInches = 0.2300;
+constexpr qreal PerClassIndexColumnWidthInches = 0.3500;
 constexpr qreal PerClassExtraColumnWidthInches = 0.9700;
 constexpr qreal PerClassCellPaddingInches = 0.0350;
+constexpr qreal PerClassVerticalCellPaddingInches = 0.0150;
 constexpr qreal PerClassBorderWidthInches = 0.0060;
 constexpr char PerClassPageKeySeparator = '|';
 
@@ -3084,36 +3087,124 @@ int perClassStudentColumnCount(
     return columnCount;
 }
 
-qreal perClassStudentColumnWidth(
-    int column,
-    int resolutionDpi
-    )
-{
-    return perClassInches(
-        column <= PerClassKoreanColumn
-            ? PerClassNameColumnWidthInches
-            : PerClassExtraColumnWidthInches,
-        resolutionDpi
-        );
-}
-
-qreal perClassTableWidth(
+QVector<qreal> perClassStudentColumnWidths(
+    const QHash<QString, QString>& values,
     int columnCount,
     int resolutionDpi
     )
 {
-    qreal width = 0.0;
+    QVector<qreal> widths(columnCount + 1);
+    widths[PerClassIndexColumn] =
+        perClassInches(
+            PerClassIndexColumnWidthInches,
+            resolutionDpi
+            );
 
-    for (int column = 1; column <= columnCount; ++column)
+    const QFont nameFont =
+        printKoreanFont(
+            10.0,
+            resolutionDpi
+            );
+    const QFont headerFont =
+        printKoreanFont(
+            8.2,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFontMetricsF nameMetrics(nameFont);
+    const QFontMetricsF headerMetrics(headerFont);
+    const qreal horizontalPadding =
+        perClassInches(
+            PerClassCellPaddingInches * 4.0,
+            resolutionDpi
+            );
+
+    for (int column = PerClassEnglishColumn;
+         column <= PerClassKoreanColumn;
+         ++column)
     {
-        width +=
-            perClassStudentColumnWidth(
-                column,
+        qreal widestText = 0.0;
+
+        for (int row = PerClassHeaderRow;
+             row < PerClassFirstStudentRow + PerClassStudentRowCount;
+             ++row)
+        {
+            const QString text = cellValue(values, row, column);
+            widestText = std::max(
+                widestText,
+                row == PerClassHeaderRow
+                    ? headerMetrics.horizontalAdvance(text)
+                    : nameMetrics.horizontalAdvance(text)
+                );
+        }
+
+        widths[column] = std::max(
+            perClassInches(0.7500, resolutionDpi),
+            widestText + horizontalPadding
+            );
+    }
+
+    for (int column = PerClassFirstExtraColumn;
+         column <= columnCount;
+         ++column)
+    {
+        widths[column] =
+            perClassInches(
+                PerClassExtraColumnWidthInches,
                 resolutionDpi
                 );
     }
 
-    return width;
+    return widths;
+}
+
+QVector<qreal> perClassInfoColumnWidths(
+    const QHash<QString, QString>& values,
+    int resolutionDpi
+    )
+{
+    QVector<qreal> widths(5);
+    const QFont labelFont =
+        printKoreanFont(
+            8.5,
+            resolutionDpi,
+            QFont::Bold
+            );
+    const QFont valueFont =
+        printKoreanFont(
+            8.5,
+            resolutionDpi
+            );
+    const QFontMetricsF labelMetrics(labelFont);
+    const QFontMetricsF valueMetrics(valueFont);
+    const qreal horizontalPadding =
+        perClassInches(
+            PerClassCellPaddingInches * 4.0,
+            resolutionDpi
+            );
+
+    for (int column = 1; column <= 4; ++column)
+    {
+        const QFontMetricsF& metrics =
+            column == 1 || column == 3
+                ? labelMetrics
+                : valueMetrics;
+        qreal widestText = 0.0;
+
+        for (int row = 1; row <= 4; ++row)
+        {
+            widestText = std::max(
+                widestText,
+                metrics.horizontalAdvance(
+                    cellValue(values, row, column)
+                    )
+                );
+        }
+
+        widths[column] = widestText + horizontalPadding;
+    }
+
+    return widths;
 }
 
 QRectF perClassStudentCellRect(
@@ -3121,7 +3212,8 @@ QRectF perClassStudentCellRect(
     qreal tableTop,
     int row,
     int column,
-    int resolutionDpi
+    int resolutionDpi,
+    const QVector<qreal>& columnWidths
     )
 {
     qreal left =
@@ -3129,11 +3221,7 @@ QRectF perClassStudentCellRect(
 
     for (int currentColumn = 1; currentColumn < column; ++currentColumn)
     {
-        left +=
-            perClassStudentColumnWidth(
-                currentColumn,
-                resolutionDpi
-                );
+        left += columnWidths.at(currentColumn);
     }
 
     const qreal rowHeight =
@@ -3163,10 +3251,7 @@ QRectF perClassStudentCellRect(
         row == PerClassHeaderRow
             ? tableTop
             : top,
-        perClassStudentColumnWidth(
-            column,
-            resolutionDpi
-            ),
+        columnWidths.at(column),
         rowHeight
         );
 }
@@ -3208,13 +3293,18 @@ void drawPerClassCell(
                 PerClassCellPaddingInches,
                 resolutionDpi
                 );
+        const qreal verticalPadding =
+            perClassInches(
+                PerClassVerticalCellPaddingInches,
+                resolutionDpi
+                );
         drawDailyText(
             painter,
             rect.adjusted(
                 padding,
-                0.0,
+                verticalPadding,
                 -padding,
-                0.0
+                -verticalPadding
                 ),
             text,
             font,
@@ -3242,13 +3332,16 @@ void paintPerClassWithExtraInfoPage(
 
     const int columnCount =
         perClassStudentColumnCount(values);
-    const qreal tableWidth =
-        std::min(
-            contentRect.width(),
-            perClassTableWidth(
-                columnCount,
-                resolutionDpi
-                )
+    const QVector<qreal> columnWidths =
+        perClassStudentColumnWidths(
+            values,
+            columnCount,
+            resolutionDpi
+            );
+    const QVector<qreal> infoColumnWidths =
+        perClassInfoColumnWidths(
+            values,
+            resolutionDpi
             );
     const qreal infoRowHeight =
         perClassInches(
@@ -3257,43 +3350,74 @@ void paintPerClassWithExtraInfoPage(
             );
     const qreal tableTop =
         contentRect.top()
-        + (infoRowHeight * 4.0);
-    const qreal infoColumnWidth =
-        tableWidth / 4.0;
-
+        + (infoRowHeight * 4.0)
+        + perClassInches(
+            PerClassInfoTableGapInches,
+            resolutionDpi
+            );
     const QFont labelFont =
         printKoreanFont(
-            9.5,
+            8.5,
             resolutionDpi,
             QFont::Bold
             );
     const QFont valueFont =
         printKoreanFont(
-            9.5,
+            8.5,
             resolutionDpi
             );
     const QFont headerFont =
         printKoreanFont(
-            9.2,
+            8.2,
             resolutionDpi,
             QFont::Bold
             );
     const QFont studentFont =
         printKoreanFont(
-            9.0,
+            10.0,
             resolutionDpi
             );
+    QFont notesFont =
+        printKoreanFont(
+            8.5,
+            resolutionDpi,
+            QFont::Bold
+            );
+    notesFont.setUnderline(true);
     const QColor labelBackground(QStringLiteral("#DCE6F1"));
     const QColor headerBackground(QStringLiteral("#B8CCE4"));
 
+    qreal infoTableWidth = 0.0;
+    for (int column = 1; column <= 4; ++column)
+    {
+        infoTableWidth += infoColumnWidths.at(column);
+    }
+
+    const qreal notesLeft =
+        contentRect.left()
+        + infoTableWidth
+        + perClassInches(
+            PerClassInfoTableGapInches,
+            resolutionDpi
+            );
+    const QRectF notesRect(
+        notesLeft,
+        contentRect.top(),
+        std::max(0.0, contentRect.right() - notesLeft),
+        infoRowHeight * 4.0
+        );
+
     for (int row = 1; row <= 4; ++row)
     {
+        qreal infoCellLeft =
+            contentRect.left();
+
         for (int column = 1; column <= 4; ++column)
         {
             const QRectF rect(
-                contentRect.left() + ((column - 1) * infoColumnWidth),
+                infoCellLeft,
                 contentRect.top() + ((row - 1) * infoRowHeight),
-                infoColumnWidth,
+                infoColumnWidths.at(column),
                 infoRowHeight
                 );
             const bool labelColumn =
@@ -3310,12 +3434,27 @@ void paintPerClassWithExtraInfoPage(
                 labelColumn ? labelFont : valueFont,
                 labelColumn ? labelBackground : Qt::white,
                 Qt::black,
-                labelColumn
-                    ? Qt::AlignCenter
-                    : (Qt::AlignLeft | Qt::AlignVCenter),
+                Qt::AlignCenter,
                 resolutionDpi
                 );
+
+            infoCellLeft +=
+                infoColumnWidths.at(column);
         }
+    }
+
+    if (notesRect.width() > 0.0)
+    {
+        drawPerClassCell(
+            painter,
+            notesRect,
+            QObject::tr("Notes:"),
+            notesFont,
+            Qt::white,
+            Qt::black,
+            Qt::AlignLeft | Qt::AlignTop,
+            resolutionDpi
+            );
     }
 
     for (int column = 1; column <= columnCount; ++column)
@@ -3327,7 +3466,8 @@ void paintPerClassWithExtraInfoPage(
                 tableTop,
                 PerClassHeaderRow,
                 column,
-                resolutionDpi
+                resolutionDpi,
+                columnWidths
                 ),
             cellValue(
                 values,
@@ -3356,7 +3496,8 @@ void paintPerClassWithExtraInfoPage(
                     tableTop,
                     row,
                     column,
-                    resolutionDpi
+                    resolutionDpi,
+                    columnWidths
                     ),
                 cellValue(
                     values,
@@ -3366,7 +3507,7 @@ void paintPerClassWithExtraInfoPage(
                 studentFont,
                 Qt::white,
                 Qt::black,
-                Qt::AlignLeft | Qt::AlignVCenter,
+                Qt::AlignCenter,
                 resolutionDpi
                 );
         }
@@ -4241,6 +4382,7 @@ QList<RosterCellValue> buildPerClassExtraInfoCellValues(
         appendCellValue(values, pageKey, 3, 4, QStringLiteral("Zoom Password"));
         appendCellValue(values, pageKey, 4, 4, data.info.zoomPassword);
 
+        appendCellValue(values, pageKey, PerClassIndexColumn, PerClassHeaderRow, QStringLiteral("No."));
         appendCellValue(values, pageKey, PerClassEnglishColumn, PerClassHeaderRow, QStringLiteral("English Name"));
         appendCellValue(values, pageKey, PerClassKoreanColumn, PerClassHeaderRow, QStringLiteral("Korean Name"));
 
@@ -4280,15 +4422,28 @@ QList<RosterCellValue> buildPerClassExtraInfoCellValues(
 
         for (
             int rowIndex = 0;
-            rowIndex < data.roster.rows.size()
-                && rowIndex < PerClassStudentRowCount;
+            rowIndex < PerClassStudentRowCount;
             ++rowIndex
             )
         {
-            const QStringList& row =
-                data.roster.rows.at(rowIndex);
             const int outputRow =
                 PerClassFirstStudentRow + rowIndex;
+
+            appendCellValue(
+                values,
+                pageKey,
+                PerClassIndexColumn,
+                outputRow,
+                QString::number(rowIndex + 1)
+                );
+
+            if (rowIndex >= data.roster.rows.size())
+            {
+                continue;
+            }
+
+            const QStringList& row =
+                data.roster.rows.at(rowIndex);
 
             appendCellValue(
                 values,
