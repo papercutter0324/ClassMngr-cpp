@@ -77,7 +77,7 @@ bool configureRosterPdfWriter(
         QStringLiteral("ClassMngr")
         );
     writer.setTitle(
-        QObject::tr("Rosters")
+        QStringLiteral("Rosters")
         );
     writer.setResolution(RosterPdfResolutionDpi);
 

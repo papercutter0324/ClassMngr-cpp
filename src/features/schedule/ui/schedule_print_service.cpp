@@ -315,7 +315,7 @@ bool configureSchedulePdfWriter(
         QStringLiteral("ClassMngr")
         );
     writer.setTitle(
-        QObject::tr("Schedule")
+        QStringLiteral("Schedule")
         );
     writer.setResolution(SchedulePdfResolutionDpi);
 
@@ -568,7 +568,7 @@ void drawScheduleCell(
         drawCenteredText(
             painter,
             rect,
-            QObject::tr("ESSAY"),
+            QStringLiteral("ESSAY"),
             printUiFont(
                 palette.excel ? 17 : 18,
                 QFont::Bold
@@ -585,7 +585,7 @@ void drawScheduleCell(
         drawCenteredText(
             painter,
             rect,
-            QObject::tr("Lunch"),
+            QStringLiteral("Lunch"),
             printUiFont(
                 palette.excel ? 15 : 18,
                 QFont::Bold
@@ -785,9 +785,9 @@ void paintSchedule(
     const QString leftHeader =
         palette.excel
             ? userName.trimmed().isEmpty()
-                ? QObject::tr("Schedule")
+                ? QStringLiteral("Schedule")
                 : userName.trimmed()
-            : QObject::tr("Time");
+            : QStringLiteral("Time");
 
     QRectF rect(
         0.0,
@@ -865,7 +865,7 @@ void paintSchedule(
         drawCenteredText(
             painter,
             rect,
-            QObject::tr("No registered class meeting times available."),
+            QStringLiteral("No registered class meeting times available."),
             printUiFont(
                 15,
                 QFont::DemiBold

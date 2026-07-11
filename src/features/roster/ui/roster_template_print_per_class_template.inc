@@ -441,7 +441,7 @@ void paintPerClassWithExtraInfoPage(
         drawPerClassCell(
             painter,
             notesRect,
-            QObject::tr("Notes:"),
+            QStringLiteral("Notes:"),
             notesFont,
             Qt::white,
             Qt::black,

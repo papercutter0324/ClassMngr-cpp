@@ -392,15 +392,15 @@ void CalendarEventDialog::buildUi()
     }
 
     m_repeatFrequencyCombo->addItem(
-        tr("Daily"),
+        QStringLiteral("Daily"),
         static_cast<int>(CalendarEventRepeatFrequency::Daily)
         );
     m_repeatFrequencyCombo->addItem(
-        tr("Weekly"),
+        QStringLiteral("Weekly"),
         static_cast<int>(CalendarEventRepeatFrequency::Weekly)
         );
     m_repeatFrequencyCombo->addItem(
-        tr("Monthly"),
+        QStringLiteral("Monthly"),
         static_cast<int>(CalendarEventRepeatFrequency::Monthly)
         );
     WidgetSizing::installTextAwareFieldWidth(

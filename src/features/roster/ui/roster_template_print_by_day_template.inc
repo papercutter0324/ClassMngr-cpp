@@ -69,7 +69,7 @@ void paintRosterDay(
     drawCell(
         painter,
         sourceCellRect(TimeRow, 1, 1, 1, layout),
-        QObject::tr("Time"),
+        QStringLiteral("Time"),
         labelFont,
         palette.timeBackground,
         palette,
@@ -96,7 +96,7 @@ void paintRosterDay(
     drawCell(
         painter,
         sourceCellRect(LevelRow, 1, 1, 1, layout),
-        QObject::tr("Level"),
+        QStringLiteral("Level"),
         labelFont,
         palette.classInfoBackground,
         palette,
@@ -106,7 +106,7 @@ void paintRosterDay(
     drawCell(
         painter,
         sourceCellRect(TeacherRoomRow, 1, 1, 1, layout),
-        QObject::tr("KT / Rm"),
+        QStringLiteral("KT / Rm"),
         labelFont,
         palette.classInfoBackground,
         palette,
@@ -178,10 +178,10 @@ void paintRosterDay(
     }
 
     const QList<QPair<int, QString>> footerRows{
-        {WifiRow, QObject::tr("Wi-Fi")},
-        {WifiPasswordRow, QObject::tr("Wi-Fi PW")},
-        {ZoomRow, QObject::tr("Zoom")},
-        {ZoomPasswordRow, QObject::tr("Zoom PW")}
+        {WifiRow, QStringLiteral("Wi-Fi")},
+        {WifiPasswordRow, QStringLiteral("Wi-Fi PW")},
+        {ZoomRow, QStringLiteral("Zoom")},
+        {ZoomPasswordRow, QStringLiteral("Zoom PW")}
     };
 
     for (const auto& rowLabel : footerRows)

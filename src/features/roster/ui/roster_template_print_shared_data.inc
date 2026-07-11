@@ -157,14 +157,14 @@ QString templateTitle(
     switch (templateId)
     {
     case TemplateId::PerClassWithExtraInfo:
-        return QObject::tr("Per Class with Extra Info");
+        return QStringLiteral("Per Class with Extra Info");
 
     case TemplateId::Daily:
-        return QObject::tr("Daily");
+        return QStringLiteral("Daily");
 
     case TemplateId::ByDay:
     default:
-        return QObject::tr("By Day");
+        return QStringLiteral("By Day");
     }
 }
 
