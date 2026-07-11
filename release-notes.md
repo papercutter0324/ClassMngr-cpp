@@ -1,55 +1,56 @@
-# ClassMngr Release Notes
+# ClassMngr 0.6.0 Release Notes
 
-This update focuses on making the app easier to read, easier to navigate, and
-more comfortable to use day to day.
+This release adds a more capable calendar, a built-in document library, and
+new ways to manage and print rosters and schedules.
 
 ## Highlights
 
-- The Sub Prep page now uses class tabs, so class information is easier to
-  browse without scrolling through every class at once.
-- Class schedule views now handle weekend columns more cleanly, including empty
-  weekend hours and weekend-only Essay/Lunch toggles where supported.
-- The sidebar class list is now sorted in a more useful order by grade, teacher,
-  schedule, and time.
-- Teacher dropdowns are easier to scan because Korean names and English names
-  are sorted naturally.
+- Added the **Documents** section, with teacher guides, lesson and assessment
+  templates, book-report materials, training resources, and vacation/sub-prep
+  forms.
+- Added an in-app PDF viewer with page navigation, page-count display,
+  adjustable page spacing and background colour, printing, exporting, and an
+  option to open exported files.
+- Added printable schedules and a custom print preview that works more
+  consistently across Windows, macOS, and Linux.
+- Added roster templates that can be previewed, printed, or saved as PDF.
 
-## Easier Reading
+## Calendar Improvements
 
-- Added options to increase or decrease the app font size.
-- Increased and refined several font sizes across the app.
-- Menus and right-click menus now follow the app font settings more consistently.
-- Improved spacing, alignment, and layout consistency on several pages.
-- Improved the light theme and made theme styling more consistent.
+- Calendar events can now be imported from a Google Sheets link.
+- Added repeating events, including an optional end date.
+- Added support for importing term start dates, with a setting to hide them.
+- Choose whether calendar weeks begin on Sunday or Monday.
+- Added an Upcoming Events list below the calendar.
+- Improved campus-based event filtering, calendar layout, event-label colours,
+  and handling of imported data.
 
-## My Info And Calendar
+## Rosters And Class Management
 
-- Added a My Name field to the My Info page.
-- The Monthly Calendar now shows term weeks.
-- Fixed monthly calendar rendering issues on Windows.
+- Added a unified **Rosters** page under My Info, while keeping the existing
+  class roster pages available.
+- Students can be moved between classes, reordered by dragging, or removed
+  from a button or right-click menu.
+- New roster templates include daily, by-day, per-class, and section-based
+  layouts, with additional layout options.
+- Supported templates can include selected custom student-information columns.
+- Template previews now scale to the available space and use improved margins
+  and layouts.
 
-## Campus Information
+## Documents And Resources
 
-- Added a campus map tab.
-- Split campus address and directions into clearer separate tabs.
-- Simplified housing and directions notes so each section has one note value.
-- Campus information, printable templates, and roster design resources can now
-  be updated through resource packs.
+- Added bundled resources for lesson planning, PowerPoint shortcuts, lesson
+  activities, essay writing, book reports, speaking evaluations, training, and
+  vacation/substitution preparation.
+- Campus information, document resources, templates, and roster designs can
+  now be refreshed independently through resource packs.
 
-## Scheduling And Class Info
+## General Improvements
 
-- Improved Class Schedule behavior and layout.
-- Weekend hours are now handled more consistently in regular and intensive
-  schedules.
-- The Class Info page has more consistent section layouts.
-- Dropdown menus no longer change accidentally when using the mouse wheel on
-  Windows.
-
-## General Polish
-
-- The app window and page widths were adjusted to work better on lower
-  resolution screens.
-- Horizontal scrollbars should appear more reliably when the content needs them.
-- Buttons now resize better when translated or longer text is shown.
-- The sidebar styling was cleaned up with a softer frame and better theme
-  matching.
+- Refined the sidebar layout and navigation labels.
+- Improved the light-theme class schedule styling and the application’s
+  initial window size.
+- Improved Windows installer support and macOS packaging compatibility,
+  including the application icon and bundled Qt libraries.
+- Fixed several layout and printing issues across calendars, My Info, PDF
+  viewing, and print dialogs.
