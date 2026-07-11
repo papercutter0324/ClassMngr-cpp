@@ -702,6 +702,21 @@
 <context>
     <name>BasePage</name>
     <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="226"/>
+        <source>No database is open. Open an existing database or create a new one to continue.</source>
+        <translation>No database is open. Open an existing database or create a new one to continue.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="233"/>
+        <source>Open Database...</source>
+        <translation>Open Database...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="240"/>
+        <source>New Database...</source>
+        <translation>New Database...</translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/pages/basepage.cpp" line="107"/>
         <source>Unsaved Changes</source>
         <translation>Unsaved Changes</translation>

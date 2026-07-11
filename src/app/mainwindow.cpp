@@ -308,6 +308,26 @@ void MainWindow::retranslateUi()
 
 void MainWindow::connectSignals()
 {
+    if (m_pages && m_actions.openFile)
+    {
+        connect(
+            m_pages,
+            &PageManager::openDatabaseRequested,
+            m_actions.openFile,
+            &QAction::trigger
+            );
+    }
+
+    if (m_pages && m_actions.newFile)
+    {
+        connect(
+            m_pages,
+            &PageManager::newDatabaseRequested,
+            m_actions.newFile,
+            &QAction::trigger
+            );
+    }
+
     if (m_actions.saveModeState)
     {
         const auto previousSaveModeHandler =
@@ -570,6 +590,11 @@ bool MainWindow::confirmCurrentPageCanLeave(
 
 void MainWindow::applyNoDatabaseState()
 {
+    if (m_pages)
+    {
+        m_pages->setDatabaseOpen(false);
+    }
+
     if (m_sidebarController)
     {
         m_sidebarController->refreshAllSidebars();
@@ -599,6 +624,11 @@ void MainWindow::applyNoDatabaseState()
 
 void MainWindow::applyDatabaseLoadedState()
 {
+    if (m_pages)
+    {
+        m_pages->setDatabaseOpen(true);
+    }
+
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->setDatabaseSectionsVisible(true);

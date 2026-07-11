@@ -726,6 +726,21 @@
 <context>
     <name>BasePage</name>
     <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="226"/>
+        <source>No database is open. Open an existing database or create a new one to continue.</source>
+        <translation>열려 있는 데이터베이스가 없습니다. 계속하려면 기존 데이터베이스를 열거나 새 데이터베이스를 만드세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="233"/>
+        <source>Open Database...</source>
+        <translation>데이터베이스 열기...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="240"/>
+        <source>New Database...</source>
+        <translation>새 데이터베이스...</translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/pages/basepage.cpp" line="107"/>
         <source>Unsaved Changes</source>
         <translation>저장되지 않은 변경 사항</translation>

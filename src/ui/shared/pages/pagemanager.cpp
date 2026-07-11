@@ -185,6 +185,20 @@ void PageManager::registerPages()
     for (BasePage* page : m_pages)
     {
         addWidget(page);
+
+        connect(
+            page,
+            &BasePage::openDatabaseRequested,
+            this,
+            &PageManager::openDatabaseRequested
+            );
+
+        connect(
+            page,
+            &BasePage::newDatabaseRequested,
+            this,
+            &PageManager::newDatabaseRequested
+            );
     }
 }
 
@@ -285,6 +299,19 @@ void PageManager::setDocumentViewerBackground(
         m_pdfViewerPage->setDocumentViewerBackground(
             background
             );
+    }
+}
+
+void PageManager::setDatabaseOpen(
+    bool databaseOpen
+    )
+{
+    for (BasePage* page : m_pages)
+    {
+        if (page)
+        {
+            page->setDatabaseOpen(databaseOpen);
+        }
     }
 }
 

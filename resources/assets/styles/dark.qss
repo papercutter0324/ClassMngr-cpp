@@ -84,6 +84,29 @@ QWidget#sectionCard:hover {
     border-color: #0a84ff;
 }
 
+QFrame#noDatabaseBanner {
+    background-color: #203342;
+    border: 1px solid #4f7b98;
+    border-radius: 0px;
+}
+
+QLabel#noDatabaseMessage {
+    color: #f0f6fb;
+    font-weight: 600;
+}
+
+QPushButton#noDatabaseOpenButton,
+QPushButton#noDatabaseNewButton {
+    background-color: #29465a;
+    border: 1px solid #5a89a8;
+}
+
+QPushButton#noDatabaseOpenButton:hover,
+QPushButton#noDatabaseNewButton:hover {
+    background-color: #365d75;
+    border-color: #84b6d7;
+}
+
 QFrame[role="separator"] {
     color: #4b5563;
     background-color: #4b5563;

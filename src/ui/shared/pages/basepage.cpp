@@ -1,9 +1,18 @@
 #include "basepage.h"
 
+#include <QFrame>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 #include <QSizePolicy>
 #include <QWidget>
+
+namespace
+{
+constexpr int NoDatabaseBannerSpacer = 8;
+}
 
 
 
@@ -38,6 +47,9 @@ BasePage::BasePage(
 
     m_mainLayout =
         new QVBoxLayout(this);
+
+    m_defaultMainLayoutMargins =
+        m_mainLayout->contentsMargins();
 
     m_mainLayout->addLayout(
         m_contentLayout
@@ -74,6 +86,85 @@ BasePage::BasePage(
     m_mainLayout->addWidget(
         m_bottomBar
         );
+
+
+
+    // =====================================================
+    // No Database Banner
+    // =====================================================
+
+    m_noDatabaseBanner =
+        new QFrame(this);
+
+    m_noDatabaseBanner->setObjectName(
+        QStringLiteral("noDatabaseBanner")
+        );
+
+    auto* bannerLayout =
+        new QHBoxLayout(m_noDatabaseBanner);
+
+    bannerLayout->setContentsMargins(
+        16,
+        8,
+        16,
+        8
+        );
+
+    bannerLayout->setSpacing(8);
+
+    m_noDatabaseMessage =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseMessage->setObjectName(
+        QStringLiteral("noDatabaseMessage")
+        );
+
+    m_noDatabaseMessage->setWordWrap(true);
+
+    bannerLayout->addWidget(
+        m_noDatabaseMessage,
+        1
+        );
+
+    m_openDatabaseButton =
+        new QPushButton(m_noDatabaseBanner);
+
+    m_openDatabaseButton->setObjectName(
+        QStringLiteral("noDatabaseOpenButton")
+        );
+
+    bannerLayout->addWidget(
+        m_openDatabaseButton
+        );
+
+    m_newDatabaseButton =
+        new QPushButton(m_noDatabaseBanner);
+
+    m_newDatabaseButton->setObjectName(
+        QStringLiteral("noDatabaseNewButton")
+        );
+
+    bannerLayout->addWidget(
+        m_newDatabaseButton
+        );
+
+    connect(
+        m_openDatabaseButton,
+        &QPushButton::clicked,
+        this,
+        &BasePage::openDatabaseRequested
+        );
+
+    connect(
+        m_newDatabaseButton,
+        &QPushButton::clicked,
+        this,
+        &BasePage::newDatabaseRequested
+        );
+
+    retranslateUi();
+
+    m_noDatabaseBanner->hide();
 }
 
 
@@ -137,6 +228,56 @@ void BasePage::refresh()
 
 void BasePage::retranslateUi()
 {
+    if (m_noDatabaseMessage)
+    {
+        m_noDatabaseMessage->setText(
+            tr("No database is open. Open an existing database or create a new one to continue.")
+            );
+    }
+
+    if (m_openDatabaseButton)
+    {
+        m_openDatabaseButton->setText(
+            tr("Open Database...")
+            );
+    }
+
+    if (m_newDatabaseButton)
+    {
+        m_newDatabaseButton->setText(
+            tr("New Database...")
+            );
+    }
+}
+
+void BasePage::setDatabaseOpen(
+    bool databaseOpen
+    )
+{
+    if (!m_noDatabaseBanner)
+    {
+        return;
+    }
+
+    m_noDatabaseBannerEnabled =
+        !databaseOpen;
+
+    m_noDatabaseBanner->setVisible(
+        m_noDatabaseBannerEnabled
+        );
+
+    updateNoDatabaseBannerGeometry();
+    updateNoDatabaseBannerLayout();
+}
+
+void BasePage::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QWidget::resizeEvent(event);
+
+    updateNoDatabaseBannerGeometry();
+    updateNoDatabaseBannerLayout();
 }
 
 
@@ -153,4 +294,57 @@ QVBoxLayout* BasePage::contentLayout() const
 QHBoxLayout* BasePage::bottomLayout() const
 {
     return m_bottomLayout;
+}
+
+void BasePage::updateNoDatabaseBannerGeometry()
+{
+    if (!m_noDatabaseBanner)
+    {
+        return;
+    }
+
+    int bannerHeight =
+        m_noDatabaseBanner->heightForWidth(
+            width()
+            );
+
+    if (bannerHeight < 0)
+    {
+        bannerHeight =
+            m_noDatabaseBanner->sizeHint().height();
+    }
+
+    m_noDatabaseBanner->setGeometry(
+        0,
+        0,
+        width(),
+        bannerHeight
+        );
+
+    m_noDatabaseBanner->raise();
+}
+
+void BasePage::updateNoDatabaseBannerLayout()
+{
+    if (!m_mainLayout || !m_noDatabaseBanner)
+    {
+        return;
+    }
+
+    QMargins margins =
+        m_defaultMainLayoutMargins;
+
+    if (m_noDatabaseBannerEnabled)
+    {
+        margins.setTop(
+            margins.top()
+            + m_noDatabaseBanner->height()
+            + NoDatabaseBannerSpacer
+            );
+    }
+
+    if (m_mainLayout->contentsMargins() != margins)
+    {
+        m_mainLayout->setContentsMargins(margins);
+    }
 }

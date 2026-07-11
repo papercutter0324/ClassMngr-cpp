@@ -738,6 +738,34 @@ if(BUILD_TESTING)
         COMMAND ClassMngrUniformWidthTabBarTests
     )
 
+    qt_add_executable(ClassMngrBasePageTests
+        tests/basepage_tests.cpp
+        src/ui/shared/pages/basepage.cpp
+    )
+
+    target_compile_features(ClassMngrBasePageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrBasePageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrBasePageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrBasePageTests
+        COMMAND ClassMngrBasePageTests
+    )
+
     qt_add_executable(ClassMngrSchedulePrintModelTests
         tests/schedule_print_model_tests.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp

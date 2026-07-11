@@ -3,11 +3,16 @@
 
 #include "ui/shared/constants/options.h"
 
+#include <QMargins>
 #include <QString>
 #include <QWidget>
 
 class QVBoxLayout;
 class QHBoxLayout;
+class QFrame;
+class QLabel;
+class QPushButton;
+class QResizeEvent;
 class QWidget;
 
 class BasePage : public QWidget
@@ -52,6 +57,18 @@ public:
     virtual void refresh();
     virtual void retranslateUi();
 
+    void setDatabaseOpen(
+        bool databaseOpen
+        );
+
+
+
+signals:
+
+    void openDatabaseRequested();
+
+    void newDatabaseRequested();
+
 
 
 protected:
@@ -59,6 +76,10 @@ protected:
     QVBoxLayout* contentLayout() const;
 
     QHBoxLayout* bottomLayout() const;
+
+    void resizeEvent(
+        QResizeEvent* event
+        ) override;
 
 
 
@@ -70,11 +91,27 @@ private:
 
     QVBoxLayout* m_mainLayout = nullptr;
 
+    QMargins m_defaultMainLayoutMargins;
+
     QVBoxLayout* m_contentLayout = nullptr;
 
     QWidget* m_bottomBar = nullptr;
 
     QHBoxLayout* m_bottomLayout = nullptr;
+
+    QFrame* m_noDatabaseBanner = nullptr;
+
+    QLabel* m_noDatabaseMessage = nullptr;
+
+    QPushButton* m_openDatabaseButton = nullptr;
+
+    QPushButton* m_newDatabaseButton = nullptr;
+
+    bool m_noDatabaseBannerEnabled = false;
+
+    void updateNoDatabaseBannerGeometry();
+
+    void updateNoDatabaseBannerLayout();
 };
 
 #endif // BASEPAGE_H

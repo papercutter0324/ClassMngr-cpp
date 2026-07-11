@@ -102,7 +102,20 @@ public:
         DocumentViewerBackground background
         );
 
+    void setDatabaseOpen(
+        bool databaseOpen
+        );
 
+
+
+signals:
+
+    void openDatabaseRequested();
+
+    void newDatabaseRequested();
+
+
+public:
 
     // =====================================================
     // Accessors
