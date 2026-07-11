@@ -292,9 +292,6 @@ void UpdateDialog::buildUi()
             this
             );
 
-    m_downloadButton->setObjectName("primaryButton");
-    m_installButton->setObjectName("primaryButton");
-
     buttonLayout->addWidget(m_checkButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(m_downloadButton);

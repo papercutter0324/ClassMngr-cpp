@@ -527,7 +527,6 @@ void ScheduleSectionWidget::buildUi()
 
     m_printButton =
         new TextFitPushButton(this);
-    m_printButton->setObjectName("primaryButton");
     m_printButton->setMinimumWidth(120);
 
     m_exportButton =

@@ -406,9 +406,6 @@ void TeacherInfoPage::buildUi()
     m_saveButton =
         new TextFitPushButton(tr("Save Changes"));
 
-    m_saveButton->setObjectName(
-        "primaryButton");
-
     connect(
         m_saveButton,
         &QPushButton::clicked,

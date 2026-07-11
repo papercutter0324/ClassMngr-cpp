@@ -295,8 +295,6 @@ void ScheduleEditorDialog::buildUi()
             this
             );
 
-    saveButton->setObjectName("primaryButton");
-
     footerLayout->addWidget(cancelButton);
     footerLayout->addWidget(saveButton);
 

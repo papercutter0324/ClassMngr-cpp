@@ -11,9 +11,6 @@ inline constexpr auto ButtonFooter =
 inline constexpr auto IconButton =
     "icon_button";
 
-inline constexpr auto Primary =
-    "primary";
-
 inline constexpr auto Default =
     "default";
 

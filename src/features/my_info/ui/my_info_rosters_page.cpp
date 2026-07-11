@@ -1324,8 +1324,6 @@ void MyInfoRostersPage::buildUi()
             this
             );
 
-    m_saveButton->setObjectName("primaryButton");
-
     bottomLayout()->addWidget(m_importButton);
     bottomLayout()->addWidget(m_printButton);
     bottomLayout()->addStretch();

@@ -861,7 +861,6 @@ void SpeakingEvalPage::buildUi()
             this
             );
 
-    m_saveButton->setObjectName("primaryButton");
     m_saveButton->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Preferred

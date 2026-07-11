@@ -251,7 +251,6 @@ void ClassInfoPage::buildUi()
             tr("Save Changes")
             );
 
-    m_saveButton->setObjectName("primaryButton");
     m_saveButton->setEnabled(false);
 
     bottomLayout()->addStretch();

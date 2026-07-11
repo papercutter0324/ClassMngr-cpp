@@ -423,7 +423,6 @@ void ClassNotesPage::buildUi()
             this
             );
 
-    m_saveButton->setObjectName("primaryButton");
     m_saveButton->setEnabled(false);
 
     bottomLayout()->addStretch();

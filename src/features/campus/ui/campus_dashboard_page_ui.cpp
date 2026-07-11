@@ -144,7 +144,6 @@ void CampusDashboardPage::buildUi()
                 this
                 );
 
-        m_saveCampusButton->setObjectName("primaryButton");
         m_saveCampusButton->setEnabled(false);
 
         selectorLayout->addWidget(m_newCampusButton);

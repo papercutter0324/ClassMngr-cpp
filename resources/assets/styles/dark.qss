@@ -114,35 +114,55 @@ QWidget[role="input"] {
     padding: 5px 8px;
 }
 
-QCheckBox#zoomNotAvailableCheck,
-QCheckBox#printerDriverUrlUnavailableCheck,
-QCheckBox#photocopierCodeUnavailableCheck {
+QCheckBox,
+QRadioButton {
     background: transparent;
     spacing: 6px;
 }
 
-QCheckBox#zoomNotAvailableCheck::indicator,
-QCheckBox#printerDriverUrlUnavailableCheck::indicator,
-QCheckBox#photocopierCodeUnavailableCheck::indicator {
-    width: 16px;
-    height: 16px;
-    background-color: #1e1e1e;
-    border: 2px solid #4b5563;
+QCheckBox::indicator,
+QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    background-color: #292c30;
+    border: 2px solid #7f8c8d;
+}
+
+QCheckBox::indicator {
     border-radius: 4px;
 }
 
-QCheckBox#zoomNotAvailableCheck::indicator:hover,
-QCheckBox#printerDriverUrlUnavailableCheck::indicator:hover,
-QCheckBox#photocopierCodeUnavailableCheck::indicator:hover {
-    border-color: #0a84ff;
+QRadioButton::indicator {
+    border-radius: 9px;
 }
 
-QCheckBox#zoomNotAvailableCheck::indicator:checked,
-QCheckBox#printerDriverUrlUnavailableCheck::indicator:checked,
-QCheckBox#photocopierCodeUnavailableCheck::indicator:checked {
+QCheckBox::indicator:hover,
+QCheckBox::indicator:focus,
+QRadioButton::indicator:hover,
+QRadioButton::indicator:focus {
+    border-color: #3daee9;
+}
+
+QCheckBox::indicator:checked {
     image: url(:/assets/icons/check_dark.svg);
-    background-color: #1e1e1e;
-    border-color: #0a84ff;
+    background-color: #3daee9;
+    border-color: #3daee9;
+}
+
+QCheckBox::indicator:indeterminate {
+    background-color: #3daee9;
+    border-color: #3daee9;
+}
+
+QRadioButton::indicator:checked {
+    background-color: #292c30;
+    border: 6px solid #3daee9;
+}
+
+QCheckBox::indicator:disabled,
+QRadioButton::indicator:disabled {
+    background-color: #31363b;
+    border-color: #4b5056;
 }
 
 QComboBox:editable,
@@ -166,7 +186,19 @@ QComboBox:focus,
 QDateEdit:focus,
 QTimeEdit:focus,
 QDateTimeEdit:focus {
-    border-color: #0a84ff;
+    border-color: #3daee9;
+}
+
+QLineEdit:hover,
+QPlainTextEdit:hover,
+QTextEdit:hover,
+QSpinBox:hover,
+QDoubleSpinBox:hover,
+QComboBox:hover,
+QDateEdit:hover,
+QTimeEdit:hover,
+QDateTimeEdit:hover {
+    border-color: #3daee9;
 }
 
 QLineEdit:disabled,
@@ -273,21 +305,29 @@ QComboBox QAbstractItemView {
 }
 
 QPushButton {
-    background-color: #3a3a3a;
-    color: #f0f0f0;
-    border: 2px solid #555555;
+    background-color: #292c30;
+    color: #fcfcfc;
+    border: 2px solid #4b5056;
     border-radius: 6px;
     padding: 6px 12px;
     min-height: 24px;
 }
 
 QPushButton:hover {
-    background-color: #454545;
-    border-color: #0a84ff;
+    background-color: #31363b;
+    border-color: #3daee9;
 }
 
 QPushButton:pressed {
-    background-color: #262626;
+    background-color: #3daee9;
+    color: #ffffff;
+    border-color: #3daee9;
+}
+
+QPushButton:checked {
+    background-color: #3daee9;
+    color: #ffffff;
+    border-color: #3daee9;
 }
 
 QPushButton:disabled {
@@ -296,55 +336,24 @@ QPushButton:disabled {
     border-color: #3d3d3d;
 }
 
-QPushButton#primaryButton,
-QPushButton[role="primary"] {
-    background-color: #0a84ff;
-    color: #ffffff;
-    border: 2px solid #0a84ff;
-    font-weight: 600;
-}
-
-QPushButton#primaryButton:hover,
-QPushButton[role="primary"]:hover {
-    background-color: #409cff;
-    border-color: #409cff;
-}
-
-QPushButton#primaryButton:checked,
-QPushButton[role="primary"]:checked {
-    background-color: #0067cc;
-    border-color: #005bb5;
-}
-
-QPushButton#primaryButton:checked:hover,
-QPushButton[role="primary"]:checked:hover {
-    background-color: #005bb5;
-    border-color: #004f99;
-}
-
-QPushButton#primaryButton:pressed,
-QPushButton[role="primary"]:pressed {
-    background-color: #0067cc;
-    border-color: #0067cc;
-}
-
-QPushButton#primaryButton:disabled,
-QPushButton[role="primary"]:disabled {
-    background-color: #2f2f2f;
-    color: #777777;
-    border-color: #3d3d3d;
-}
-
 QPushButton[role="button_footer"] {
-    background-color: #2f2f2f;
-    border: 2px solid #555555;
+    background-color: #292c30;
+    border: 2px solid #4b5056;
     border-radius: 6px;
     padding: 6px 12px;
     min-height: 28px;
 }
 
 QPushButton[role="button_footer"]:hover {
-    background-color: #3d3d3d;
+    background-color: #31363b;
+    border-color: #3daee9;
+}
+
+QPushButton[role="button_footer"]:pressed,
+QPushButton[role="button_footer"]:checked {
+    background-color: #3daee9;
+    color: #ffffff;
+    border-color: #3daee9;
 }
 
 QPushButton[role="button_footer"]:disabled {
@@ -354,8 +363,8 @@ QPushButton[role="button_footer"]:disabled {
 }
 
 QPushButton[role="icon_button"] {
-    background-color: #2f2f2f;
-    border: 2px solid #555555;
+    background-color: #292c30;
+    border: 2px solid #4b5056;
     border-radius: 6px;
     padding: 0;
     min-height: 24px;
@@ -363,12 +372,15 @@ QPushButton[role="icon_button"] {
 }
 
 QPushButton[role="icon_button"]:hover {
-    background-color: #3d3d3d;
-    border-color: #0a84ff;
+    background-color: #31363b;
+    border-color: #3daee9;
 }
 
-QPushButton[role="icon_button"]:pressed {
-    background-color: #242424;
+QPushButton[role="icon_button"]:pressed,
+QPushButton[role="icon_button"]:checked {
+    background-color: #3daee9;
+    color: #ffffff;
+    border-color: #3daee9;
 }
 
 QPushButton[role="icon_button"]:disabled {
@@ -461,8 +473,8 @@ QTabBar#myInfoGradeTabBar::tab:hover,
 QTabBar#myInfoClassTabBar::tab:hover,
 QTabBar[uniformTabKind="grade"]::tab:hover,
 QTabBar[uniformTabKind="class"]::tab:hover {
-    background-color: #383838;
-    border-color: #5a6370;
+    background-color: #31363b;
+    border-color: #3daee9;
 }
 
 QTabBar#subPrepGradeTabBar::tab:selected,
@@ -471,9 +483,9 @@ QTabBar#myInfoGradeTabBar::tab:selected,
 QTabBar#myInfoClassTabBar::tab:selected,
 QTabBar[uniformTabKind="grade"]::tab:selected,
 QTabBar[uniformTabKind="class"]::tab:selected {
-    background-color: #0a84ff;
+    background-color: #3daee9;
     color: #ffffff;
-    border-color: #0a84ff;
+    border-color: #3daee9;
 }
 
 QTableView,

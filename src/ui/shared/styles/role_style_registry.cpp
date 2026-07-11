@@ -14,8 +14,7 @@ bool applyRoleFont(
     const QString& role
     )
 {
-    if (role == QString::fromUtf8(UiRoles::Primary)
-        || role == QString::fromUtf8(UiRoles::ButtonFooter)
+    if (role == QString::fromUtf8(UiRoles::ButtonFooter)
         || role == QString::fromUtf8(UiRoles::IconButton))
     {
         widget->setFont(

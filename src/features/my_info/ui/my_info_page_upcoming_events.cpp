@@ -616,6 +616,8 @@ QWidget* MyInfoPage::createEventTypeFilterRow(
 
     for (const QString& eventType : calendarEventTypes())
     {
+        // Event-type filters intentionally use their event color rather than
+        // the application-wide button colors.
         auto* button =
             new QPushButton(
                 eventType,

@@ -288,11 +288,6 @@ void PdfPrintDialog::buildUi()
             tr("Print"),
             optionsPanel
             );
-    RoleStyleRegistry::apply(
-        m_printButton,
-        UiRoles::Primary
-        );
-
 #ifdef Q_OS_WIN
     m_nativePrintButton =
         new TextFitPushButton(

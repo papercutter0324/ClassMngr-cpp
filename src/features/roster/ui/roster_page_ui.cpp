@@ -189,8 +189,6 @@ void RosterPage::buildUi()
     m_removeStudentButton = new TextFitPushButton(tr("Remove Student"), this);
     m_removeColumnButton = new TextFitPushButton(tr("Remove Column"), this);
     m_saveButton = new TextFitPushButton(tr("Save Changes"), this);
-    m_saveButton->setObjectName("primaryButton");
-
     bottomLayout()->addWidget(m_importButton);
     bottomLayout()->addWidget(m_printButton);
     bottomLayout()->addStretch();
