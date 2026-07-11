@@ -260,6 +260,8 @@ private:
 
     bool m_overflowMarqueeEnabled = false;
 
+    bool m_databaseSectionsVisible = true;
+
     QTreeWidgetItem* m_previousCurrentItem = nullptr;
 
 

@@ -5,6 +5,7 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 
+#include <QAction>
 #include <QDesktopServices>
 #include <QFontMetrics>
 #include <QHeaderView>
@@ -1238,6 +1239,8 @@ void Sidebar::setDatabaseSectionsVisible(
     bool visible
     )
 {
+    m_databaseSectionsVisible = visible;
+
     const QStringList databaseNodeKeys{
         QStringLiteral("my_info"),
         QStringLiteral("sub_prep"),
@@ -1839,6 +1842,30 @@ void Sidebar::showContextMenu(
 
     QMenu menu(this);
 
+    const auto addClassAction =
+        [this, &menu]()
+        {
+            auto* action =
+                menu.addAction(
+                    tr("Add Class"),
+                    this,
+                    &Sidebar::addClassRequested
+                    );
+            action->setEnabled(m_databaseSectionsVisible);
+        };
+
+    const auto addTeacherAction =
+        [this, &menu]()
+        {
+            auto* action =
+                menu.addAction(
+                    tr("Add Teacher"),
+                    this,
+                    &Sidebar::addTeacherRequested
+                    );
+            action->setEnabled(m_databaseSectionsVisible);
+        };
+
     NodeType type = NodeType::Root;
 
     if (item)
@@ -1860,11 +1887,7 @@ void Sidebar::showContextMenu(
 
     if (isClassItem(item))
     {
-        menu.addAction(
-            tr("Add Class"),
-            this,
-            &Sidebar::addClassRequested
-            );
+        addClassAction();
 
         menu.addAction(
             tr("Delete Class"),
@@ -1881,11 +1904,7 @@ void Sidebar::showContextMenu(
 
     else if (type == NodeType::Teacher)
     {
-        menu.addAction(
-            tr("Add Teacher"),
-            this,
-            &Sidebar::addTeacherRequested
-            );
+        addTeacherAction();
 
         menu.addAction(
             tr("Delete Teacher"),
@@ -1902,11 +1921,7 @@ void Sidebar::showContextMenu(
 
     else if (item == m_nodes["teachers"])
     {
-        menu.addAction(
-            tr("Add Teacher"),
-            this,
-            &Sidebar::addTeacherRequested
-            );
+        addTeacherAction();
     }
 
 
@@ -1917,11 +1932,7 @@ void Sidebar::showContextMenu(
 
     else if (item == m_nodes["classes"])
     {
-        menu.addAction(
-            tr("Add Class"),
-            this,
-            &Sidebar::addClassRequested
-            );
+        addClassAction();
     }
 
 
@@ -1932,17 +1943,8 @@ void Sidebar::showContextMenu(
 
     else
     {
-        menu.addAction(
-            tr("Add Class"),
-            this,
-            &Sidebar::addClassRequested
-            );
-
-        menu.addAction(
-            tr("Add Teacher"),
-            this,
-            &Sidebar::addTeacherRequested
-            );
+        addClassAction();
+        addTeacherAction();
     }
 
     menu.exec(
