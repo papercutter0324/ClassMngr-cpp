@@ -39,6 +39,8 @@ constexpr auto InterLicensePath =
 constexpr auto PretendardLicensePath =
     "licenses/fonts/pretendard/LICENSE.txt";
 
+constexpr int DialogWidthSafetyBuffer = 12;
+
 QLabel* createLinkLabel(
     const QString& html,
     QWidget* parent
@@ -233,11 +235,14 @@ void AboutDialog::buildUi()
 
     titleLayout->addWidget(title, 0, Qt::AlignTop);
     titleLayout->addWidget(version, 0, Qt::AlignTop);
-    titleLayout->addStretch();
     titleLayout->setAlignment(Qt::AlignTop);
 
     headerLayout->addWidget(iconLabel, 0, Qt::AlignTop);
     headerLayout->addLayout(titleLayout, 1);
+    headerLayout->setAlignment(
+        titleLayout,
+        Qt::AlignTop
+        );
 
     auto* description =
         new QLabel(
@@ -303,6 +308,7 @@ void AboutDialog::buildUi()
                     ),
             this
             );
+    qtLicenseLink->setWordWrap(false);
 
     auto* licenseButtonLayout =
         new QHBoxLayout;
@@ -381,8 +387,29 @@ void AboutDialog::buildUi()
     layout->addWidget(acknowledgements);
     layout->addWidget(qtLicenseLink);
     layout->addLayout(licenseButtonLayout);
-    layout->addStretch();
     layout->addLayout(dialogButtonLayout);
+
+    const QMargins margins =
+        layout->contentsMargins();
+    const int qtLicenseLineWidth =
+        qtLicenseLink->sizeHint().width()
+        + margins.left()
+        + margins.right()
+        + DialogWidthSafetyBuffer;
+    const int dialogWidth =
+        qMax(
+            minimumWidth(),
+            qMax(
+                layout->minimumSize().width(),
+                qtLicenseLineWidth
+                )
+            );
+
+    setFixedWidth(dialogWidth);
+    layout->activate();
+    setFixedHeight(
+        layout->totalHeightForWidth(dialogWidth)
+        );
 }
 
 void AboutDialog::showLicense(
