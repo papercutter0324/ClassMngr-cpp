@@ -12,7 +12,14 @@ class SchedulePrintDialog : public QDialog
     Q_OBJECT
 
 public:
+    enum class Action
+    {
+        Print,
+        Export
+    };
+
     explicit SchedulePrintDialog(
+        Action action,
         QWidget* parent = nullptr
         );
 

@@ -14,7 +14,10 @@
 #include <algorithm>
 
 #include <QAbstractItemView>
+#include <QCheckBox>
 #include <QDialog>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -23,6 +26,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVariant>
@@ -72,40 +76,6 @@ bool settingToBool(
     }
 
     return value.toBool();
-}
-
-void sizeButtonForBothTimeFormats(
-    QPushButton* button,
-    const QString& twelveHourText,
-    const QString& twentyFourHourText
-    )
-{
-    if (!button)
-    {
-        return;
-    }
-
-    const QString currentText =
-        button->text();
-
-    button->setText(twelveHourText);
-    const int twelveHourWidth =
-        button->sizeHint().width();
-
-    button->setText(twentyFourHourText);
-    const int twentyFourHourWidth =
-        button->sizeHint().width();
-
-    button->setText(currentText);
-    button->setMinimumWidth(
-        std::max(
-            button->minimumWidth(),
-            std::max(
-                twelveHourWidth,
-                twentyFourHourWidth
-                )
-            )
-        );
 }
 
 QString escaped(
@@ -191,9 +161,11 @@ void ScheduleSectionWidget::retranslateUi()
     loadSchedule();
 }
 
-void ScheduleSectionWidget::toggleTimeFormat()
+void ScheduleSectionWidget::setUse24HourTime(
+    bool use24h
+    )
 {
-    m_use24h = !m_use24h;
+    m_use24h = use24h;
 
     if (auto* dataService = openDataService(m_services))
     {
@@ -209,29 +181,39 @@ void ScheduleSectionWidget::toggleTimeFormat()
     loadSchedule();
 }
 
-void ScheduleSectionWidget::toggleScheduleMode()
+void ScheduleSectionWidget::setShowIntensiveSchedule(
+    bool showIntensive
+    )
 {
-    m_showIntensive = !m_showIntensive;
-
-    if (!m_showIntensive)
-    {
-        m_showAllHours = false;
-    }
+    m_showIntensive = showIntensive;
 
     updateButtons();
     loadSchedule();
 }
 
-void ScheduleSectionWidget::toggleShowAllHours()
+void ScheduleSectionWidget::setShowAllHours(
+    bool showAllHours
+    )
 {
-    m_showAllHours = !m_showAllHours;
+    m_showAllHours = showAllHours;
     updateButtons();
     loadSchedule();
 }
 
-void ScheduleSectionWidget::toggleWeekends()
+void ScheduleSectionWidget::setHideEmptyRows(
+    bool hideEmptyRows
+    )
 {
-    m_showWeekends = !m_showWeekends;
+    m_hideEmptyRows = hideEmptyRows;
+    updateButtons();
+    loadSchedule();
+}
+
+void ScheduleSectionWidget::setShowWeekends(
+    bool showWeekends
+    )
+{
+    m_showWeekends = showWeekends;
 
     if (auto* dataService = openDataService(m_services))
     {
@@ -338,7 +320,10 @@ void ScheduleSectionWidget::onCellClicked(
 
 void ScheduleSectionWidget::printSchedule()
 {
-    SchedulePrintDialog dialog(this);
+    SchedulePrintDialog dialog(
+        SchedulePrintDialog::Action::Print,
+        this
+        );
 
     if (dialog.exec() != QDialog::Accepted)
     {
@@ -381,6 +366,90 @@ void ScheduleSectionWidget::printSchedule()
         QMessageBox::warning(
             this,
             tr("Print Schedule"),
+            result.message
+            );
+    }
+}
+
+void ScheduleSectionWidget::exportSchedule()
+{
+    SchedulePrintDialog dialog(
+        SchedulePrintDialog::Action::Export,
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    QFileDialog fileDialog(
+        this,
+        tr("Export Schedule"),
+        QString(),
+        tr("PDF Documents (*.pdf)")
+        );
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setFileMode(QFileDialog::AnyFile);
+    fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    fileDialog.setDefaultSuffix(QStringLiteral("pdf"));
+    fileDialog.selectFile(QStringLiteral("Schedule.pdf"));
+
+    if (fileDialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QStringList selectedFiles =
+        fileDialog.selectedFiles();
+
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    QString documentPath =
+        selectedFiles.first();
+
+    if (QFileInfo(documentPath).suffix().isEmpty())
+    {
+        documentPath += QStringLiteral(".pdf");
+    }
+
+    SchedulePrintService::Request request;
+    request.parent = this;
+    request.model = buildScheduleModel();
+    request.style = dialog.selectedStyle();
+    request.pageOrientation = dialog.selectedOrientation();
+
+    if (m_services && m_services->themeService())
+    {
+        request.currentTheme =
+            m_services->themeService()->currentTheme();
+    }
+
+    if (auto* dataService = openDataService(m_services))
+    {
+        request.userName =
+            dataService
+                ->loadSetting(
+                    QStringLiteral("myInfo/name"),
+                    QString()
+                    )
+                .toString();
+    }
+
+    const SchedulePrintService::Result result =
+        SchedulePrintService::saveSchedulePdf(
+            request,
+            documentPath
+            );
+
+    if (result.status == SchedulePrintService::Status::Failed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Export Schedule"),
             result.message
             );
     }
@@ -441,67 +510,102 @@ void ScheduleSectionWidget::buildUi()
         );
     controlsLayout->setSpacing(8);
 
-    m_timeFormatButton =
-        new TextFitPushButton(this);
-    m_timeFormatButton->setObjectName("primaryButton");
-    m_timeFormatButton->setMinimumWidth(140);
+    m_use24HourTimeCheckBox =
+        new QCheckBox(this);
 
-    m_weekendButton =
-        new TextFitPushButton(this);
-    m_weekendButton->setObjectName("primaryButton");
-    m_weekendButton->setMinimumWidth(150);
+    m_showWeekendsCheckBox =
+        new QCheckBox(this);
 
-    m_showAllHoursButton =
-        new TextFitPushButton(this);
-    m_showAllHoursButton->setObjectName("primaryButton");
-    m_showAllHoursButton->setCheckable(true);
-    m_showAllHoursButton->setMinimumWidth(170);
+    m_showAllHoursCheckBox =
+        new QCheckBox(this);
 
-    m_scheduleModeButton =
-        new TextFitPushButton(this);
-    m_scheduleModeButton->setObjectName("primaryButton");
-    m_scheduleModeButton->setMinimumWidth(200);
+    m_hideEmptyRowsCheckBox =
+        new QCheckBox(this);
+
+    m_showIntensiveScheduleCheckBox =
+        new QCheckBox(this);
 
     m_printButton =
         new TextFitPushButton(this);
     m_printButton->setObjectName("primaryButton");
     m_printButton->setMinimumWidth(120);
 
-    controlsLayout->addWidget(m_timeFormatButton);
-    controlsLayout->addWidget(m_weekendButton);
+    m_exportButton =
+        new TextFitPushButton(this);
+    m_exportButton->setMinimumWidth(
+        m_printButton->minimumWidth()
+        );
+
+    auto* controlsColumnLayout =
+        new QVBoxLayout;
+    controlsColumnLayout->setContentsMargins(0, 0, 0, 0);
+    controlsColumnLayout->setSpacing(4);
+    controlsColumnLayout->addWidget(m_use24HourTimeCheckBox);
+    controlsColumnLayout->addWidget(m_showWeekendsCheckBox);
+    controlsColumnLayout->addWidget(m_showIntensiveScheduleCheckBox);
+
+    auto* intensiveOptionsLayout =
+        new QVBoxLayout;
+    intensiveOptionsLayout->setContentsMargins(20, 0, 0, 0);
+    intensiveOptionsLayout->setSpacing(4);
+    intensiveOptionsLayout->addWidget(m_showAllHoursCheckBox);
+    intensiveOptionsLayout->addWidget(m_hideEmptyRowsCheckBox);
+    controlsColumnLayout->addLayout(intensiveOptionsLayout);
+
+    auto* actionsLayout =
+        new QVBoxLayout;
+    actionsLayout->setContentsMargins(0, 0, 0, 0);
+    actionsLayout->setSpacing(4);
+    actionsLayout->addStretch();
+    actionsLayout->addWidget(m_exportButton);
+    actionsLayout->addWidget(m_printButton);
+
+    controlsLayout->addLayout(controlsColumnLayout);
     controlsLayout->addStretch();
-    controlsLayout->addWidget(m_showAllHoursButton);
-    controlsLayout->addWidget(m_scheduleModeButton);
-    controlsLayout->addWidget(m_printButton);
+    controlsLayout->addLayout(actionsLayout);
 
     layout->addLayout(controlsLayout);
 
     connect(
-        m_timeFormatButton,
-        &QPushButton::clicked,
+        m_use24HourTimeCheckBox,
+        &QCheckBox::toggled,
         this,
-        &ScheduleSectionWidget::toggleTimeFormat
+        &ScheduleSectionWidget::setUse24HourTime
         );
 
     connect(
-        m_weekendButton,
-        &QPushButton::clicked,
+        m_showWeekendsCheckBox,
+        &QCheckBox::toggled,
         this,
-        &ScheduleSectionWidget::toggleWeekends
+        &ScheduleSectionWidget::setShowWeekends
         );
 
     connect(
-        m_showAllHoursButton,
-        &QPushButton::clicked,
+        m_showAllHoursCheckBox,
+        &QCheckBox::toggled,
         this,
-        &ScheduleSectionWidget::toggleShowAllHours
+        &ScheduleSectionWidget::setShowAllHours
         );
 
     connect(
-        m_scheduleModeButton,
+        m_hideEmptyRowsCheckBox,
+        &QCheckBox::toggled,
+        this,
+        &ScheduleSectionWidget::setHideEmptyRows
+        );
+
+    connect(
+        m_showIntensiveScheduleCheckBox,
+        &QCheckBox::toggled,
+        this,
+        &ScheduleSectionWidget::setShowIntensiveSchedule
+        );
+
+    connect(
+        m_exportButton,
         &QPushButton::clicked,
         this,
-        &ScheduleSectionWidget::toggleScheduleMode
+        &ScheduleSectionWidget::exportSchedule
         );
 
     connect(
@@ -691,55 +795,41 @@ void ScheduleSectionWidget::loadSchedule()
 void ScheduleSectionWidget::updateButtons()
 {
     if (
-        !m_timeFormatButton
-        || !m_weekendButton
-        || !m_showAllHoursButton
-        || !m_scheduleModeButton
+        !m_use24HourTimeCheckBox
+        || !m_showWeekendsCheckBox
+        || !m_showAllHoursCheckBox
+        || !m_hideEmptyRowsCheckBox
+        || !m_showIntensiveScheduleCheckBox
+        || !m_exportButton
         || !m_printButton
         )
     {
         return;
     }
 
-    const QString twelveHourText =
-        tr("12-Hour Time");
-    const QString twentyFourHourText =
-        tr("24-Hour Time");
+    const QSignalBlocker use24hBlocker(m_use24HourTimeCheckBox);
+    const QSignalBlocker weekendsBlocker(m_showWeekendsCheckBox);
+    const QSignalBlocker allHoursBlocker(m_showAllHoursCheckBox);
+    const QSignalBlocker hideEmptyBlocker(m_hideEmptyRowsCheckBox);
+    const QSignalBlocker intensiveBlocker(m_showIntensiveScheduleCheckBox);
 
-    sizeButtonForBothTimeFormats(
-        m_timeFormatButton,
-        twelveHourText,
-        twentyFourHourText
+    m_use24HourTimeCheckBox->setText(tr("Use 24-hour time"));
+    m_use24HourTimeCheckBox->setChecked(m_use24h);
+    m_showWeekendsCheckBox->setText(tr("Show weekends"));
+    m_showWeekendsCheckBox->setChecked(m_showWeekends);
+    m_showIntensiveScheduleCheckBox->setText(
+        tr("Show intensive schedule")
         );
+    m_showIntensiveScheduleCheckBox->setChecked(m_showIntensive);
+    m_showAllHoursCheckBox->setText(tr("Show all hours"));
+    m_showAllHoursCheckBox->setChecked(m_showAllHours);
+    m_showAllHoursCheckBox->setEnabled(m_showIntensive);
+    m_hideEmptyRowsCheckBox->setText(tr("Hide empty rows"));
+    m_hideEmptyRowsCheckBox->setChecked(m_hideEmptyRows);
+    m_hideEmptyRowsCheckBox->setEnabled(m_showIntensive);
 
-    m_timeFormatButton->setText(
-        m_use24h
-            ? twelveHourText
-            : twentyFourHourText
-        );
-
-    m_weekendButton->setText(
-        m_showWeekends
-            ? tr("Hide Weekends")
-            : tr("Show Weekends")
-        );
-
-    m_showAllHoursButton->setText(
-        m_showAllHours
-            ? tr("Hide All Hours")
-            : tr("Show All Hours")
-        );
-    m_showAllHoursButton->setChecked(
-        m_showAllHours
-        );
-    m_showAllHoursButton->setVisible(
-        m_showIntensive
-        );
-
-    m_scheduleModeButton->setText(
-        m_showIntensive
-            ? tr("Show Regular Schedule")
-            : tr("Show Intensive Schedule")
+    m_exportButton->setText(
+        tr("Export")
         );
 
     m_printButton->setText(
@@ -883,8 +973,8 @@ ScheduleViewRequest ScheduleSectionWidget::buildScheduleViewRequest() const
     request.regularWeekdaySlotTogglingEnabled =
         m_regularWeekdaySlotTogglingEnabled;
     request.rowFilter =
-        m_showIntensive && !m_showAllHours
-            ? ScheduleRowFilter::TrimEmptyOuterRows
+        m_showIntensive && m_hideEmptyRows
+            ? ScheduleRowFilter::HideEmptyRows
             : ScheduleRowFilter::None;
 
     return request;
@@ -905,7 +995,7 @@ ScheduleViewModel ScheduleSectionWidget::buildScheduleModel()
         builder.build(
             request.useIntensive,
             request.days,
-            request.useIntensive
+            request.useIntensive && m_showAllHours
             );
 
     return buildScheduleViewModel(

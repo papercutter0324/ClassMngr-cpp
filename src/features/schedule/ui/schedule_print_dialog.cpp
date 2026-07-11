@@ -7,12 +7,15 @@
 #include <QVBoxLayout>
 
 SchedulePrintDialog::SchedulePrintDialog(
+    Action action,
     QWidget* parent
     )
     : QDialog(parent)
 {
     setWindowTitle(
-        tr("Print Schedule")
+        action == Action::Export
+            ? tr("Export Schedule")
+            : tr("Print Schedule")
         );
 
     auto* layout =
@@ -109,7 +112,9 @@ SchedulePrintDialog::SchedulePrintDialog(
             );
 
     buttons->button(QDialogButtonBox::Ok)->setText(
-        tr("Print")
+        action == Action::Export
+            ? tr("Export")
+            : tr("Print")
         );
 
     connect(

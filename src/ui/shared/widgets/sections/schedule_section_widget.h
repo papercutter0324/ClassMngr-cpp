@@ -6,6 +6,7 @@
 #include <QWidget>
 
 class ApplicationServices;
+class QCheckBox;
 class QLabel;
 class QPushButton;
 class QTableWidget;
@@ -29,10 +30,12 @@ signals:
         );
 
 private slots:
-    void toggleTimeFormat();
-    void toggleScheduleMode();
-    void toggleShowAllHours();
-    void toggleWeekends();
+    void setUse24HourTime(bool use24h);
+    void setShowIntensiveSchedule(bool showIntensive);
+    void setShowAllHours(bool showAllHours);
+    void setHideEmptyRows(bool hideEmptyRows);
+    void setShowWeekends(bool showWeekends);
+    void exportSchedule();
     void printSchedule();
     void onCellClicked(
         int row,
@@ -68,6 +71,7 @@ private:
     bool m_use24h = false;
     bool m_showIntensive = false;
     bool m_showAllHours = false;
+    bool m_hideEmptyRows = true;
     bool m_showWeekends = false;
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
@@ -75,9 +79,11 @@ private:
     ScheduleViewModel m_scheduleModel;
 
     QTableWidget* m_table = nullptr;
-    QPushButton* m_timeFormatButton = nullptr;
-    QPushButton* m_weekendButton = nullptr;
-    QPushButton* m_showAllHoursButton = nullptr;
-    QPushButton* m_scheduleModeButton = nullptr;
+    QCheckBox* m_use24HourTimeCheckBox = nullptr;
+    QCheckBox* m_showWeekendsCheckBox = nullptr;
+    QCheckBox* m_showAllHoursCheckBox = nullptr;
+    QCheckBox* m_hideEmptyRowsCheckBox = nullptr;
+    QCheckBox* m_showIntensiveScheduleCheckBox = nullptr;
+    QPushButton* m_exportButton = nullptr;
     QPushButton* m_printButton = nullptr;
 };
