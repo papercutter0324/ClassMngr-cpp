@@ -98,25 +98,25 @@ QList<TreeNodeSpec> treeStructure()
 
         {
             "document",
-            QStringLiteral("Documents"),
+            QObject::tr("Documents"),
             NodeType::Root,
 
             {
                 {
                     "document_guides",
-                    QStringLiteral("Guides"),
+                    QObject::tr("Guides"),
                     NodeType::Root,
 
                     {
                         {
                             "document_guides_lesson_planning",
-                            QStringLiteral("Lesson Planning"),
+                            QObject::tr("Lesson Planning"),
                             NodeType::Page
                         },
 
                         {
                             "document_guides_powerpoint_shortcuts",
-                            QStringLiteral("PowerPoint Shortcuts"),
+                            QObject::tr("PowerPoint Shortcuts"),
                             NodeType::Page
                         }
                     }
@@ -124,43 +124,43 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_lesson_templates",
-                    QStringLiteral("Lesson Templates"),
+                    QObject::tr("Lesson Templates"),
                     NodeType::Root,
 
                     {
                         {
                             "document_lesson_templates_sp_wr",
-                            QStringLiteral("Speaking / Writing"),
+                            QObject::tr("Speaking / Writing"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_skill",
-                            QStringLiteral("Skill / TBL"),
+                            QObject::tr("Skill / TBL"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_student_led",
-                            QStringLiteral("Student-Led Activities"),
+                            QObject::tr("Student-Led Activities"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_ms_essay",
-                            QStringLiteral("Middle School OE"),
+                            QObject::tr("Middle School OE"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_theseus_paragraph",
-                            QStringLiteral("Theseus Paragraph Writing"),
+                            QObject::tr("Theseus Paragraph Writing"),
                             NodeType::Page
                         },
 
                         {
                             "document_lesson_templates_creo_writing",
-                            QStringLiteral("CREO"),
+                            QObject::tr("CREO"),
                             NodeType::Page
                         }
                     }
@@ -168,25 +168,25 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_online_essay",
-                    QStringLiteral("Online Essay"),
+                    QObject::tr("Online Essay"),
                     NodeType::Root,
 
                     {
                         {
                             "document_online_essay_topic_template",
-                            QStringLiteral("Essay Topic Template"),
+                            QObject::tr("Essay Topic Template"),
                             NodeType::Page
                         },
 
                         {
                             "document_online_essay_brainstorm",
-                            QStringLiteral("Essay Brainstorm"),
+                            QObject::tr("Essay Brainstorm"),
                             NodeType::Page
                         },
 
                         {
                             "document_online_essay_theseus_explained",
-                            QStringLiteral("Theseus Paragraphs Explained"),
+                            QObject::tr("Theseus Paragraphs Explained"),
                             NodeType::Page
                         }
                     }
@@ -194,49 +194,49 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_speaking_evals",
-                    QStringLiteral("Speaking Evals"),
+                    QObject::tr("Speaking Evals"),
                     NodeType::Root,
 
                     {
                         {
                             "document_speaking_evals_tips_one_on_one",
-                            QStringLiteral("One-to-One Evaluations"),
+                            QObject::tr("One-to-One Evaluations"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_tips_presentations",
-                            QStringLiteral("In-Class Presentations"),
+                            QObject::tr("In-Class Presentations"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_tips_single_class",
-                            QStringLiteral("Finishing in One Class"),
+                            QObject::tr("Finishing in One Class"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_topic_options",
-                            QStringLiteral("Topic Options"),
+                            QObject::tr("Topic Options"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_regular_template",
-                            QStringLiteral("Regular Template"),
+                            QObject::tr("Regular Template"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_athena_songs_template",
-                            QStringLiteral("Athena/Song's Template"),
+                            QObject::tr("Athena/Song's Template"),
                             NodeType::Page
                         },
 
                         {
                             "document_speaking_evals_winner_certificates",
-                            QStringLiteral("Winner Certificates"),
+                            QObject::tr("Winner Certificates"),
                             NodeType::Page
                         }
                     }
@@ -244,25 +244,25 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_book_reports",
-                    QStringLiteral("Book Reports"),
+                    QObject::tr("Book Reports"),
                     NodeType::Root,
 
                     {
                         {
                             "document_book_reports_grading_rubric",
-                            QStringLiteral("Grading Rubric"),
+                            QObject::tr("Grading Rubric"),
                             NodeType::Page
                         },
 
                         {
                             "document_book_reports_grading_rubric_40",
-                            QStringLiteral("Grading Rubric (40%)"),
+                            QObject::tr("Grading Rubric (40%)"),
                             NodeType::Page
                         },
 
                         {
                             "document_book_reports_student_info_handout",
-                            QStringLiteral("Student Info Handout"),
+                            QObject::tr("Student Info Handout"),
                             NodeType::Page
                         }
                     }
@@ -270,25 +270,25 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_training",
-                    QStringLiteral("Training"),
+                    QObject::tr("Training"),
                     NodeType::Root,
 
                     {
                         {
                             "document_training_observation",
-                            QStringLiteral("Observation"),
+                            QObject::tr("Observation"),
                             NodeType::Page
                         },
 
                         {
                             "document_training_reflection",
-                            QStringLiteral("Reflection"),
+                            QObject::tr("Reflection"),
                             NodeType::Page
                         },
 
                         {
                             "document_training_final_reflection",
-                            QStringLiteral("Final Reflection"),
+                            QObject::tr("Final Reflection"),
                             NodeType::Page
                         }
                     }
@@ -296,43 +296,43 @@ QList<TreeNodeSpec> treeStructure()
 
                 {
                     "document_vacation_sub_prep",
-                    QStringLiteral("Vacation / Sub Prep"),
+                    QObject::tr("Vacation / Sub Prep"),
                     NodeType::Root,
 
                     {
                         {
                             "document_vacation_sub_prep_applying",
-                            QStringLiteral("Applying for Vacation"),
+                            QObject::tr("Applying for Vacation"),
                             NodeType::Page
                         },
 
                         {
                             "document_vacation_sub_prep_guidelines",
-                            QStringLiteral("Vacation Guidelines"),
+                            QObject::tr("Vacation Guidelines"),
                             NodeType::Page
                         },
 
                         {
                             "document_vacation_sub_prep_request_form",
-                            QStringLiteral("Vacacation Request Form"),
+                            QObject::tr("Vacacation Request Form"),
                             NodeType::Page
                         },
 
                         {
                             "document_vacation_sub_prep_procedures",
-                            QStringLiteral("Sub Prep Procedures"),
+                            QObject::tr("Sub Prep Procedures"),
                             NodeType::Page
                         },
 
                         {
                             "document_vacation_sub_prep_checklist",
-                            QStringLiteral("Sub Prep Checklist"),
+                            QObject::tr("Sub Prep Checklist"),
                             NodeType::Page
                         },
 
                         {
                             "document_vacation_sub_prep_template",
-                            QStringLiteral("Sub Prep Template"),
+                            QObject::tr("Sub Prep Template"),
                             NodeType::Page
                         }
                     }

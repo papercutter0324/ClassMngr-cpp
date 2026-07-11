@@ -2925,6 +2925,196 @@
         <translation>모든 교사</translation>
     </message>
     <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="101"/>
+        <source>Documents</source>
+        <translation>문서</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="107"/>
+        <source>Guides</source>
+        <translation>안내서</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="113"/>
+        <source>Lesson Planning</source>
+        <translation>수업 계획</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="119"/>
+        <source>PowerPoint Shortcuts</source>
+        <translation>PowerPoint 단축키</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="127"/>
+        <source>Lesson Templates</source>
+        <translation>수업 템플릿</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="133"/>
+        <source>Speaking / Writing</source>
+        <translation>말하기 / 쓰기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="139"/>
+        <source>Skill / TBL</source>
+        <translation>기능 / TBL</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="145"/>
+        <source>Student-Led Activities</source>
+        <translation>학생 주도 활동</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="151"/>
+        <source>Middle School OE</source>
+        <translation>중학교 OE</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="157"/>
+        <source>Theseus Paragraph Writing</source>
+        <translation>Theseus 단락 쓰기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="163"/>
+        <source>CREO</source>
+        <translation>CREO</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="171"/>
+        <source>Online Essay</source>
+        <translation>온라인 에세이</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="177"/>
+        <source>Essay Topic Template</source>
+        <translation>에세이 주제 템플릿</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="183"/>
+        <source>Essay Brainstorm</source>
+        <translation>에세이 브레인스토밍</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="189"/>
+        <source>Theseus Paragraphs Explained</source>
+        <translation>Theseus 단락 설명</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="197"/>
+        <source>Speaking Evals</source>
+        <translation>말하기 평가</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="203"/>
+        <source>One-to-One Evaluations</source>
+        <translation>1:1 평가</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="209"/>
+        <source>In-Class Presentations</source>
+        <translation>수업 내 발표</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="215"/>
+        <source>Finishing in One Class</source>
+        <translation>한 수업에 마치기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="221"/>
+        <source>Topic Options</source>
+        <translation>주제 선택지</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="227"/>
+        <source>Regular Template</source>
+        <translation>기본 템플릿</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="233"/>
+        <source>Athena/Song&apos;s Template</source>
+        <translation>Athena/Song 템플릿</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="239"/>
+        <source>Winner Certificates</source>
+        <translation>수상자 증서</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="247"/>
+        <source>Book Reports</source>
+        <translation>독후감</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="253"/>
+        <source>Grading Rubric</source>
+        <translation>평가 기준표</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="259"/>
+        <source>Grading Rubric (40%)</source>
+        <translation>평가 기준표 (40%)</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="265"/>
+        <source>Student Info Handout</source>
+        <translation>학생 정보 유인물</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="273"/>
+        <source>Training</source>
+        <translation>연수</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="279"/>
+        <source>Observation</source>
+        <translation>관찰</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="285"/>
+        <source>Reflection</source>
+        <translation>성찰</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="291"/>
+        <source>Final Reflection</source>
+        <translation>최종 성찰</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="299"/>
+        <source>Vacation / Sub Prep</source>
+        <translation>휴가 / 대체 수업 준비</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="305"/>
+        <source>Applying for Vacation</source>
+        <translation>휴가 신청</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="311"/>
+        <source>Vacation Guidelines</source>
+        <translation>휴가 지침</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="317"/>
+        <source>Vacacation Request Form</source>
+        <translation>휴가 신청서</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="323"/>
+        <source>Sub Prep Procedures</source>
+        <translation>대체 수업 준비 절차</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="329"/>
+        <source>Sub Prep Checklist</source>
+        <translation>대체 수업 준비 체크리스트</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="335"/>
+        <source>Sub Prep Template</source>
+        <translation>대체 수업 준비 템플릿</translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="345"/>
         <source>Useful Links</source>
         <translation>유용한 링크</translation>

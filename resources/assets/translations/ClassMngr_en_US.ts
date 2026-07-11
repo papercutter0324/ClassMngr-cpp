@@ -1973,6 +1973,196 @@
         <translation>Fall</translation>
     </message>
     <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="101"/>
+        <source>Documents</source>
+        <translation>Documents</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="107"/>
+        <source>Guides</source>
+        <translation>Guides</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="113"/>
+        <source>Lesson Planning</source>
+        <translation>Lesson Planning</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="119"/>
+        <source>PowerPoint Shortcuts</source>
+        <translation>PowerPoint Shortcuts</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="127"/>
+        <source>Lesson Templates</source>
+        <translation>Lesson Templates</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="133"/>
+        <source>Speaking / Writing</source>
+        <translation>Speaking / Writing</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="139"/>
+        <source>Skill / TBL</source>
+        <translation>Skill / TBL</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="145"/>
+        <source>Student-Led Activities</source>
+        <translation>Student-Led Activities</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="151"/>
+        <source>Middle School OE</source>
+        <translation>Middle School OE</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="157"/>
+        <source>Theseus Paragraph Writing</source>
+        <translation>Theseus Paragraph Writing</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="163"/>
+        <source>CREO</source>
+        <translation>CREO</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="171"/>
+        <source>Online Essay</source>
+        <translation>Online Essay</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="177"/>
+        <source>Essay Topic Template</source>
+        <translation>Essay Topic Template</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="183"/>
+        <source>Essay Brainstorm</source>
+        <translation>Essay Brainstorm</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="189"/>
+        <source>Theseus Paragraphs Explained</source>
+        <translation>Theseus Paragraphs Explained</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="197"/>
+        <source>Speaking Evals</source>
+        <translation>Speaking Evals</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="203"/>
+        <source>One-to-One Evaluations</source>
+        <translation>One-to-One Evaluations</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="209"/>
+        <source>In-Class Presentations</source>
+        <translation>In-Class Presentations</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="215"/>
+        <source>Finishing in One Class</source>
+        <translation>Finishing in One Class</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="221"/>
+        <source>Topic Options</source>
+        <translation>Topic Options</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="227"/>
+        <source>Regular Template</source>
+        <translation>Regular Template</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="233"/>
+        <source>Athena/Song&apos;s Template</source>
+        <translation>Athena/Song&apos;s Template</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="239"/>
+        <source>Winner Certificates</source>
+        <translation>Winner Certificates</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="247"/>
+        <source>Book Reports</source>
+        <translation>Book Reports</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="253"/>
+        <source>Grading Rubric</source>
+        <translation>Grading Rubric</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="259"/>
+        <source>Grading Rubric (40%)</source>
+        <translation>Grading Rubric (40%)</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="265"/>
+        <source>Student Info Handout</source>
+        <translation>Student Info Handout</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="273"/>
+        <source>Training</source>
+        <translation>Training</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="279"/>
+        <source>Observation</source>
+        <translation>Observation</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="285"/>
+        <source>Reflection</source>
+        <translation>Reflection</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="291"/>
+        <source>Final Reflection</source>
+        <translation>Final Reflection</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="299"/>
+        <source>Vacation / Sub Prep</source>
+        <translation>Vacation / Sub Prep</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="305"/>
+        <source>Applying for Vacation</source>
+        <translation>Applying for Vacation</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="311"/>
+        <source>Vacation Guidelines</source>
+        <translation>Vacation Guidelines</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="317"/>
+        <source>Vacacation Request Form</source>
+        <translation>Vacacation Request Form</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="323"/>
+        <source>Sub Prep Procedures</source>
+        <translation>Sub Prep Procedures</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="329"/>
+        <source>Sub Prep Checklist</source>
+        <translation>Sub Prep Checklist</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="335"/>
+        <source>Sub Prep Template</source>
+        <translation>Sub Prep Template</translation>
+    </message>
+    <message>
         <location filename="../../../src/core/updater/update_service.cpp" line="37"/>
         <source>update manifest</source>
         <translation type="unfinished"></translation>
