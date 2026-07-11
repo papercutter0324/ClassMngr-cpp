@@ -10,10 +10,13 @@ class ApplicationServices;
 class QButtonGroup;
 class QCheckBox;
 class QComboBox;
+class QGridLayout;
 class QGroupBox;
 class QLabel;
 class QListWidget;
 class QResizeEvent;
+class QScrollArea;
+class QWidget;
 
 class RosterPrintDialog : public QDialog
 {
@@ -58,6 +61,7 @@ private:
     void captureFinalSelection();
     void loadClasses();
     void retranslateUi();
+    void resizeForExtraInfoOptions();
 
     ApplicationServices* m_services = nullptr;
     int m_currentClassId = -1;
@@ -74,12 +78,21 @@ private:
         QPageLayout::Portrait;
 
     QComboBox* m_templateCombo = nullptr;
-    QGroupBox* m_extraInfoOptionsGroup = nullptr;
+    QWidget* m_extraInfoOptionsGroup = nullptr;
+    QLabel* m_pageLayoutLabel = nullptr;
+    QLabel* m_extraInfoColumnsLabel = nullptr;
+    QLabel* m_extraInfoSelectionCountLabel = nullptr;
+    QLabel* m_rosterPreviewLabel = nullptr;
     QButtonGroup* m_extraInfoOrientationGroup = nullptr;
-    QListWidget* m_extraColumnList = nullptr;
+    QGridLayout* m_extraColumnGridLayout = nullptr;
+    QScrollArea* m_extraColumnScrollArea = nullptr;
+    QWidget* m_extraColumnOptionsWidget = nullptr;
+    QList<QCheckBox*> m_extraColumnChecks;
     QCheckBox* m_livePreviewCheckBox = nullptr;
     QLabel* m_previewLabel = nullptr;
     QLabel* m_previewStatusLabel = nullptr;
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;
+    int m_baseMinimumWidth = 0;
+    int m_baseMinimumHeight = 0;
 };

@@ -17,6 +17,7 @@
 #include <QFileInfo>
 #include <QFrame>
 #include <QGroupBox>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLayout>
 #include <QLabel>
@@ -28,6 +29,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QResizeEvent>
+#include <QScrollArea>
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStyle>
@@ -46,6 +48,10 @@ constexpr int LandscapeOrientationId = 11;
 constexpr int DialogWidth = 520;
 constexpr int DialogExpandedHeight = 620;
 constexpr int PreviewHeight = 190;
+constexpr int ExtraColumnGridColumns = 3;
+constexpr int ExtraColumnVisibleRows = 3;
+constexpr int MaximumDialogWidthMultiplier = 3;
+constexpr int MaximumDialogWidthDivisor = 2;
 
 class RosterClassListMarqueeDelegate : public QStyledItemDelegate
 {
@@ -432,6 +438,7 @@ RosterPrintDialog::RosterPrintDialog(
     buildUi();
     loadClasses();
     retranslateUi();
+    updateTemplateOptionsVisibility();
     updateClassListVisibility();
 }
 
@@ -495,20 +502,16 @@ QStringList RosterPrintDialog::selectedExtraColumns() const
     if (
         selectedTemplateId()
             != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
-        || !m_extraColumnList
         )
     {
         return columns;
     }
 
-    for (int index = 0; index < m_extraColumnList->count(); ++index)
+    for (const QCheckBox* checkBox : m_extraColumnChecks)
     {
-        const QListWidgetItem* item =
-            m_extraColumnList->item(index);
-
-        if (item && item->checkState() == Qt::Checked)
+        if (checkBox && checkBox->isChecked())
         {
-            columns.append(item->text());
+            columns.append(checkBox->text());
         }
     }
 
@@ -724,8 +727,9 @@ void RosterPrintDialog::updateClassListVisibility()
 
 void RosterPrintDialog::updateTemplateOptionsVisibility()
 {
+    const auto templateId = selectedTemplateId();
     const bool showExtraInfoOptions =
-        selectedTemplateId()
+        templateId
         == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
 
     if (m_extraInfoOptionsGroup)
@@ -734,12 +738,54 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
         m_extraInfoOptionsGroup->setEnabled(showExtraInfoOptions);
     }
 
+    if (m_extraInfoOrientationGroup)
+    {
+        if (auto* portrait =
+                m_extraInfoOrientationGroup->button(PortraitOrientationId))
+        {
+            const bool supported =
+                templateId
+                != RosterTemplatePrintService::TemplateId::ByDay;
+            portrait->setVisible(supported);
+            portrait->setEnabled(supported);
+
+            if (
+                supported
+                && templateId
+                    == RosterTemplatePrintService::TemplateId::Daily
+                )
+            {
+                portrait->setChecked(true);
+            }
+        }
+
+        if (auto* landscape =
+                m_extraInfoOrientationGroup->button(LandscapeOrientationId))
+        {
+            const bool supported =
+                templateId
+                != RosterTemplatePrintService::TemplateId::Daily;
+            landscape->setVisible(supported);
+            landscape->setEnabled(supported);
+
+            if (
+                supported
+                && templateId
+                    == RosterTemplatePrintService::TemplateId::ByDay
+                )
+            {
+                landscape->setChecked(true);
+            }
+        }
+    }
+
     if (showExtraInfoOptions)
     {
         updateExtraInfoColumns();
     }
     else
     {
+        setMinimumHeight(m_baseMinimumHeight);
         updatePreview();
     }
 }
@@ -750,7 +796,8 @@ void RosterPrintDialog::updateExtraInfoColumns()
         selectedTemplateId()
             != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
         ||
-        !m_extraColumnList
+        !m_extraColumnGridLayout
+        || !m_extraColumnOptionsWidget
         || !m_services
         || !m_services->dataService()
         )
@@ -787,34 +834,79 @@ void RosterPrintDialog::updateExtraInfoColumns()
             rosterClasses
             );
 
-    const QSignalBlocker blocker(m_extraColumnList);
-    m_extraColumnList->clear();
-
-    for (const QString& column : columns)
+    while (QLayoutItem* item = m_extraColumnGridLayout->takeAt(0))
     {
-        auto* item =
-            new QListWidgetItem(
-                column,
-                m_extraColumnList
-                );
-        item->setFlags(
-            item->flags()
-            | Qt::ItemIsUserCheckable
-            );
-        item->setCheckState(
+        delete item->widget();
+        delete item;
+    }
+
+    m_extraColumnChecks.clear();
+
+    QList<int> columnWidths(ExtraColumnGridColumns, 0);
+
+    for (int column = 0; column < ExtraColumnGridColumns; ++column)
+    {
+        m_extraColumnGridLayout->setColumnMinimumWidth(column, 0);
+    }
+
+    for (int index = 0; index < columns.size(); ++index)
+    {
+        const QString& column = columns.at(index);
+        auto* checkBox = new QCheckBox(column);
+        checkBox->setToolTip(column);
+        checkBox->setChecked(
             previouslyChecked.contains(column, Qt::CaseInsensitive)
-                ? Qt::Checked
-                : Qt::Unchecked
+            );
+
+        const int gridColumn = index % ExtraColumnGridColumns;
+        columnWidths[gridColumn] = qMax(
+            columnWidths.at(gridColumn),
+            checkBox->sizeHint().width()
+            );
+
+        m_extraColumnGridLayout->addWidget(
+            checkBox,
+            index / ExtraColumnGridColumns,
+            gridColumn
+            );
+        m_extraColumnChecks.append(checkBox);
+
+        connect(
+            checkBox,
+            &QCheckBox::toggled,
+            this,
+            &RosterPrintDialog::updateExtraInfoSelectionLimits
             );
     }
 
+    int optionsWidth = 0;
+
+    for (int column = 0; column < ExtraColumnGridColumns; ++column)
+    {
+        m_extraColumnGridLayout->setColumnMinimumWidth(
+            column,
+            columnWidths.at(column)
+            );
+        optionsWidth += columnWidths.at(column);
+    }
+
+    optionsWidth +=
+        (ExtraColumnGridColumns - 1)
+        * m_extraColumnGridLayout->horizontalSpacing();
+    m_extraColumnOptionsWidget->setMinimumWidth(optionsWidth);
+    m_extraColumnOptionsWidget->resize(
+        optionsWidth,
+        m_extraColumnOptionsWidget->minimumHeight()
+        );
+
     updateExtraInfoSelectionLimits();
+    resizeForExtraInfoOptions();
     updatePreview();
 }
 
 void RosterPrintDialog::updateExtraInfoSelectionLimits()
 {
-    if (!m_extraColumnList)
+    if (!m_extraColumnGridLayout)
     {
         return;
     }
@@ -826,25 +918,21 @@ void RosterPrintDialog::updateExtraInfoSelectionLimits()
     int selectedCount = 0;
 
     {
-        const QSignalBlocker blocker(m_extraColumnList);
-
-        for (int index = 0; index < m_extraColumnList->count(); ++index)
+        for (QCheckBox* checkBox : m_extraColumnChecks)
         {
-            QListWidgetItem* item =
-                m_extraColumnList->item(index);
-
-            if (!item)
+            if (!checkBox)
             {
                 continue;
             }
 
-            if (item->checkState() == Qt::Checked)
+            if (checkBox->isChecked())
             {
                 ++selectedCount;
 
                 if (selectedCount > maxSelected)
                 {
-                    item->setCheckState(Qt::Unchecked);
+                    const QSignalBlocker blocker(checkBox);
+                    checkBox->setChecked(false);
                     --selectedCount;
                 }
             }
@@ -853,34 +941,32 @@ void RosterPrintDialog::updateExtraInfoSelectionLimits()
         const bool atLimit =
             selectedCount >= maxSelected;
 
-        for (int index = 0; index < m_extraColumnList->count(); ++index)
+        for (QCheckBox* checkBox : m_extraColumnChecks)
         {
-            QListWidgetItem* item =
-                m_extraColumnList->item(index);
-
-            if (!item)
+            if (!checkBox)
             {
                 continue;
             }
 
-            Qt::ItemFlags flags =
-                item->flags()
-                | Qt::ItemIsUserCheckable;
-
             if (
                 atLimit
-                && item->checkState() != Qt::Checked
+                && !checkBox->isChecked()
                 )
             {
-                flags &= ~Qt::ItemIsEnabled;
+                checkBox->setEnabled(false);
             }
             else
             {
-                flags |= Qt::ItemIsEnabled;
+                checkBox->setEnabled(true);
             }
-
-            item->setFlags(flags);
         }
+    }
+
+    if (m_extraInfoSelectionCountLabel)
+    {
+        m_extraInfoSelectionCountLabel->setText(
+            tr("%1 of %2 selected").arg(selectedCount).arg(maxSelected)
+            );
     }
 
     updatePreview();
@@ -970,6 +1056,11 @@ void RosterPrintDialog::updatePreview()
 void RosterPrintDialog::buildUi()
 {
     setModal(true);
+    setMinimumWidth(DialogWidth);
+    setMaximumWidth(
+        DialogWidth * MaximumDialogWidthMultiplier
+        / MaximumDialogWidthDivisor
+        );
     resize(DialogWidth, DialogExpandedHeight);
 
     auto* rootLayout =
@@ -994,18 +1085,27 @@ void RosterPrintDialog::buildUi()
             );
     }
 
-    m_extraInfoOptionsGroup =
-        new QGroupBox(templateGroupBox);
-    m_extraInfoOptionsGroup->setObjectName(QStringLiteral("extraInfoOptionsGroup"));
-    auto* extraInfoLayout =
-        new QVBoxLayout(m_extraInfoOptionsGroup);
+    templateLayout->addWidget(m_templateCombo);
+    templateLayout->addSpacing(24);
+
+    auto* pageLayoutOptionsWidget = new QFrame(templateGroupBox);
+    pageLayoutOptionsWidget->setObjectName(
+        QStringLiteral("pageLayoutOptionsGroup")
+        );
+    pageLayoutOptionsWidget->setFrameShape(QFrame::StyledPanel);
+    auto* pageLayoutOptionsLayout = new QVBoxLayout(pageLayoutOptionsWidget);
+    pageLayoutOptionsLayout->setContentsMargins(12, 12, 12, 24);
+
+    m_pageLayoutLabel = new QLabel(pageLayoutOptionsWidget);
 
     auto* orientationLayout =
         new QHBoxLayout();
+    orientationLayout->setContentsMargins(0, 0, 0, 0);
+    orientationLayout->setSpacing(32);
     auto* portraitRadio =
-        new QRadioButton(m_extraInfoOptionsGroup);
+        new QRadioButton(pageLayoutOptionsWidget);
     auto* landscapeRadio =
-        new QRadioButton(m_extraInfoOptionsGroup);
+        new QRadioButton(pageLayoutOptionsWidget);
     portraitRadio->setObjectName(QStringLiteral("portraitExtraInfoRadio"));
     landscapeRadio->setObjectName(QStringLiteral("landscapeExtraInfoRadio"));
 
@@ -1024,19 +1124,97 @@ void RosterPrintDialog::buildUi()
     orientationLayout->addWidget(portraitRadio);
     orientationLayout->addWidget(landscapeRadio);
     orientationLayout->addStretch(1);
+    pageLayoutOptionsLayout->addWidget(m_pageLayoutLabel);
+    pageLayoutOptionsLayout->addLayout(orientationLayout);
 
-    m_extraColumnList =
-        new QListWidget(m_extraInfoOptionsGroup);
-    m_extraColumnList->setObjectName(QStringLiteral("extraColumnList"));
-    m_extraColumnList->setSelectionMode(QAbstractItemView::NoSelection);
-    m_extraColumnList->setMaximumHeight(120);
+    auto* extraInfoOptionsFrame = new QFrame(templateGroupBox);
+    extraInfoOptionsFrame->setFrameShape(QFrame::StyledPanel);
+    m_extraInfoOptionsGroup = extraInfoOptionsFrame;
+    m_extraInfoOptionsGroup->setObjectName(QStringLiteral("extraInfoOptionsGroup"));
+    auto* extraInfoLayout = new QVBoxLayout(m_extraInfoOptionsGroup);
+    extraInfoLayout->setContentsMargins(12, 12, 12, 12);
 
-    extraInfoLayout->addLayout(orientationLayout);
-    extraInfoLayout->addWidget(m_extraColumnList);
+    auto* extraInfoHeaderLayout = new QHBoxLayout();
+    extraInfoHeaderLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_extraInfoColumnsLabel = new QLabel(m_extraInfoOptionsGroup);
+    m_extraInfoSelectionCountLabel =
+        new QLabel(m_extraInfoOptionsGroup);
+    m_extraInfoSelectionCountLabel->setAlignment(
+        Qt::AlignRight
+        | Qt::AlignVCenter
+        );
+
+    extraInfoHeaderLayout->addWidget(m_extraInfoColumnsLabel);
+    extraInfoHeaderLayout->addStretch(1);
+    extraInfoHeaderLayout->addWidget(m_extraInfoSelectionCountLabel);
+    extraInfoLayout->addLayout(extraInfoHeaderLayout);
+
+    m_extraColumnOptionsWidget = new QWidget(m_extraInfoOptionsGroup);
+    m_extraColumnOptionsWidget->setObjectName(
+        QStringLiteral("extraColumnOptions")
+        );
+    m_extraColumnGridLayout = new QGridLayout(m_extraColumnOptionsWidget);
+    m_extraColumnGridLayout->setContentsMargins(0, 0, 0, 0);
+    m_extraColumnGridLayout->setHorizontalSpacing(18);
+    m_extraColumnGridLayout->setVerticalSpacing(10);
+
+    const int optionRowHeight = portraitRadio->sizeHint().height();
+    const int optionRowSpacing = m_extraColumnGridLayout->verticalSpacing();
+
+    for (int column = 0; column < ExtraColumnGridColumns; ++column)
+    {
+        m_extraColumnGridLayout->setColumnStretch(column, 1);
+    }
+
+    for (int row = 0; row < ExtraColumnVisibleRows; ++row)
+    {
+        m_extraColumnGridLayout->setRowMinimumHeight(row, optionRowHeight);
+    }
+
+    const int optionsHeight =
+        ExtraColumnVisibleRows * optionRowHeight
+        + (ExtraColumnVisibleRows - 1) * optionRowSpacing;
+    m_extraColumnOptionsWidget->setMinimumHeight(optionsHeight);
+
+    m_extraColumnScrollArea = new QScrollArea(m_extraInfoOptionsGroup);
+    m_extraColumnScrollArea->setObjectName(
+        QStringLiteral("extraColumnScrollArea")
+        );
+    m_extraColumnScrollArea->setFrameShape(QFrame::NoFrame);
+    m_extraColumnScrollArea->setWidgetResizable(false);
+    m_extraColumnScrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+    m_extraColumnScrollArea->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+        );
+    m_extraColumnScrollArea->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Minimum
+        );
+    m_extraColumnScrollArea->setMinimumHeight(
+        optionsHeight
+        + m_extraColumnScrollArea->style()->pixelMetric(
+            QStyle::PM_ScrollBarExtent
+            )
+        );
+    m_extraColumnScrollArea->setWidget(m_extraColumnOptionsWidget);
+
+    extraInfoLayout->addWidget(m_extraColumnScrollArea);
     m_extraInfoOptionsGroup->setVisible(false);
 
+    auto* previewSection = new QFrame(templateGroupBox);
+    previewSection->setObjectName(QStringLiteral("rosterPreviewSection"));
+    previewSection->setFrameShape(QFrame::StyledPanel);
+    auto* previewSectionLayout = new QVBoxLayout(previewSection);
+    previewSectionLayout->setContentsMargins(12, 12, 12, 12);
+
+    m_rosterPreviewLabel =
+        new QLabel(previewSection);
+
     m_previewLabel =
-        new QLabel(templateGroupBox);
+        new QLabel(previewSection);
     m_previewLabel->setObjectName(QStringLiteral("templatePreview"));
     m_previewLabel->setAlignment(Qt::AlignCenter);
     m_previewLabel->setFrameShape(QFrame::StyledPanel);
@@ -1047,20 +1225,23 @@ void RosterPrintDialog::buildUi()
         );
 
     m_livePreviewCheckBox =
-        new QCheckBox(templateGroupBox);
+        new QCheckBox(previewSection);
     m_livePreviewCheckBox->setObjectName(QStringLiteral("livePreviewCheckBox"));
     m_livePreviewCheckBox->setChecked(true);
 
     m_previewStatusLabel =
-        new QLabel(templateGroupBox);
+        new QLabel(previewSection);
     m_previewStatusLabel->setObjectName(QStringLiteral("previewStatusLabel"));
     m_previewStatusLabel->setVisible(false);
 
-    templateLayout->addWidget(m_templateCombo);
+    previewSectionLayout->addWidget(m_rosterPreviewLabel);
+    previewSectionLayout->addWidget(m_previewLabel, 1);
+    previewSectionLayout->addWidget(m_livePreviewCheckBox);
+    previewSectionLayout->addWidget(m_previewStatusLabel);
+
+    templateLayout->addWidget(pageLayoutOptionsWidget);
     templateLayout->addWidget(m_extraInfoOptionsGroup);
-    templateLayout->addWidget(m_previewLabel, 1);
-    templateLayout->addWidget(m_livePreviewCheckBox);
-    templateLayout->addWidget(m_previewStatusLabel);
+    templateLayout->addWidget(previewSection, 1);
 
     auto* scopeGroupBox =
         new QGroupBox(this);
@@ -1119,13 +1300,6 @@ void RosterPrintDialog::buildUi()
         &QListWidget::itemChanged,
         this,
         &RosterPrintDialog::updateExtraInfoColumns
-        );
-
-    connect(
-        m_extraColumnList,
-        &QListWidget::itemChanged,
-        this,
-        &RosterPrintDialog::updateExtraInfoSelectionLimits
         );
 
     auto* buttonLayout =
@@ -1211,6 +1385,61 @@ void RosterPrintDialog::buildUi()
         this,
         &QDialog::reject
         );
+
+    m_baseMinimumWidth = minimumWidth();
+    m_baseMinimumHeight = minimumSizeHint().height();
+}
+
+void RosterPrintDialog::resizeForExtraInfoOptions()
+{
+    if (!m_extraInfoOptionsGroup || !m_extraInfoOptionsGroup->isVisible())
+    {
+        return;
+    }
+
+    if (QLayout* rootLayout = layout())
+    {
+        rootLayout->invalidate();
+        rootLayout->activate();
+
+        const int requiredHeight = qMax(
+            m_baseMinimumHeight,
+            rootLayout->minimumSize().height()
+            );
+        const int maximumWidth =
+            m_baseMinimumWidth * MaximumDialogWidthMultiplier
+            / MaximumDialogWidthDivisor;
+        int requiredWidth =
+            m_baseMinimumWidth;
+
+        if (
+            m_extraColumnScrollArea
+            && m_extraColumnOptionsWidget
+            && m_extraColumnScrollArea->viewport()
+            )
+        {
+            const int optionsWidth =
+                m_extraColumnOptionsWidget->minimumWidth();
+            const int viewportWidth =
+                m_extraColumnScrollArea->viewport()->width();
+
+            if (optionsWidth > viewportWidth)
+            {
+                requiredWidth =
+                    width() + optionsWidth - viewportWidth;
+            }
+        }
+
+        setMinimumHeight(requiredHeight);
+        resize(
+            qBound(
+                m_baseMinimumWidth,
+                qMax(width(), requiredWidth),
+                maximumWidth
+                ),
+            qMax(height(), requiredHeight)
+            );
+    }
 }
 
 void RosterPrintDialog::loadClasses()
@@ -1300,9 +1529,40 @@ void RosterPrintDialog::retranslateUi()
         m_livePreviewCheckBox->setText(tr("Live Preview"));
     }
 
-    if (m_extraInfoOptionsGroup)
+    if (m_pageLayoutLabel)
     {
-        m_extraInfoOptionsGroup->setTitle(tr("Extra Info Columns"));
+        m_pageLayoutLabel->setText(tr("Page Layout"));
+    }
+
+    if (m_extraInfoColumnsLabel)
+    {
+        m_extraInfoColumnsLabel->setText(tr("Extra Info Columns"));
+    }
+
+    if (m_extraInfoSelectionCountLabel)
+    {
+        int selectedCount = 0;
+
+        for (const QCheckBox* checkBox : m_extraColumnChecks)
+        {
+            if (checkBox && checkBox->isChecked())
+            {
+                ++selectedCount;
+            }
+        }
+
+        const int maxSelected =
+            RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(
+                selectedPerClassExtraInfoOrientation()
+                );
+        m_extraInfoSelectionCountLabel->setText(
+            tr("%1 of %2 selected").arg(selectedCount).arg(maxSelected)
+            );
+    }
+
+    if (m_rosterPreviewLabel)
+    {
+        m_rosterPreviewLabel->setText(tr("Roster Preview"));
     }
 
     if (m_extraInfoOrientationGroup)
