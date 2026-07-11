@@ -10,6 +10,7 @@
 class QVBoxLayout;
 class QHBoxLayout;
 class QFrame;
+class QEvent;
 class QLabel;
 class QPushButton;
 class QResizeEvent;
@@ -72,6 +73,10 @@ signals:
 
 
 protected:
+
+    void changeEvent(
+        QEvent* event
+        ) override;
 
     QVBoxLayout* contentLayout() const;
 

@@ -1,8 +1,11 @@
 #include "ui/shared/pages/basepage.h"
 
+#include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPushButton>
+#include <QTranslator>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtTest>
@@ -31,6 +34,46 @@ public:
     }
 };
 
+class NoDatabaseBannerTranslator : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        int n = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(n);
+
+        if (qstrcmp(context, "BasePage") != 0)
+        {
+            return {};
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "No database is open. Open an existing database or create a new one to continue."
+                ) == 0)
+        {
+            return QStringLiteral("Translated database warning");
+        }
+
+        if (qstrcmp(sourceText, "Open Database...") == 0)
+        {
+            return QStringLiteral("Translated open database");
+        }
+
+        if (qstrcmp(sourceText, "New Database...") == 0)
+        {
+            return QStringLiteral("Translated new database");
+        }
+
+        return {};
+    }
+};
+
 class BasePageTests : public QObject
 {
     Q_OBJECT
@@ -38,6 +81,7 @@ class BasePageTests : public QObject
 private slots:
     void noDatabaseBannerVisibilityAndActions();
     void noDatabaseBannerOffsetsExistingLayout();
+    void noDatabaseBannerRetranslatesOnLanguageChange();
 };
 
 void BasePageTests::noDatabaseBannerVisibilityAndActions()
@@ -154,6 +198,55 @@ void BasePageTests::noDatabaseBannerOffsetsExistingLayout()
         contentWidget->geometry(),
         contentGeometry
         );
+}
+
+void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
+{
+    TestPage page;
+    page.resize(800, 600);
+    page.show();
+
+    auto* message =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseMessage")
+            );
+
+    auto* openButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseOpenButton")
+            );
+
+    auto* newButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseNewButton")
+            );
+
+    QVERIFY(message);
+    QVERIFY(openButton);
+    QVERIFY(newButton);
+
+    NoDatabaseBannerTranslator translator;
+    qApp->installTranslator(&translator);
+
+    QEvent languageChange(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(&page, &languageChange);
+
+    QCOMPARE(message->text(), QStringLiteral("Translated database warning"));
+    QCOMPARE(openButton->text(), QStringLiteral("Translated open database"));
+    QCOMPARE(newButton->text(), QStringLiteral("Translated new database"));
+
+    qApp->removeTranslator(&translator);
+
+    QCoreApplication::sendEvent(&page, &languageChange);
+
+    QCOMPARE(
+        message->text(),
+        QStringLiteral(
+            "No database is open. Open an existing database or create a new one to continue."
+            )
+        );
+    QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
+    QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
 }
 
 QTEST_MAIN(BasePageTests)

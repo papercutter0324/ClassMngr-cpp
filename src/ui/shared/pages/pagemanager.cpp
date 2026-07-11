@@ -338,6 +338,7 @@ void PageManager::retranslatePages()
     {
         if (page)
         {
+            page->BasePage::retranslateUi();
             page->retranslateUi();
         }
     }

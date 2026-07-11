@@ -1,6 +1,7 @@
 #include "basepage.h"
 
 #include <QFrame>
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
@@ -268,6 +269,20 @@ void BasePage::setDatabaseOpen(
 
     updateNoDatabaseBannerGeometry();
     updateNoDatabaseBannerLayout();
+}
+
+void BasePage::changeEvent(
+    QEvent* event
+    )
+{
+    QWidget::changeEvent(event);
+
+    if (event->type() == QEvent::LanguageChange)
+    {
+        BasePage::retranslateUi();
+        updateNoDatabaseBannerGeometry();
+        updateNoDatabaseBannerLayout();
+    }
 }
 
 void BasePage::resizeEvent(
