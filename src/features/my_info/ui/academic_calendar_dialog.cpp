@@ -316,6 +316,18 @@ void AcademicCalendarDialog::buildUi()
             this
             );
 
+    m_buttons->button(
+        QDialogButtonBox::Save
+        )->setText(
+            tr("Save")
+            );
+
+    m_buttons->button(
+        QDialogButtonBox::Cancel
+        )->setText(
+            tr("Cancel")
+            );
+
     connect(
         m_buttons,
         &QDialogButtonBox::accepted,

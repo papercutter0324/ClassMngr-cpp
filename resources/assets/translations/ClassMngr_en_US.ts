@@ -145,6 +145,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="322"/>
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="328"/>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="199"/>
         <source>Elementary</source>
         <translation type="unfinished"></translation>

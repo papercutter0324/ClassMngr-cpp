@@ -190,6 +190,16 @@
         <translation>가져오기</translation>
     </message>
     <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="322"/>
+        <source>Save</source>
+        <translation>저장</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="328"/>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/my_info/ui/academic_calendar_dialog.cpp" line="346"/>
         <source>Show Events at All Campuses</source>
         <translation>모든 캠퍼스의 일정 표시</translation>
@@ -2566,6 +2576,31 @@
         <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="538"/>
         <source>Export File</source>
         <translation>파일 내보내기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="550"/>
+        <source>Look in:</source>
+        <translation>찾는 위치:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="554"/>
+        <source>File name:</source>
+        <translation>파일 이름:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="558"/>
+        <source>Files of type:</source>
+        <translation>파일 형식:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="562"/>
+        <source>Save</source>
+        <translation>저장</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="566"/>
+        <source>Cancel</source>
+        <translation>취소</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/pages/pdf_viewer_page.cpp" line="444"/>

@@ -7,6 +7,7 @@
 class QLabel;
 class QLineEdit;
 class QIntValidator;
+class QEvent;
 class QPdfDocument;
 class QPdfView;
 class QPushButton;
@@ -27,6 +28,8 @@ public:
         );
 
     ~PdfViewerPage() override;
+
+    void retranslateUi() override;
 
     [[nodiscard]] bool loadPdf(
         const QString& filePath,
@@ -57,8 +60,14 @@ private slots:
     void printFile();
     void handleDocumentStatusChanged();
 
+protected:
+    void changeEvent(
+        QEvent* event
+        ) override;
+
 private:
     void buildUi();
+    void applyUiFonts();
     void applyZoom();
     void updateZoomDisplay();
     void applyCalculatedFitZoom();

@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QColor>
 #include <QDesktopServices>
+#include <QEvent>
 #include <QIntValidator>
 #include <QDir>
 #include <QFile>
@@ -19,6 +20,7 @@
 #include <QFileInfo>
 #include <QFontMetrics>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QList>
@@ -264,6 +266,91 @@ PdfViewerPage::~PdfViewerPage()
     }
 }
 
+void PdfViewerPage::retranslateUi()
+{
+    if (m_pageLabel)
+    {
+        m_pageLabel->setText(
+            tr("Page:")
+            );
+    }
+
+    if (m_pageInput)
+    {
+        m_pageInput->setToolTip(
+            tr("Go to page")
+            );
+    }
+
+    if (m_zoomLabel)
+    {
+        m_zoomLabel->setText(
+            tr("Zoom:")
+            );
+    }
+
+    if (m_zoomOutButton)
+    {
+        m_zoomOutButton->setToolTip(
+            tr("Zoom out")
+            );
+    }
+
+    if (m_zoomInButton)
+    {
+        m_zoomInButton->setToolTip(
+            tr("Zoom in")
+            );
+    }
+
+    if (m_fitWidthButton)
+    {
+        m_fitWidthButton->setText(
+            tr("Fit Width")
+            );
+    }
+
+    if (m_fitPageButton)
+    {
+        m_fitPageButton->setText(
+            tr("Fit Page")
+            );
+    }
+
+    if (m_exportButton)
+    {
+        m_exportButton->setText(
+            tr("Export")
+            );
+    }
+
+    if (m_printButton)
+    {
+        m_printButton->setText(
+            tr("Print")
+            );
+    }
+
+    applyUiFonts();
+    updatePageDisplay();
+    updateDocumentActionButtons();
+}
+
+void PdfViewerPage::changeEvent(
+    QEvent* event
+    )
+{
+    BasePage::changeEvent(event);
+
+    if (
+        !m_tearingDown
+        && event->type() == QEvent::FontChange
+        )
+    {
+        applyUiFonts();
+    }
+}
+
 bool PdfViewerPage::loadPdf(
     const QString& filePath,
     PdfViewerDocumentActions actions
@@ -475,6 +562,26 @@ void PdfViewerPage::exportFile()
         );
     dialog.setDefaultSuffix(
         sourceInfo.suffix()
+        );
+    dialog.setLabelText(
+        QFileDialog::LookIn,
+        tr("Look in:")
+        );
+    dialog.setLabelText(
+        QFileDialog::FileName,
+        tr("File name:")
+        );
+    dialog.setLabelText(
+        QFileDialog::FileType,
+        tr("Files of type:")
+        );
+    dialog.setLabelText(
+        QFileDialog::Accept,
+        tr("Save")
+        );
+    dialog.setLabelText(
+        QFileDialog::Reject,
+        tr("Cancel")
         );
     dialog.selectFile(
         QFileInfo(suggestedPath).fileName()
@@ -1091,6 +1198,62 @@ void PdfViewerPage::buildUi()
 
     updatePageDisplay();
     updateDocumentActionButtons();
+    applyUiFonts();
+}
+
+void PdfViewerPage::applyUiFonts()
+{
+    const QFont standardFont =
+        font();
+
+    QFont smallFont =
+        standardFont;
+
+    smallFont.setPointSize(
+        FontManager::adjustedPointSize(10)
+        );
+
+    for (QLabel* label : {
+             m_statusLabel,
+             m_pageLabel,
+             m_pageTotalLabel,
+             m_zoomLabel
+         })
+    {
+        if (label)
+        {
+            label->setFont(
+                smallFont
+                );
+        }
+    }
+
+    const auto applyStandardFont =
+        [&standardFont](QWidget* widget)
+    {
+        if (widget)
+        {
+            widget->setFont(
+                standardFont
+                );
+        }
+    };
+
+    applyStandardFont(m_pageInput);
+    applyStandardFont(m_zoomInput);
+    applyStandardFont(m_zoomOutButton);
+    applyStandardFont(m_zoomInButton);
+    applyStandardFont(m_fitWidthButton);
+    applyStandardFont(m_fitPageButton);
+    applyStandardFont(m_exportButton);
+    applyStandardFont(m_printButton);
+
+    if (QHBoxLayout* layout = bottomLayout())
+    {
+        layout->invalidate();
+    }
+
+    updateGeometry();
 }
 
 void PdfViewerPage::applyZoom()
