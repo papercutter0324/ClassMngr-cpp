@@ -15,6 +15,34 @@ add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
 )
 
+# A CMake build directory can retain individual Qt component locations after
+# Qt6_DIR has been changed.  Qt permits components from the same public version
+# to be found this way, but its private ABI is not compatible between separate
+# Qt builds.  Clear only component cache entries that are outside the selected
+# Qt installation before Qt resolves its dependencies.
+if(DEFINED Qt6_DIR AND EXISTS "${Qt6_DIR}/Qt6Config.cmake")
+    file(REAL_PATH "${Qt6_DIR}/.." _classmngr_qt6_cmake_root)
+    get_cmake_property(_classmngr_cache_variables CACHE_VARIABLES)
+
+    foreach(_classmngr_cache_variable IN LISTS _classmngr_cache_variables)
+        if(_classmngr_cache_variable MATCHES "^Qt6.+_DIR$"
+           AND NOT _classmngr_cache_variable STREQUAL "Qt6_DIR"
+           AND NOT "${${_classmngr_cache_variable}}" MATCHES "-NOTFOUND$")
+            file(REAL_PATH "${${_classmngr_cache_variable}}" _classmngr_component_dir)
+            cmake_path(IS_PREFIX _classmngr_qt6_cmake_root
+                "${_classmngr_component_dir}" NORMALIZE
+                _classmngr_component_uses_selected_qt)
+
+            if(NOT _classmngr_component_uses_selected_qt)
+                message(STATUS
+                    "Discarding stale ${_classmngr_cache_variable}: "
+                    "${${_classmngr_cache_variable}}")
+                unset(${_classmngr_cache_variable} CACHE)
+            endif()
+        endif()
+    endforeach()
+endif()
+
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
     Core
     Gui
