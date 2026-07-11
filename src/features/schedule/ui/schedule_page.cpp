@@ -69,6 +69,40 @@ bool settingToBool(
     return value.toBool();
 }
 
+void sizeButtonForBothTimeFormats(
+    QPushButton* button,
+    const QString& twelveHourText,
+    const QString& twentyFourHourText
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    const QString currentText =
+        button->text();
+
+    button->setText(twelveHourText);
+    const int twelveHourWidth =
+        button->sizeHint().width();
+
+    button->setText(twentyFourHourText);
+    const int twentyFourHourWidth =
+        button->sizeHint().width();
+
+    button->setText(currentText);
+    button->setMinimumWidth(
+        std::max(
+            button->minimumWidth(),
+            std::max(
+                twelveHourWidth,
+                twentyFourHourWidth
+                )
+            )
+        );
+}
+
 QString escaped(
     const QString& text
     )
@@ -696,10 +730,21 @@ void SchedulePage::updateButtons()
         return;
     }
 
+    const QString twelveHourText =
+        tr("12-Hour Time");
+    const QString twentyFourHourText =
+        tr("24-Hour Time");
+
+    sizeButtonForBothTimeFormats(
+        m_timeFormatButton,
+        twelveHourText,
+        twentyFourHourText
+        );
+
     m_timeFormatButton->setText(
         m_use24h
-            ? tr("12-Hour Time")
-            : tr("24-Hour Time")
+            ? twelveHourText
+            : twentyFourHourText
         );
 
     m_weekendButton->setText(
