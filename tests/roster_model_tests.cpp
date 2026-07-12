@@ -20,6 +20,7 @@ private slots:
     void insertTransferredRowCopiesOnlyMatchingColumns();
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
+    void namePairHelpersDetectDuplicatesAndSuggestSuffix();
 };
 
 namespace
@@ -577,6 +578,39 @@ void RosterModelTests::transferredRowDetectsDuplicateStudentPair()
                 QStringLiteral("김아미")
                 )
             )
+        );
+}
+
+void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()
+{
+    Roster roster;
+    roster.columns =
+        Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("amy"),
+            QStringLiteral("김민수")
+            ),
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("김민수")
+            ),
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("김민수(a)")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    QCOMPARE(
+        model.duplicateNameRows(0),
+        QList<int>{ 1 }
+        );
+    QCOMPARE(
+        model.suggestedKoreanNameWithSuffix(0),
+        QStringLiteral("김민수(B)")
         );
 }
 

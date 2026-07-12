@@ -1,5 +1,7 @@
 #include "roster_model.h"
 
+#include "core/utils/student_name_utils.h"
+
 #include <QRegularExpression>
 
 int RosterModel::englishNameColumn() const
@@ -30,60 +32,18 @@ QList<int> RosterModel::duplicateNameRows(
     int row
     ) const
 {
-    QList<int> rows;
-
     const int englishColumn =
         englishNameColumn();
 
     const int koreanColumn =
         koreanNameColumn();
 
-    if (
-        row < 0
-        || row >= m_rows.size()
-        || englishColumn < 0
-        || koreanColumn < 0
-        )
-    {
-        return rows;
-    }
-
-    const QString englishName =
-        m_rows[row][englishColumn].trimmed();
-
-    const QString koreanName =
-        m_rows[row][koreanColumn].trimmed();
-
-    if (englishName.isEmpty() || koreanName.isEmpty())
-    {
-        return rows;
-    }
-
-    const QString key =
-        namePairKey(
-            englishName,
-            koreanName
-            );
-
-    for (int candidateRow = 0; candidateRow < m_rows.size(); ++candidateRow)
-    {
-        if (candidateRow == row)
-        {
-            continue;
-        }
-
-        if (
-            namePairKey(
-                m_rows[candidateRow][englishColumn],
-                m_rows[candidateRow][koreanColumn]
-                ) == key
-            )
-        {
-            rows.append(candidateRow);
-        }
-    }
-
-    return rows;
+    return StudentNameUtils::duplicateNameRows(
+        m_rows,
+        row,
+        englishColumn,
+        koreanColumn
+        );
 }
 
 QString RosterModel::suggestedKoreanNameWithSuffix(
@@ -96,70 +56,12 @@ QString RosterModel::suggestedKoreanNameWithSuffix(
     const int koreanColumn =
         koreanNameColumn();
 
-    if (
-        row < 0
-        || row >= m_rows.size()
-        || englishColumn < 0
-        || koreanColumn < 0
-        )
-    {
-        return {};
-    }
-
-    const QString englishName =
-        m_rows[row][englishColumn].trimmed();
-
-    const QString baseName =
-        baseKoreanName(
-            m_rows[row][koreanColumn]
-            );
-
-    if (englishName.isEmpty() || baseName.isEmpty())
-    {
-        return {};
-    }
-
-    QSet<QChar> usedSuffixes;
-
-    for (const QStringList& candidateRow : m_rows)
-    {
-        if (
-            englishName.compare(
-                candidateRow.value(englishColumn).trimmed(),
-                Qt::CaseSensitive
-                ) != 0
-            || baseKoreanName(
-                candidateRow.value(koreanColumn)
-                ) != baseName
-            )
-        {
-            continue;
-        }
-
-        const QString suffix =
-            koreanNameSuffix(
-                candidateRow.value(koreanColumn)
-                );
-
-        if (suffix.size() == 1)
-        {
-            usedSuffixes.insert(suffix.front());
-        }
-    }
-
-    for (int suffix = 'A'; suffix <= 'Z'; ++suffix)
-    {
-        const QChar suffixCharacter(suffix);
-
-        if (!usedSuffixes.contains(suffixCharacter))
-        {
-            return QStringLiteral("%1(%2)")
-                .arg(baseName)
-                .arg(suffixCharacter);
-        }
-    }
-
-    return {};
+    return StudentNameUtils::suggestedKoreanNameWithSuffix(
+        m_rows,
+        row,
+        englishColumn,
+        koreanColumn
+        );
 }
 
 bool RosterModel::hasDuplicateNameErrors() const
@@ -220,7 +122,7 @@ QString RosterModel::normalizeCell(
 
     if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
     {
-        return normalizeKorean(value);
+        return StudentNameUtils::normalizeKoreanName(value);
     }
 
     return value.simplified();
@@ -230,6 +132,19 @@ QString RosterModel::normalizeEnglish(
     const QString& value
     ) const
 {
+    static const QRegularExpression spacedHyphenExpression(
+        QStringLiteral("\\s*-\\s*")
+        );
+    static const QRegularExpression spacedPeriodExpression(
+        QStringLiteral("\\s*\\.\\s*")
+        );
+    static const QRegularExpression repeatedHyphenExpression(
+        QStringLiteral("-+")
+        );
+    static const QRegularExpression repeatedPeriodExpression(
+        QStringLiteral("\\.+")
+        );
+
     QString filtered;
     filtered.reserve(value.size());
 
@@ -259,22 +174,22 @@ QString RosterModel::normalizeEnglish(
         filtered.simplified();
 
     normalized.replace(
-        QRegularExpression(QStringLiteral("\\s*-\\s*")),
+        spacedHyphenExpression,
         QStringLiteral("-")
         );
 
     normalized.replace(
-        QRegularExpression(QStringLiteral("\\s*\\.\\s*")),
+        spacedPeriodExpression,
         QStringLiteral(".")
         );
 
     normalized.replace(
-        QRegularExpression(QStringLiteral("-+")),
+        repeatedHyphenExpression,
         QStringLiteral("-")
         );
 
     normalized.replace(
-        QRegularExpression(QStringLiteral("\\.+")),
+        repeatedPeriodExpression,
         QStringLiteral(".")
         );
 
@@ -349,95 +264,3 @@ QString RosterModel::normalizeEnglishToken(
 
     return hyphenParts.join(QLatin1Char('-'));
 }
-
-QString RosterModel::normalizeKorean(
-    const QString& value
-    ) const
-{
-    const QRegularExpression suffixExpression(
-        QStringLiteral("\\(([A-Za-z])\\)\\s*$")
-        );
-
-    const QRegularExpressionMatch suffixMatch =
-        suffixExpression.match(value);
-
-    const QString suffix =
-        suffixMatch.hasMatch()
-            ? suffixMatch.captured(1).toUpper()
-            : QString();
-
-    const QString source =
-        suffixMatch.hasMatch()
-            ? value.left(suffixMatch.capturedStart())
-            : value;
-
-    QString normalized;
-    normalized.reserve(source.size());
-
-    for (const QChar& character : source)
-    {
-        const ushort code =
-            character.unicode();
-
-        if (code >= 0xAC00 && code <= 0xD7A3)
-        {
-            normalized.append(character);
-        }
-    }
-
-    if (!normalized.isEmpty() && suffix.size() == 1)
-    {
-        normalized += QStringLiteral("(%1)")
-            .arg(suffix);
-    }
-
-    return normalized;
-}
-
-QString RosterModel::baseKoreanName(
-    const QString& value
-    ) const
-{
-    QString normalized =
-        normalizeKorean(value);
-
-    normalized.remove(
-        QRegularExpression(QStringLiteral("\\([A-Z]\\)$"))
-        );
-
-    return normalized;
-}
-
-QString RosterModel::koreanNameSuffix(
-    const QString& value
-    ) const
-{
-    const QRegularExpression suffixExpression(
-        QStringLiteral("\\(([A-Z])\\)$")
-        );
-
-    const QRegularExpressionMatch match =
-        suffixExpression.match(
-            normalizeKorean(value)
-            );
-
-    return match.hasMatch()
-        ? match.captured(1)
-        : QString();
-}
-
-QString RosterModel::namePairKey(
-    const QString& englishName,
-    const QString& koreanName
-    ) const
-{
-    if (englishName.trimmed().isEmpty() || koreanName.trimmed().isEmpty())
-    {
-        return {};
-    }
-
-    return englishName.trimmed()
-        + QChar(0x001F)
-        + koreanName.trimmed();
-}
-

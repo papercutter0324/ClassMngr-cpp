@@ -1,6 +1,6 @@
 #include "roster_model.h"
 
-#include <algorithm>
+#include "core/utils/student_name_utils.h"
 
 bool RosterModel::canRemoveRow(
     int row,
@@ -18,14 +18,7 @@ bool RosterModel::canRemoveRow(
     }
 
     const bool hasData =
-        std::any_of(
-            m_rows[row].constBegin(),
-            m_rows[row].constEnd(),
-            [](const QString& value)
-            {
-                return !value.trimmed().isEmpty();
-            }
-            );
+        rowHasData(m_rows[row]);
 
     if (!hasData)
     {
@@ -130,14 +123,7 @@ bool RosterModel::canMoveRow(
     }
 
     const bool hasData =
-        std::any_of(
-            m_rows[sourceRow].constBegin(),
-            m_rows[sourceRow].constEnd(),
-            [](const QString& value)
-            {
-                return !value.trimmed().isEmpty();
-            }
-            );
+        rowHasData(m_rows[sourceRow]);
 
     if (!hasData)
     {
@@ -228,7 +214,7 @@ bool RosterModel::hasDuplicateTransferredStudent(
     }
 
     const QString key =
-        namePairKey(
+        StudentNameUtils::namePairKey(
             mappedRow[englishColumn],
             mappedRow[koreanColumn]
             );
@@ -243,7 +229,7 @@ bool RosterModel::hasDuplicateTransferredStudent(
         if (
             englishColumn < existingRow.size()
             && koreanColumn < existingRow.size()
-            && namePairKey(
+            && StudentNameUtils::namePairKey(
                 existingRow[englishColumn],
                 existingRow[koreanColumn]
                 ) == key

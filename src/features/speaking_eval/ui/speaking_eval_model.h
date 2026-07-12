@@ -111,23 +111,6 @@ private:
         const QString& value
         ) const;
 
-    QString normalizeKoreanName(
-        const QString& value
-        ) const;
-
-    QString baseKoreanName(
-        const QString& value
-        ) const;
-
-    QString koreanNameSuffix(
-        const QString& value
-        ) const;
-
-    QString namePairKey(
-        const QString& englishName,
-        const QString& koreanName
-        ) const;
-
     QString normalizeScore(
         const QString& value
         ) const;

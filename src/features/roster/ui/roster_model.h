@@ -198,23 +198,6 @@ private:
         const QString& token
         ) const;
 
-    QString normalizeKorean(
-        const QString& value
-        ) const;
-
-    QString baseKoreanName(
-        const QString& value
-        ) const;
-
-    QString koreanNameSuffix(
-        const QString& value
-        ) const;
-
-    QString namePairKey(
-        const QString& englishName,
-        const QString& koreanName
-        ) const;
-
     QStringList validateCell(
         const QString& value,
         int column

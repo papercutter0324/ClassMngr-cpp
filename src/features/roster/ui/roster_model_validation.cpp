@@ -1,5 +1,7 @@
 #include "roster_model.h"
 
+#include "core/utils/student_name_utils.h"
+
 #include <algorithm>
 
 QStringList RosterModel::validateCell(
@@ -36,7 +38,7 @@ QStringList RosterModel::validateCell(
     else if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
     {
         const int length =
-            baseKoreanName(value).size();
+            StudentNameUtils::baseKoreanName(value).size();
 
         if (length == 0 || length == 3)
         {
@@ -189,21 +191,12 @@ void RosterModel::validateDuplicateNames()
         return;
     }
 
-    QHash<QString, QList<int>> rowsByPair;
-
-    for (int row = 0; row < m_rows.size(); ++row)
-    {
-        const QString key =
-            namePairKey(
-                m_rows[row][englishColumn],
-                m_rows[row][koreanColumn]
-                );
-
-        if (!key.isEmpty())
-        {
-            rowsByPair[key].append(row);
-        }
-    }
+    const QHash<QString, QList<int>> rowsByPair =
+        StudentNameUtils::rowsByNamePair(
+            m_rows,
+            englishColumn,
+            koreanColumn
+            );
 
     for (auto it = rowsByPair.constBegin(); it != rowsByPair.constEnd(); ++it)
     {
@@ -316,4 +309,3 @@ void RosterModel::appendValidationError(
         m_duplicateNameErrorCells.insert(key);
     }
 }
-
