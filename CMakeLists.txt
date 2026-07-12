@@ -265,6 +265,8 @@ file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
 )
 
+list(FILTER CLASSMNGR_EMBEDDED_PACK_FILES EXCLUDE REGEX "/~\\$[^/]+$")
+
 qt_add_resources(ClassMngr app_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
@@ -279,6 +281,7 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/spin_up_dark.svg
         resources/assets/icons/spin_up_light.svg
         resources/assets/icons/icon_256x256.png
+        resources/assets/images/dyb.png
         resources/assets/splash/splash.png
         resources/assets/styles/dark.qss
         resources/assets/styles/light.qss
@@ -1020,6 +1023,42 @@ if(BUILD_TESTING)
         COMMAND ClassMngrCampusMapTests
     )
 
+    qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
+        tests/speaking_eval_report_widget_tests.cpp
+        src/core/fontmanager.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
+    )
+
+    target_compile_features(ClassMngrSpeakingEvalReportWidgetTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSpeakingEvalReportWidgetTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSpeakingEvalReportWidgetTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    qt_add_resources(ClassMngrSpeakingEvalReportWidgetTests report_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/images/dyb.png
+    )
+
+    add_test(
+        NAME ClassMngrSpeakingEvalReportWidgetTests
+        COMMAND ClassMngrSpeakingEvalReportWidgetTests
+    )
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
     )
@@ -1070,6 +1109,7 @@ if(BUILD_TESTING)
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
+            ClassMngrSpeakingEvalReportWidgetTests
             ClassMngrStartupPerformanceTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION

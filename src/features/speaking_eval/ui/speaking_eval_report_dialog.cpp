@@ -38,6 +38,37 @@ QString classLabel(
     return parts.join(QLatin1Char(' '));
 }
 
+bool usesAdvancedTemplate(
+    const ClassInfo& info
+    )
+{
+    const QString grade =
+        info.classGrade.trimmed();
+    const QString level =
+        info.classLevel.trimmed();
+
+    return (
+               grade.compare(
+                   QStringLiteral("E5"),
+                   Qt::CaseInsensitive
+                   ) == 0
+               && level.compare(
+                   QStringLiteral("Athena"),
+                   Qt::CaseInsensitive
+                   ) == 0
+               )
+        || (
+               grade.compare(
+                   QStringLiteral("E6"),
+                   Qt::CaseInsensitive
+                   ) == 0
+               && level.compare(
+                   QStringLiteral("Song's"),
+                   Qt::CaseInsensitive
+                   ) == 0
+               );
+}
+
 } // namespace
 
 SpeakingEvalReportDialog::SpeakingEvalReportDialog(
@@ -265,7 +296,7 @@ void SpeakingEvalReportDialog::printCurrentReport()
     const QPageSize pageSize(
         QSizeF(7.5, 10.833333),
         QPageSize::Inch,
-        QStringLiteral("SpeakingEvaluation")
+        QStringLiteral("SpeakingEvaluationA4")
         );
 
     printer.setPageLayout(
@@ -342,6 +373,8 @@ SpeakingEvalReportData SpeakingEvalReportDialog::reportDataForRow(
         values.value(
             SpeakingEval::toInt(SpeakingEvalColumn::Comments)
             );
+    data.useAdvancedTemplate =
+        usesAdvancedTemplate(m_classInfo);
 
     const std::array<SpeakingEvalColumn, 6> scoreColumns{
         SpeakingEvalColumn::Grammar,

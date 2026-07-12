@@ -16,6 +16,7 @@ struct SpeakingEvalReportData
     QString date;
     QString comments;
     std::array<QString, 6> scores;
+    bool useAdvancedTemplate = false;
 };
 
 class SpeakingEvalReportWidget : public QWidget
@@ -39,6 +40,8 @@ public:
         QPainter* painter,
         const QRectF& targetRect
         ) const;
+
+    bool usesAdvancedTemplate() const;
 
 protected:
     void paintEvent(
