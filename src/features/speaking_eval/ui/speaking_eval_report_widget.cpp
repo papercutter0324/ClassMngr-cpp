@@ -1,7 +1,5 @@
 #include "speaking_eval_report_widget.h"
 
-#include "core/fontmanager.h"
-
 #include <QPainter>
 #include <QPaintEvent>
 #include <QFontMetricsF>
@@ -15,13 +13,17 @@ namespace
 
 constexpr QSizeF RegularReportSize(540.0, 780.0);
 constexpr QSizeF AdvancedReportSize(540.0, 780.0);
-constexpr QRectF PageRect(16.0, 16.0, 508.0, 748.0);
-constexpr qreal TableLeft = 34.0;
-constexpr qreal TableTop = 125.0;
-constexpr qreal TableWidth = 472.0;
-constexpr qreal CriteriaWidth = 76.0;
-constexpr qreal GradeWidth = (TableWidth - CriteriaWidth) / 5.0;
-constexpr qreal GradeHeaderHeight = 23.0;
+constexpr QRectF RegularBorderRect(
+    17.71654,
+    18.66228,
+    504.5669,
+    742.6771
+    );
+constexpr qreal TableLeft = 35.0263;
+constexpr qreal TableTop = 125.0386;
+constexpr qreal CriteriaWidth = 74.25504;
+constexpr qreal GradeWidth = 78.57787;
+constexpr qreal GradeHeaderHeight = 22.8;
 
 struct RubricSection
 {
@@ -32,18 +34,19 @@ struct RubricSection
     bool hasMergedDescriptions = false;
 };
 
-QFont reportFont(
+QFont standardFont(
+    const QString& family,
     qreal pointSize,
     int weight = QFont::Normal
     )
 {
-    QFont font =
-        FontManager::getUiFont(
-            qRound(pointSize),
-            weight
-            );
-
-    font.setPointSizeF(pointSize);
+    QFont font(family);
+    // The PowerPoint reference uses the same 540-by-780 point grid as the
+    // report canvas. Pixel sizes therefore map its font sizes one-to-one.
+    font.setPixelSize(qRound(pointSize));
+    font.setWeight(
+        static_cast<QFont::Weight>(weight)
+        );
     return font;
 }
 
@@ -222,21 +225,23 @@ void drawCenteredText(
 void drawLabelAndValue(
     QPainter* painter,
     const QRectF& labelRect,
-    const QRectF& valueRect,
+    const QRectF& valueCellRect,
+    const QRectF& valueTextRect,
     const QString& label,
     const QString& value,
     bool koreanValue = false
     )
 {
     painter->setFont(
-        reportFont(
-            8.2,
-            QFont::DemiBold
+        standardFont(
+            QStringLiteral("Calibri"),
+            12.0,
+            QFont::Bold
             )
         );
     painter->setPen(Qt::black);
     painter->drawText(
-        labelRect,
+        labelRect.adjusted(3.6, 0.0, -1.0, 0.0),
         Qt::AlignLeft | Qt::AlignVCenter,
         label
         );
@@ -245,18 +250,27 @@ void drawLabelAndValue(
     linePen.setWidthF(0.85);
     painter->setPen(linePen);
     painter->drawLine(
-        valueRect.bottomLeft(),
-        valueRect.bottomRight()
+        QPointF(
+            valueCellRect.left() + 3.6,
+            valueCellRect.bottom() - 4.8
+            ),
+        QPointF(
+            valueCellRect.right() - 3.6,
+            valueCellRect.bottom() - 4.8
+            )
         );
 
     painter->setFont(
-        koreanValue
-            ? FontManager::getKoreanFont(11)
-            : reportFont(10.5)
+        standardFont(
+            koreanValue
+                ? QStringLiteral("Kakao Big Sans")
+                : QStringLiteral("Segoe UI Semibold"),
+            16.0
+            )
         );
     painter->setPen(Qt::black);
     painter->drawText(
-        valueRect.adjusted(2.0, 0.0, -2.0, -1.5),
+        valueTextRect,
         Qt::AlignCenter | Qt::AlignVCenter,
         value
         );
@@ -300,7 +314,7 @@ QList<RubricSection> rubricSections()
                 QStringLiteral("Pronunciation\nimproving, but some\nKonglish."),
                 QStringLiteral("Excessive use of\nKonglish.")
             },
-            73.0
+            73.2
         },
         {
             QStringLiteral("Fluency"),
@@ -317,7 +331,7 @@ QList<RubricSection> rubricSections()
                 QStringLiteral("Overuse of filler\nwords\n(umm/like)."),
                 QStringLiteral("Very long pauses.")
             },
-            73.0
+            73.2
         },
         {
             QStringLiteral("Manner"),
@@ -337,7 +351,7 @@ QList<RubricSection> rubricSections()
                 QStringLiteral("Still some nerves\nwhen speaking, but\ngenuine effort given."),
                 QStringLiteral("No eye contact.\nToo soft to hear.")
             },
-            73.0
+            73.8
         },
         {
             QStringLiteral("Content"),
@@ -355,7 +369,7 @@ QList<RubricSection> rubricSections()
                 QString(),
                 QStringLiteral("No details or\nexamples (single\nworded answers)")
             },
-            73.0,
+            73.2,
             true
         },
         {
@@ -373,7 +387,7 @@ QList<RubricSection> rubricSections()
                 QStringLiteral("Little effort has been\nput in."),
                 QStringLiteral("No effort has been\nput in.")
             },
-            73.0
+            73.2
         }
     };
 }
@@ -503,13 +517,14 @@ void drawCriteriaCell(
     const RubricSection& section
     )
 {
-    painter->fillRect(rect, QColor(QStringLiteral("#b7b7b7")));
+    painter->fillRect(rect, QColor(QStringLiteral("#bfbfbf")));
     drawBorder(painter, rect);
 
     painter->setFont(
-        reportFont(
-            8.6,
-            QFont::DemiBold
+        standardFont(
+            QStringLiteral("Calibri"),
+            10.0,
+            QFont::Bold
             )
         );
     painter->setPen(Qt::black);
@@ -519,12 +534,17 @@ void drawCriteriaCell(
         section.title
         );
 
-    painter->setFont(reportFont(4.2));
+    painter->setFont(
+        standardFont(
+            QStringLiteral("Calibri"),
+            6.0
+            )
+        );
     const qreal startY =
         rect.top() + 18.5;
 
     const qreal lineHeight =
-        5.65;
+        6.0;
 
     for (int index = 0; index < section.criteria.size(); ++index)
     {
@@ -551,28 +571,23 @@ void drawGradeCell(
     bool selected
     )
 {
-    painter->fillRect(rect, QColor(QStringLiteral("#d9d9d9")));
+    painter->fillRect(
+        rect,
+        selected
+            ? QColor(QStringLiteral("#ffff00"))
+            : QColor(QStringLiteral("#d9d9d9"))
+        );
     drawBorder(painter, rect);
     drawCenteredText(
         painter,
         rect,
         grade,
-        reportFont(
-            17.0,
-            QFont::DemiBold
+        standardFont(
+            QStringLiteral("Times New Roman"),
+            18.0,
+            QFont::Bold
             )
         );
-
-    if (!selected)
-    {
-        return;
-    }
-
-    QPen selectionPen(QColor(QStringLiteral("#c00000")));
-    selectionPen.setWidthF(1.8);
-    painter->setPen(selectionPen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(rect.adjusted(1.5, 1.5, -1.5, -1.5));
 }
 
 void drawLogo(
@@ -1198,80 +1213,90 @@ void SpeakingEvalReportWidget::paintReport(
     }
 
     QPen borderPen(Qt::black);
-    borderPen.setWidthF(2.0);
+    borderPen.setWidthF(1.0);
     painter->setPen(borderPen);
     painter->setBrush(Qt::NoBrush);
-    painter->drawRect(PageRect);
+    painter->drawRect(
+        RegularBorderRect.adjusted(-1.5, -1.5, 1.5, 1.5)
+        );
+    painter->drawRect(
+        RegularBorderRect.adjusted(1.5, 1.5, -1.5, -1.5)
+        );
 
-    QPen innerBorderPen(Qt::black);
-    innerBorderPen.setWidthF(0.7);
-    painter->setPen(innerBorderPen);
-    painter->drawRect(PageRect.adjusted(3.0, 3.0, -3.0, -3.0));
-
-    painter->setPen(QColor(QStringLiteral("#bd0000")));
+    painter->setPen(QColor(QStringLiteral("#c00000")));
     painter->setFont(
-        reportFont(
-            22.0,
+        standardFont(
+            QStringLiteral("Calibri"),
+            28.0,
             QFont::Bold
             )
         );
     painter->drawText(
-        QRectF(155.0, 27.0, 315.0, 33.0),
-        Qt::AlignCenter,
+        QRectF(99.29984, 20.43748, 402.8709, 45.37504),
+        Qt::AlignCenter | Qt::AlignVCenter,
         tr("Speaking Evaluation")
         );
 
     drawLogo(
         painter,
-        QRectF(33.0, 24.0, 80.0, 52.0)
+        QRectF(29.71654, 27.20937, 61.24598, 51.74795)
         );
 
-    QPen titleLinePen(QColor(QStringLiteral("#6f6f6f")));
-    titleLinePen.setWidthF(1.3);
+    QPen titleLinePen(QColor(QStringLiteral("#7f7f7f")));
+    titleLinePen.setWidthF(1.5);
     painter->setPen(titleLinePen);
-    painter->drawLine(QPointF(118.0, 66.0), QPointF(505.0, 66.0));
+    painter->drawLine(
+        QPointF(99.29984, 66.0),
+        QPointF(503.97084, 66.0)
+        );
 
     drawLabelAndValue(
         painter,
-        QRectF(36.0, 82.0, 89.0, 18.0),
-        QRectF(121.0, 82.0, 91.0, 18.0),
+        QRectF(32.48087, 78.53858, 84.18748, 24.0),
+        QRectF(116.66835, 78.53858, 98.1911, 24.0),
+        QRectF(116.9999, 76.73653, 95.80008, 26.65299),
         tr("English Name:"),
         m_data.englishName
         );
     drawLabelAndValue(
         painter,
-        QRectF(220.0, 82.0, 90.0, 18.0),
-        QRectF(307.0, 82.0, 72.0, 18.0),
+        QRectF(214.85945, 78.53858, 89.49732, 24.0),
+        QRectF(304.35677, 78.53858, 77.56433, 24.0),
+        QRectF(304.05, 77.34701, 76.95, 23.02268),
         tr("Korean Name:"),
         m_data.koreanName,
         true
         );
     drawLabelAndValue(
         painter,
-        QRectF(387.0, 82.0, 44.0, 18.0),
-        QRectF(429.0, 82.0, 75.0, 18.0),
+        QRectF(381.9211, 78.53858, 41.30976, 24.0),
+        QRectF(423.23086, 78.53858, 81.58197, 24.0),
+        QRectF(423.0001, 76.73653, 81.6, 26.64),
         tr("Grade:"),
         m_data.classLabel
         );
     drawLabelAndValue(
         painter,
-        QRectF(36.0, 105.0, 92.0, 18.0),
-        QRectF(121.0, 105.0, 91.0, 18.0),
+        QRectF(32.48087, 102.53858, 84.18748, 21.6),
+        QRectF(116.66835, 102.53858, 98.1911, 21.6),
+        QRectF(117.7499, 102.1399, 95.80008, 23.74969),
         tr("Native Teacher:"),
         m_data.nativeTeacher
         );
     drawLabelAndValue(
         painter,
-        QRectF(220.0, 105.0, 90.0, 18.0),
-        QRectF(307.0, 105.0, 72.0, 18.0),
+        QRectF(214.85945, 102.53858, 89.49732, 21.6),
+        QRectF(304.35677, 102.53858, 77.56433, 21.6),
+        QRectF(304.05, 100.1782, 76.95, 23.02268),
         tr("Korean Teacher:"),
         m_data.koreanTeacher,
         true
         );
     drawLabelAndValue(
         painter,
-        QRectF(387.0, 105.0, 44.0, 18.0),
-        QRectF(429.0, 105.0, 75.0, 18.0),
+        QRectF(381.9211, 102.53858, 41.30976, 21.6),
+        QRectF(423.23086, 102.53858, 81.58197, 21.6),
+        QRectF(414.1999, 100.08, 99.20032, 25.92),
         tr("Date:"),
         m_data.date
         );
@@ -1361,21 +1386,30 @@ void SpeakingEvalReportWidget::paintReport(
                 painter,
                 firstRect.adjusted(3.0, 2.0, -3.0, -2.0),
                 section.descriptions[0],
-                reportFont(5.1),
+                standardFont(
+                    QStringLiteral("Calibri"),
+                    8.0
+                    ),
                 Qt::AlignLeft
                 );
             drawCenteredText(
                 painter,
                 secondRect.adjusted(3.0, 2.0, -3.0, -2.0),
                 section.descriptions[2],
-                reportFont(5.1),
+                standardFont(
+                    QStringLiteral("Calibri"),
+                    8.0
+                    ),
                 Qt::AlignLeft
                 );
             drawCenteredText(
                 painter,
                 thirdRect.adjusted(2.0, 2.0, -2.0, -2.0),
                 section.descriptions[4],
-                reportFont(5.1)
+                standardFont(
+                    QStringLiteral("Calibri"),
+                    8.0
+                    )
                 );
         }
         else
@@ -1395,7 +1429,10 @@ void SpeakingEvalReportWidget::paintReport(
                     painter,
                     descriptionRect.adjusted(3.0, 2.0, -3.0, -2.0),
                     section.descriptions[gradeIndex],
-                    reportFont(5.1)
+                    standardFont(
+                        QStringLiteral("Calibri"),
+                        8.0
+                        )
                     );
             }
         }
@@ -1406,23 +1443,34 @@ void SpeakingEvalReportWidget::paintReport(
 
     painter->setPen(Qt::black);
     painter->setFont(
-        reportFont(
-            12.0,
-            QFont::DemiBold
+        standardFont(
+            QStringLiteral("Calibri"),
+            14.0,
+            QFont::Bold
             )
         );
     painter->drawText(
-        QRectF(37.0, 576.0, 135.0, 17.0),
+        QRectF(38.1374, 575.7059, 87.8626, 20.63441),
         Qt::AlignLeft | Qt::AlignVCenter,
         tr("Comments:")
         );
 
-    const QRectF commentsRect(34.0, 594.0, 472.0, 132.0);
+    const QRectF commentsRect(
+        34.87504,
+        594.75,
+        470.0625,
+        131.25
+        );
     painter->fillRect(commentsRect, Qt::white);
     drawBorder(painter, commentsRect);
 
     painter->setPen(Qt::black);
-    painter->setFont(reportFont(9.5));
+    painter->setFont(
+        standardFont(
+            QStringLiteral("Segoe UI Semibold"),
+            18.0
+            )
+        );
     painter->drawText(
         commentsRect.adjusted(5.0, 5.0, -5.0, -5.0),
         Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
@@ -1430,38 +1478,41 @@ void SpeakingEvalReportWidget::paintReport(
         );
 
     painter->setFont(
-        reportFont(
-            12.0,
-            QFont::DemiBold
-            )
-        );
-    painter->drawText(
-        QRectF(37.0, 736.0, 111.0, 18.0),
-        Qt::AlignLeft | Qt::AlignVCenter,
-        tr("Overall Grade:")
-        );
-
-    painter->setFont(
-        reportFont(
+        standardFont(
+            QStringLiteral("Calibri"),
             14.0,
             QFont::Bold
             )
         );
     painter->drawText(
-        QRectF(147.0, 736.0, 53.0, 18.0),
+        QRectF(38.1374, 734.0623, 93.8626, 24.23441),
+        Qt::AlignLeft | Qt::AlignVCenter,
+        tr("Overall Grade:")
+        );
+
+    painter->setFont(
+        standardFont(
+            QStringLiteral("Times New Roman"),
+            18.0,
+            QFont::Bold
+            )
+        );
+    painter->drawText(
+        QRectF(120.9843, 735.0, 43.2, 21.56252),
         Qt::AlignCenter | Qt::AlignVCenter,
         overallGrade()
         );
 
     painter->setFont(
-        reportFont(
-            12.0,
-            QFont::DemiBold
+        standardFont(
+            QStringLiteral("Calibri"),
+            14.0,
+            QFont::Bold
             )
         );
     painter->drawText(
-        QRectF(224.0, 736.0, 210.0, 18.0),
-        Qt::AlignCenter | Qt::AlignVCenter,
+        QRectF(223.2, 734.0623, 160.8, 24.23441),
+        Qt::AlignLeft | Qt::AlignVCenter,
         tr("Native Teacher Signature:")
         );
 

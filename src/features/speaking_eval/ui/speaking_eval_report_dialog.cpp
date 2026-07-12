@@ -365,16 +365,18 @@ SpeakingEvalReportData SpeakingEvalReportDialog::reportDataForRow(
         m_classInfo.teacherEn;
     data.koreanTeacher =
         m_classInfo.teacherKr;
-    data.date =
-        QDate::currentDate().toString(
-            QStringLiteral("MMM. yyyy")
-            );
     data.comments =
         values.value(
             SpeakingEval::toInt(SpeakingEvalColumn::Comments)
             );
     data.useAdvancedTemplate =
         usesAdvancedTemplate(m_classInfo);
+    data.date =
+        QDate::currentDate().toString(
+            data.useAdvancedTemplate
+                ? QStringLiteral("MMM. yyyy")
+                : QStringLiteral("MMMM yyyy")
+            );
 
     const std::array<SpeakingEvalColumn, 6> scoreColumns{
         SpeakingEvalColumn::Grammar,
