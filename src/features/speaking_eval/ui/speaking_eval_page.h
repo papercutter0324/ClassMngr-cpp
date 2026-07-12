@@ -62,6 +62,8 @@ private slots:
 
     void updateActions();
 
+    void showReports();
+
 private:
     void buildUi();
 

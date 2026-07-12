@@ -6,11 +6,13 @@
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "core/utils/student_name_utils.h"
+#include "domain/models/class_info.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "data/data_service.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
@@ -548,9 +550,6 @@ void SpeakingEvalPage::retranslateUi()
         m_reportButtons[index]->setText(
             reportLabels[index]
             );
-        m_reportButtons[index]->setToolTip(
-            tr("This action is not available yet.")
-            );
     }
 
     if (m_koreanKeyboardButton)
@@ -691,6 +690,65 @@ void SpeakingEvalPage::updateActions()
         && m_classroom.id > 0
         && !m_model->changedCells().isEmpty()
         );
+
+    bool hasStudents = false;
+
+    for (const QStringList& row : m_model->rows())
+    {
+        if (
+            !row.value(
+                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+                ).trimmed().isEmpty()
+            || !row.value(
+                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+                ).trimmed().isEmpty()
+            )
+        {
+            hasStudents = true;
+            break;
+        }
+    }
+
+    for (QPushButton* button : m_reportButtons)
+    {
+        if (button)
+        {
+            button->setEnabled(
+                m_classroom.id > 0 && hasStudents
+                );
+            button->setToolTip(
+                hasStudents
+                    ? QString()
+                    : tr("Import or enter a student name to create reports.")
+                );
+        }
+    }
+}
+
+void SpeakingEvalPage::showReports()
+{
+    if (!m_model || m_classroom.id <= 0)
+    {
+        return;
+    }
+
+    ClassInfo classInfo;
+
+    if (m_services && m_services->dataService())
+    {
+        classInfo =
+            m_services
+                ->dataService()
+                ->loadClassInfo(m_classroom.id);
+    }
+
+    SpeakingEvalReportDialog dialog(
+        m_model->rows(),
+        classInfo,
+        this
+        );
+
+    dialog.exec();
 }
 
 void SpeakingEvalPage::buildUi()
@@ -804,29 +862,24 @@ void SpeakingEvalPage::buildUi()
     bottomLayout()->addWidget(m_importNamesButton);
     bottomLayout()->addSpacing(20);
 
-    const QList<QString> disabledLabels{
+    const QList<QString> reportLabels{
         tr("Create Reports"),
         tr("Print Reports")
     };
 
     m_reportButtons.clear();
 
-    for (int index = 0; index < disabledLabels.size(); ++index)
+    for (int index = 0; index < reportLabels.size(); ++index)
     {
         auto* button =
             new TextFitPushButton(
-                disabledLabels[index],
+                reportLabels[index],
                 this
                 );
 
         button->setSizePolicy(
             QSizePolicy::Expanding,
             QSizePolicy::Preferred
-            );
-
-        button->setEnabled(false);
-        button->setToolTip(
-            tr("This action is not available yet.")
             );
 
         bottomLayout()->addWidget(button);
@@ -877,6 +930,16 @@ void SpeakingEvalPage::buildUi()
         this,
         &SpeakingEvalPage::importNames
         );
+
+    for (QPushButton* button : m_reportButtons)
+    {
+        connect(
+            button,
+            &QPushButton::clicked,
+            this,
+            &SpeakingEvalPage::showReports
+            );
+    }
 
     connect(
         m_koreanKeyboardButton,
