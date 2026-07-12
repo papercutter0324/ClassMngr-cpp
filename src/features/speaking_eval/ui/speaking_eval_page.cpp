@@ -5,6 +5,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
+#include "core/utils/student_name_utils.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "data/data_service.h"
@@ -15,6 +16,7 @@
 
 #include <QAbstractButton>
 #include <QDesktopServices>
+#include <QHash>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
@@ -1040,7 +1042,40 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
         return changes;
     }
 
-    int targetRow = 0;
+    const int evaluationEnglishColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+
+    const int evaluationKoreanColumn =
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+
+    const SpeakingEvalRows evaluationRows =
+        m_model->rows();
+
+    const QHash<QString, QList<int>> rowsByNamePair =
+        StudentNameUtils::rowsByNamePair(
+            evaluationRows,
+            evaluationEnglishColumn,
+            evaluationKoreanColumn
+            );
+
+    QList<int> availableRows;
+
+    for (int row = 0; row < evaluationRows.size(); ++row)
+    {
+        if (
+            evaluationRows[row]
+                .value(evaluationEnglishColumn)
+                .trimmed()
+                .isEmpty()
+            && evaluationRows[row]
+                   .value(evaluationKoreanColumn)
+                   .trimmed()
+                   .isEmpty()
+            )
+        {
+            availableRows.append(row);
+        }
+    }
 
     const auto appendChange =
         [this, &changes](int row, SpeakingEvalColumn column, const QString& value)
@@ -1077,6 +1112,9 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
                 );
         };
 
+    QSet<QString> importedNamePairs;
+    int availableRowIndex = 0;
+
     for (const QStringList& rosterRow : rosterRows)
     {
         const QString englishName =
@@ -1089,15 +1127,30 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
                 ? rosterRow[rosterKoreanColumn].trimmed()
                 : QString();
 
-        if (englishName.isEmpty() && koreanName.isEmpty())
+        const QString namePairKey =
+            StudentNameUtils::namePairKey(
+                englishName,
+                koreanName
+                );
+
+        if (
+            namePairKey.isEmpty()
+            || importedNamePairs.contains(namePairKey)
+            || rowsByNamePair.contains(namePairKey)
+            )
         {
             continue;
         }
 
-        if (targetRow >= SpeakingEval::RowCount)
+        if (availableRowIndex >= availableRows.size())
         {
             break;
         }
+
+        importedNamePairs.insert(namePairKey);
+
+        const int targetRow =
+            availableRows[availableRowIndex++];
 
         appendChange(
             targetRow,
@@ -1111,7 +1164,6 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
             koreanName
             );
 
-        ++targetRow;
     }
 
     return changes;

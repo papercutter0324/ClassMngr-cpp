@@ -1,6 +1,7 @@
 #include "roster_page.h"
 
 #include "core/application_services.h"
+#include "core/utils/student_name_utils.h"
 #include "data/data_service.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_print_dialog.h"
@@ -43,14 +44,6 @@ void RosterPage::importScores()
         return;
     }
 
-    const auto keyFor =
-        [](const QString& englishName, const QString& koreanName)
-        {
-            return englishName.trimmed()
-                + QChar(0x001F)
-                + koreanName.trimmed();
-        };
-
     const QStringList evaluationColumns{
         QStringLiteral("Winter"),
         QStringLiteral("Speech Contest"),
@@ -81,7 +74,10 @@ void RosterPage::importScores()
         for (const SpeakingEvalScore& score : scores)
         {
             lookup.insert(
-                keyFor(score.englishName, score.koreanName),
+                StudentNameUtils::namePairKey(
+                    score.englishName,
+                    score.koreanName
+                    ),
                 score.finalGrade
                 );
         }
@@ -96,16 +92,23 @@ void RosterPage::importScores()
                                            .data(Qt::EditRole)
                                            .toString()
                                            .trimmed();
-            if (englishName.isEmpty() || koreanName.isEmpty())
+            const QString namePairKey =
+                StudentNameUtils::namePairKey(
+                    englishName,
+                    koreanName
+                    );
+
+            if (namePairKey.isEmpty())
             {
                 continue;
             }
 
-            const QString finalGrade = lookup.value(keyFor(englishName, koreanName));
-            if (finalGrade.isEmpty())
+            if (!lookup.contains(namePairKey))
             {
                 continue;
             }
+
+            const QString finalGrade = lookup.value(namePairKey);
 
             const QModelIndex index = m_model->index(row, scoreColumn);
             if (!index.isValid() || index.data(Qt::EditRole).toString() == finalGrade)

@@ -3,6 +3,7 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "core/application_services.h"
+#include "core/utils/student_name_utils.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
@@ -658,14 +659,6 @@ void MyInfoRostersPage::importScores()
         return;
     }
 
-    const auto keyFor =
-        [](const QString& englishName, const QString& koreanName)
-        {
-            return englishName.trimmed()
-                + QChar(0x001F)
-                + koreanName.trimmed();
-        };
-
     const QStringList evaluationColumns{
         QStringLiteral("Winter"),
         QStringLiteral("Speech Contest"),
@@ -703,7 +696,7 @@ void MyInfoRostersPage::importScores()
         for (const SpeakingEvalScore& score : scores)
         {
             lookup.insert(
-                keyFor(
+                StudentNameUtils::namePairKey(
                     score.englishName,
                     score.koreanName
                     ),
@@ -733,23 +726,23 @@ void MyInfoRostersPage::importScores()
                     .toString()
                     .trimmed();
 
-            if (englishName.isEmpty() || koreanName.isEmpty())
-            {
-                continue;
-            }
-
-            const QString finalGrade =
-                lookup.value(
-                    keyFor(
-                        englishName,
-                        koreanName
-                        )
+            const QString namePairKey =
+                StudentNameUtils::namePairKey(
+                    englishName,
+                    koreanName
                     );
 
-            if (finalGrade.isEmpty())
+            if (namePairKey.isEmpty())
             {
                 continue;
             }
+
+            if (!lookup.contains(namePairKey))
+            {
+                continue;
+            }
+
+            const QString finalGrade = lookup.value(namePairKey);
 
             const QModelIndex index =
                 m_model->index(
