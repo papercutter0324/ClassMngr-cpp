@@ -11,6 +11,7 @@
 #include "domain/models/speaking_evaluation.h"
 #include "data/data_service.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
+#include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -537,7 +538,7 @@ void SpeakingEvalPage::retranslateUi()
 
     const QList<QString> reportLabels{
         tr("Create Reports"),
-        tr("Print Reports")
+        tr("Export / Print Reports")
     };
 
     for (
@@ -751,6 +752,60 @@ void SpeakingEvalPage::showReports()
     dialog.exec();
 }
 
+void SpeakingEvalPage::exportReports()
+{
+    if (!m_model || m_classroom.id <= 0)
+    {
+        return;
+    }
+
+    ClassInfo classInfo;
+    if (m_services && m_services->dataService())
+    {
+        classInfo = m_services->dataService()->loadClassInfo(m_classroom.id);
+    }
+
+    const QList<SpeakingEvalBatchReportService::StudentReport> reports =
+        buildSpeakingEvalStudentReports(m_model->rows(), classInfo);
+
+    int currentReportIndex = 0;
+    const int selectedRow = m_table ? m_table->currentIndex().row() : -1;
+    if (selectedRow >= 0)
+    {
+        int reportIndex = 0;
+        for (int row = 0; row < m_model->rows().size(); ++row)
+        {
+            const QString englishName = m_model->rows().at(row).value(
+                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+                ).trimmed();
+            const QString koreanName = m_model->rows().at(row).value(
+                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+                ).trimmed();
+            if (englishName.isEmpty() && koreanName.isEmpty())
+            {
+                continue;
+            }
+            if (row == selectedRow)
+            {
+                currentReportIndex = reportIndex;
+                break;
+            }
+            ++reportIndex;
+        }
+    }
+
+    SpeakingEvalBatchExportDialog dialog(
+        reports,
+        currentReportIndex,
+        SpeakingEvalBatchReportService::defaultOutputDirectory(
+            classInfo,
+            m_evaluationName
+            ),
+        this
+        );
+    dialog.exec();
+}
+
 void SpeakingEvalPage::buildUi()
 {
     contentLayout()->setContentsMargins(
@@ -864,7 +919,7 @@ void SpeakingEvalPage::buildUi()
 
     const QList<QString> reportLabels{
         tr("Create Reports"),
-        tr("Print Reports")
+        tr("Export / Print Reports")
     };
 
     m_reportButtons.clear();
@@ -931,13 +986,22 @@ void SpeakingEvalPage::buildUi()
         &SpeakingEvalPage::importNames
         );
 
-    for (QPushButton* button : m_reportButtons)
+    if (!m_reportButtons.isEmpty())
     {
         connect(
-            button,
+            m_reportButtons.at(0),
             &QPushButton::clicked,
             this,
             &SpeakingEvalPage::showReports
+            );
+    }
+    if (m_reportButtons.size() > 1)
+    {
+        connect(
+            m_reportButtons.at(1),
+            &QPushButton::clicked,
+            this,
+            &SpeakingEvalPage::exportReports
             );
     }
 

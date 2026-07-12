@@ -1059,6 +1059,55 @@ if(BUILD_TESTING)
         COMMAND ClassMngrSpeakingEvalReportWidgetTests
     )
 
+    qt_add_executable(ClassMngrSpeakingEvalBatchReportServiceTests
+        tests/speaking_eval_batch_report_service_tests.cpp
+        src/core/fontmanager.cpp
+        src/features/speaking_eval/ui/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
+        src/ui/shared/printing/pdf_print_dialog.cpp
+        src/ui/shared/printing/pdf_print_dialog_pages.cpp
+        src/ui/shared/printing/pdf_print_dialog_printer.cpp
+        src/ui/shared/printing/pdf_print_dialog_printing.cpp
+        src/ui/shared/printing/pdf_print_dialog_widgets.cpp
+        src/ui/shared/printing/pdf_print_service.cpp
+        src/ui/shared/styles/role_style_registry.cpp
+    )
+
+    target_compile_features(ClassMngrSpeakingEvalBatchReportServiceTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSpeakingEvalBatchReportServiceTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
+            Qt6::PdfWidgets
+            Qt6::PrintSupport
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    qt_add_resources(ClassMngrSpeakingEvalBatchReportServiceTests batch_report_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/images/dyb.png
+            resources/assets/files/evaluations/SpeakingEvaluationTemplate-Full.pptx
+            resources/assets/files/evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx
+    )
+
+    add_test(
+        NAME ClassMngrSpeakingEvalBatchReportServiceTests
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+    )
+
     qt_add_executable(ClassMngrStartupPerformanceTests
         tests/startup_performance_tests.cpp
     )
@@ -1110,6 +1159,7 @@ if(BUILD_TESTING)
             ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
             ClassMngrSpeakingEvalReportWidgetTests
+            ClassMngrSpeakingEvalBatchReportServiceTests
             ClassMngrStartupPerformanceTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION

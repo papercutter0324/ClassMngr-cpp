@@ -17,6 +17,8 @@
 #include <QtGlobal>
 
 #include <algorithm>
+#include <memory>
+#include <vector>
 
 namespace PdfPrintService
 {
@@ -588,5 +590,170 @@ Result printPdfDocument(
         request
         );
 #endif
+}
+
+Result printPdfDocuments(
+    const BatchRequest& request
+    )
+{
+    if (request.documentPaths.isEmpty())
+    {
+        return failed(
+            QObject::tr("No PDF files are available to print.")
+            );
+    }
+
+#ifdef Q_OS_LINUX
+    if (QPrinterInfo::availablePrinterNames().isEmpty())
+    {
+        return failed(
+            QObject::tr("No printers are available.")
+            );
+    }
+#endif
+
+    std::vector<std::unique_ptr<QPdfDocument>> documents;
+    documents.reserve(request.documentPaths.size());
+    int pageCount = 0;
+
+    for (const QString& documentPath : request.documentPaths)
+    {
+        auto document = std::make_unique<QPdfDocument>();
+        if (document->load(documentPath) != QPdfDocument::Error::None
+            || document->status() != QPdfDocument::Status::Ready
+            || document->pageCount() <= 0)
+        {
+            return failed(
+                QObject::tr("Unable to open \"%1\" for printing.")
+                    .arg(documentDisplayName(documentPath))
+                );
+        }
+
+        pageCount += document->pageCount();
+        documents.push_back(std::move(document));
+    }
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::NativeFormat);
+    printer.setDocName(
+        request.dialogTitle.trimmed().isEmpty()
+            ? QObject::tr("Print from ClassMngr - Speaking Evaluation Reports")
+            : request.dialogTitle
+        );
+    printer.setCreator(QStringLiteral("ClassMngr"));
+    printer.setPageOrientation(request.pageOrientation);
+    if (request.preferredPageSize)
+    {
+        printer.setPageSize(QPageSize(*request.preferredPageSize));
+    }
+
+    QPrintDialog dialog(&printer, request.parent);
+    dialog.setWindowTitle(
+        request.dialogTitle.trimmed().isEmpty()
+            ? QObject::tr("Print Reports")
+            : request.dialogTitle
+        );
+    dialog.setMinMax(1, pageCount);
+    dialog.setFromTo(1, pageCount);
+
+#ifdef Q_OS_LINUX
+    dialog.setOptions(
+        QAbstractPrintDialog::PrintPageRange
+        | QAbstractPrintDialog::PrintCollateCopies
+        | QAbstractPrintDialog::PrintShowPageSize
+        );
+#endif
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return canceled();
+    }
+
+    int firstPage = 1;
+    int lastPage = pageCount;
+    if (printer.printRange() == QPrinter::PageRange
+        && printer.fromPage() > 0
+        && printer.toPage() >= printer.fromPage())
+    {
+        firstPage = std::clamp(printer.fromPage(), 1, pageCount);
+        lastPage = std::clamp(printer.toPage(), firstPage, pageCount);
+    }
+
+    printer.setFullPage(!request.fitToPage);
+    PdfPrintDialogSupport::RenderOptions options;
+    options.grayscale = printer.colorMode() == QPrinter::GrayScale;
+    options.fitToPage = request.fitToPage;
+
+    QPainter painter;
+    if (!painter.begin(&printer))
+    {
+        return failed(
+            QObject::tr("Unable to start the print job.")
+            );
+    }
+
+    int globalPage = 0;
+    int printedPageCount = 0;
+    for (const std::unique_ptr<QPdfDocument>& document : documents)
+    {
+        for (int pageIndex = 0;
+             pageIndex < document->pageCount();
+             ++pageIndex)
+        {
+            ++globalPage;
+            if (globalPage < firstPage || globalPage > lastPage)
+            {
+                continue;
+            }
+
+            if (printedPageCount > 0 && !printer.newPage())
+            {
+                painter.end();
+                return failed(
+                    QObject::tr("Unable to create a new printed page.")
+                    );
+            }
+
+            if (!renderPdfPageToPrinter(
+                    document.get(),
+                    pageIndex,
+                    printer,
+                    painter,
+                    options
+                    ))
+            {
+                painter.end();
+                return failed(
+                    QObject::tr("Unable to render a PDF page for printing.")
+                    );
+            }
+
+            ++printedPageCount;
+        }
+    }
+
+    if (printedPageCount == 0)
+    {
+        painter.end();
+        return failed(
+            QObject::tr("No pages were selected to print.")
+            );
+    }
+
+    if (!painter.end())
+    {
+        return failed(
+            QObject::tr("The print job could not be completed.")
+            );
+    }
+
+    if (printer.printerState() == QPrinter::Error)
+    {
+        return failed(
+            QObject::tr("The printer reported an error while printing.")
+            );
+    }
+
+    return sent();
 }
 }

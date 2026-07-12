@@ -3,6 +3,7 @@
 #include <QPageLayout>
 #include <QPageSize>
 #include <QString>
+#include <QStringList>
 
 #include <optional>
 
@@ -37,7 +38,24 @@ struct Result
     QString message;
 };
 
+struct BatchRequest
+{
+    QWidget* parent = nullptr;
+    QStringList documentPaths;
+    QString dialogTitle;
+    QPageLayout::Orientation pageOrientation = QPageLayout::Portrait;
+    std::optional<QPageSize::PageSizeId> preferredPageSize;
+    bool fitToPage = true;
+};
+
 [[nodiscard]] Result printPdfDocument(
     const Request& request
+    );
+
+// Opens one printer settings dialog, then submits all supplied PDFs as a
+// single print job.  This is intended for batch reports, not the interactive
+// single-document preview workflow above.
+[[nodiscard]] Result printPdfDocuments(
+    const BatchRequest& request
     );
 }

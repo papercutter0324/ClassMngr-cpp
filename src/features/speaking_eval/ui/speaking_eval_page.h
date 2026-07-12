@@ -64,6 +64,8 @@ private slots:
 
     void showReports();
 
+    void exportReports();
+
 private:
     void buildUi();
 

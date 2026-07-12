@@ -6,12 +6,6 @@
 #include <QDate>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
-#include <QPageLayout>
-#include <QPageSize>
-#include <QPainter>
-#include <QPrintDialog>
-#include <QPrinter>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -69,16 +63,131 @@ bool usesAdvancedTemplate(
                );
 }
 
+QString studentDisplayName(
+    const SpeakingEvalRows& rows,
+    int row
+    )
+{
+    if (row < 0 || row >= rows.size())
+    {
+        return {};
+    }
+
+    const QString englishName =
+        rows[row].value(
+            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+            ).trimmed();
+    const QString koreanName =
+        rows[row].value(
+            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+            ).trimmed();
+
+    if (englishName.isEmpty())
+    {
+        return koreanName;
+    }
+    if (koreanName.isEmpty())
+    {
+        return englishName;
+    }
+
+    return QObject::tr("%1 (%2)").arg(englishName, koreanName);
+}
+
+SpeakingEvalReportData reportDataForRow(
+    const SpeakingEvalRows& rows,
+    const ClassInfo& classInfo,
+    int row
+    )
+{
+    SpeakingEvalReportData data;
+    if (row < 0 || row >= rows.size())
+    {
+        return data;
+    }
+
+    const QStringList& values = rows[row];
+    data.englishName = values.value(
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+        );
+    data.koreanName = values.value(
+        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+        );
+    data.classLabel = classLabel(classInfo);
+    data.nativeTeacher = classInfo.teacherEn;
+    data.koreanTeacher = classInfo.teacherKr;
+    data.comments = values.value(
+        SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+        );
+    data.useAdvancedTemplate = usesAdvancedTemplate(classInfo);
+    data.date = QDate::currentDate().toString(
+        data.useAdvancedTemplate
+            ? QStringLiteral("MMM. yyyy")
+            : QStringLiteral("MMMM yyyy")
+        );
+
+    const std::array<SpeakingEvalColumn, 6> scoreColumns{
+        SpeakingEvalColumn::Grammar,
+        SpeakingEvalColumn::Pronunciation,
+        SpeakingEvalColumn::Fluency,
+        SpeakingEvalColumn::Manner,
+        SpeakingEvalColumn::Content,
+        SpeakingEvalColumn::OverallEffort
+    };
+    for (int index = 0; index < scoreColumns.size(); ++index)
+    {
+        data.scores[index] = values.value(
+            SpeakingEval::toInt(scoreColumns[index])
+            );
+    }
+
+    return data;
+}
+
 } // namespace
+
+QList<SpeakingEvalBatchReportService::StudentReport>
+buildSpeakingEvalStudentReports(
+    const SpeakingEvalRows& rows,
+    const ClassInfo& classInfo
+    )
+{
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    for (int row = 0; row < rows.size(); ++row)
+    {
+        const QString displayName = studentDisplayName(rows, row);
+        if (displayName.isEmpty())
+        {
+            continue;
+        }
+
+        reports.append(
+            { displayName, reportDataForRow(rows, classInfo, row) }
+            );
+    }
+    return reports;
+}
 
 SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const SpeakingEvalRows& rows,
     const ClassInfo& classInfo,
     QWidget* parent
     )
+    : SpeakingEvalReportDialog(
+        buildSpeakingEvalStudentReports(rows, classInfo),
+        0,
+        parent
+        )
+{
+}
+
+SpeakingEvalReportDialog::SpeakingEvalReportDialog(
+    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
+    int currentStudentIndex,
+    QWidget* parent
+    )
     : QDialog(parent)
-    , m_rows(rows)
-    , m_classInfo(classInfo)
+    , m_reports(reports)
 {
     setWindowTitle(tr("Speaking Evaluation Reports"));
     resize(940, 900);
@@ -138,11 +247,6 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     auto* buttonLayout =
         new QHBoxLayout;
 
-    auto* printButton =
-        new TextFitPushButton(
-            tr("Print This Report"),
-            this
-            );
     auto* closeButton =
         new TextFitPushButton(
             tr("Close"),
@@ -150,29 +254,14 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
             );
 
     buttonLayout->addStretch();
-    buttonLayout->addWidget(printButton);
     buttonLayout->addWidget(closeButton);
     layout->addLayout(buttonLayout);
 
-    for (int row = 0; row < m_rows.size(); ++row)
+    for (int index = 0; index < m_reports.size(); ++index)
     {
-        const QString englishName =
-            m_rows[row].value(
-                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-                ).trimmed();
-        const QString koreanName =
-            m_rows[row].value(
-                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-                ).trimmed();
-
-        if (englishName.isEmpty() && koreanName.isEmpty())
-        {
-            continue;
-        }
-
         m_studentSelector->addItem(
-            studentDisplayName(row),
-            row
+            m_reports.at(index).displayName,
+            index
             );
     }
 
@@ -189,7 +278,12 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     m_studentSelector->setEnabled(hasStudents);
     previousButton->setEnabled(hasStudents);
     nextButton->setEnabled(hasStudents);
-    printButton->setEnabled(hasStudents);
+    if (hasStudents)
+    {
+        m_studentSelector->setCurrentIndex(
+            qBound(0, currentStudentIndex, m_reports.size() - 1)
+            );
+    }
 
     connect(
         m_studentSelector,
@@ -213,12 +307,6 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         &SpeakingEvalReportDialog::moveToNextStudent
         );
     connect(
-        printButton,
-        &QPushButton::clicked,
-        this,
-        &SpeakingEvalReportDialog::printCurrentReport
-        );
-    connect(
         closeButton,
         &QPushButton::clicked,
         this,
@@ -238,14 +326,14 @@ void SpeakingEvalReportDialog::updateReport()
     const int row =
         m_studentSelector->currentData().toInt();
 
-    if (row < 0 || row >= m_rows.size())
+    if (row < 0 || row >= m_reports.size())
     {
         m_report->setReportData({});
         return;
     }
 
     m_report->setReportData(
-        reportDataForRow(row)
+        m_reports.at(row).report
         );
 }
 
@@ -274,158 +362,4 @@ void SpeakingEvalReportDialog::moveToNextStudent()
         (m_studentSelector->currentIndex() + 1)
         % m_studentSelector->count()
         );
-}
-
-void SpeakingEvalReportDialog::printCurrentReport()
-{
-    if (!m_report || !m_studentSelector)
-    {
-        return;
-    }
-
-    const int row =
-        m_studentSelector->currentData().toInt();
-
-    if (row < 0 || row >= m_rows.size())
-    {
-        return;
-    }
-
-    QPrinter printer(QPrinter::HighResolution);
-
-    const QPageSize pageSize(
-        QSizeF(7.5, 10.833333),
-        QPageSize::Inch,
-        QStringLiteral("SpeakingEvaluationA4")
-        );
-
-    printer.setPageLayout(
-        QPageLayout(
-            pageSize,
-            QPageLayout::Portrait,
-            QMarginsF()
-            )
-        );
-
-    QPrintDialog printDialog(
-        &printer,
-        this
-        );
-
-    if (printDialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    QPainter painter;
-
-    if (!painter.begin(&printer))
-    {
-        QMessageBox::warning(
-            this,
-            tr("Print Failed"),
-            tr("The speaking evaluation report could not be printed.")
-            );
-        return;
-    }
-
-    m_report->paintReport(
-        &painter,
-        printer.pageRect(QPrinter::DevicePixel)
-        );
-
-    painter.end();
-}
-
-SpeakingEvalReportData SpeakingEvalReportDialog::reportDataForRow(
-    int row
-    ) const
-{
-    SpeakingEvalReportData data;
-
-    if (row < 0 || row >= m_rows.size())
-    {
-        return data;
-    }
-
-    const QStringList& values =
-        m_rows[row];
-
-    data.englishName =
-        values.value(
-            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-            );
-    data.koreanName =
-        values.value(
-            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-            );
-    data.classLabel =
-        classLabel(m_classInfo);
-    data.nativeTeacher =
-        m_classInfo.teacherEn;
-    data.koreanTeacher =
-        m_classInfo.teacherKr;
-    data.comments =
-        values.value(
-            SpeakingEval::toInt(SpeakingEvalColumn::Comments)
-            );
-    data.useAdvancedTemplate =
-        usesAdvancedTemplate(m_classInfo);
-    data.date =
-        QDate::currentDate().toString(
-            data.useAdvancedTemplate
-                ? QStringLiteral("MMM. yyyy")
-                : QStringLiteral("MMMM yyyy")
-            );
-
-    const std::array<SpeakingEvalColumn, 6> scoreColumns{
-        SpeakingEvalColumn::Grammar,
-        SpeakingEvalColumn::Pronunciation,
-        SpeakingEvalColumn::Fluency,
-        SpeakingEvalColumn::Manner,
-        SpeakingEvalColumn::Content,
-        SpeakingEvalColumn::OverallEffort
-    };
-
-    for (int index = 0; index < scoreColumns.size(); ++index)
-    {
-        data.scores[index] =
-            values.value(
-                SpeakingEval::toInt(scoreColumns[index])
-                );
-    }
-
-    return data;
-}
-
-QString SpeakingEvalReportDialog::studentDisplayName(
-    int row
-    ) const
-{
-    if (row < 0 || row >= m_rows.size())
-    {
-        return {};
-    }
-
-    const QString englishName =
-        m_rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-            ).trimmed();
-    const QString koreanName =
-        m_rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-            ).trimmed();
-
-    if (englishName.isEmpty())
-    {
-        return koreanName;
-    }
-
-    if (koreanName.isEmpty())
-    {
-        return englishName;
-    }
-
-    return tr("%1 (%2)")
-        .arg(englishName, koreanName);
 }
