@@ -203,18 +203,25 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             metrics,
             QStringLiteral("progressUpdates")
             );
+    const double finalProgress =
+        metricValue(
+            metrics,
+            QStringLiteral("finalProgress")
+            );
 
     QVERIFY(windowConstructedMs >= 0.0);
     QVERIFY(readyMs >= windowConstructedMs);
     QVERIFY(progressUpdates > 0.0);
+    QCOMPARE(finalProgress, 100.0);
     QVERIFY(processStartToExitMs >= readyMs);
 
     std::printf(
-        "Startup performance: windowConstructed=%.0f ms, ready=%.0f ms, process=%lld ms, progressUpdates=%.0f\n",
+        "Startup performance: windowConstructed=%.0f ms, ready=%.0f ms, process=%lld ms, progressUpdates=%.0f, finalProgress=%.0f\n",
         windowConstructedMs,
         readyMs,
         static_cast<long long>(processStartToExitMs),
-        progressUpdates
+        progressUpdates,
+        finalProgress
         );
     std::fflush(stdout);
 

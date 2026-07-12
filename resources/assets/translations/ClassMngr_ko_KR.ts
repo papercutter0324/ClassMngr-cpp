@@ -1804,39 +1804,74 @@
         <translation>메인 창</translation>
     </message>
     <message>
+        <location filename="../../../src/main.cpp" line="247"/>
+        <source>Loading resource packs...</source>
+        <translation>리소스 팩을 불러오는 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/main.cpp" line="264"/>
+        <source>Loading application icon...</source>
+        <translation>애플리케이션 아이콘을 불러오는 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/mainwindow.cpp" line="49"/>
+        <source>Creating main window...</source>
+        <translation>메인 창을 만드는 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/mainwindow.cpp" line="52"/>
+        <source>Initializing application services...</source>
+        <translation>애플리케이션 서비스를 초기화하는 중...</translation>
+    </message>
+    <message>
         <location filename="../../../src/app/mainwindow.cpp" line="55"/>
+        <source>Configuring window...</source>
+        <translation>창을 구성하는 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/mainwindow.cpp" line="58"/>
         <source>Loading pages...</source>
         <translation>페이지 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="58"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="61"/>
         <source>Loading sidebar...</source>
         <translation>사이드바 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="61"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="64"/>
         <source>Initializing actions...</source>
         <translation>작업 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="64"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="67"/>
         <source>Initializing controllers...</source>
         <translation>컨트롤러 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="67"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="70"/>
         <source>Building menus...</source>
         <translation>메뉴 구성 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="71"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="74"/>
         <source>Connecting signals...</source>
         <translation>신호 연결 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="74"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="77"/>
         <source>Loading recent file...</source>
         <translation>최근 파일 로드 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/mainwindow.cpp" line="87"/>
+        <source>Restoring window layout...</source>
+        <translation>창 레이아웃을 복원하는 중...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/main.cpp" line="283"/>
+        <source>Ready...</source>
+        <translation>준비 완료...</translation>
     </message>
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="104"/>

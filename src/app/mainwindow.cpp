@@ -46,10 +46,13 @@ MainWindow::MainWindow(
     , m_startupOptions(startupOptions)
     , m_languageService(languageService)
 {
+    progressCallback(tr("Creating main window..."));
     ui->setupUi(this);
 
+    progressCallback(tr("Initializing application services..."));
     initializeServices();
 
+    progressCallback(tr("Configuring window..."));
     initializeWindow();
 
     progressCallback(tr("Loading pages..."));
@@ -81,11 +84,8 @@ MainWindow::MainWindow(
         applyNoDatabaseState();
     }
 
-    QTimer::singleShot(
-        0,
-        this,
-        &MainWindow::restoreSplitter
-        );
+    progressCallback(tr("Restoring window layout..."));
+    restoreSplitter();
 }
 
 void MainWindow::initializeServices()

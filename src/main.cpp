@@ -12,6 +12,7 @@
 #include "core/utils/platform.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QFile>
 #include <QIcon>
 #include <QJsonDocument>
@@ -82,7 +83,8 @@ bool writeStartupPerformanceMetrics(
     const QString& outputPath,
     qint64 processStartToWindowConstructedMs,
     qint64 processStartToReadyMs,
-    int progressUpdates
+    int progressUpdates,
+    int finalProgress
     )
 {
     if (outputPath.trimmed().isEmpty())
@@ -118,6 +120,10 @@ bool writeStartupPerformanceMetrics(
         QStringLiteral("progressUpdates"),
         progressUpdates
         );
+    metrics.insert(
+        QStringLiteral("finalProgress"),
+        finalProgress
+        );
 
     file.write(
         QJsonDocument(metrics).toJson(QJsonDocument::Indented)
@@ -150,20 +156,6 @@ int main(int argc, char *argv[])
     app.setApplicationVersion(
         QString::fromUtf8(BuildInfo::Version)
         );
-
-    if (
-        const Status resourcePackStatus =
-            ResourcePackManager::instance().initialize();
-        !resourcePackStatus
-        )
-    {
-        qWarning().noquote()
-            << resourcePackStatus.error();
-    }
-
-    app.setWindowIcon(getAppIcon());
-
-
 
     // =====================================================
     // Translation Support
@@ -217,21 +209,23 @@ int main(int argc, char *argv[])
     // Progress Callback
     // =====================================================
 
-    int progress = 0;
+    // Language and font setup complete before the splash can be displayed.
+    int completedStartupSteps = 2;
     int progressUpdates = 0;
-
-    const double step =
-        100.0 / AppSettings::StartupProgressSteps;
+    int progress = 0;
 
     auto updateProgress =
         [&](const QString &message)
     {
+        ++completedStartupSteps;
         ++progressUpdates;
 
-        progress = qMin(
-            static_cast<int>(progress + step),
-            100
-            );
+        progress =
+            qMin(
+                100,
+                (100 * completedStartupSteps)
+                    / AppSettings::StartupProgressSteps
+                );
 
         splash.setMessage(message);
         splash.setProgress(progress);
@@ -255,6 +249,32 @@ int main(int argc, char *argv[])
     // Main Window
     // =====================================================
 
+    updateProgress(
+        QCoreApplication::translate(
+            "MainWindow",
+            "Loading resource packs..."
+            )
+        );
+
+    if (
+        const Status resourcePackStatus =
+            ResourcePackManager::instance().initialize();
+        !resourcePackStatus
+        )
+    {
+        qWarning().noquote()
+            << resourcePackStatus.error();
+    }
+
+    updateProgress(
+        QCoreApplication::translate(
+            "MainWindow",
+            "Loading application icon..."
+            )
+        );
+
+    app.setWindowIcon(getAppIcon());
+
     MainWindow window(
         updateProgress,
         isAdminMode(app.arguments()),
@@ -263,6 +283,18 @@ int main(int argc, char *argv[])
             .loadMostRecentDatabase = !startupPerformance.enabled,
             .runPostShowStartupTasks = !startupPerformance.enabled
         }
+        );
+
+    updateProgress(
+        QCoreApplication::translate(
+            "MainWindow",
+            "Ready..."
+            )
+        );
+
+    Q_ASSERT(
+        completedStartupSteps
+            == AppSettings::StartupProgressSteps
         );
 
     const qint64 processStartToWindowConstructedMs =
@@ -296,7 +328,8 @@ int main(int argc, char *argv[])
             &startupPerformance,
             &processStartupTimer,
             processStartToWindowConstructedMs,
-            progressUpdates
+            progressUpdates,
+            progress
         ]()
     {
         window.show();
@@ -309,7 +342,8 @@ int main(int argc, char *argv[])
                     startupPerformance.outputPath,
                     processStartToWindowConstructedMs,
                     processStartupTimer.elapsed(),
-                    progressUpdates
+                    progressUpdates,
+                    progress
                     );
 
             QTimer::singleShot(

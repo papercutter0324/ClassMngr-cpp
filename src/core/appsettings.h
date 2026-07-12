@@ -19,7 +19,7 @@ inline constexpr int MinimumSplashDurationMs =
     2000;
 
 inline constexpr int StartupProgressSteps =
-    8;
+    16;
 }
 
 #endif // APPSETTINGS_H
