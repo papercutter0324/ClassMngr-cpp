@@ -4,6 +4,7 @@
 
 #include <QImage>
 #include <QPainter>
+#include <QPlainTextEdit>
 
 class SpeakingEvalReportWidgetTests : public QObject
 {
@@ -13,6 +14,7 @@ private slots:
     void regularTemplateUsesPortraitSize();
     void regularTemplateMatchesReferenceAndHighlightsScores();
     void advancedTemplateUsesPortraitSizeAndEmbeddedLogo();
+    void interactiveTemplateEditsScoresAndComments();
 };
 
 void SpeakingEvalReportWidgetTests::regularTemplateUsesPortraitSize()
@@ -24,6 +26,75 @@ void SpeakingEvalReportWidgetTests::regularTemplateUsesPortraitSize()
         QSize(810, 1170)
         );
     QVERIFY(!report.usesAdvancedTemplate());
+}
+
+void SpeakingEvalReportWidgetTests::interactiveTemplateEditsScoresAndComments()
+{
+    SpeakingEvalReportWidget report;
+    report.setInteractive(true);
+
+    QSignalSpy scoreSpy(
+        &report,
+        &SpeakingEvalReportWidget::scoreEdited
+        );
+    const QPoint grammarAPlusCell(
+        qRound((35.0263 + 74.25504 + 39.288935) * 1.5),
+        qRound((125.0386 + 11.4) * 1.5)
+        );
+
+    QTest::mouseClick(
+        &report,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        grammarAPlusCell
+        );
+    QCOMPARE(scoreSpy.size(), 1);
+    QCOMPARE(scoreSpy.at(0).at(0).toInt(), 0);
+    QCOMPARE(scoreSpy.at(0).at(1).toString(), QStringLiteral("A+"));
+
+    QTest::mouseClick(
+        &report,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        grammarAPlusCell
+        );
+    QCOMPARE(scoreSpy.size(), 2);
+    QCOMPARE(scoreSpy.at(1).at(1).toString(), QString());
+
+    SpeakingEvalReportData advancedData;
+    advancedData.useAdvancedTemplate = true;
+    report.setReportData(advancedData);
+    const QPoint advancedGrammarAPlusCell(
+        qRound((17.28 + 134.97 + 36.9) * 1.5),
+        qRound((167.27 + 10.8) * 1.5)
+        );
+    QTest::mouseClick(
+        &report,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        advancedGrammarAPlusCell
+        );
+    QCOMPARE(scoreSpy.size(), 3);
+    QCOMPARE(scoreSpy.at(2).at(0).toInt(), 0);
+    QCOMPARE(scoreSpy.at(2).at(1).toString(), QStringLiteral("A+"));
+
+    auto* comments =
+        report.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalReportComments")
+            );
+    QVERIFY(comments);
+    QVERIFY(!comments->isHidden());
+
+    QSignalSpy commentsSpy(
+        &report,
+        &SpeakingEvalReportWidget::commentsEdited
+        );
+    comments->setPlainText(QStringLiteral("A freshly typed comment."));
+    QCOMPARE(commentsSpy.size(), 1);
+    QCOMPARE(
+        commentsSpy.at(0).at(0).toString(),
+        QStringLiteral("A freshly typed comment.")
+        );
 }
 
 void SpeakingEvalReportWidgetTests::regularTemplateMatchesReferenceAndHighlightsScores()

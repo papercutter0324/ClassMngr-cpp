@@ -7,6 +7,8 @@
 #include <QDialog>
 
 class QComboBox;
+class QLabel;
+class QPlainTextEdit;
 
 [[nodiscard]] QList<SpeakingEvalBatchReportService::StudentReport>
 buildSpeakingEvalStudentReports(
@@ -16,6 +18,8 @@ buildSpeakingEvalStudentReports(
 
 class SpeakingEvalReportDialog : public QDialog
 {
+    Q_OBJECT
+
 public:
     explicit SpeakingEvalReportDialog(
         const SpeakingEvalRows& rows,
@@ -26,7 +30,15 @@ public:
     explicit SpeakingEvalReportDialog(
         const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
         int currentStudentIndex,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        bool interactive = false
+        );
+
+signals:
+    void reportValueEdited(
+        int sourceRow,
+        SpeakingEvalColumn column,
+        const QString& value
         );
 
 private:
@@ -39,5 +51,8 @@ private:
 private:
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     QComboBox* m_studentSelector = nullptr;
+    QLabel* m_notesLabel = nullptr;
+    QPlainTextEdit* m_notesEdit = nullptr;
     SpeakingEvalReportWidget* m_report = nullptr;
+    bool m_interactive = false;
 };

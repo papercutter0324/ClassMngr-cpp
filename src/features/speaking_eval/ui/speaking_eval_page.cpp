@@ -749,6 +749,26 @@ void SpeakingEvalPage::showReports()
         this
         );
 
+    connect(
+        &dialog,
+        &SpeakingEvalReportDialog::reportValueEdited,
+        this,
+        [this](int row, SpeakingEvalColumn column, const QString& value)
+        {
+            if (!m_model)
+            {
+                return;
+            }
+
+            const QModelIndex index =
+                m_model->index(row, SpeakingEval::toInt(column));
+            if (index.isValid())
+            {
+                m_model->setData(index, value, Qt::EditRole);
+            }
+        }
+        );
+
     dialog.exec();
 }
 

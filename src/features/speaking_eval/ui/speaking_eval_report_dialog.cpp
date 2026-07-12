@@ -6,9 +6,13 @@
 #include <QDate>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSignalBlocker>
 #include <QVBoxLayout>
+
+#include <array>
 
 namespace
 {
@@ -119,6 +123,9 @@ SpeakingEvalReportData reportDataForRow(
     data.comments = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::Comments)
         );
+    data.notes = values.value(
+        SpeakingEval::toInt(SpeakingEvalColumn::Notes)
+        );
     data.useAdvancedTemplate = usesAdvancedTemplate(classInfo);
     data.date = QDate::currentDate().toString(
         data.useAdvancedTemplate
@@ -162,7 +169,7 @@ buildSpeakingEvalStudentReports(
         }
 
         reports.append(
-            { displayName, reportDataForRow(rows, classInfo, row) }
+            { displayName, reportDataForRow(rows, classInfo, row), row }
             );
     }
     return reports;
@@ -176,7 +183,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     : SpeakingEvalReportDialog(
         buildSpeakingEvalStudentReports(rows, classInfo),
         0,
-        parent
+        parent,
+        true
         )
 {
 }
@@ -184,10 +192,12 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
 SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     int currentStudentIndex,
-    QWidget* parent
+    QWidget* parent,
+    bool interactive
     )
     : QDialog(parent)
     , m_reports(reports)
+    , m_interactive(interactive)
 {
     setWindowTitle(tr("Speaking Evaluation Reports"));
     resize(940, 900);
@@ -198,8 +208,16 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     layout->setContentsMargins(18, 18, 18, 18);
     layout->setSpacing(12);
 
+    auto* previewColumn =
+        new QWidget(this);
+    auto* previewLayout =
+        new QVBoxLayout(previewColumn);
+    previewLayout->setContentsMargins(0, 0, 0, 0);
+    previewLayout->setSpacing(12);
+
     auto* selectorLayout =
         new QHBoxLayout;
+    selectorLayout->setContentsMargins(0, 0, 0, 0);
 
     auto* studentLabel =
         new QLabel(
@@ -229,7 +247,24 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     selectorLayout->addWidget(m_studentSelector, 1);
     selectorLayout->addWidget(previousButton);
     selectorLayout->addWidget(nextButton);
-    layout->addLayout(selectorLayout);
+    previewLayout->addLayout(selectorLayout);
+
+    m_notesLabel =
+        new QLabel(
+            tr("Private Notes (not included in the report)"),
+            previewColumn
+            );
+    m_notesEdit =
+        new QPlainTextEdit(previewColumn);
+    m_notesEdit->setPlaceholderText(
+        tr("Add internal notes about this student…")
+        );
+    m_notesEdit->setFixedHeight(72);
+    m_notesEdit->setTabChangesFocus(true);
+    m_notesLabel->setVisible(m_interactive);
+    m_notesEdit->setVisible(m_interactive);
+    previewLayout->addWidget(m_notesLabel);
+    previewLayout->addWidget(m_notesEdit);
 
     auto* scrollArea =
         new QScrollArea(this);
@@ -239,9 +274,15 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     scrollArea->setFrameShape(QFrame::StyledPanel);
 
     m_report =
-        new SpeakingEvalReportWidget(scrollArea);
+        new SpeakingEvalReportWidget(previewColumn);
+    m_report->setInteractive(m_interactive);
 
-    scrollArea->setWidget(m_report);
+    previewLayout->addWidget(m_report);
+    previewColumn->setFixedSize(
+        m_report->width(),
+        previewLayout->sizeHint().height()
+        );
+    scrollArea->setWidget(previewColumn);
     layout->addWidget(scrollArea, 1);
 
     auto* buttonLayout =
@@ -278,6 +319,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     m_studentSelector->setEnabled(hasStudents);
     previousButton->setEnabled(hasStudents);
     nextButton->setEnabled(hasStudents);
+    m_notesEdit->setEnabled(hasStudents);
+    m_report->setInteractive(m_interactive && hasStudents);
     if (hasStudents)
     {
         m_studentSelector->setCurrentIndex(
@@ -307,6 +350,98 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         &SpeakingEvalReportDialog::moveToNextStudent
         );
     connect(
+        m_report,
+        &SpeakingEvalReportWidget::scoreEdited,
+        this,
+        [this](int metricIndex, const QString& score)
+        {
+            static constexpr std::array<SpeakingEvalColumn, 6> columns{
+                SpeakingEvalColumn::Grammar,
+                SpeakingEvalColumn::Pronunciation,
+                SpeakingEvalColumn::Fluency,
+                SpeakingEvalColumn::Manner,
+                SpeakingEvalColumn::Content,
+                SpeakingEvalColumn::OverallEffort
+            };
+            const int reportIndex =
+                m_studentSelector
+                    ? m_studentSelector->currentData().toInt()
+                    : -1;
+            if (
+                !m_interactive
+                || reportIndex < 0
+                || reportIndex >= m_reports.size()
+                || metricIndex < 0
+                || metricIndex >= columns.size()
+                )
+            {
+                return;
+            }
+
+            m_reports[reportIndex].report.scores[metricIndex] = score;
+            emit reportValueEdited(
+                m_reports.at(reportIndex).sourceRow,
+                columns[metricIndex],
+                score
+                );
+        }
+        );
+    connect(
+        m_report,
+        &SpeakingEvalReportWidget::commentsEdited,
+        this,
+        [this](const QString& comments)
+        {
+            const int reportIndex =
+                m_studentSelector
+                    ? m_studentSelector->currentData().toInt()
+                    : -1;
+            if (
+                !m_interactive
+                || reportIndex < 0
+                || reportIndex >= m_reports.size()
+                )
+            {
+                return;
+            }
+
+            m_reports[reportIndex].report.comments = comments;
+            emit reportValueEdited(
+                m_reports.at(reportIndex).sourceRow,
+                SpeakingEvalColumn::Comments,
+                comments
+                );
+        }
+        );
+    connect(
+        m_notesEdit,
+        &QPlainTextEdit::textChanged,
+        this,
+        [this]()
+        {
+            const int reportIndex =
+                m_studentSelector
+                    ? m_studentSelector->currentData().toInt()
+                    : -1;
+            if (
+                !m_interactive
+                || reportIndex < 0
+                || reportIndex >= m_reports.size()
+                )
+            {
+                return;
+            }
+
+            const QString notes = m_notesEdit->toPlainText();
+            m_reports[reportIndex].report.notes = notes;
+            emit reportValueEdited(
+                m_reports.at(reportIndex).sourceRow,
+                SpeakingEvalColumn::Notes,
+                notes
+                );
+        }
+        );
+    connect(
         closeButton,
         &QPushButton::clicked,
         this,
@@ -329,12 +464,25 @@ void SpeakingEvalReportDialog::updateReport()
     if (row < 0 || row >= m_reports.size())
     {
         m_report->setReportData({});
+        if (m_notesEdit)
+        {
+            const QSignalBlocker blocker(m_notesEdit);
+            m_notesEdit->clear();
+        }
         return;
     }
 
     m_report->setReportData(
         m_reports.at(row).report
         );
+
+    if (m_notesEdit)
+    {
+        const QSignalBlocker blocker(m_notesEdit);
+        m_notesEdit->setPlainText(
+            m_reports.at(row).report.notes
+            );
+    }
 }
 
 void SpeakingEvalReportDialog::moveToPreviousStudent()

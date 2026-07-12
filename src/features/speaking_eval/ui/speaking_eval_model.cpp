@@ -498,6 +498,9 @@ SpeakingEvalModel::ProcessedValue SpeakingEvalModel::processValue(
         normalized =
             normalizeComment(value);
         break;
+    case SpeakingEvalColumn::Notes:
+        normalized = value;
+        break;
     default:
         normalized =
             value.trimmed();
@@ -705,7 +708,7 @@ QString SpeakingEvalModel::normalizeComment(
     const QString& value
     ) const
 {
-    return value.trimmed();
+    return value;
 }
 
 QStringList SpeakingEvalModel::validateValue(
@@ -787,13 +790,6 @@ QStringList SpeakingEvalModel::validateValue(
             errors.append(
                 tr("Comment must be <= %1 characters.")
                     .arg(SpeakingEval::CommentMaxLength)
-                );
-        }
-        else if (value.size() < SpeakingEval::CommentMinLength)
-        {
-            errors.append(
-                tr("Comment must be >= %1 characters.")
-                    .arg(SpeakingEval::CommentMinLength)
                 );
         }
     }

@@ -32,6 +32,7 @@ struct StudentReport
 {
     QString displayName;
     SpeakingEvalReportData report;
+    int sourceRow = -1;
 };
 
 struct Request
