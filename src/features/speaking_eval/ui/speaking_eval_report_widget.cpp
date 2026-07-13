@@ -29,6 +29,20 @@ constexpr qreal TableTop = 125.0386;
 constexpr qreal CriteriaWidth = 74.25504;
 constexpr qreal GradeWidth = 78.57787;
 constexpr qreal GradeHeaderHeight = 22.8;
+constexpr qreal CriteriaMetricsTopInset = 18.5;
+constexpr qreal CriteriaMetricHeight = 6.0;
+constexpr int GrammarMetricCount = 8;
+constexpr qreal GrammarMetricsCellHeight = 81.0;
+// Grammar has 14.5 points remaining below its eight 6-point metric rows.
+// Distributing that over its seven inter-metric gaps adds 2.07143 points to
+// each gap, filling the existing cell without changing its height.
+constexpr qreal CriteriaMetricExtraSpacing =
+    (GrammarMetricsCellHeight
+     - CriteriaMetricsTopInset
+     - (CriteriaMetricHeight * GrammarMetricCount))
+    / (GrammarMetricCount - 1);
+constexpr qreal CriteriaMetricPitch =
+    CriteriaMetricHeight + CriteriaMetricExtraSpacing;
 
 struct RubricSection
 {
@@ -254,14 +268,16 @@ void drawLabelAndValue(
     QPen linePen(Qt::black);
     linePen.setWidthF(0.85);
     painter->setPen(linePen);
+    const qreal underlineY =
+        valueCellRect.bottom() - 4.8;
     painter->drawLine(
         QPointF(
             valueCellRect.left() + 3.6,
-            valueCellRect.bottom() - 4.8
+            underlineY
             ),
         QPointF(
             valueCellRect.right() - 3.6,
-            valueCellRect.bottom() - 4.8
+            underlineY
             )
         );
 
@@ -274,9 +290,13 @@ void drawLabelAndValue(
             )
         );
     painter->setPen(Qt::black);
+    const QFontMetricsF valueMetrics(painter->font());
     painter->drawText(
-        valueTextRect,
-        Qt::AlignCenter | Qt::AlignVCenter,
+        QPointF(
+            valueTextRect.center().x()
+                - (valueMetrics.horizontalAdvance(value) / 2.0),
+            underlineY - (linePen.widthF() / 2.0)
+            ),
         value
         );
 }
@@ -546,18 +566,15 @@ void drawCriteriaCell(
             )
         );
     const qreal startY =
-        rect.top() + 18.5;
-
-    const qreal lineHeight =
-        6.0;
+        rect.top() + CriteriaMetricsTopInset;
 
     for (int index = 0; index < section.criteria.size(); ++index)
     {
         const QRectF lineRect(
             rect.left() + 4.0,
-            startY + (lineHeight * index),
+            startY + (CriteriaMetricPitch * index),
             rect.width() - 6.0,
-            lineHeight
+            CriteriaMetricHeight
             );
 
         painter->drawText(
