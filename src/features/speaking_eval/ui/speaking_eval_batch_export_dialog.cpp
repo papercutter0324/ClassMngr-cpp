@@ -333,8 +333,8 @@ void SpeakingEvalBatchExportDialog::exportReports()
         {
             const QString path = outputDirectory.filePath(
                 SpeakingEvalBatchReportService::safeFileName(
-                    reports.at(index).displayName,
-                    index + 1
+                    reports.at(index).report.englishName,
+                    reports.at(index).report.koreanName
                     )
                 );
             if (QFileInfo::exists(path))

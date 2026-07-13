@@ -60,8 +60,8 @@ struct Result
     );
 
 [[nodiscard]] QString safeFileName(
-    const QString& displayName,
-    int sequenceNumber
+    const QString& englishName,
+    const QString& koreanName
     );
 
 [[nodiscard]] QString defaultOutputDirectory(

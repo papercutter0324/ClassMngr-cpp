@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QPdfDocument>
+#include <QPdfSelection>
 #include <QTemporaryDir>
 
 class SpeakingEvalBatchReportServiceTests : public QObject
@@ -13,7 +14,7 @@ class SpeakingEvalBatchReportServiceTests : public QObject
     Q_OBJECT
 
 private slots:
-    void safeFileNameUsesSequenceAndRemovesReservedCharacters();
+    void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
     void internalRendererCreatesReadablePdf();
     void overwriteExistingReportWhenAllowed();
@@ -21,14 +22,14 @@ private slots:
     void powerPointRendererCreatesReadablePdfWhenAvailable();
 };
 
-void SpeakingEvalBatchReportServiceTests::safeFileNameUsesSequenceAndRemovesReservedCharacters()
+void SpeakingEvalBatchReportServiceTests::safeFileNameUsesStudentNamesAndRemovesReservedCharacters()
 {
     QCOMPARE(
         SpeakingEvalBatchReportService::safeFileName(
-            QStringLiteral("Jane: Doe / E6"),
-            7
+            QStringLiteral("Jane: Doe"),
+            QStringLiteral("김/철수")
             ),
-        QStringLiteral("007 - Jane- Doe - E6.pdf")
+        QStringLiteral("Jane- Doe (김-철수).pdf")
         );
 }
 
@@ -121,8 +122,8 @@ void SpeakingEvalBatchReportServiceTests::overwriteExistingReportWhenAllowed()
 
     const QString targetPath = QDir(outputDirectory.path()).filePath(
         SpeakingEvalBatchReportService::safeFileName(
-            QStringLiteral("Existing Student"),
-            1
+            data.englishName,
+            data.koreanName
             )
         );
     QFile existingFile(targetPath);
@@ -190,6 +191,11 @@ void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWh
     };
 
     SpeakingEvalBatchReportService::Request request;
+    SpeakingEvalReportData secondStandardData = data;
+    secondStandardData.englishName = QStringLiteral("Second PowerPoint Student");
+    secondStandardData.koreanName = QStringLiteral("Second Student");
+    secondStandardData.comments = QStringLiteral("Second report from the same open template.");
+    secondStandardData.scores.fill(QStringLiteral("C"));
     SpeakingEvalReportData advancedData = data;
     advancedData.englishName = QStringLiteral("Advanced Student");
     advancedData.classLabel = QStringLiteral("E5 Athena");
@@ -197,6 +203,7 @@ void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWh
     advancedData.useAdvancedTemplate = true;
     request.reports = {
         { QStringLiteral("PowerPoint Student"), data },
+        { QStringLiteral("Second PowerPoint Student"), secondStandardData },
         { QStringLiteral("Advanced Student"), advancedData }
     };
     request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
@@ -210,14 +217,24 @@ void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWh
         result.status == SpeakingEvalBatchReportService::Status::Completed,
         qPrintable(result.message)
         );
-    QCOMPARE(result.savedPdfPaths.size(), 2);
+    QCOMPARE(result.savedPdfPaths.size(), 3);
 
-    for (const QString& pdfPath : result.savedPdfPaths)
+    for (int index = 0; index < result.savedPdfPaths.size(); ++index)
     {
+        const QString& pdfPath = result.savedPdfPaths.at(index);
         QPdfDocument document;
         QCOMPARE(document.load(pdfPath), QPdfDocument::Error::None);
         QCOMPARE(document.status(), QPdfDocument::Status::Ready);
         QVERIFY(document.pageCount() >= 1);
+        QVERIFY2(
+            document.getAllText(0).text().contains(
+                request.reports.at(index).report.englishName
+                ),
+            qPrintable(
+                QStringLiteral("The PDF did not contain the current student's name: %1")
+                    .arg(request.reports.at(index).report.englishName)
+                )
+            );
     }
 }
 

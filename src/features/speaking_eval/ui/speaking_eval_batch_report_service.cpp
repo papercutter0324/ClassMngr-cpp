@@ -25,6 +25,7 @@
 #include <QUuid>
 
 #include <algorithm>
+#include <limits>
 
 namespace SpeakingEvalBatchReportService
 {
@@ -33,7 +34,27 @@ namespace
 
 constexpr QSizeF ReportPageSizeInches(7.5, 10.833333);
 constexpr int ReportPdfResolution = 144;
-constexpr int PowerPointTimeoutMs = 120000;
+constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
+
+#ifdef Q_OS_MACOS
+QString powerPointWorkingDirectory()
+{
+    const QString homePath = QStandardPaths::writableLocation(
+        QStandardPaths::HomeLocation
+        );
+    QDir powerPointDocuments(
+        homePath + QStringLiteral(
+                       "/Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr"
+                       )
+        );
+    if (!powerPointDocuments.exists() && !powerPointDocuments.mkpath(QStringLiteral(".")))
+    {
+        return {};
+    }
+
+    return powerPointDocuments.absolutePath();
+}
+#endif
 
 QString safeFolderName(const QString& value, const QString& fallback)
 {
@@ -510,77 +531,191 @@ on gradeColumn(scoreValue, firstGradeColumn)
     return 0
 end gradeColumn
 
-on setCellFill(tableShape, rowIndex, columnIndex, fillColor)
+on findShape(shapeContainer, targetName)
     tell application "Microsoft PowerPoint"
-        set cellShape to shape of cell columnIndex of row rowIndex of table of tableShape
-        set fore color of fill format of cellShape to fillColor
+        try
+            return shape (targetName) of shapeContainer
+        end try
+        try
+            set candidateShapes to shapes of shapeContainer
+        on error
+            return missing value
+        end try
+        repeat with shapeReference in candidateShapes
+            set candidateShape to contents of shapeReference
+            if (name of candidateShape as text) is targetName then
+                return candidateShape
+            end if
+            set nestedShape to my findShape(candidateShape, targetName)
+            if nestedShape is not missing value then return nestedShape
+        end repeat
+    end tell
+    return missing value
+end findShape
+
+on requireShape(shapeContainer, targetName)
+    set requiredShape to my findShape(shapeContainer, targetName)
+    if requiredShape is missing value then
+        error "The PowerPoint template is missing '" & targetName & "'."
+    end if
+    return requiredShape
+end requireShape
+
+on setShapeText(targetShape, textValue, alignWithUnderline)
+    tell application "Microsoft PowerPoint"
+        set content of text range of text frame of targetShape to textValue
+        if alignWithUnderline then
+            set «property TfVA» of text frame of targetShape to 4
+        end if
+    end tell
+end setShapeText
+
+on requireTable(shapeContainer, targetName, minimumRows, minimumColumns)
+    set tableShape to my requireShape(shapeContainer, targetName)
+    tell application "Microsoft PowerPoint"
+        if not («property sHTb» of tableShape) then
+            error "The PowerPoint template shape '" & targetName & "' is not a table."
+        end if
+        if «property NRws» of tableShape is less than minimumRows or «property NCms» of tableShape is less than minimumColumns then
+            error "The PowerPoint template table '" & targetName & "' has an unexpected size."
+        end if
+    end tell
+    return tableShape
+end requireTable
+
+on setCellFill(tableShape, rowIndex, columnIndex, rgbValue)
+    tell application "Microsoft PowerPoint"
+        set reportTable to «property PTbO» of tableShape
+        set reportCell to cell (columnIndex) of row (rowIndex) of reportTable
+        set cellShape to shape of reportCell
+        set «property fClr» of «property pFFm» of cellShape to contents of rgbValue
     end tell
 end setCellFill
 
+on openPresentationCount()
+    tell application "Microsoft PowerPoint"
+        set openPresentations to presentations
+    end tell
+    if openPresentations is missing value then return 0
+    return count of openPresentations
+end openPresentationCount
+
+on waitForOpenedPresentation(previousPresentationCount)
+    repeat with attemptIndex from 1 to 100
+        tell application "Microsoft PowerPoint"
+            set openPresentations to presentations
+        end tell
+        if openPresentations is not missing value and (count of openPresentations) is greater than previousPresentationCount then
+            return contents of last item of openPresentations
+        end if
+        delay 0.1
+    end repeat
+    return missing value
+end waitForOpenedPresentation
+
 on run argv
     set pptxPath to item 1 of argv
-    set pdfPath to item 2 of argv
-    set englishName to item 3 of argv
-    set koreanName to item 4 of argv
-    set classLabel to item 5 of argv
-    set nativeTeacher to item 6 of argv
-    set koreanTeacher to item 7 of argv
-    set evaluationDate to item 8 of argv
-    set commentsText to item 9 of argv
-    set overallGrade to item 10 of argv
-    set isAdvanced to (item 11 of argv is "true")
-    set scoreValues to items 12 thru 17 of argv
+    set isAdvanced to (item 2 of argv is "true")
+    set jobCount to item 3 of argv as integer
+    set argumentIndex to 4
     set greyFill to {217, 217, 217}
     set yellowFill to {255, 255, 0}
     set reportPresentation to missing value
+    set exportStep to "opening the presentation"
 
-    tell application "Microsoft PowerPoint"
-        try
-            set reportPresentation to open (POSIX file pptxPath)
-            set reportSlide to slide 1 of reportPresentation
-            tell reportSlide
-                set content of text range of text frame of shape "English_Name" to englishName
-                set content of text range of text frame of shape "Korean_Name" to koreanName
-                set content of text range of text frame of shape "Grade_Level" to classLabel
-                set content of text range of text frame of shape "Native_Teacher" to nativeTeacher
-                set content of text range of text frame of shape "Korean_Teacher" to koreanTeacher
-                set content of text range of text frame of shape "Eval_Date" to evaluationDate
-                set content of text range of text frame of shape "Comments" to commentsText
-                set content of text range of text frame of shape "Overall_Grade" to overallGrade
-            end tell
+    try
+        tell application "Microsoft PowerPoint"
+            -- PowerPoint opens the file but does not return a reliable
+            -- presentation object from its open command.  Resolve the newly
+            -- added presentation from the application collection instead.
+            set originalPresentationCount to my openPresentationCount()
+            open (POSIX file pptxPath)
+            set reportPresentation to my waitForOpenedPresentation(originalPresentationCount)
+            if reportPresentation is missing value then
+                error "PowerPoint did not finish opening the template."
+            end if
+            set exportStep to "accessing slide 1"
+            set reportSlide to slide (1) of reportPresentation
+            set exportStep to "resolving report text shapes"
+            set englishNameShape to my requireShape(reportSlide, "English_Name")
+            set koreanNameShape to my requireShape(reportSlide, "Korean_Name")
+            set gradeLevelShape to my requireShape(reportSlide, "Grade_Level")
+            set nativeTeacherShape to my requireShape(reportSlide, "Native_Teacher")
+            set koreanTeacherShape to my requireShape(reportSlide, "Korean_Teacher")
+            set evaluationDateShape to my requireShape(reportSlide, "Eval_Date")
+            set commentsShape to my requireShape(reportSlide, "Comments")
+            set overallGradeShape to my requireShape(reportSlide, "Overall_Grade")
 
+            set exportStep to "resolving the score table"
             if isAdvanced then
-                set reportTableShape to shape "Report_Table" of reportSlide
+                set greyFill to {229, 229, 231}
+                set reportTableShape to my requireTable(reportSlide, "Report_Table", 12, 7)
                 set firstGradeColumn to 3
             else
                 -- The score-label shapes on the standard slide are
-                -- transparent overlays.  Fill the bordered master table.
-                set reportTableShape to shape "Grades & Scores" of master of reportSlide
+                -- transparent overlays. Fill the cells in the bordered table
+                -- on the slide master directly.
+                set reportMaster to «property SlMr» of reportSlide
+                set reportTableShape to my requireTable(reportMaster, "Grades & Scores", 12, 6)
                 set firstGradeColumn to 2
             end if
 
-            repeat with scoreIndex from 1 to 6
-                set rowIndex to (scoreIndex - 1) * 2 + 1
-                repeat with columnIndex from firstGradeColumn to firstGradeColumn + 4
-                    my setCellFill(reportTableShape, rowIndex, columnIndex, greyFill)
+            repeat with jobIndex from 1 to jobCount
+                set studentName to item argumentIndex of argv
+                set pdfPath to item (argumentIndex + 1) of argv
+                set englishName to item (argumentIndex + 2) of argv
+                set koreanName to item (argumentIndex + 3) of argv
+                set classLabel to item (argumentIndex + 4) of argv
+                set nativeTeacher to item (argumentIndex + 5) of argv
+                set koreanTeacher to item (argumentIndex + 6) of argv
+                set evaluationDate to item (argumentIndex + 7) of argv
+                set commentsText to item (argumentIndex + 8) of argv
+                set overallGrade to item (argumentIndex + 9) of argv
+                set scoreValues to items (argumentIndex + 10) thru (argumentIndex + 15) of argv
+                set argumentIndex to argumentIndex + 16
+
+                set exportStep to "updating report text for " & studentName
+                my setShapeText(englishNameShape, englishName, true)
+                my setShapeText(koreanNameShape, koreanName, true)
+                my setShapeText(gradeLevelShape, classLabel, true)
+                my setShapeText(nativeTeacherShape, nativeTeacher, true)
+                my setShapeText(koreanTeacherShape, koreanTeacher, true)
+                my setShapeText(evaluationDateShape, evaluationDate, true)
+                my setShapeText(commentsShape, commentsText, false)
+                my setShapeText(overallGradeShape, overallGrade, false)
+
+                set exportStep to "updating score-table cells for " & studentName
+                repeat with scoreIndex from 1 to 6
+                    set rowIndex to (scoreIndex - 1) * 2 + 1
+                    repeat with columnIndex from firstGradeColumn to firstGradeColumn + 4
+                        my setCellFill(reportTableShape, rowIndex, columnIndex, greyFill)
+                    end repeat
+                    set selectedColumn to my gradeColumn(item scoreIndex of scoreValues, firstGradeColumn)
+                    if selectedColumn is greater than 0 then
+                        my setCellFill(reportTableShape, rowIndex, selectedColumn, yellowFill)
+                    end if
                 end repeat
-                set selectedColumn to my gradeColumn(item scoreIndex of scoreValues, firstGradeColumn)
-                if selectedColumn is greater than 0 then
-                    my setCellFill(reportTableShape, rowIndex, selectedColumn, yellowFill)
-                end if
+
+                set exportStep to "saving the PDF for " & studentName
+                save reportPresentation in (POSIX file pdfPath) as save as PDF
             end repeat
 
-            save reportPresentation in (POSIX file pdfPath) as save as PDF
             close reportPresentation saving no
-        on error errorMessage number errorNumber
-            if reportPresentation is not missing value then
+            set reportPresentation to missing value
+        end tell
+    on error errorMessage number errorNumber
+        -- Keep cleanup outside PowerPoint's tell scope so AppleScript resolves
+        -- reportPresentation as this handler's local variable.  The previous
+        -- cleanup masked the original export failure with error -2753.
+        if reportPresentation is not missing value then
+            tell application "Microsoft PowerPoint"
                 try
                     close reportPresentation saving no
                 end try
-            end if
-            error errorMessage number errorNumber
-        end try
-    end tell
+            end tell
+        end if
+        error exportStep & ": " & errorMessage number errorNumber
+    end try
 end run
 )APPLESCRIPT");
 }
@@ -710,6 +845,11 @@ bool renderPowerPointPdf(
         {
             scriptPath,
             pptxPath,
+            data.useAdvancedTemplate
+                ? QStringLiteral("true")
+                : QStringLiteral("false"),
+            QStringLiteral("1"),
+            data.englishName,
             documentPath,
             data.englishName,
             data.koreanName,
@@ -719,9 +859,6 @@ bool renderPowerPointPdf(
             data.date,
             data.comments,
             overallGrade(data.scores),
-            data.useAdvancedTemplate
-                ? QStringLiteral("true")
-                : QStringLiteral("false"),
             data.scores[0],
             data.scores[1],
             data.scores[2],
@@ -789,6 +926,219 @@ bool renderPowerPointPdf(
     return true;
 }
 
+#ifdef Q_OS_MACOS
+bool renderMacPowerPointTemplateBatch(
+    const QList<StudentReport>& reports,
+    const QStringList& documentPaths,
+    const QList<int>& reportIndexes,
+    bool useAdvancedTemplate,
+    QTemporaryDir* stagingDirectory,
+    QString* errorMessage
+    )
+{
+    if (reportIndexes.isEmpty())
+    {
+        return true;
+    }
+
+    const QString workingDirectory = powerPointWorkingDirectory();
+    if (workingDirectory.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QObject::tr("PowerPoint's ClassMngr Documents folder could not be created.");
+        }
+        return false;
+    }
+
+    const QString exportId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    const QString pptxPath =
+        QDir(workingDirectory).filePath(
+            QStringLiteral("report-%1.pptx").arg(exportId)
+            );
+    const QString scriptPath =
+        QDir(workingDirectory).filePath(
+            QStringLiteral("export-%1.applescript").arg(exportId)
+            );
+    const auto removeWorkingFiles = [&pptxPath, &scriptPath]()
+    {
+        QFile::remove(pptxPath);
+        QFile::remove(scriptPath);
+    };
+    const QString resourcePath =
+        useAdvancedTemplate
+            ? QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx")
+            : QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate-Full.pptx");
+
+    if (!copyResourceToFile(resourcePath, pptxPath, errorMessage)
+        || !writeUtf8File(
+            scriptPath,
+            macPowerPointScript().toUtf8(),
+            errorMessage
+            ))
+    {
+        removeWorkingFiles();
+        return false;
+    }
+
+    const QString executable =
+        QStandardPaths::findExecutable(QStringLiteral("osascript"));
+    if (executable.isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = powerPointRendererAvailabilityMessage();
+        }
+        removeWorkingFiles();
+        return false;
+    }
+
+    QStringList arguments{
+        scriptPath,
+        pptxPath,
+        useAdvancedTemplate
+            ? QStringLiteral("true")
+            : QStringLiteral("false"),
+        QString::number(reportIndexes.size())
+    };
+    for (const int reportIndex : reportIndexes)
+    {
+        const StudentReport& student = reports.at(reportIndex);
+        const SpeakingEvalReportData& data = student.report;
+        arguments.append(QStringList{
+            student.displayName,
+            documentPaths.at(reportIndex),
+            data.englishName,
+            data.koreanName,
+            data.classLabel,
+            data.nativeTeacher,
+            data.koreanTeacher,
+            data.date,
+            data.comments,
+            overallGrade(data.scores),
+            data.scores[0],
+            data.scores[1],
+            data.scores[2],
+            data.scores[3],
+            data.scores[4],
+            data.scores[5]
+        });
+    }
+
+    QProcess process;
+    process.setWorkingDirectory(workingDirectory);
+    process.start(executable, arguments);
+    if (!process.waitForStarted())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QObject::tr("PowerPoint could not be started.");
+        }
+        removeWorkingFiles();
+        return false;
+    }
+
+    const qint64 timeout =
+        static_cast<qint64>(PowerPointTimeoutMs)
+        * std::max<qsizetype>(1, reportIndexes.size());
+    if (!process.waitForFinished(
+            static_cast<int>(
+                std::min<qint64>(timeout, std::numeric_limits<int>::max())
+                )
+            ))
+    {
+        process.kill();
+        process.waitForFinished();
+        if (errorMessage)
+        {
+            *errorMessage = QObject::tr("PowerPoint did not finish exporting the reports.");
+        }
+        removeWorkingFiles();
+        return false;
+    }
+
+    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
+    {
+        if (errorMessage)
+        {
+            const QString details =
+                (QString::fromUtf8(process.readAllStandardError())
+                 + QLatin1Char('\n')
+                 + QString::fromUtf8(process.readAllStandardOutput()))
+                    .trimmed();
+            *errorMessage = details.isEmpty()
+                ? QObject::tr("PowerPoint could not export the reports.")
+                : details;
+        }
+        removeWorkingFiles();
+        return false;
+    }
+
+    for (const int reportIndex : reportIndexes)
+    {
+        const QString& documentPath = documentPaths.at(reportIndex);
+        if (!QFileInfo::exists(documentPath)
+            || QFileInfo(documentPath).size() <= 0)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr("PowerPoint did not create a PDF report for %1.")
+                                    .arg(reports.at(reportIndex).displayName);
+            }
+            removeWorkingFiles();
+            return false;
+        }
+    }
+
+    removeWorkingFiles();
+    return true;
+}
+
+bool renderMacPowerPointPdfs(
+    const QList<StudentReport>& reports,
+    const QStringList& documentPaths,
+    QTemporaryDir* stagingDirectory,
+    QString* errorMessage
+    )
+{
+    if (!stagingDirectory || !stagingDirectory->isValid())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QObject::tr("The temporary report directory is unavailable.");
+        }
+        return false;
+    }
+
+    QList<int> standardReportIndexes;
+    QList<int> advancedReportIndexes;
+    for (int index = 0; index < reports.size(); ++index)
+    {
+        (reports.at(index).report.useAdvancedTemplate
+             ? advancedReportIndexes
+             : standardReportIndexes)
+            .append(index);
+    }
+
+    return renderMacPowerPointTemplateBatch(
+               reports,
+               documentPaths,
+               standardReportIndexes,
+               false,
+               stagingDirectory,
+               errorMessage
+               )
+        && renderMacPowerPointTemplateBatch(
+            reports,
+            documentPaths,
+            advancedReportIndexes,
+            true,
+            stagingDirectory,
+            errorMessage
+            );
+}
+#endif
+
 bool targetFilePaths(
     const Request& request,
     QStringList* targetPaths,
@@ -817,8 +1167,8 @@ bool targetFilePaths(
     {
         const QString path = outputDirectory.filePath(
             safeFileName(
-                request.reports.at(index).displayName,
-                index + 1
+                request.reports.at(index).report.englishName,
+                request.reports.at(index).report.koreanName
                 )
             );
 
@@ -1034,11 +1384,21 @@ QString defaultOutputDirectory(
 }
 
 QString safeFileName(
-    const QString& displayName,
-    int sequenceNumber
+    const QString& englishName,
+    const QString& koreanName
     )
 {
-    QString baseName = displayName.trimmed();
+    QString baseName;
+    const QString english = englishName.trimmed();
+    const QString korean = koreanName.trimmed();
+    if (!english.isEmpty() && !korean.isEmpty())
+    {
+        baseName = QStringLiteral("%1 (%2)").arg(english, korean);
+    }
+    else
+    {
+        baseName = !english.isEmpty() ? english : korean;
+    }
     baseName.replace(
         QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")),
         QStringLiteral("-")
@@ -1049,9 +1409,7 @@ QString safeFileName(
         baseName = QObject::tr("Student");
     }
 
-    return QStringLiteral("%1 - %2.pdf")
-        .arg(sequenceNumber, 3, 10, QLatin1Char('0'))
-        .arg(baseName);
+    return QStringLiteral("%1.pdf").arg(baseName);
 }
 
 bool isPowerPointRendererAvailable()
@@ -1137,44 +1495,84 @@ Result exportReports(
 
     QStringList stagedPdfPaths;
     stagedPdfPaths.reserve(request.reports.size());
-    for (int index = 0; index < request.reports.size(); ++index)
+    bool pdfsSavedDirectlyToTarget = false;
+#ifdef Q_OS_MACOS
+    if (request.renderer == Renderer::PowerPoint && request.savePdf)
     {
-        const StudentReport& student = request.reports.at(index);
-        if (request.progressCallback
-            && !request.progressCallback(
-                index,
-                request.reports.size(),
-                student.displayName
+        for (int index = 0; index < request.reports.size(); ++index)
+        {
+            const StudentReport& student = request.reports.at(index);
+            if (request.progressCallback
+                && !request.progressCallback(
+                    index,
+                    request.reports.size(),
+                    student.displayName
+                    ))
+            {
+                return canceled();
+            }
+
+            stagedPdfPaths.append(
+                targetPaths.at(index)
+                );
+        }
+
+        if (!renderMacPowerPointPdfs(
+                request.reports,
+                stagedPdfPaths,
+                &stagingDirectory,
+                &errorMessage
                 ))
         {
-            return canceled();
+            return failed(errorMessage);
         }
+        pdfsSavedDirectlyToTarget = true;
+    }
+    else
+#endif
+    {
+        for (int index = 0; index < request.reports.size(); ++index)
+        {
+            const StudentReport& student = request.reports.at(index);
+            if (request.progressCallback
+                && !request.progressCallback(
+                    index,
+                    request.reports.size(),
+                    student.displayName
+                    ))
+            {
+                return canceled();
+            }
 
-        const QString stagedPath =
-            QDir(stagingDirectory.path()).filePath(
-                safeFileName(student.displayName, index + 1)
-                );
-
-        const bool rendered =
-            request.renderer == Renderer::Internal
-                ? renderInternalPdf(student.report, stagedPath, &errorMessage)
-                : renderPowerPointPdf(
-                    student.report,
-                    stagedPath,
-                    &stagingDirectory,
-                    &errorMessage
+            const QString stagedPath =
+                QDir(stagingDirectory.path()).filePath(
+                    safeFileName(
+                        student.report.englishName,
+                        student.report.koreanName
+                        )
                     );
 
-        if (!rendered)
-        {
-            return failed(
-                QObject::tr("%1: %2")
-                    .arg(student.displayName, errorMessage),
+            const bool rendered =
                 request.renderer == Renderer::Internal
-                );
-        }
+                    ? renderInternalPdf(student.report, stagedPath, &errorMessage)
+                    : renderPowerPointPdf(
+                        student.report,
+                        stagedPath,
+                        &stagingDirectory,
+                        &errorMessage
+                        );
 
-        stagedPdfPaths.append(stagedPath);
+            if (!rendered)
+            {
+                return failed(
+                    QObject::tr("%1: %2")
+                        .arg(student.displayName, errorMessage),
+                    request.renderer == Renderer::Internal
+                    );
+            }
+
+            stagedPdfPaths.append(stagedPath);
+        }
     }
 
     if (request.progressCallback
@@ -1187,7 +1585,7 @@ Result exportReports(
         return canceled();
     }
 
-    if (request.savePdf
+    if (request.savePdf && !pdfsSavedDirectlyToTarget
         && !commitPdfFiles(
             stagedPdfPaths,
             targetPaths,
