@@ -41,6 +41,7 @@ private:
     QComboBox* m_rendererSelector = nullptr;
     QCheckBox* m_savePdfCheck = nullptr;
     QCheckBox* m_printReportsCheck = nullptr;
+    QCheckBox* m_openOutputFolderCheck = nullptr;
     QLineEdit* m_outputDirectoryEdit = nullptr;
     QPushButton* m_chooseDirectoryButton = nullptr;
     QLabel* m_rendererNote = nullptr;

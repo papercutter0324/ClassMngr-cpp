@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -16,6 +17,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QUrl>
 #include <QVBoxLayout>
 
 namespace
@@ -40,7 +42,6 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     , m_currentStudentIndex(currentStudentIndex)
 {
     setWindowTitle(tr("Export / Print Speaking Reports"));
-    setMinimumWidth(520);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(18, 18, 18, 18);
@@ -55,6 +56,8 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
 
     auto* formLayout = new QFormLayout;
     formLayout->setFieldGrowthPolicy(QFormLayout::ExpandingFieldsGrow);
+    formLayout->setLabelAlignment(Qt::AlignLeft | Qt::AlignTop);
+    formLayout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
 
     m_scopeSelector = new QComboBox(this);
     m_scopeSelector->addItem(
@@ -75,6 +78,7 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
             ),
         static_cast<int>(SpeakingEvalBatchReportService::Renderer::Internal)
         );
+#ifndef Q_OS_LINUX
     m_rendererSelector->addItem(
         SpeakingEvalBatchReportService::rendererDisplayName(
             SpeakingEvalBatchReportService::Renderer::PowerPoint
@@ -82,6 +86,7 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
         static_cast<int>(SpeakingEvalBatchReportService::Renderer::PowerPoint)
         );
     m_rendererSelector->setCurrentIndex(1);
+#endif
     formLayout->addRow(tr("Renderer:"), m_rendererSelector);
 
     m_rendererNote = new QLabel(this);
@@ -101,9 +106,17 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     m_chooseDirectoryButton = new TextFitPushButton(tr("Choose…"), this);
     outputDirectoryLayout->addWidget(m_outputDirectoryEdit, 1);
     outputDirectoryLayout->addWidget(m_chooseDirectoryButton);
-    formLayout->addRow(tr("PDF folder:"), outputDirectoryLayout);
+    formLayout->addRow(tr("PDF Folder:"), outputDirectoryLayout);
+
+    m_openOutputFolderCheck = new QCheckBox(
+        tr("Open PDF Folder after saving"),
+        this
+        );
+    m_openOutputFolderCheck->setChecked(false);
+    formLayout->addRow(QString(), m_openOutputFolderCheck);
 
     layout->addLayout(formLayout);
+    layout->addSpacing(16);
 
     auto* buttons = new QHBoxLayout;
     m_previewButton = new TextFitPushButton(tr("Preview Reports"), this);
@@ -177,6 +190,34 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
         );
 
     updateControls();
+
+    const int dialogWidth =
+        introduction->fontMetrics().horizontalAdvance(introduction->text())
+        + 56;
+    setFixedWidth(dialogWidth);
+    resize(dialogWidth, layout->sizeHint().height());
+    layout->activate();
+
+    const int rendererNoteWidth = qMax(1, m_rendererNote->width());
+    const auto rendererNoteHeightForText =
+        [this, rendererNoteWidth](const QString& text)
+        {
+            m_rendererNote->setText(text);
+            return m_rendererNote->heightForWidth(rendererNoteWidth);
+        };
+    const int rendererNoteHeight = qMax(
+        rendererNoteHeightForText(
+            tr("Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)")
+            ),
+        rendererNoteHeightForText(
+            tr("Uses PowerPoint to generate student reports using a bundled template. (Supports Windows and MacOS.)")
+            )
+        );
+    m_rendererNote->setFixedHeight(rendererNoteHeight);
+    updateControls();
+
+    layout->activate();
+    setFixedHeight(layout->totalHeightForWidth(dialogWidth));
 }
 
 void SpeakingEvalBatchExportDialog::updateControls()
@@ -187,6 +228,7 @@ void SpeakingEvalBatchExportDialog::updateControls()
 
     m_outputDirectoryEdit->setEnabled(saving);
     m_chooseDirectoryButton->setEnabled(saving);
+    m_openOutputFolderCheck->setEnabled(saving);
     m_exportButton->setEnabled(hasOutput && !selectedReports().isEmpty());
     m_previewButton->setEnabled(!selectedReports().isEmpty());
 
@@ -391,6 +433,14 @@ void SpeakingEvalBatchExportDialog::exportReports()
                 : tr("%1 report(s) were sent to the printer.")
                       .arg(reports.size())
             );
+        if (request.savePdf && m_openOutputFolderCheck->isChecked())
+        {
+            QDesktopServices::openUrl(
+                QUrl::fromLocalFile(
+                    QDir(request.outputDirectory).absolutePath()
+                    )
+                );
+        }
         accept();
         return;
     case SpeakingEvalBatchReportService::Status::Canceled:
