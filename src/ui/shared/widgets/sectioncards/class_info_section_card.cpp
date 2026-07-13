@@ -31,6 +31,10 @@ SectionCard::SectionCard(
 
     m_titleLabel->setObjectName("sectionTitle");
 
+    m_titleLabel->setVisible(
+        !title.isEmpty()
+        );
+
     m_layout->addWidget(
         m_titleLabel,
         0,
@@ -48,6 +52,9 @@ void SectionCard::setTitle(
     }
 
     m_titleLabel->setText(title);
+    m_titleLabel->setVisible(
+        !title.isEmpty()
+        );
 }
 
 QVBoxLayout* SectionCard::contentLayout() const

@@ -3,38 +3,38 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
-#include "features/campus/data/campus_json_repository.h"
-#include "features/sub_prep/ui/sub_prep_class_navigation.h"
-#include "domain/models/class_info.h"
-#include "domain/models/classroom.h"
-#include "domain/models/teacher.h"
 #include "data/data_service.h"
+#include "features/campus/data/campus_json_repository.h"
+#include "features/sub_prep/ui/sub_prep_class_information_model.h"
+#include "features/sub_prep/ui/sub_prep_print_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
-#include "core/utils/sidebar_node_naming.h"
+#include "ui/shared/widgets/sections/schedule_section_widget.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
 #include <utility>
 
 #include <QEvent>
 #include <QFont>
-#include <QFontMetrics>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QShowEvent>
 #include <QSignalBlocker>
 #include <QSizePolicy>
-#include <QStringList>
-#include <QTabWidget>
 #include <QTextEdit>
 #include <QTimer>
+#include <QVariant>
 #include <QVBoxLayout>
 #include <QtAssert>
 
@@ -44,10 +44,37 @@ constexpr int AutosaveDelayMs = 750;
 constexpr int OfficeNumberFieldWidth = 115;
 constexpr int CompactFieldWidth = 170;
 constexpr int TextEditVerticalPadding = 24;
-constexpr int ClassTabContentTopMargin = 16;
+constexpr int ClassNotesLines = 4;
+constexpr int TeacherNotesLines = 4;
 
 const QString NotAvailableText =
     QStringLiteral("N/A");
+
+namespace SettingsKeys
+{
+const QString MyInfoCampus =
+    QStringLiteral("myInfo/campus");
+const QString MyInfoZoomLoginId =
+    QStringLiteral("myInfo/zoomLoginId");
+const QString MyInfoZoomPassword =
+    QStringLiteral("myInfo/zoomPassword");
+const QString MyInfoZoomNotAvailable =
+    QStringLiteral("myInfo/zoomNotAvailable");
+const QString LegacyZoomLoginId =
+    QStringLiteral("subPrep/personalZoomEmail");
+const QString LegacyZoomPassword =
+    QStringLiteral("subPrep/personalZoomPassword");
+const QString LegacyZoomNotAvailable =
+    QStringLiteral("subPrep/personalZoomNotAvailable");
+const QString ClassMaterials =
+    QStringLiteral("subPrep/classMaterials");
+const QString BookReportGrading =
+    QStringLiteral("subPrep/bookReportGrading");
+const QString BookReportSpecialInstructions =
+    QStringLiteral("subPrep/bookReportSpecialInstructions");
+const QString SubNotes =
+    QStringLiteral("subPrep/subComments");
+}
 
 DataService* openDataService(
     ApplicationServices* services
@@ -79,27 +106,6 @@ QString campusDisplayName(
         : campus.campusName.trimmed();
 }
 
-namespace SettingsKeys
-{
-const QString MyInfoCampus =
-    QStringLiteral("myInfo/campus");
-const QString ClassMaterials =
-    QStringLiteral("subPrep/classMaterials");
-const QString BookReportGrading =
-    QStringLiteral("subPrep/bookReportGrading");
-const QString SubComments =
-    QStringLiteral("subPrep/subComments");
-}
-
-struct ClassSummary
-{
-    Classroom classroom;
-    ClassInfo info;
-    Teacher teacher;
-    QString displayName;
-    int studentCount = 0;
-};
-
 QString valueOrNa(
     const QString& value
     )
@@ -112,219 +118,46 @@ QString valueOrNa(
         : trimmed;
 }
 
-QString gradeLevelText(
-    const ClassInfo& info
+QVariant loadSettingWithLegacyFallback(
+    DataService* dataService,
+    const QString& primaryKey,
+    const QString& legacyKey,
+    const QVariant& defaultValue
     )
 {
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
-
-    if (!grade.isEmpty() && !level.isEmpty())
+    if (!dataService)
     {
-        return QStringLiteral("%1 - %2")
-            .arg(grade, level);
+        return defaultValue;
     }
 
-    if (!grade.isEmpty())
-    {
-        return grade;
-    }
-
-    if (!level.isEmpty())
-    {
-        return level;
-    }
-
-    return NotAvailableText;
-}
-
-QString classTitleText(
-    const Classroom& classroom,
-    const ClassInfo& info
-    )
-{
-    const QString gradeLevel =
-        gradeLevelText(info);
-
-    if (gradeLevel != NotAvailableText)
-    {
-        return gradeLevel;
-    }
-
-    if (!classroom.name.trimmed().isEmpty())
-    {
-        return classroom.name.trimmed();
-    }
-
-    return QStringLiteral("Class %1")
-        .arg(classroom.id);
-}
-
-QString dayAbbreviation(
-    const QString& day
-    )
-{
-    if (day == QStringLiteral("Monday"))
-    {
-        return QStringLiteral("Mon");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
-        return QStringLiteral("Tues");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
-        return QStringLiteral("Wed");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
-        return QStringLiteral("Thurs");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
-        return QStringLiteral("Fri");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
-        return QStringLiteral("Sat");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
-        return QStringLiteral("Sun");
-    }
-
-    return day.trimmed();
-}
-
-QString formatSchedule(
-    const QList<ClassTime>& times
-    )
-{
-    if (times.isEmpty())
-    {
-        return NotAvailableText;
-    }
-
-    struct TimeGroup
-    {
-        QString startTime;
-        QString endTime;
-        QStringList days;
-    };
-
-    QList<TimeGroup> groups;
-
-    for (const ClassTime& time : times)
-    {
-        const QString start =
-            time.startTime.trimmed();
-        const QString end =
-            time.endTime.trimmed();
-
-        auto group =
-            std::find_if(
-                groups.begin(),
-                groups.end(),
-                [&start, &end](const TimeGroup& candidate)
-                {
-                    return candidate.startTime == start
-                        && candidate.endTime == end;
-                }
-                );
-
-        if (group == groups.end())
-        {
-            TimeGroup newGroup;
-            newGroup.startTime = start;
-            newGroup.endTime = end;
-            newGroup.days.append(
-                dayAbbreviation(time.day)
-                );
-
-            groups.append(newGroup);
-        }
-        else
-        {
-            group->days.append(
-                dayAbbreviation(time.day)
-                );
-        }
-    }
-
-    QStringList labels;
-
-    for (const TimeGroup& group : groups)
-    {
-        const QString days =
-            group.days.join(QStringLiteral("/"));
-
-        if (group.startTime.isEmpty() && group.endTime.isEmpty())
-        {
-            labels.append(
-                days.isEmpty()
-                    ? NotAvailableText
-                    : days
-                );
-            continue;
-        }
-
-        labels.append(
-            QStringLiteral("%1 %2-%3")
-                .arg(
-                    days.isEmpty()
-                        ? NotAvailableText
-                        : days,
-                    valueOrNa(group.startTime),
-                    valueOrNa(group.endTime)
-                    )
+    QVariant value =
+        dataService->loadSetting(
+            primaryKey,
+            QVariant()
             );
-    }
 
-    return labels.isEmpty()
-        ? NotAvailableText
-        : labels.join(QStringLiteral("; "));
-}
-
-QString teacherDisplayName(
-    const Teacher& teacher
-    )
-{
-    const QString displayName =
-        SidebarNodeNaming::formatTeacherDisplayName(
-            teacher
-            )
-            .trimmed();
-
-    return displayName.isEmpty()
-        ? QObject::tr("Unassigned")
-        : displayName;
-}
-
-QString teacherHeadingText(
-    const Teacher& teacher,
-    bool unassigned
-    )
-{
-    if (unassigned)
+    if (value.isValid())
     {
-        return QObject::tr("Unassigned");
+        return value;
     }
 
-    const QString name =
-        teacherDisplayName(teacher);
+    value =
+        dataService->loadSetting(
+            legacyKey,
+            QVariant()
+            );
 
-    const QString room =
-        teacher.roomNumber.trimmed();
-
-    if (room.isEmpty())
+    if (!value.isValid())
     {
-        return name;
+        return defaultValue;
     }
 
-    return QStringLiteral("%1 - Room %2")
-        .arg(name, room);
+    dataService->saveSetting(
+        primaryKey,
+        value
+        );
+
+    return value;
 }
 
 int textEditHeightForLines(
@@ -367,126 +200,51 @@ void clearLayout(
     }
 }
 
-QLabel* createValueLabel(
+QLabel* createInlineValue(
+    const QString& label,
     const QString& value,
     QWidget* parent
     )
 {
-    auto* label =
+    auto* field =
         new QLabel(
-            valueOrNa(value),
+            QStringLiteral("%1: %2")
+                .arg(
+                    label,
+                    valueOrNa(value)
+                    ),
             parent
             );
 
-    label->setTextInteractionFlags(
+    field->setTextInteractionFlags(
         Qt::TextSelectableByMouse
         | Qt::TextSelectableByKeyboard
         );
-    label->setWordWrap(true);
-    label->setSizePolicy(
+    field->setWordWrap(true);
+    field->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Preferred
         );
 
-    return label;
+    return field;
 }
 
-QLineEdit* createReadOnlyValueEdit(
-    const QString& value,
+QFrame* createSeparator(
     QWidget* parent
     )
 {
-    auto* edit =
-        new QLineEdit(
-            valueOrNa(value),
-            parent
-            );
-
-    edit->setReadOnly(true);
-    edit->setCursorPosition(0);
-    WidgetSizing::installTextAwareFieldWidth(
-        edit,
-        CompactFieldWidth
+    auto* separator =
+        new QFrame(parent);
+    separator->setFrameShape(QFrame::HLine);
+    separator->setFrameShadow(QFrame::Sunken);
+    separator->setProperty(
+        "role",
+        UiRoles::Separator
         );
 
-    return edit;
+    return separator;
 }
-
-void addInfoRow(
-    QGridLayout* grid,
-    int row,
-    const QString& labelText,
-    const QString& value,
-    QWidget* parent
-    )
-{
-    auto* label =
-        new QLabel(labelText, parent);
-
-    label->setContentsMargins(
-        UiConstants::ClassInfo::Form::LabelIndent,
-        0,
-        0,
-        0
-        );
-
-    auto* valueLabel =
-        createValueLabel(
-            value,
-            parent
-            );
-
-    grid->addWidget(
-        label,
-        row,
-        0,
-        Qt::AlignLeft | Qt::AlignTop
-        );
-    grid->addWidget(
-        valueLabel,
-        row,
-        1,
-        Qt::AlignLeft | Qt::AlignTop
-        );
 }
-
-void addHorizontalInfoField(
-    QGridLayout* grid,
-    int labelRow,
-    int valueRow,
-    int column,
-    const QString& labelText,
-    const QString& value,
-    QWidget* parent
-    )
-{
-    auto* label =
-        new QLabel(labelText, parent);
-
-    label->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    grid->addWidget(
-        label,
-        labelRow,
-        column,
-        Qt::AlignLeft
-        );
-    auto* valueEdit =
-        createReadOnlyValueEdit(value, parent);
-
-    grid->addWidget(
-        valueEdit,
-        valueRow,
-        column
-        );
-}
-
-} // namespace
 
 SubPrepPage::SubPrepPage(
     ApplicationServices* services,
@@ -557,12 +315,13 @@ void SubPrepPage::refresh()
         return;
     }
 
+    loadPersonalZoomInformation();
+    loadCampuses();
     refreshGeneratedContent();
 
     if (!m_dirty)
     {
         loadStoredSettings();
-        loadCampuses();
     }
 }
 
@@ -582,6 +341,16 @@ void SubPrepPage::retranslateUi()
             );
     }
 
+    if (m_printButton)
+    {
+        m_printButton->setText(
+            tr("Print Sub Prep")
+            );
+        m_printButton->setToolTip(
+            tr("Print all sub prep information as an A4 PDF.")
+            );
+    }
+
     if (m_importantInformationHeading)
     {
         m_importantInformationHeading->setText(
@@ -589,10 +358,10 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_subCommentsHeading)
+    if (m_subNotesHeading)
     {
-        m_subCommentsHeading->setText(
-            tr("Sub Comments")
+        m_subNotesHeading->setText(
+            tr("Sub Notes")
             );
     }
 
@@ -603,17 +372,45 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_materialsCard)
+    if (m_zoomCard)
     {
-        m_materialsCard->setTitle(
-            tr("Lesson Materials and Grading")
+        m_zoomCard->setTitle(
+            tr("Personal Zoom Information")
             );
     }
 
-    if (m_commentsCard)
+    if (m_materialsCard)
     {
-        m_commentsCard->setTitle(
-            tr("Comments")
+        m_materialsCard->setTitle(
+            tr("Class Materials")
+            );
+    }
+
+    if (m_gradingCard)
+    {
+        m_gradingCard->setTitle(
+            tr("Book Report Grading")
+            );
+    }
+
+    if (m_scheduleHeading)
+    {
+        m_scheduleHeading->setText(
+            tr("Schedule")
+            );
+    }
+
+    if (m_classInformationHeading)
+    {
+        m_classInformationHeading->setText(
+            tr("Class Information")
+            );
+    }
+
+    if (m_notesCard)
+    {
+        m_notesCard->setTitle(
+            tr("Notes")
             );
     }
 
@@ -645,41 +442,58 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_classMaterialsLabel)
+    if (m_zoomLoginIdLabel)
     {
-        m_classMaterialsLabel->setText(
-            tr("Class Materials")
+        m_zoomLoginIdLabel->setText(
+            tr("Zoom Login ID")
             );
     }
 
-    if (m_bookReportGradingLabel)
+    if (m_zoomPasswordLabel)
     {
-        m_bookReportGradingLabel->setText(
-            tr("Book Report Grading")
+        m_zoomPasswordLabel->setText(
+            tr("Zoom Password")
             );
     }
 
-    refreshGeneratedContent();
+    if (m_gradingInstructionsLabel)
+    {
+        m_gradingInstructionsLabel->setText(
+            tr("Grading Instructions")
+            );
+    }
+
+    if (m_specialInstructionsLabel)
+    {
+        m_specialInstructionsLabel->setText(
+            tr("Special Instructions")
+            );
+    }
+
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->retranslateUi();
+    }
+
+    rebuildClassInformation();
 }
 
 void SubPrepPage::scrollToSection(
     SubPrepSection section
     )
 {
-    m_currentSection =
-        section;
+    m_currentSection = section;
 
-    QLabel* target = nullptr;
+    QWidget* target = nullptr;
 
     switch (section)
     {
     case SubPrepSection::ImportantInformation:
-        target =
-            m_importantInformationHeading;
+        target = m_importantInformationHeading;
         break;
-    case SubPrepSection::SubComments:
-        target =
-            m_subCommentsHeading;
+
+    case SubPrepSection::SubNotes:
+        target = m_subNotesHeading;
         break;
     }
 
@@ -744,11 +558,11 @@ QString SubPrepPage::currentSectionName() const
     case SubPrepSection::ImportantInformation:
         return tr("Important Information");
 
-    case SubPrepSection::SubComments:
-        return tr("Sub Comments");
+    case SubPrepSection::SubNotes:
+        return tr("Sub Notes");
     }
 
-    return QString();
+    return {};
 }
 
 QString SubPrepPage::currentSectionKey() const
@@ -758,11 +572,11 @@ QString SubPrepPage::currentSectionKey() const
     case SubPrepSection::ImportantInformation:
         return QStringLiteral("sub_prep_important");
 
-    case SubPrepSection::SubComments:
-        return QStringLiteral("sub_prep_comments");
+    case SubPrepSection::SubNotes:
+        return QStringLiteral("sub_prep_notes");
     }
 
-    return QString();
+    return {};
 }
 
 void SubPrepPage::showEvent(
@@ -771,12 +585,13 @@ void SubPrepPage::showEvent(
 {
     BasePage::showEvent(event);
 
+    loadPersonalZoomInformation();
+    loadCampuses();
     refreshGeneratedContent();
 
     if (!m_dirty)
     {
         loadStoredSettings();
-        loadCampuses();
     }
 }
 
@@ -786,15 +601,15 @@ bool SubPrepPage::eventFilter(
     )
 {
     if (
-        watched == m_bookReportGradingEdit
+        watched == m_gradingInstructionsEdit
+        && event
         && event->type() == QEvent::FocusOut
+        && restoreGradingDefaultIfNeeded()
         )
     {
-        if (restoreBookReportDefaultIfNeeded())
-        {
-            handleEditableChanged();
-        }
+        handleEditableChanged();
     }
+
     return BasePage::eventFilter(
         watched,
         event
@@ -818,22 +633,71 @@ void SubPrepPage::handleEditableChanged()
 
 void SubPrepPage::autosave()
 {
-    if (!m_dirty)
+    if (m_dirty)
+    {
+        saveSubPrepInternal();
+    }
+}
+
+void SubPrepPage::printSubPrep()
+{
+    if (hasUnsavedChanges() && !saveChanges())
     {
         return;
     }
 
-    saveSubPrepInternal();
+    refreshGeneratedContent();
+
+    SubPrepPrintService::Request request;
+    request.parent = this;
+    request.campus = {
+        m_officeNumberEdit ? m_officeNumberEdit->text() : QString(),
+        m_officeWifiEdit ? m_officeWifiEdit->text() : QString(),
+        m_officeWifiPasswordEdit ? m_officeWifiPasswordEdit->text() : QString(),
+        m_photocopierCodeEdit ? m_photocopierCodeEdit->text() : QString()
+    };
+    request.zoom = {
+        m_zoomLoginIdEdit ? m_zoomLoginIdEdit->text() : QString(),
+        m_zoomPasswordEdit ? m_zoomPasswordEdit->text() : QString()
+    };
+    request.classMaterials =
+        m_classMaterialsEdit
+            ? m_classMaterialsEdit->toPlainText()
+            : QString();
+    request.gradingInstructions =
+        m_gradingInstructionsEdit
+            ? m_gradingInstructionsEdit->toPlainText()
+            : QString();
+    request.specialInstructions =
+        m_specialInstructionsEdit
+            ? m_specialInstructionsEdit->toPlainText()
+            : QString();
+    request.schedule =
+        m_scheduleWidget
+            ? m_scheduleWidget->scheduleModel()
+            : ScheduleViewModel();
+    request.classInformation = buildClassInformation();
+    request.subNotes =
+        m_subNotesEdit
+            ? m_subNotesEdit->toPlainText()
+            : QString();
+
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::printSubPrep(request);
+
+    if (result.status == SubPrepPrintService::Status::Failed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Print Sub Prep"),
+            result.message
+            );
+    }
 }
 
 void SubPrepPage::buildUi()
 {
-    contentLayout()->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
+    contentLayout()->setContentsMargins(0, 0, 0, 0);
     contentLayout()->setSpacing(0);
 
     m_scrollArea =
@@ -862,12 +726,8 @@ void SubPrepPage::buildUi()
         );
     m_scrollContentLayout->setAlignment(Qt::AlignTop);
 
-    m_scrollArea->setWidget(
-        m_scrollContent
-        );
-    contentLayout()->addWidget(
-        m_scrollArea
-        );
+    m_scrollArea->setWidget(m_scrollContent);
+    contentLayout()->addWidget(m_scrollArea);
 
     auto* headerLayout =
         new QVBoxLayout;
@@ -906,7 +766,28 @@ void SubPrepPage::buildUi()
             )
         );
 
-    headerLayout->addWidget(m_titleLabel);
+    auto* titleRow =
+        new QHBoxLayout;
+    titleRow->setContentsMargins(0, 0, 0, 0);
+    titleRow->setSpacing(UiConstants::Pages::HeaderSpacing);
+    titleRow->addWidget(m_titleLabel);
+    titleRow->addStretch();
+
+    m_printButton =
+        new TextFitPushButton(
+            tr("Print Sub Prep"),
+            m_scrollContent
+            );
+    m_printButton->setObjectName(
+        QStringLiteral("subPrepPrintButton")
+        );
+    m_printButton->setMinimumWidth(130);
+    m_printButton->setToolTip(
+        tr("Print all sub prep information as an A4 PDF.")
+        );
+    titleRow->addWidget(m_printButton);
+
+    headerLayout->addLayout(titleRow);
     headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
     m_scrollContentLayout->addSpacing(
@@ -917,6 +798,9 @@ void SubPrepPage::buildUi()
         createTopLevelHeading(
             tr("Important Information"),
             m_scrollContent
+            );
+    m_importantInformationHeading->setObjectName(
+        QStringLiteral("subPrepImportantInformationHeading")
         );
     m_scrollContentLayout->addWidget(
         m_importantInformationHeading
@@ -927,6 +811,11 @@ void SubPrepPage::buildUi()
             tr("Campus Information"),
             m_scrollContent
             );
+    m_campusCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("campus")
+        );
+
     auto* campusGrid =
         new QGridLayout;
     campusGrid->setHorizontalSpacing(
@@ -945,27 +834,34 @@ void SubPrepPage::buildUi()
     m_photocopierCodeEdit =
         new QLineEdit(m_campusCard);
 
-    m_officeNumberEdit->setReadOnly(true);
-    m_officeWifiEdit->setReadOnly(true);
-    m_officeWifiPasswordEdit->setReadOnly(true);
-    m_photocopierCodeEdit->setReadOnly(true);
+    const QList<QLineEdit*> campusEdits{
+        m_officeNumberEdit,
+        m_officeWifiEdit,
+        m_officeWifiPasswordEdit,
+        m_photocopierCodeEdit
+    };
+
+    for (QLineEdit* edit : campusEdits)
+    {
+        edit->setReadOnly(true);
+    }
 
     WidgetSizing::installTextAwareFieldWidth(
         m_officeNumberEdit,
         OfficeNumberFieldWidth
         );
-    WidgetSizing::installTextAwareFieldWidth(
-        m_officeWifiEdit,
-        CompactFieldWidth
-        );
-    WidgetSizing::installTextAwareFieldWidth(
-        m_officeWifiPasswordEdit,
-        CompactFieldWidth
-        );
-    WidgetSizing::installTextAwareFieldWidth(
-        m_photocopierCodeEdit,
-        CompactFieldWidth
-        );
+
+    for (QLineEdit* edit : {
+             m_officeWifiEdit,
+             m_officeWifiPasswordEdit,
+             m_photocopierCodeEdit
+             })
+    {
+        WidgetSizing::installTextAwareFieldWidth(
+            edit,
+            CompactFieldWidth
+            );
+    }
 
     m_officeNumberLabel =
         createFieldLabel(tr("Office Number"), m_campusCard);
@@ -976,135 +872,255 @@ void SubPrepPage::buildUi()
     m_photocopierCodeLabel =
         createFieldLabel(tr("Photocopier Code"), m_campusCard);
 
-    campusGrid->addWidget(
+    const QList<QLabel*> campusLabels{
         m_officeNumberLabel,
-        0,
-        0,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
         m_officeWifiLabel,
-        0,
-        1,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
         m_officeWifiPasswordLabel,
-        0,
-        2,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        m_photocopierCodeLabel,
-        0,
-        3,
-        Qt::AlignLeft
-        );
-    campusGrid->addWidget(
-        m_officeNumberEdit,
-        1,
-        0
-        );
-    campusGrid->addWidget(
-        m_officeWifiEdit,
-        1,
-        1
-        );
-    campusGrid->addWidget(
-        m_officeWifiPasswordEdit,
-        1,
-        2
-        );
-    campusGrid->addWidget(
-        m_photocopierCodeEdit,
-        1,
-        3
-        );
-    for (int column = 0; column < 4; ++column)
+        m_photocopierCodeLabel
+    };
+
+    for (int column = 0; column < campusLabels.size(); ++column)
     {
-        campusGrid->setColumnStretch(
+        campusGrid->addWidget(
+            campusLabels.at(column),
+            0,
             column,
-            1
+            Qt::AlignLeft
             );
+        campusGrid->addWidget(
+            campusEdits.at(column),
+            1,
+            column
+            );
+        campusGrid->setColumnStretch(column, 1);
     }
 
-    m_campusCard->contentLayout()->addLayout(
-        campusGrid
+    m_campusCard->contentLayout()->addLayout(campusGrid);
+    m_scrollContentLayout->addWidget(m_campusCard);
+
+    m_zoomCard =
+        new SectionCard(
+            tr("Personal Zoom Information"),
+            m_scrollContent
+            );
+    m_zoomCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("zoom")
         );
-    m_scrollContentLayout->addWidget(
-        m_campusCard
+
+    auto* zoomGrid =
+        new QGridLayout;
+    zoomGrid->setHorizontalSpacing(
+        UiConstants::ClassInfo::Form::HorizontalSpacing
         );
+    zoomGrid->setVerticalSpacing(
+        UiConstants::ClassInfo::Form::VerticalSpacing
+        );
+
+    m_zoomLoginIdEdit =
+        new QLineEdit(m_zoomCard);
+    m_zoomLoginIdEdit->setObjectName(
+        QStringLiteral("subPrepZoomLoginIdEdit")
+        );
+    m_zoomPasswordEdit =
+        new QLineEdit(m_zoomCard);
+    m_zoomPasswordEdit->setObjectName(
+        QStringLiteral("subPrepZoomPasswordEdit")
+        );
+    m_zoomLoginIdEdit->setReadOnly(true);
+    m_zoomPasswordEdit->setReadOnly(true);
+
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomLoginIdEdit,
+        CompactFieldWidth
+        );
+    WidgetSizing::installTextAwareFieldWidth(
+        m_zoomPasswordEdit,
+        CompactFieldWidth
+        );
+
+    m_zoomLoginIdLabel =
+        createFieldLabel(tr("Zoom Login ID"), m_zoomCard);
+    m_zoomPasswordLabel =
+        createFieldLabel(tr("Zoom Password"), m_zoomCard);
+
+    zoomGrid->addWidget(
+        m_zoomLoginIdLabel,
+        0,
+        0,
+        Qt::AlignLeft
+        );
+    zoomGrid->addWidget(
+        m_zoomPasswordLabel,
+        0,
+        1,
+        Qt::AlignLeft
+        );
+    zoomGrid->addWidget(m_zoomLoginIdEdit, 1, 0);
+    zoomGrid->addWidget(m_zoomPasswordEdit, 1, 1);
+    zoomGrid->setColumnStretch(0, 1);
+    zoomGrid->setColumnStretch(1, 1);
+
+    m_zoomCard->contentLayout()->addLayout(zoomGrid);
+    m_scrollContentLayout->addWidget(m_zoomCard);
 
     m_materialsCard =
         new SectionCard(
-            tr("Lesson Materials and Grading"),
+            tr("Class Materials"),
             m_scrollContent
             );
-
-    m_classMaterialsLabel =
-        createFieldLabel(tr("Class Materials"), m_materialsCard);
-    m_materialsCard->contentLayout()->addWidget(
-        m_classMaterialsLabel
+    m_materialsCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("materials")
         );
-
     m_classMaterialsEdit =
-        createTextEdit(
-            6,
-            false,
-            m_materialsCard
-            );
+        createTextEdit(6, false, m_materialsCard);
+    m_classMaterialsEdit->setObjectName(
+        QStringLiteral("subPrepClassMaterialsEdit")
+        );
     m_materialsCard->contentLayout()->addWidget(
         m_classMaterialsEdit
         );
+    m_scrollContentLayout->addWidget(m_materialsCard);
 
-    m_bookReportGradingLabel =
-        createFieldLabel(tr("Book Report Grading"), m_materialsCard);
-    m_materialsCard->contentLayout()->addWidget(
-        m_bookReportGradingLabel
-        );
-
-    m_bookReportGradingEdit =
-        createTextEdit(
-            5,
-            false,
-            m_materialsCard
-            );
-    m_bookReportGradingEdit->installEventFilter(this);
-    m_materialsCard->contentLayout()->addWidget(
-        m_bookReportGradingEdit
-        );
-
-    m_scrollContentLayout->addWidget(
-        m_materialsCard
-        );
-
-    m_subCommentsHeading =
-        createTopLevelHeading(
-            tr("Sub Comments"),
-            m_scrollContent
-        );
-    m_scrollContentLayout->addWidget(
-        m_subCommentsHeading
-        );
-
-    m_commentsCard =
+    m_gradingCard =
         new SectionCard(
-            tr("Comments"),
+            tr("Book Report Grading"),
             m_scrollContent
             );
+    m_gradingCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("grading")
+        );
 
-    m_subCommentsEdit =
-        createTextEdit(
-            10,
-            false,
-            m_commentsCard
+    m_gradingInstructionsLabel =
+        createFieldLabel(
+            tr("Grading Instructions"),
+            m_gradingCard
             );
-    m_commentsCard->contentLayout()->addWidget(
-        m_subCommentsEdit
+    m_gradingCard->contentLayout()->addWidget(
+        m_gradingInstructionsLabel
         );
+
+    m_gradingInstructionsEdit =
+        createTextEdit(5, false, m_gradingCard);
+    m_gradingInstructionsEdit->setObjectName(
+        QStringLiteral("subPrepGradingInstructionsEdit")
+        );
+    m_gradingInstructionsEdit->installEventFilter(this);
+    m_gradingCard->contentLayout()->addWidget(
+        m_gradingInstructionsEdit
+        );
+
+    m_specialInstructionsLabel =
+        createFieldLabel(
+            tr("Special Instructions"),
+            m_gradingCard
+            );
+    m_gradingCard->contentLayout()->addWidget(
+        m_specialInstructionsLabel
+        );
+
+    m_specialInstructionsEdit =
+        createTextEdit(4, false, m_gradingCard);
+    m_specialInstructionsEdit->setObjectName(
+        QStringLiteral("subPrepSpecialInstructionsEdit")
+        );
+    m_gradingCard->contentLayout()->addWidget(
+        m_specialInstructionsEdit
+        );
+    m_scrollContentLayout->addWidget(m_gradingCard);
+
+    m_scheduleHeading =
+        createTopLevelHeading(
+            tr("Schedule"),
+            m_scrollContent
+            );
+    m_scheduleHeading->setObjectName(
+        QStringLiteral("subPrepScheduleHeading")
+        );
+    m_scrollContentLayout->addWidget(m_scheduleHeading);
+
+    m_scheduleCard =
+        new SectionCard(
+            QString(),
+            m_scrollContent
+            );
+    m_scheduleCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("schedule")
+        );
+    m_scheduleWidget =
+        new ScheduleSectionWidget(
+            m_services,
+            m_scheduleCard,
+            ScheduleSectionMode::ReadOnly
+            );
+    m_scheduleWidget->setObjectName(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    m_scheduleCard->contentLayout()->addWidget(
+        m_scheduleWidget
+        );
+    m_scrollContentLayout->addWidget(m_scheduleCard);
+
+    m_classInformationHeading =
+        createTopLevelHeading(
+            tr("Class Information"),
+            m_scrollContent
+            );
+    m_classInformationHeading->setObjectName(
+        QStringLiteral("subPrepClassInformationHeading")
+        );
+    m_scrollContentLayout->addWidget(m_classInformationHeading);
+
+    m_classInformationContent =
+        new QWidget(m_scrollContent);
+    m_classInformationContent->setProperty(
+        "subPrepSection",
+        QStringLiteral("class_information")
+        );
+    m_classInformationContent->setObjectName(
+        QStringLiteral("subPrepClassInformationContent")
+        );
+    m_classInformationLayout =
+        new QVBoxLayout(m_classInformationContent);
+    m_classInformationLayout->setContentsMargins(0, 0, 0, 0);
+    m_classInformationLayout->setSpacing(
+        UiConstants::ClassInfo::Page::ContentSpacing
+        );
+    m_classInformationLayout->setAlignment(Qt::AlignTop);
     m_scrollContentLayout->addWidget(
-        m_commentsCard
+        m_classInformationContent
         );
+
+    m_subNotesHeading =
+        createTopLevelHeading(
+            tr("Sub Notes"),
+            m_scrollContent
+            );
+    m_scrollContentLayout->addWidget(
+        m_subNotesHeading
+        );
+
+    m_notesCard =
+        new SectionCard(
+            tr("Notes"),
+            m_scrollContent
+            );
+    m_notesCard->setProperty(
+        "subPrepSection",
+        QStringLiteral("sub_notes")
+        );
+    m_subNotesEdit =
+        createTextEdit(10, false, m_notesCard);
+    m_subNotesEdit->setObjectName(
+        QStringLiteral("subPrepNotesEdit")
+        );
+    m_notesCard->contentLayout()->addWidget(
+        m_subNotesEdit
+        );
+    m_scrollContentLayout->addWidget(m_notesCard);
 
     connect(
         m_classMaterialsEdit,
@@ -1113,16 +1129,28 @@ void SubPrepPage::buildUi()
         &SubPrepPage::handleEditableChanged
         );
     connect(
-        m_bookReportGradingEdit,
+        m_gradingInstructionsEdit,
         &QTextEdit::textChanged,
         this,
         &SubPrepPage::handleEditableChanged
         );
     connect(
-        m_subCommentsEdit,
+        m_specialInstructionsEdit,
         &QTextEdit::textChanged,
         this,
         &SubPrepPage::handleEditableChanged
+        );
+    connect(
+        m_subNotesEdit,
+        &QTextEdit::textChanged,
+        this,
+        &SubPrepPage::handleEditableChanged
+        );
+    connect(
+        m_printButton,
+        &QPushButton::clicked,
+        this,
+        &SubPrepPage::printSubPrep
         );
 }
 
@@ -1136,6 +1164,7 @@ void SubPrepPage::loadPageData()
     }
 
     loadStoredSettings();
+    loadPersonalZoomInformation();
     loadCampuses();
     refreshGeneratedContent();
 
@@ -1154,8 +1183,9 @@ void SubPrepPage::loadStoredSettings()
     }
 
     const QSignalBlocker materialsBlocker(m_classMaterialsEdit);
-    const QSignalBlocker gradingBlocker(m_bookReportGradingEdit);
-    const QSignalBlocker commentsBlocker(m_subCommentsEdit);
+    const QSignalBlocker gradingBlocker(m_gradingInstructionsEdit);
+    const QSignalBlocker specialBlocker(m_specialInstructionsEdit);
+    const QSignalBlocker notesBlocker(m_subNotesEdit);
 
     m_classMaterialsEdit->setPlainText(
         dataService
@@ -1166,28 +1196,100 @@ void SubPrepPage::loadStoredSettings()
             .toString()
         );
 
-    const QString grading =
+    const QVariant storedGrading =
+        dataService->loadSetting(
+            SettingsKeys::BookReportGrading,
+            QVariant()
+            );
+    const QVariant storedSpecial =
+        dataService->loadSetting(
+            SettingsKeys::BookReportSpecialInstructions,
+            QVariant()
+            );
+
+    if (storedGrading.isValid())
+    {
+        m_gradingInstructionsEdit->setPlainText(
+            storedGrading.toString()
+            );
+        m_specialInstructionsEdit->setPlainText(
+            storedSpecial.isValid()
+                ? storedSpecial.toString()
+                : QString()
+            );
+    }
+    else
+    {
+        m_gradingInstructionsEdit->setPlainText(
+            defaultGradingInstructions()
+            );
+        m_specialInstructionsEdit->setPlainText(
+            storedSpecial.isValid()
+                ? storedSpecial.toString()
+                : defaultSpecialInstructions()
+            );
+    }
+
+    m_subNotesEdit->setPlainText(
         dataService
             ->loadSetting(
-                SettingsKeys::BookReportGrading,
-                defaultBookReportText()
-                )
-            .toString();
-
-    m_bookReportGradingEdit->setPlainText(
-        grading.trimmed().isEmpty()
-            ? defaultBookReportText()
-            : grading
-        );
-
-    m_subCommentsEdit->setPlainText(
-        dataService
-            ->loadSetting(
-                SettingsKeys::SubComments,
+                SettingsKeys::SubNotes,
                 QString()
                 )
             .toString()
         );
+}
+
+void SubPrepPage::loadPersonalZoomInformation()
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        return;
+    }
+
+    const QSignalBlocker loginBlocker(m_zoomLoginIdEdit);
+    const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
+
+    const QString loginId =
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomLoginId,
+            SettingsKeys::LegacyZoomLoginId,
+            NotAvailableText
+            )
+            .toString();
+    const QString password =
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomPassword,
+            SettingsKeys::LegacyZoomPassword,
+            NotAvailableText
+            )
+            .toString();
+    const bool unavailable =
+        loadSettingWithLegacyFallback(
+            dataService,
+            SettingsKeys::MyInfoZoomNotAvailable,
+            SettingsKeys::LegacyZoomNotAvailable,
+            true
+            )
+            .toBool();
+
+    m_zoomLoginIdEdit->setText(
+        unavailable
+            ? NotAvailableText
+            : valueOrNa(loginId)
+        );
+    m_zoomPasswordEdit->setText(
+        unavailable
+            ? NotAvailableText
+            : valueOrNa(password)
+        );
+
+    updateReadOnlyFieldWidths();
 }
 
 void SubPrepPage::loadCampuses()
@@ -1202,7 +1304,6 @@ void SubPrepPage::loadCampuses()
 
     const bool wasLoading =
         m_loading;
-
     m_loading = true;
 
     m_campuses =
@@ -1213,76 +1314,58 @@ void SubPrepPage::loadCampuses()
             ->loadSetting(
                 SettingsKeys::MyInfoCampus,
                 QString()
-            )
+                )
             .toString();
 
     QString campusId;
-    const QString normalizedCampus =
-        savedCampus.trimmed();
 
     for (const CampusInfo& campus : std::as_const(m_campuses))
     {
         if (
             campus.id.compare(
-                normalizedCampus,
+                savedCampus.trimmed(),
                 Qt::CaseInsensitive
                 ) == 0
             || campusDisplayName(campus).compare(
-                normalizedCampus,
+                savedCampus.trimmed(),
                 Qt::CaseInsensitive
                 ) == 0
             )
         {
-            campusId =
-                campus.id;
+            campusId = campus.id;
             break;
         }
     }
 
-    if (
-        campusId.isEmpty()
-        && !m_campuses.isEmpty()
-        )
+    if (campusId.isEmpty() && !m_campuses.isEmpty())
     {
-        campusId =
-            m_campuses.first().id;
+        campusId = m_campuses.first().id;
     }
 
-    loadCampusFields(
-        campusId
-        );
+    loadCampusFields(campusId);
+    updateReadOnlyFieldWidths();
 
-    updateCampusFieldWidths();
-
-    m_loading =
-        wasLoading;
+    m_loading = wasLoading;
 }
 
 void SubPrepPage::loadCampusFields(
     const QString& campusId
     )
 {
-    const bool wasLoading =
-        m_loading;
-
-    m_loading = true;
-
     CampusInfo campus;
-    bool foundCampus = false;
+    bool found = false;
 
-    for (const CampusInfo& campusInfo : m_campuses)
+    for (const CampusInfo& candidate : std::as_const(m_campuses))
     {
         if (
-            campusInfo.id.compare(
+            candidate.id.compare(
                 campusId,
                 Qt::CaseInsensitive
                 ) == 0
             )
         {
-            campus =
-                campusInfo;
-            foundCampus =
-                true;
+            campus = candidate;
+            found = true;
             break;
         }
     }
@@ -1292,57 +1375,59 @@ void SubPrepPage::loadCampusFields(
     const QSignalBlocker wifiPasswordBlocker(m_officeWifiPasswordEdit);
     const QSignalBlocker photocopierBlocker(m_photocopierCodeEdit);
 
-    const auto fieldText =
-        [foundCampus](const QString& value)
-        {
-            return foundCampus
-                ? value
-                : NotAvailableText;
-        };
-
     m_officeNumberEdit->setText(
-        fieldText(campus.officeNumber)
+        found
+            ? valueOrNa(campus.officeNumber)
+            : NotAvailableText
         );
     m_officeWifiEdit->setText(
-        fieldText(campus.officeWifi)
+        found
+            ? valueOrNa(campus.officeWifi)
+            : NotAvailableText
         );
     m_officeWifiPasswordEdit->setText(
-        fieldText(campus.officeWifiPassword)
+        found
+            ? valueOrNa(campus.officeWifiPassword)
+            : NotAvailableText
         );
     m_photocopierCodeEdit->setText(
-        !foundCampus || campus.photocopierCode.trimmed().isEmpty()
-            ? NotAvailableText
-            : campus.photocopierCode
+        found
+            ? valueOrNa(campus.photocopierCode)
+            : NotAvailableText
         );
 
-    updateCampusFieldWidths();
-
-    m_loading =
-        wasLoading;
+    updateReadOnlyFieldWidths();
 }
 
-void SubPrepPage::updateCampusFieldWidths()
+void SubPrepPage::updateReadOnlyFieldWidths()
 {
     WidgetSizing::updateTextAwareFieldWidth(
         m_officeNumberEdit,
         OfficeNumberFieldWidth
         );
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_officeWifiEdit,
-        CompactFieldWidth
-        );
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_officeWifiPasswordEdit,
-        CompactFieldWidth
-        );
-    WidgetSizing::updateTextAwareFieldWidth(
-        m_photocopierCodeEdit,
-        CompactFieldWidth
-        );
+
+    for (QLineEdit* edit : {
+             m_officeWifiEdit,
+             m_officeWifiPasswordEdit,
+             m_photocopierCodeEdit,
+             m_zoomLoginIdEdit,
+             m_zoomPasswordEdit
+             })
+    {
+        WidgetSizing::updateTextAwareFieldWidth(
+            edit,
+            CompactFieldWidth
+            );
+    }
 
     if (m_campusCard)
     {
         m_campusCard->updateGeometry();
+    }
+
+    if (m_zoomCard)
+    {
+        m_zoomCard->updateGeometry();
     }
 }
 
@@ -1361,7 +1446,7 @@ bool SubPrepPage::saveSubPrepInternal()
         m_autosaveTimer->stop();
     }
 
-    restoreBookReportDefaultIfNeeded();
+    restoreGradingDefaultIfNeeded();
 
     dataService->saveSetting(
         SettingsKeys::ClassMaterials,
@@ -1369,20 +1454,29 @@ bool SubPrepPage::saveSubPrepInternal()
         );
     dataService->saveSetting(
         SettingsKeys::BookReportGrading,
-        m_bookReportGradingEdit->toPlainText()
+        m_gradingInstructionsEdit->toPlainText()
         );
     dataService->saveSetting(
-        SettingsKeys::SubComments,
-        m_subCommentsEdit->toPlainText()
+        SettingsKeys::BookReportSpecialInstructions,
+        m_specialInstructionsEdit->toPlainText()
+        );
+    dataService->saveSetting(
+        SettingsKeys::SubNotes,
+        m_subNotesEdit->toPlainText()
         );
 
     clearDirty();
-
     return true;
 }
 
 void SubPrepPage::refreshGeneratedContent()
 {
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->refreshSchedule();
+    }
+
+    rebuildClassInformation();
 }
 
 void SubPrepPage::rebuildClassInformation()
@@ -1390,710 +1484,312 @@ void SubPrepPage::rebuildClassInformation()
     auto* dataService =
         openDataService(m_services);
 
-    if (!dataService || !m_classInformationLayout)
+    if (
+        !dataService
+        || !m_scheduleWidget
+        || !m_classInformationLayout
+        )
     {
         return;
     }
 
     clearClassInformation();
-    m_classInformationTabs = nullptr;
 
-    QList<ClassSummary> summaries;
+    const auto groups =
+        buildClassInformation();
 
-    const QList<Classroom> classes =
-        dataService->getClasses();
-
-    for (const Classroom& classroom : classes)
+    if (groups.isEmpty())
     {
-        ClassSummary summary;
-        summary.classroom = classroom;
-        summary.info =
-            dataService->loadClassInfo(
-                classroom.id
-                );
-        summary.studentCount =
-            dataService->getRosterStudentCount(
-                classroom.id
-                );
-
-        if (summary.info.teacherId > 0)
-        {
-            summary.teacher =
-                dataService->getTeacher(
-                    summary.info.teacherId
-                    );
-        }
-
-        summary.displayName =
-            classTitleText(
-                classroom,
-                summary.info
-                );
-
-        summaries.append(summary);
-    }
-
-    if (summaries.isEmpty())
-    {
-        m_selectedClassId = -1;
-
-        if (m_classInfoSubtitle)
-        {
-            m_classInfoSubtitle->setText(
-                tr("Select a class")
-                );
-        }
-
         auto* emptyLabel =
             new QLabel(
-                tr("No classes available."),
+                tr("No scheduled class information available."),
                 m_classInformationContent
                 );
         emptyLabel->setObjectName("pageSubtitle");
-        m_classInformationLayout->addWidget(
-            emptyLabel
-            );
+        emptyLabel->setWordWrap(true);
+        m_classInformationLayout->addWidget(emptyLabel);
         return;
     }
 
-    QList<SubPrepClassNavigation::ClassEntry> navigationEntries;
-
-    for (const ClassSummary& summary : std::as_const(summaries))
+    for (int groupIndex = 0; groupIndex < groups.size(); ++groupIndex)
     {
-        SubPrepClassNavigation::ClassEntry entry;
-        entry.classId =
-            summary.classroom.id;
-        entry.classroomName =
-            summary.classroom.name;
-        entry.grade =
-            summary.info.classGrade;
-        entry.level =
-            summary.info.classLevel;
-        entry.regularTimes =
-            summary.info.classTimes;
-        entry.intensiveTimes =
-            summary.info.intensiveTimes;
-        entry.teacherEn =
-            summary.teacher.teacherEn;
-        entry.teacherKr =
-            summary.teacher.teacherKr;
+        const auto& group =
+            groups.at(groupIndex);
 
-        navigationEntries.append(entry);
-    }
-
-    const SubPrepClassNavigation::Model navigation =
-        SubPrepClassNavigation::build(
-            navigationEntries
+        auto* teacherCard =
+            new SectionCard(
+                QStringLiteral("%1: %2")
+                    .arg(
+                        group.displayName,
+                        group.classListText
+                        ),
+                m_classInformationContent
+                );
+        teacherCard->setObjectName(
+            QStringLiteral("subPrepTeacherSectionCard")
+            );
+        teacherCard->setProperty(
+            "teacherId",
+            group.teacher.id
             );
 
-    if (m_classInfoSubtitle)
-    {
-        m_classInfoSubtitle->setText(
-            navigation.mode == SubPrepClassNavigation::Mode::GradeGrouped
-                ? tr("Grouped by grade")
-                : tr("Select a class")
-            );
-    }
-
-    const int previousClassId =
-        m_selectedClassId;
-
-    auto findSummary =
-        [&summaries](int classId) -> const ClassSummary*
+        for (int classIndex = 0; classIndex < group.classes.size(); ++classIndex)
         {
-            for (const ClassSummary& summary : summaries)
-            {
-                if (summary.classroom.id == classId)
-                {
-                    return &summary;
-                }
-            }
+            const auto& details =
+                group.classes.at(classIndex);
 
-            return nullptr;
-        };
-
-    auto tabIndexForClass =
-        [](QTabWidget* tabs, int classId)
-        {
-            if (!tabs)
-            {
-                return -1;
-            }
-
-            for (int index = 0; index < tabs->count(); ++index)
-            {
-                QWidget* page =
-                    tabs->widget(index);
-
-                if (
-                    page
-                    && page->property("class_id").toInt() == classId
-                    )
-                {
-                    return index;
-                }
-            }
-
-            return -1;
-        };
-
-    auto updateSelectedFromTabs =
-        [this](QTabWidget* tabs)
-        {
-            if (!tabs || tabs->currentIndex() < 0)
-            {
-                return;
-            }
-
-            QWidget* page =
-                tabs->currentWidget();
-
-            const int classId =
-                page
-                    ? page->property("class_id").toInt()
-                    : -1;
-
-            if (classId > 0)
-            {
-                m_selectedClassId = classId;
-            }
-        };
-
-    auto createClassPage =
-        [this](const ClassSummary& summary, QWidget* parent)
-        {
-            const bool unassigned =
-                summary.teacher.id <= 0;
-
-            auto* page =
-                new QWidget(parent);
-            page->setProperty(
-                "class_id",
-                summary.classroom.id
+            auto* detailsWidget =
+                new QWidget(teacherCard);
+            detailsWidget->setObjectName(
+                QStringLiteral("subPrepClassDetails")
+                );
+            detailsWidget->setProperty(
+                "classId",
+                details.classId
+                );
+            auto* detailsLayout =
+                new QVBoxLayout(detailsWidget);
+            detailsLayout->setContentsMargins(0, 0, 0, 0);
+            detailsLayout->setSpacing(
+                UiConstants::ClassInfo::Form::VerticalSpacing
                 );
 
-            auto* pageLayout =
-                new QVBoxLayout(page);
-            pageLayout->setContentsMargins(
-                0,
-                ClassTabContentTopMargin,
+            auto* fields =
+                new QGridLayout;
+            fields->setHorizontalSpacing(
+                UiConstants::ClassInfo::Form::HorizontalSpacing
+                );
+            fields->setVerticalSpacing(
+                UiConstants::ClassInfo::Form::VerticalSpacing
+                );
+
+            fields->addWidget(
+                createInlineValue(
+                    tr("Level"),
+                    details.info.classLevel,
+                    detailsWidget
+                    ),
                 0,
                 0
                 );
-            pageLayout->setSpacing(
-                UiConstants::ClassInfo::Page::ContentSpacing
-                );
-            pageLayout->setAlignment(Qt::AlignTop);
-
-            auto* teacherHeading =
-                new QLabel(
-                    teacherHeadingText(
-                        summary.teacher,
-                        unassigned
-                        ),
-                    page
-                    );
-            teacherHeading->setObjectName("sectionTitle");
-            teacherHeading->setFont(
-                FontManager::getUiFont(
-                    16,
-                    QFont::DemiBold
-                    )
-                );
-            pageLayout->addWidget(
-                teacherHeading
-                );
-
-            auto* teacherCard =
-                new QFrame(page);
-            teacherCard->setProperty(
-                "role",
-                UiRoles::Card
-                );
-            teacherCard->setObjectName(
-                "sectionCard"
-                );
-
-            auto* teacherLayout =
-                new QVBoxLayout(teacherCard);
-            teacherLayout->setAlignment(Qt::AlignTop);
-            teacherLayout->setContentsMargins(
-                UiConstants::ClassInfo::SectionCard::Margin,
-                UiConstants::ClassInfo::SectionCard::Margin,
-                UiConstants::ClassInfo::SectionCard::Margin,
-                UiConstants::ClassInfo::SectionCard::Margin
-                );
-            teacherLayout->setSpacing(
-                UiConstants::ClassInfo::SectionCard::Spacing
-                );
-
-            auto* teacherGrid =
-                new QGridLayout;
-            teacherGrid->setHorizontalSpacing(
-                UiConstants::ClassInfo::Form::HorizontalSpacing
-                );
-            teacherGrid->setVerticalSpacing(
-                UiConstants::ClassInfo::Form::VerticalSpacing
-                );
-            teacherGrid->setColumnStretch(0, 1);
-            teacherGrid->setColumnStretch(1, 1);
-            teacherGrid->setColumnStretch(2, 1);
-            teacherGrid->setColumnStretch(3, 0);
-
-            addHorizontalInfoField(
-                teacherGrid,
+            fields->addWidget(
+                createInlineValue(
+                    tr("Time"),
+                    details.timeText,
+                    detailsWidget
+                    ),
                 0,
-                1,
-                0,
-                tr("Internet Type"),
-                unassigned ? QString() : summary.teacher.internetType,
-                teacherCard
+                1
                 );
-            addHorizontalInfoField(
-                teacherGrid,
+            fields->addWidget(
+                createInlineValue(
+                    tr("# of Students"),
+                    QString::number(details.studentCount),
+                    detailsWidget
+                    ),
                 0,
-                1,
-                1,
-                tr("WiFi Name"),
-                unassigned ? QString() : summary.teacher.wifiName,
-                teacherCard
+                2
                 );
-            addHorizontalInfoField(
-                teacherGrid,
+            fields->addWidget(
+                createInlineValue(
+                    tr("Room"),
+                    group.teacher.roomNumber,
+                    detailsWidget
+                    ),
                 0,
-                1,
-                2,
-                tr("WiFi Password"),
-                unassigned ? QString() : summary.teacher.wifiPassword,
-                teacherCard
+                3
                 );
-            teacherGrid->addItem(
-                new QSpacerItem(
-                    0,
-                    UiConstants::ClassInfo::Form::GroupSpacerHeight,
-                    QSizePolicy::Minimum,
-                    QSizePolicy::Fixed
+
+            fields->addWidget(
+                createInlineValue(
+                    tr("WiFi Name"),
+                    group.teacher.wifiName,
+                    detailsWidget
+                    ),
+                1,
+                0
+                );
+            fields->addWidget(
+                createInlineValue(
+                    tr("WiFi Password"),
+                    group.teacher.wifiPassword,
+                    detailsWidget
+                    ),
+                1,
+                1
+                );
+            fields->addWidget(
+                createInlineValue(
+                    tr("Zoom ID"),
+                    group.teacher.zoomId,
+                    detailsWidget
+                    ),
+                1,
+                2
+                );
+            fields->addWidget(
+                createInlineValue(
+                    tr("Zoom Password"),
+                    group.teacher.zoomPassword,
+                    detailsWidget
+                    ),
+                1,
+                3
+                );
+
+            fields->addWidget(
+                createInlineValue(
+                    tr("Internet"),
+                    group.teacher.internetType,
+                    detailsWidget
                     ),
                 2,
-                0,
-                1,
-                4
+                0
                 );
-            addHorizontalInfoField(
-                teacherGrid,
-                3,
-                4,
-                0,
-                tr("Projection Type"),
-                unassigned ? QString() : summary.teacher.projectionType,
-                teacherCard
-                );
-            addHorizontalInfoField(
-                teacherGrid,
-                3,
-                4,
-                1,
-                tr("Zoom ID"),
-                unassigned ? QString() : summary.teacher.zoomId,
-                teacherCard
-                );
-            addHorizontalInfoField(
-                teacherGrid,
-                3,
-                4,
+            fields->addWidget(
+                createInlineValue(
+                    tr("Projection"),
+                    group.teacher.projectionType,
+                    detailsWidget
+                    ),
                 2,
-                tr("Zoom Password"),
-                unassigned ? QString() : summary.teacher.zoomPassword,
-                teacherCard
+                1
                 );
 
-            teacherLayout->addLayout(
-                teacherGrid
-                );
-
-            teacherLayout->addWidget(
-                createFieldLabel(
-                    tr("Notes"),
-                    teacherCard
-                    )
-                );
-
-            auto* teacherNotes =
-                createTextEdit(
-                    6,
-                    true,
-                    teacherCard
-                    );
-            teacherNotes->setPlainText(
-                unassigned ? QString() : summary.teacher.notes
-                );
-            teacherLayout->addWidget(
-                teacherNotes
-                );
-
-            pageLayout->addWidget(
-                teacherCard
-                );
-
-            auto* classCard =
-                new SectionCard(
-                    summary.displayName,
-                    page
-                    );
-
-            auto* classGrid =
-                new QGridLayout;
-            classGrid->setHorizontalSpacing(
-                UiConstants::ClassInfo::Form::HorizontalSpacing
-                );
-            classGrid->setVerticalSpacing(
-                UiConstants::ClassInfo::Form::VerticalSpacing
-                );
-            classGrid->setColumnStretch(1, 1);
-
-            int row = 0;
-            addInfoRow(
-                classGrid,
-                row++,
-                tr("# of Students"),
-                QString::number(summary.studentCount),
-                classCard
-                );
-
-            if (!summary.info.classTimes.isEmpty())
+            for (int column = 0; column < 4; ++column)
             {
-                addInfoRow(
-                    classGrid,
-                    row++,
-                    tr("Regular"),
-                    formatSchedule(summary.info.classTimes),
-                    classCard
-                    );
+                fields->setColumnStretch(column, 1);
             }
 
-            if (!summary.info.intensiveTimes.isEmpty())
-            {
-                addInfoRow(
-                    classGrid,
-                    row++,
-                    tr("Intensive"),
-                    formatSchedule(summary.info.intensiveTimes),
-                    classCard
-                    );
-            }
-
-            if (
-                summary.info.classTimes.isEmpty()
-                && summary.info.intensiveTimes.isEmpty()
-                )
-            {
-                addInfoRow(
-                    classGrid,
-                    row++,
-                    tr("Schedule"),
-                    NotAvailableText,
-                    classCard
-                    );
-            }
-
-            classCard->contentLayout()->addLayout(
-                classGrid
-                );
-
-            classCard->contentLayout()->addWidget(
+            detailsLayout->addLayout(fields);
+            detailsLayout->addWidget(
                 createFieldLabel(
                     tr("Class Notes"),
-                    classCard
+                    detailsWidget
                     )
                 );
 
             auto* classNotes =
                 createTextEdit(
-                    6,
+                    ClassNotesLines,
                     true,
-                    classCard
+                    detailsWidget
                     );
+            classNotes->setProperty(
+                "classId",
+                details.classId
+                );
             classNotes->setPlainText(
-                summary.info.notes
+                valueOrNa(details.info.notes)
                 );
-            classCard->contentLayout()->addWidget(
-                classNotes
-                );
+            detailsLayout->addWidget(classNotes);
 
-            classCard->contentLayout()->addWidget(
-                createFieldLabel(
-                    tr("Time Filler Activities"),
-                    classCard
-                    )
-                );
+            teacherCard->contentLayout()->addWidget(detailsWidget);
 
-            auto* timeFillerActivities =
-                createTextEdit(
-                    4,
-                    true,
-                    classCard
+            if (classIndex + 1 < group.classes.size())
+            {
+                teacherCard->contentLayout()->addWidget(
+                    createSeparator(teacherCard)
                     );
-            timeFillerActivities->setPlainText(
-                valueOrNa(
-                    summary.info.timeFillerActivities
-                    )
-                );
-            classCard->contentLayout()->addWidget(
-                timeFillerActivities
-                );
-
-            pageLayout->addWidget(
-                classCard
-                );
-
-            return page;
-        };
-
-    if (navigation.mode == SubPrepClassNavigation::Mode::Flat)
-    {
-        auto* tabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
-                QStringLiteral("subPrepClassTabBar"),
-                m_classInformationContent
-                );
-        tabs->setObjectName("subPrepClassTabs");
-
-        for (const SubPrepClassNavigation::ClassTab& tab
-             : navigation.flatClasses)
-        {
-            const ClassSummary* summary =
-                findSummary(tab.classId);
-
-            if (!summary)
-            {
-                continue;
-            }
-
-            tabs->addTab(
-                createClassPage(
-                    *summary,
-                    tabs
-                    ),
-                tab.label
-                );
-        }
-
-        connect(
-            tabs,
-            &QTabWidget::currentChanged,
-            this,
-            [tabs, updateSelectedFromTabs](int)
-            {
-                updateSelectedFromTabs(tabs);
-            }
-            );
-
-        int selectedIndex =
-            tabIndexForClass(
-                tabs,
-                previousClassId
-                );
-
-        if (selectedIndex < 0 && tabs->count() > 0)
-        {
-            selectedIndex = 0;
-        }
-
-        if (selectedIndex >= 0)
-        {
-            tabs->setCurrentIndex(selectedIndex);
-        }
-
-        updateSelectedFromTabs(tabs);
-
-        m_classInformationTabs = tabs;
-        m_classInformationLayout->addWidget(
-            tabs
-            );
-        return;
-    }
-
-    auto* gradeTabs =
-        new UniformWidthTabWidget(
-            UniformWidthTabKind::Grade,
-            QStringLiteral("subPrepGradeTabBar"),
-            m_classInformationContent
-            );
-    gradeTabs->setObjectName("subPrepGradeTabs");
-
-    int selectedGradeIndex = -1;
-    int selectedClassIndex = -1;
-
-    for (const SubPrepClassNavigation::GradeGroup& group
-         : navigation.gradeGroups)
-    {
-        auto* gradePage =
-            new QWidget(gradeTabs);
-
-        auto* gradeLayout =
-            new QVBoxLayout(gradePage);
-        gradeLayout->setContentsMargins(0, 0, 0, 0);
-        gradeLayout->setSpacing(
-            UiConstants::ClassInfo::Page::ContentSpacing
-            );
-        gradeLayout->setAlignment(Qt::AlignTop);
-
-        auto* classTabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
-                QStringLiteral("subPrepClassTabBar"),
-                gradePage
-                );
-        classTabs->setObjectName("subPrepClassTabs");
-
-        for (const SubPrepClassNavigation::ClassTab& tab
-             : group.classes)
-        {
-            const ClassSummary* summary =
-                findSummary(tab.classId);
-
-            if (!summary)
-            {
-                continue;
-            }
-
-            classTabs->addTab(
-                createClassPage(
-                    *summary,
-                    classTabs
-                    ),
-                tab.label
-                );
-
-            if (tab.classId == previousClassId)
-            {
-                selectedGradeIndex =
-                    gradeTabs->count();
-                selectedClassIndex =
-                    classTabs->count() - 1;
             }
         }
 
-        connect(
-            classTabs,
-            &QTabWidget::currentChanged,
-            this,
-            [classTabs, updateSelectedFromTabs](int)
-            {
-                updateSelectedFromTabs(classTabs);
-            }
+        auto* teacherNotesWidget =
+            new QWidget(teacherCard);
+        auto* teacherNotesLayout =
+            new QVBoxLayout(teacherNotesWidget);
+        teacherNotesLayout->setContentsMargins(0, 0, 0, 0);
+        teacherNotesLayout->setSpacing(
+            UiConstants::ClassInfo::Form::VerticalSpacing
             );
-
-        gradeLayout->addWidget(
-            classTabs
-            );
-
-        gradeTabs->addTab(
-            gradePage,
-            group.label
-            );
-    }
-
-    connect(
-        gradeTabs,
-        &QTabWidget::currentChanged,
-        this,
-        [gradeTabs, updateSelectedFromTabs](int index)
-        {
-            QWidget* gradePage =
-                gradeTabs->widget(index);
-
-            auto* classTabs =
-                gradePage
-                    ? gradePage->findChild<QTabWidget*>(
-                        QStringLiteral("subPrepClassTabs"),
-                        Qt::FindDirectChildrenOnly
-                        )
-                    : nullptr;
-
-            updateSelectedFromTabs(classTabs);
-        }
-        );
-
-    if (gradeTabs->count() > 0)
-    {
-        if (selectedGradeIndex < 0)
-        {
-            selectedGradeIndex = 0;
-        }
-
-        gradeTabs->setCurrentIndex(
-            selectedGradeIndex
-            );
-
-        QWidget* gradePage =
-            gradeTabs->widget(
-                selectedGradeIndex
-                );
-
-        auto* selectedClassTabs =
-            gradePage
-                ? gradePage->findChild<QTabWidget*>(
-                    QStringLiteral("subPrepClassTabs"),
-                    Qt::FindDirectChildrenOnly
-                    )
-                : nullptr;
-
-        if (selectedClassTabs)
-        {
-            if (
-                selectedClassIndex < 0
-                || selectedClassIndex >= selectedClassTabs->count()
+        teacherNotesLayout->addWidget(
+            createFieldLabel(
+                tr("Co-Teacher Notes"),
+                teacherNotesWidget
                 )
-            {
-                selectedClassIndex = 0;
-            }
+            );
 
-            if (selectedClassTabs->count() > 0)
-            {
-                selectedClassTabs->setCurrentIndex(
-                    selectedClassIndex
-                    );
-            }
+        auto* teacherNotes =
+            createTextEdit(
+                TeacherNotesLines,
+                true,
+                teacherNotesWidget
+                );
+        teacherNotes->setProperty(
+            "teacherId",
+            group.teacher.id
+            );
+        teacherNotes->setPlainText(
+            valueOrNa(group.teacher.notes)
+            );
+        teacherNotesLayout->addWidget(teacherNotes);
+        teacherCard->contentLayout()->addWidget(teacherNotesWidget);
 
-            updateSelectedFromTabs(selectedClassTabs);
-        }
+        m_classInformationLayout->addWidget(teacherCard);
     }
-
-    m_classInformationTabs = gradeTabs;
-    m_classInformationLayout->addWidget(
-        gradeTabs
-        );
 }
 
-bool SubPrepPage::normalizeLineEdit(
-    QLineEdit* edit,
-    const QString& defaultText
-    )
+QList<SubPrepClassInformation::TeacherGroup>
+SubPrepPage::buildClassInformation() const
 {
-    if (
-        !edit
-        || !edit->text().trimmed().isEmpty()
-        )
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService || !m_scheduleWidget)
     {
-        return false;
+        return {};
     }
 
-    const QSignalBlocker blocker(edit);
+    QList<SubPrepClassInformation::SourceClass> sources;
 
-    edit->setText(
-        defaultText
+    for (const Classroom& classroom : dataService->getClasses())
+    {
+        SubPrepClassInformation::SourceClass source;
+        source.classroom = classroom;
+        source.info =
+            dataService->loadClassInfo(
+                classroom.id
+                );
+        source.studentCount =
+            dataService->getRosterStudentCount(
+                classroom.id
+                );
+
+        if (source.info.teacherId > 0)
+        {
+            source.teacher =
+                dataService->getTeacher(
+                    source.info.teacherId
+                    );
+        }
+
+        sources.append(source);
+    }
+
+    const ScheduleDisplayState state =
+        m_scheduleWidget->displayState();
+
+    SubPrepClassInformation::BuildOptions options;
+    options.visibleClassIds =
+        m_scheduleWidget->visibleClassIds();
+    options.visibleDays =
+        visibleScheduleDays(
+            state.showWeekends
+            );
+    options.useIntensive =
+        state.showIntensive;
+
+    return SubPrepClassInformation::build(
+        sources,
+        options
         );
-
-    return true;
 }
 
-bool SubPrepPage::restoreBookReportDefaultIfNeeded()
+bool SubPrepPage::restoreGradingDefaultIfNeeded()
 {
     if (
-        !m_bookReportGradingEdit
-        || !m_bookReportGradingEdit
+        !m_gradingInstructionsEdit
+        || !m_gradingInstructionsEdit
                 ->toPlainText()
                 .trimmed()
                 .isEmpty()
@@ -2102,23 +1798,26 @@ bool SubPrepPage::restoreBookReportDefaultIfNeeded()
         return false;
     }
 
-    const QSignalBlocker blocker(m_bookReportGradingEdit);
-
-    m_bookReportGradingEdit->setPlainText(
-        defaultBookReportText()
+    const QSignalBlocker blocker(m_gradingInstructionsEdit);
+    m_gradingInstructionsEdit->setPlainText(
+        defaultGradingInstructions()
         );
 
     return true;
 }
 
-QString SubPrepPage::defaultBookReportText() const
+QString SubPrepPage::defaultGradingInstructions() const
 {
     return tr(
         "Scoring: 0 / 20 / 40 / 60 / 80 / 100\n"
         "Comments: Please leave a comment about what the student did well "
-        "and what they need to work on.\n"
-        "Additional Rules: N/A"
+        "and what they need to work on."
         );
+}
+
+QString SubPrepPage::defaultSpecialInstructions() const
+{
+    return tr("N/A");
 }
 
 QLabel* SubPrepPage::createTopLevelHeading(
@@ -2127,10 +1826,7 @@ QLabel* SubPrepPage::createTopLevelHeading(
     ) const
 {
     auto* label =
-        new QLabel(
-            text,
-            parent
-            );
+        new QLabel(text, parent);
 
     label->setObjectName("sectionTitle");
     label->setAlignment(Qt::AlignCenter);
@@ -2150,10 +1846,7 @@ QLabel* SubPrepPage::createFieldLabel(
     ) const
 {
     auto* label =
-        new QLabel(
-            text,
-            parent
-            );
+        new QLabel(text, parent);
 
     label->setContentsMargins(
         UiConstants::ClassInfo::Form::LabelIndent,
@@ -2174,9 +1867,7 @@ QTextEdit* SubPrepPage::createTextEdit(
     auto* edit =
         new QTextEdit(parent);
 
-    edit->setReadOnly(
-        readOnly
-        );
+    edit->setReadOnly(readOnly);
     edit->setMinimumHeight(
         textEditHeightForLines(
             edit,
@@ -2199,9 +1890,7 @@ QTextEdit* SubPrepPage::createTextEdit(
 
 void SubPrepPage::clearClassInformation()
 {
-    clearLayout(
-        m_classInformationLayout
-        );
+    clearLayout(m_classInformationLayout);
 }
 
 void SubPrepPage::clearDirty()

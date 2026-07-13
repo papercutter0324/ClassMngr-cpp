@@ -663,10 +663,13 @@ void NavigationController::handleSubPrep(
     SubPrepSection section =
         SubPrepSection::ImportantInformation;
 
-    if (sectionKey == QStringLiteral("sub_prep_comments"))
+    if (
+        sectionKey == QStringLiteral("sub_prep_notes")
+        || sectionKey == QStringLiteral("sub_prep_comments")
+        )
     {
         section =
-            SubPrepSection::SubComments;
+            SubPrepSection::SubNotes;
     }
 
     const bool rootClick =

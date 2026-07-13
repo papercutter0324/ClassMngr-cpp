@@ -15,4 +15,9 @@ QString formatClassDisplayName(
 QString formatTeacherDisplayName(
     const Teacher& teacher
     );
+
+bool teacherDisplayLessThan(
+    const Teacher& left,
+    const Teacher& right
+    );
 }

@@ -2967,8 +2967,8 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="67"/>
-        <source>Sub Comments</source>
-        <translation>대체 수업 댓글</translation>
+        <source>Sub Notes</source>
+        <translation>대체 수업 노트</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="75"/>
@@ -4787,14 +4787,14 @@
     </message>
     <message>
         <source>Class Information</source>
-        <translation type="vanished">수업 정보</translation>
+        <translation>수업 정보</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="595"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="748"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1083"/>
-        <source>Sub Comments</source>
-        <translation>대체 수업 댓글</translation>
+        <source>Sub Notes</source>
+        <translation>대체 수업 노트</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="574"/>
@@ -4810,11 +4810,11 @@
     </message>
     <message>
         <source>Personal Zoom Information</source>
-        <translation type="vanished">개인 Zoom 정보</translation>
+        <translation>개인 Zoom 정보</translation>
     </message>
     <message>
-        <source>Login Email</source>
-        <translation type="vanished">로그인 이메일</translation>
+        <source>Zoom Login ID</source>
+        <translation>Zoom 로그인 ID</translation>
     </message>
     <message>
         <source>Password</source>
@@ -4869,8 +4869,8 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1825"/>
-        <source>Time Filler Activities</source>
-        <translation>자투리 시간 활동</translation>
+        <source>Grading Instructions</source>
+        <translation>채점 지침</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="658"/>
@@ -4885,8 +4885,8 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="616"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1092"/>
-        <source>Comments</source>
-        <translation>댓글</translation>
+        <source>Special Instructions</source>
+        <translation>특별 지침</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1443"/>
@@ -4896,8 +4896,8 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1449"/>
-        <source>No classes available.</source>
-        <translation>사용 가능한 수업이 없습니다.</translation>
+        <source>No scheduled class information available.</source>
+        <translation>예정된 수업 정보가 없습니다.</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1493"/>
@@ -4906,8 +4906,8 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1648"/>
-        <source>Internet Type</source>
-        <translation>인터넷 유형</translation>
+        <source>Internet</source>
+        <translation>인터넷</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1657"/>
@@ -4916,8 +4916,8 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1687"/>
-        <source>Projection Type</source>
-        <translation>프로젝션 유형</translation>
+        <source>Projection</source>
+        <translation>프로젝션</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1696"/>
@@ -4962,11 +4962,29 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2116"/>
         <source>Scoring: 0 / 20 / 40 / 60 / 80 / 100
-Comments: Please leave a comment about what the student did well and what they need to work on.
-Additional Rules: N/A</source>
+Comments: Please leave a comment about what the student did well and what they need to work on.</source>
         <translation>점수: 0 / 20 / 40 / 60 / 80 / 100
-댓글: 학생이 잘한 점과 더 연습해야 할 점을 남겨 주세요.
-추가 규칙: 해당 없음</translation>
+댓글: 학생이 잘한 점과 더 연습해야 할 점을 남겨 주세요.</translation>
+    </message>
+    <message>
+        <source>Level</source>
+        <translation>레벨</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation>시간</translation>
+    </message>
+    <message>
+        <source>Room</source>
+        <translation>교실</translation>
+    </message>
+    <message>
+        <source>Co-Teacher Notes</source>
+        <translation>공동 교사 노트</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation>해당 없음</translation>
     </message>
 </context>
 <context>

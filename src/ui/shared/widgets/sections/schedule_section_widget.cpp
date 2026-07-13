@@ -38,6 +38,20 @@ constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
 
+namespace SettingsKeys
+{
+const QString Use24HourTime =
+    QStringLiteral("schedule_use_24h");
+const QString ShowWeekends =
+    QStringLiteral("schedule_show_weekends");
+const QString ShowIntensive =
+    QStringLiteral("schedule_show_intensive");
+const QString ShowAllHours =
+    QStringLiteral("schedule_show_all_hours");
+const QString HideEmptyRows =
+    QStringLiteral("schedule_hide_empty_rows");
+}
+
 DataService* openDataService(
     ApplicationServices* services
     )
@@ -76,6 +90,25 @@ bool settingToBool(
     }
 
     return value.toBool();
+}
+
+void saveBoolSetting(
+    DataService* dataService,
+    const QString& key,
+    bool value
+    )
+{
+    if (!dataService)
+    {
+        return;
+    }
+
+    dataService->saveSetting(
+        key,
+        value
+            ? QStringLiteral("true")
+            : QStringLiteral("false")
+        );
 }
 
 QString escaped(
@@ -138,10 +171,12 @@ QString joinedEnglishLine(
 
 ScheduleSectionWidget::ScheduleSectionWidget(
     ApplicationServices* services,
-    QWidget* parent
+    QWidget* parent,
+    ScheduleSectionMode mode
     )
     : QWidget(parent)
     , m_services(services)
+    , m_mode(mode)
 {
     setProperty("role", UiRoles::Schedule);
 
@@ -152,6 +187,8 @@ ScheduleSectionWidget::ScheduleSectionWidget(
 
 void ScheduleSectionWidget::refreshSchedule()
 {
+    loadSettings();
+    updateButtons();
     loadSchedule();
 }
 
@@ -161,21 +198,55 @@ void ScheduleSectionWidget::retranslateUi()
     loadSchedule();
 }
 
+ScheduleDisplayState ScheduleSectionWidget::displayState() const
+{
+    ScheduleDisplayState state;
+    state.use24HourTime = m_use24h;
+    state.showIntensive = m_showIntensive;
+    state.showAllHours = m_showAllHours;
+    state.hideEmptyRows = m_hideEmptyRows;
+    state.showWeekends = m_showWeekends;
+
+    return state;
+}
+
+ScheduleViewModel ScheduleSectionWidget::scheduleModel() const
+{
+    return m_scheduleModel;
+}
+
+QSet<int> ScheduleSectionWidget::visibleClassIds() const
+{
+    QSet<int> classIds;
+
+    for (const ScheduleRowView& row : m_scheduleModel.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.classId > 0)
+                {
+                    classIds.insert(entry.classId);
+                }
+            }
+        }
+    }
+
+    return classIds;
+}
+
 void ScheduleSectionWidget::setUse24HourTime(
     bool use24h
     )
 {
     m_use24h = use24h;
 
-    if (auto* dataService = openDataService(m_services))
-    {
-        dataService->saveSetting(
-            QStringLiteral("schedule_use_24h"),
-            m_use24h
-                ? QStringLiteral("true")
-                : QStringLiteral("false")
-            );
-    }
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::Use24HourTime,
+        m_use24h
+        );
 
     updateButtons();
     loadSchedule();
@@ -187,6 +258,12 @@ void ScheduleSectionWidget::setShowIntensiveSchedule(
 {
     m_showIntensive = showIntensive;
 
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::ShowIntensive,
+        m_showIntensive
+        );
+
     updateButtons();
     loadSchedule();
 }
@@ -196,6 +273,13 @@ void ScheduleSectionWidget::setShowAllHours(
     )
 {
     m_showAllHours = showAllHours;
+
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::ShowAllHours,
+        m_showAllHours
+        );
+
     updateButtons();
     loadSchedule();
 }
@@ -205,6 +289,13 @@ void ScheduleSectionWidget::setHideEmptyRows(
     )
 {
     m_hideEmptyRows = hideEmptyRows;
+
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::HideEmptyRows,
+        m_hideEmptyRows
+        );
+
     updateButtons();
     loadSchedule();
 }
@@ -215,15 +306,11 @@ void ScheduleSectionWidget::setShowWeekends(
 {
     m_showWeekends = showWeekends;
 
-    if (auto* dataService = openDataService(m_services))
-    {
-        dataService->saveSetting(
-            QStringLiteral("schedule_show_weekends"),
-            m_showWeekends
-                ? QStringLiteral("true")
-                : QStringLiteral("false")
-            );
-    }
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::ShowWeekends,
+        m_showWeekends
+        );
 
     updateButtons();
     loadSchedule();
@@ -234,6 +321,11 @@ void ScheduleSectionWidget::onCellClicked(
     int column
     )
 {
+    if (m_mode == ScheduleSectionMode::ReadOnly)
+    {
+        return;
+    }
+
     if (column == 0)
     {
         return;
@@ -474,6 +566,9 @@ void ScheduleSectionWidget::buildUi()
             6,
             this
             );
+    m_table->setObjectName(
+        QStringLiteral("scheduleTable")
+        );
 
     m_table->setProperty(
         "role",
@@ -499,8 +594,14 @@ void ScheduleSectionWidget::buildUi()
 
     layout->addWidget(m_table);
 
+    m_controlsWidget =
+        new QWidget(this);
+    m_controlsWidget->setObjectName(
+        QStringLiteral("scheduleControls")
+        );
+
     auto* controlsLayout =
-        new QHBoxLayout;
+        new QHBoxLayout(m_controlsWidget);
 
     controlsLayout->setContentsMargins(
         0,
@@ -512,25 +613,46 @@ void ScheduleSectionWidget::buildUi()
 
     m_use24HourTimeCheckBox =
         new QCheckBox(this);
+    m_use24HourTimeCheckBox->setObjectName(
+        QStringLiteral("scheduleUse24HourTimeCheckBox")
+        );
 
     m_showWeekendsCheckBox =
         new QCheckBox(this);
+    m_showWeekendsCheckBox->setObjectName(
+        QStringLiteral("scheduleShowWeekendsCheckBox")
+        );
 
     m_showAllHoursCheckBox =
         new QCheckBox(this);
+    m_showAllHoursCheckBox->setObjectName(
+        QStringLiteral("scheduleShowAllHoursCheckBox")
+        );
 
     m_hideEmptyRowsCheckBox =
         new QCheckBox(this);
+    m_hideEmptyRowsCheckBox->setObjectName(
+        QStringLiteral("scheduleHideEmptyRowsCheckBox")
+        );
 
     m_showIntensiveScheduleCheckBox =
         new QCheckBox(this);
+    m_showIntensiveScheduleCheckBox->setObjectName(
+        QStringLiteral("scheduleShowIntensiveCheckBox")
+        );
 
     m_printButton =
         new TextFitPushButton(this);
+    m_printButton->setObjectName(
+        QStringLiteral("schedulePrintButton")
+        );
     m_printButton->setMinimumWidth(120);
 
     m_exportButton =
         new TextFitPushButton(this);
+    m_exportButton->setObjectName(
+        QStringLiteral("scheduleExportButton")
+        );
     m_exportButton->setMinimumWidth(
         m_printButton->minimumWidth()
         );
@@ -563,7 +685,11 @@ void ScheduleSectionWidget::buildUi()
     controlsLayout->addStretch();
     controlsLayout->addLayout(actionsLayout);
 
-    layout->addLayout(controlsLayout);
+    layout->addWidget(m_controlsWidget);
+
+    m_controlsWidget->setHidden(
+        m_mode == ScheduleSectionMode::ReadOnly
+        );
 
     connect(
         m_use24HourTimeCheckBox,
@@ -637,7 +763,7 @@ void ScheduleSectionWidget::loadSettings()
     m_use24h =
         settingToBool(
             dataService->loadSetting(
-                QStringLiteral("schedule_use_24h"),
+                SettingsKeys::Use24HourTime,
                 QStringLiteral("false")
                 ),
             false
@@ -646,10 +772,37 @@ void ScheduleSectionWidget::loadSettings()
     m_showWeekends =
         settingToBool(
             dataService->loadSetting(
-                QStringLiteral("schedule_show_weekends"),
+                SettingsKeys::ShowWeekends,
                 QStringLiteral("false")
                 ),
             false
+            );
+
+    m_showIntensive =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::ShowIntensive,
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    m_showAllHours =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::ShowAllHours,
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    m_hideEmptyRows =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::HideEmptyRows,
+                QStringLiteral("true")
+                ),
+            true
             );
 }
 

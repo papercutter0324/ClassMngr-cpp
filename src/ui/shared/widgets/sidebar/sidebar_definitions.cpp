@@ -63,8 +63,8 @@ QList<TreeNodeSpec> treeStructure()
                 },
 
                 {
-                    "sub_prep_comments",
-                    QObject::tr("Sub Comments"),
+                    "sub_prep_notes",
+                    QObject::tr("Sub Notes"),
                     NodeType::Page
                 }
             }

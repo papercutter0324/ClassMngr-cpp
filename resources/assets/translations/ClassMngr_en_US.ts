@@ -1864,8 +1864,8 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="61"/>
-        <source>Sub Comments</source>
-        <translation>Sub Comments</translation>
+        <source>Sub Notes</source>
+        <translation>Sub Notes</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="69"/>
@@ -3026,8 +3026,8 @@
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="754"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="933"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1437"/>
-        <source>Sub Comments</source>
-        <translation>Sub Comments</translation>
+        <source>Sub Notes</source>
+        <translation>Sub Notes</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="726"/>
@@ -3050,14 +3050,14 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="796"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1172"/>
-        <source>Login Email</source>
-        <translation>Login Email</translation>
+        <source>Zoom Login ID</source>
+        <translation>Zoom Login ID</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="803"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1174"/>
         <source>Password</source>
-        <translation>Password</translation>
+        <translation type="vanished">Password</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="775"/>
@@ -3111,8 +3111,8 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="852"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1363"/>
-        <source>Time Filler Activities</source>
-        <translation>Time Filler Activities</translation>
+        <source>Grading Instructions</source>
+        <translation>Grading Instructions</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="859"/>
@@ -3129,18 +3129,18 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="789"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1446"/>
-        <source>Comments</source>
-        <translation>Comments</translation>
+        <source>Special Instructions</source>
+        <translation>Special Instructions</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1939"/>
-        <source>No classes available.</source>
-        <translation>No classes available.</translation>
+        <source>No scheduled class information available.</source>
+        <translation>No scheduled class information available.</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2021"/>
-        <source>Internet Type</source>
-        <translation>Internet Type</translation>
+        <source>Internet</source>
+        <translation>Internet</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2030"/>
@@ -3149,8 +3149,8 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2060"/>
-        <source>Projection Type</source>
-        <translation>Projection Type</translation>
+        <source>Projection</source>
+        <translation>Projection</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2069"/>
@@ -3195,11 +3195,29 @@
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="2251"/>
         <source>Scoring: 0 / 20 / 40 / 60 / 80 / 100
-Comments: Please leave a comment about what the student did well and what they need to work on.
-Additional Rules: N/A</source>
+Comments: Please leave a comment about what the student did well and what they need to work on.</source>
         <translation>Scoring: 0 / 20 / 40 / 60 / 80 / 100
-Comments: Please leave a comment about what the student did well and what they need to work on.
-Additional Rules: N/A</translation>
+Comments: Please leave a comment about what the student did well and what they need to work on.</translation>
+    </message>
+    <message>
+        <source>Level</source>
+        <translation>Level</translation>
+    </message>
+    <message>
+        <source>Time</source>
+        <translation>Time</translation>
+    </message>
+    <message>
+        <source>Room</source>
+        <translation>Room</translation>
+    </message>
+    <message>
+        <source>Co-Teacher Notes</source>
+        <translation>Co-Teacher Notes</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation>N/A</translation>
     </message>
 </context>
 <context>

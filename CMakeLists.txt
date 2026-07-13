@@ -741,6 +741,130 @@ if(BUILD_TESTING)
         COMMAND ClassMngrSubPrepClassNavigationTests
     )
 
+    qt_add_executable(ClassMngrSubPrepClassInformationModelTests
+        tests/sub_prep_class_information_model_tests.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/domain/models/classroom.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_model.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepClassInformationModelTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepClassInformationModelTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepClassInformationModelTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepClassInformationModelTests
+        COMMAND ClassMngrSubPrepClassInformationModelTests
+    )
+
+    qt_add_executable(ClassMngrScheduleSectionWidgetTests
+        tests/schedule_section_widget_tests.cpp
+        tests/schedule_section_widget_test_stubs.cpp
+        src/domain/models/classroom.cpp
+        src/features/schedule/ui/schedule_editor_dialog.h
+        src/features/schedule/ui/schedule_print_dialog.h
+        src/ui/shared/widgets/sections/schedule_section_widget.cpp
+        src/ui/shared/widgets/sections/schedule_section_widget.h
+    )
+
+    target_compile_features(ClassMngrScheduleSectionWidgetTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrScheduleSectionWidgetTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrScheduleSectionWidgetTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::PrintSupport
+            Qt6::Sql
+            Qt6::Widgets
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrScheduleSectionWidgetTests
+        COMMAND ClassMngrScheduleSectionWidgetTests
+    )
+
+    qt_add_executable(ClassMngrSubPrepPageTests
+        tests/sub_prep_page_tests.cpp
+        tests/schedule_section_widget_test_stubs.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/domain/models/classroom.cpp
+        src/features/campus/data/campus_json_repository.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/schedule/ui/schedule_editor_dialog.h
+        src/features/schedule/ui/schedule_print_dialog.h
+        src/features/sub_prep/ui/sub_prep_class_information_model.cpp
+        src/features/sub_prep/ui/sub_prep_page.cpp
+        src/features/sub_prep/ui/sub_prep_page.h
+        src/features/sub_prep/ui/sub_prep_print_service.cpp
+        src/features/sub_prep/ui/sub_prep_print_service.h
+        src/ui/shared/pages/basepage.cpp
+        src/ui/shared/pages/basepage.h
+        src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
+        src/ui/shared/widgets/sectioncards/class_info_section_card.h
+        src/ui/shared/widgets/sections/schedule_section_widget.cpp
+        src/ui/shared/widgets/sections/schedule_section_widget.h
+    )
+
+    target_compile_features(ClassMngrSubPrepPageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepPageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrSubPrepPageTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrSubPrepPageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
+            Qt6::PrintSupport
+            Qt6::Sql
+            Qt6::Widgets
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepPageTests
+        COMMAND ClassMngrSubPrepPageTests
+    )
+
+    set_tests_properties(
+        ClassMngrScheduleSectionWidgetTests
+        ClassMngrSubPrepPageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrUniformWidthTabBarTests
         tests/uniform_width_tab_bar_tests.cpp
         src/ui/shared/widgets/uniform_width_tab_bar.cpp
@@ -854,6 +978,44 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrSchedulePrintPdfTests
         COMMAND ClassMngrSchedulePrintPdfTests
+    )
+
+    qt_add_executable(ClassMngrSubPrepPrintPdfTests
+        tests/sub_prep_print_pdf_tests.cpp
+        src/core/fontmanager.cpp
+        src/features/schedule/ui/schedule_time_formatter.cpp
+        src/features/schedule/ui/schedule_view_model.cpp
+        src/features/sub_prep/ui/sub_prep_print_service.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepPrintPdfTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepPrintPdfTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepPrintPdfTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepPrintPdfTests
+        COMMAND ClassMngrSubPrepPrintPdfTests
+    )
+
+    set_tests_properties(
+        ClassMngrSubPrepPrintPdfTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrRosterModelTests
@@ -1150,9 +1312,13 @@ if(BUILD_TESTING)
             ClassMngrCalendarEventRepositoryTests
             ClassMngrCalendarImportTests
             ClassMngrSubPrepClassNavigationTests
+            ClassMngrSubPrepClassInformationModelTests
+            ClassMngrScheduleSectionWidgetTests
+            ClassMngrSubPrepPageTests
             ClassMngrUniformWidthTabBarTests
             ClassMngrSchedulePrintModelTests
             ClassMngrSchedulePrintPdfTests
+            ClassMngrSubPrepPrintPdfTests
             ClassMngrRosterModelTests
             ClassMngrRosterTemplatePrintServiceTests
             ClassMngrLanguageServiceTests

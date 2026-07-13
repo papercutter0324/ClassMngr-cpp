@@ -229,3 +229,48 @@ QString SidebarNodeNaming::formatTeacherDisplayName(
 
     return "New Teacher";
 }
+
+bool SidebarNodeNaming::teacherDisplayLessThan(
+    const Teacher& left,
+    const Teacher& right
+    )
+{
+    const QString leftEnglish =
+        left.teacherEn.trimmed();
+    const QString rightEnglish =
+        right.teacherEn.trimmed();
+
+    const bool leftHasEnglish =
+        !leftEnglish.isEmpty();
+    const bool rightHasEnglish =
+        !rightEnglish.isEmpty();
+
+    if (leftHasEnglish != rightHasEnglish)
+    {
+        return leftHasEnglish;
+    }
+
+    const int englishComparison =
+        QString::localeAwareCompare(
+            leftEnglish,
+            rightEnglish
+            );
+
+    if (englishComparison != 0)
+    {
+        return englishComparison < 0;
+    }
+
+    const int koreanComparison =
+        QString::localeAwareCompare(
+            left.teacherKr.trimmed(),
+            right.teacherKr.trimmed()
+            );
+
+    if (koreanComparison != 0)
+    {
+        return koreanComparison < 0;
+    }
+
+    return left.id < right.id;
+}

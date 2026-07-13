@@ -3,6 +3,7 @@
 #include "features/schedule/ui/schedule_view_model.h"
 
 #include <QMap>
+#include <QSet>
 #include <QWidget>
 
 class ApplicationServices;
@@ -11,6 +12,21 @@ class QLabel;
 class QPushButton;
 class QTableWidget;
 
+enum class ScheduleSectionMode
+{
+    Interactive,
+    ReadOnly
+};
+
+struct ScheduleDisplayState
+{
+    bool use24HourTime = false;
+    bool showIntensive = false;
+    bool showAllHours = false;
+    bool hideEmptyRows = true;
+    bool showWeekends = false;
+};
+
 class ScheduleSectionWidget : public QWidget
 {
     Q_OBJECT
@@ -18,11 +34,15 @@ class ScheduleSectionWidget : public QWidget
 public:
     explicit ScheduleSectionWidget(
         ApplicationServices* services,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ScheduleSectionMode mode = ScheduleSectionMode::Interactive
         );
 
     void refreshSchedule();
     void retranslateUi();
+    [[nodiscard]] ScheduleDisplayState displayState() const;
+    [[nodiscard]] ScheduleViewModel scheduleModel() const;
+    [[nodiscard]] QSet<int> visibleClassIds() const;
 
 signals:
     void classInfoSaved(
@@ -67,6 +87,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    ScheduleSectionMode m_mode = ScheduleSectionMode::Interactive;
 
     bool m_use24h = false;
     bool m_showIntensive = false;
@@ -79,6 +100,7 @@ private:
     ScheduleViewModel m_scheduleModel;
 
     QTableWidget* m_table = nullptr;
+    QWidget* m_controlsWidget = nullptr;
     QCheckBox* m_use24HourTimeCheckBox = nullptr;
     QCheckBox* m_showWeekendsCheckBox = nullptr;
     QCheckBox* m_showAllHoursCheckBox = nullptr;
