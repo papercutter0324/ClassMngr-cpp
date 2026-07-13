@@ -34,13 +34,14 @@ constexpr qreal CriteriaMetricHeight = 6.0;
 constexpr int GrammarMetricCount = 8;
 constexpr qreal GrammarMetricsCellHeight = 81.0;
 // Grammar has 14.5 points remaining below its eight 6-point metric rows.
-// Distributing that over its seven inter-metric gaps adds 2.07143 points to
-// each gap, filling the existing cell without changing its height.
+// Distributing that over its seven inter-metric gaps and the final bottom gap
+// adds 1.8125 points to each gap, keeping the final metric clear of the cell
+// border without changing the existing cell height.
 constexpr qreal CriteriaMetricExtraSpacing =
     (GrammarMetricsCellHeight
      - CriteriaMetricsTopInset
      - (CriteriaMetricHeight * GrammarMetricCount))
-    / (GrammarMetricCount - 1);
+    / GrammarMetricCount;
 constexpr qreal CriteriaMetricPitch =
     CriteriaMetricHeight + CriteriaMetricExtraSpacing;
 
@@ -291,11 +292,25 @@ void drawLabelAndValue(
         );
     painter->setPen(Qt::black);
     const QFontMetricsF valueMetrics(painter->font());
+    const qreal underlineTop =
+        underlineY - (linePen.widthF() / 2.0);
+    qreal valueBaseline =
+        underlineTop;
+
+    if (koreanValue)
+    {
+        valueBaseline -=
+            std::max(
+                0.0,
+                valueMetrics.tightBoundingRect(value).bottom()
+                );
+    }
+
     painter->drawText(
         QPointF(
             valueTextRect.center().x()
                 - (valueMetrics.horizontalAdvance(value) / 2.0),
-            underlineY - (linePen.widthF() / 2.0)
+            valueBaseline
             ),
         value
         );
