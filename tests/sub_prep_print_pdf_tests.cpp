@@ -8,6 +8,7 @@
 #include <QImage>
 #include <QPageSize>
 #include <QPdfDocument>
+#include <QPdfSelection>
 #include <QRect>
 #include <QTemporaryDir>
 
@@ -73,7 +74,11 @@ SubPrepPrintService::Request sampleRequest()
         cell.defaultSlotState = scheduleEmptySlotState();
         cell.slotState = cell.defaultSlotState;
 
-        if (day == QStringLiteral("Tuesday"))
+        if (day == QStringLiteral("Monday"))
+        {
+            cell.slotState = scheduleEssaySlotState();
+        }
+        else if (day == QStringLiteral("Tuesday"))
         {
             ScheduleEntry entry;
             entry.classId = 42;
@@ -108,6 +113,8 @@ SubPrepPrintService::Request sampleRequest()
     details.classId = 42;
     details.classLabel = QStringLiteral("E4 Hercules");
     details.info.classLevel = QStringLiteral("Hercules");
+    details.info.classColor = QStringLiteral("#dbeafe");
+    details.info.fontColor = QStringLiteral("#1e3a5f");
     details.info.notes = QStringLiteral("Read chapter three and discuss the vocabulary.");
     details.studentCount = 12;
     details.timeText = QStringLiteral("Tues 4pm");
@@ -191,6 +198,55 @@ QRect nonWhiteBounds(
 
     return QRect(QPoint(left, top), QPoint(right, bottom));
 }
+
+QString documentText(
+    QPdfDocument& document
+    )
+{
+    QString text;
+
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        text += document.getAllText(pageIndex).text();
+    }
+
+    return text;
+}
+
+QString pageText(
+    QPdfDocument& document,
+    int pageIndex
+    )
+{
+    return document.getAllText(pageIndex).text();
+}
+
+int longestVerticalInkRun(
+    const QImage& image,
+    const QRect& area
+    )
+{
+    int longestRun = 0;
+
+    for (int x = area.left(); x <= area.right(); ++x)
+    {
+        int currentRun = 0;
+
+        for (int y = area.top(); y <= area.bottom(); ++y)
+        {
+            if (isWhitePixel(image.pixelColor(x, y)))
+            {
+                currentRun = 0;
+                continue;
+            }
+
+            ++currentRun;
+            longestRun = std::max(longestRun, currentRun);
+        }
+    }
+
+    return longestRun;
+}
 }
 
 class SubPrepPrintPdfTests : public QObject
@@ -199,6 +255,10 @@ class SubPrepPrintPdfTests : public QObject
 
 private slots:
     void generatedPdfUsesA4PortraitWithNarrowMargins();
+    void rendersEssayScheduleSlots();
+    void omitsUnavailableZoomInformation();
+    void rendersTeacherReferenceTableAndClassList();
+    void keepsTeacherSectionsTogetherAcrossPages();
     void longNotesFlowOntoAdditionalPages();
 };
 
@@ -238,6 +298,141 @@ void SubPrepPrintPdfTests::generatedPdfUsesA4PortraitWithNarrowMargins()
     QVERIFY(bounds.top() >= marginPixels - TolerancePixels);
     QVERIFY(bounds.right() <= image.width() - marginPixels + TolerancePixels);
     QVERIFY(bounds.bottom() <= image.height() - marginPixels + TolerancePixels);
+
+    const QRect rightBodyArea(
+        image.width() / 2,
+        image.height() / 8,
+        image.width() / 2 - marginPixels + TolerancePixels,
+        image.height() * 3 / 8
+        );
+    QVERIFY2(
+        longestVerticalInkRun(image, rightBodyArea)
+            >= qRound(RenderDpi * 0.25),
+        "The printable tables should extend through the right side of the page."
+        );
+}
+
+void SubPrepPrintPdfTests::rendersEssayScheduleSlots()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Essay Sub Prep.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(sampleRequest(), path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    QVERIFY(documentText(document).contains(QStringLiteral("Essay")));
+}
+
+void SubPrepPrintPdfTests::omitsUnavailableZoomInformation()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    request.zoom.loginId = QStringLiteral("N/A");
+    request.zoom.password = QStringLiteral("N/A");
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("No Zoom Sub Prep.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    const QString text =
+        documentText(document);
+    QVERIFY(!text.contains(QStringLiteral("Personal Zoom Information")));
+    QVERIFY(!text.contains(QStringLiteral("Zoom Login ID")));
+}
+
+void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    SubPrepClassInformation::ClassDetails duplicate =
+        request.classInformation.first().classes.first();
+    duplicate.classId = 43;
+    request.classInformation.first().classes.append(duplicate);
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Teacher Reference Sub Prep.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    const QString text =
+        documentText(document);
+    QVERIFY(text.contains(QStringLiteral("Korean Teacher Name")));
+    QVERIFY(text.contains(QStringLiteral("김선생")));
+    QVERIFY(text.contains(QStringLiteral("Internet Type")));
+    QVERIFY(text.contains(QStringLiteral("Projection Type")));
+    QCOMPARE(text.count(QStringLiteral("E4 Hercules")), 2);
+    QCOMPARE(text.count(QStringLiteral("Tues 4pm")), 2);
+    QCOMPARE(text.count(QStringLiteral("12 Students")), 2);
+}
+
+void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    SubPrepClassInformation::TeacherGroup firstGroup =
+        request.classInformation.first();
+    firstGroup.displayName = QStringLiteral("First Teacher");
+    firstGroup.classes.clear();
+
+    for (int classIndex = 0; classIndex < 14; ++classIndex)
+    {
+        SubPrepClassInformation::ClassDetails details =
+            request.classInformation.first().classes.first();
+        details.classId = 100 + classIndex;
+        details.classLabel =
+            QStringLiteral("First Class %1").arg(classIndex + 1);
+        details.info.notes =
+            QStringLiteral("Bring the required materials and complete the review activity.");
+        firstGroup.classes.append(details);
+    }
+
+    SubPrepClassInformation::TeacherGroup secondGroup =
+        request.classInformation.first();
+    secondGroup.displayName = QStringLiteral("Second Teacher");
+    secondGroup.classes.first().classLabel = QStringLiteral("Second Teacher Class");
+    request.classInformation = {firstGroup, secondGroup};
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Teacher Page Breaks.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    QVERIFY(document.pageCount() >= 3);
+    QVERIFY(pageText(document, 1).contains(QStringLiteral("First Teacher")));
+    QVERIFY(!pageText(document, 1).contains(QStringLiteral("Second Teacher")));
+    QVERIFY(pageText(document, 2).contains(QStringLiteral("Second Teacher")));
+    QVERIFY(
+        pageText(document, 2).contains(
+            QStringLiteral("Second Teacher Class")
+            )
+        );
 }
 
 void SubPrepPrintPdfTests::longNotesFlowOntoAdditionalPages()

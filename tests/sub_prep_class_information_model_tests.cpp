@@ -49,6 +49,7 @@ private slots:
     void formatsSharedAndDifferentMeetingTimes();
     void filtersHiddenDaysAndInvalidTimes();
     void groupsSortsAndDeduplicatesVisibleClasses();
+    void collapsesRepeatedClassLabelsInTeacherHeading();
     void selectedScheduleModeControlsDetails();
     void fallsBackForMissingTeacherAndClassNames();
 };
@@ -226,6 +227,43 @@ void SubPrepClassInformationModelTests
         groups.first().classes.first().timeText,
         QStringLiteral("Wed 10am")
         );
+}
+
+void SubPrepClassInformationModelTests
+    ::collapsesRepeatedClassLabelsInTeacherHeading()
+{
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Emma");
+
+    SubPrepClassInformation::BuildOptions options;
+    options.visibleClassIds = {1, 2};
+    options.visibleDays = {QStringLiteral("Monday")};
+
+    const auto groups =
+        SubPrepClassInformation::build(
+            {
+                sourceClass(
+                    1,
+                    teacher,
+                    QStringLiteral("M1"),
+                    QStringLiteral("Major"),
+                    {meeting(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+                    ),
+                sourceClass(
+                    2,
+                    teacher,
+                    QStringLiteral("M1"),
+                    QStringLiteral("Major"),
+                    {meeting(QStringLiteral("Monday"), QStringLiteral("5:00 PM"))}
+                    )
+            },
+            options
+            );
+
+    QCOMPARE(groups.size(), 1);
+    QCOMPARE(groups.first().classes.size(), 2);
+    QCOMPARE(groups.first().classListText, QStringLiteral("M1 Major"));
 }
 
 void SubPrepClassInformationModelTests

@@ -490,9 +490,16 @@ SubPrepClassInformation::build(
             );
 
         QStringList classLabels;
+        QSet<QString> seenClassLabels;
 
         for (const ClassDetails& details : classes)
         {
+            if (seenClassLabels.contains(details.classLabel))
+            {
+                continue;
+            }
+
+            seenClassLabels.insert(details.classLabel);
             classLabels.append(details.classLabel);
         }
 
