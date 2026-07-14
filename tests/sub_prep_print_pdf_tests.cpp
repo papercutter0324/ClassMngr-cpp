@@ -247,6 +247,45 @@ int longestVerticalInkRun(
 
     return longestRun;
 }
+
+bool isNearColor(
+    const QColor& actual,
+    const QColor& expected,
+    int tolerance = 8
+    )
+{
+    return std::abs(actual.red() - expected.red()) <= tolerance
+        && std::abs(actual.green() - expected.green()) <= tolerance
+        && std::abs(actual.blue() - expected.blue()) <= tolerance;
+}
+
+int longestVerticalColorRun(
+    const QImage& image,
+    const QRect& area,
+    const QColor& expected
+    )
+{
+    int longestRun = 0;
+
+    for (int x = area.left(); x <= area.right(); ++x)
+    {
+        int currentRun = 0;
+
+        for (int y = area.top(); y <= area.bottom(); ++y)
+        {
+            if (!isNearColor(image.pixelColor(x, y), expected))
+            {
+                currentRun = 0;
+                continue;
+            }
+
+            ++currentRun;
+            longestRun = std::max(longestRun, currentRun);
+        }
+    }
+
+    return longestRun;
+}
 }
 
 class SubPrepPrintPdfTests : public QObject
@@ -258,6 +297,7 @@ private slots:
     void rendersEssayScheduleSlots();
     void omitsUnavailableZoomInformation();
     void rendersTeacherReferenceTableAndClassList();
+    void teacherSectionBordersUseScheduleColor();
     void keepsTeacherSectionsTogetherAcrossPages();
     void longNotesFlowOntoAdditionalPages();
 };
@@ -384,6 +424,77 @@ void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
     QCOMPARE(text.count(QStringLiteral("E4 Hercules")), 2);
     QCOMPARE(text.count(QStringLiteral("Tues 4pm")), 2);
     QCOMPARE(text.count(QStringLiteral("12 Students")), 2);
+}
+
+void SubPrepPrintPdfTests::teacherSectionBordersUseScheduleColor()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    const QString accent = QStringLiteral("#d05a7a");
+    request.schedule.rows.first().cells[1].entries.first().classColor =
+        accent;
+    request.classInformation.first().classes.first().info.classColor =
+        accent;
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Teacher Border Colors.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    int teacherPage = -1;
+
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        if (pageText(document, pageIndex).contains(QStringLiteral("Susan")))
+        {
+            teacherPage = pageIndex;
+            break;
+        }
+    }
+
+    QVERIFY(teacherPage >= 0);
+
+    const QImage image = renderPage(document, teacherPage);
+    QVERIFY(!image.isNull());
+
+    const int marginPixels =
+        qRound(MarginInches * RenderDpi);
+    constexpr int BorderSearchWidth = 24;
+    const QRect leftBorderArea(
+        marginPixels - 4,
+        marginPixels,
+        BorderSearchWidth,
+        image.height() - (2 * marginPixels)
+        );
+    const QRect rightBorderArea(
+        image.width() - marginPixels - BorderSearchWidth + 4,
+        marginPixels,
+        BorderSearchWidth,
+        image.height() - (2 * marginPixels)
+        );
+    const int longestRun =
+        std::max(
+            longestVerticalColorRun(image, leftBorderArea, QColor(accent)),
+            longestVerticalColorRun(image, rightBorderArea, QColor(accent))
+            );
+
+    QVERIFY2(
+        longestRun >= qRound(RenderDpi * 0.5),
+        qPrintable(
+            QStringLiteral(
+                "The schedule color should outline the teacher header and content; "
+                "the longest detected edge was %1 px."
+                )
+                .arg(longestRun)
+            )
+        );
 }
 
 void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()

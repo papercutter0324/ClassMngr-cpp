@@ -365,7 +365,8 @@ QString scheduleHtml(
 }
 
 QString teacherHeadingHtml(
-    const SubPrepClassInformation::TeacherGroup& group
+    const SubPrepClassInformation::TeacherGroup& group,
+    const QString& borderColor
     )
 {
     QString background =
@@ -391,13 +392,29 @@ QString teacherHeadingHtml(
 
     return QStringLiteral(
         "<tr><td class=\"teacher-heading\" "
-        "style=\"background:%1;border-color:%1;color:%2;\">%3</td></tr>"
+        "style=\"background:%1;border:1px solid %2;color:%3;\">%4</td></tr>"
         )
         .arg(
             background,
+            borderColor,
             foreground,
             htmlText(displayValue(group.displayName))
             );
+}
+
+QString teacherBorderColor(
+    const SubPrepClassInformation::TeacherGroup& group
+    )
+{
+    if (group.classes.isEmpty())
+    {
+        return QStringLiteral("#3f7c96");
+    }
+
+    return validColor(
+        group.classes.first().info.classColor,
+        QStringLiteral("#3f7c96")
+        );
 }
 
 QString classInformationHtml(
@@ -423,6 +440,8 @@ QString classInformationHtml(
     {
         const SubPrepClassInformation::TeacherGroup& group =
             groups.at(groupIndex);
+        const QString borderColor =
+            teacherBorderColor(group);
         html += QStringLiteral(
             "<div class=\"teacher-card-wrapper%1\">"
             )
@@ -435,8 +454,12 @@ QString classInformationHtml(
             "<table class=\"teacher-card\" width=\"100%\" "
             "cellspacing=\"0\" cellpadding=\"0\">"
             );
-        html += teacherHeadingHtml(group);
-        html += QStringLiteral("<tr><td class=\"teacher-card-content\">");
+        html += teacherHeadingHtml(group, borderColor);
+        html += QStringLiteral(
+            "<tr><td class=\"teacher-card-content\" "
+            "style=\"border:1px solid %1;border-top:0;\">"
+            )
+            .arg(borderColor);
 
         html += factsHtml(
             {
