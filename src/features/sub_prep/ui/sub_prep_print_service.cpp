@@ -35,6 +35,13 @@ constexpr qreal SubPrepPdfMarginInches = 0.5;
 constexpr int SubPrepPdfResolutionDpi = 300;
 constexpr qreal FooterHeightInches = 0.24;
 constexpr qreal SubNotesLineSpacingPoints = 16.0;
+constexpr qreal ScheduleTimeColumnWidthPoints = 64.0;
+constexpr int WeekdayScheduleColumnCount = 5;
+constexpr int WeekendScheduleColumnCount = 7;
+constexpr qreal CssPixelsPerPoint = 96.0 / 72.0;
+#ifdef Q_OS_WIN
+constexpr qreal ScheduleTableWindowsLeftShiftPoints = 1.0;
+#endif
 
 Result failed(
     const QString& message
@@ -213,6 +220,14 @@ QString scheduleCellHtml(
     return entries;
 }
 
+struct ScheduleTableLayout
+{
+    qreal timeColumnWidth = 0.0;
+    qreal dayColumnMinimumWidth = 0.0;
+    qreal tableContentWidth = 0.0;
+    qreal leftMargin = 0.0;
+};
+
 QString factsHtml(
     const QList<QPair<QString, QString>>& facts,
     int columnCount = 2,
@@ -361,15 +376,15 @@ QString scheduleHtml(
     }
 
     QString html = QStringLiteral(
-        "<table class=\"schedule\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\">"
-        "<tr><th width=\"12%\">"
+        "<table class=\"schedule\" align=\"center\" cellspacing=\"0\" cellpadding=\"0\">"
+        "<tr><th>%1</th>"
         )
-        + htmlText(translate("Time"))
-        + QStringLiteral("</th>");
+        .arg(htmlText(translate("Time")));
 
     for (const QString& day : schedule.days)
     {
-        html += QStringLiteral("<th>%1</th>").arg(htmlText(day));
+        html += QStringLiteral("<th>%1</th>")
+            .arg(htmlText(day));
     }
 
     html += QStringLiteral("</tr>");
@@ -777,11 +792,11 @@ QString documentStyleSheet()
         ".co-teacher-note { margin-left:4em; }"
         ".sub-notes-prompt { margin:0; }"
         ".schedule { border:1px solid #000000; border-collapse:collapse; font-size:8.5pt; margin:0 0 8px 0; "
-        "page-break-inside:avoid; table-layout:fixed; width:100%; }"
+        "page-break-inside:avoid; table-layout:fixed; }"
         ".schedule th { background:#244b5f; border:1px solid #000000; color:#ffffff; "
-        "font-weight:700; padding:7px 4px; }"
+        "font-weight:700; padding:7px 4px; text-align:center; }"
         ".schedule td { border:1px solid #000000; padding:5px 4px; text-align:center; vertical-align:middle; }"
-        ".schedule-time { background:#e9f1f5; color:#263f4b; font-weight:700; width:12%; }"
+        ".schedule-time { background:#e9f1f5; color:#263f4b; font-weight:700; }"
         ".schedule-entry { margin:1px 0; padding:4px 3px; }"
         ".schedule-slot { font-weight:700; padding:6px 3px; }"
         ".essay { background:#ffffff; color:#000000; font-size:12pt; font-style:normal; font-weight:700; }"
@@ -869,6 +884,86 @@ QSet<int> teacherSectionsThatSpanPages(
     }
 
     return groups;
+}
+
+void collectTables(
+    QTextFrame* frame,
+    QList<QTextTable*>& tables
+    )
+{
+    for (QTextFrame* childFrame : frame->childFrames())
+    {
+        if (auto* table = dynamic_cast<QTextTable*>(childFrame))
+        {
+            tables.append(table);
+        }
+
+        collectTables(childFrame, tables);
+    }
+}
+
+void applyScheduleTableLayout(
+    QTextDocument& document,
+    const ScheduleViewModel& schedule,
+    const ScheduleTableLayout& layout
+    )
+{
+    if (schedule.rows.isEmpty() || schedule.days.isEmpty())
+    {
+        return;
+    }
+
+    QList<QTextTable*> tables;
+    collectTables(document.rootFrame(), tables);
+
+    const int expectedRowCount = schedule.rows.size() + 1;
+    const int expectedColumnCount = schedule.days.size() + 1;
+    const auto table = std::find_if(
+        tables.cbegin(),
+        tables.cend(),
+        [expectedRowCount, expectedColumnCount](const QTextTable* candidate)
+        {
+            return candidate
+                && candidate->rows() == expectedRowCount
+                && candidate->columns() == expectedColumnCount;
+        }
+        );
+
+    if (table == tables.cend())
+    {
+        return;
+    }
+
+    QList<QTextLength> columnWidths;
+    columnWidths.append(
+        QTextLength(
+            QTextLength::FixedLength,
+            layout.timeColumnWidth
+            )
+        );
+
+    for (int index = 0; index < schedule.days.size(); ++index)
+    {
+        columnWidths.append(
+            QTextLength(
+                QTextLength::FixedLength,
+                layout.dayColumnMinimumWidth
+                )
+            );
+    }
+
+    QTextTableFormat format = (*table)->format();
+    format.setWidth(
+        QTextLength(
+            QTextLength::FixedLength,
+            layout.tableContentWidth
+            )
+        );
+    format.setColumnWidthConstraints(columnWidths);
+    format.setLeftMargin(layout.leftMargin);
+    format.setRightMargin(0.0);
+    format.setAlignment(Qt::AlignLeft);
+    (*table)->setFormat(format);
 }
 
 std::optional<QRectF> textBlockBounds(
@@ -991,6 +1086,55 @@ qreal pixelsForPoints(
     )
 {
     return points * std::max(1, resolutionDpi) / 72.0;
+}
+
+ScheduleTableLayout scheduleTableLayout(
+    qreal documentWidthPixels,
+    int resolutionDpi,
+    const ScheduleViewModel& schedule
+    )
+{
+    const qreal documentWidth =
+        documentWidthPixels * 72.0
+        / std::max(1, resolutionDpi);
+    const qreal timeColumnWidth =
+        ScheduleTimeColumnWidthPoints * CssPixelsPerPoint;
+    const qreal availableDayWidth =
+        std::max(
+            0.0,
+            documentWidth - ScheduleTimeColumnWidthPoints
+            );
+    const bool showsWeekends =
+        schedule.days.contains(QStringLiteral("Saturday"))
+        || schedule.days.contains(QStringLiteral("Sunday"));
+    const int dayColumnCount =
+        showsWeekends
+            ? WeekendScheduleColumnCount
+            : WeekdayScheduleColumnCount;
+
+    const qreal dayColumnMinimumWidth =
+        (availableDayWidth / dayColumnCount) * CssPixelsPerPoint;
+    const qreal tableWidth =
+        timeColumnWidth
+        + (dayColumnMinimumWidth * schedule.days.size());
+    const qreal documentWidthCssPixels =
+        documentWidth * CssPixelsPerPoint;
+    qreal leftMargin =
+        (documentWidthCssPixels - tableWidth) / 2.0;
+
+#ifdef Q_OS_WIN
+    // QTextDocument's Windows PDF layout leaves the table a fraction to the
+    // right of the section header. Nudge it back to the header's center.
+    leftMargin -=
+        ScheduleTableWindowsLeftShiftPoints * CssPixelsPerPoint;
+#endif
+
+    return {
+        timeColumnWidth,
+        dayColumnMinimumWidth,
+        tableWidth,
+        leftMargin
+    };
 }
 
 std::optional<qreal> subNotesWritingStart(
@@ -1162,6 +1306,12 @@ Result saveSubPrepPdf(
     document.setDefaultStyleSheet(documentStyleSheet());
     document.setDocumentMargin(0.0);
     document.setPageSize(body.size());
+    const ScheduleTableLayout scheduleLayout =
+        scheduleTableLayout(
+            body.width(),
+            writer.resolution(),
+            request.schedule
+            );
 
     QSet<int> pageBreakBeforeTeacherGroups;
     bool startSubNotesOnNewPage = false;
@@ -1174,6 +1324,11 @@ Result saveSubPrepPdf(
                 pageBreakBeforeTeacherGroups,
                 startSubNotesOnNewPage
                 )
+            );
+        applyScheduleTableLayout(
+            document,
+            request.schedule,
+            scheduleLayout
             );
 
         const QSet<int> spanningGroups =
@@ -1203,6 +1358,11 @@ Result saveSubPrepPdf(
             pageBreakBeforeTeacherGroups,
             startSubNotesOnNewPage
             )
+        );
+    applyScheduleTableLayout(
+        document,
+        request.schedule,
+        scheduleLayout
         );
     const std::optional<qreal> subNotesLineStart =
         subNotesWritingStart(

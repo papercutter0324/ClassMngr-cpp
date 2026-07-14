@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
+#include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "ui/shared/widgets/sections/schedule_section_widget.h"
 
@@ -9,6 +10,8 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QScrollArea>
+#include <QCheckBox>
+#include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
@@ -51,6 +54,7 @@ private slots:
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void zoomUnavailableHidesStoredCredentials();
+    void printDialogSelectsVacationDaysFromTheCurrentOrFollowingWeek();
 };
 
 void SubPrepPageTests::init()
@@ -412,6 +416,94 @@ void SubPrepPageTests
                 )
             .toString(),
         QStringLiteral("legacy@example.com")
+        );
+}
+
+void SubPrepPageTests
+    ::printDialogSelectsVacationDaysFromTheCurrentOrFollowingWeek()
+{
+    const QDate wednesday(2026, 7, 15);
+    CalendarEvent currentWeekVacation;
+    currentWeekVacation.eventType = QStringLiteral("Vacation");
+    currentWeekVacation.startDate = QDate(2026, 7, 14);
+    currentWeekVacation.endDate = QDate(2026, 7, 16);
+
+    CalendarEvent nextWeekVacation;
+    nextWeekVacation.eventType = QStringLiteral("Vacation");
+    nextWeekVacation.startDate = QDate(2026, 7, 20);
+    nextWeekVacation.endDate = QDate(2026, 7, 21);
+
+    CalendarEvent currentWeekHoliday;
+    currentWeekHoliday.eventType = QStringLiteral("Holiday");
+    currentWeekHoliday.startDate = QDate(2026, 7, 13);
+    currentWeekHoliday.endDate = QDate(2026, 7, 17);
+
+    QCOMPARE(
+        SubPrepPrintDialog::defaultSelectedDays(
+            {currentWeekVacation, nextWeekVacation, currentWeekHoliday},
+            wednesday
+            ),
+        QStringList({
+            QStringLiteral("Tuesday"),
+            QStringLiteral("Wednesday"),
+            QStringLiteral("Thursday")
+        })
+        );
+    QCOMPARE(
+        SubPrepPrintDialog::defaultSelectedDays(
+            {nextWeekVacation, currentWeekHoliday},
+            wednesday
+            ),
+        QStringList({
+            QStringLiteral("Monday"),
+            QStringLiteral("Tuesday")
+        })
+        );
+    QVERIFY(
+        SubPrepPrintDialog::defaultSelectedDays(
+            {currentWeekHoliday},
+            wednesday
+            ).isEmpty()
+        );
+
+    SubPrepPrintDialog dialog(
+        {currentWeekVacation},
+        wednesday
+        );
+    QVERIFY(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintTuesdayCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintWednesdayCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintThursdayCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        !dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintMondayCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("subPrepPrintCancelButton")
+            )
+        );
+    QVERIFY(
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("subPrepPrintSaveAsButton")
+            )
+        );
+    QVERIFY(
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("subPrepPrintButton")
+            )
         );
 }
 

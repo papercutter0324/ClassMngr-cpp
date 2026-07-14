@@ -6,6 +6,7 @@
 #include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
+#include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/ui/sub_prep_print_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
@@ -18,6 +19,7 @@
 #include <utility>
 
 #include <QEvent>
+#include <QDate>
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
@@ -29,6 +31,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSet>
 #include <QShowEvent>
 #include <QSignalBlocker>
 #include <QSizePolicy>
@@ -243,6 +246,70 @@ QFrame* createSeparator(
         );
 
     return separator;
+}
+
+ScheduleViewModel scheduleForDays(
+    const ScheduleViewModel& source,
+    const QStringList& selectedDays
+    )
+{
+    ScheduleViewModel result = source;
+    result.days.clear();
+    result.rows.clear();
+
+    for (const QString& day : source.days)
+    {
+        if (selectedDays.contains(day))
+        {
+            result.days.append(day);
+        }
+    }
+
+    if (result.days.isEmpty())
+    {
+        return result;
+    }
+
+    for (const ScheduleRowView& sourceRow : source.rows)
+    {
+        ScheduleRowView row = sourceRow;
+        row.cells.clear();
+
+        for (const ScheduleCellView& cell : sourceRow.cells)
+        {
+            if (result.days.contains(cell.day))
+            {
+                row.cells.append(cell);
+            }
+        }
+
+        result.rows.append(row);
+    }
+
+    return result;
+}
+
+QSet<int> visibleClassIds(
+    const ScheduleViewModel& schedule
+    )
+{
+    QSet<int> classIds;
+
+    for (const ScheduleRowView& row : schedule.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.classId > 0)
+                {
+                    classIds.insert(entry.classId);
+                }
+            }
+        }
+    }
+
+    return classIds;
 }
 }
 
@@ -648,6 +715,33 @@ void SubPrepPage::printSubPrep()
 
     refreshGeneratedContent();
 
+    QList<CalendarEvent> calendarEvents;
+    const QDate currentDate = QDate::currentDate();
+
+    if (auto* dataService = openDataService(m_services))
+    {
+        const QDate currentWeekStart =
+            currentDate.addDays(
+                Qt::Monday - currentDate.dayOfWeek()
+                );
+        calendarEvents =
+            dataService->loadCalendarEventsInRange(
+                currentWeekStart,
+                currentWeekStart.addDays(11)
+                );
+    }
+
+    SubPrepPrintDialog dialog(
+        calendarEvents,
+        currentDate,
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
     SubPrepPrintService::Request request;
     request.parent = this;
     request.campus = {
@@ -673,17 +767,26 @@ void SubPrepPage::printSubPrep()
             ? m_specialInstructionsEdit->toPlainText()
             : QString();
     request.schedule =
-        m_scheduleWidget
-            ? m_scheduleWidget->scheduleModel()
-            : ScheduleViewModel();
-    request.classInformation = buildClassInformation();
+        scheduleForDays(
+            m_scheduleWidget
+                ? m_scheduleWidget->scheduleModel()
+                : ScheduleViewModel(),
+            dialog.selectedDays()
+            );
+    request.classInformation =
+        buildClassInformation(request.schedule);
     request.subNotes =
         m_subNotesEdit
             ? m_subNotesEdit->toPlainText()
             : QString();
 
     const SubPrepPrintService::Result result =
-        SubPrepPrintService::printSubPrep(request);
+        dialog.selectedAction() == SubPrepPrintDialog::Action::SaveAs
+            ? SubPrepPrintService::saveSubPrepPdf(
+                request,
+                dialog.selectedSavePath()
+                )
+            : SubPrepPrintService::printSubPrep(request);
 
     if (result.status == SubPrepPrintService::Status::Failed)
     {
@@ -1732,8 +1835,22 @@ void SubPrepPage::rebuildClassInformation()
 QList<SubPrepClassInformation::TeacherGroup>
 SubPrepPage::buildClassInformation() const
 {
-    auto* dataService =
-        openDataService(m_services);
+    if (!m_scheduleWidget)
+    {
+        return {};
+    }
+
+    return buildClassInformation(
+        m_scheduleWidget->scheduleModel()
+        );
+}
+
+QList<SubPrepClassInformation::TeacherGroup>
+SubPrepPage::buildClassInformation(
+    const ScheduleViewModel& schedule
+    ) const
+{
+    auto* dataService = openDataService(m_services);
 
     if (!dataService || !m_scheduleWidget)
     {
@@ -1771,11 +1888,8 @@ SubPrepPage::buildClassInformation() const
 
     SubPrepClassInformation::BuildOptions options;
     options.visibleClassIds =
-        m_scheduleWidget->visibleClassIds();
-    options.visibleDays =
-        visibleScheduleDays(
-            state.showWeekends
-            );
+        visibleClassIds(schedule);
+    options.visibleDays = schedule.days;
     options.useIntensive =
         state.showIntensive;
 

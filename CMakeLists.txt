@@ -821,6 +821,8 @@ if(BUILD_TESTING)
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
         src/features/sub_prep/ui/sub_prep_page.cpp
         src/features/sub_prep/ui/sub_prep_page.h
+        src/features/sub_prep/ui/sub_prep_print_dialog.cpp
+        src/features/sub_prep/ui/sub_prep_print_dialog.h
         src/features/sub_prep/ui/sub_prep_print_service.cpp
         src/features/sub_prep/ui/sub_prep_print_service.h
         src/ui/shared/pages/basepage.cpp

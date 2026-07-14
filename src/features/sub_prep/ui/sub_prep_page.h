@@ -18,6 +18,7 @@ class QVBoxLayout;
 class QWidget;
 class ScheduleSectionWidget;
 class SectionCard;
+struct ScheduleViewModel;
 
 enum class SubPrepSection
 {
@@ -80,6 +81,9 @@ private:
     void refreshGeneratedContent();
     void rebuildClassInformation();
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation() const;
+    QList<SubPrepClassInformation::TeacherGroup> buildClassInformation(
+        const ScheduleViewModel& schedule
+        ) const;
 
     bool restoreGradingDefaultIfNeeded();
     QString defaultGradingInstructions() const;

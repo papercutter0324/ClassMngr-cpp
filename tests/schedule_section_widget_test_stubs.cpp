@@ -95,6 +95,14 @@ QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()
     return {};
 }
 
+QList<CalendarEvent> DataService::loadCalendarEventsInRange(
+    const QDate&,
+    const QDate&
+    )
+{
+    return {};
+}
+
 void DataService::saveIntensiveSlotState(
     const QString&,
     const QString&,
