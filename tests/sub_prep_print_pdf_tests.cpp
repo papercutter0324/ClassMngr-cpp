@@ -221,6 +221,92 @@ QString pageText(
     return document.getAllText(pageIndex).text();
 }
 
+QRectF textBounds(
+    QPdfDocument& document,
+    int pageIndex,
+    const QString& text
+    )
+{
+    const QString pageContents =
+        pageText(document, pageIndex);
+    const int index =
+        pageContents.indexOf(text);
+
+    if (index < 0)
+    {
+        return {};
+    }
+
+    const QPdfSelection selection =
+        document.getSelectionAtIndex(
+            pageIndex,
+            index,
+            text.size()
+            );
+
+    return selection.isValid()
+        ? selection.boundingRectangle()
+        : QRectF();
+}
+
+QList<QRectF> textBoundsForAllOccurrences(
+    QPdfDocument& document,
+    int pageIndex,
+    const QString& text
+    )
+{
+    QList<QRectF> bounds;
+    const QString pageContents =
+        pageText(document, pageIndex);
+    int startIndex = 0;
+
+    while (true)
+    {
+        const int index =
+            pageContents.indexOf(text, startIndex);
+
+        if (index < 0)
+        {
+            break;
+        }
+
+        const QPdfSelection selection =
+            document.getSelectionAtIndex(
+                pageIndex,
+                index,
+                text.size()
+                );
+
+        if (selection.isValid())
+        {
+            bounds.append(selection.boundingRectangle());
+        }
+
+        startIndex = index + text.size();
+    }
+
+    return bounds;
+}
+
+QRectF firstTextBounds(
+    QPdfDocument& document,
+    const QString& text
+    )
+{
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        const QRectF bounds =
+            textBounds(document, pageIndex, text);
+
+        if (!bounds.isEmpty())
+        {
+            return bounds;
+        }
+    }
+
+    return {};
+}
+
 int longestVerticalInkRun(
     const QImage& image,
     const QRect& area
@@ -286,6 +372,82 @@ int longestVerticalColorRun(
 
     return longestRun;
 }
+
+int horizontalColorLineCount(
+    const QImage& image,
+    const QRect& area,
+    const QColor& expected,
+    int minimumWidth
+    )
+{
+    int lineCount = 0;
+    bool previousRowHadLine = false;
+
+    for (int y = area.top(); y <= area.bottom(); ++y)
+    {
+        int longestRun = 0;
+        int currentRun = 0;
+
+        for (int x = area.left(); x <= area.right(); ++x)
+        {
+            if (!isNearColor(image.pixelColor(x, y), expected))
+            {
+                currentRun = 0;
+                continue;
+            }
+
+            ++currentRun;
+            longestRun = std::max(longestRun, currentRun);
+        }
+
+        const bool rowHasLine = longestRun >= minimumWidth;
+
+        if (rowHasLine && !previousRowHadLine)
+        {
+            ++lineCount;
+        }
+
+        previousRowHadLine = rowHasLine;
+    }
+
+    return lineCount;
+}
+
+int changedPixelCount(
+    const QImage& first,
+    const QImage& second
+    )
+{
+    if (first.size() != second.size())
+    {
+        return 0;
+    }
+
+    int count = 0;
+
+    for (int y = 0; y < first.height(); ++y)
+    {
+        for (int x = 0; x < first.width(); ++x)
+        {
+            const QColor left =
+                first.pixelColor(x, y);
+            const QColor right =
+                second.pixelColor(x, y);
+
+            if (
+                std::abs(left.red() - right.red())
+                    + std::abs(left.green() - right.green())
+                    + std::abs(left.blue() - right.blue())
+                > 20
+                )
+            {
+                ++count;
+            }
+        }
+    }
+
+    return count;
+}
 }
 
 class SubPrepPrintPdfTests : public QObject
@@ -296,10 +458,11 @@ private slots:
     void generatedPdfUsesA4PortraitWithNarrowMargins();
     void rendersEssayScheduleSlots();
     void omitsUnavailableZoomInformation();
+    void bookReportNotesUseCompactTextAndUnderlinedLabels();
     void rendersTeacherReferenceTableAndClassList();
     void teacherSectionBordersUseScheduleColor();
     void keepsTeacherSectionsTogetherAcrossPages();
-    void longNotesFlowOntoAdditionalPages();
+    void subNotesUsePromptAndRuledWritingSpace();
 };
 
 void SubPrepPrintPdfTests::generatedPdfUsesA4PortraitWithNarrowMargins()
@@ -357,16 +520,37 @@ void SubPrepPrintPdfTests::rendersEssayScheduleSlots()
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
-    const QString path =
+    const QString essayPath =
         temporaryDirectory.filePath(QStringLiteral("Essay Sub Prep.pdf"));
-    const SubPrepPrintService::Result result =
-        SubPrepPrintService::saveSubPrepPdf(sampleRequest(), path);
+    const SubPrepPrintService::Result essayResult =
+        SubPrepPrintService::saveSubPrepPdf(sampleRequest(), essayPath);
 
-    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+    QCOMPARE(essayResult.status, SubPrepPrintService::Status::Sent);
 
-    QPdfDocument document;
-    loadDocument(document, path);
-    QVERIFY(documentText(document).contains(QStringLiteral("Essay")));
+    SubPrepPrintService::Request emptyRequest =
+        sampleRequest();
+    emptyRequest.schedule.rows.first().cells.first().slotState =
+        scheduleEmptySlotState();
+    const QString emptyPath =
+        temporaryDirectory.filePath(QStringLiteral("Empty Schedule Sub Prep.pdf"));
+    const SubPrepPrintService::Result emptyResult =
+        SubPrepPrintService::saveSubPrepPdf(emptyRequest, emptyPath);
+
+    QCOMPARE(emptyResult.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument essayDocument;
+    loadDocument(essayDocument, essayPath);
+    QPdfDocument emptyDocument;
+    loadDocument(emptyDocument, emptyPath);
+    QVERIFY(documentText(essayDocument).contains(QStringLiteral("ESSAY")));
+
+    const QImage essayPage =
+        renderPage(essayDocument, 0);
+    const QImage emptyPage =
+        renderPage(emptyDocument, 0);
+    QVERIFY(!essayPage.isNull());
+    QVERIFY(!emptyPage.isNull());
+    QVERIFY(changedPixelCount(essayPage, emptyPage) > 100);
 }
 
 void SubPrepPrintPdfTests::omitsUnavailableZoomInformation()
@@ -394,6 +578,61 @@ void SubPrepPrintPdfTests::omitsUnavailableZoomInformation()
     QVERIFY(!text.contains(QStringLiteral("Zoom Login ID")));
 }
 
+void SubPrepPrintPdfTests::bookReportNotesUseCompactTextAndUnderlinedLabels()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request =
+        sampleRequest();
+    const QString gradingInstructionsText =
+        QStringLiteral("Grading Instructions");
+    request.classMaterials = gradingInstructionsText;
+    request.gradingInstructions = gradingInstructionsText;
+    request.specialInstructions = gradingInstructionsText;
+    const QString path =
+        temporaryDirectory.filePath(
+            QStringLiteral("Book Report Grading.pdf")
+            );
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    int bookReportPage = -1;
+
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        if (
+            pageText(document, pageIndex).contains(
+                QStringLiteral("Grading Instructions")
+                )
+            && pageText(document, pageIndex).contains(
+                QStringLiteral("Special Instructions")
+                )
+            )
+        {
+            bookReportPage = pageIndex;
+            break;
+        }
+    }
+
+    QVERIFY(bookReportPage >= 0);
+
+    const QList<QRectF> gradingInstructionsBounds =
+        textBoundsForAllOccurrences(
+            document,
+            bookReportPage,
+            gradingInstructionsText
+            );
+
+    QCOMPARE(gradingInstructionsBounds.size(), 4);
+
+}
+
 void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
 {
     QTemporaryDir temporaryDirectory;
@@ -417,10 +656,13 @@ void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
 
     const QString text =
         documentText(document);
-    QVERIFY(text.contains(QStringLiteral("Korean Teacher Name")));
+    QVERIFY(text.contains(QStringLiteral("Korean Name")));
+    QVERIFY(!text.contains(QStringLiteral("Korean Teacher Name")));
     QVERIFY(text.contains(QStringLiteral("김선생")));
     QVERIFY(text.contains(QStringLiteral("Internet Type")));
     QVERIFY(text.contains(QStringLiteral("Projection Type")));
+    QVERIFY(text.contains(QStringLiteral("Notes:")));
+    QVERIFY(!text.contains(QStringLiteral("Class Notes")));
     QCOMPARE(text.count(QStringLiteral("E4 Hercules")), 2);
     QCOMPARE(text.count(QStringLiteral("Tues 4pm")), 2);
     QCOMPARE(text.count(QStringLiteral("12 Students")), 2);
@@ -546,18 +788,17 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
         );
 }
 
-void SubPrepPrintPdfTests::longNotesFlowOntoAdditionalPages()
+void SubPrepPrintPdfTests::subNotesUsePromptAndRuledWritingSpace()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
     SubPrepPrintService::Request request = sampleRequest();
     request.subNotes =
-        QStringLiteral("Please record attendance and return materials to the cabinet. ")
-            .repeated(900);
+        QStringLiteral("This saved sub-note record must not be included in the PDF.");
 
     const QString path =
-        temporaryDirectory.filePath(QStringLiteral("Long Sub Prep.pdf"));
+        temporaryDirectory.filePath(QStringLiteral("Sub Notes Writing Space.pdf"));
     const SubPrepPrintService::Result result =
         SubPrepPrintService::saveSubPrepPdf(request, path);
 
@@ -565,31 +806,71 @@ void SubPrepPrintPdfTests::longNotesFlowOntoAdditionalPages()
 
     QPdfDocument document;
     loadDocument(document, path);
-    QVERIFY(document.pageCount() > 1);
 
-    const QImage secondPage = renderPage(document, 1);
-    QVERIFY(!secondPage.isNull());
+    const QString text =
+        documentText(document);
+    QVERIFY(text.contains(QStringLiteral("Thank you for subbing for me!")));
+    QVERIFY(
+        text.contains(
+            QStringLiteral(
+                "If there is anything important that you want me to know, "
+                "please leave me some notes."
+                )
+            )
+        );
+    QVERIFY(!text.contains(request.subNotes));
+    QVERIFY(!text.contains(QStringLiteral("ClassMngr")));
+    QVERIFY(text.contains(QStringLiteral("Page 1")));
+
+    const QSizeF firstPageSize =
+        document.pagePointSize(0);
+    const QRectF pageNumberBounds =
+        textBounds(document, 0, QStringLiteral("Page 1"));
+    QVERIFY(!pageNumberBounds.isEmpty());
+    QVERIFY(pageNumberBounds.center().y() > firstPageSize.height() * 0.9);
+
+    for (
+        const QString& heading : {
+            QStringLiteral("Important Information"),
+            QStringLiteral("Schedule"),
+            QStringLiteral("Class Information"),
+            QStringLiteral("Sub Notes")
+        }
+        )
+    {
+        const QRectF headingBounds =
+            firstTextBounds(document, heading);
+        QVERIFY(!headingBounds.isEmpty());
+        QVERIFY(
+            std::abs(
+                headingBounds.center().x()
+                - (firstPageSize.width() / 2.0)
+                )
+            < 25.0
+            );
+    }
+
+    const QImage subNotesPage =
+        renderPage(document, document.pageCount() - 1);
+    QVERIFY(!subNotesPage.isNull());
 
     const int marginPixels =
         qRound(MarginInches * RenderDpi);
-    int bodyInkPixels = 0;
-
-    for (
-        int y = marginPixels + 80;
-        y < secondPage.height() - marginPixels - 60;
-        ++y
-        )
-    {
-        for (int x = marginPixels; x < secondPage.width() - marginPixels; ++x)
-        {
-            if (!isWhitePixel(secondPage.pixelColor(x, y)))
-            {
-                ++bodyInkPixels;
-            }
-        }
-    }
-
-    QVERIFY(bodyInkPixels > 500);
+    const QRect writingArea(
+        marginPixels,
+        subNotesPage.height() * 2 / 3,
+        subNotesPage.width() - (2 * marginPixels),
+        subNotesPage.height() / 3 - marginPixels
+        );
+    QVERIFY(
+        horizontalColorLineCount(
+            subNotesPage,
+            writingArea,
+            Qt::black,
+            writingArea.width() * 9 / 10
+            )
+        >= 4
+        );
 }
 
 QTEST_MAIN(SubPrepPrintPdfTests)

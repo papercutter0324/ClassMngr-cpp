@@ -3042,6 +3042,16 @@
         <translation>Prepare substitute materials and class notes.</translation>
     </message>
     <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="611"/>
+        <source>Thank you for subbing for me!</source>
+        <translation>Thank you for subbing for me!</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="436"/>
+        <source>If there is anything important that you want me to know, please leave me some notes.</source>
+        <translation>If there is anything important that you want me to know, please leave me some notes.</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="768"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1148"/>
         <source>Personal Zoom Information</source>
@@ -3218,6 +3228,11 @@ Comments: Please leave a comment about what the student did well and what they n
     <message>
         <source>N/A</source>
         <translation>N/A</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="504"/>
+        <source>Korean Name</source>
+        <translation>Korean Name</translation>
     </message>
 </context>
 <context>

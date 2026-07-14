@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <optional>
 
 #include <QAbstractTextDocumentLayout>
 #include <QColor>
@@ -19,6 +20,8 @@
 #include <QRectF>
 #include <QSet>
 #include <QTemporaryDir>
+#include <QTextBlock>
+#include <QTextCursor>
 #include <QTextDocument>
 #include <QTextFrame>
 #include <QTextTable>
@@ -30,8 +33,8 @@ namespace
 constexpr QPageSize::PageSizeId SubPrepPdfPageSize = QPageSize::A4;
 constexpr qreal SubPrepPdfMarginInches = 0.5;
 constexpr int SubPrepPdfResolutionDpi = 300;
-constexpr qreal HeaderHeightInches = 0.32;
 constexpr qreal FooterHeightInches = 0.24;
+constexpr qreal SubNotesLineSpacingPoints = 16.0;
 
 Result failed(
     const QString& message
@@ -169,9 +172,8 @@ QString scheduleCellHtml(
         if (cell.slotState == scheduleEssaySlotState())
         {
             return QStringLiteral(
-                "<div class=\"schedule-slot essay\"><span class=\"essay-label\">%1</span></div>"
-                )
-                .arg(htmlText(translate("Essay")));
+                "<div class=\"schedule-slot essay\">ESSAY</div>"
+                );
         }
 
         if (cell.slotState == scheduleLunchSlotState())
@@ -214,7 +216,8 @@ QString scheduleCellHtml(
 QString factsHtml(
     const QList<QPair<QString, QString>>& facts,
     int columnCount = 2,
-    bool useBorderlessEmptyCells = false
+    bool useBorderlessEmptyCells = false,
+    const QString& valueClass = QString()
     )
 {
     columnCount = std::max(1, columnCount);
@@ -247,11 +250,12 @@ QString factsHtml(
             const auto& fact = facts.at(factIndex);
             html +=
                 QStringLiteral(
-                    "<td width=\"%1%\"><span class=\"field-label\">%2</span><br/>%3</td>"
+                    "<td width=\"%1%\"><span class=\"field-label\">%2</span><div class=\"fact-value%3\">%4</div></td>"
                     )
                     .arg(
                         cellWidth,
                         htmlText(fact.first),
+                        valueClass,
                         htmlText(fact.second)
                         );
         }
@@ -265,23 +269,43 @@ QString factsHtml(
 
 QString noteHtml(
     const QString& label,
-    const QString& note
+    const QString& note,
+    const QString& labelClass = QString(),
+    const QString& noteClass = QString()
     )
 {
     if (label.trimmed().isEmpty())
     {
-        return QStringLiteral("<div class=\"note\">%1</div>")
-            .arg(htmlText(note));
+        return QStringLiteral("<div class=\"note%1\">%2</div>")
+            .arg(
+                noteClass,
+                htmlText(note)
+                );
     }
 
     return QStringLiteral(
-        "<div class=\"note-label\">%1</div>"
-        "<div class=\"note\">%2</div>"
+        "<div class=\"note-label%1\">%2</div>"
+        "<div class=\"note%3\">%4</div>"
         )
         .arg(
+            labelClass,
             htmlText(label),
+            noteClass,
             htmlText(note)
             );
+}
+
+QString gradingNoteHtml(
+    const QString& label,
+    const QString& note
+    )
+{
+    return noteHtml(
+        label,
+        note,
+        QStringLiteral(" grading-note-label"),
+        QStringLiteral(" compact-note")
+        );
 }
 
 QString sectionHtml(
@@ -304,13 +328,17 @@ QString sectionHtml(
 
 QString subsectionHtml(
     const QString& heading,
-    const QString& contents
+    const QString& contents,
+    const QString& additionalClass = QString()
     )
 {
     return QStringLiteral(
-        "<div class=\"subsection\"><h3 class=\"subsection-heading\">%1</h3>%2</div>"
+        "<div class=\"subsection%1\"><h3 class=\"subsection-heading\">%2</h3>%3</div>"
         )
         .arg(
+            additionalClass.isEmpty()
+                ? QString()
+                : QStringLiteral(" %1").arg(additionalClass),
             htmlText(heading),
             contents
             );
@@ -402,6 +430,37 @@ QString teacherHeadingHtml(
             );
 }
 
+QString coTeacherNotesHtml(
+    const QString& note
+    )
+{
+    return QStringLiteral(
+        "<div class=\"co-teacher-notes\">"
+        "<div class=\"note-label\">%1</div>"
+        "<div class=\"note co-teacher-note\">%2</div>"
+        "</div>"
+        )
+        .arg(
+            htmlText(translate("Co-Teacher Notes")),
+            htmlText(note)
+            );
+}
+
+QString subNotesHtml()
+{
+    return QStringLiteral(
+        "<div class=\"sub-notes-prompt\">%1</div>"
+        )
+        .arg(
+            htmlText(
+                translate(
+                    "If there is anything important that you want me to know, "
+                    "please leave me some notes."
+                    )
+                )
+            );
+}
+
 QString teacherBorderColor(
     const SubPrepClassInformation::TeacherGroup& group
     )
@@ -464,7 +523,7 @@ QString classInformationHtml(
         html += factsHtml(
             {
                 {
-                    translate("Korean Teacher Name"),
+                    translate("Korean Name"),
                     group.teacher.teacherKr
                 },
                 {
@@ -496,7 +555,9 @@ QString classInformationHtml(
                     group.teacher.zoomPassword
                 }
             },
-            4
+            4,
+            false,
+            QStringLiteral(" teacher-fact-value")
             );
 
         html += QStringLiteral(
@@ -529,7 +590,7 @@ QString classInformationHtml(
                     "<span>%1:</span>&nbsp;%2</div>"
                     )
                     .arg(
-                        htmlText(translate("Class Notes")),
+                        htmlText(translate("Notes")),
                         htmlText(details.info.notes)
                         );
             }
@@ -541,10 +602,9 @@ QString classInformationHtml(
 
         if (!isNotAvailable(group.teacher.notes))
         {
-            html += noteHtml(
-                translate("Co-Teacher Notes"),
+            html += coTeacherNotesHtml(
                 group.teacher.notes
-            );
+                );
         }
         html += QStringLiteral("</td></tr></table>");
         html += QStringLiteral("</div>");
@@ -562,7 +622,8 @@ QString classInformationHtml(
 
 QString documentHtml(
     const Request& request,
-    const QSet<int>& pageBreakBeforeTeacherGroups = {}
+    const QSet<int>& pageBreakBeforeTeacherGroups = {},
+    bool startSubNotesOnNewPage = false
     )
 {
     QString html = QStringLiteral(
@@ -574,7 +635,7 @@ QString documentHtml(
         )
         .arg(
             htmlText(translate("Sub Prep")),
-            htmlText(translate("Prepare substitute materials and class notes."))
+            htmlText(translate("Thank you for subbing for me!"))
             );
 
     html += sectionHtml(
@@ -600,7 +661,9 @@ QString documentHtml(
                         request.campus.photocopierCode
                     }
                 },
-                4
+                4,
+                false,
+                QStringLiteral(" campus-fact-value")
                 )
             )
         + (hasZoomInformation(request)
@@ -622,15 +685,21 @@ QString documentHtml(
                : QString())
         + subsectionHtml(
             translate("Class Materials"),
-            noteHtml(QString(), request.classMaterials)
+            noteHtml(
+                QString(),
+                request.classMaterials,
+                QString(),
+                QStringLiteral(" compact-note")
+                ),
+            QStringLiteral("class-materials-subsection")
             )
         + subsectionHtml(
             translate("Book Report Grading"),
-            noteHtml(
+            gradingNoteHtml(
                 translate("Grading Instructions"),
                 request.gradingInstructions
                 )
-            + noteHtml(
+            + gradingNoteHtml(
                 translate("Special Instructions"),
                 request.specialInstructions
                 )
@@ -651,7 +720,8 @@ QString documentHtml(
         );
     html += sectionHtml(
         translate("Sub Notes"),
-        noteHtml(translate("Notes"), request.subNotes)
+        subNotesHtml(),
+        startSubNotesOnNewPage
         );
 
     html += QStringLiteral("</body></html>");
@@ -672,9 +742,10 @@ QString documentStyleSheet()
         ".major-section { margin:0 0 14px 0; width:100%; }"
         ".new-page { page-break-before:always; }"
         "h2 { background:#244b5f; border:1px solid #244b5f; color:#ffffff; "
-        "font-size:14pt; font-weight:700; margin:14px 0 9px 0; padding:7px 9px; "
+        "border-top-width:2px; font-size:14pt; font-weight:700; margin:14px 0 9px 0; padding:7px 9px; text-align:center; "
         "page-break-after:avoid; }"
         ".subsection { margin:0 0 11px 0; width:100%; }"
+        ".class-materials-subsection { margin-bottom:27px; }"
         ".subsection-heading { background:#e9f1f5; border-left:4px solid #3f7c96; "
         "color:#23495c; font-size:12pt; font-weight:700; margin:9px 0 6px 0; padding:5px 8px; "
         "page-break-after:avoid; }"
@@ -683,10 +754,13 @@ QString documentStyleSheet()
         ".facts { border-collapse:collapse; margin:0 0 8px 0; table-layout:fixed; width:100%; }"
         ".facts td { background:#ffffff; border:1px solid #bdcbd2; padding:7px 9px; vertical-align:top; }"
         ".facts td.empty-fact-cell { background:transparent; border:0; padding:0; }"
+        ".campus-fact-value, .teacher-fact-value { text-align:center; }"
         ".field-label, .note-label { color:#486675; font-size:9pt; font-weight:700; }"
         ".note-label { margin:8px 0 3px 0; }"
         ".note { background:#f8fbfc; border:1px solid #bdcbd2; border-left:3px solid #7aa3b5; "
         "padding:8px 9px; }"
+        ".compact-note { font-size:9pt; }"
+        ".grading-note-label { font-weight:700; text-decoration:underline; }"
         ".teacher-card { border-collapse:collapse; margin:0; page-break-inside:avoid; width:100%; }"
         ".teacher-card-content { border:1px solid #9fb3bd; border-top:0; padding:9px; vertical-align:top; }"
         ".teacher-card-wrapper { margin:0; padding:0; width:100%; }"
@@ -696,18 +770,21 @@ QString documentStyleSheet()
         ".class-list { margin:0; padding:0 0 0 19px; }"
         ".class-list li { margin:4px 0; padding:0; }"
         ".class-list-item { font-weight:700; }"
-        ".class-list-note { color:#52656f; font-size:9.5pt; margin:2px 0 0 0; }"
+        ".class-list-note { color:#52656f; font-size:9.5pt; margin:2px 0 0 4em; }"
         ".class-list-note span { color:#486675; font-weight:700; }"
-        ".schedule { border-collapse:collapse; font-size:8.5pt; margin:0 0 8px 0; "
+        ".co-teacher-notes { margin:9px 0 0 0; }"
+        ".co-teacher-notes .note-label { margin:0 0 3px 0; }"
+        ".co-teacher-note { margin-left:4em; }"
+        ".sub-notes-prompt { margin:0; }"
+        ".schedule { border:1px solid #000000; border-collapse:collapse; font-size:8.5pt; margin:0 0 8px 0; "
         "page-break-inside:avoid; table-layout:fixed; width:100%; }"
-        ".schedule th { background:#244b5f; border:1px solid #244b5f; color:#ffffff; "
+        ".schedule th { background:#244b5f; border:1px solid #000000; color:#ffffff; "
         "font-weight:700; padding:7px 4px; }"
-        ".schedule td { border:1px solid #9fb3bd; padding:5px 4px; text-align:center; vertical-align:middle; }"
+        ".schedule td { border:1px solid #000000; padding:5px 4px; text-align:center; vertical-align:middle; }"
         ".schedule-time { background:#e9f1f5; color:#263f4b; font-weight:700; width:12%; }"
         ".schedule-entry { margin:1px 0; padding:4px 3px; }"
         ".schedule-slot { font-weight:700; padding:6px 3px; }"
-        ".essay { background:#ffffff; color:#000000; font-size:10pt; font-style:italic; }"
-        ".essay-label { font-weight:700; white-space:nowrap; }"
+        ".essay { background:#ffffff; color:#000000; font-size:12pt; font-style:normal; font-weight:700; }"
         ".lunch { background:#dcdcdc; color:#000000; }"
         ".empty { background:#f8fbfc; border:1px solid #d1dce1; color:#5c6e78; "
         "font-style:italic; padding:9px; }"
@@ -794,6 +871,63 @@ QSet<int> teacherSectionsThatSpanPages(
     return groups;
 }
 
+std::optional<QRectF> textBlockBounds(
+    QTextDocument& document,
+    const QString& text
+    )
+{
+    const QTextCursor cursor =
+        document.find(text);
+
+    if (cursor.isNull())
+    {
+        return std::nullopt;
+    }
+
+    const QRectF bounds =
+        document.documentLayout()->blockBoundingRect(
+            cursor.block()
+            );
+
+    return bounds.isEmpty()
+        ? std::nullopt
+        : std::optional<QRectF>(bounds);
+}
+
+bool shouldStartSubNotesOnNewPage(
+    QTextDocument& document,
+    qreal pageHeight
+    )
+{
+    if (pageHeight <= 0.0)
+    {
+        return false;
+    }
+
+    const std::optional<QRectF> headingBounds =
+        textBlockBounds(
+            document,
+            translate("Sub Notes")
+            );
+
+    if (!headingBounds)
+    {
+        return false;
+    }
+
+    const int pageIndex =
+        std::max(
+            0,
+            static_cast<int>(std::floor(
+                (headingBounds->bottom() - 0.01) / pageHeight
+                ))
+            );
+    const qreal availableBelowHeading =
+        ((pageIndex + 1) * pageHeight) - headingBounds->bottom();
+
+    return availableBelowHeading < (pageHeight / 3.0);
+}
+
 QPageLayout pageLayout()
 {
     return QPageLayout(
@@ -851,53 +985,101 @@ qreal pixelsForInches(
     return inches * std::max(1, resolutionDpi);
 }
 
-void drawPageChrome(
+qreal pixelsForPoints(
+    qreal points,
+    int resolutionDpi
+    )
+{
+    return points * std::max(1, resolutionDpi) / 72.0;
+}
+
+std::optional<qreal> subNotesWritingStart(
+    QTextDocument& document,
+    int resolutionDpi
+    )
+{
+    const std::optional<QRectF> promptBounds =
+        textBlockBounds(
+            document,
+            translate(
+                "If there is anything important that you want me to know, "
+                "please leave me some notes."
+                )
+            );
+
+    if (!promptBounds)
+    {
+        return std::nullopt;
+    }
+
+    return promptBounds->bottom()
+        + pixelsForPoints(
+            SubNotesLineSpacingPoints,
+            resolutionDpi
+            );
+}
+
+void drawSubNotesWritingLines(
+    QPainter& painter,
+    const QRectF& body,
+    qreal writingStart,
+    qreal lineSpacing,
+    int pageIndex
+    )
+{
+    if (lineSpacing <= 0.0)
+    {
+        return;
+    }
+
+    const qreal documentPageTop =
+        pageIndex * body.height();
+    const qreal documentPageBottom =
+        documentPageTop + body.height();
+
+    if (
+        writingStart < documentPageTop
+        || writingStart >= documentPageBottom
+        )
+    {
+        return;
+    }
+
+    painter.save();
+    QPen pen(Qt::black);
+    pen.setWidthF(1.75);
+    painter.setPen(pen);
+
+    for (
+        qreal lineY = writingStart;
+        lineY < documentPageBottom;
+        lineY += lineSpacing
+        )
+    {
+        const qreal pageY =
+            body.top() + (lineY - documentPageTop);
+        painter.drawLine(
+            QPointF(body.left(), pageY),
+            QPointF(body.right(), pageY)
+            );
+    }
+
+    painter.restore();
+}
+
+void drawPageFooter(
     QPainter& painter,
     const QRectF& content,
-    qreal headerHeight,
     qreal footerHeight,
     int pageNumber
     )
 {
-    QFont headingFont =
-        FontManager::getUiFont(-1, QFont::DemiBold);
-    headingFont.setPointSizeF(9.5);
-
     QFont pageFont =
         FontManager::getUiFont(-1);
     pageFont.setPointSizeF(8.5);
 
     painter.save();
-    painter.setPen(QColor(QStringLiteral("#1f3a4d")));
-    painter.setFont(headingFont);
-    painter.drawText(
-        QRectF(
-            content.left(),
-            content.top(),
-            content.width() * 0.7,
-            headerHeight - 12.0
-            ),
-        Qt::AlignLeft | Qt::AlignVCenter,
-        translate("Sub Prep")
-        );
-
     painter.setPen(QColor(QStringLiteral("#5f6f7a")));
-    painter.setFont(pageFont);
-    painter.drawText(
-        QRectF(
-            content.right() - (content.width() * 0.2),
-            content.top(),
-            content.width() * 0.2,
-            headerHeight - 12.0
-            ),
-        Qt::AlignRight | Qt::AlignVCenter,
-        QObject::tr("Page %1").arg(pageNumber)
-        );
-    painter.drawLine(
-        QPointF(content.left(), content.top() + headerHeight - 8.0),
-        QPointF(content.right(), content.top() + headerHeight - 8.0)
-        );
-
     painter.setFont(pageFont);
     painter.drawText(
         QRectF(
@@ -907,7 +1089,7 @@ void drawPageChrome(
             footerHeight - 8.0
             ),
         Qt::AlignRight | Qt::AlignVCenter,
-        QObject::tr("ClassMngr")
+        QObject::tr("Page %1").arg(pageNumber)
         );
     painter.restore();
 }
@@ -947,11 +1129,6 @@ Result saveSubPrepPdf(
 
     const QRectF page = pageRect(writer);
     const QRectF content = contentRect(page, writer.resolution());
-    const qreal headerHeight =
-        pixelsForInches(
-            HeaderHeightInches,
-            writer.resolution()
-            );
     const qreal footerHeight =
         pixelsForInches(
             FooterHeightInches,
@@ -959,9 +1136,9 @@ Result saveSubPrepPdf(
             );
     const QRectF body(
         content.left(),
-        content.top() + headerHeight,
+        content.top(),
         content.width(),
-        content.height() - headerHeight - footerHeight
+        content.height() - footerHeight
         );
 
     if (
@@ -987,29 +1164,56 @@ Result saveSubPrepPdf(
     document.setPageSize(body.size());
 
     QSet<int> pageBreakBeforeTeacherGroups;
+    bool startSubNotesOnNewPage = false;
 
-    for (int pass = 0; pass < request.classInformation.size(); ++pass)
+    for (int pass = 0; pass <= request.classInformation.size(); ++pass)
     {
         document.setHtml(
-            documentHtml(request, pageBreakBeforeTeacherGroups)
+            documentHtml(
+                request,
+                pageBreakBeforeTeacherGroups,
+                startSubNotesOnNewPage
+                )
             );
 
         const QSet<int> spanningGroups =
             teacherSectionsThatSpanPages(document, body.height());
         const QSet<int> newPageBreaks =
             spanningGroups - pageBreakBeforeTeacherGroups;
+        const bool moveSubNotesToNewPage =
+            !startSubNotesOnNewPage
+            && shouldStartSubNotesOnNewPage(
+                document,
+                body.height()
+                );
 
-        if (newPageBreaks.isEmpty())
+        if (newPageBreaks.isEmpty() && !moveSubNotesToNewPage)
         {
             break;
         }
 
         pageBreakBeforeTeacherGroups.unite(newPageBreaks);
+        startSubNotesOnNewPage =
+            startSubNotesOnNewPage || moveSubNotesToNewPage;
     }
 
     document.setHtml(
-        documentHtml(request, pageBreakBeforeTeacherGroups)
+        documentHtml(
+            request,
+            pageBreakBeforeTeacherGroups,
+            startSubNotesOnNewPage
+            )
         );
+    const std::optional<qreal> subNotesLineStart =
+        subNotesWritingStart(
+            document,
+            writer.resolution()
+            );
+    const qreal subNotesLineSpacing =
+        pixelsForPoints(
+            SubNotesLineSpacingPoints,
+            writer.resolution()
+            );
 
     const QSizeF documentSize =
         document.documentLayout()->documentSize();
@@ -1024,10 +1228,9 @@ Result saveSubPrepPdf(
     for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex)
     {
         painter.fillRect(page, Qt::white);
-        drawPageChrome(
+        drawPageFooter(
             painter,
             content,
-            headerHeight,
             footerHeight,
             pageIndex + 1
             );
@@ -1048,6 +1251,17 @@ Result saveSubPrepPdf(
                 )
             );
         painter.restore();
+
+        if (subNotesLineStart)
+        {
+            drawSubNotesWritingLines(
+                painter,
+                body,
+                *subNotesLineStart,
+                subNotesLineSpacing,
+                pageIndex
+                );
+        }
 
         if (pageIndex + 1 < pageCount && !writer.newPage())
         {

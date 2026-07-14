@@ -4809,6 +4809,16 @@
         <translation>대체 수업 자료와 수업 노트를 준비합니다.</translation>
     </message>
     <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="611"/>
+        <source>Thank you for subbing for me!</source>
+        <translation>대신 수업해 주셔서 감사합니다!</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="436"/>
+        <source>If there is anything important that you want me to know, please leave me some notes.</source>
+        <translation>전달해 주실 중요한 내용이 있다면 메모를 남겨 주세요.</translation>
+    </message>
+    <message>
         <source>Personal Zoom Information</source>
         <translation>개인 Zoom 정보</translation>
     </message>
@@ -4985,6 +4995,11 @@ Comments: Please leave a comment about what the student did well and what they n
     <message>
         <source>N/A</source>
         <translation>해당 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_service.cpp" line="504"/>
+        <source>Korean Name</source>
+        <translation>한국어 이름</translation>
     </message>
 </context>
 <context>
