@@ -1243,6 +1243,7 @@ void Sidebar::setDatabaseSectionsVisible(
 
     const QStringList databaseNodeKeys{
         QStringLiteral("my_info"),
+        QStringLiteral("my_info_class_roster"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
         QStringLiteral("speaking_evaluations"),

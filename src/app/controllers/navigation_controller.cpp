@@ -478,6 +478,12 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (data.routeKey == QStringLiteral("my_info_class_roster"))
+        {
+            handleRosters(data);
+            return;
+        }
+
         if (data.keys.first() == QStringLiteral("my_info"))
         {
             handleMyInfo(data);
@@ -734,25 +740,6 @@ void NavigationController::handleMyInfo(
             ? data.routeKey
             : QStringLiteral("my_info_information");
 
-    if (sectionKey == QStringLiteral("my_info_class_roster"))
-    {
-        if (!m_pages->confirmCurrentPageCanLeave())
-        {
-            return;
-        }
-
-        m_pages->myInfoRostersPage()
-            ->loadRosters();
-
-        m_pages->showPage(PageType::MyInfoRosters);
-
-        m_sidebar->selectMyInfoSection(
-            QStringLiteral("my_info_class_roster")
-            );
-
-        return;
-    }
-
     PageType targetPageType =
         PageType::MyInfo;
     QWidget* targetPage =
@@ -822,6 +809,32 @@ void NavigationController::handleMyInfo(
             m_pages->myInfoPage()->scrollToTop();
         }
     }
+}
+
+void NavigationController::handleRosters(
+    const NavigationData& data
+    )
+{
+    Q_UNUSED(data)
+
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        || !m_pages->confirmCurrentPageCanLeave()
+        )
+    {
+        return;
+    }
+
+    m_pages->myInfoRostersPage()
+        ->loadRosters();
+
+    m_pages->showPage(PageType::MyInfoRosters);
+
+    m_sidebar->selectByKeys(
+        {QStringLiteral("my_info_class_roster")}
+        );
 }
 
 void NavigationController::handleCampus(

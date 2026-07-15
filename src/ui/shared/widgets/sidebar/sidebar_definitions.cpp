@@ -40,14 +40,14 @@ QList<TreeNodeSpec> treeStructure()
                     "my_info_class_information",
                     QObject::tr("Class Information"),
                     NodeType::Page
-                },
-
-                {
-                    "my_info_class_roster",
-                    QObject::tr("Rosters"),
-                    NodeType::Page
                 }
             }
+        },
+
+        {
+            "my_info_class_roster",
+            QObject::tr("Rosters"),
+            NodeType::Page
         },
 
         {

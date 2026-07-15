@@ -30,6 +30,10 @@ private:
         const NavigationData& data
         );
 
+    void handleRosters(
+        const NavigationData& data
+        );
+
     void handleSubPrep(
         const NavigationData& data
         );
