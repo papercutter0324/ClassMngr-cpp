@@ -130,6 +130,32 @@ QString joinedEnglishLine(
         QStringLiteral(" - ")
         );
 }
+
+QString teacherRoomLine(
+    const ScheduleEntry& entry,
+    bool showEnglishName
+    )
+{
+    const QString preferredName =
+        (showEnglishName
+            ? entry.teacherEn
+            : entry.teacherKr)
+            .trimmed();
+    const QString fallbackName =
+        (showEnglishName
+            ? entry.teacherKr
+            : entry.teacherEn)
+            .trimmed();
+
+    return QStringLiteral("%1 %2")
+        .arg(
+            preferredName.isEmpty()
+                ? fallbackName
+                : preferredName,
+            entry.roomNumber.trimmed()
+            )
+        .simplified();
+}
 }
 
 SchedulePage::SchedulePage(
@@ -195,6 +221,26 @@ void SchedulePage::setUse24HourTime(
         dataService->saveSetting(
             QStringLiteral("schedule_use_24h"),
             m_use24h
+                ? QStringLiteral("true")
+                : QStringLiteral("false")
+            );
+    }
+
+    updateButtons();
+    loadSchedule();
+}
+
+void SchedulePage::setShowKoreanTeacherEnglishNames(
+    bool showEnglishNames
+    )
+{
+    m_showKoreanTeacherEnglishNames = showEnglishNames;
+
+    if (auto* dataService = openDataService(m_services))
+    {
+        dataService->saveSetting(
+            QStringLiteral("schedule_show_korean_teacher_english_names"),
+            m_showKoreanTeacherEnglishNames
                 ? QStringLiteral("true")
                 : QStringLiteral("false")
             );
@@ -548,6 +594,9 @@ void SchedulePage::buildUi()
     m_use24HourTimeCheckBox =
         new QCheckBox(this);
 
+    m_showKoreanTeacherEnglishNamesCheckBox =
+        new QCheckBox(this);
+
     m_showWeekendsCheckBox =
         new QCheckBox(this);
 
@@ -576,6 +625,7 @@ void SchedulePage::buildUi()
     controlsLayout->setContentsMargins(0, 0, 0, 0);
     controlsLayout->setSpacing(4);
     controlsLayout->addWidget(m_use24HourTimeCheckBox);
+    controlsLayout->addWidget(m_showKoreanTeacherEnglishNamesCheckBox);
     controlsLayout->addWidget(m_showWeekendsCheckBox);
     controlsLayout->addWidget(m_showIntensiveScheduleCheckBox);
 
@@ -604,6 +654,13 @@ void SchedulePage::buildUi()
         &QCheckBox::toggled,
         this,
         &SchedulePage::setUse24HourTime
+        );
+
+    connect(
+        m_showKoreanTeacherEnglishNamesCheckBox,
+        &QCheckBox::toggled,
+        this,
+        &SchedulePage::setShowKoreanTeacherEnglishNames
         );
 
     connect(
@@ -681,6 +738,15 @@ void SchedulePage::loadSettings()
         settingToBool(
             dataService->loadSetting(
                 QStringLiteral("schedule_show_weekends"),
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    m_showKoreanTeacherEnglishNames =
+        settingToBool(
+            dataService->loadSetting(
+                QStringLiteral("schedule_show_korean_teacher_english_names"),
                 QStringLiteral("false")
                 ),
             false
@@ -827,6 +893,7 @@ void SchedulePage::updateButtons()
 {
     if (
         !m_use24HourTimeCheckBox
+        || !m_showKoreanTeacherEnglishNamesCheckBox
         || !m_showWeekendsCheckBox
         || !m_showAllHoursCheckBox
         || !m_hideEmptyRowsCheckBox
@@ -839,6 +906,9 @@ void SchedulePage::updateButtons()
     }
 
     const QSignalBlocker use24hBlocker(m_use24HourTimeCheckBox);
+    const QSignalBlocker englishNamesBlocker(
+        m_showKoreanTeacherEnglishNamesCheckBox
+        );
     const QSignalBlocker weekendsBlocker(m_showWeekendsCheckBox);
     const QSignalBlocker allHoursBlocker(m_showAllHoursCheckBox);
     const QSignalBlocker hideEmptyBlocker(m_hideEmptyRowsCheckBox);
@@ -846,6 +916,12 @@ void SchedulePage::updateButtons()
 
     m_use24HourTimeCheckBox->setText(tr("Use 24-hour time"));
     m_use24HourTimeCheckBox->setChecked(m_use24h);
+    m_showKoreanTeacherEnglishNamesCheckBox->setText(
+        tr("Show English names for Korean teachers")
+        );
+    m_showKoreanTeacherEnglishNamesCheckBox->setChecked(
+        m_showKoreanTeacherEnglishNames
+        );
     m_showWeekendsCheckBox->setText(tr("Show weekends"));
     m_showWeekendsCheckBox->setChecked(m_showWeekends);
     m_showIntensiveScheduleCheckBox->setText(
@@ -1023,11 +1099,11 @@ QWidget* SchedulePage::createScheduleLabel(
             )
         );
 
-    const QString koreanLine =
-        QStringLiteral("%1 %2")
-            .arg(entry.teacherKr.trimmed())
-            .arg(entry.roomNumber.trimmed())
-            .simplified();
+    const QString teacherLine =
+        teacherRoomLine(
+            entry,
+            m_showKoreanTeacherEnglishNames
+            );
 
     const QString englishLine =
         joinedEnglishLine(entry);
@@ -1053,7 +1129,7 @@ QWidget* SchedulePage::createScheduleLabel(
             .arg(
                 FontManager::getKoreanFont().pointSize()
                 )
-            .arg(escaped(koreanLine))
+            .arg(escaped(teacherLine))
             .arg(
                 FontManager::adjustedPointSize(14)
                 )
@@ -1094,11 +1170,11 @@ QWidget* SchedulePage::createMultiScheduleLabel(
 
     for (const ScheduleEntry& entry : entries)
     {
-        const QString koreanLine =
-            QStringLiteral("%1 %2")
-                .arg(entry.teacherKr.trimmed())
-                .arg(entry.roomNumber.trimmed())
-                .simplified();
+        const QString teacherLine =
+            teacherRoomLine(
+                entry,
+                m_showKoreanTeacherEnglishNames
+                );
 
         const QString englishLine =
             joinedEnglishLine(entry);
@@ -1124,7 +1200,7 @@ QWidget* SchedulePage::createMultiScheduleLabel(
                 .arg(
                     FontManager::getKoreanFont().pointSize()
                     )
-                .arg(escaped(koreanLine))
+                .arg(escaped(teacherLine))
                 .arg(
                     FontManager::adjustedPointSize(14)
                     )

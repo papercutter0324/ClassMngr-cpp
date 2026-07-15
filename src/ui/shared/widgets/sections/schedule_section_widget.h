@@ -21,6 +21,7 @@ enum class ScheduleSectionMode
 struct ScheduleDisplayState
 {
     bool use24HourTime = false;
+    bool showKoreanTeacherEnglishNames = false;
     bool showIntensive = false;
     bool showAllHours = false;
     bool hideEmptyRows = true;
@@ -51,6 +52,7 @@ signals:
 
 private slots:
     void setUse24HourTime(bool use24h);
+    void setShowKoreanTeacherEnglishNames(bool showEnglishNames);
     void setShowIntensiveSchedule(bool showIntensive);
     void setShowAllHours(bool showAllHours);
     void setHideEmptyRows(bool hideEmptyRows);
@@ -90,6 +92,7 @@ private:
     ScheduleSectionMode m_mode = ScheduleSectionMode::Interactive;
 
     bool m_use24h = false;
+    bool m_showKoreanTeacherEnglishNames = false;
     bool m_showIntensive = false;
     bool m_showAllHours = false;
     bool m_hideEmptyRows = true;
@@ -102,6 +105,7 @@ private:
     QTableWidget* m_table = nullptr;
     QWidget* m_controlsWidget = nullptr;
     QCheckBox* m_use24HourTimeCheckBox = nullptr;
+    QCheckBox* m_showKoreanTeacherEnglishNamesCheckBox = nullptr;
     QCheckBox* m_showWeekendsCheckBox = nullptr;
     QCheckBox* m_showAllHoursCheckBox = nullptr;
     QCheckBox* m_hideEmptyRowsCheckBox = nullptr;

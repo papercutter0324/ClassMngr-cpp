@@ -5,6 +5,7 @@
 #include <QtTest>
 
 #include <QCheckBox>
+#include <QLabel>
 #include <QPushButton>
 #include <QTableWidget>
 
@@ -43,6 +44,10 @@ void ScheduleSectionWidgetTests
         interactive.findChild<QCheckBox*>(
             QStringLiteral("scheduleShowWeekendsCheckBox")
             );
+    auto* showEnglishNames =
+        interactive.findChild<QCheckBox*>(
+            QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
+            );
     auto* showIntensive =
         interactive.findChild<QCheckBox*>(
             QStringLiteral("scheduleShowIntensiveCheckBox")
@@ -58,15 +63,31 @@ void ScheduleSectionWidgetTests
 
     QVERIFY(use24Hour);
     QVERIFY(showWeekends);
+    QVERIFY(showEnglishNames);
     QVERIFY(showIntensive);
     QVERIFY(showAllHours);
     QVERIFY(hideEmptyRows);
 
     use24Hour->setChecked(true);
     showWeekends->setChecked(true);
+    showEnglishNames->setChecked(true);
     showIntensive->setChecked(true);
     showAllHours->setChecked(true);
     hideEmptyRows->setChecked(false);
+
+    auto* table =
+        interactive.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(table);
+
+    auto* scheduledClass =
+        qobject_cast<QLabel*>(
+            table->cellWidget(0, 2)
+            );
+    QVERIFY(scheduledClass);
+    QVERIFY(scheduledClass->text().contains(QStringLiteral("Susan")));
+    QVERIFY(!scheduledClass->text().contains(QStringLiteral("김선생")));
 
     ScheduleSectionWidget mirrored(
         &services,
@@ -79,6 +100,7 @@ void ScheduleSectionWidgetTests
 
     QVERIFY(state.use24HourTime);
     QVERIFY(state.showWeekends);
+    QVERIFY(state.showKoreanTeacherEnglishNames);
     QVERIFY(state.showIntensive);
     QVERIFY(state.showAllHours);
     QVERIFY(!state.hideEmptyRows);
@@ -121,7 +143,7 @@ void ScheduleSectionWidgetTests
         controls->findChildren<QCheckBox*>();
     const auto buttons =
         controls->findChildren<QPushButton*>();
-    QCOMPARE(checkBoxes.size(), 5);
+    QCOMPARE(checkBoxes.size(), 6);
     QCOMPARE(buttons.size(), 2);
 
     for (const QCheckBox* checkBox : checkBoxes)

@@ -40,6 +40,8 @@ protected:
 private slots:
     void setUse24HourTime(bool use24h);
 
+    void setShowKoreanTeacherEnglishNames(bool showEnglishNames);
+
     void setShowAllHours(bool showAllHours);
 
     void setHideEmptyRows(bool hideEmptyRows);
@@ -94,6 +96,7 @@ private:
     ApplicationServices* m_services = nullptr;
 
     bool m_use24h = false;
+    bool m_showKoreanTeacherEnglishNames = false;
     bool m_showAllHours = false;
     bool m_hideEmptyBlocks = false;
     bool m_showIntensive = false;
@@ -107,6 +110,7 @@ private:
     QLabel* m_subtitleLabel = nullptr;
     QTableWidget* m_table = nullptr;
     QCheckBox* m_use24HourTimeCheckBox = nullptr;
+    QCheckBox* m_showKoreanTeacherEnglishNamesCheckBox = nullptr;
     QCheckBox* m_showWeekendsCheckBox = nullptr;
     QCheckBox* m_showAllHoursCheckBox = nullptr;
     QCheckBox* m_hideEmptyRowsCheckBox = nullptr;

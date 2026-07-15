@@ -14,6 +14,7 @@ struct ScheduleEntry
 {
     int classId{-1};
     QString teacherKr;
+    QString teacherEn;
     QString roomNumber;
     QString classGrade;
     QString classLevel;

@@ -20,6 +20,7 @@ ScheduleEntry toEntry(
 
     entry.classId = classId;
     entry.teacherKr = info.teacherKr;
+    entry.teacherEn = info.teacherEn;
     entry.roomNumber = info.roomNumber;
     entry.classGrade = info.classGrade;
     entry.classLevel = info.classLevel;

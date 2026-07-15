@@ -165,7 +165,7 @@ QString teacherLine(
 {
     return QStringLiteral("%1 %2")
         .arg(
-            entry.teacherKr.trimmed(),
+            entry.teacherEn.trimmed(),
             entry.roomNumber.trimmed()
             )
         .simplified();
@@ -468,7 +468,7 @@ QString teacherHeadingHtml(
             background,
             borderColor,
             foreground,
-            htmlText(displayValue(group.displayName))
+            htmlText(group.teacher.teacherEn)
             );
 }
 
@@ -565,8 +565,8 @@ QString classInformationHtml(
         html += factsHtml(
             {
                 {
-                    translate("Korean Name"),
-                    group.teacher.teacherKr
+                    translate("English Name"),
+                    group.teacher.teacherEn
                 },
                 {
                     translate("Room"),
@@ -600,7 +600,7 @@ QString classInformationHtml(
             4,
             false,
             QStringLiteral(" teacher-fact-value"),
-            QSet<QString>{translate("Korean Name")}
+            QSet<QString>{translate("English Name")}
             );
 
         html += QStringLiteral(

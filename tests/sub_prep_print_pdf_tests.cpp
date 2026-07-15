@@ -83,6 +83,7 @@ SubPrepPrintService::Request sampleRequest()
             ScheduleEntry entry;
             entry.classId = 42;
             entry.teacherKr = QStringLiteral("김선생");
+            entry.teacherEn = QStringLiteral("Susan");
             entry.roomNumber = QStringLiteral("413");
             entry.classGrade = QStringLiteral("E4");
             entry.classLevel = QStringLiteral("Hercules");
@@ -100,6 +101,8 @@ SubPrepPrintService::Request sampleRequest()
     group.displayName = QStringLiteral("Susan");
     group.classListText = QStringLiteral("E4 Hercules");
     group.teacher.id = 7;
+    group.teacher.teacherKr = QStringLiteral("김선생");
+    group.teacher.teacherEn = QStringLiteral("Susan");
     group.teacher.roomNumber = QStringLiteral("413");
     group.teacher.wifiName = QStringLiteral("Susan WiFi");
     group.teacher.wifiPassword = QStringLiteral("wifi secret");
@@ -800,9 +803,10 @@ void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
 
     const QString text =
         documentText(document);
-    QVERIFY(text.contains(QStringLiteral("Korean Name")));
+    QVERIFY(text.contains(QStringLiteral("English Name")));
     QVERIFY(!text.contains(QStringLiteral("Korean Teacher Name")));
-    QVERIFY(text.contains(QStringLiteral("김선생")));
+    QVERIFY(text.contains(QStringLiteral("Susan")));
+    QVERIFY(!text.contains(QStringLiteral("김선생")));
     QVERIFY(text.contains(QStringLiteral("Internet Type")));
     QVERIFY(text.contains(QStringLiteral("Projection Type")));
     QVERIFY(text.contains(QStringLiteral("Notes:")));

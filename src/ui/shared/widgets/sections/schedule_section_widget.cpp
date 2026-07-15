@@ -42,6 +42,8 @@ namespace SettingsKeys
 {
 const QString Use24HourTime =
     QStringLiteral("schedule_use_24h");
+const QString ShowKoreanTeacherEnglishNames =
+    QStringLiteral("schedule_show_korean_teacher_english_names");
 const QString ShowWeekends =
     QStringLiteral("schedule_show_weekends");
 const QString ShowIntensive =
@@ -167,6 +169,32 @@ QString joinedEnglishLine(
         QStringLiteral(" - ")
         );
 }
+
+QString teacherRoomLine(
+    const ScheduleEntry& entry,
+    bool showEnglishName
+    )
+{
+    const QString preferredName =
+        (showEnglishName
+            ? entry.teacherEn
+            : entry.teacherKr)
+            .trimmed();
+    const QString fallbackName =
+        (showEnglishName
+            ? entry.teacherKr
+            : entry.teacherEn)
+            .trimmed();
+
+    return QStringLiteral("%1 %2")
+        .arg(
+            preferredName.isEmpty()
+                ? fallbackName
+                : preferredName,
+            entry.roomNumber.trimmed()
+            )
+        .simplified();
+}
 }
 
 ScheduleSectionWidget::ScheduleSectionWidget(
@@ -202,6 +230,8 @@ ScheduleDisplayState ScheduleSectionWidget::displayState() const
 {
     ScheduleDisplayState state;
     state.use24HourTime = m_use24h;
+    state.showKoreanTeacherEnglishNames =
+        m_showKoreanTeacherEnglishNames;
     state.showIntensive = m_showIntensive;
     state.showAllHours = m_showAllHours;
     state.hideEmptyRows = m_hideEmptyRows;
@@ -246,6 +276,22 @@ void ScheduleSectionWidget::setUse24HourTime(
         openDataService(m_services),
         SettingsKeys::Use24HourTime,
         m_use24h
+        );
+
+    updateButtons();
+    loadSchedule();
+}
+
+void ScheduleSectionWidget::setShowKoreanTeacherEnglishNames(
+    bool showEnglishNames
+    )
+{
+    m_showKoreanTeacherEnglishNames = showEnglishNames;
+
+    saveBoolSetting(
+        openDataService(m_services),
+        SettingsKeys::ShowKoreanTeacherEnglishNames,
+        m_showKoreanTeacherEnglishNames
         );
 
     updateButtons();
@@ -617,6 +663,12 @@ void ScheduleSectionWidget::buildUi()
         QStringLiteral("scheduleUse24HourTimeCheckBox")
         );
 
+    m_showKoreanTeacherEnglishNamesCheckBox =
+        new QCheckBox(this);
+    m_showKoreanTeacherEnglishNamesCheckBox->setObjectName(
+        QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
+        );
+
     m_showWeekendsCheckBox =
         new QCheckBox(this);
     m_showWeekendsCheckBox->setObjectName(
@@ -662,6 +714,9 @@ void ScheduleSectionWidget::buildUi()
     controlsColumnLayout->setContentsMargins(0, 0, 0, 0);
     controlsColumnLayout->setSpacing(4);
     controlsColumnLayout->addWidget(m_use24HourTimeCheckBox);
+    controlsColumnLayout->addWidget(
+        m_showKoreanTeacherEnglishNamesCheckBox
+        );
     controlsColumnLayout->addWidget(m_showWeekendsCheckBox);
     controlsColumnLayout->addWidget(m_showIntensiveScheduleCheckBox);
 
@@ -696,6 +751,13 @@ void ScheduleSectionWidget::buildUi()
         &QCheckBox::toggled,
         this,
         &ScheduleSectionWidget::setUse24HourTime
+        );
+
+    connect(
+        m_showKoreanTeacherEnglishNamesCheckBox,
+        &QCheckBox::toggled,
+        this,
+        &ScheduleSectionWidget::setShowKoreanTeacherEnglishNames
         );
 
     connect(
@@ -773,6 +835,15 @@ void ScheduleSectionWidget::loadSettings()
         settingToBool(
             dataService->loadSetting(
                 SettingsKeys::ShowWeekends,
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    m_showKoreanTeacherEnglishNames =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::ShowKoreanTeacherEnglishNames,
                 QStringLiteral("false")
                 ),
             false
@@ -948,6 +1019,7 @@ void ScheduleSectionWidget::updateButtons()
 {
     if (
         !m_use24HourTimeCheckBox
+        || !m_showKoreanTeacherEnglishNamesCheckBox
         || !m_showWeekendsCheckBox
         || !m_showAllHoursCheckBox
         || !m_hideEmptyRowsCheckBox
@@ -960,6 +1032,9 @@ void ScheduleSectionWidget::updateButtons()
     }
 
     const QSignalBlocker use24hBlocker(m_use24HourTimeCheckBox);
+    const QSignalBlocker englishNamesBlocker(
+        m_showKoreanTeacherEnglishNamesCheckBox
+        );
     const QSignalBlocker weekendsBlocker(m_showWeekendsCheckBox);
     const QSignalBlocker allHoursBlocker(m_showAllHoursCheckBox);
     const QSignalBlocker hideEmptyBlocker(m_hideEmptyRowsCheckBox);
@@ -967,6 +1042,12 @@ void ScheduleSectionWidget::updateButtons()
 
     m_use24HourTimeCheckBox->setText(tr("Use 24-hour time"));
     m_use24HourTimeCheckBox->setChecked(m_use24h);
+    m_showKoreanTeacherEnglishNamesCheckBox->setText(
+        tr("Show English names for Korean teachers")
+        );
+    m_showKoreanTeacherEnglishNamesCheckBox->setChecked(
+        m_showKoreanTeacherEnglishNames
+        );
     m_showWeekendsCheckBox->setText(tr("Show weekends"));
     m_showWeekendsCheckBox->setChecked(m_showWeekends);
     m_showIntensiveScheduleCheckBox->setText(
@@ -1175,11 +1256,11 @@ QWidget* ScheduleSectionWidget::createScheduleLabel(
             )
         );
 
-    const QString koreanLine =
-        QStringLiteral("%1 %2")
-            .arg(entry.teacherKr.trimmed())
-            .arg(entry.roomNumber.trimmed())
-            .simplified();
+    const QString teacherLine =
+        teacherRoomLine(
+            entry,
+            m_showKoreanTeacherEnglishNames
+            );
 
     const QString englishLine =
         joinedEnglishLine(entry);
@@ -1205,7 +1286,7 @@ QWidget* ScheduleSectionWidget::createScheduleLabel(
             .arg(
                 FontManager::getKoreanFont().pointSize()
                 )
-            .arg(escaped(koreanLine))
+            .arg(escaped(teacherLine))
             .arg(
                 FontManager::adjustedPointSize(14)
                 )
@@ -1246,11 +1327,11 @@ QWidget* ScheduleSectionWidget::createMultiScheduleLabel(
 
     for (const ScheduleEntry& entry : entries)
     {
-        const QString koreanLine =
-            QStringLiteral("%1 %2")
-                .arg(entry.teacherKr.trimmed())
-                .arg(entry.roomNumber.trimmed())
-                .simplified();
+        const QString teacherLine =
+            teacherRoomLine(
+                entry,
+                m_showKoreanTeacherEnglishNames
+                );
 
         const QString englishLine =
             joinedEnglishLine(entry);
@@ -1276,7 +1357,7 @@ QWidget* ScheduleSectionWidget::createMultiScheduleLabel(
                 .arg(
                     FontManager::getKoreanFont().pointSize()
                     )
-                .arg(escaped(koreanLine))
+                .arg(escaped(teacherLine))
                 .arg(
                     FontManager::adjustedPointSize(14)
                     )

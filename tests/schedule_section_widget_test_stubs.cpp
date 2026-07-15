@@ -267,6 +267,7 @@ ScheduleBuildResult ScheduleBuilder::build(
         ScheduleEntry entry;
         entry.classId = 42;
         entry.teacherKr = QStringLiteral("김선생");
+        entry.teacherEn = QStringLiteral("Susan");
         entry.roomNumber = QStringLiteral("413");
         entry.classGrade = QStringLiteral("E4");
         entry.classLevel = QStringLiteral("Hercules");
