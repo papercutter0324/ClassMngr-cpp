@@ -39,10 +39,6 @@ constexpr qreal MajorSectionSpacingPoints = 21.0;
 constexpr qreal ScheduleTimeColumnWidthPoints = 64.0;
 constexpr int WeekdayScheduleColumnCount = 5;
 constexpr int WeekendScheduleColumnCount = 7;
-constexpr qreal CssPixelsPerPoint = 96.0 / 72.0;
-#ifdef Q_OS_WIN
-constexpr qreal ScheduleTableWindowsLeftShiftPoints = 1.0;
-#endif
 
 Result failed(
     const QString& message
@@ -223,10 +219,9 @@ QString scheduleCellHtml(
 
 struct ScheduleTableLayout
 {
-    qreal timeColumnWidth = 0.0;
-    qreal dayColumnMinimumWidth = 0.0;
-    qreal tableContentWidth = 0.0;
-    qreal leftMargin = 0.0;
+    qreal tableWidthPercentage = 0.0;
+    qreal timeColumnWidthPercentage = 0.0;
+    qreal dayColumnWidthPercentage = 0.0;
 };
 
 QString factsHtml(
@@ -968,8 +963,8 @@ void applyScheduleTableLayout(
     QList<QTextLength> columnWidths;
     columnWidths.append(
         QTextLength(
-            QTextLength::FixedLength,
-            layout.timeColumnWidth
+            QTextLength::PercentageLength,
+            layout.timeColumnWidthPercentage
             )
         );
 
@@ -977,8 +972,8 @@ void applyScheduleTableLayout(
     {
         columnWidths.append(
             QTextLength(
-                QTextLength::FixedLength,
-                layout.dayColumnMinimumWidth
+                QTextLength::PercentageLength,
+                layout.dayColumnWidthPercentage
                 )
             );
     }
@@ -986,14 +981,14 @@ void applyScheduleTableLayout(
     QTextTableFormat format = (*table)->format();
     format.setWidth(
         QTextLength(
-            QTextLength::FixedLength,
-            layout.tableContentWidth
+            QTextLength::PercentageLength,
+            layout.tableWidthPercentage
             )
         );
     format.setColumnWidthConstraints(columnWidths);
-    format.setLeftMargin(layout.leftMargin);
+    format.setLeftMargin(0.0);
     format.setRightMargin(0.0);
-    format.setAlignment(Qt::AlignLeft);
+    format.setAlignment(Qt::AlignHCenter);
     (*table)->setFormat(format);
 }
 
@@ -1166,8 +1161,6 @@ ScheduleTableLayout scheduleTableLayout(
     const qreal documentWidth =
         documentWidthPixels * 72.0
         / std::max(1, resolutionDpi);
-    const qreal timeColumnWidth =
-        ScheduleTimeColumnWidthPoints * CssPixelsPerPoint;
     const qreal availableDayWidth =
         std::max(
             0.0,
@@ -1181,28 +1174,23 @@ ScheduleTableLayout scheduleTableLayout(
             ? WeekendScheduleColumnCount
             : WeekdayScheduleColumnCount;
 
-    const qreal dayColumnMinimumWidth =
-        (availableDayWidth / dayColumnCount) * CssPixelsPerPoint;
+    const qreal dayColumnWidth =
+        availableDayWidth / dayColumnCount;
     const qreal tableWidth =
-        timeColumnWidth
-        + (dayColumnMinimumWidth * schedule.days.size());
-    const qreal documentWidthCssPixels =
-        documentWidth * CssPixelsPerPoint;
-    qreal leftMargin =
-        (documentWidthCssPixels - tableWidth) / 2.0;
+        ScheduleTimeColumnWidthPoints
+        + (dayColumnWidth * schedule.days.size());
 
-#ifdef Q_OS_WIN
-    // QTextDocument's Windows PDF layout leaves the table a fraction to the
-    // right of the section header. Nudge it back to the header's center.
-    leftMargin -=
-        ScheduleTableWindowsLeftShiftPoints * CssPixelsPerPoint;
-#endif
+    if (documentWidth <= 0.0 || tableWidth <= 0.0)
+    {
+        return {};
+    }
 
+    // Keep QTextDocument's table constraints unitless: the table percentage
+    // is relative to the page body, while its columns are relative to it.
     return {
-        timeColumnWidth,
-        dayColumnMinimumWidth,
-        tableWidth,
-        leftMargin
+        (tableWidth / documentWidth) * 100.0,
+        (ScheduleTimeColumnWidthPoints / tableWidth) * 100.0,
+        (dayColumnWidth / tableWidth) * 100.0
     };
 }
 

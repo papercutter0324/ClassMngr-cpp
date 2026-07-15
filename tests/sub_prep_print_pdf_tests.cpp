@@ -129,6 +129,77 @@ SubPrepPrintService::Request sampleRequest()
     return request;
 }
 
+SubPrepPrintService::Request denseWeekdayScheduleRequest()
+{
+    SubPrepPrintService::Request request = sampleRequest();
+    request.schedule.rows.clear();
+
+    const QStringList timeLabels{
+        QStringLiteral("16:00"),
+        QStringLiteral("17:00"),
+        QStringLiteral("18:00"),
+        QStringLiteral("19:00"),
+        QStringLiteral("20:00"),
+        QStringLiteral("21:00")
+    };
+    const QStringList teacherNames{
+        QStringLiteral("Jihye"),
+        QStringLiteral("Hyeeyoung"),
+        QStringLiteral("San"),
+        QStringLiteral("Youjin"),
+        QStringLiteral("Emma")
+    };
+
+    for (int rowIndex = 0; rowIndex < timeLabels.size(); ++rowIndex)
+    {
+        ScheduleRowView row;
+        row.timeLabel = timeLabels.at(rowIndex);
+        row.timeRangeLabel = QStringLiteral("%1:00 -\n%1:50")
+            .arg(rowIndex + 4);
+
+        for (int dayIndex = 0;
+             dayIndex < request.schedule.days.size();
+             ++dayIndex)
+        {
+            ScheduleCellView cell;
+            cell.day = request.schedule.days.at(dayIndex);
+            cell.timeLabel = row.timeLabel;
+            cell.defaultSlotState = scheduleEmptySlotState();
+            cell.slotState = cell.defaultSlotState;
+
+            if (rowIndex >= 2 && rowIndex <= 4)
+            {
+                cell.slotState = scheduleEssaySlotState();
+            }
+            else
+            {
+                ScheduleEntry entry;
+                entry.classId = (rowIndex * 10) + dayIndex + 1;
+                entry.teacherEn = teacherNames.at(
+                    (rowIndex + dayIndex) % teacherNames.size()
+                    );
+                entry.roomNumber = QString::number(
+                    401 + (rowIndex * 10) + dayIndex
+                    );
+                entry.classGrade = QStringLiteral("E5");
+                entry.classLevel =
+                    dayIndex == 1
+                        ? QStringLiteral("Extraordinary Advanced Course")
+                        : QStringLiteral("Zeus");
+                entry.classColor = QStringLiteral("#dbeafe");
+                entry.fontColor = QStringLiteral("#1e3a5f");
+                cell.entries.append(entry);
+            }
+
+            row.cells.append(cell);
+        }
+
+        request.schedule.rows.append(row);
+    }
+
+    return request;
+}
+
 void loadDocument(
     QPdfDocument& document,
     const QString& path
@@ -468,7 +539,8 @@ private slots:
     void subNotesUsePromptAndRuledWritingSpace();
     void subNotesArePresentForSelectedDayCombinations_data();
     void subNotesArePresentForSelectedDayCombinations();
-    void alignsWeekdayScheduleToSectionHeader();
+    void denseWeekdayScheduleFitsSectionWidth();
+    void centersSelectedWeekdayScheduleAtNominalColumnWidth();
     void usesSevenDayColumnMinimumWhenWeekendsAreShown();
 };
 
@@ -580,14 +652,17 @@ void SubPrepPrintPdfTests::rendersEssayScheduleSlots()
     QVERIFY(changedPixelCount(essayPage, emptyPage) > 100);
 }
 
-void SubPrepPrintPdfTests::alignsWeekdayScheduleToSectionHeader()
+void SubPrepPrintPdfTests::denseWeekdayScheduleFitsSectionWidth()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
-    SubPrepPrintService::Request request = sampleRequest();
+    SubPrepPrintService::Request request =
+        denseWeekdayScheduleRequest();
     const QString path =
-        temporaryDirectory.filePath(QStringLiteral("Weekday Sub Prep.pdf"));
+        temporaryDirectory.filePath(
+            QStringLiteral("Dense Weekday Sub Prep.pdf")
+            );
     const SubPrepPrintService::Result result =
         SubPrepPrintService::saveSubPrepPdf(request, path);
     QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
@@ -610,10 +685,11 @@ void SubPrepPrintPdfTests::alignsWeekdayScheduleToSectionHeader()
 
     constexpr qreal TimeColumnWidthPoints = 64.0;
     constexpr int DayColumnCount = 5;
-    constexpr qreal TolerancePoints = 10.0;
+    constexpr qreal TolerancePoints = 4.0;
     const qreal pageWidth = document.pagePointSize(0).width();
+    const qreal marginPoints = MarginInches * PointsPerInch;
     const qreal contentWidth =
-        pageWidth - (2.0 * MarginInches * PointsPerInch);
+        pageWidth - (2.0 * marginPoints);
     const qreal dayColumnWidth =
         (contentWidth - TimeColumnWidthPoints) / DayColumnCount;
     const qreal expectedTimeToDayCenterDistance =
@@ -638,15 +714,132 @@ void SubPrepPrintPdfTests::alignsWeekdayScheduleToSectionHeader()
         timeBounds.center().x() - (TimeColumnWidthPoints / 2.0);
     const qreal tableRight =
         fridayBounds.center().x() + (dayColumnWidth / 2.0);
-#ifdef Q_OS_WIN
-    constexpr qreal WindowsLeftShiftPoints = 1.0;
-#else
-    constexpr qreal WindowsLeftShiftPoints = 0.0;
-#endif
+    QVERIFY(
+        std::abs(
+            tableLeft - marginPoints
+            )
+        <= TolerancePoints
+        );
+    QVERIFY(
+        std::abs(
+            tableRight - (pageWidth - marginPoints)
+            )
+        <= TolerancePoints
+        );
+
+    const QRectF longEntryBounds =
+        textBounds(document, 0, QStringLiteral("Hyeeyoung 402"));
+    QVERIFY(!longEntryBounds.isEmpty());
+    QVERIFY(
+        longEntryBounds.left()
+        >= tuesdayBounds.center().x()
+            - (dayColumnWidth / 2.0)
+            - TolerancePoints
+        );
+    QVERIFY(
+        longEntryBounds.right()
+        <= tuesdayBounds.center().x()
+            + (dayColumnWidth / 2.0)
+            + TolerancePoints
+        );
+
+    const QRectF lastRowBounds =
+        textBounds(document, 0, QStringLiteral("Emma 455"));
+    QVERIFY(!lastRowBounds.isEmpty());
+
+    const QImage image = renderPage(document, 0);
+    QVERIFY(!image.isNull());
+    const qreal pixelsPerPoint = RenderDpi / PointsPerInch;
+    const QRect rightBorderArea(
+        qRound((tableRight - 1.0) * pixelsPerPoint),
+        qRound(timeBounds.top() * pixelsPerPoint),
+        qRound(2.0 * pixelsPerPoint),
+        qRound(
+            (lastRowBounds.bottom() - timeBounds.top() + 10.0)
+            * pixelsPerPoint
+            )
+        );
+    QVERIFY(
+        longestVerticalInkRun(image, rightBorderArea)
+        >= qRound(RenderDpi * 0.5)
+        );
+}
+
+void SubPrepPrintPdfTests
+    ::centersSelectedWeekdayScheduleAtNominalColumnWidth()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    request.schedule.days = {
+        QStringLiteral("Monday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Friday")
+    };
+    request.schedule.rows.first().cells = {
+        request.schedule.rows.first().cells.at(0),
+        request.schedule.rows.first().cells.at(2),
+        request.schedule.rows.first().cells.at(4)
+    };
+
+    const QString path =
+        temporaryDirectory.filePath(
+            QStringLiteral("Selected Weekdays Sub Prep.pdf")
+            );
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    const QRectF timeBounds =
+        textBounds(document, 0, QStringLiteral("Time"));
+    const QRectF mondayBounds =
+        textBounds(document, 0, QStringLiteral("Monday"));
+    const QRectF wednesdayBounds =
+        textBounds(document, 0, QStringLiteral("Wednesday"));
+    const QRectF fridayBounds =
+        textBounds(document, 0, QStringLiteral("Friday"));
+    QVERIFY(!timeBounds.isEmpty());
+    QVERIFY(!mondayBounds.isEmpty());
+    QVERIFY(!wednesdayBounds.isEmpty());
+    QVERIFY(!fridayBounds.isEmpty());
+
+    constexpr qreal TimeColumnWidthPoints = 64.0;
+    constexpr int DayColumnCount = 5;
+    constexpr qreal TolerancePoints = 4.0;
+    const qreal pageWidth = document.pagePointSize(0).width();
+    const qreal contentWidth =
+        pageWidth - (2.0 * MarginInches * PointsPerInch);
+    const qreal dayColumnWidth =
+        (contentWidth - TimeColumnWidthPoints) / DayColumnCount;
+    const qreal tableLeft =
+        timeBounds.center().x() - (TimeColumnWidthPoints / 2.0);
+    const qreal tableRight =
+        fridayBounds.center().x() + (dayColumnWidth / 2.0);
+
+    QVERIFY(
+        std::abs(
+            wednesdayBounds.center().x()
+            - mondayBounds.center().x()
+            - dayColumnWidth
+            )
+        <= TolerancePoints
+        );
+    QVERIFY(
+        std::abs(
+            fridayBounds.center().x()
+            - wednesdayBounds.center().x()
+            - dayColumnWidth
+            )
+        <= TolerancePoints
+        );
     QVERIFY(
         std::abs(
             ((tableLeft + tableRight) / 2.0)
-            - ((pageWidth / 2.0) - WindowsLeftShiftPoints)
+            - (pageWidth / 2.0)
             )
         <= TolerancePoints
         );
