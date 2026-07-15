@@ -35,7 +35,7 @@ constexpr qreal SubPrepPdfMarginInches = 0.5;
 constexpr int SubPrepPdfResolutionDpi = 300;
 constexpr qreal FooterHeightInches = 0.24;
 constexpr qreal SubNotesLineSpacingPoints = 16.0;
-constexpr qreal MajorSectionSpacingPoints = 10.5;
+constexpr qreal MajorSectionSpacingPoints = 21.0;
 constexpr qreal ScheduleTimeColumnWidthPoints = 64.0;
 constexpr int WeekdayScheduleColumnCount = 5;
 constexpr int WeekendScheduleColumnCount = 7;
@@ -233,7 +233,8 @@ QString factsHtml(
     const QList<QPair<QString, QString>>& facts,
     int columnCount = 2,
     bool useBorderlessEmptyCells = false,
-    const QString& valueClass = QString()
+    const QString& valueClass = QString(),
+    const QSet<QString>& boldValueLabels = {}
     )
 {
     columnCount = std::max(1, columnCount);
@@ -264,6 +265,12 @@ QString factsHtml(
             }
 
             const auto& fact = facts.at(factIndex);
+            const QString valueHtml =
+                boldValueLabels.contains(fact.first)
+                    ? QStringLiteral("<strong>%1</strong>").arg(
+                          htmlText(fact.second)
+                          )
+                    : htmlText(fact.second);
             html +=
                 QStringLiteral(
                     "<td width=\"%1%\"><span class=\"field-label\">%2</span><div class=\"fact-value%3\">%4</div></td>"
@@ -272,7 +279,7 @@ QString factsHtml(
                         cellWidth,
                         htmlText(fact.first),
                         valueClass,
-                        htmlText(fact.second)
+                        valueHtml
                         );
         }
 
@@ -287,7 +294,8 @@ QString noteHtml(
     const QString& label,
     const QString& note,
     const QString& labelClass = QString(),
-    const QString& noteClass = QString()
+    const QString& noteClass = QString(),
+    bool boldLabel = false
     )
 {
     if (label.trimmed().isEmpty())
@@ -299,13 +307,18 @@ QString noteHtml(
                 );
     }
 
+    const QString labelHtml =
+        boldLabel
+            ? QStringLiteral("<strong>%1</strong>").arg(htmlText(label))
+            : htmlText(label);
+
     return QStringLiteral(
         "<div class=\"note-label%1\">%2</div>"
         "<div class=\"note%3\">%4</div>"
         )
         .arg(
             labelClass,
-            htmlText(label),
+            labelHtml,
             noteClass,
             htmlText(note)
             );
@@ -320,24 +333,37 @@ QString gradingNoteHtml(
         label,
         note,
         QStringLiteral(" grading-note-label"),
-        QStringLiteral(" compact-note")
+        QStringLiteral(" compact-note"),
+        true
         );
+}
+
+QString boldHtmlText(
+    const QString& value
+    )
+{
+    return QStringLiteral("<strong>%1</strong>")
+        .arg(htmlText(value));
 }
 
 QString sectionHtml(
     const QString& heading,
     const QString& contents,
-    bool startOnNewPage = false
+    bool startOnNewPage = false,
+    bool useStandardTopSpacing = false
     )
 {
     return QStringLiteral(
-        "<div class=\"major-section%1\"><h2>%2</h2>%3</div>"
+        "<div class=\"major-section%1%2\"><h2>%3</h2>%4</div>"
         )
         .arg(
             startOnNewPage
                 ? QStringLiteral(" new-page")
                 : QString(),
-            htmlText(heading),
+            useStandardTopSpacing
+                ? QStringLiteral(" first-major-section")
+                : QString(),
+            boldHtmlText(heading),
             contents
             );
 }
@@ -355,7 +381,7 @@ QString subsectionHtml(
             additionalClass.isEmpty()
                 ? QString()
                 : QStringLiteral(" %1").arg(additionalClass),
-            htmlText(heading),
+            boldHtmlText(heading),
             contents
             );
 }
@@ -452,7 +478,7 @@ QString coTeacherNotesHtml(
 {
     return QStringLiteral(
         "<div class=\"co-teacher-notes\">"
-        "<div class=\"note-label\">%1</div>"
+        "<div class=\"note-label\"><strong>%1</strong></div>"
         "<div class=\"note co-teacher-note\">%2</div>"
         "</div>"
         )
@@ -573,7 +599,8 @@ QString classInformationHtml(
             },
             4,
             false,
-            QStringLiteral(" teacher-fact-value")
+            QStringLiteral(" teacher-fact-value"),
+            QSet<QString>{translate("Korean Name")}
             );
 
         html += QStringLiteral(
@@ -603,7 +630,7 @@ QString classInformationHtml(
             {
                 html += QStringLiteral(
                     "<div class=\"class-list-note\">"
-                    "<span>%1:</span>&nbsp;%2</div>"
+                    "<span><strong>%1:</strong></span>&nbsp;%2</div>"
                     )
                     .arg(
                         htmlText(translate("Notes")),
@@ -645,7 +672,7 @@ QString documentHtml(
     QString html = QStringLiteral(
         "<html><body>"
         "<div class=\"document-title\">"
-        "<h1>%1</h1>"
+        "<h1><strong>%1</strong></h1>"
         "<div class=\"subtitle\">%2</div>"
         "</div>"
         )
@@ -719,7 +746,9 @@ QString documentHtml(
                 translate("Special Instructions"),
                 request.specialInstructions
                 )
-            )
+            ),
+        false,
+        true
         );
 
     html += sectionHtml(
@@ -751,19 +780,20 @@ QString documentStyleSheet()
 
     return QStringLiteral(
         "html, body { margin:0; padding:0; width:100%; }"
-        "body { color:#24313a; font-family:'%1'; font-size:10.5pt; }"
+        "body { color:#000000; font-family:'%1'; font-size:10.5pt; }"
         ".document-title { border-bottom:2px solid #2f657d; margin:0 0 15px 0; padding:0 0 10px 0; text-align:center; }"
-        "h1 { color:#183746; font-size:23pt; font-weight:700; margin:0 0 3px 0; }"
-        ".subtitle { color:#566a75; font-size:11pt; margin:0; }"
-        ".major-section { margin:0 0 14px 0; width:100%; }"
+        "h1 { color:#000000; font-size:23pt; font-weight:800; margin:0 0 3px 0; }"
+        ".subtitle { color:#000000; font-size:11pt; margin:0; }"
+        ".major-section { margin:0 0 28px 0; width:100%; }"
         ".new-page { page-break-before:always; }"
         "h2 { background:#244b5f; border:1px solid #244b5f; color:#ffffff; "
-        "border-top-width:2px; font-size:14pt; font-weight:700; margin:14px 0 9px 0; padding:7px 9px; text-align:center; "
+        "border-top-width:2px; font-size:14pt; font-weight:800; margin:28px 0 9px 0; padding:7px 9px; text-align:center; "
         "page-break-after:avoid; }"
+        ".first-major-section h2 { margin-top:14px; }"
         ".subsection { margin:0 0 11px 0; width:100%; }"
         ".class-materials-subsection { margin-bottom:27px; }"
         ".subsection-heading { background:#e9f1f5; border-left:4px solid #3f7c96; "
-        "color:#23495c; font-size:12pt; font-weight:700; margin:9px 0 6px 0; padding:5px 8px; "
+        "color:#000000; font-size:12pt; font-weight:800; margin:9px 0 6px 0; padding:5px 8px; "
         "page-break-after:avoid; }"
         ".teacher-heading { background:#e9f1f5; border:1px solid #3f7c96; "
         "color:#23495c; font-size:12pt; font-weight:700; padding:7px 9px; }"
@@ -771,7 +801,7 @@ QString documentStyleSheet()
         ".facts td { background:#ffffff; border:1px solid #bdcbd2; padding:7px 9px; vertical-align:top; }"
         ".facts td.empty-fact-cell { background:transparent; border:0; padding:0; }"
         ".campus-fact-value, .teacher-fact-value { text-align:center; }"
-        ".field-label, .note-label { color:#486675; font-size:9pt; font-weight:700; }"
+        ".field-label, .note-label { color:#000000; font-size:9pt; font-weight:700; }"
         ".note-label { margin:8px 0 3px 0; }"
         ".note { background:#f8fbfc; border:1px solid #bdcbd2; border-left:3px solid #7aa3b5; "
         "padding:8px 9px; }"
@@ -782,12 +812,12 @@ QString documentStyleSheet()
         ".teacher-card-wrapper { margin:0; padding:0; width:100%; }"
         ".teacher-section-spacer { font-size:6pt; margin:0 0 8px 0; padding:0; }"
         ".teacher-class-list { border-top:1px solid #d1dce1; margin:9px 0 0 0; padding:7px 0 0 0; }"
-        ".class-list-heading { color:#2c5366; font-size:11pt; font-weight:700; margin:0 0 3px 0; }"
+        ".class-list-heading { color:#000000; font-size:11pt; font-weight:700; margin:0 0 3px 0; }"
         ".class-list { margin:0; padding:0 0 0 19px; }"
         ".class-list li { margin:4px 0; padding:0; }"
         ".class-list-item { font-weight:700; }"
-        ".class-list-note { color:#52656f; font-size:9.5pt; margin:2px 0 0 4em; }"
-        ".class-list-note span { color:#486675; font-weight:700; }"
+        ".class-list-note { color:#000000; font-size:9.5pt; margin:2px 0 0 4em; }"
+        ".class-list-note span { color:#000000; font-weight:700; }"
         ".co-teacher-notes { margin:9px 0 0 0; }"
         ".co-teacher-notes .note-label { margin:0 0 3px 0; }"
         ".co-teacher-note { margin-left:4em; }"
@@ -797,12 +827,12 @@ QString documentStyleSheet()
         ".schedule th { background:#244b5f; border:1px solid #000000; color:#ffffff; "
         "font-weight:700; padding:7px 4px; text-align:center; }"
         ".schedule td { border:1px solid #000000; padding:5px 4px; text-align:center; vertical-align:middle; }"
-        ".schedule-time { background:#e9f1f5; color:#263f4b; font-weight:700; }"
+        ".schedule-time { background:#e9f1f5; color:#000000; font-weight:700; }"
         ".schedule-entry { margin:1px 0; padding:4px 3px; }"
         ".schedule-slot { font-weight:700; padding:6px 3px; }"
         ".essay { background:#ffffff; color:#000000; font-size:12pt; font-style:normal; font-weight:700; }"
         ".lunch { background:#dcdcdc; color:#000000; }"
-        ".empty { background:#f8fbfc; border:1px solid #d1dce1; color:#5c6e78; "
+        ".empty { background:#f8fbfc; border:1px solid #d1dce1; color:#000000; "
         "font-style:italic; padding:9px; }"
         )
         .arg(family);
@@ -1262,7 +1292,7 @@ void drawPageFooter(
     pageFont.setPointSizeF(8.5);
 
     painter.save();
-    painter.setPen(QColor(QStringLiteral("#5f6f7a")));
+    painter.setPen(Qt::black);
     painter.setFont(pageFont);
     painter.drawText(
         QRectF(
