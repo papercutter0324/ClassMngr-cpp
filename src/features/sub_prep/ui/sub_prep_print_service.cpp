@@ -35,6 +35,7 @@ constexpr qreal SubPrepPdfMarginInches = 0.5;
 constexpr int SubPrepPdfResolutionDpi = 300;
 constexpr qreal FooterHeightInches = 0.24;
 constexpr qreal SubNotesLineSpacingPoints = 16.0;
+constexpr qreal MajorSectionSpacingPoints = 10.5;
 constexpr qreal ScheduleTimeColumnWidthPoints = 64.0;
 constexpr int WeekdayScheduleColumnCount = 5;
 constexpr int WeekendScheduleColumnCount = 7;
@@ -751,7 +752,7 @@ QString documentStyleSheet()
     return QStringLiteral(
         "html, body { margin:0; padding:0; width:100%; }"
         "body { color:#24313a; font-family:'%1'; font-size:10.5pt; }"
-        ".document-title { border-bottom:2px solid #2f657d; margin:0 0 15px 0; padding:0 0 10px 0; }"
+        ".document-title { border-bottom:2px solid #2f657d; margin:0 0 15px 0; padding:0 0 10px 0; text-align:center; }"
         "h1 { color:#183746; font-size:23pt; font-weight:700; margin:0 0 3px 0; }"
         ".subtitle { color:#566a75; font-size:11pt; margin:0; }"
         ".major-section { margin:0 0 14px 0; width:100%; }"
@@ -987,6 +988,44 @@ std::optional<QRectF> textBlockBounds(
     return bounds.isEmpty()
         ? std::nullopt
         : std::optional<QRectF>(bounds);
+}
+
+std::optional<qreal> contentBottomBeforeText(
+    QTextDocument& document,
+    const QString& text
+    )
+{
+    const QTextCursor cursor = document.find(text);
+
+    if (cursor.isNull())
+    {
+        return std::nullopt;
+    }
+
+    qreal contentBottom = 0.0;
+    bool foundContent = false;
+
+    for (
+        QTextBlock block = document.begin();
+        block.isValid() && block.position() < cursor.selectionStart();
+        block = block.next()
+        )
+    {
+        const QRectF bounds =
+            document.documentLayout()->blockBoundingRect(block);
+
+        if (bounds.isEmpty())
+        {
+            continue;
+        }
+
+        contentBottom = std::max(contentBottom, bounds.bottom());
+        foundContent = true;
+    }
+
+    return foundContent
+        ? std::optional<qreal>(contentBottom)
+        : std::nullopt;
 }
 
 bool shouldStartSubNotesOnNewPage(
@@ -1375,18 +1414,131 @@ Result saveSubPrepPdf(
             writer.resolution()
             );
 
+    QTextDocument fallbackSubNotesDocument;
+    std::optional<qreal> fallbackSubNotesLineStart;
+    const bool appendFallbackSubNotesPage =
+        !subNotesLineStart.has_value();
+
+    if (appendFallbackSubNotesPage)
+    {
+        fallbackSubNotesDocument.documentLayout()->setPaintDevice(
+            &writer
+            );
+        fallbackSubNotesDocument.setDefaultFont(documentFont);
+        fallbackSubNotesDocument.setDefaultStyleSheet(
+            documentStyleSheet()
+            );
+        fallbackSubNotesDocument.setDocumentMargin(0.0);
+        fallbackSubNotesDocument.setPageSize(body.size());
+        fallbackSubNotesDocument.setHtml(
+            QStringLiteral("<html><body>")
+            + sectionHtml(
+                translate("Sub Notes"),
+                subNotesHtml()
+                )
+            + QStringLiteral("</body></html>")
+            );
+        fallbackSubNotesLineStart =
+            subNotesWritingStart(
+                fallbackSubNotesDocument,
+                writer.resolution()
+                );
+    }
+
     const QSizeF documentSize =
         document.documentLayout()->documentSize();
-    const int pageCount =
+    const int subNotesPageCount =
+        subNotesLineStart
+            ? static_cast<int>(
+                  std::floor(*subNotesLineStart / body.height())
+                  ) + 1
+            : 1;
+    const int documentPageCount =
         std::max(
-            1,
-            static_cast<int>(
-                std::ceil(documentSize.height() / body.height())
+            document.pageCount(),
+            std::max(
+                subNotesPageCount,
+                std::max(
+                    1,
+                    static_cast<int>(
+                        std::ceil(documentSize.height() / body.height())
+                        )
+                    )
                 )
+            );
+    bool placeFallbackSubNotesOnLastPage = false;
+    qreal fallbackSubNotesTop = 0.0;
+
+    if (appendFallbackSubNotesPage)
+    {
+        const std::optional<qreal> contentBottom =
+            contentBottomBeforeText(
+                document,
+                translate("Sub Notes")
+                );
+
+        if (contentBottom)
+        {
+            const int contentPageIndex =
+                std::max(
+                    0,
+                    static_cast<int>(std::floor(
+                        (*contentBottom - 0.01) / body.height()
+                        ))
+                    );
+            const qreal contentBottomOnPage =
+                *contentBottom
+                - (contentPageIndex * body.height());
+            const qreal availableHeight =
+                body.height() - contentBottomOnPage;
+
+            if (
+                contentPageIndex == documentPageCount - 1
+                && availableHeight >= (body.height() / 2.0)
+                )
+            {
+                placeFallbackSubNotesOnLastPage = true;
+                fallbackSubNotesTop =
+                    contentBottomOnPage
+                    + pixelsForPoints(
+                        MajorSectionSpacingPoints,
+                        writer.resolution()
+                        );
+            }
+        }
+    }
+
+    const int pageCount =
+        documentPageCount
+        + (
+            appendFallbackSubNotesPage
+            && !placeFallbackSubNotesOnLastPage
+                ? 1
+                : 0
             );
 
     for (int pageIndex = 0; pageIndex < pageCount; ++pageIndex)
     {
+        const bool isFallbackSubNotesPage =
+            appendFallbackSubNotesPage
+            && !placeFallbackSubNotesOnLastPage
+            && pageIndex == documentPageCount;
+        const bool drawsFallbackSubNotesOnThisPage =
+            placeFallbackSubNotesOnLastPage
+            && pageIndex == documentPageCount - 1;
+        QTextDocument& pageDocument =
+            isFallbackSubNotesPage
+                ? fallbackSubNotesDocument
+                : document;
+        const int documentPageIndex =
+            isFallbackSubNotesPage
+                ? 0
+                : pageIndex;
+        const std::optional<qreal>& writingLineStart =
+            isFallbackSubNotesPage
+                ? fallbackSubNotesLineStart
+                : subNotesLineStart;
+
         painter.fillRect(page, Qt::white);
         drawPageFooter(
             painter,
@@ -1399,28 +1551,60 @@ Result saveSubPrepPdf(
         painter.setClipRect(body);
         painter.translate(
             body.left(),
-            body.top() - (pageIndex * body.height())
+            body.top() - (documentPageIndex * body.height())
             );
-        document.drawContents(
+        pageDocument.drawContents(
             &painter,
             QRectF(
                 0.0,
-                pageIndex * body.height(),
+                documentPageIndex * body.height(),
                 body.width(),
                 body.height()
                 )
             );
         painter.restore();
 
-        if (subNotesLineStart)
+        if (writingLineStart)
         {
             drawSubNotesWritingLines(
                 painter,
                 body,
-                *subNotesLineStart,
+                *writingLineStart,
                 subNotesLineSpacing,
-                pageIndex
+                documentPageIndex
                 );
+        }
+
+        if (drawsFallbackSubNotesOnThisPage)
+        {
+            painter.save();
+            painter.setClipRect(body);
+            painter.translate(
+                body.left(),
+                body.top() + fallbackSubNotesTop
+                );
+            fallbackSubNotesDocument.drawContents(
+                &painter,
+                QRectF(
+                    0.0,
+                    0.0,
+                    body.width(),
+                    body.height() - fallbackSubNotesTop
+                    )
+                );
+            painter.restore();
+
+            if (fallbackSubNotesLineStart)
+            {
+                drawSubNotesWritingLines(
+                    painter,
+                    body,
+                    fallbackSubNotesTop
+                        + *fallbackSubNotesLineStart,
+                    subNotesLineSpacing,
+                    0
+                    );
+            }
         }
 
         if (pageIndex + 1 < pageCount && !writer.newPage())

@@ -463,6 +463,8 @@ private slots:
     void teacherSectionBordersUseScheduleColor();
     void keepsTeacherSectionsTogetherAcrossPages();
     void subNotesUsePromptAndRuledWritingSpace();
+    void subNotesArePresentForSelectedDayCombinations_data();
+    void subNotesArePresentForSelectedDayCombinations();
     void alignsWeekdayScheduleToSectionHeader();
     void usesSevenDayColumnMinimumWhenWeekendsAreShown();
 };
@@ -489,6 +491,26 @@ void SubPrepPrintPdfTests::generatedPdfUsesA4PortraitWithNarrowMargins()
         QPageSize(QPageSize::A4).size(QPageSize::Point);
     QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
     QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+
+    const QRectF titleBounds =
+        textBounds(document, 0, QStringLiteral("Sub Prep"));
+    const QRectF subtitleBounds =
+        textBounds(
+            document,
+            0,
+            QStringLiteral("Thank you for subbing for me!")
+            );
+    QVERIFY(!titleBounds.isEmpty());
+    QVERIFY(!subtitleBounds.isEmpty());
+    constexpr qreal CenterTolerancePoints = 3.0;
+    QVERIFY(
+        std::abs(titleBounds.center().x() - (pageSize.width() / 2.0))
+        <= CenterTolerancePoints
+        );
+    QVERIFY(
+        std::abs(subtitleBounds.center().x() - (pageSize.width() / 2.0))
+        <= CenterTolerancePoints
+        );
 
     const QImage image = renderPage(document, 0);
     QVERIFY(!image.isNull());
@@ -867,6 +889,10 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
     QVERIFY(temporaryDirectory.isValid());
 
     SubPrepPrintService::Request request = sampleRequest();
+    request.schedule.days = {QStringLiteral("Thursday")};
+    request.schedule.rows.first().cells = {
+        request.schedule.rows.first().cells.at(3)
+    };
     SubPrepClassInformation::TeacherGroup firstGroup =
         request.classInformation.first();
     firstGroup.displayName = QStringLiteral("First Teacher");
@@ -899,7 +925,7 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
 
     QPdfDocument document;
     loadDocument(document, path);
-    QVERIFY(document.pageCount() >= 3);
+    QCOMPARE(document.pageCount(), 3);
     QVERIFY(pageText(document, 1).contains(QStringLiteral("First Teacher")));
     QVERIFY(!pageText(document, 1).contains(QStringLiteral("Second Teacher")));
     QVERIFY(pageText(document, 2).contains(QStringLiteral("Second Teacher")));
@@ -907,6 +933,58 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
         pageText(document, 2).contains(
             QStringLiteral("Second Teacher Class")
             )
+        );
+    const QString text = documentText(document);
+    QVERIFY(text.contains(QStringLiteral("Sub Notes")));
+    QVERIFY(!text.contains(request.subNotes));
+    QVERIFY(
+        text.contains(
+            QStringLiteral(
+                "If there is anything important that you want me to know, "
+                "please leave me some notes."
+                )
+            )
+        );
+    const int subNotesPageIndex = document.pageCount() - 1;
+    QCOMPARE(subNotesPageIndex, 2);
+    QVERIFY(
+        pageText(document, subNotesPageIndex).contains(
+            QStringLiteral("Sub Notes")
+            )
+        );
+    const QRectF lastClassBounds =
+        textBounds(
+            document,
+            subNotesPageIndex,
+            QStringLiteral("Second Teacher Class")
+            );
+    const QRectF subNotesBounds =
+        textBounds(
+            document,
+            subNotesPageIndex,
+            QStringLiteral("Sub Notes")
+            );
+    QVERIFY(!lastClassBounds.isEmpty());
+    QVERIFY(!subNotesBounds.isEmpty());
+    QVERIFY(subNotesBounds.top() - lastClassBounds.bottom() >= 8.0);
+
+    const QImage subNotesPage = renderPage(document, subNotesPageIndex);
+    QVERIFY(!subNotesPage.isNull());
+    const int marginPixels = qRound(MarginInches * RenderDpi);
+    const QRect writingArea(
+        marginPixels,
+        subNotesPage.height() / 2,
+        subNotesPage.width() - (2 * marginPixels),
+        subNotesPage.height() / 2 - marginPixels
+        );
+    QVERIFY(
+        horizontalColorLineCount(
+            subNotesPage,
+            writingArea,
+            Qt::black,
+            writingArea.width() * 9 / 10
+            )
+        >= 4
         );
 }
 
@@ -993,6 +1071,88 @@ void SubPrepPrintPdfTests::subNotesUsePromptAndRuledWritingSpace()
             )
         >= 4
         );
+}
+
+void SubPrepPrintPdfTests
+    ::subNotesArePresentForSelectedDayCombinations_data()
+{
+    QTest::addColumn<QStringList>("selectedDays");
+
+    QTest::newRow("monday") << QStringList{QStringLiteral("Monday")};
+    QTest::newRow("tuesday") << QStringList{QStringLiteral("Tuesday")};
+    QTest::newRow("thursday") << QStringList{QStringLiteral("Thursday")};
+    QTest::newRow("weekdays") << QStringList{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    QTest::newRow("weekend") << QStringList{
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    QTest::newRow("alternating-days") << QStringList{
+        QStringLiteral("Monday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Sunday")
+    };
+    QTest::newRow("full-week") << QStringList{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+}
+
+void SubPrepPrintPdfTests
+    ::subNotesArePresentForSelectedDayCombinations()
+{
+    QFETCH(QStringList, selectedDays);
+
+    SubPrepPrintService::Request request = sampleRequest();
+    request.subNotes =
+        QStringLiteral("This saved note must stay out of every printed PDF.");
+    request.schedule.days = selectedDays;
+    request.schedule.rows.first().cells.clear();
+
+    for (const QString& day : selectedDays)
+    {
+        ScheduleCellView cell;
+        cell.day = day;
+        cell.timeLabel = QStringLiteral("16:00");
+        cell.defaultSlotState = scheduleEmptySlotState();
+        cell.slotState = cell.defaultSlotState;
+        request.schedule.rows.first().cells.append(cell);
+    }
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Selected Days.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    const QString text = documentText(document);
+    QVERIFY(text.contains(QStringLiteral("Sub Notes")));
+    QVERIFY(
+        text.contains(
+            QStringLiteral(
+                "If there is anything important that you want me to know, "
+                "please leave me some notes."
+                )
+            )
+        );
+    QVERIFY(!text.contains(request.subNotes));
 }
 
 QTEST_MAIN(SubPrepPrintPdfTests)
