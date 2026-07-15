@@ -101,4 +101,25 @@
         <translation>Font Colour</translation>
     </message>
 </context>
+<context>
+    <name>QObject</name>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="80"/>
+        <source>Speaking Evaluations</source>
+        <translation>Speaking Evaluations</translation>
+    </message>
+</context>
+<context>
+    <name>SpeakingEvalPage</name>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1674"/>
+        <source>No classes available</source>
+        <translation>No classes available</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1428"/>
+        <source>Select a class to create reports.</source>
+        <translation>Select a class to create reports.</translation>
+    </message>
+</context>
 </TS>

@@ -1245,6 +1245,7 @@ void Sidebar::setDatabaseSectionsVisible(
         QStringLiteral("my_info"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
+        QStringLiteral("speaking_evaluations"),
         QStringLiteral("teachers")
     };
 

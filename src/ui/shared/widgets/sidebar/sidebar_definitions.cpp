@@ -77,6 +77,12 @@ QList<TreeNodeSpec> treeStructure()
         },
 
         {
+            "speaking_evaluations",
+            QObject::tr("Speaking Evaluations"),
+            NodeType::Page
+        },
+
+        {
             "teachers",
             QObject::tr("Korean Teachers"),
             NodeType::Root,

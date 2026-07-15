@@ -14,8 +14,11 @@ class ApplicationServices;
 class QLabel;
 class QModelIndex;
 class QPushButton;
+class QTabWidget;
 class QTimer;
+class QVBoxLayout;
 class QUndoStack;
+class QWidget;
 class SpeakingEvalDelegate;
 class SpeakingEvalModel;
 
@@ -32,6 +35,11 @@ public:
     void loadEvaluation(
         const Classroom& classroom,
         const QString& evaluationName
+        );
+
+    void loadEvaluations(
+        int selectedClassId = -1,
+        const QString& selectedEvaluationName = QString()
         );
 
     void saveData() override;
@@ -69,6 +77,43 @@ private slots:
 private:
     void buildUi();
 
+    void rebuildClassTabs(
+        int selectedClassId
+        );
+
+    bool activateEvaluation(
+        int classId,
+        const QString& evaluationName
+        );
+
+    void restoreEvaluationTabSelection();
+
+    void syncTabWidgetToClass(
+        QTabWidget* tabs,
+        int classId
+        );
+
+    int currentClassIdFromTabs(
+        QTabWidget* tabs
+        ) const;
+
+    QString currentEvaluationNameFromTabs() const;
+
+    Classroom classroomById(
+        int classId
+        ) const;
+
+    int firstEvaluationClassId() const;
+
+    void setEvaluationEditorAvailable(
+        bool available
+        );
+
+    void loadEvaluationData(
+        const Classroom& classroom,
+        const QString& evaluationName
+        );
+
     void setupTable();
 
     void updateHeaderText();
@@ -105,14 +150,24 @@ private:
 private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
+    QList<Classroom> m_evaluationClasses;
     QString m_evaluationName;
     bool m_loadingEvaluation = false;
     bool m_importingNames = false;
     bool m_resolvingDuplicateName = false;
+    bool m_rebuildingClassTabs = false;
+    bool m_restoringClassTabs = false;
+    bool m_syncingEvaluationTabs = false;
     SaveMode m_saveMode = SaveMode::Automatic;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    QLabel* m_emptyLabel = nullptr;
+    QWidget* m_tabsContainer = nullptr;
+    QWidget* m_classTabsContainer = nullptr;
+    QVBoxLayout* m_classTabsLayout = nullptr;
+    QTabWidget* m_classTabs = nullptr;
+    QTabWidget* m_evaluationTabs = nullptr;
 
     SpeakingEvalModel* m_model = nullptr;
     SpeakingEvalTableView* m_table = nullptr;

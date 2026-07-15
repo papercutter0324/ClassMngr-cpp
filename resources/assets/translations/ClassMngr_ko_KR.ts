@@ -2814,6 +2814,11 @@
 <context>
     <name>QObject</name>
     <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="80"/>
+        <source>Speaking Evaluations</source>
+        <translation>말하기 평가</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="823"/>
         <source>Unable to open campus file for writing:
 %1</source>
@@ -4534,6 +4539,16 @@
 </context>
 <context>
     <name>SpeakingEvalPage</name>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1674"/>
+        <source>No classes available</source>
+        <translation>사용 가능한 수업이 없습니다</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page.cpp" line="1428"/>
+        <source>Select a class to create reports.</source>
+        <translation>보고서를 만들려면 수업을 선택하세요.</translation>
+    </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page.cpp" line="394"/>
         <source>Unsaved Speaking Evaluation Changes</source>

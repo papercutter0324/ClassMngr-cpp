@@ -502,6 +502,23 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (data.keys.first() == QStringLiteral("speaking_evaluations"))
+        {
+            if (
+                !m_services
+                || !m_services->dataService()
+                || !m_services->dataService()->isOpen()
+                || !m_pages->confirmCurrentPageCanLeave()
+                )
+            {
+                return;
+            }
+
+            m_pages->speakingPage()->loadEvaluations();
+            m_pages->showPage(PageType::SpeakingEval);
+            return;
+        }
+
         if (data.classId > 0)
         {
             if (
