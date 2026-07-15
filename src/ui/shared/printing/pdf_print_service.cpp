@@ -484,6 +484,7 @@ Result printPdfDocumentWithSystemDialog(
 
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::NativeFormat);
+    printer.setDuplex(QPrinter::DuplexLongSide);
     printer.setDocName(
         printJobTitle(request.documentPath)
         );
@@ -635,6 +636,7 @@ Result printPdfDocuments(
 
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::NativeFormat);
+    printer.setDuplex(QPrinter::DuplexLongSide);
     printer.setDocName(
         request.dialogTitle.trimmed().isEmpty()
             ? QObject::tr("Print from ClassMngr - Speaking Evaluation Reports")

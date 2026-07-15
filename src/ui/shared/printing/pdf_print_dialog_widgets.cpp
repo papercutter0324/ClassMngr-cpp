@@ -257,7 +257,7 @@ void PdfPrintDialog::buildUi()
             tr("Two-sided"),
             optionsPanel
             );
-    m_twoSidedCheck->setChecked(false);
+    m_twoSidedCheck->setChecked(true);
     optionsLayout->addWidget(m_twoSidedCheck);
     optionsLayout->addSpacing(10);
 
