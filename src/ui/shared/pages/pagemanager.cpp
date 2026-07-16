@@ -303,6 +303,17 @@ void PageManager::setDatabaseOpen(
     }
 }
 
+void PageManager::clearDatabaseState()
+{
+    for (BasePage* page : m_pages)
+    {
+        if (page)
+        {
+            page->clearDatabaseState();
+        }
+    }
+}
+
 
 
 // =========================================================

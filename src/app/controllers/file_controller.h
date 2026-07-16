@@ -75,6 +75,8 @@ private:
         const QString& filePath
         );
 
+    void closeActiveDatabase();
+
     void enterNoDatabaseState();
 
     QString mostRecentDatabasePath() const;

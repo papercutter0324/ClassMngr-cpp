@@ -31,6 +31,14 @@ void SchedulePage::refresh()
     }
 }
 
+void SchedulePage::clearDatabaseState()
+{
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->clearDatabaseState();
+    }
+}
+
 void SchedulePage::retranslateUi()
 {
     if (m_titleLabel)

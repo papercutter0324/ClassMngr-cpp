@@ -15,6 +15,23 @@ void SpeakingEvalPage::refresh()
     }
 }
 
+void SpeakingEvalPage::clearDatabaseState()
+{
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    if (m_undoStack)
+    {
+        m_undoStack->clear();
+    }
+
+    m_importingNames = false;
+    m_resolvingDuplicateName = false;
+    loadEvaluations();
+}
+
 void SpeakingEvalPage::retranslateUi()
 {
     updateHeaderText();
@@ -360,4 +377,3 @@ void SpeakingEvalPage::exportReports()
         );
     dialog.exec();
 }
-

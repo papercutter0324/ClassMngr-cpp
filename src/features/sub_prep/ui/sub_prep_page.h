@@ -41,6 +41,7 @@ public:
     bool hasUnsavedChanges() const override;
     void discardChanges() override;
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
     void scrollToSection(

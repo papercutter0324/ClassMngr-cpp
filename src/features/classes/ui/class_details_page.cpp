@@ -381,6 +381,33 @@ void ClassDetailsPage::loadClass(
     clearDirty();
 }
 
+void ClassDetailsPage::clearDatabaseState()
+{
+    m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    m_classroom = {};
+    m_teacherSection->setTeachers({});
+    m_teacherSection->selectTeacher(-1);
+    m_detailsSection->loadInfo({}, {}, {}, {}, {}, {}, 0);
+    m_scheduleSection->loadSchedules(
+        QList<ClassTime>{},
+        QList<ClassTime>{}
+        );
+    updateTitle({});
+    m_subtitleLabel->setText(
+        tr("No class selected")
+        );
+    updateScrollContentMinimumWidth();
+
+    m_loading = false;
+    clearDirty();
+}
+
 void ClassDetailsPage::updateTitle(
     const ClassInfo& info
     )

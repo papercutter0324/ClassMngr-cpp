@@ -126,6 +126,27 @@ void ClassNotesPage::loadClass(
     clearDirty();
 }
 
+void ClassNotesPage::clearDatabaseState()
+{
+    m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    m_classroom = {};
+    m_savedNotes.clear();
+    m_savedTimeFillerActivities.clear();
+    m_subtitleText.clear();
+    m_notesEdit->clear();
+    m_timeFillerActivitiesEdit->clear();
+    updateHeaderText();
+
+    m_loading = false;
+    clearDirty();
+}
+
 void ClassNotesPage::saveData()
 {
     saveClassNotesInternal(true);

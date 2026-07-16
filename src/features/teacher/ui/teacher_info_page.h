@@ -41,6 +41,7 @@ public:
         ) override;
 
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
     Teacher teacher() const;

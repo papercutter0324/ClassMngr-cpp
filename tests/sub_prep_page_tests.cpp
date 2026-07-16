@@ -18,6 +18,7 @@
 namespace ScheduleWidgetTestStubs
 {
 void reset();
+void setDatabaseOpen(bool open);
 }
 
 namespace
@@ -55,6 +56,7 @@ private slots:
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void zoomUnavailableHidesStoredCredentials();
     void printDialogSelectsVacationDaysFromTheCurrentOrFollowingWeek();
+    void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
 };
 
 void SubPrepPageTests::init()
@@ -428,6 +430,83 @@ void SubPrepPageTests
                 )
             .toString(),
         QStringLiteral("legacy@example.com")
+        );
+}
+
+void SubPrepPageTests
+    ::clearDatabaseStateStopsAutosaveAndRemovesLoadedContent()
+{
+    ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("subPrep/classMaterials"),
+        QStringLiteral("Stored database A material")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("myInfo/zoomLoginId"),
+        QStringLiteral("database-a@example.com")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("myInfo/zoomNotAvailable"),
+        false
+        );
+
+    SubPrepPage page(&services);
+    auto* materials =
+        page.findChild<QTextEdit*>(
+            QStringLiteral("subPrepClassMaterialsEdit")
+            );
+    auto* zoomLogin =
+        page.findChild<QLineEdit*>(
+            QStringLiteral("subPrepZoomLoginIdEdit")
+            );
+    auto* schedule =
+        page.findChild<ScheduleWidget*>(
+            QStringLiteral("subPrepScheduleWidget")
+            );
+
+    QVERIFY(materials);
+    QVERIFY(zoomLogin);
+    QVERIFY(schedule);
+    QCOMPARE(
+        materials->toPlainText(),
+        QStringLiteral("Stored database A material")
+        );
+    QCOMPARE(
+        zoomLogin->text(),
+        QStringLiteral("database-a@example.com")
+        );
+    QCOMPARE(schedule->visibleClassIds(), QSet<int>{42});
+
+    materials->setPlainText(
+        QStringLiteral("Unsaved database A material")
+        );
+    QVERIFY(page.hasUnsavedChanges());
+
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    page.clearDatabaseState();
+    QCoreApplication::sendPostedEvents(
+        nullptr,
+        QEvent::DeferredDelete
+        );
+
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(materials->toPlainText().isEmpty());
+    QVERIFY(zoomLogin->text().isEmpty());
+    QVERIFY(schedule->visibleClassIds().isEmpty());
+    QVERIFY(
+        page.findChildren<QWidget*>(
+            QStringLiteral("subPrepClassDetails")
+            ).isEmpty()
+        );
+
+    QTest::qWait(850);
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(
+                QStringLiteral("subPrep/classMaterials")
+                )
+            .toString(),
+        QStringLiteral("Stored database A material")
         );
 }
 

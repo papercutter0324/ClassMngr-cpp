@@ -27,6 +27,13 @@ void MyClassesPage::refresh()
     }
 }
 
+void MyClassesPage::clearDatabaseState()
+{
+    clearClassInformation();
+    m_classInformationTabs = nullptr;
+    m_selectedClassId = -1;
+}
+
 void MyClassesPage::retranslateUi()
 {
     m_titleLabel->setText(tr("Class Information"));

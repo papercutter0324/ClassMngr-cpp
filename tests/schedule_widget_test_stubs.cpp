@@ -29,11 +29,20 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 int savedSlotStates = 0;
+bool databaseOpen = true;
 
 void reset()
 {
     settings.clear();
     savedSlotStates = 0;
+    databaseOpen = true;
+}
+
+void setDatabaseOpen(
+    bool open
+    )
+{
+    databaseOpen = open;
 }
 }
 
@@ -65,7 +74,7 @@ DataService::~DataService() = default;
 
 bool DataService::isOpen() const
 {
-    return true;
+    return ScheduleWidgetTestStubs::databaseOpen;
 }
 
 void DataService::saveSetting(
@@ -253,6 +262,12 @@ ScheduleBuildResult ScheduleBuilder::build(
 {
     ScheduleBuildResult result;
     result.days = visibleDays;
+
+    if (!m_dataService || !m_dataService->isOpen())
+    {
+        return result;
+    }
+
     result.rows.append(
         {QStringLiteral("16:00")}
         );

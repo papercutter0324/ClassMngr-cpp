@@ -38,6 +38,7 @@ public:
     void setSaveMode(
         SaveMode mode
         ) override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
 private:

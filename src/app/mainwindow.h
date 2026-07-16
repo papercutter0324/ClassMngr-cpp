@@ -86,6 +86,7 @@ public:
     void applyNoDatabaseState();
 
     void applyDatabaseLoadedState();
+    void clearDatabaseBackedState();
     void retranslateUi();
 
 protected:

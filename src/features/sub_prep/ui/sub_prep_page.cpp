@@ -79,6 +79,57 @@ void SubPrepPage::refresh()
     }
 }
 
+void SubPrepPage::clearDatabaseState()
+{
+    m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    m_campuses.clear();
+
+    for (QLineEdit* edit : {
+             m_officeNumberEdit,
+             m_officeWifiEdit,
+             m_officeWifiPasswordEdit,
+             m_photocopierCodeEdit,
+             m_zoomLoginIdEdit,
+             m_zoomPasswordEdit
+         })
+    {
+        if (edit)
+        {
+            edit->clear();
+        }
+    }
+
+    for (QTextEdit* edit : {
+             m_classMaterialsEdit,
+             m_gradingInstructionsEdit,
+             m_specialInstructionsEdit,
+             m_subNotesEdit
+         })
+    {
+        if (edit)
+        {
+            edit->clear();
+        }
+    }
+
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->clearDatabaseState();
+    }
+
+    clearClassInformation();
+    updateReadOnlyFieldWidths();
+
+    m_loading = false;
+    clearDirty();
+}
+
 void SubPrepPage::retranslateUi()
 {
     if (m_titleLabel)

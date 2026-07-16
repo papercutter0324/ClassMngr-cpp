@@ -13,6 +13,7 @@ namespace ScheduleWidgetTestStubs
 {
 extern int savedSlotStates;
 void reset();
+void setDatabaseOpen(bool open);
 }
 
 class ScheduleWidgetTests : public QObject
@@ -23,6 +24,7 @@ private slots:
     void init();
     void persistsAndMirrorsEveryViewOption();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
+    void clearDatabaseStateRemovesLoadedDataAndSettings();
 };
 
 void ScheduleWidgetTests::init()
@@ -173,6 +175,44 @@ void ScheduleWidgetTests
         ScheduleWidgetTestStubs::savedSlotStates,
         0
         );
+}
+
+void ScheduleWidgetTests
+    ::clearDatabaseStateRemovesLoadedDataAndSettings()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
+
+    auto* use24Hour =
+        widget.findChild<QCheckBox*>(
+            QStringLiteral("scheduleUse24HourTimeCheckBox")
+            );
+    auto* showWeekends =
+        widget.findChild<QCheckBox*>(
+            QStringLiteral("scheduleShowWeekendsCheckBox")
+            );
+
+    QVERIFY(use24Hour);
+    QVERIFY(showWeekends);
+    use24Hour->setChecked(true);
+    showWeekends->setChecked(true);
+
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    widget.clearDatabaseState();
+
+    QVERIFY(widget.visibleClassIds().isEmpty());
+    const ScheduleDisplayState cleared =
+        widget.displayState();
+    QVERIFY(!cleared.use24HourTime);
+    QVERIFY(!cleared.showKoreanTeacherEnglishNames);
+    QVERIFY(!cleared.showIntensive);
+    QVERIFY(!cleared.showAllHours);
+    QVERIFY(cleared.hideEmptyRows);
+    QVERIFY(!cleared.showWeekends);
+    QVERIFY(!use24Hour->isChecked());
+    QVERIFY(!showWeekends->isChecked());
 }
 
 QTEST_MAIN(ScheduleWidgetTests)

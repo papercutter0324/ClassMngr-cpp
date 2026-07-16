@@ -689,6 +689,47 @@ if(BUILD_TESTING)
         COMMAND ClassMngrCalendarEventRepositoryTests
     )
 
+    qt_add_executable(ClassMngrDataServiceLifecycleTests
+        tests/data_service_lifecycle_tests.cpp
+        src/data/data_service.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/repositories/calendar_event_repository.cpp
+        src/data/repositories/campus_record_repository.cpp
+        src/data/repositories/class_info_repository.cpp
+        src/data/repositories/class_repository.cpp
+        src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/roster_repository.cpp
+        src/data/repositories/settings_repository.cpp
+        src/data/repositories/speaking_eval_repository.cpp
+        src/data/repositories/teacher_repository.cpp
+        src/domain/models/classroom.cpp
+        src/domain/models/roster.cpp
+    )
+
+    target_compile_features(ClassMngrDataServiceLifecycleTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrDataServiceLifecycleTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrDataServiceLifecycleTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrDataServiceLifecycleTests
+        COMMAND ClassMngrDataServiceLifecycleTests
+    )
+
     qt_add_executable(ClassMngrCalendarImportTests
         tests/calendar_import_tests.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
@@ -1371,6 +1412,7 @@ if(BUILD_TESTING)
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrCalendarEventRepositoryTests
+            ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests
             ClassMngrClassTabNavigationModelTests
             ClassMngrSubPrepClassInformationModelTests

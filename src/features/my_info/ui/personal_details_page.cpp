@@ -3,7 +3,9 @@
 #include "ui/shared/styles/roles.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -47,6 +49,49 @@ void PersonalDetailsPage::refresh()
     {
         loadPageData();
     }
+}
+
+void PersonalDetailsPage::clearDatabaseState()
+{
+    m_loading = true;
+
+    if (m_autosaveTimer)
+    {
+        m_autosaveTimer->stop();
+    }
+
+    if (m_nameEdit)
+    {
+        m_nameEdit->clear();
+    }
+
+    if (m_campusCombo)
+    {
+        m_campusCombo->clear();
+    }
+
+    if (m_zoomLoginIdEdit)
+    {
+        m_zoomLoginIdEdit->clear();
+    }
+
+    if (m_zoomPasswordEdit)
+    {
+        m_zoomPasswordEdit->clear();
+    }
+
+    if (m_zoomNotAvailableCheck)
+    {
+        m_zoomNotAvailableCheck->setChecked(false);
+    }
+
+    m_signatureImageData.clear();
+    setZoomFieldsEnabled();
+    updateMyInformationFieldWidths();
+    updateSignaturePreview();
+
+    m_loading = false;
+    clearDirty();
 }
 
 void PersonalDetailsPage::retranslateUi()

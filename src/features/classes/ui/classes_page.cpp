@@ -208,6 +208,35 @@ void ClassesPage::refresh()
     }
 }
 
+void ClassesPage::clearDatabaseState()
+{
+    m_classes.clear();
+    m_currentClassId = -1;
+    m_currentSection = ClassesSection::Details;
+
+    rebuildClassTabs(-1);
+
+    if (m_detailsPage)
+    {
+        m_detailsPage->clearDatabaseState();
+    }
+
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clearDatabaseState();
+    }
+
+    if (m_notesPage)
+    {
+        m_notesPage->clearDatabaseState();
+    }
+
+    restoreSelections();
+    showActiveEditor();
+    setEditorAvailable(false);
+    updateHeaderText();
+}
+
 void ClassesPage::retranslateUi()
 {
     m_titleLabel->setText(tr("Classes"));

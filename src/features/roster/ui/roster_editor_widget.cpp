@@ -78,6 +78,14 @@ void RosterEditorWidget::loadClass(
     updateActions();
 }
 
+void RosterEditorWidget::clearDatabaseState()
+{
+    m_resolvingDuplicateName = false;
+    m_removingRosterRow = false;
+    m_movingRosterRow = false;
+    loadClass({});
+}
+
 void RosterEditorWidget::saveData()
 {
     saveRosterInternal(true);

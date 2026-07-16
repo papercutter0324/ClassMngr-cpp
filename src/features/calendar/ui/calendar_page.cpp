@@ -127,6 +127,26 @@ void CalendarPage::refresh()
     refreshUpcomingEvents();
 }
 
+void CalendarPage::clearDatabaseState()
+{
+    m_eventTypeFilterStates.clear();
+
+    updateCalendarCampusFilter();
+
+    if (m_calendarModel)
+    {
+        m_calendarModel->reload();
+    }
+
+    if (m_academicCalendarProvider)
+    {
+        m_academicCalendarProvider->reload();
+    }
+
+    syncCalendarEventTypeColors();
+    refreshUpcomingEvents();
+}
+
 void CalendarPage::retranslateUi()
 {
     if (m_titleLabel)

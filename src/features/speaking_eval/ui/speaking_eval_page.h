@@ -59,6 +59,7 @@ public:
         ) override;
 
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
 private slots:

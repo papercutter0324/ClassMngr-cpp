@@ -40,6 +40,7 @@ public:
         );
 
     void refreshSchedule();
+    void clearDatabaseState();
     void retranslateUi();
     [[nodiscard]] ScheduleDisplayState displayState() const;
     [[nodiscard]] ScheduleViewModel scheduleModel() const;

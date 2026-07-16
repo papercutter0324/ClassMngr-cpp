@@ -137,11 +137,18 @@ void FileController::loadMostRecentDatabase()
     {
         pruneRecentFile(recentPath);
         populateRecentMenu();
-        enterNoDatabaseState();
+
+        if (!m_services || !m_services->hasOpenDatabase())
+        {
+            enterNoDatabaseState();
+        }
         return;
     }
 
-    if (!loadDatabase(normalizedPath, false))
+    if (
+        !loadDatabase(normalizedPath, false)
+        && (!m_services || !m_services->hasOpenDatabase())
+        )
     {
         enterNoDatabaseState();
     }
@@ -176,7 +183,7 @@ void FileController::newFile()
         return;
     }
 
-    m_services->closeDatabase();
+    closeActiveDatabase();
 
     if (
         QFile::exists(normalizedPath)
@@ -270,7 +277,10 @@ bool FileController::loadDatabase(
                 );
         }
 
-        enterNoDatabaseState();
+        if (!m_services || !m_services->hasOpenDatabase())
+        {
+            enterNoDatabaseState();
+        }
         return false;
     }
 
@@ -280,7 +290,7 @@ bool FileController::loadDatabase(
         return false;
     }
 
-    m_services->closeDatabase();
+    closeActiveDatabase();
 
     const Status opened =
         m_services->openDatabase(normalizedPath);
@@ -389,10 +399,7 @@ void FileController::closeFile()
     if (!confirmUnsavedChanges())
         return;
 
-    if (m_services)
-    {
-        m_services->closeDatabase();
-    }
+    closeActiveDatabase();
 
     enterNoDatabaseState();
 }
@@ -656,6 +663,21 @@ bool FileController::exportDatabaseAs(
     }
 
     return true;
+}
+
+void FileController::closeActiveDatabase()
+{
+    if (m_services)
+    {
+        m_services->closeDatabase();
+    }
+
+    m_currentFile.clear();
+
+    if (m_window)
+    {
+        m_window->clearDatabaseBackedState();
+    }
 }
 
 QString FileController::normalizeFilePath(

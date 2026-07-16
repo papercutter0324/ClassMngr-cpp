@@ -105,6 +105,8 @@ public:
         bool databaseOpen
         );
 
+    void clearDatabaseState();
+
 
 
 signals:

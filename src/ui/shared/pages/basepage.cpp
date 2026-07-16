@@ -251,6 +251,10 @@ void BasePage::retranslateUi()
     }
 }
 
+void BasePage::clearDatabaseState()
+{
+}
+
 void BasePage::setDatabaseOpen(
     bool databaseOpen
     )

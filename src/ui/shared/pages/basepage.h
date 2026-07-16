@@ -58,6 +58,8 @@ public:
     virtual void refresh();
     virtual void retranslateUi();
 
+    virtual void clearDatabaseState();
+
     void setDatabaseOpen(
         bool databaseOpen
         );

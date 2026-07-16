@@ -603,8 +603,18 @@ bool MainWindow::confirmCurrentPageCanLeave(
         || m_pages->confirmCurrentPageCanLeave(exiting);
 }
 
+void MainWindow::clearDatabaseBackedState()
+{
+    if (m_pages)
+    {
+        m_pages->clearDatabaseState();
+    }
+}
+
 void MainWindow::applyNoDatabaseState()
 {
+    clearDatabaseBackedState();
+
     if (m_pages)
     {
         m_pages->setDatabaseOpen(false);

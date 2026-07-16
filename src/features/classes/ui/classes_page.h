@@ -50,6 +50,7 @@ public:
     QString unsavedChangesMessage() const override;
     void setSaveMode(SaveMode mode) override;
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
 signals:

@@ -175,6 +175,21 @@ void RostersPage::setSaveMode(
     }
 }
 
+void RostersPage::clearDatabaseState()
+{
+    m_rosterClasses.clear();
+    m_currentClassroom = {};
+    rebuildRosterTabs(-1);
+
+    if (m_editor)
+    {
+        m_editor->clearDatabaseState();
+    }
+
+    setRosterEditorAvailable(false);
+    updateHeaderText();
+}
+
 void RostersPage::retranslateUi()
 {
     updateHeaderText();

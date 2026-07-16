@@ -13,6 +13,11 @@
 class TestPage : public BasePage
 {
 public:
+    void clearDatabaseState() override
+    {
+        ++databaseClearCount;
+    }
+
     QWidget* addContentWidget()
     {
         auto* widget = new QWidget(this);
@@ -32,6 +37,8 @@ public:
 
         return widget;
     }
+
+    int databaseClearCount = 0;
 };
 
 class NoDatabaseBannerTranslator : public QTranslator
@@ -82,6 +89,7 @@ private slots:
     void noDatabaseBannerVisibilityAndActions();
     void noDatabaseBannerOffsetsExistingLayout();
     void noDatabaseBannerRetranslatesOnLanguageChange();
+    void databaseStateClearHookIsDispatched();
 };
 
 void BasePageTests::noDatabaseBannerVisibilityAndActions()
@@ -247,6 +255,15 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
         );
     QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
     QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
+}
+
+void BasePageTests::databaseStateClearHookIsDispatched()
+{
+    TestPage page;
+
+    QCOMPARE(page.databaseClearCount, 0);
+    page.clearDatabaseState();
+    QCOMPARE(page.databaseClearCount, 1);
 }
 
 QTEST_MAIN(BasePageTests)

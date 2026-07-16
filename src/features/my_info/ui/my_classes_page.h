@@ -22,6 +22,7 @@ public:
         );
 
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
 
 protected:

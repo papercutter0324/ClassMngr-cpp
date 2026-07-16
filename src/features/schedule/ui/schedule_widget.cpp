@@ -219,6 +219,22 @@ void ScheduleWidget::refreshSchedule()
     loadSchedule();
 }
 
+void ScheduleWidget::clearDatabaseState()
+{
+    m_use24h = false;
+    m_showKoreanTeacherEnglishNames = false;
+    m_showIntensive = false;
+    m_showAllHours = false;
+    m_hideEmptyRows = true;
+    m_showWeekends = false;
+    m_regularWeekdaySlotTogglingEnabled = false;
+    m_intensiveSlotStates.clear();
+    m_scheduleModel = {};
+
+    updateButtons();
+    loadSchedule();
+}
+
 void ScheduleWidget::retranslateUi()
 {
     updateButtons();

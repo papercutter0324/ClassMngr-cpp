@@ -809,6 +809,12 @@ void TeacherInfoPage::refresh()
     BasePage::refresh();
 }
 
+void TeacherInfoPage::clearDatabaseState()
+{
+    loadTeacher({});
+    retranslateUi();
+}
+
 void TeacherInfoPage::retranslateUi()
 {
     if (m_titleLabel)

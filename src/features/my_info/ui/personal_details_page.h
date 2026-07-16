@@ -28,6 +28,7 @@ public:
         );
 
     void refresh() override;
+    void clearDatabaseState() override;
     void retranslateUi() override;
     void saveData() override;
     bool saveChanges() override;

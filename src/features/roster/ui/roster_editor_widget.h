@@ -34,6 +34,7 @@ public:
         const Classroom& classroom
         );
 
+    void clearDatabaseState() override;
     void saveData() override;
 
     bool saveChanges() override;
