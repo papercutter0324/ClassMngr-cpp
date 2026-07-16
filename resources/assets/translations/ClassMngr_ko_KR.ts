@@ -2029,7 +2029,7 @@
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="132"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="398"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="264"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="264"/>
         <source>My Information</source>
         <translation>내 정보</translation>
     </message>
@@ -2050,21 +2050,21 @@
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="218"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="314"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="314"/>
         <source>N/A</source>
         <translation>해당 없음</translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="183"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="350"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="350"/>
         <source>My Name</source>
         <translation>내 이름</translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="146"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="395"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="146"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="255"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="146"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="255"/>
         <source>Class Information</source>
         <translation>수업 정보</translation>
     </message>
@@ -2094,13 +2094,13 @@
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="190"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="352"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="352"/>
         <source>My Campus</source>
         <translation>내 캠퍼스</translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="197"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="354"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="354"/>
         <source>Zoom Login ID</source>
         <translation>Zoom 로그인 ID</translation>
     </message>
@@ -2137,7 +2137,7 @@
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page_class_information.cpp" line="737"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="204"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="356"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="356"/>
         <source>Zoom Password</source>
         <translation>Zoom 비밀번호</translation>
     </message>
@@ -2165,8 +2165,8 @@
         <location filename="../../../src/features/my_info/ui/my_info_page_class_information.cpp" line="825"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="139"/>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="392"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="143"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="193"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="143"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="193"/>
         <source>Schedule</source>
         <translation>수업 일정</translation>
     </message>
@@ -2182,7 +2182,7 @@
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="211"/>
-        <location filename="../../../src/features/my_info/ui/my_info_page_personal.cpp" line="358"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_details.cpp" line="358"/>
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>
@@ -2255,12 +2255,12 @@
         <translation>추가된 서명 이미지가 없습니다</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="159"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="159"/>
         <source>View and adjust your class schedule.</source>
         <translation>수업 일정을 확인하고 조정합니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="162"/>
+        <location filename="../../../src/features/my_info/ui/my_info_page_ui.cpp" line="162"/>
         <source>Review teacher, class, and roster details.</source>
         <translation>교사, 수업, 명단 세부 정보를 확인합니다.</translation>
     </message>
@@ -2296,230 +2296,230 @@
     </message>
 </context>
 <context>
-    <name>MyInfoRostersPage</name>
+    <name>RostersPage</name>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="289"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="289"/>
         <source>Unsaved Roster Changes</source>
         <translation>저장되지 않은 명단 변경 사항</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="294"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="294"/>
         <source>This roster has unsaved changes.</source>
         <translation>이 명단에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="304"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="655"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="785"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="796"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1284"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="304"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="655"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="785"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="796"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1284"/>
         <source>Import Scores</source>
         <translation>점수 가져오기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="307"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1290"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="307"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1290"/>
         <source>Import final grades from speaking evaluations.</source>
         <translation>말하기 평가에서 최종 성적을 가져옵니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="314"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="856"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1295"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="314"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="856"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1295"/>
         <source>Print Rosters</source>
         <translation>명단 인쇄</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="317"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1300"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="317"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1300"/>
         <source>Print rosters as an A4 PDF.</source>
         <translation>명단을 A4 PDF로 인쇄합니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="324"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="450"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1305"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="324"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="450"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1305"/>
         <source>Add Column</source>
         <translation>열 추가</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="331"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="968"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1311"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2213"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="331"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="968"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1311"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2213"/>
         <source>Remove Student</source>
         <translation>학생 제거</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="338"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="528"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1317"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="338"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="528"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1317"/>
         <source>Remove Column</source>
         <translation>열 제거</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="345"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1323"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="345"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1323"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="429"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="429"/>
         <source>Duplicate Student Names</source>
         <translation>중복 학생 이름</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="432"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="432"/>
         <source>Resolve duplicate English/Korean student name pairs before saving.</source>
         <translation>저장하기 전에 중복된 영어/한국어 학생 이름 조합을 해결하세요.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="451"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="451"/>
         <source>Column name:</source>
         <translation>열 이름:</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="468"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="468"/>
         <source>Cannot Add Column</source>
         <translation>열을 추가할 수 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="513"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="513"/>
         <source>Cannot Remove Column</source>
         <translation>열을 제거할 수 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="529"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="529"/>
         <source>Remove the &quot;%1&quot; column?</source>
         <translation>&quot;%1&quot; 열을 제거할까요?</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="656"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="656"/>
         <source>Roster must contain &apos;English&apos; and &apos;Korean&apos; columns.</source>
         <translation>명단에는 &apos;English&apos; 및 &apos;Korean&apos; 열이 있어야 합니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="786"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="786"/>
         <source>Scores are already up to date.</source>
         <translation>점수가 이미 최신 상태입니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="797"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="797"/>
         <source>Scores imported successfully.</source>
         <translation>점수를 성공적으로 가져왔습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="980"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="980"/>
         <source>Transfer Class</source>
         <translation>수업 이동</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1051"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1948"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1051"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1948"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1086"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1086"/>
         <source>No same-grade classes</source>
         <translation>같은 학년 수업 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1097"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1097"/>
         <source>%1 (full)</source>
         <translation>%1 (정원 마감)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1108"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1108"/>
         <source>Target roster is full.</source>
         <translation>대상 명단이 가득 찼습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1170"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1919"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1170"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1919"/>
         <source>Rosters</source>
         <translation>명단</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1184"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1184"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1265"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="1925"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1265"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="1925"/>
         <source>No classes available</source>
         <translation>등록된 수업이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2044"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2044"/>
         <source>Duplicate Student Name</source>
         <translation>중복 학생 이름</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2047"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2047"/>
         <source>This English/Korean name combination already exists.</source>
         <translation>이 영어/한국어 이름 조합은 이미 있습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2050"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2050"/>
         <source>Duplicate row(s): %1</source>
         <translation>중복 행: %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2058"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2058"/>
         <source>No Suffix Available</source>
         <translation>사용 가능한 접미사가 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2059"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2059"/>
         <source>Use %1</source>
         <translation>%1 사용</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2069"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2069"/>
         <source>Clear Edited Cell</source>
         <translation>수정한 셀 지우기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2075"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2075"/>
         <source>Locate Duplicate</source>
         <translation>중복 위치 찾기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2081"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2081"/>
         <source>Keep As-Is</source>
         <translation>그대로 유지</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2195"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2195"/>
         <source>Cannot Remove Student</source>
         <translation>학생을 제거할 수 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2207"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2207"/>
         <source>Remove row %1 from the roster?</source>
         <translation>명단에서 %1행을 제거할까요?</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2208"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2208"/>
         <source>Remove %1 from the roster?</source>
         <translation>명단에서 %1을(를) 제거할까요?</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2277"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2320"/>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2359"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2277"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2320"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2359"/>
         <source>Cannot Transfer Student</source>
         <translation>학생을 이동할 수 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2322"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2322"/>
         <source>The student could not be transferred.</source>
         <translation>학생을 이동할 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_rosters_page.cpp" line="2360"/>
+        <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="2360"/>
         <source>The roster changes could not be saved.</source>
         <translation>명단 변경 사항을 저장할 수 없습니다.</translation>
     </message>

@@ -10,7 +10,7 @@
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/my_info/ui/calendar_page.h"
 #include "features/my_info/ui/my_info_page.h"
-#include "features/my_info/ui/my_info_rosters_page.h"
+#include "features/roster/ui/rosters_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
@@ -824,10 +824,10 @@ void NavigationController::handleRosters(
         return;
     }
 
-    m_pages->myInfoRostersPage()
+    m_pages->rostersPage()
         ->loadRosters();
 
-    m_pages->showPage(PageType::MyInfoRosters);
+    m_pages->showPage(PageType::Rosters);
 
     m_sidebar->selectByKeys(
         {QStringLiteral("my_info_class_roster")}

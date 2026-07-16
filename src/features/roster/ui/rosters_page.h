@@ -23,12 +23,12 @@ class RosterItemDelegate;
 class RosterModel;
 class RosterTableView;
 
-class MyInfoRostersPage : public BasePage
+class RostersPage : public BasePage
 {
     Q_OBJECT
 
 public:
-    explicit MyInfoRostersPage(
+    explicit RostersPage(
         ApplicationServices* services,
         QWidget* parent = nullptr
         );

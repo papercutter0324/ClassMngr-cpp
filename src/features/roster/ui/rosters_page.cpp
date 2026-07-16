@@ -1,4 +1,4 @@
-#include "my_info_rosters_page.h"
+#include "rosters_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -85,14 +85,14 @@ QString sidebarClassDisplayName(
 
 } // namespace
 
-MyInfoRostersPage::MyInfoRostersPage(
+RostersPage::RostersPage(
     ApplicationServices* services,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
 {
-    setProperty("role", UiRoles::MyInfoRostersPage);
+    setProperty("role", UiRoles::RostersPage);
 
     buildUi();
 
@@ -107,11 +107,11 @@ MyInfoRostersPage::MyInfoRostersPage(
         m_autosaveTimer,
         &QTimer::timeout,
         this,
-        &MyInfoRostersPage::autosave
+        &RostersPage::autosave
         );
 }
 
-void MyInfoRostersPage::loadClass(
+void RostersPage::loadClass(
     const Classroom& classroom
     )
 {
@@ -120,7 +120,7 @@ void MyInfoRostersPage::loadClass(
         );
 }
 
-void MyInfoRostersPage::loadRosters(
+void RostersPage::loadRosters(
     int selectedClassId
     )
 {
@@ -168,7 +168,7 @@ void MyInfoRostersPage::loadRosters(
         );
 }
 
-void MyInfoRostersPage::loadRosterClass(
+void RostersPage::loadRosterClass(
     const Classroom& classroom
     )
 {
@@ -249,12 +249,12 @@ void MyInfoRostersPage::loadRosterClass(
     setRosterEditorAvailable(false);
 }
 
-void MyInfoRostersPage::saveData()
+void RostersPage::saveData()
 {
     saveRosterInternal(true);
 }
 
-bool MyInfoRostersPage::saveChanges()
+bool RostersPage::saveChanges()
 {
     if (m_autosaveTimer)
     {
@@ -269,13 +269,13 @@ bool MyInfoRostersPage::saveChanges()
     return saveRosterInternal(true);
 }
 
-bool MyInfoRostersPage::hasUnsavedChanges() const
+bool RostersPage::hasUnsavedChanges() const
 {
     return m_widthsDirty
         || (m_model && m_model->isDirty());
 }
 
-void MyInfoRostersPage::discardChanges()
+void RostersPage::discardChanges()
 {
     if (m_autosaveTimer)
     {
@@ -285,17 +285,17 @@ void MyInfoRostersPage::discardChanges()
     loadClass(m_classroom);
 }
 
-QString MyInfoRostersPage::unsavedChangesTitle() const
+QString RostersPage::unsavedChangesTitle() const
 {
     return tr("Unsaved Roster Changes");
 }
 
-QString MyInfoRostersPage::unsavedChangesMessage() const
+QString RostersPage::unsavedChangesMessage() const
 {
     return tr("This roster has unsaved changes.");
 }
 
-void MyInfoRostersPage::retranslateUi()
+void RostersPage::retranslateUi()
 {
     updateHeaderText();
 
@@ -350,7 +350,7 @@ void MyInfoRostersPage::retranslateUi()
     updateActions();
 }
 
-void MyInfoRostersPage::setSaveMode(
+void RostersPage::setSaveMode(
     SaveMode mode
     )
 {
@@ -378,7 +378,7 @@ void MyInfoRostersPage::setSaveMode(
     }
 }
 
-bool MyInfoRostersPage::saveRosterInternal(
+bool RostersPage::saveRosterInternal(
     bool showValidationMessages
     )
 {
@@ -413,7 +413,7 @@ bool MyInfoRostersPage::saveRosterInternal(
     return true;
 }
 
-bool MyInfoRostersPage::validateRosterBeforeSave(
+bool RostersPage::validateRosterBeforeSave(
     bool showValidationMessages
     )
 {
@@ -441,7 +441,7 @@ bool MyInfoRostersPage::validateRosterBeforeSave(
     return false;
 }
 
-void MyInfoRostersPage::addColumn()
+void RostersPage::addColumn()
 {
     bool accepted = false;
 
@@ -500,7 +500,7 @@ void MyInfoRostersPage::addColumn()
     updateActions();
 }
 
-void MyInfoRostersPage::removeColumn()
+void RostersPage::removeColumn()
 {
     const QModelIndex current =
         m_table->currentIndex();
@@ -552,7 +552,7 @@ void MyInfoRostersPage::removeColumn()
     updateActions();
 }
 
-void MyInfoRostersPage::removeStudent()
+void RostersPage::removeStudent()
 {
     if (!m_table)
     {
@@ -567,7 +567,7 @@ void MyInfoRostersPage::removeStudent()
         );
 }
 
-void MyInfoRostersPage::moveStudentRow(
+void RostersPage::moveStudentRow(
     int sourceRow,
     int destinationRow
     )
@@ -618,7 +618,7 @@ void MyInfoRostersPage::moveStudentRow(
     updateActions();
 }
 
-void MyInfoRostersPage::importScores()
+void RostersPage::importScores()
 {
     if (
         !m_services
@@ -791,7 +791,7 @@ void MyInfoRostersPage::importScores()
     );
 }
 
-void MyInfoRostersPage::printRosters()
+void RostersPage::printRosters()
 {
     if (hasUnsavedChanges() && !saveChanges())
     {
@@ -852,7 +852,7 @@ void MyInfoRostersPage::printRosters()
     }
 }
 
-void MyInfoRostersPage::autosave()
+void RostersPage::autosave()
 {
     if (!hasUnsavedChanges())
     {
@@ -862,7 +862,7 @@ void MyInfoRostersPage::autosave()
     saveRosterInternal(false);
 }
 
-void MyInfoRostersPage::updateActions()
+void RostersPage::updateActions()
 {
     if (
         !m_saveButton
@@ -927,7 +927,7 @@ void MyInfoRostersPage::updateActions()
         );
 }
 
-void MyInfoRostersPage::showRosterContextMenu(
+void RostersPage::showRosterContextMenu(
     const QPoint& position
     )
 {
@@ -1131,7 +1131,7 @@ void MyInfoRostersPage::showRosterContextMenu(
     }
 }
 
-void MyInfoRostersPage::buildUi()
+void RostersPage::buildUi()
 {
     contentLayout()->setContentsMargins(
         UiConstants::Pages::Margin,
@@ -1329,56 +1329,56 @@ void MyInfoRostersPage::buildUi()
         m_addColumnButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::addColumn
+        &RostersPage::addColumn
         );
 
     connect(
         m_removeStudentButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::removeStudent
+        &RostersPage::removeStudent
         );
 
     connect(
         m_removeColumnButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::removeColumn
+        &RostersPage::removeColumn
         );
 
     connect(
         m_saveButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::saveData
+        &RostersPage::saveData
         );
 
     connect(
         m_importButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::importScores
+        &RostersPage::importScores
         );
 
     connect(
         m_printButton,
         &QPushButton::clicked,
         this,
-        &MyInfoRostersPage::printRosters
+        &RostersPage::printRosters
         );
 
     connect(
         m_table,
         &QWidget::customContextMenuRequested,
         this,
-        &MyInfoRostersPage::showRosterContextMenu
+        &RostersPage::showRosterContextMenu
         );
 
     connect(
         m_table,
         &RosterTableView::rowMoveRequested,
         this,
-        &MyInfoRostersPage::moveStudentRow
+        &RostersPage::moveStudentRow
         );
 
     connect(
@@ -1415,7 +1415,7 @@ void MyInfoRostersPage::buildUi()
         m_table->selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
-        &MyInfoRostersPage::updateActions
+        &RostersPage::updateActions
         );
 
     connect(
@@ -1442,7 +1442,7 @@ void MyInfoRostersPage::buildUi()
     updateActions();
 }
 
-void MyInfoRostersPage::rebuildRosterTabs(
+void RostersPage::rebuildRosterTabs(
     int selectedClassId
     )
 {
@@ -1687,7 +1687,7 @@ void MyInfoRostersPage::rebuildRosterTabs(
     m_rebuildingRosterTabs = false;
 }
 
-bool MyInfoRostersPage::activateRosterClass(
+bool RostersPage::activateRosterClass(
     int classId
     )
 {
@@ -1728,7 +1728,7 @@ bool MyInfoRostersPage::activateRosterClass(
     return true;
 }
 
-void MyInfoRostersPage::restoreRosterTabSelection()
+void RostersPage::restoreRosterTabSelection()
 {
     if (!m_rosterTabs)
     {
@@ -1743,7 +1743,7 @@ void MyInfoRostersPage::restoreRosterTabSelection()
     m_restoringRosterTabs = false;
 }
 
-void MyInfoRostersPage::syncTabWidgetToClass(
+void RostersPage::syncTabWidgetToClass(
     QTabWidget* tabs,
     int classId
     )
@@ -1812,7 +1812,7 @@ void MyInfoRostersPage::syncTabWidgetToClass(
     }
 }
 
-int MyInfoRostersPage::currentClassIdFromTabs(
+int RostersPage::currentClassIdFromTabs(
     QTabWidget* tabs
     ) const
 {
@@ -1854,7 +1854,7 @@ int MyInfoRostersPage::currentClassIdFromTabs(
         : -1;
 }
 
-Classroom MyInfoRostersPage::classroomById(
+Classroom RostersPage::classroomById(
     int classId
     ) const
 {
@@ -1869,7 +1869,7 @@ Classroom MyInfoRostersPage::classroomById(
     return {};
 }
 
-int MyInfoRostersPage::firstRosterClassId() const
+int RostersPage::firstRosterClassId() const
 {
     for (const Classroom& classroom : m_rosterClasses)
     {
@@ -1882,7 +1882,7 @@ int MyInfoRostersPage::firstRosterClassId() const
     return -1;
 }
 
-void MyInfoRostersPage::setRosterEditorAvailable(
+void RostersPage::setRosterEditorAvailable(
     bool available
     )
 {
@@ -1906,7 +1906,7 @@ void MyInfoRostersPage::setRosterEditorAvailable(
     updateActions();
 }
 
-void MyInfoRostersPage::updateHeaderText()
+void RostersPage::updateHeaderText()
 {
     m_titleLabel->setText(
         tr("Rosters")
@@ -1943,7 +1943,7 @@ void MyInfoRostersPage::updateHeaderText()
         );
 }
 
-void MyInfoRostersPage::handleNameCellChanged(
+void RostersPage::handleNameCellChanged(
     const QModelIndex& topLeft,
     const QModelIndex& bottomRight
     )
@@ -1979,7 +1979,7 @@ void MyInfoRostersPage::handleNameCellChanged(
     }
 }
 
-void MyInfoRostersPage::scheduleAutosave()
+void RostersPage::scheduleAutosave()
 {
     if (
         m_loadingRoster
@@ -1994,7 +1994,7 @@ void MyInfoRostersPage::scheduleAutosave()
     m_autosaveTimer->start();
 }
 
-void MyInfoRostersPage::resolveDuplicateName(
+void RostersPage::resolveDuplicateName(
     int row,
     int editedColumn
     )
@@ -2145,7 +2145,7 @@ void MyInfoRostersPage::resolveDuplicateName(
     updateActions();
 }
 
-void MyInfoRostersPage::selectRosterCell(
+void RostersPage::selectRosterCell(
     int row,
     int column
     )
@@ -2170,7 +2170,7 @@ void MyInfoRostersPage::selectRosterCell(
     m_table->scrollTo(index);
 }
 
-bool MyInfoRostersPage::removeRosterRow(
+bool RostersPage::removeRosterRow(
     int row
     )
 {
@@ -2243,7 +2243,7 @@ bool MyInfoRostersPage::removeRosterRow(
     return true;
 }
 
-void MyInfoRostersPage::transferRosterRow(
+void RostersPage::transferRosterRow(
     int row,
     int targetClassId
     )
@@ -2384,7 +2384,7 @@ void MyInfoRostersPage::transferRosterRow(
     updateActions();
 }
 
-Roster MyInfoRostersPage::currentRosterForSave() const
+Roster RostersPage::currentRosterForSave() const
 {
     Roster roster =
         m_model
@@ -2399,7 +2399,7 @@ Roster MyInfoRostersPage::currentRosterForSave() const
     return roster;
 }
 
-Roster MyInfoRostersPage::rosterWithRowRemoved(
+Roster RostersPage::rosterWithRowRemoved(
     int row
     ) const
 {
@@ -2429,7 +2429,7 @@ Roster MyInfoRostersPage::rosterWithRowRemoved(
     return roster;
 }
 
-QVector<int> MyInfoRostersPage::normalizedColumnWidths(
+QVector<int> RostersPage::normalizedColumnWidths(
     const Roster& roster,
     const QStringList& columns
     ) const
@@ -2469,7 +2469,7 @@ QVector<int> MyInfoRostersPage::normalizedColumnWidths(
     return widths;
 }
 
-QString MyInfoRostersPage::rosterRowLabel(
+QString RostersPage::rosterRowLabel(
     int row
     ) const
 {

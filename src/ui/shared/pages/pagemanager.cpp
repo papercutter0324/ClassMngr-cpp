@@ -6,7 +6,7 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/calendar_page.h"
 #include "features/my_info/ui/my_info_page.h"
-#include "features/my_info/ui/my_info_rosters_page.h"
+#include "features/roster/ui/rosters_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
@@ -80,8 +80,8 @@ void PageManager::initialize(
             this
             );
 
-    m_myInfoRostersPage =
-        new MyInfoRostersPage(
+    m_rostersPage =
+        new RostersPage(
             m_services,
             this
             );
@@ -163,8 +163,8 @@ void PageManager::registerPages()
     m_pages[PageType::CampusDashboard] =
         m_campusDashboard;
 
-    m_pages[PageType::MyInfoRosters] =
-        m_myInfoRostersPage;
+    m_pages[PageType::Rosters] =
+        m_rostersPage;
 
     m_pages[PageType::SpeakingEval] =
         m_speakingPage;
@@ -365,9 +365,9 @@ MyInfoPage* PageManager::myInfoClassInformationPage() const
     return m_myInfoClassInformationPage;
 }
 
-MyInfoRostersPage* PageManager::myInfoRostersPage() const
+RostersPage* PageManager::rostersPage() const
 {
-    return m_myInfoRostersPage;
+    return m_rostersPage;
 }
 
 SubPrepPage* PageManager::subPrepPage() const
