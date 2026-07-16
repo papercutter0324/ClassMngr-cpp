@@ -386,6 +386,22 @@ bool MyInfoPage::eventFilter(
 {
     if (
         event
+        && watched == m_signaturePreviewLabel
+        && event->type() == QEvent::Resize
+        )
+    {
+        QTimer::singleShot(
+            0,
+            this,
+            [this]()
+            {
+                updateSignaturePreview();
+            }
+            );
+    }
+
+    if (
+        event
         && (
             watched == m_nameEdit
             || watched == m_campusCombo
@@ -1288,27 +1304,31 @@ bool MyInfoPage::hideStartOfTermEvents() const
 QStringList MyInfoPage::currentCampusCodes() const
 {
     QStringList codes;
+    QString currentId;
+    QString currentName;
 
     if (m_campusCombo && m_campusCombo->currentIndex() >= 0)
     {
-        codes.append(
-            m_campusCombo->currentData().toString()
-            );
-        codes.append(
-            m_campusCombo->currentText()
-            );
+        currentId =
+            m_campusCombo->currentData().toString();
+        currentName =
+            m_campusCombo->currentText();
+    }
+    else if (auto* dataService = openDataService(m_services))
+    {
+        currentName =
+            dataService
+                ->loadSetting(
+                    QStringLiteral("myInfo/campus"),
+                    QString()
+                    )
+                .toString();
+        currentId =
+            currentName;
     }
 
-    const QString currentId =
-        m_campusCombo
-        && m_campusCombo->currentIndex() >= 0
-            ? m_campusCombo->currentData().toString()
-            : QString();
-    const QString currentName =
-        m_campusCombo
-        && m_campusCombo->currentIndex() >= 0
-            ? m_campusCombo->currentText()
-            : QString();
+    codes.append(currentId);
+    codes.append(currentName);
 
     const QList<CampusInfo> campuses =
         campusRepository().loadCampuses();

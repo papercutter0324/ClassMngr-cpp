@@ -65,6 +65,13 @@ QLabel[role="section_header_center"] {
     font-weight: 700;
 }
 
+QLabel#signatureImagePreview {
+    background-color: #eeece7;
+    color: #66727a;
+    border: 1px dashed #a8b2b8;
+    border-radius: 6px;
+}
+
 QFrame[role="card"],
 QWidget[role="card"],
 QFrame#sectionCard,

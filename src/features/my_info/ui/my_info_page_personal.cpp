@@ -10,12 +10,21 @@
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QCheckBox>
+#include <QBuffer>
 #include <QComboBox>
+#include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHBoxLayout>
+#include <QImage>
+#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <QPixmap>
+#include <QPushButton>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QTimer>
 #include <QVariant>
 #include <QVBoxLayout>
@@ -25,8 +34,36 @@ namespace
 constexpr int UntitledCardTopMargin = 4;
 constexpr int CompactFieldWidth = 170;
 constexpr int MyInformationFieldVerticalPadding = 14;
+constexpr int SignaturePreviewHeight = 220;
 const QString NotAvailableText =
     QStringLiteral("N/A");
+
+QStringList supportedImagePatterns()
+{
+    QStringList patterns;
+
+    for (const QByteArray& format : QImageReader::supportedImageFormats())
+    {
+        const QString suffix =
+            QString::fromLatin1(format).toLower();
+
+        if (!suffix.isEmpty())
+        {
+            patterns.append(
+                QStringLiteral("*.%1").arg(suffix)
+                );
+        }
+
+        if (suffix == QStringLiteral("jpeg"))
+        {
+            patterns.append(QStringLiteral("*.jpg"));
+        }
+    }
+
+    patterns.removeDuplicates();
+    patterns.sort(Qt::CaseInsensitive);
+    return patterns;
+}
 
 DataService* openDataService(
     ApplicationServices* services
@@ -174,6 +211,8 @@ const QString ZoomPassword =
     QStringLiteral("myInfo/zoomPassword");
 const QString ZoomNotAvailable =
     QStringLiteral("myInfo/zoomNotAvailable");
+const QString SignatureImage =
+    QStringLiteral("myInfo/signatureImage");
 
 const QString LegacyZoomEmail =
     QStringLiteral("subPrep/personalZoomEmail");
@@ -256,6 +295,91 @@ void MyInfoPage::autosave()
     }
 
     saveMyInfoInternal();
+}
+void MyInfoPage::chooseSignatureImage()
+{
+    const QStringList patterns =
+        supportedImagePatterns();
+    const QString filter =
+        patterns.isEmpty()
+            ? tr("PNG and JPEG Images (*.png *.jpg *.jpeg)")
+            : tr("Supported Images (%1)")
+                .arg(patterns.join(QLatin1Char(' ')));
+
+    const QString filePath =
+        QFileDialog::getOpenFileName(
+            this,
+            tr("Choose Signature Image"),
+            QString(),
+            filter
+            );
+
+    if (filePath.isEmpty())
+    {
+        return;
+    }
+
+    QImageReader reader(filePath);
+    reader.setAutoTransform(true);
+
+    const QImage image =
+        reader.read();
+
+    if (image.isNull())
+    {
+        QMessageBox::warning(
+            this,
+            tr("Unsupported Signature Image"),
+            tr("The selected file is not a supported image.")
+            );
+        return;
+    }
+
+    const QByteArray sourceFormat =
+        reader.format().toLower();
+    const bool sourceIsJpeg =
+        sourceFormat == QByteArrayLiteral("jpeg")
+        || sourceFormat == QByteArrayLiteral("jpg");
+    const QByteArray outputFormat =
+        sourceIsJpeg
+            ? QByteArrayLiteral("JPG")
+            : QByteArrayLiteral("PNG");
+
+    QByteArray encodedImage;
+    QBuffer buffer(&encodedImage);
+    buffer.open(QIODevice::WriteOnly);
+
+    if (
+        !image.save(
+            &buffer,
+            outputFormat.constData(),
+            sourceIsJpeg ? 92 : -1
+            )
+        )
+    {
+        QMessageBox::warning(
+            this,
+            tr("Signature Image Error"),
+            tr("The signature image could not be prepared for embedding.")
+            );
+        return;
+    }
+
+    m_signatureImageData =
+        encodedImage;
+    updateSignaturePreview();
+    handleEditableChanged();
+}
+void MyInfoPage::removeSignatureImage()
+{
+    if (m_signatureImageData.isEmpty())
+    {
+        return;
+    }
+
+    m_signatureImageData.clear();
+    updateSignaturePreview();
+    handleEditableChanged();
 }
 void MyInfoPage::buildMyInformationSection()
 {
@@ -459,6 +583,124 @@ void MyInfoPage::buildMyInformationSection()
         &MyInfoPage::handleZoomNotAvailableChanged
         );
 }
+void MyInfoPage::buildSignatureSection()
+{
+    m_scrollContentLayout->addSpacing(
+        UiConstants::Pages::MajorSectionSpacing
+        );
+
+    m_signatureHeading =
+        createTopLevelHeading(
+            tr("Signature"),
+            m_scrollContent
+            );
+    m_scrollContentLayout->addWidget(
+        m_signatureHeading
+        );
+
+    auto* card =
+        new QFrame(m_scrollContent);
+    card->setProperty(
+        "role",
+        UiRoles::Card
+        );
+    card->setObjectName(
+        "sectionCard"
+        );
+
+    auto* cardLayout =
+        new QVBoxLayout(card);
+    cardLayout->setContentsMargins(
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin,
+        UiConstants::ClassInfo::SectionCard::Margin
+        );
+    cardLayout->setSpacing(
+        UiConstants::ClassInfo::SectionCard::Spacing
+        );
+
+    m_signatureInstructionsLabel =
+        new QLabel(
+            tr("Add a PNG or JPEG signature image. Other supported image formats are converted to PNG."),
+            card
+            );
+    m_signatureInstructionsLabel->setObjectName(
+        "sectionSubtitle"
+        );
+    m_signatureInstructionsLabel->setWordWrap(true);
+    cardLayout->addWidget(
+        m_signatureInstructionsLabel
+        );
+
+    m_signaturePreviewLabel =
+        new QLabel(card);
+    m_signaturePreviewLabel->setObjectName(
+        "signatureImagePreview"
+        );
+    m_signaturePreviewLabel->setAlignment(
+        Qt::AlignCenter
+        );
+    m_signaturePreviewLabel->setFixedHeight(
+        SignaturePreviewHeight
+        );
+    m_signaturePreviewLabel->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+    m_signaturePreviewLabel->installEventFilter(this);
+    cardLayout->addWidget(
+        m_signaturePreviewLabel
+        );
+
+    auto* actionsLayout =
+        new QHBoxLayout;
+    actionsLayout->setContentsMargins(0, 0, 0, 0);
+    actionsLayout->setSpacing(
+        UiConstants::Pages::Spacing
+        );
+    actionsLayout->addStretch();
+
+    m_chooseSignatureButton =
+        new QPushButton(
+            tr("Add Signature Image..."),
+            card
+            );
+    m_removeSignatureButton =
+        new QPushButton(
+            tr("Remove"),
+            card
+            );
+
+    actionsLayout->addWidget(
+        m_chooseSignatureButton
+        );
+    actionsLayout->addWidget(
+        m_removeSignatureButton
+        );
+    cardLayout->addLayout(
+        actionsLayout
+        );
+
+    m_scrollContentLayout->addWidget(
+        card
+        );
+
+    connect(
+        m_chooseSignatureButton,
+        &QPushButton::clicked,
+        this,
+        &MyInfoPage::chooseSignatureImage
+        );
+    connect(
+        m_removeSignatureButton,
+        &QPushButton::clicked,
+        this,
+        &MyInfoPage::removeSignatureImage
+        );
+
+    updateSignaturePreview();
+}
 void MyInfoPage::loadPageData()
 {
     m_loading = true;
@@ -591,8 +833,20 @@ void MyInfoPage::loadStoredSettings()
             .toBool()
         );
 
+    m_signatureImageData =
+        QByteArray::fromBase64(
+            dataService
+                ->loadSetting(
+                    SettingsKeys::SignatureImage,
+                    QString()
+                    )
+                .toString()
+                .toLatin1()
+            );
+
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
+    updateSignaturePreview();
     updateCalendarCampusFilter();
 }
 bool MyInfoPage::saveMyInfoInternal()
@@ -637,6 +891,12 @@ bool MyInfoPage::saveMyInfoInternal()
     dataService->saveSetting(
         SettingsKeys::ZoomNotAvailable,
         m_zoomNotAvailableCheck->isChecked()
+        );
+    dataService->saveSetting(
+        SettingsKeys::SignatureImage,
+        QString::fromLatin1(
+            m_signatureImageData.toBase64()
+            )
         );
 
     clearDirty();
@@ -732,6 +992,69 @@ void MyInfoPage::updateMyInformationFieldWidths()
         m_zoomLoginIdEdit,
         m_zoomPasswordEdit
         );
+}
+void MyInfoPage::updateSignaturePreview()
+{
+    if (!m_signaturePreviewLabel)
+    {
+        return;
+    }
+
+    if (m_signatureImageData.isEmpty())
+    {
+        m_signaturePreviewLabel->setPixmap(QPixmap());
+        m_signaturePreviewLabel->setText(
+            tr("No signature image added")
+            );
+
+        if (m_chooseSignatureButton)
+        {
+            m_chooseSignatureButton->setText(
+                tr("Add Signature Image...")
+                );
+        }
+
+        if (m_removeSignatureButton)
+        {
+            m_removeSignatureButton->setEnabled(false);
+        }
+        return;
+    }
+
+    QPixmap signature;
+    if (!signature.loadFromData(m_signatureImageData))
+    {
+        m_signatureImageData.clear();
+        updateSignaturePreview();
+        return;
+    }
+
+    const QSize previewSize =
+        m_signaturePreviewLabel
+            ->contentsRect()
+            .adjusted(16, 16, -16, -16)
+            .size();
+
+    m_signaturePreviewLabel->setText(QString());
+    m_signaturePreviewLabel->setPixmap(
+        signature.scaled(
+            previewSize,
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation
+            )
+        );
+
+    if (m_chooseSignatureButton)
+    {
+        m_chooseSignatureButton->setText(
+            tr("Replace Signature Image...")
+            );
+    }
+
+    if (m_removeSignatureButton)
+    {
+        m_removeSignatureButton->setEnabled(true);
+    }
 }
 void MyInfoPage::clearDirty()
 {

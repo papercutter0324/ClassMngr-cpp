@@ -5,6 +5,7 @@
 
 #include <array>
 
+#include <QByteArray>
 #include <QColor>
 #include <QDate>
 #include <QHash>
@@ -49,7 +50,8 @@ enum class MyInfoSection
 
 enum class MyInfoPageMode
 {
-    InformationCalendar,
+    Information,
+    Calendar,
     Schedule,
     ClassInformation
 };
@@ -61,7 +63,7 @@ class MyInfoPage : public BasePage
 public:
     explicit MyInfoPage(
         ApplicationServices* services,
-        MyInfoPageMode mode = MyInfoPageMode::InformationCalendar,
+        MyInfoPageMode mode = MyInfoPageMode::Information,
         QWidget* parent = nullptr
         );
 
@@ -102,6 +104,8 @@ private slots:
     void handleZoomNotAvailableChanged(
         bool checked
         );
+    void chooseSignatureImage();
+    void removeSignatureImage();
     void autosave();
     void handleCalendarDayActivated(
         int year,
@@ -131,6 +135,7 @@ private:
     void buildClassScheduleSection();
     void buildClassInformationSection();
     void buildMyInformationSection();
+    void buildSignatureSection();
     void buildMonthlyCalendarSection();
     void buildUpcomingEventsPanel(
         QVBoxLayout* cardLayout,
@@ -153,6 +158,7 @@ private:
         );
     void setZoomFieldsEnabled();
     void updateMyInformationFieldWidths();
+    void updateSignaturePreview();
     void refreshGeneratedContent();
     void rebuildClassInformation();
     void clearClassInformation();
@@ -248,6 +254,7 @@ private:
     QLabel* m_classScheduleHeading = nullptr;
     QLabel* m_classInformationHeading = nullptr;
     QLabel* m_myInformationHeading = nullptr;
+    QLabel* m_signatureHeading = nullptr;
     QLabel* m_monthlyCalendarHeading = nullptr;
     QLabel* m_upcomingEventsHeading = nullptr;
 
@@ -269,6 +276,11 @@ private:
     QLineEdit* m_zoomLoginIdEdit = nullptr;
     QLineEdit* m_zoomPasswordEdit = nullptr;
     QCheckBox* m_zoomNotAvailableCheck = nullptr;
+    QLabel* m_signatureInstructionsLabel = nullptr;
+    QLabel* m_signaturePreviewLabel = nullptr;
+    QPushButton* m_chooseSignatureButton = nullptr;
+    QPushButton* m_removeSignatureButton = nullptr;
+    QByteArray m_signatureImageData;
 
     CalendarEventModel* m_calendarModel = nullptr;
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;

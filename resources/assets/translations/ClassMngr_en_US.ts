@@ -1670,6 +1670,74 @@
         <source>Zoom</source>
         <translation>Zoom</translation>
     </message>
+    <message>
+        <source>My Details</source>
+        <translation>My Details</translation>
+    </message>
+    <message>
+        <source>Calendar</source>
+        <translation>Calendar</translation>
+    </message>
+    <message>
+        <source>Manage your personal information and signature.</source>
+        <translation>Manage your personal information and signature.</translation>
+    </message>
+    <message>
+        <source>View and manage your monthly events and upcoming dates.</source>
+        <translation>View and manage your monthly events and upcoming dates.</translation>
+    </message>
+    <message>
+        <source>Signature</source>
+        <translation>Signature</translation>
+    </message>
+    <message>
+        <source>Add a PNG or JPEG signature image. Other supported image formats are converted to PNG.</source>
+        <translation>Add a PNG or JPEG signature image. Other supported image formats are converted to PNG.</translation>
+    </message>
+    <message>
+        <source>PNG and JPEG Images (*.png *.jpg *.jpeg)</source>
+        <translation>PNG and JPEG Images (*.png *.jpg *.jpeg)</translation>
+    </message>
+    <message>
+        <source>Supported Images (%1)</source>
+        <translation>Supported Images (%1)</translation>
+    </message>
+    <message>
+        <source>Choose Signature Image</source>
+        <translation>Choose Signature Image</translation>
+    </message>
+    <message>
+        <source>Unsupported Signature Image</source>
+        <translation>Unsupported Signature Image</translation>
+    </message>
+    <message>
+        <source>The selected file is not a supported image.</source>
+        <translation>The selected file is not a supported image.</translation>
+    </message>
+    <message>
+        <source>Signature Image Error</source>
+        <translation>Signature Image Error</translation>
+    </message>
+    <message>
+        <source>The signature image could not be prepared for embedding.</source>
+        <translation>The signature image could not be prepared for embedding.</translation>
+    </message>
+    <message>
+        <source>Add Signature Image...</source>
+        <translation>Add Signature Image...</translation>
+    </message>
+    <message>
+        <source>Replace Signature Image...</source>
+        <translation>Replace Signature Image...</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>Remove</translation>
+    </message>
+    <message>
+        <source>No signature image added</source>
+        <translation>No signature image added</translation>
+    </message>
 </context>
 <context>
     <name>NavigationController</name>

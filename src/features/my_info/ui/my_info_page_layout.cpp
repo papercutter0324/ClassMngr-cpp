@@ -110,6 +110,7 @@ void MyInfoPage::buildUi()
     if (includesMyInformation())
     {
         buildMyInformationSection();
+        buildSignatureSection();
     }
 
     if (includesClassSchedule())

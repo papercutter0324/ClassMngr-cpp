@@ -10,6 +10,7 @@
 
 #include <QLabel>
 #include <QCheckBox>
+#include <QPushButton>
 #include <QQmlEngine>
 #include <QQuickWidget>
 #include <QScrollArea>
@@ -36,9 +37,14 @@ MyInfoPage::MyInfoPage(
 
     switch (m_mode)
     {
-    case MyInfoPageMode::InformationCalendar:
+    case MyInfoPageMode::Information:
         m_currentSection =
             MyInfoSection::MyInformation;
+        break;
+
+    case MyInfoPageMode::Calendar:
+        m_currentSection =
+            MyInfoSection::MonthlyCalendar;
         break;
 
     case MyInfoPageMode::Schedule:
@@ -93,6 +99,7 @@ void MyInfoPage::refresh()
 
     if (m_calendarModel)
     {
+        updateCalendarCampusFilter();
         m_calendarModel->reload();
     }
 
@@ -132,6 +139,38 @@ void MyInfoPage::retranslateUi()
             tr("My Information")
             );
     }
+
+    if (m_signatureHeading)
+    {
+        m_signatureHeading->setText(
+            tr("Signature")
+            );
+    }
+
+    if (m_signatureInstructionsLabel)
+    {
+        m_signatureInstructionsLabel->setText(
+            tr("Add a PNG or JPEG signature image. Other supported image formats are converted to PNG.")
+            );
+    }
+
+    if (m_chooseSignatureButton)
+    {
+        m_chooseSignatureButton->setText(
+            m_signatureImageData.isEmpty()
+                ? tr("Add Signature Image...")
+                : tr("Replace Signature Image...")
+            );
+    }
+
+    if (m_removeSignatureButton)
+    {
+        m_removeSignatureButton->setText(
+            tr("Remove")
+            );
+    }
+
+    updateSignaturePreview();
 
     if (m_classScheduleHeading)
     {
@@ -328,7 +367,9 @@ void MyInfoPage::scrollToSection(
         break;
 
     case MyInfoSection::MonthlyCalendar:
-        target = m_monthlyCalendarHeading;
+        target = m_monthlyCalendarHeading
+            ? m_monthlyCalendarHeading
+            : m_titleLabel;
         break;
     }
 
@@ -365,7 +406,9 @@ void MyInfoPage::scrollToSection(
 void MyInfoPage::scrollToTop()
 {
     m_currentSection =
-        MyInfoSection::MyInformation;
+        includesMonthlyCalendar()
+            ? MyInfoSection::MonthlyCalendar
+            : MyInfoSection::MyInformation;
 
     QTimer::singleShot(
         0,
@@ -442,6 +485,7 @@ void MyInfoPage::showEvent(
 
     if (m_calendarModel)
     {
+        updateCalendarCampusFilter();
         m_calendarModel->reload();
     }
 

@@ -2136,14 +2136,72 @@
         <translation>Zoom</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="140"/>
-        <source>My Information &amp; Calendar</source>
-        <translation>내 정보 및 캘린더</translation>
+        <source>My Details</source>
+        <translation>내 세부 정보</translation>
     </message>
     <message>
-        <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="156"/>
-        <source>Manage your personal details and monthly events.</source>
-        <translation>개인 정보와 월간 일정을 관리합니다.</translation>
+        <source>Calendar</source>
+        <translation>캘린더</translation>
+    </message>
+    <message>
+        <source>Manage your personal information and signature.</source>
+        <translation>개인 정보와 서명을 관리합니다.</translation>
+    </message>
+    <message>
+        <source>View and manage your monthly events and upcoming dates.</source>
+        <translation>월간 일정과 예정된 날짜를 확인하고 관리합니다.</translation>
+    </message>
+    <message>
+        <source>Signature</source>
+        <translation>서명</translation>
+    </message>
+    <message>
+        <source>Add a PNG or JPEG signature image. Other supported image formats are converted to PNG.</source>
+        <translation>PNG 또는 JPEG 서명 이미지를 추가하세요. 지원되는 다른 이미지 형식은 PNG로 변환됩니다.</translation>
+    </message>
+    <message>
+        <source>PNG and JPEG Images (*.png *.jpg *.jpeg)</source>
+        <translation>PNG 및 JPEG 이미지 (*.png *.jpg *.jpeg)</translation>
+    </message>
+    <message>
+        <source>Supported Images (%1)</source>
+        <translation>지원되는 이미지 (%1)</translation>
+    </message>
+    <message>
+        <source>Choose Signature Image</source>
+        <translation>서명 이미지 선택</translation>
+    </message>
+    <message>
+        <source>Unsupported Signature Image</source>
+        <translation>지원되지 않는 서명 이미지</translation>
+    </message>
+    <message>
+        <source>The selected file is not a supported image.</source>
+        <translation>선택한 파일은 지원되는 이미지가 아닙니다.</translation>
+    </message>
+    <message>
+        <source>Signature Image Error</source>
+        <translation>서명 이미지 오류</translation>
+    </message>
+    <message>
+        <source>The signature image could not be prepared for embedding.</source>
+        <translation>서명 이미지를 삽입할 수 있도록 준비하지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Add Signature Image...</source>
+        <translation>서명 이미지 추가...</translation>
+    </message>
+    <message>
+        <source>Replace Signature Image...</source>
+        <translation>서명 이미지 교체...</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation>제거</translation>
+    </message>
+    <message>
+        <source>No signature image added</source>
+        <translation>추가된 서명 이미지가 없습니다</translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page_layout.cpp" line="159"/>
