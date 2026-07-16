@@ -17,8 +17,8 @@ inline constexpr auto Default =
 inline constexpr auto Input =
     "input";
 
-inline constexpr auto RosterPage =
-    "roster_page";
+inline constexpr auto RosterEditorWidget =
+    "roster_editor_widget";
 
 inline constexpr auto ClassInfo =
     "class_info";

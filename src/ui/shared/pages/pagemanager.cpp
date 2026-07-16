@@ -4,8 +4,9 @@
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
-#include "features/my_info/ui/calendar_page.h"
-#include "features/my_info/ui/my_info_page.h"
+#include "features/calendar/ui/calendar_page.h"
+#include "features/my_info/ui/my_classes_page.h"
+#include "features/my_info/ui/personal_details_page.h"
 #include "features/roster/ui/rosters_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
@@ -53,10 +54,9 @@ void PageManager::initialize(
             this
             );
 
-    m_myInfoPage =
-        new MyInfoPage(
+    m_personalDetailsPage =
+        new PersonalDetailsPage(
             m_services,
-            MyInfoPageMode::Information,
             this
             );
 
@@ -66,17 +66,15 @@ void PageManager::initialize(
             this
             );
 
-    m_myInfoSchedulePage =
-        new MyInfoPage(
+    m_mySchedulePage =
+        new SchedulePage(
             m_services,
-            MyInfoPageMode::Schedule,
             this
             );
 
-    m_myInfoClassInformationPage =
-        new MyInfoPage(
+    m_myClassesPage =
+        new MyClassesPage(
             m_services,
-            MyInfoPageMode::ClassInformation,
             this
             );
 
@@ -124,7 +122,7 @@ void PageManager::initialize(
     registerPages();
 
     showPage(
-        PageType::MyInfo
+        PageType::PersonalDetails
         );
 }
 
@@ -136,17 +134,17 @@ void PageManager::initialize(
 
 void PageManager::registerPages()
 {
-    m_pages[PageType::MyInfo] =
-        m_myInfoPage;
+    m_pages[PageType::PersonalDetails] =
+        m_personalDetailsPage;
 
     m_pages[PageType::Calendar] =
         m_calendarPage;
 
-    m_pages[PageType::MyInfoSchedule] =
-        m_myInfoSchedulePage;
+    m_pages[PageType::MySchedule] =
+        m_mySchedulePage;
 
-    m_pages[PageType::MyInfoClassInformation] =
-        m_myInfoClassInformationPage;
+    m_pages[PageType::MyClasses] =
+        m_myClassesPage;
 
     m_pages[PageType::Schedule] =
         m_schedulePage;
@@ -345,9 +343,9 @@ SchedulePage* PageManager::schedulePage() const
     return m_schedulePage;
 }
 
-MyInfoPage* PageManager::myInfoPage() const
+PersonalDetailsPage* PageManager::personalDetailsPage() const
 {
-    return m_myInfoPage;
+    return m_personalDetailsPage;
 }
 
 CalendarPage* PageManager::calendarPage() const
@@ -355,14 +353,14 @@ CalendarPage* PageManager::calendarPage() const
     return m_calendarPage;
 }
 
-MyInfoPage* PageManager::myInfoSchedulePage() const
+SchedulePage* PageManager::mySchedulePage() const
 {
-    return m_myInfoSchedulePage;
+    return m_mySchedulePage;
 }
 
-MyInfoPage* PageManager::myInfoClassInformationPage() const
+MyClassesPage* PageManager::myClassesPage() const
 {
-    return m_myInfoClassInformationPage;
+    return m_myClassesPage;
 }
 
 RostersPage* PageManager::rostersPage() const

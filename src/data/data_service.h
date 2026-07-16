@@ -62,10 +62,6 @@ public:
 
     [[nodiscard]] QString currentDatabasePath() const;
 
-    void createTables();
-
-
-
     // =====================================================
     // Settings
     // =====================================================

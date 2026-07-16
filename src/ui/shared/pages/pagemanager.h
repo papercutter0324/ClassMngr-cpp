@@ -16,7 +16,8 @@ class ApplicationServices;
 
 class SchedulePage;
 class CalendarPage;
-class MyInfoPage;
+class PersonalDetailsPage;
+class MyClassesPage;
 class RostersPage;
 class ClassesPage;
 class TeacherInfoPage;
@@ -33,10 +34,10 @@ class PdfViewerPage;
 
 enum class PageType
 {
-    MyInfo,
+    PersonalDetails,
     Calendar,
-    MyInfoSchedule,
-    MyInfoClassInformation,
+    MySchedule,
+    MyClasses,
     Schedule,
     Classes,
     TeacherInfo,
@@ -121,13 +122,13 @@ public:
 
     SchedulePage* schedulePage() const;
 
-    MyInfoPage* myInfoPage() const;
+    PersonalDetailsPage* personalDetailsPage() const;
 
     CalendarPage* calendarPage() const;
 
-    MyInfoPage* myInfoSchedulePage() const;
+    SchedulePage* mySchedulePage() const;
 
-    MyInfoPage* myInfoClassInformationPage() const;
+    MyClassesPage* myClassesPage() const;
 
     RostersPage* rostersPage() const;
 
@@ -185,13 +186,13 @@ private:
 
     SchedulePage* m_schedulePage = nullptr;
 
-    MyInfoPage* m_myInfoPage = nullptr;
+    PersonalDetailsPage* m_personalDetailsPage = nullptr;
 
     CalendarPage* m_calendarPage = nullptr;
 
-    MyInfoPage* m_myInfoSchedulePage = nullptr;
+    SchedulePage* m_mySchedulePage = nullptr;
 
-    MyInfoPage* m_myInfoClassInformationPage = nullptr;
+    MyClassesPage* m_myClassesPage = nullptr;
 
     RostersPage* m_rostersPage = nullptr;
 

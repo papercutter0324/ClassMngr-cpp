@@ -3,7 +3,7 @@
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
-#include "ui/shared/widgets/sections/schedule_section_widget.h"
+#include "features/schedule/ui/schedule_widget.h"
 
 #include <QtTest>
 
@@ -15,7 +15,7 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
-namespace ScheduleSectionWidgetTestStubs
+namespace ScheduleWidgetTestStubs
 {
 void reset();
 }
@@ -59,7 +59,7 @@ private slots:
 
 void SubPrepPageTests::init()
 {
-    ScheduleSectionWidgetTestStubs::reset();
+    ScheduleWidgetTestStubs::reset();
 }
 
 void SubPrepPageTests
@@ -127,7 +127,7 @@ void SubPrepPageTests
             QStringLiteral("subPrepNotesEdit")
             );
     auto* schedule =
-        page.findChild<ScheduleSectionWidget*>(
+        page.findChild<ScheduleWidget*>(
             QStringLiteral("subPrepScheduleWidget")
             );
 
@@ -284,7 +284,7 @@ void SubPrepPageTests
         QCOMPARE(special->toPlainText(), QStringLiteral("N/A"));
     }
 
-    ScheduleSectionWidgetTestStubs::reset();
+    ScheduleWidgetTestStubs::reset();
     services.dataService()->saveSetting(
         QStringLiteral("subPrep/bookReportGrading"),
         QStringLiteral("Custom legacy grading\nAdditional Rules: keep here")
@@ -397,7 +397,7 @@ void SubPrepPageTests
         QStringLiteral("secret")
         );
 
-    ScheduleSectionWidgetTestStubs::reset();
+    ScheduleWidgetTestStubs::reset();
     ApplicationServices legacyServices;
     legacyServices.dataService()->saveSetting(
         QStringLiteral("subPrep/personalZoomEmail"),

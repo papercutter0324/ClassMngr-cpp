@@ -12,7 +12,7 @@ class QLabel;
 class QStackedWidget;
 class QTabWidget;
 class QVBoxLayout;
-class RosterPage;
+class RosterEditorWidget;
 class QWidget;
 
 enum class ClassesSection
@@ -91,6 +91,6 @@ private:
     QTabWidget* m_sectionTabs = nullptr;
     QStackedWidget* m_editorStack = nullptr;
     ClassDetailsPage* m_detailsPage = nullptr;
-    RosterPage* m_rosterPage = nullptr;
+    RosterEditorWidget* m_rosterEditor = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
 };

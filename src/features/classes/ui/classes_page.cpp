@@ -8,8 +8,8 @@
 #include "domain/models/teacher.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
-#include "features/roster/ui/roster_page.h"
-#include "features/sub_prep/ui/sub_prep_class_navigation.h"
+#include "features/roster/ui/roster_editor_widget.h"
+#include "features/classes/models/class_tab_navigation_model.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
@@ -194,7 +194,7 @@ void ClassesPage::setSaveMode(
     )
 {
     m_detailsPage->setSaveMode(mode);
-    m_rosterPage->setSaveMode(mode);
+    m_rosterEditor->setSaveMode(mode);
     m_notesPage->setSaveMode(mode);
 }
 
@@ -221,7 +221,7 @@ void ClassesPage::retranslateUi()
     }
 
     m_detailsPage->retranslateUi();
-    m_rosterPage->retranslateUi();
+    m_rosterEditor->retranslateUi();
     m_notesPage->retranslateUi();
 
     rebuildClassTabs(m_currentClassId);
@@ -305,10 +305,10 @@ void ClassesPage::buildUi()
 
     m_editorStack = new QStackedWidget(this);
     m_detailsPage = new ClassDetailsPage(m_services, true, m_editorStack);
-    m_rosterPage = new RosterPage(m_services, true, m_editorStack);
+    m_rosterEditor = new RosterEditorWidget(m_services, true, m_editorStack);
     m_notesPage = new ClassNotesPage(m_services, true, m_editorStack);
     m_editorStack->addWidget(m_detailsPage);
-    m_editorStack->addWidget(m_rosterPage);
+    m_editorStack->addWidget(m_rosterEditor);
     m_editorStack->addWidget(m_notesPage);
     contentLayout()->addWidget(m_editorStack, 1);
 
@@ -361,7 +361,7 @@ void ClassesPage::rebuildClassTabs(
             ? m_services->dataService()
             : nullptr;
 
-    QList<SubPrepClassNavigation::ClassEntry> entries;
+    QList<ClassTabNavigation::ClassEntry> entries;
 
     if (dataService && dataService->isOpen())
     {
@@ -381,7 +381,7 @@ void ClassesPage::rebuildClassTabs(
                 teacher = dataService->getTeacher(info.teacherId);
             }
 
-            SubPrepClassNavigation::ClassEntry entry;
+            ClassTabNavigation::ClassEntry entry;
             entry.classId = classroom.id;
             entry.classroomName = classroom.name;
             entry.grade = info.classGrade;
@@ -394,10 +394,10 @@ void ClassesPage::rebuildClassTabs(
         }
     }
 
-    const SubPrepClassNavigation::Model navigation =
-        SubPrepClassNavigation::build(
+    const ClassTabNavigation::Model navigation =
+        ClassTabNavigation::build(
             entries,
-            SubPrepClassNavigation::GroupingPolicy::AlwaysGradeGrouped
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
             );
 
     auto* gradeTabs = new UniformWidthTabWidget(
@@ -426,7 +426,7 @@ void ClassesPage::rebuildClassTabs(
                 );
         };
 
-    for (const SubPrepClassNavigation::GradeGroup& group
+    for (const ClassTabNavigation::GradeGroup& group
          : navigation.gradeGroups)
     {
         auto* gradePage = new QWidget(gradeTabs);
@@ -442,7 +442,7 @@ void ClassesPage::rebuildClassTabs(
             );
         classTabs->setObjectName("classesLevelTabs");
 
-        for (const SubPrepClassNavigation::ClassTab& classTab
+        for (const ClassTabNavigation::ClassTab& classTab
              : group.classes)
         {
             classTabs->addTab(
@@ -547,7 +547,7 @@ void ClassesPage::loadEditors(
     )
 {
     m_detailsPage->loadClass(classroom);
-    m_rosterPage->loadClass(classroom);
+    m_rosterEditor->loadClass(classroom);
     m_notesPage->loadClass(classroom);
     showActiveEditor();
 }
@@ -691,7 +691,7 @@ BasePage* ClassesPage::activeEditor() const
         return m_detailsPage;
 
     case ClassesSection::Roster:
-        return m_rosterPage;
+        return m_rosterEditor;
 
     case ClassesSection::Notes:
         return m_notesPage;

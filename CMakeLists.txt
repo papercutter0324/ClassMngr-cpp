@@ -313,27 +313,27 @@ if(APPLE)
 endif()
 
 set_source_files_properties(
-    src/features/my_info/ui/qml/EventCalendar.qml
+    src/features/calendar/ui/qml/EventCalendar.qml
     PROPERTIES
         QT_RESOURCE_ALIAS EventCalendar.qml
 )
 
 set_source_files_properties(
-    src/features/my_info/ui/qml/MonthGridDelegate.qml
+    src/features/calendar/ui/qml/MonthGridDelegate.qml
     PROPERTIES
         QT_RESOURCE_ALIAS MonthGridDelegate.qml
 )
 
 qt_add_qml_module(ClassMngr
-    URI ClassMngr.MyInfo
+    URI ClassMngr.Calendar
     VERSION 1.0
     OUTPUT_DIRECTORY
-        ${CMAKE_CURRENT_BINARY_DIR}/qml/ClassMngr/MyInfo
+        ${CMAKE_CURRENT_BINARY_DIR}/qml/ClassMngr/Calendar
     RESOURCE_PREFIX
         /qt/qml
     QML_FILES
-        src/features/my_info/ui/qml/EventCalendar.qml
-        src/features/my_info/ui/qml/MonthGridDelegate.qml
+        src/features/calendar/ui/qml/EventCalendar.qml
+        src/features/calendar/ui/qml/MonthGridDelegate.qml
 )
 
 qt_add_translations(
@@ -388,7 +388,7 @@ if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
         COMMAND "${CMAKE_COMMAND}" -E env
             ${CLASSMNGR_WINDEPLOYQT_ENV}
             "$<TARGET_FILE:Qt6::windeployqt>"
-            --qmldir "${PROJECT_SOURCE_DIR}/src/features/my_info/ui/qml"
+            --qmldir "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
             --dir "$<TARGET_FILE_DIR:ClassMngr>"
             "$<TARGET_FILE:ClassMngr>"
         COMMENT "Deploying Qt runtime dependencies"
@@ -691,9 +691,9 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrCalendarImportTests
         tests/calendar_import_tests.cpp
-        src/features/my_info/calendar_event_campus_filter.cpp
-        src/features/my_info/calendar_event_sheet_parser.cpp
-        src/features/my_info/calendar_import_workbook.cpp
+        src/features/calendar/calendar_event_campus_filter.cpp
+        src/features/calendar/academic_calendar_event_parser.cpp
+        src/features/calendar/calendar_workbook_reader.cpp
     )
 
     target_compile_features(ClassMngrCalendarImportTests
@@ -718,32 +718,32 @@ if(BUILD_TESTING)
         COMMAND ClassMngrCalendarImportTests
     )
 
-    qt_add_executable(ClassMngrSubPrepClassNavigationTests
-        tests/sub_prep_class_navigation_tests.cpp
+    qt_add_executable(ClassMngrClassTabNavigationModelTests
+        tests/class_tab_navigation_model_tests.cpp
         src/features/classes/config/class_info_config.cpp
-        src/features/sub_prep/ui/sub_prep_class_navigation.cpp
+        src/features/classes/models/class_tab_navigation_model.cpp
         src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
     )
 
-    target_compile_features(ClassMngrSubPrepClassNavigationTests
+    target_compile_features(ClassMngrClassTabNavigationModelTests
         PRIVATE
             cxx_std_23
     )
 
-    target_include_directories(ClassMngrSubPrepClassNavigationTests
+    target_include_directories(ClassMngrClassTabNavigationModelTests
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src
     )
 
-    target_link_libraries(ClassMngrSubPrepClassNavigationTests
+    target_link_libraries(ClassMngrClassTabNavigationModelTests
         PRIVATE
             Qt6::Core
             Qt6::Test
     )
 
     add_test(
-        NAME ClassMngrSubPrepClassNavigationTests
-        COMMAND ClassMngrSubPrepClassNavigationTests
+        NAME ClassMngrClassTabNavigationModelTests
+        COMMAND ClassMngrClassTabNavigationModelTests
     )
 
     qt_add_executable(ClassMngrSubPrepClassInformationModelTests
@@ -775,27 +775,27 @@ if(BUILD_TESTING)
         COMMAND ClassMngrSubPrepClassInformationModelTests
     )
 
-    qt_add_executable(ClassMngrScheduleSectionWidgetTests
-        tests/schedule_section_widget_tests.cpp
-        tests/schedule_section_widget_test_stubs.cpp
+    qt_add_executable(ClassMngrScheduleWidgetTests
+        tests/schedule_widget_tests.cpp
+        tests/schedule_widget_test_stubs.cpp
         src/domain/models/classroom.cpp
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
-        src/ui/shared/widgets/sections/schedule_section_widget.cpp
-        src/ui/shared/widgets/sections/schedule_section_widget.h
+        src/features/schedule/ui/schedule_widget.cpp
+        src/features/schedule/ui/schedule_widget.h
     )
 
-    target_compile_features(ClassMngrScheduleSectionWidgetTests
+    target_compile_features(ClassMngrScheduleWidgetTests
         PRIVATE
             cxx_std_23
     )
 
-    target_include_directories(ClassMngrScheduleSectionWidgetTests
+    target_include_directories(ClassMngrScheduleWidgetTests
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src
     )
 
-    target_link_libraries(ClassMngrScheduleSectionWidgetTests
+    target_link_libraries(ClassMngrScheduleWidgetTests
         PRIVATE
             Qt6::Core
             Qt6::Gui
@@ -806,32 +806,36 @@ if(BUILD_TESTING)
     )
 
     add_test(
-        NAME ClassMngrScheduleSectionWidgetTests
-        COMMAND ClassMngrScheduleSectionWidgetTests
+        NAME ClassMngrScheduleWidgetTests
+        COMMAND ClassMngrScheduleWidgetTests
     )
 
     qt_add_executable(ClassMngrSubPrepPageTests
         tests/sub_prep_page_tests.cpp
-        tests/schedule_section_widget_test_stubs.cpp
+        tests/schedule_widget_test_stubs.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
+        src/features/campus/data/campus_json_codec.cpp
         src/features/campus/data/campus_json_repository.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
         src/features/sub_prep/ui/sub_prep_page.cpp
+        src/features/sub_prep/ui/sub_prep_page_class_information.cpp
         src/features/sub_prep/ui/sub_prep_page.h
+        src/features/sub_prep/ui/sub_prep_page_settings.cpp
+        src/features/sub_prep/ui/sub_prep_page_ui.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.h
-        src/features/sub_prep/ui/sub_prep_print_service.cpp
-        src/features/sub_prep/ui/sub_prep_print_service.h
+        src/features/sub_prep/services/sub_prep_print_service.cpp
+        src/features/sub_prep/services/sub_prep_print_service.h
         src/ui/shared/pages/basepage.cpp
         src/ui/shared/pages/basepage.h
         src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.h
-        src/ui/shared/widgets/sections/schedule_section_widget.cpp
-        src/ui/shared/widgets/sections/schedule_section_widget.h
+        src/features/schedule/ui/schedule_widget.cpp
+        src/features/schedule/ui/schedule_widget.h
     )
 
     target_compile_features(ClassMngrSubPrepPageTests
@@ -866,7 +870,7 @@ if(BUILD_TESTING)
     )
 
     set_tests_properties(
-        ClassMngrScheduleSectionWidgetTests
+        ClassMngrScheduleWidgetTests
         ClassMngrSubPrepPageTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
@@ -904,8 +908,14 @@ if(BUILD_TESTING)
         tests/sidebar_structure_tests.cpp
         src/core/fontmanager.cpp
         src/ui/shared/widgets/sidebar/sidebar.cpp
+        src/ui/shared/widgets/sidebar/sidebar_classes.cpp
+        src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp
         src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
         src/ui/shared/widgets/sidebar/sidebar_marquee_delegate.cpp
+        src/ui/shared/widgets/sidebar/sidebar_overflow.cpp
+        src/ui/shared/widgets/sidebar/sidebar_selection.cpp
+        src/ui/shared/widgets/sidebar/sidebar_teachers.cpp
+        src/ui/shared/widgets/sidebar/sidebar_tree.cpp
     )
 
     target_compile_features(ClassMngrSidebarStructureTests
@@ -995,7 +1005,7 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSchedulePrintPdfTests
         tests/schedule_print_pdf_tests.cpp
         src/core/fontmanager.cpp
-        src/features/schedule/ui/schedule_print_service.cpp
+        src/features/schedule/services/schedule_print_service.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
     )
@@ -1029,7 +1039,7 @@ if(BUILD_TESTING)
         src/core/fontmanager.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
-        src/features/sub_prep/ui/sub_prep_print_service.cpp
+        src/features/sub_prep/services/sub_prep_print_service.cpp
     )
 
     target_compile_features(ClassMngrSubPrepPrintPdfTests
@@ -1060,6 +1070,7 @@ if(BUILD_TESTING)
         ClassMngrSubPrepPrintPdfTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     )
 
     qt_add_executable(ClassMngrRosterModelTests
@@ -1098,7 +1109,7 @@ if(BUILD_TESTING)
         tests/roster_template_print_service_tests.cpp
         src/core/fontmanager.cpp
         src/domain/models/classroom.cpp
-        src/features/roster/ui/roster_template_print_service.cpp
+        src/features/roster/services/roster_template_print_service.cpp
     )
 
     target_compile_features(ClassMngrRosterTemplatePrintServiceTests
@@ -1134,6 +1145,7 @@ if(BUILD_TESTING)
     set_tests_properties(ClassMngrRosterTemplatePrintServiceTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
     )
 
     qt_add_executable(ClassMngrLanguageServiceTests
@@ -1166,8 +1178,8 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrAcademicCalendarTests
         tests/academic_calendar_tests.cpp
-        src/features/my_info/academic_calendar_schedule.cpp
-        src/features/my_info/ui/academic_calendar_provider.cpp
+        src/features/calendar/academic_calendar_schedule.cpp
+        src/features/calendar/ui/academic_calendar_provider.cpp
     )
 
     target_compile_features(ClassMngrAcademicCalendarTests
@@ -1195,6 +1207,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrCampusMapTests
         tests/campus_map_tests.cpp
+        src/features/campus/data/campus_json_codec.cpp
         src/features/campus/data/campus_json_repository.cpp
         src/features/campus/ui/campus_map_preview.cpp
     )
@@ -1233,6 +1246,8 @@ if(BUILD_TESTING)
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp
     )
 
     target_compile_features(ClassMngrSpeakingEvalReportWidgetTests
@@ -1268,8 +1283,10 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSpeakingEvalBatchReportServiceTests
         tests/speaking_eval_batch_report_service_tests.cpp
         src/core/fontmanager.cpp
-        src/features/speaking_eval/ui/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp
         src/ui/shared/printing/pdf_print_dialog.cpp
         src/ui/shared/printing/pdf_print_dialog_pages.cpp
         src/ui/shared/printing/pdf_print_dialog_printer.cpp
@@ -1355,9 +1372,9 @@ if(BUILD_TESTING)
             ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrCalendarEventRepositoryTests
             ClassMngrCalendarImportTests
-            ClassMngrSubPrepClassNavigationTests
+            ClassMngrClassTabNavigationModelTests
             ClassMngrSubPrepClassInformationModelTests
-            ClassMngrScheduleSectionWidgetTests
+            ClassMngrScheduleWidgetTests
             ClassMngrSubPrepPageTests
             ClassMngrUniformWidthTabBarTests
             ClassMngrSidebarStructureTests

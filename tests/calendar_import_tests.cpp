@@ -1,6 +1,6 @@
-#include "features/my_info/calendar_event_campus_filter.h"
-#include "features/my_info/calendar_event_sheet_parser.h"
-#include "features/my_info/calendar_import_workbook.h"
+#include "features/calendar/calendar_event_campus_filter.h"
+#include "features/calendar/academic_calendar_event_parser.h"
+#include "features/calendar/calendar_workbook_reader.h"
 
 #include <QtTest>
 

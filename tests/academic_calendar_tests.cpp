@@ -1,5 +1,5 @@
-#include "features/my_info/academic_calendar_schedule.h"
-#include "features/my_info/ui/academic_calendar_provider.h"
+#include "features/calendar/academic_calendar_schedule.h"
+#include "features/calendar/ui/academic_calendar_provider.h"
 #include "data/data_service.h"
 
 #include <QJsonArray>

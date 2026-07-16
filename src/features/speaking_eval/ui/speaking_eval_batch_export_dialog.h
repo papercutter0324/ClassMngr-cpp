@@ -1,6 +1,6 @@
 #pragma once
 
-#include "features/speaking_eval/ui/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 
 #include <QDialog>
 

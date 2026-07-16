@@ -16,7 +16,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
-#include "features/my_info/ui/my_info_page.h"
+#include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -448,15 +448,8 @@ void MainWindow::connectSignals()
         );
 
     connect(
-        m_pages->myInfoPage(),
-        &MyInfoPage::classInfoSaved,
-        m_sidebarController.get(),
-        &SidebarController::handleClassInfoSaved
-        );
-
-    connect(
-        m_pages->myInfoSchedulePage(),
-        &MyInfoPage::classInfoSaved,
+        m_pages->mySchedulePage(),
+        &SchedulePage::classInfoSaved,
         m_sidebarController.get(),
         &SidebarController::handleClassInfoSaved
         );
@@ -641,11 +634,11 @@ void MainWindow::applyDatabaseLoadedState()
         m_sidebarController->refreshAllSidebars();
     }
 
-    if (m_pages && m_pages->myInfoPage())
+    if (m_pages && m_pages->personalDetailsPage())
     {
-        m_pages->showPage(PageType::MyInfo);
+        m_pages->showPage(PageType::PersonalDetails);
         m_pages->refreshAll();
-        m_pages->myInfoPage()->scrollToTop();
+        m_pages->personalDetailsPage()->scrollToTop();
     }
 
     if (ui && ui->sidebarWidget)

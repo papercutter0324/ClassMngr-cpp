@@ -16,7 +16,7 @@ class QTextEdit;
 class QTimer;
 class QVBoxLayout;
 class QWidget;
-class ScheduleSectionWidget;
+class ScheduleWidget;
 class SectionCard;
 struct ScheduleViewModel;
 
@@ -153,7 +153,7 @@ private:
     QLabel* m_gradingInstructionsLabel = nullptr;
     QLabel* m_specialInstructionsLabel = nullptr;
 
-    ScheduleSectionWidget* m_scheduleWidget = nullptr;
+    ScheduleWidget* m_scheduleWidget = nullptr;
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
 

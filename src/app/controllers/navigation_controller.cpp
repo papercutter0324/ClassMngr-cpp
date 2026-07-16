@@ -8,9 +8,11 @@
 
 #include "features/classes/ui/classes_page.h"
 #include "features/campus/ui/campus_dashboard_page.h"
-#include "features/my_info/ui/calendar_page.h"
-#include "features/my_info/ui/my_info_page.h"
+#include "features/calendar/ui/calendar_page.h"
+#include "features/my_info/ui/my_classes_page.h"
+#include "features/my_info/ui/personal_details_page.h"
 #include "features/roster/ui/rosters_page.h"
+#include "features/schedule/ui/schedule_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
@@ -739,27 +741,27 @@ void NavigationController::handleMyInfo(
             : data.routeKey;
 
     PageType targetPageType =
-        PageType::MyInfo;
+        PageType::PersonalDetails;
     QWidget* targetPage =
-        m_pages->myInfoPage();
+        m_pages->personalDetailsPage();
     QString selectedSectionKey =
         QStringLiteral("my_info_information");
 
     if (sectionKey == QStringLiteral("my_info_schedule"))
     {
         targetPageType =
-            PageType::MyInfoSchedule;
+            PageType::MySchedule;
         targetPage =
-            m_pages->myInfoSchedulePage();
+            m_pages->mySchedulePage();
         selectedSectionKey =
             QStringLiteral("my_info_schedule");
     }
     else if (sectionKey == QStringLiteral("my_info_class_information"))
     {
         targetPageType =
-            PageType::MyInfoClassInformation;
+            PageType::MyClasses;
         targetPage =
-            m_pages->myInfoClassInformationPage();
+            m_pages->myClassesPage();
         selectedSectionKey =
             QStringLiteral("my_info_class_information");
     }
@@ -789,7 +791,7 @@ void NavigationController::handleMyInfo(
         m_sidebar->selectMyInfoSection(
             QStringLiteral("my_info_information")
             );
-        m_pages->myInfoPage()->scrollToTop();
+        m_pages->personalDetailsPage()->scrollToTop();
     }
     else
     {
@@ -803,7 +805,7 @@ void NavigationController::handleMyInfo(
         }
         else if (sectionKey == QStringLiteral("my_info_information"))
         {
-            m_pages->myInfoPage()->scrollToTop();
+            m_pages->personalDetailsPage()->scrollToTop();
         }
     }
 }
