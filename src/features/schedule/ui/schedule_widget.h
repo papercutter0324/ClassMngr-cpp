@@ -58,7 +58,6 @@ private slots:
     void setHideEmptyRows(bool hideEmptyRows);
     void setShowWeekends(bool showWeekends);
     void exportSchedule();
-    void printSchedule();
     void onCellClicked(
         int row,
         int column
@@ -111,5 +110,4 @@ private:
     QCheckBox* m_hideEmptyRowsCheckBox = nullptr;
     QCheckBox* m_showIntensiveScheduleCheckBox = nullptr;
     QPushButton* m_exportButton = nullptr;
-    QPushButton* m_printButton = nullptr;
 };

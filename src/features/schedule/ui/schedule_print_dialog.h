@@ -2,8 +2,9 @@
 
 #include "features/schedule/ui/schedule_print_style.h"
 
-#include <QPageLayout>
 #include <QDialog>
+#include <QPageLayout>
+#include <QString>
 
 class QRadioButton;
 
@@ -15,18 +16,24 @@ public:
     enum class Action
     {
         Print,
-        Export
+        SaveAs
     };
 
     explicit SchedulePrintDialog(
-        Action action,
         QWidget* parent = nullptr
         );
 
+    [[nodiscard]] Action selectedAction() const;
+    [[nodiscard]] QString selectedSavePath() const;
     [[nodiscard]] SchedulePrintStyle selectedStyle() const;
     [[nodiscard]] QPageLayout::Orientation selectedOrientation() const;
 
 private:
+    void acceptPrint();
+    void chooseSavePath();
+
+    Action m_selectedAction = Action::Print;
+    QString m_selectedSavePath;
     QRadioButton* m_currentAppearanceButton = nullptr;
     QRadioButton* m_lightThemeButton = nullptr;
     QRadioButton* m_darkThemeButton = nullptr;

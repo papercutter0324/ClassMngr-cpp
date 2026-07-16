@@ -1,22 +1,36 @@
 #include "schedule_print_dialog.h"
 
-#include <QDialogButtonBox>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QVBoxLayout>
 
+namespace
+{
+constexpr int OptionsColumnSpacing = 32;
+
+int requiredColumnWidth(
+    const QRadioButton* firstButton,
+    const QRadioButton* secondButton
+    )
+{
+    return qMax(
+        firstButton->sizeHint().width(),
+        secondButton->sizeHint().width()
+        );
+}
+}
+
 SchedulePrintDialog::SchedulePrintDialog(
-    Action action,
     QWidget* parent
     )
     : QDialog(parent)
 {
-    setWindowTitle(
-        action == Action::Export
-            ? tr("Export Schedule")
-            : tr("Print Schedule")
-        );
+    setWindowTitle(tr("Export Schedule"));
 
     auto* layout =
         new QVBoxLayout(this);
@@ -35,42 +49,72 @@ SchedulePrintDialog::SchedulePrintDialog(
             this
             );
     auto* styleLayout =
-        new QVBoxLayout(styleGroup);
+        new QGridLayout(styleGroup);
     styleLayout->setContentsMargins(
         12,
         10,
         12,
         12
         );
-    styleLayout->setSpacing(8);
+    styleLayout->setHorizontalSpacing(OptionsColumnSpacing);
+    styleLayout->setVerticalSpacing(8);
 
     m_currentAppearanceButton =
         new QRadioButton(
-            tr("Current appearance"),
+            tr("Current Theme"),
             styleGroup
             );
     m_lightThemeButton =
         new QRadioButton(
-            tr("Light theme"),
+            tr("Light Theme"),
             styleGroup
             );
     m_darkThemeButton =
         new QRadioButton(
-            tr("Dark theme"),
+            tr("Dark Theme"),
             styleGroup
             );
     m_excelButton =
         new QRadioButton(
-            tr("Excel-style"),
+            tr("Excel Theme"),
             styleGroup
             );
 
+    m_currentAppearanceButton->setObjectName(
+        QStringLiteral("schedulePrintCurrentThemeButton")
+        );
+    m_lightThemeButton->setObjectName(
+        QStringLiteral("schedulePrintLightThemeButton")
+        );
+    m_excelButton->setObjectName(
+        QStringLiteral("schedulePrintExcelThemeButton")
+        );
+    m_darkThemeButton->setObjectName(
+        QStringLiteral("schedulePrintDarkThemeButton")
+        );
+
     m_currentAppearanceButton->setChecked(true);
 
-    styleLayout->addWidget(m_currentAppearanceButton);
-    styleLayout->addWidget(m_lightThemeButton);
-    styleLayout->addWidget(m_darkThemeButton);
-    styleLayout->addWidget(m_excelButton);
+    styleLayout->addWidget(m_currentAppearanceButton, 0, 0);
+    styleLayout->addWidget(m_lightThemeButton, 1, 0);
+    styleLayout->addWidget(m_excelButton, 0, 1);
+    styleLayout->addWidget(m_darkThemeButton, 1, 1);
+    styleLayout->setColumnMinimumWidth(
+        0,
+        requiredColumnWidth(
+            m_currentAppearanceButton,
+            m_lightThemeButton
+            )
+        );
+    styleLayout->setColumnMinimumWidth(
+        1,
+        requiredColumnWidth(
+            m_excelButton,
+            m_darkThemeButton
+            )
+        );
+    styleLayout->setColumnStretch(0, 1);
+    styleLayout->setColumnStretch(1, 1);
     layout->addWidget(styleGroup);
 
     auto* orientationGroup =
@@ -105,32 +149,70 @@ SchedulePrintDialog::SchedulePrintDialog(
     orientationLayout->addWidget(m_portraitButton);
     layout->addWidget(orientationGroup);
 
-    auto* buttons =
-        new QDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+    auto* buttonLayout = new QHBoxLayout;
+    auto* cancelButton =
+        new QPushButton(
+            tr("Cancel"),
             this
             );
-
-    buttons->button(QDialogButtonBox::Ok)->setText(
-        action == Action::Export
-            ? tr("Export")
-            : tr("Print")
+    cancelButton->setObjectName(
+        QStringLiteral("schedulePrintCancelButton")
         );
+    auto* saveAsButton =
+        new QPushButton(
+            tr("Save As"),
+            this
+            );
+    saveAsButton->setObjectName(
+        QStringLiteral("schedulePrintSaveAsButton")
+        );
+    auto* printButton =
+        new QPushButton(
+            tr("Print"),
+            this
+            );
+    printButton->setObjectName(
+        QStringLiteral("schedulePrintButton")
+        );
+    printButton->setDefault(true);
+
+    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(saveAsButton);
+    buttonLayout->addWidget(printButton);
 
     connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &QDialog::accept
-        );
-    connect(
-        buttons,
-        &QDialogButtonBox::rejected,
+        cancelButton,
+        &QPushButton::clicked,
         this,
         &QDialog::reject
         );
+    connect(
+        saveAsButton,
+        &QPushButton::clicked,
+        this,
+        &SchedulePrintDialog::chooseSavePath
+        );
+    connect(
+        printButton,
+        &QPushButton::clicked,
+        this,
+        &SchedulePrintDialog::acceptPrint
+        );
 
-    layout->addWidget(buttons);
+    layout->addLayout(buttonLayout);
+    layout->activate();
+    setFixedWidth(layout->minimumSize().width());
+}
+
+SchedulePrintDialog::Action SchedulePrintDialog::selectedAction() const
+{
+    return m_selectedAction;
+}
+
+QString SchedulePrintDialog::selectedSavePath() const
+{
+    return m_selectedSavePath;
 }
 
 SchedulePrintStyle SchedulePrintDialog::selectedStyle() const
@@ -161,4 +243,49 @@ QPageLayout::Orientation SchedulePrintDialog::selectedOrientation() const
     }
 
     return QPageLayout::Landscape;
+}
+
+void SchedulePrintDialog::acceptPrint()
+{
+    m_selectedAction = Action::Print;
+    m_selectedSavePath.clear();
+    accept();
+}
+
+void SchedulePrintDialog::chooseSavePath()
+{
+    QFileDialog dialog(
+        this,
+        tr("Save Schedule As"),
+        QString(),
+        tr("PDF Documents (*.pdf)")
+        );
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    dialog.setDefaultSuffix(QStringLiteral("pdf"));
+    dialog.selectFile(QStringLiteral("Schedule.pdf"));
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QStringList selectedFiles = dialog.selectedFiles();
+
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    QString savePath = selectedFiles.first();
+
+    if (QFileInfo(savePath).suffix().isEmpty())
+    {
+        savePath += QStringLiteral(".pdf");
+    }
+
+    m_selectedAction = Action::SaveAs;
+    m_selectedSavePath = savePath;
+    accept();
 }

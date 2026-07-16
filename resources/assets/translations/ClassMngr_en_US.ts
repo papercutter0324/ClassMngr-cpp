@@ -4474,62 +4474,72 @@
 <context>
     <name>SchedulePrintDialog</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="17"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="33"/>
         <source>Export Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="18"/>
-        <source>Print Schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="34"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="48"/>
         <source>Style</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="49"/>
-        <source>Current appearance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="54"/>
-        <source>Light theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="59"/>
-        <source>Dark theme</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="64"/>
-        <source>Excel-style</source>
+        <source>Current Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="78"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="69"/>
+        <source>Light Theme</source>
+        <translation type="unfinished">Light Theme</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="74"/>
+        <source>Dark Theme</source>
+        <translation type="unfinished">Dark Theme</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="79"/>
+        <source>Excel Theme</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="122"/>
         <source>Orientation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="93"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="137"/>
         <source>Landscape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="98"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="142"/>
         <source>Portrait</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="116"/>
-        <source>Export</source>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="155"/>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancel</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="163"/>
+        <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="117"/>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="259"/>
+        <source>Save Schedule As</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="261"/>
+        <source>PDF Documents (*.pdf)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="171"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4537,7 +4547,7 @@
 <context>
     <name>ScheduleWidget</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="990"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="902"/>
         <source>No registered class meeting times available.</source>
         <translation>No registered class meeting times available.</translation>
     </message>
@@ -4554,8 +4564,9 @@
         <translation type="vanished">Hide Weekends</translation>
     </message>
     <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="962"/>
         <source>Show Weekends</source>
-        <translation type="vanished">Show Weekends</translation>
+        <translation>Show Weekends</translation>
     </message>
     <message>
         <source>Show Regular Schedule</source>
@@ -4566,73 +4577,57 @@
         <translation type="vanished">Show Intensive Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="506"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="509"/>
         <source>Print Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="526"/>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="590"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="510"/>
         <source>Export Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="528"/>
-        <source>PDF Documents (*.pdf)</source>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="954"/>
+        <source>Use 24-Hour Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1043"/>
-        <source>Use 24-hour time</source>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="957"/>
+        <source>Show English Names</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1046"/>
-        <source>Show English names for Korean teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1051"/>
-        <source>Show weekends</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1054"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="965"/>
         <source>Show intensive schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1057"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="968"/>
         <source>Show all hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1060"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="971"/>
         <source>Hide empty rows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1065"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="976"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1069"/>
-        <source>Print</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1078"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="985"/>
         <source>Time</source>
         <translation>Time</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1395"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1302"/>
         <source>Essay</source>
         <translation>Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1420"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1327"/>
         <source>Lunch</source>
         <translation>Lunch</translation>
     </message>

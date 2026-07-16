@@ -445,11 +445,20 @@ void ScheduleEditorDialog::saveChanges()
 }
 
 SchedulePrintDialog::SchedulePrintDialog(
-    Action,
     QWidget* parent
     )
     : QDialog(parent)
 {
+}
+
+SchedulePrintDialog::Action SchedulePrintDialog::selectedAction() const
+{
+    return Action::Print;
+}
+
+QString SchedulePrintDialog::selectedSavePath() const
+{
+    return {};
 }
 
 SchedulePrintStyle SchedulePrintDialog::selectedStyle() const

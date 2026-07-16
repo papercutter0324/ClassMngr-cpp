@@ -67,6 +67,9 @@ void ScheduleWidgetTests
     QVERIFY(showIntensive);
     QVERIFY(showAllHours);
     QVERIFY(hideEmptyRows);
+    QCOMPARE(use24Hour->text(), QStringLiteral("Use 24-Hour Time"));
+    QCOMPARE(showWeekends->text(), QStringLiteral("Show Weekends"));
+    QCOMPARE(showEnglishNames->text(), QStringLiteral("Show English Names"));
 
     use24Hour->setChecked(true);
     showWeekends->setChecked(true);
@@ -144,7 +147,8 @@ void ScheduleWidgetTests
     const auto buttons =
         controls->findChildren<QPushButton*>();
     QCOMPARE(checkBoxes.size(), 6);
-    QCOMPARE(buttons.size(), 2);
+    QCOMPARE(buttons.size(), 1);
+    QCOMPARE(buttons.first()->text(), QStringLiteral("Export"));
 
     for (const QCheckBox* checkBox : checkBoxes)
     {

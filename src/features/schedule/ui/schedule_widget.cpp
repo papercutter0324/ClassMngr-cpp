@@ -16,8 +16,6 @@
 #include <QAbstractItemView>
 #include <QCheckBox>
 #include <QDialog>
-#include <QFileDialog>
-#include <QFileInfo>
 #include <QFont>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -37,6 +35,7 @@ namespace
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
+constexpr int OptionsColumnSpacing = 32;
 
 namespace SettingsKeys
 {
@@ -456,102 +455,13 @@ void ScheduleWidget::onCellClicked(
     dialog.exec();
 }
 
-void ScheduleWidget::printSchedule()
-{
-    SchedulePrintDialog dialog(
-        SchedulePrintDialog::Action::Print,
-        this
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    SchedulePrintService::Request request;
-    request.parent = this;
-    request.model =
-        buildScheduleModel();
-    request.style =
-        dialog.selectedStyle();
-    request.pageOrientation =
-        dialog.selectedOrientation();
-
-    if (m_services && m_services->themeService())
-    {
-        request.currentTheme =
-            m_services->themeService()->currentTheme();
-    }
-
-    if (auto* dataService = openDataService(m_services))
-    {
-        request.userName =
-            dataService
-                ->loadSetting(
-                    QStringLiteral("myInfo/name"),
-                    QString()
-                    )
-                .toString();
-    }
-
-    const SchedulePrintService::Result result =
-        SchedulePrintService::printSchedule(
-            request
-            );
-
-    if (result.status == SchedulePrintService::Status::Failed)
-    {
-        QMessageBox::warning(
-            this,
-            tr("Print Schedule"),
-            result.message
-            );
-    }
-}
-
 void ScheduleWidget::exportSchedule()
 {
-    SchedulePrintDialog dialog(
-        SchedulePrintDialog::Action::Export,
-        this
-        );
+    SchedulePrintDialog dialog(this);
 
     if (dialog.exec() != QDialog::Accepted)
     {
         return;
-    }
-
-    QFileDialog fileDialog(
-        this,
-        tr("Export Schedule"),
-        QString(),
-        tr("PDF Documents (*.pdf)")
-        );
-    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setFileMode(QFileDialog::AnyFile);
-    fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    fileDialog.setDefaultSuffix(QStringLiteral("pdf"));
-    fileDialog.selectFile(QStringLiteral("Schedule.pdf"));
-
-    if (fileDialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    const QStringList selectedFiles =
-        fileDialog.selectedFiles();
-
-    if (selectedFiles.isEmpty())
-    {
-        return;
-    }
-
-    QString documentPath =
-        selectedFiles.first();
-
-    if (QFileInfo(documentPath).suffix().isEmpty())
-    {
-        documentPath += QStringLiteral(".pdf");
     }
 
     SchedulePrintService::Request request;
@@ -577,17 +487,27 @@ void ScheduleWidget::exportSchedule()
                 .toString();
     }
 
-    const SchedulePrintService::Result result =
-        SchedulePrintService::saveSchedulePdf(
+    SchedulePrintService::Result result;
+
+    if (dialog.selectedAction() == SchedulePrintDialog::Action::Print)
+    {
+        result = SchedulePrintService::printSchedule(request);
+    }
+    else
+    {
+        result = SchedulePrintService::saveSchedulePdf(
             request,
-            documentPath
+            dialog.selectedSavePath()
             );
+    }
 
     if (result.status == SchedulePrintService::Status::Failed)
     {
         QMessageBox::warning(
             this,
-            tr("Export Schedule"),
+            dialog.selectedAction() == SchedulePrintDialog::Action::Print
+                ? tr("Print Schedule")
+                : tr("Export Schedule"),
             result.message
             );
     }
@@ -693,32 +613,22 @@ void ScheduleWidget::buildUi()
         QStringLiteral("scheduleShowIntensiveCheckBox")
         );
 
-    m_printButton =
-        new TextFitPushButton(this);
-    m_printButton->setObjectName(
-        QStringLiteral("schedulePrintButton")
-        );
-    m_printButton->setMinimumWidth(120);
-
     m_exportButton =
         new TextFitPushButton(this);
     m_exportButton->setObjectName(
         QStringLiteral("scheduleExportButton")
         );
-    m_exportButton->setMinimumWidth(
-        m_printButton->minimumWidth()
-        );
+    m_exportButton->setMinimumWidth(120);
 
-    auto* controlsColumnLayout =
+    auto* primaryOptionsLayout =
         new QVBoxLayout;
-    controlsColumnLayout->setContentsMargins(0, 0, 0, 0);
-    controlsColumnLayout->setSpacing(4);
-    controlsColumnLayout->addWidget(m_use24HourTimeCheckBox);
-    controlsColumnLayout->addWidget(
+    primaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
+    primaryOptionsLayout->setSpacing(4);
+    primaryOptionsLayout->setAlignment(Qt::AlignTop);
+    primaryOptionsLayout->addWidget(
         m_showKoreanTeacherEnglishNamesCheckBox
         );
-    controlsColumnLayout->addWidget(m_showWeekendsCheckBox);
-    controlsColumnLayout->addWidget(m_showIntensiveScheduleCheckBox);
+    primaryOptionsLayout->addWidget(m_showIntensiveScheduleCheckBox);
 
     auto* intensiveOptionsLayout =
         new QVBoxLayout;
@@ -726,19 +636,28 @@ void ScheduleWidget::buildUi()
     intensiveOptionsLayout->setSpacing(4);
     intensiveOptionsLayout->addWidget(m_showAllHoursCheckBox);
     intensiveOptionsLayout->addWidget(m_hideEmptyRowsCheckBox);
-    controlsColumnLayout->addLayout(intensiveOptionsLayout);
+    primaryOptionsLayout->addLayout(intensiveOptionsLayout);
 
-    auto* actionsLayout =
+    auto* secondaryOptionsLayout =
         new QVBoxLayout;
-    actionsLayout->setContentsMargins(0, 0, 0, 0);
-    actionsLayout->setSpacing(4);
-    actionsLayout->addStretch();
-    actionsLayout->addWidget(m_exportButton);
-    actionsLayout->addWidget(m_printButton);
+    secondaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
+    secondaryOptionsLayout->setSpacing(4);
+    secondaryOptionsLayout->setAlignment(Qt::AlignTop);
+    secondaryOptionsLayout->addWidget(m_use24HourTimeCheckBox);
+    secondaryOptionsLayout->addWidget(m_showWeekendsCheckBox);
 
-    controlsLayout->addLayout(controlsColumnLayout);
+    auto* optionsLayout = new QHBoxLayout;
+    optionsLayout->setContentsMargins(0, 0, 0, 0);
+    optionsLayout->setSpacing(OptionsColumnSpacing);
+    optionsLayout->addLayout(primaryOptionsLayout);
+    optionsLayout->setAlignment(primaryOptionsLayout, Qt::AlignTop);
+    optionsLayout->addLayout(secondaryOptionsLayout);
+    optionsLayout->setAlignment(secondaryOptionsLayout, Qt::AlignTop);
+
+    controlsLayout->addLayout(optionsLayout);
+    controlsLayout->setAlignment(optionsLayout, Qt::AlignTop);
     controlsLayout->addStretch();
-    controlsLayout->addLayout(actionsLayout);
+    controlsLayout->addWidget(m_exportButton, 0, Qt::AlignTop);
 
     layout->addWidget(m_controlsWidget);
 
@@ -793,13 +712,6 @@ void ScheduleWidget::buildUi()
         &QPushButton::clicked,
         this,
         &ScheduleWidget::exportSchedule
-        );
-
-    connect(
-        m_printButton,
-        &QPushButton::clicked,
-        this,
-        &ScheduleWidget::printSchedule
         );
 
     connect(
@@ -1025,7 +937,6 @@ void ScheduleWidget::updateButtons()
         || !m_hideEmptyRowsCheckBox
         || !m_showIntensiveScheduleCheckBox
         || !m_exportButton
-        || !m_printButton
         )
     {
         return;
@@ -1040,15 +951,15 @@ void ScheduleWidget::updateButtons()
     const QSignalBlocker hideEmptyBlocker(m_hideEmptyRowsCheckBox);
     const QSignalBlocker intensiveBlocker(m_showIntensiveScheduleCheckBox);
 
-    m_use24HourTimeCheckBox->setText(tr("Use 24-hour time"));
+    m_use24HourTimeCheckBox->setText(tr("Use 24-Hour Time"));
     m_use24HourTimeCheckBox->setChecked(m_use24h);
     m_showKoreanTeacherEnglishNamesCheckBox->setText(
-        tr("Show English names for Korean teachers")
+        tr("Show English Names")
         );
     m_showKoreanTeacherEnglishNamesCheckBox->setChecked(
         m_showKoreanTeacherEnglishNames
         );
-    m_showWeekendsCheckBox->setText(tr("Show weekends"));
+    m_showWeekendsCheckBox->setText(tr("Show Weekends"));
     m_showWeekendsCheckBox->setChecked(m_showWeekends);
     m_showIntensiveScheduleCheckBox->setText(
         tr("Show intensive schedule")
@@ -1063,10 +974,6 @@ void ScheduleWidget::updateButtons()
 
     m_exportButton->setText(
         tr("Export")
-        );
-
-    m_printButton->setText(
-        tr("Print")
         );
 }
 
