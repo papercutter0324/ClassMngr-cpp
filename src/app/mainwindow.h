@@ -114,6 +114,7 @@ private:
 
     void restoreSplitter();
     void reapplyStartupFontSize();
+    void showStartupDatabasePage();
 
     void setDatabaseBackedActionsEnabled(
         bool enabled

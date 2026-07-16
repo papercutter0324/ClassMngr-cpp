@@ -78,6 +78,7 @@ MainWindow::MainWindow(
     if (m_startupOptions.loadMostRecentDatabase)
     {
         m_fileController->loadMostRecentDatabase();
+        showStartupDatabasePage();
     }
     else
     {
@@ -571,6 +572,27 @@ void MainWindow::reapplyStartupFontSize()
     updateGeometry();
     update();
     repaint();
+}
+
+void MainWindow::showStartupDatabasePage()
+{
+    if (
+        !m_services
+        || !m_services->hasOpenDatabase()
+        || !m_pages
+        )
+    {
+        return;
+    }
+
+    m_pages->showPage(PageType::MySchedule);
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->selectMyInfoSection(
+            QStringLiteral("my_info_schedule")
+            );
+    }
 }
 
 bool MainWindow::confirmCurrentPageCanLeave(
