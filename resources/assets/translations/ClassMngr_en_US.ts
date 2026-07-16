@@ -1600,6 +1600,57 @@
     </message>
 </context>
 <context>
+    <name>CalendarPage</name>
+    <message>
+        <source>Calendar</source>
+        <translation>Calendar</translation>
+    </message>
+    <message>
+        <source>View and manage your monthly events and upcoming dates.</source>
+        <translation>View and manage your monthly events and upcoming dates.</translation>
+    </message>
+    <message>
+        <source>Upcoming Events</source>
+        <translation>Upcoming Events</translation>
+    </message>
+    <message>
+        <source>Current Month</source>
+        <translation>Current Month</translation>
+    </message>
+    <message>
+        <source>Next 30 Days</source>
+        <translation>Next 30 Days</translation>
+    </message>
+    <message>
+        <source>Next 10 Events</source>
+        <translation>Next 10 Events</translation>
+    </message>
+    <message>
+        <source>No upcoming events.</source>
+        <translation>No upcoming events.</translation>
+    </message>
+    <message>
+        <source>Choose %1 Color</source>
+        <translation>Choose %1 Color</translation>
+    </message>
+    <message>
+        <source>All day</source>
+        <translation>All day</translation>
+    </message>
+    <message>
+        <source>Unknown Time</source>
+        <translation>Unknown Time</translation>
+    </message>
+    <message>
+        <source>Unconfirmed Time</source>
+        <translation>Unconfirmed Time</translation>
+    </message>
+    <message>
+        <source>Choose %1 color</source>
+        <translation>Choose %1 color</translation>
+    </message>
+</context>
+<context>
     <name>MyInfoPage</name>
     <message>
         <location filename="../../../src/features/my_info/ui/my_info_page.cpp" line="295"/>

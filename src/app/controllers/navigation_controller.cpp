@@ -8,6 +8,7 @@
 
 #include "features/classes/ui/classes_page.h"
 #include "features/campus/ui/campus_dashboard_page.h"
+#include "features/my_info/ui/calendar_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/my_info/ui/my_info_rosters_page.h"
 #include "ui/shared/pages/pagemanager.h"

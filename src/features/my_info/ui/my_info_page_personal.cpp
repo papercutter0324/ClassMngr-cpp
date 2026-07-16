@@ -12,6 +12,7 @@
 #include <QCheckBox>
 #include <QBuffer>
 #include <QComboBox>
+#include <QEvent>
 #include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
@@ -259,14 +260,66 @@ QVariant loadSettingWithLegacyFallback(
 }
 }
 
+bool MyInfoPage::eventFilter(
+    QObject* watched,
+    QEvent* event
+    )
+{
+    if (
+        event
+        && watched == m_signaturePreviewLabel
+        && event->type() == QEvent::Resize
+        )
+    {
+        QTimer::singleShot(
+            0,
+            this,
+            [this]()
+            {
+                updateSignaturePreview();
+            }
+            );
+    }
+
+    if (
+        event
+        && (
+            watched == m_nameEdit
+            || watched == m_campusCombo
+            || watched == m_zoomLoginIdEdit
+            || watched == m_zoomPasswordEdit
+            )
+        && (
+            event->type() == QEvent::FontChange
+            || event->type() == QEvent::ApplicationFontChange
+            || event->type() == QEvent::Polish
+            || event->type() == QEvent::Show
+            || event->type() == QEvent::StyleChange
+            )
+        )
+    {
+        QTimer::singleShot(
+            0,
+            this,
+            [this]()
+            {
+                updateMyInformationFieldWidths();
+            }
+            );
+    }
+
+    return BasePage::eventFilter(
+        watched,
+        event
+        );
+}
+
 void MyInfoPage::handleEditableChanged()
 {
     if (m_loading)
     {
         return;
     }
-
-    updateCalendarCampusFilter();
 
     m_dirty = true;
 
@@ -847,7 +900,6 @@ void MyInfoPage::loadStoredSettings()
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
     updateSignaturePreview();
-    updateCalendarCampusFilter();
 }
 bool MyInfoPage::saveMyInfoInternal()
 {

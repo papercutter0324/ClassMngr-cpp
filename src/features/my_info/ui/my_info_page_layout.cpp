@@ -123,11 +123,6 @@ void MyInfoPage::buildUi()
         buildClassInformationSection();
     }
 
-    if (includesMonthlyCalendar())
-    {
-        buildMonthlyCalendarSection();
-    }
-
     m_scrollContentLayout->addStretch();
 
     m_scrollArea->setWidget(m_scrollContent);
@@ -139,9 +134,6 @@ QString MyInfoPage::pageTitle() const
     {
     case MyInfoPageMode::Information:
         return tr("My Details");
-
-    case MyInfoPageMode::Calendar:
-        return tr("Calendar");
 
     case MyInfoPageMode::Schedule:
         return tr("Schedule");
@@ -158,9 +150,6 @@ QString MyInfoPage::pageSubtitle() const
     {
     case MyInfoPageMode::Information:
         return tr("Manage your personal information and signature.");
-
-    case MyInfoPageMode::Calendar:
-        return tr("View and manage your monthly events and upcoming dates.");
 
     case MyInfoPageMode::Schedule:
         return tr("View and adjust your class schedule.");
@@ -182,10 +171,6 @@ bool MyInfoPage::includesClassSchedule() const
 bool MyInfoPage::includesClassInformation() const
 {
     return m_mode == MyInfoPageMode::ClassInformation;
-}
-bool MyInfoPage::includesMonthlyCalendar() const
-{
-    return m_mode == MyInfoPageMode::Calendar;
 }
 void MyInfoPage::buildClassScheduleSection()
 {

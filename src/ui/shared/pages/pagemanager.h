@@ -15,6 +15,7 @@
 class ApplicationServices;
 
 class SchedulePage;
+class CalendarPage;
 class MyInfoPage;
 class MyInfoRostersPage;
 class ClassesPage;
@@ -122,7 +123,7 @@ public:
 
     MyInfoPage* myInfoPage() const;
 
-    MyInfoPage* calendarPage() const;
+    CalendarPage* calendarPage() const;
 
     MyInfoPage* myInfoSchedulePage() const;
 
@@ -186,7 +187,7 @@ private:
 
     MyInfoPage* m_myInfoPage = nullptr;
 
-    MyInfoPage* m_calendarPage = nullptr;
+    CalendarPage* m_calendarPage = nullptr;
 
     MyInfoPage* m_myInfoSchedulePage = nullptr;
 

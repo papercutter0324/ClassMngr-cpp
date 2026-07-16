@@ -5,18 +5,13 @@
 #include "ui/shared/pages/basepage.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/sections/schedule_section_widget.h"
-#include "calendar_event_model.h"
-#include "academic_calendar_provider.h"
 
 #include <QLabel>
 #include <QCheckBox>
 #include <QPushButton>
-#include <QQmlEngine>
-#include <QQuickWidget>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QShowEvent>
-#include <QTabWidget>
 #include <QTimer>
 
 namespace
@@ -40,11 +35,6 @@ MyInfoPage::MyInfoPage(
     case MyInfoPageMode::Information:
         m_currentSection =
             MyInfoSection::MyInformation;
-        break;
-
-    case MyInfoPageMode::Calendar:
-        m_currentSection =
-            MyInfoSection::MonthlyCalendar;
         break;
 
     case MyInfoPageMode::Schedule:
@@ -96,19 +86,6 @@ void MyInfoPage::refresh()
     {
         m_scheduleWidget->refreshSchedule();
     }
-
-    if (m_calendarModel)
-    {
-        updateCalendarCampusFilter();
-        m_calendarModel->reload();
-    }
-
-    if (m_academicCalendarProvider)
-    {
-        m_academicCalendarProvider->reload();
-    }
-
-    refreshUpcomingEvents();
 
     if (!m_dirty && includesMyInformation())
     {
@@ -186,36 +163,6 @@ void MyInfoPage::retranslateUi()
             );
     }
 
-    if (m_monthlyCalendarHeading)
-    {
-        m_monthlyCalendarHeading->setText(
-            tr("Monthly Calendar")
-            );
-    }
-
-    if (m_upcomingEventsHeading)
-    {
-        m_upcomingEventsHeading->setText(
-            tr("Upcoming Events")
-            );
-    }
-
-    if (m_upcomingEventsTabs && m_upcomingEventsTabs->count() >= 3)
-    {
-        m_upcomingEventsTabs->setTabText(
-            0,
-            tr("Current Month")
-            );
-        m_upcomingEventsTabs->setTabText(
-            1,
-            tr("Next 30 Days")
-            );
-        m_upcomingEventsTabs->setTabText(
-            2,
-            tr("Next 10 Events")
-            );
-    }
-
     if (m_nameLabel)
     {
         m_nameLabel->setText(
@@ -262,18 +209,6 @@ void MyInfoPage::retranslateUi()
     {
         m_scheduleWidget->retranslateUi();
     }
-
-    if (m_calendarView && m_calendarView->engine())
-    {
-        m_calendarView->engine()->retranslate();
-    }
-
-    if (m_academicCalendarProvider)
-    {
-        m_academicCalendarProvider->reload();
-    }
-
-    refreshUpcomingEvents();
 
     refreshGeneratedContent();
 }
@@ -366,11 +301,6 @@ void MyInfoPage::scrollToSection(
         target = m_myInformationHeading;
         break;
 
-    case MyInfoSection::MonthlyCalendar:
-        target = m_monthlyCalendarHeading
-            ? m_monthlyCalendarHeading
-            : m_titleLabel;
-        break;
     }
 
     if (!target || !m_scrollArea)
@@ -406,9 +336,7 @@ void MyInfoPage::scrollToSection(
 void MyInfoPage::scrollToTop()
 {
     m_currentSection =
-        includesMonthlyCalendar()
-            ? MyInfoSection::MonthlyCalendar
-            : MyInfoSection::MyInformation;
+        MyInfoSection::MyInformation;
 
     QTimer::singleShot(
         0,
@@ -440,8 +368,6 @@ QString MyInfoPage::currentSectionName() const
     case MyInfoSection::MyInformation:
         return tr("My Information");
 
-    case MyInfoSection::MonthlyCalendar:
-        return tr("Monthly Calendar");
     }
 
     return QString();
@@ -459,8 +385,6 @@ QString MyInfoPage::currentSectionKey() const
     case MyInfoSection::MyInformation:
         return QStringLiteral("my_info_information");
 
-    case MyInfoSection::MonthlyCalendar:
-        return QStringLiteral("my_info_calendar");
     }
 
     return QString();
@@ -483,14 +407,4 @@ void MyInfoPage::showEvent(
         m_scheduleWidget->refreshSchedule();
     }
 
-    if (m_calendarModel)
-    {
-        updateCalendarCampusFilter();
-        m_calendarModel->reload();
-    }
-
-    if (m_academicCalendarProvider)
-    {
-        m_academicCalendarProvider->reload();
-    }
 }

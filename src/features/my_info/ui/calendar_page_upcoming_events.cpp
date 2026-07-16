@@ -1,4 +1,4 @@
-#include "my_info_page.h"
+#include "calendar_page.h"
 
 #include "calendar_event_model.h"
 #include "core/application_services.h"
@@ -14,14 +14,12 @@
 
 #include <QBasicTimer>
 #include <QColorDialog>
-#include <QComboBox>
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
 #include <QQuickItem>
@@ -379,54 +377,11 @@ bool settingToBool(
 }
 }
 
-bool MyInfoPage::eventFilter(
+bool CalendarPage::eventFilter(
     QObject* watched,
     QEvent* event
     )
 {
-    if (
-        event
-        && watched == m_signaturePreviewLabel
-        && event->type() == QEvent::Resize
-        )
-    {
-        QTimer::singleShot(
-            0,
-            this,
-            [this]()
-            {
-                updateSignaturePreview();
-            }
-            );
-    }
-
-    if (
-        event
-        && (
-            watched == m_nameEdit
-            || watched == m_campusCombo
-            || watched == m_zoomLoginIdEdit
-            || watched == m_zoomPasswordEdit
-            )
-        && (
-            event->type() == QEvent::FontChange
-            || event->type() == QEvent::ApplicationFontChange
-            || event->type() == QEvent::Polish
-            || event->type() == QEvent::Show
-            || event->type() == QEvent::StyleChange
-            )
-        )
-    {
-        QTimer::singleShot(
-            0,
-            this,
-            [this]()
-            {
-                updateMyInformationFieldWidths();
-            }
-            );
-    }
-
     if (
         event
         && watched == m_calendarView
@@ -500,7 +455,7 @@ bool MyInfoPage::eventFilter(
         event
         );
 }
-void MyInfoPage::buildUpcomingEventsPanel(
+void CalendarPage::buildUpcomingEventsPanel(
     QVBoxLayout* cardLayout,
     QWidget* parent
     )
@@ -575,7 +530,7 @@ void MyInfoPage::buildUpcomingEventsPanel(
     syncEventTypeFilterButtons();
     refreshUpcomingEvents();
 }
-QWidget* MyInfoPage::createUpcomingEventsPage(
+QWidget* CalendarPage::createUpcomingEventsPage(
     QVBoxLayout** pageLayout,
     QWidget* parent
     )
@@ -611,7 +566,7 @@ QWidget* MyInfoPage::createUpcomingEventsPage(
 
     return page;
 }
-QWidget* MyInfoPage::createEventTypeFilterRow(
+QWidget* CalendarPage::createEventTypeFilterRow(
     QWidget* parent
     )
 {
@@ -697,7 +652,7 @@ QWidget* MyInfoPage::createEventTypeFilterRow(
 
     return container;
 }
-void MyInfoPage::refreshUpcomingEvents()
+void CalendarPage::refreshUpcomingEvents()
 {
     if (!m_upcomingEventsTabs)
     {
@@ -797,7 +752,7 @@ void MyInfoPage::refreshUpcomingEvents()
             );
     }
 }
-void MyInfoPage::renderUpcomingEvents(
+void CalendarPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
     const QList<CalendarEvent>& events,
     int dateColumnWidth,
@@ -878,7 +833,7 @@ void MyInfoPage::renderUpcomingEvents(
             );
     }
 }
-QList<CalendarEvent> MyInfoPage::upcomingEventsForScope(
+QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
     UpcomingEventsScope scope
     ) const
 {
@@ -922,7 +877,7 @@ QList<CalendarEvent> MyInfoPage::upcomingEventsForScope(
 
     return {};
 }
-QStringList MyInfoPage::activeCalendarEventTypes() const
+QStringList CalendarPage::activeCalendarEventTypes() const
 {
     QStringList activeTypes;
 
@@ -938,7 +893,7 @@ QStringList MyInfoPage::activeCalendarEventTypes() const
 
     return activeTypes;
 }
-QColor MyInfoPage::calendarEventTypeColor(
+QColor CalendarPage::calendarEventTypeColor(
     const QString& eventType
     ) const
 {
@@ -967,7 +922,7 @@ QColor MyInfoPage::calendarEventTypeColor(
 
     return defaultCalendarEventTypeColor(normalized);
 }
-void MyInfoPage::saveCalendarEventTypeColor(
+void CalendarPage::saveCalendarEventTypeColor(
     const QString& eventType,
     const QColor& color
     )
@@ -990,7 +945,7 @@ void MyInfoPage::saveCalendarEventTypeColor(
         color.name(QColor::HexRgb)
         );
 }
-void MyInfoPage::chooseCalendarEventTypeColor(
+void CalendarPage::chooseCalendarEventTypeColor(
     const QString& eventType
     )
 {
@@ -1017,7 +972,7 @@ void MyInfoPage::chooseCalendarEventTypeColor(
     syncCalendarEventTypeColors();
     refreshUpcomingEvents();
 }
-QString MyInfoPage::eventTypeBadgeStyle(
+QString CalendarPage::eventTypeBadgeStyle(
     const QString& eventType,
     const QFont& font
     ) const
@@ -1047,7 +1002,7 @@ QString MyInfoPage::eventTypeBadgeStyle(
             QString::number(horizontalPadding)
             );
 }
-QString MyInfoPage::eventTypeFilterButtonStyle(
+QString CalendarPage::eventTypeFilterButtonStyle(
     const QString& eventType,
     bool checked,
     const QFont& font
@@ -1084,7 +1039,7 @@ QString MyInfoPage::eventTypeFilterButtonStyle(
             color.name(QColor::HexRgb)
             );
 }
-void MyInfoPage::syncEventTypeFilterButtons()
+void CalendarPage::syncEventTypeFilterButtons()
 {
     for (QPushButton* button : m_eventTypeFilterButtons)
     {
@@ -1125,7 +1080,7 @@ void MyInfoPage::syncEventTypeFilterButtons()
             );
     }
 }
-void MyInfoPage::syncCalendarEventTypeColors()
+void CalendarPage::syncCalendarEventTypeColors()
 {
     if (!m_calendarView)
     {
@@ -1169,7 +1124,7 @@ void MyInfoPage::syncCalendarEventTypeColors()
         textColors
         );
 }
-QString MyInfoPage::upcomingEventDateText(
+QString CalendarPage::upcomingEventDateText(
     const CalendarEvent& event
     ) const
 {
@@ -1199,7 +1154,7 @@ QString MyInfoPage::upcomingEventDateText(
             event.endDate.toString(QStringLiteral("MMM d yyyy"))
             );
 }
-QString MyInfoPage::upcomingEventTimeText(
+QString CalendarPage::upcomingEventTimeText(
     const CalendarEvent& event
     ) const
 {
@@ -1254,7 +1209,7 @@ QString MyInfoPage::upcomingEventTimeText(
             event.endTime.toString(format)
             );
 }
-bool MyInfoPage::calendarEventVisible(
+bool CalendarPage::calendarEventVisible(
     const CalendarEvent& event
     ) const
 {
@@ -1273,7 +1228,7 @@ bool MyInfoPage::calendarEventVisible(
         showAllCalendarCampuses()
         );
 }
-bool MyInfoPage::showAllCalendarCampuses() const
+bool CalendarPage::showAllCalendarCampuses() const
 {
     auto* dataService =
         openDataService(m_services);
@@ -1287,7 +1242,7 @@ bool MyInfoPage::showAllCalendarCampuses() const
             false
             );
 }
-bool MyInfoPage::hideStartOfTermEvents() const
+bool CalendarPage::hideStartOfTermEvents() const
 {
     auto* dataService =
         openDataService(m_services);
@@ -1301,20 +1256,13 @@ bool MyInfoPage::hideStartOfTermEvents() const
             false
             );
 }
-QStringList MyInfoPage::currentCampusCodes() const
+QStringList CalendarPage::currentCampusCodes() const
 {
     QStringList codes;
     QString currentId;
     QString currentName;
 
-    if (m_campusCombo && m_campusCombo->currentIndex() >= 0)
-    {
-        currentId =
-            m_campusCombo->currentData().toString();
-        currentName =
-            m_campusCombo->currentText();
-    }
-    else if (auto* dataService = openDataService(m_services))
+    if (auto* dataService = openDataService(m_services))
     {
         currentName =
             dataService
@@ -1351,7 +1299,7 @@ QStringList MyInfoPage::currentCampusCodes() const
     codes.removeDuplicates();
     return codes;
 }
-QStringList MyInfoPage::allCampusCodes() const
+QStringList CalendarPage::allCampusCodes() const
 {
     QStringList codes;
     const QList<CampusInfo> campuses =
@@ -1367,7 +1315,7 @@ QStringList MyInfoPage::allCampusCodes() const
     codes.removeDuplicates();
     return codes;
 }
-QWidget* MyInfoPage::createUpcomingEventRow(
+QWidget* CalendarPage::createUpcomingEventRow(
     const CalendarEvent& event,
     int dateColumnWidth,
     int timeColumnWidth,

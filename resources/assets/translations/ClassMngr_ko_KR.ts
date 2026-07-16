@@ -1970,6 +1970,57 @@
     </message>
 </context>
 <context>
+    <name>CalendarPage</name>
+    <message>
+        <source>Calendar</source>
+        <translation>캘린더</translation>
+    </message>
+    <message>
+        <source>View and manage your monthly events and upcoming dates.</source>
+        <translation>월간 일정과 예정된 날짜를 확인하고 관리합니다.</translation>
+    </message>
+    <message>
+        <source>Upcoming Events</source>
+        <translation>예정된 일정</translation>
+    </message>
+    <message>
+        <source>Current Month</source>
+        <translation>이번 달</translation>
+    </message>
+    <message>
+        <source>Next 30 Days</source>
+        <translation>다음 30일</translation>
+    </message>
+    <message>
+        <source>Next 10 Events</source>
+        <translation>다음 10개 일정</translation>
+    </message>
+    <message>
+        <source>No upcoming events.</source>
+        <translation>예정된 일정이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Choose %1 Color</source>
+        <translation>%1 색상 선택</translation>
+    </message>
+    <message>
+        <source>All day</source>
+        <translation>하루 종일</translation>
+    </message>
+    <message>
+        <source>Unknown Time</source>
+        <translation>시간 미상</translation>
+    </message>
+    <message>
+        <source>Unconfirmed Time</source>
+        <translation>시간 미확정</translation>
+    </message>
+    <message>
+        <source>Choose %1 color</source>
+        <translation>%1 색상 선택</translation>
+    </message>
+</context>
+<context>
     <name>MyInfoPage</name>
     <message>
         <source>Class Schedule</source>

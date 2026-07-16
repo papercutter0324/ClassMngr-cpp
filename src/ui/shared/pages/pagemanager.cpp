@@ -4,6 +4,7 @@
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/my_info/ui/calendar_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/my_info/ui/my_info_rosters_page.h"
 #include "features/schedule/ui/schedule_page.h"
@@ -60,9 +61,8 @@ void PageManager::initialize(
             );
 
     m_calendarPage =
-        new MyInfoPage(
+        new CalendarPage(
             m_services,
-            MyInfoPageMode::Calendar,
             this
             );
 
@@ -350,7 +350,7 @@ MyInfoPage* PageManager::myInfoPage() const
     return m_myInfoPage;
 }
 
-MyInfoPage* PageManager::calendarPage() const
+CalendarPage* PageManager::calendarPage() const
 {
     return m_calendarPage;
 }

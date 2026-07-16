@@ -1,4 +1,4 @@
-#include "my_info_page.h"
+#include "calendar_page.h"
 
 #include "academic_calendar_dialog.h"
 #include "academic_calendar_provider.h"
@@ -215,7 +215,7 @@ void saveRepeatSeriesFromDate(
 }
 }
 
-void MyInfoPage::handleCalendarDayActivated(
+void CalendarPage::handleCalendarDayActivated(
     int year,
     int month,
     int day
@@ -241,7 +241,7 @@ void MyInfoPage::handleCalendarDayActivated(
         false
         );
 }
-void MyInfoPage::handleCalendarEventActivated(
+void CalendarPage::handleCalendarEventActivated(
     int eventId
     )
 {
@@ -268,7 +268,7 @@ void MyInfoPage::handleCalendarEventActivated(
         true
         );
 }
-void MyInfoPage::handleCalendarConfigureRequested(
+void CalendarPage::handleCalendarConfigureRequested(
     int year,
     int month
     )
@@ -318,7 +318,7 @@ void MyInfoPage::handleCalendarConfigureRequested(
         updateCalendarCampusFilter();
     }
 }
-void MyInfoPage::handleCalendarDisplayedMonthChanged(
+void CalendarPage::handleCalendarDisplayedMonthChanged(
     int year,
     int month
     )
@@ -339,7 +339,7 @@ void MyInfoPage::handleCalendarDisplayedMonthChanged(
 
     refreshUpcomingEvents();
 }
-void MyInfoPage::buildMonthlyCalendarSection()
+void CalendarPage::buildCalendarContent()
 {
     auto* card =
         new QFrame(m_scrollContent);
@@ -466,7 +466,7 @@ void MyInfoPage::buildMonthlyCalendarSection()
         card
         );
 }
-void MyInfoPage::updateCalendarCampusFilter()
+void CalendarPage::updateCalendarCampusFilter()
 {
     if (!m_calendarModel)
     {
@@ -481,7 +481,7 @@ void MyInfoPage::updateCalendarCampusFilter()
         );
     refreshUpcomingEvents();
 }
-void MyInfoPage::syncCalendarFontSize()
+void CalendarPage::syncCalendarFontSize()
 {
     if (!m_calendarView)
     {
@@ -509,7 +509,7 @@ void MyInfoPage::syncCalendarFontSize()
         pixelSize
         );
 }
-void MyInfoPage::openCalendarDialog(
+void CalendarPage::openCalendarDialog(
     const CalendarEvent& event,
     bool existingEvent
     )
