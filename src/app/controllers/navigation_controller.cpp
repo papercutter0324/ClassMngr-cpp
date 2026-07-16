@@ -764,6 +764,10 @@ void NavigationController::handleMyInfo(
     }
     else if (sectionKey == QStringLiteral("my_info_calendar"))
     {
+        targetPageType =
+            PageType::Calendar;
+        targetPage =
+            m_pages->calendarPage();
         selectedSectionKey =
             QStringLiteral("my_info_calendar");
     }
@@ -794,10 +798,7 @@ void NavigationController::handleMyInfo(
 
         if (sectionKey == QStringLiteral("my_info_calendar"))
         {
-            m_pages->myInfoPage()
-                ->scrollToSection(
-                    MyInfoSection::MonthlyCalendar
-                    );
+            m_pages->calendarPage()->scrollToTop();
         }
         else if (sectionKey == QStringLiteral("my_info_information"))
         {

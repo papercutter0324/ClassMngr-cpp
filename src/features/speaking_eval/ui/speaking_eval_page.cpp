@@ -1555,25 +1555,29 @@ void SpeakingEvalPage::exportReports()
 void SpeakingEvalPage::buildUi()
 {
     contentLayout()->setContentsMargins(
-        24,
-        18,
-        24,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
         0
         );
 
-    contentLayout()->setSpacing(12);
+    contentLayout()->setSpacing(
+        UiConstants::Pages::Spacing
+        );
 
     auto* headerLayout =
         new QVBoxLayout;
 
     headerLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin
         );
 
-    headerLayout->setSpacing(2);
+    headerLayout->setSpacing(
+        UiConstants::Pages::HeaderSpacing
+        );
 
     m_titleLabel =
         new QLabel(
@@ -1584,8 +1588,8 @@ void SpeakingEvalPage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
         FontManager::getUiFont(
-            20,
-            QFont::DemiBold
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
             )
         );
 
@@ -1597,7 +1601,9 @@ void SpeakingEvalPage::buildUi()
 
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
 
     headerLayout->addWidget(m_titleLabel);
