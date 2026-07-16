@@ -77,6 +77,12 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
     QTreeWidgetItem* myInfo =
         topLevelWithKey(tree, QStringLiteral("my_info"));
     QVERIFY(myInfo);
+    QVERIFY(
+        !childWithKey(
+            myInfo,
+            QStringLiteral("my_info_class_information")
+            )
+        );
 
     QTreeWidgetItem* classList =
         childWithKey(myInfo, QStringLiteral("my_info_class_list"));

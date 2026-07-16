@@ -37,12 +37,6 @@ QList<TreeNodeSpec> treeStructure()
                 },
 
                 {
-                    "my_info_class_information",
-                    QObject::tr("Class Information"),
-                    NodeType::Page
-                },
-
-                {
                     "my_info_class_list",
                     QObject::tr("Class List"),
                     NodeType::Root
