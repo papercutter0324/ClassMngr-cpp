@@ -566,6 +566,12 @@ void NavigationController::handleNavigation(
             return;
         }
 
+        if (data.routeKey == QStringLiteral("my_info_calendar"))
+        {
+            handleMyInfo(data);
+            return;
+        }
+
         if (data.keys.first() == QStringLiteral("my_info"))
         {
             handleMyInfo(data);
@@ -722,10 +728,14 @@ void NavigationController::handleMyInfo(
         return;
     }
 
+    const bool rootClick =
+        data.keys.size() == 1
+        && data.routeKey == QStringLiteral("my_info");
+
     const QString sectionKey =
-        data.keys.size() >= 2
-            ? data.routeKey
-            : QStringLiteral("my_info_information");
+        rootClick
+            ? QStringLiteral("my_info_information")
+            : data.routeKey;
 
     PageType targetPageType =
         PageType::MyInfo;
@@ -758,8 +768,6 @@ void NavigationController::handleMyInfo(
             QStringLiteral("my_info_calendar");
     }
 
-    const bool rootClick =
-        data.path.size() == 1;
     const bool alreadyShowingTarget =
         m_pages->currentWidget()
         == targetPage;

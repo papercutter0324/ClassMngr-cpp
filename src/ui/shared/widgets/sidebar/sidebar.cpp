@@ -1282,6 +1282,7 @@ void Sidebar::setDatabaseSectionsVisible(
 
     const QStringList databaseNodeKeys{
         QStringLiteral("my_info"),
+        QStringLiteral("my_info_calendar"),
         QStringLiteral("my_info_class_roster"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
@@ -1558,6 +1559,14 @@ void Sidebar::selectMyInfoSection(
     const QString& sectionKey
     )
 {
+    if (auto* topLevelSection = m_nodes.value(sectionKey, nullptr))
+    {
+        const QSignalBlocker blocker(m_tree);
+        m_tree->setCurrentItem(topLevelSection);
+        m_tree->scrollToItem(topLevelSection);
+        return;
+    }
+
     auto* myInfoRoot =
         m_nodes.value("my_info", nullptr);
 
