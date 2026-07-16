@@ -1,4 +1,4 @@
-#include "class_info_page.h"
+#include "class_details_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -51,16 +51,23 @@ SectionCard* addSectionCard(
 }
 }
 
-ClassInfoPage::ClassInfoPage(
+ClassDetailsPage::ClassDetailsPage(
     ApplicationServices* services,
+    bool embedded,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
+    , m_embedded(embedded)
 {
     Q_ASSERT(m_services);
 
     setProperty("role", UiRoles::ClassInfo);
+
+    if (m_embedded)
+    {
+        setPageLayoutMargins({});
+    }
 
     buildUi();
 
@@ -76,62 +83,50 @@ ClassInfoPage::ClassInfoPage(
         m_autosaveTimer,
         &QTimer::timeout,
         this,
-        &ClassInfoPage::autosave
+        &ClassDetailsPage::autosave
         );
 
     connect(
         m_saveButton,
         &QPushButton::clicked,
         this,
-        &ClassInfoPage::saveData
+        &ClassDetailsPage::saveData
         );
 
     connect(
         m_detailsSection,
         &ClassDetailsSection::dataChanged,
         this,
-        &ClassInfoPage::markDirty
+        &ClassDetailsPage::markDirty
         );
 
     connect(
         m_teacherSection,
         &TeacherInfoSection::dataChanged,
         this,
-        &ClassInfoPage::markDirty
+        &ClassDetailsPage::markDirty
         );
 
     connect(
         m_scheduleSection,
         &ClassScheduleSection::dataChanged,
         this,
-        &ClassInfoPage::markDirty
+        &ClassDetailsPage::markDirty
         );
 }
 
-void ClassInfoPage::buildUi()
+void ClassDetailsPage::buildUi()
 {
     contentLayout()->setContentsMargins(
-        UiConstants::Pages::Margin,
-        18,
-        UiConstants::Pages::Margin,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
+        m_embedded ? 0 : 18,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
         0
         );
 
     contentLayout()->setSpacing(
         12
         );
-
-    auto* headerLayout =
-        new QVBoxLayout;
-
-    headerLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-
-    headerLayout->setSpacing(2);
 
     m_titleLabel =
         new QLabel(
@@ -158,13 +153,26 @@ void ClassInfoPage::buildUi()
         FontManager::getUiFont(11)
         );
 
-    headerLayout->addWidget(m_titleLabel);
-    headerLayout->addWidget(m_subtitleLabel);
+    if (m_embedded)
+    {
+        m_titleLabel->hide();
+        m_subtitleLabel->hide();
+    }
+    else
+    {
+        auto* headerLayout =
+            new QVBoxLayout;
 
-    contentLayout()->addLayout(headerLayout);
-    contentLayout()->addSpacing(
-        UiConstants::Pages::HeaderContentSpacing
-        );
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(2);
+        headerLayout->addWidget(m_titleLabel);
+        headerLayout->addWidget(m_subtitleLabel);
+
+        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addSpacing(
+            UiConstants::Pages::HeaderContentSpacing
+            );
+    }
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
@@ -261,7 +269,7 @@ void ClassInfoPage::buildUi()
     updateActions();
 }
 
-void ClassInfoPage::updateScrollContentMinimumWidth()
+void ClassDetailsPage::updateScrollContentMinimumWidth()
 {
     if (
         !m_scrollContent
@@ -278,7 +286,7 @@ void ClassInfoPage::updateScrollContentMinimumWidth()
         );
 }
 
-void ClassInfoPage::markDirty()
+void ClassDetailsPage::markDirty()
 {
     if (m_loading)
     {
@@ -298,7 +306,7 @@ void ClassInfoPage::markDirty()
     }
 }
 
-void ClassInfoPage::clearDirty()
+void ClassDetailsPage::clearDirty()
 {
     m_dirty = false;
 
@@ -309,7 +317,7 @@ void ClassInfoPage::clearDirty()
     updateActions();
 }
 
-void ClassInfoPage::loadClass(
+void ClassDetailsPage::loadClass(
     const Classroom& classroom
     )
 {
@@ -362,7 +370,7 @@ void ClassInfoPage::loadClass(
     clearDirty();
 }
 
-void ClassInfoPage::updateTitle(
+void ClassDetailsPage::updateTitle(
     const ClassInfo& info
     )
 {
@@ -400,12 +408,12 @@ void ClassInfoPage::updateTitle(
         );
 }
 
-void ClassInfoPage::saveData()
+void ClassDetailsPage::saveData()
 {
     saveClassInfoInternal(true);
 }
 
-bool ClassInfoPage::saveChanges()
+bool ClassDetailsPage::saveChanges()
 {
     if (m_autosaveTimer)
     {
@@ -420,12 +428,12 @@ bool ClassInfoPage::saveChanges()
     return saveClassInfoInternal(true);
 }
 
-bool ClassInfoPage::hasUnsavedChanges() const
+bool ClassDetailsPage::hasUnsavedChanges() const
 {
     return m_dirty;
 }
 
-void ClassInfoPage::discardChanges()
+void ClassDetailsPage::discardChanges()
 {
     if (m_autosaveTimer)
     {
@@ -435,7 +443,7 @@ void ClassInfoPage::discardChanges()
     loadClass(m_classroom);
 }
 
-void ClassInfoPage::setSaveMode(
+void ClassDetailsPage::setSaveMode(
     SaveMode mode
     )
 {
@@ -462,7 +470,7 @@ void ClassInfoPage::setSaveMode(
     }
 }
 
-void ClassInfoPage::autosave()
+void ClassDetailsPage::autosave()
 {
     if (!hasUnsavedChanges())
     {
@@ -472,7 +480,7 @@ void ClassInfoPage::autosave()
     saveClassInfoInternal(false);
 }
 
-void ClassInfoPage::updateActions()
+void ClassDetailsPage::updateActions()
 {
     if (!m_saveButton)
     {
@@ -499,7 +507,7 @@ void ClassInfoPage::updateActions()
         );
 }
 
-bool ClassInfoPage::saveClassInfoInternal(
+bool ClassDetailsPage::saveClassInfoInternal(
     bool showMessages
     )
 {
@@ -611,7 +619,7 @@ bool ClassInfoPage::saveClassInfoInternal(
     return true;
 }
 
-void ClassInfoPage::refresh()
+void ClassDetailsPage::refresh()
 {
     BasePage::refresh();
 
@@ -623,7 +631,7 @@ void ClassInfoPage::refresh()
     */
 }
 
-void ClassInfoPage::retranslateUi()
+void ClassDetailsPage::retranslateUi()
 {
     if (
         m_services
@@ -688,7 +696,7 @@ void ClassInfoPage::retranslateUi()
     updateActions();
 }
 
-bool ClassInfoPage::showScheduleConflicts(
+bool ClassDetailsPage::showScheduleConflicts(
     const QList<ClassTime>& times,
     ScheduleType type,
     const QString& title,

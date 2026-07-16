@@ -1,4 +1,5 @@
 #include "features/sub_prep/ui/sub_prep_class_navigation.h"
+#include "ui/shared/widgets/sidebar/sidebar_definitions.h"
 
 #include <QtTest>
 
@@ -41,10 +42,12 @@ class SubPrepClassNavigationTests : public QObject
 
 private slots:
     void sixOrFewerClassesUseFlatTabs();
+    void forcedGroupingUsesGradeAndLevelRows();
     void moreThanSixClassesUseOrderedGradeGroups();
     void gradeModeLabelsUseLevelAndSchedule();
     void classTabsSortByLevelThenDay();
     void duplicateLabelsAreDisambiguated();
+    void sidebarDefinesClassListAndClassesPage();
 };
 
 void SubPrepClassNavigationTests::sixOrFewerClassesUseFlatTabs()
@@ -87,6 +90,42 @@ void SubPrepClassNavigationTests::sixOrFewerClassesUseFlatTabs()
         model.flatClasses.at(1).label,
         QStringLiteral("M1 Solis • T/Th 5:00")
         );
+}
+
+void SubPrepClassNavigationTests::forcedGroupingUsesGradeAndLevelRows()
+{
+    const QList<SubPrepClassNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("M1"),
+            QStringLiteral("Solis")
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus")
+            ),
+        classEntry(
+            3,
+            QString(),
+            QStringLiteral("Custom")
+            )
+    };
+
+    const SubPrepClassNavigation::Model model =
+        SubPrepClassNavigation::build(
+            entries,
+            SubPrepClassNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    QCOMPARE(model.mode, SubPrepClassNavigation::Mode::GradeGrouped);
+    QCOMPARE(model.gradeGroups.size(), 3);
+    QCOMPARE(model.gradeGroups.at(0).label, QStringLiteral("E4"));
+    QCOMPARE(model.gradeGroups.at(0).classes.first().classId, 2);
+    QCOMPARE(model.gradeGroups.at(1).label, QStringLiteral("M1"));
+    QCOMPARE(model.gradeGroups.at(1).classes.first().classId, 1);
+    QCOMPARE(model.gradeGroups.at(2).label, QStringLiteral("Other"));
+    QCOMPARE(model.gradeGroups.at(2).classes.first().classId, 3);
 }
 
 void SubPrepClassNavigationTests::moreThanSixClassesUseOrderedGradeGroups()
@@ -294,6 +333,57 @@ void SubPrepClassNavigationTests::duplicateLabelsAreDisambiguated()
         model.flatClasses.at(2).label,
         QStringLiteral("E4 Perseus • M 4:00 • Bob #3")
         );
+}
+
+void SubPrepClassNavigationTests::sidebarDefinesClassListAndClassesPage()
+{
+    const QList<TreeNodeSpec> tree = treeStructure();
+
+    const auto findNode =
+        [](const QList<TreeNodeSpec>& nodes, const QString& key)
+            -> const TreeNodeSpec*
+        {
+            for (const TreeNodeSpec& node : nodes)
+            {
+                if (node.key == key)
+                {
+                    return &node;
+                }
+            }
+
+            return nullptr;
+        };
+
+    const TreeNodeSpec* myInfo =
+        findNode(tree, QStringLiteral("my_info"));
+    QVERIFY(myInfo);
+
+    const TreeNodeSpec* classList =
+        findNode(
+            myInfo->children,
+            QStringLiteral("my_info_class_list")
+            );
+    QVERIFY(classList);
+    QCOMPARE(classList->label, QStringLiteral("Class List"));
+    QCOMPARE(classList->type, NodeType::Root);
+
+    const TreeNodeSpec* classes =
+        findNode(tree, QStringLiteral("classes"));
+    QVERIFY(classes);
+    QCOMPARE(classes->label, QStringLiteral("Classes"));
+    QCOMPARE(classes->type, NodeType::Page);
+
+    const QList<TreeNodeSpec> classNodes = classTemplate();
+    QCOMPARE(classNodes.size(), 4);
+    QCOMPARE(classNodes.at(0).key, QStringLiteral("class_details"));
+    QCOMPARE(classNodes.at(0).label, QStringLiteral("Details"));
+    QCOMPARE(classNodes.at(1).label, QStringLiteral("Roster"));
+    QCOMPARE(classNodes.at(2).label, QStringLiteral("Notes"));
+    QCOMPARE(
+        classNodes.at(3).key,
+        QStringLiteral("student_evaluations")
+        );
+    QCOMPARE(classNodes.at(3).children.size(), 4);
 }
 
 QTEST_APPLESS_MAIN(SubPrepClassNavigationTests)

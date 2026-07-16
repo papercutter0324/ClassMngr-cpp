@@ -20,13 +20,14 @@ class QTimer;
 class QVBoxLayout;
 class QWidget;
 
-class ClassInfoPage : public BasePage
+class ClassDetailsPage : public BasePage
 {
     Q_OBJECT
 
 public:
-    explicit ClassInfoPage(
+    explicit ClassDetailsPage(
         ApplicationServices* services,
+        bool embedded = false,
         QWidget* parent = nullptr
         );
 
@@ -77,6 +78,7 @@ private:
     bool m_loading{false};
     bool m_dirty{false};
     SaveMode m_saveMode{SaveMode::Automatic};
+    bool m_embedded{false};
 
     SectionCard* m_teacherCard{nullptr};
     SectionCard* m_detailsCard{nullptr};

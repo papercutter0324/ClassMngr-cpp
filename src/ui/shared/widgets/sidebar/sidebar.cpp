@@ -559,6 +559,17 @@ QStringList Sidebar::expandedRootKeys() const
         }
     }
 
+    auto* classListRoot =
+        childWithKey(
+            m_nodes.value("my_info", nullptr),
+            QStringLiteral("my_info_class_list")
+            );
+
+    if (classListRoot && classListRoot->isExpanded())
+    {
+        keys.append(QStringLiteral("my_info_class_list"));
+    }
+
     return keys;
 }
 
@@ -578,6 +589,17 @@ void Sidebar::restoreExpandedRootKeys(
                 keys.contains(it.key())
                 );
         }
+    }
+
+    if (auto* classListRoot =
+        childWithKey(
+            m_nodes.value("my_info", nullptr),
+            QStringLiteral("my_info_class_list")
+            ))
+    {
+        classListRoot->setExpanded(
+            keys.contains(QStringLiteral("my_info_class_list"))
+            );
     }
 }
 
@@ -753,6 +775,17 @@ void Sidebar::addClassNode(
     int classId
     )
 {
+    auto* classListRoot =
+        childWithKey(
+            m_nodes.value("my_info", nullptr),
+            QStringLiteral("my_info_class_list")
+            );
+
+    if (!classListRoot)
+    {
+        return;
+    }
+
     auto *item =
         createItem(
             displayName,
@@ -799,7 +832,7 @@ void Sidebar::addClassNode(
         item->addChild(child);
     }
 
-    m_nodes["classes"]->addChild(item);
+    classListRoot->addChild(item);
 
     m_classItems[classId] = item;
 
@@ -808,12 +841,18 @@ void Sidebar::addClassNode(
 
 void Sidebar::clearClasses()
 {
-    if (!m_nodes.contains("classes"))
+    auto* classListRoot =
+        childWithKey(
+            m_nodes.value("my_info", nullptr),
+            QStringLiteral("my_info_class_list")
+            );
+
+    if (!classListRoot)
     {
         return;
     }
 
-    m_nodes["classes"]->takeChildren();
+    classListRoot->takeChildren();
 
     m_classItems.clear();
 
@@ -1404,7 +1443,7 @@ void Sidebar::onItemClicked(
     {
         item->setExpanded(true);
 
-        if (auto* classInfoItem = classInfoChildForClass(item))
+        if (auto* classInfoItem = classDetailsChildForClass(item))
         {
             item =
                 classInfoItem;
@@ -1684,7 +1723,7 @@ bool Sidebar::isClassItem(
     return false;
 }
 
-QTreeWidgetItem* Sidebar::classInfoChildForClass(
+QTreeWidgetItem* Sidebar::classDetailsChildForClass(
     QTreeWidgetItem* classItem
     ) const
 {
@@ -1730,7 +1769,7 @@ QTreeWidgetItem* Sidebar::classInfoChildForClass(
                     0,
                     Qt::UserRole + 4
                     ).toString()
-            == QStringLiteral("class_info")
+            == QStringLiteral("class_details")
             )
         {
             return child;
@@ -1932,7 +1971,14 @@ void Sidebar::showContextMenu(
     // Class Root
     // =====================================================
 
-    else if (item == m_nodes["classes"])
+    else if (
+        item == m_nodes["classes"]
+        || item
+            == childWithKey(
+                m_nodes.value("my_info", nullptr),
+                QStringLiteral("my_info_class_list")
+                )
+        )
     {
         addClassAction();
     }

@@ -82,6 +82,14 @@ protected:
 
     QHBoxLayout* bottomLayout() const;
 
+    void setPageLayoutMargins(
+        const QMargins& margins
+        );
+
+    void setBottomBarVisible(
+        bool visible
+        );
+
     void resizeEvent(
         QResizeEvent* event
         ) override;

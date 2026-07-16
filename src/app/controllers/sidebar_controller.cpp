@@ -11,7 +11,7 @@
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/classes/config/class_info_config.h"
-#include "features/classes/ui/class_info_page.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
@@ -840,10 +840,18 @@ void SidebarController::handleClassInfoSaved(
     int classId
     )
 {
+    const QStringList selectedKeys =
+        m_sidebar->selectedKeys();
+    const int selectedClassId =
+        m_sidebar->getSelectedClassId();
+
     refreshClassSidebar();
 
-    m_sidebar->selectClass(
-        classId
+    m_sidebar->selectByKeys(
+        selectedKeys,
+        selectedClassId > 0
+            ? selectedClassId
+            : classId
         );
 }
 
@@ -892,6 +900,11 @@ void SidebarController::addClass()
         return;
     }
 
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
     int classId =
         ds->createClass("");
 
@@ -907,12 +920,17 @@ void SidebarController::addClass()
         return;
     }
 
-    m_pages->classInfoPage()->loadClass(
-        classroom
+    m_pages->classesPage()->openClass(
+        classroom.id,
+        ClassesSection::Details
         );
 
     m_pages->showPage(
-        PageType::ClassInfo
+        PageType::Classes
+        );
+
+    m_sidebar->selectByKeys(
+        {QStringLiteral("classes")}
         );
 }
 
@@ -950,11 +968,37 @@ void SidebarController::deleteClass()
         return;
     }
 
+    if (!m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    const QStringList selectedKeys =
+        m_sidebar->selectedKeys();
+    const int selectedClassId =
+        m_sidebar->getSelectedClassId();
+
     ds->deleteClass(
         classroom.id
         );
 
     refreshClassSidebar();
+
+    m_pages->classesPage()->loadClasses();
+
+    if (selectedClassId == classroom.id)
+    {
+        m_sidebar->selectByKeys(
+            {QStringLiteral("classes")}
+            );
+    }
+    else
+    {
+        m_sidebar->selectByKeys(
+            selectedKeys,
+            selectedClassId
+            );
+    }
 }
 
 Teacher SidebarController::getTeacherById(int teacherId) const

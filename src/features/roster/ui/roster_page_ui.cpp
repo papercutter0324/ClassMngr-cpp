@@ -141,12 +141,13 @@ void RosterPage::updateActions()
 
 void RosterPage::buildUi()
 {
-    contentLayout()->setContentsMargins(24, 18, 24, 0);
+    contentLayout()->setContentsMargins(
+        m_embedded ? 0 : 24,
+        m_embedded ? 0 : 18,
+        m_embedded ? 0 : 24,
+        0
+        );
     contentLayout()->setSpacing(12);
-
-    auto* headerLayout = new QVBoxLayout;
-    headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(2);
 
     m_titleLabel = new QLabel(tr("Class Roster"), this);
     m_titleLabel->setObjectName("pageTitle");
@@ -156,10 +157,23 @@ void RosterPage::buildUi()
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(FontManager::getUiFont(11));
 
-    headerLayout->addWidget(m_titleLabel);
-    headerLayout->addWidget(m_subtitleLabel);
-    contentLayout()->addLayout(headerLayout);
-    contentLayout()->addSpacing(UiConstants::Pages::HeaderContentSpacing);
+    if (m_embedded)
+    {
+        m_titleLabel->hide();
+        m_subtitleLabel->hide();
+    }
+    else
+    {
+        auto* headerLayout = new QVBoxLayout;
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(2);
+        headerLayout->addWidget(m_titleLabel);
+        headerLayout->addWidget(m_subtitleLabel);
+        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addSpacing(
+            UiConstants::Pages::HeaderContentSpacing
+            );
+    }
 
     m_model = new RosterModel(this);
     m_layoutController = new RosterColumnLayoutController(this);

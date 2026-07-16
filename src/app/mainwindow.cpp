@@ -15,7 +15,7 @@
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
-#include "features/classes/ui/class_info_page.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
@@ -434,8 +434,8 @@ void MainWindow::connectSignals()
         );
 
     connect(
-        m_pages->classInfoPage(),
-        &ClassInfoPage::classInfoSaved,
+        m_pages->classesPage(),
+        &ClassesPage::classInfoSaved,
         m_sidebarController.get(),
         &SidebarController::handleClassInfoSaved
         );
@@ -716,7 +716,7 @@ void MainWindow::onSidebarItemSelected(
 
     if (data.type == NodeType::Class)
     {
-        m_pages->showPage(PageType::ClassInfo);
+        m_pages->showPage(PageType::Classes);
         return;
     }*/
 }

@@ -1463,7 +1463,7 @@
     </message>
 </context>
 <context>
-    <name>ClassInfoPage</name>
+    <name>ClassDetailsPage</name>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="138"/>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="370"/>
@@ -3527,6 +3527,10 @@
         <source>No printers are available.</source>
         <translation>사용 가능한 프린터가 없습니다.</translation>
     </message>
+    <message><source>Class List</source><translation>수업 목록</translation></message>
+    <message><source>Details</source><translation>상세 정보</translation></message>
+    <message><source>Roster</source><translation>명단</translation></message>
+    <message><source>Notes</source><translation>노트</translation></message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -5401,5 +5405,15 @@ Comments: Please leave a comment about what the student did well and what they n
         <source>Current application version is invalid: %1</source>
         <translation>현재 애플리케이션 버전이 올바르지 않습니다: %1</translation>
     </message>
+</context>
+<context>
+    <name>ClassesPage</name>
+    <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>No classes available</source><translation>이용 가능한 수업 없음</translation></message>
+    <message><source>No class selected</source><translation>선택한 수업 없음</translation></message>
+    <message><source>Details</source><translation>상세 정보</translation></message>
+    <message><source>Roster</source><translation>명단</translation></message>
+    <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Class %1</source><translation>수업 %1</translation></message>
 </context>
 </TS>

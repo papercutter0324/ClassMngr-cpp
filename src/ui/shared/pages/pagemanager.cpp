@@ -3,11 +3,9 @@
 #include "core/application_services.h"
 
 #include "features/campus/ui/campus_dashboard_page.h"
-#include "features/classes/ui/class_info_page.h"
-#include "features/classes/ui/class_notes_page.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/my_info/ui/my_info_rosters_page.h"
-#include "features/roster/ui/roster_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
@@ -87,8 +85,8 @@ void PageManager::initialize(
             this
             );
 
-    m_classInfoPage =
-        new ClassInfoPage(
+    m_classesPage =
+        new ClassesPage(
             m_services,
             this
             );
@@ -102,18 +100,6 @@ void PageManager::initialize(
     m_campusDashboard =
         new CampusDashboardPage(
             m_adminMode,
-            this
-            );
-
-    m_rosterPage =
-        new RosterPage(
-            m_services,
-            this
-            );
-
-    m_classNotesPage =
-        new ClassNotesPage(
-            m_services,
             this
             );
 
@@ -158,8 +144,8 @@ void PageManager::registerPages()
     m_pages[PageType::SubPrep] =
         m_subPrepPage;
 
-    m_pages[PageType::ClassInfo] =
-        m_classInfoPage;
+    m_pages[PageType::Classes] =
+        m_classesPage;
 
     m_pages[PageType::TeacherInfo] =
         m_teacherPage;
@@ -167,14 +153,8 @@ void PageManager::registerPages()
     m_pages[PageType::CampusDashboard] =
         m_campusDashboard;
 
-    m_pages[PageType::Roster] =
-        m_rosterPage;
-
     m_pages[PageType::MyInfoRosters] =
         m_myInfoRostersPage;
-
-    m_pages[PageType::ClassNotes] =
-        m_classNotesPage;
 
     m_pages[PageType::SpeakingEval] =
         m_speakingPage;
@@ -380,14 +360,9 @@ SubPrepPage* PageManager::subPrepPage() const
     return m_subPrepPage;
 }
 
-ClassInfoPage* PageManager::classInfoPage() const
+ClassesPage* PageManager::classesPage() const
 {
-    return m_classInfoPage;
-}
-
-ClassNotesPage* PageManager::classNotesPage() const
-{
-    return m_classNotesPage;
+    return m_classesPage;
 }
 
 TeacherInfoPage* PageManager::teacherPage() const
@@ -398,11 +373,6 @@ TeacherInfoPage* PageManager::teacherPage() const
 CampusDashboardPage* PageManager::campusDashboard() const
 {
     return m_campusDashboard;
-}
-
-RosterPage* PageManager::rosterPage() const
-{
-    return m_rosterPage;
 }
 
 SpeakingEvalPage* PageManager::speakingPage() const

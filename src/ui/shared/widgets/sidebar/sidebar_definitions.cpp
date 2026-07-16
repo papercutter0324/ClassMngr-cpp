@@ -40,6 +40,12 @@ QList<TreeNodeSpec> treeStructure()
                     "my_info_class_information",
                     QObject::tr("Class Information"),
                     NodeType::Page
+                },
+
+                {
+                    "my_info_class_list",
+                    QObject::tr("Class List"),
+                    NodeType::Root
                 }
             }
         },
@@ -73,7 +79,7 @@ QList<TreeNodeSpec> treeStructure()
         {
             "classes",
             QObject::tr("Classes"),
-            NodeType::Root
+            NodeType::Page
         },
 
         {
@@ -461,20 +467,20 @@ QList<TreeNodeSpec> classTemplate()
     return
     {
         {
-            "class_info",
-            QObject::tr("Class Info"),
+            "class_details",
+            QObject::tr("Details"),
             NodeType::Page
         },
 
         {
             "class_roster",
-            QObject::tr("Class Roster"),
+            QObject::tr("Roster"),
             NodeType::Page
         },
 
         {
             "class_notes",
-            QObject::tr("Class Notes"),
+            QObject::tr("Notes"),
             NodeType::Page
         },
 

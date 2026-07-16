@@ -766,12 +766,14 @@ QList<SubPrepClassNavigation::ClassTab> makeClassTabs(
 namespace SubPrepClassNavigation
 {
 Model build(
-    const QList<ClassEntry>& entries
+    const QList<ClassEntry>& entries,
+    GroupingPolicy groupingPolicy
     )
 {
     Model model;
     model.mode =
-        entries.size() > FlatClassThreshold
+        groupingPolicy == GroupingPolicy::AlwaysGradeGrouped
+        || entries.size() > FlatClassThreshold
             ? Mode::GradeGrouped
             : Mode::Flat;
 

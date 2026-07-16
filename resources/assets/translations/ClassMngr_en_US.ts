@@ -1191,7 +1191,7 @@
     </message>
 </context>
 <context>
-    <name>ClassInfoPage</name>
+    <name>ClassDetailsPage</name>
     <message>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="136"/>
         <location filename="../../../src/features/classes/ui/class_info_page.cpp" line="366"/>
@@ -2192,6 +2192,10 @@
         <source>update data</source>
         <translation type="unfinished"></translation>
     </message>
+    <message><source>Class List</source><translation>Class List</translation></message>
+    <message><source>Details</source><translation>Details</translation></message>
+    <message><source>Roster</source><translation>Roster</translation></message>
+    <message><source>Notes</source><translation>Notes</translation></message>
 </context>
 <context>
     <name>RosterModel</name>
@@ -3621,5 +3625,15 @@ Comments: Please leave a comment about what the student did well and what they n
         <source>Current application version is invalid: %1</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>ClassesPage</name>
+    <message><source>Classes</source><translation>Classes</translation></message>
+    <message><source>No classes available</source><translation>No classes available</translation></message>
+    <message><source>No class selected</source><translation>No class selected</translation></message>
+    <message><source>Details</source><translation>Details</translation></message>
+    <message><source>Roster</source><translation>Roster</translation></message>
+    <message><source>Notes</source><translation>Notes</translation></message>
+    <message><source>Class %1</source><translation>Class %1</translation></message>
 </context>
 </TS>

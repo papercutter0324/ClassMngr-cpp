@@ -6,13 +6,11 @@
 
 #include "data/data_service.h"
 
-#include "features/classes/ui/class_info_page.h"
-#include "features/classes/ui/class_notes_page.h"
+#include "features/classes/ui/classes_page.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/my_info/ui/my_info_page.h"
 #include "features/my_info/ui/my_info_rosters_page.h"
 #include "ui/shared/pages/pagemanager.h"
-#include "features/roster/ui/roster_page.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
@@ -469,18 +467,102 @@ void NavigationController::handleNavigation(
             return;
         }
 
-        if (
-            data.classId > 0
-            && data.routeKey == QStringLiteral("class_roster")
-            )
-        {
-            handleRoster(data);
-            return;
-        }
-
         if (data.routeKey == QStringLiteral("my_info_class_roster"))
         {
             handleRosters(data);
+            return;
+        }
+
+        if (
+            data.classId > 0
+            && data.keys.contains(QStringLiteral("student_evaluations"))
+            && !data.routeKey.trimmed().isEmpty()
+            )
+        {
+            const QString evaluationName =
+                evaluationNameForKey(data.routeKey);
+
+            if (
+                evaluationName.trimmed().isEmpty()
+                || !m_services
+                || !m_services->dataService()
+                || !m_services->dataService()->isOpen()
+                )
+            {
+                return;
+            }
+
+            const Classroom classroom =
+                m_services
+                    ->dataService()
+                    ->getClassById(data.classId);
+
+            if (
+                classroom.id <= 0
+                || !m_pages->confirmCurrentPageCanLeave()
+                )
+            {
+                return;
+            }
+
+            m_pages->speakingPage()->loadEvaluation(
+                classroom,
+                evaluationName
+                );
+            m_pages->showPage(PageType::SpeakingEval);
+            return;
+        }
+
+        if (data.classId > 0)
+        {
+            if (data.routeKey == QStringLiteral("class_details"))
+            {
+                handleClass(data);
+                return;
+            }
+
+            if (data.routeKey == QStringLiteral("class_roster"))
+            {
+                handleRoster(data);
+                return;
+            }
+
+            if (data.routeKey == QStringLiteral("class_notes"))
+            {
+                handleNotes(data);
+                return;
+            }
+        }
+
+        if (data.routeKey == QStringLiteral("classes"))
+        {
+            if (
+                !m_services
+                || !m_services->dataService()
+                || !m_services->dataService()->isOpen()
+                )
+            {
+                return;
+            }
+
+            const bool alreadyShowingClasses =
+                m_pages->currentWidget()
+                == m_pages->classesPage();
+
+            if (
+                !alreadyShowingClasses
+                && !m_pages->confirmCurrentPageCanLeave()
+                )
+            {
+                return;
+            }
+
+            if (!m_pages->classesPage()->loadClasses())
+            {
+                return;
+            }
+
+            m_pages->showPage(PageType::Classes);
             return;
         }
 
@@ -522,94 +604,6 @@ void NavigationController::handleNavigation(
 
             m_pages->speakingPage()->loadEvaluations();
             m_pages->showPage(PageType::SpeakingEval);
-            return;
-        }
-
-        if (data.classId > 0)
-        {
-            if (
-                !m_services
-                || !m_services->dataService()
-                || !m_services->dataService()->isOpen()
-                )
-            {
-                return;
-            }
-
-            if (data.routeKey == QStringLiteral("class_info"))
-            {
-                handleClass(data);
-                return;
-            }
-
-            if (data.routeKey == QStringLiteral("class_roster"))
-            {
-                handleRoster(data);
-                return;
-            }
-
-            if (data.routeKey == QStringLiteral("class_notes"))
-            {
-                Classroom classroom =
-                    m_services
-                        ->dataService()
-                        ->getClassById(data.classId);
-
-                if (classroom.id < 0)
-                {
-                    return;
-                }
-
-                if (!m_pages->confirmCurrentPageCanLeave())
-                {
-                    return;
-                }
-
-                m_pages->classNotesPage()
-                    ->loadClass(classroom);
-
-                m_pages->showPage(PageType::ClassNotes);
-                return;
-            }
-
-            if (
-                data.keys.contains(QStringLiteral("student_evaluations"))
-                && !data.routeKey.trimmed().isEmpty()
-                )
-            {
-                const QString evaluationName =
-                    evaluationNameForKey(data.routeKey);
-
-                if (evaluationName.trimmed().isEmpty())
-                {
-                    return;
-                }
-
-                Classroom classroom =
-                    m_services
-                        ->dataService()
-                        ->getClassById(data.classId);
-
-                if (classroom.id < 0)
-                {
-                    return;
-                }
-
-                if (!m_pages->confirmCurrentPageCanLeave())
-                {
-                    return;
-                }
-
-                m_pages->speakingPage()
-                    ->loadEvaluation(
-                        classroom,
-                        evaluationName
-                        );
-
-                m_pages->showPage(PageType::SpeakingEval);
-                return;
-            }
-
             return;
         }
 
@@ -935,34 +929,64 @@ void NavigationController::handleRoster(
         return;
     }
 
-    Classroom classroom =
-        m_services
-            ->dataService()
-            ->getClassById(data.classId);
+    const bool alreadyShowingClasses =
+        m_pages->currentWidget()
+        == m_pages->classesPage();
 
-    if (classroom.id <= 0)
+    if (
+        !alreadyShowingClasses
+        && !m_pages->confirmCurrentPageCanLeave()
+        )
     {
         return;
     }
 
-    if (!m_pages->confirmCurrentPageCanLeave())
+    if (
+        m_pages->classesPage()->openClass(
+            data.classId,
+            ClassesSection::Roster
+            )
+        )
+    {
+        m_pages->showPage(PageType::Classes);
+    }
+}
+
+void NavigationController::handleNotes(
+    const NavigationData& data
+    )
+{
+    if (
+        !m_services
+        || !m_services->dataService()
+        || !m_services->dataService()->isOpen()
+        || data.classId <= 0
+        )
     {
         return;
     }
 
-    m_pages->rosterPage()
-        ->loadClass(classroom);
+    const bool alreadyShowingClasses =
+        m_pages->currentWidget()
+        == m_pages->classesPage();
 
-    m_pages->showPage(PageType::Roster);
+    if (
+        !alreadyShowingClasses
+        && !m_pages->confirmCurrentPageCanLeave()
+        )
+    {
+        return;
+    }
 
-    m_sidebar->selectByKeys(
-        {
-            QStringLiteral("classes"),
-            QStringLiteral("class"),
-            QStringLiteral("class_roster")
-        },
-        data.classId
-        );
+    if (
+        m_pages->classesPage()->openClass(
+            data.classId,
+            ClassesSection::Notes
+            )
+        )
+    {
+        m_pages->showPage(PageType::Classes);
+    }
 }
 
 void NavigationController::handleClass(
@@ -983,23 +1007,25 @@ void NavigationController::handleClass(
         return;
     }
 
-    Classroom classroom =
-        m_services
-            ->dataService()
-            ->getClassById(data.classId);
+    const bool alreadyShowingClasses =
+        m_pages->currentWidget()
+        == m_pages->classesPage();
 
-    if (classroom.id < 0)
+    if (
+        !alreadyShowingClasses
+        && !m_pages->confirmCurrentPageCanLeave()
+        )
     {
         return;
     }
 
-    if (!m_pages->confirmCurrentPageCanLeave())
+    if (
+        m_pages->classesPage()->openClass(
+            data.classId,
+            ClassesSection::Details
+            )
+        )
     {
-        return;
+        m_pages->showPage(PageType::Classes);
     }
-
-    m_pages->classInfoPage()
-        ->loadClass(classroom);
-
-    m_pages->showPage(PageType::ClassInfo);
 }

@@ -23,6 +23,9 @@ inline constexpr auto RosterPage =
 inline constexpr auto ClassInfo =
     "class_info";
 
+inline constexpr auto Classes =
+    "classes";
+
 inline constexpr auto TeacherInfo =
     "teacher_info";
 

@@ -311,6 +311,30 @@ QHBoxLayout* BasePage::bottomLayout() const
     return m_bottomLayout;
 }
 
+void BasePage::setPageLayoutMargins(
+    const QMargins& margins
+    )
+{
+    if (!m_mainLayout)
+    {
+        return;
+    }
+
+    m_defaultMainLayoutMargins = margins;
+    m_mainLayout->setContentsMargins(margins);
+    updateNoDatabaseBannerLayout();
+}
+
+void BasePage::setBottomBarVisible(
+    bool visible
+    )
+{
+    if (m_bottomBar)
+    {
+        m_bottomBar->setVisible(visible);
+    }
+}
+
 void BasePage::updateNoDatabaseBannerGeometry()
 {
     if (!m_noDatabaseBanner)

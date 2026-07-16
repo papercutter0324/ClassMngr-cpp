@@ -722,6 +722,7 @@ if(BUILD_TESTING)
         tests/sub_prep_class_navigation_tests.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/sub_prep/ui/sub_prep_class_navigation.cpp
+        src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
     )
 
     target_compile_features(ClassMngrSubPrepClassNavigationTests
@@ -897,6 +898,43 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrUniformWidthTabBarTests
         COMMAND ClassMngrUniformWidthTabBarTests
+    )
+
+    qt_add_executable(ClassMngrSidebarStructureTests
+        tests/sidebar_structure_tests.cpp
+        src/core/fontmanager.cpp
+        src/ui/shared/widgets/sidebar/sidebar.cpp
+        src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
+        src/ui/shared/widgets/sidebar/sidebar_marquee_delegate.cpp
+    )
+
+    target_compile_features(ClassMngrSidebarStructureTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSidebarStructureTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSidebarStructureTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrSidebarStructureTests
+        COMMAND ClassMngrSidebarStructureTests
+    )
+
+    set_tests_properties(
+        ClassMngrSidebarStructureTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrBasePageTests
@@ -1322,6 +1360,7 @@ if(BUILD_TESTING)
             ClassMngrScheduleSectionWidgetTests
             ClassMngrSubPrepPageTests
             ClassMngrUniformWidthTabBarTests
+            ClassMngrSidebarStructureTests
             ClassMngrSchedulePrintModelTests
             ClassMngrSchedulePrintPdfTests
             ClassMngrSubPrepPrintPdfTests

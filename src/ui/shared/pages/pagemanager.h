@@ -17,11 +17,9 @@ class ApplicationServices;
 class SchedulePage;
 class MyInfoPage;
 class MyInfoRostersPage;
-class ClassInfoPage;
-class ClassNotesPage;
+class ClassesPage;
 class TeacherInfoPage;
 class CampusDashboardPage;
-class RosterPage;
 class SpeakingEvalPage;
 class SubPrepPage;
 class PdfViewerPage;
@@ -38,12 +36,10 @@ enum class PageType
     MyInfoSchedule,
     MyInfoClassInformation,
     Schedule,
-    ClassInfo,
+    Classes,
     TeacherInfo,
     CampusDashboard,
-    Roster,
     MyInfoRosters,
-    ClassNotes,
     SpeakingEval,
     SubPrep,
     PdfViewer
@@ -133,15 +129,11 @@ public:
 
     SubPrepPage* subPrepPage() const;
 
-    ClassInfoPage* classInfoPage() const;
-
-    ClassNotesPage* classNotesPage() const;
+    ClassesPage* classesPage() const;
 
     TeacherInfoPage* teacherPage() const;
 
     CampusDashboardPage* campusDashboard() const;
-
-    RosterPage* rosterPage() const;
 
     SpeakingEvalPage* speakingPage() const;
 
@@ -199,15 +191,11 @@ private:
 
     SubPrepPage* m_subPrepPage = nullptr;
 
-    ClassInfoPage* m_classInfoPage = nullptr;
-
-    ClassNotesPage* m_classNotesPage = nullptr;
+    ClassesPage* m_classesPage = nullptr;
 
     TeacherInfoPage* m_teacherPage = nullptr;
 
     CampusDashboardPage* m_campusDashboard = nullptr;
-
-    RosterPage* m_rosterPage = nullptr;
 
     SpeakingEvalPage* m_speakingPage = nullptr;
 

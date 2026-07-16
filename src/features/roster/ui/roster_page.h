@@ -26,6 +26,7 @@ class RosterPage : public BasePage
 public:
     explicit RosterPage(
         ApplicationServices* services,
+        bool embedded = false,
         QWidget* parent = nullptr
         );
 
@@ -137,6 +138,7 @@ private:
     bool m_removingRosterRow = false;
     bool m_movingRosterRow = false;
     SaveMode m_saveMode = SaveMode::Automatic;
+    bool m_embedded = false;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;

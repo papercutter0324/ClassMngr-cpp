@@ -210,7 +210,7 @@ private:
         QTreeWidgetItem *item
         ) const;
 
-    QTreeWidgetItem* classInfoChildForClass(
+    QTreeWidgetItem* classDetailsChildForClass(
         QTreeWidgetItem* classItem
         ) const;
 

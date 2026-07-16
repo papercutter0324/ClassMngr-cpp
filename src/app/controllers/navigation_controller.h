@@ -54,6 +54,10 @@ private:
         const NavigationData& data
         );
 
+    void handleNotes(
+        const NavigationData& data
+        );
+
     void handleClass(
         const NavigationData& data
         );

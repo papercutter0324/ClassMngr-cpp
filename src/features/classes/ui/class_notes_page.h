@@ -19,6 +19,7 @@ class ClassNotesPage : public BasePage
 public:
     explicit ClassNotesPage(
         ApplicationServices* services,
+        bool embedded = false,
         QWidget* parent = nullptr
         );
 
@@ -58,6 +59,7 @@ private:
     bool m_loading = false;
     bool m_dirty = false;
     SaveMode m_saveMode = SaveMode::Automatic;
+    bool m_embedded = false;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;

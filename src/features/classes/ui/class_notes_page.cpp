@@ -28,12 +28,19 @@ constexpr int AutosaveDelayMs = 750;
 
 ClassNotesPage::ClassNotesPage(
     ApplicationServices* services,
+    bool embedded,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
+    , m_embedded(embedded)
 {
     Q_ASSERT(m_services);
+
+    if (m_embedded)
+    {
+        setPageLayoutMargins({});
+    }
 
     buildUi();
 
@@ -318,19 +325,13 @@ void ClassNotesPage::markDirty()
 void ClassNotesPage::buildUi()
 {
     contentLayout()->setContentsMargins(
-        UiConstants::Pages::Margin,
-        18,
-        UiConstants::Pages::Margin,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
+        m_embedded ? 0 : 18,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
         0
         );
 
     contentLayout()->setSpacing(12);
-
-    auto* headerLayout =
-        new QVBoxLayout;
-
-    headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(2);
 
     m_titleLabel =
         new QLabel(
@@ -357,13 +358,24 @@ void ClassNotesPage::buildUi()
         FontManager::getUiFont(11)
         );
 
-    headerLayout->addWidget(m_titleLabel);
-    headerLayout->addWidget(m_subtitleLabel);
+    if (m_embedded)
+    {
+        m_titleLabel->hide();
+        m_subtitleLabel->hide();
+    }
+    else
+    {
+        auto* headerLayout = new QVBoxLayout;
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(2);
+        headerLayout->addWidget(m_titleLabel);
+        headerLayout->addWidget(m_subtitleLabel);
 
-    contentLayout()->addLayout(headerLayout);
-    contentLayout()->addSpacing(
-        UiConstants::Pages::HeaderContentSpacing
-        );
+        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addSpacing(
+            UiConstants::Pages::HeaderContentSpacing
+            );
+    }
 
     m_notesCard =
         new SectionCard(

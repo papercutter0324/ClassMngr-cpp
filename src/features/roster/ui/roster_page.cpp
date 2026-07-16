@@ -20,12 +20,20 @@ inline constexpr int AutosaveDelayMs = 750;
 
 RosterPage::RosterPage(
     ApplicationServices* services,
+    bool embedded,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
+    , m_embedded(embedded)
 {
     setProperty("role", UiRoles::RosterPage);
+
+    if (m_embedded)
+    {
+        setPageLayoutMargins({});
+    }
+
     buildUi();
 
     m_autosaveTimer = new QTimer(this);

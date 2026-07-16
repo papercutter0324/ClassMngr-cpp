@@ -15,6 +15,12 @@ enum class Mode
     GradeGrouped
 };
 
+enum class GroupingPolicy
+{
+    Adaptive,
+    AlwaysGradeGrouped
+};
+
 struct ClassEntry
 {
     int classId{-1};
@@ -48,6 +54,7 @@ struct Model
 };
 
 Model build(
-    const QList<ClassEntry>& entries
+    const QList<ClassEntry>& entries,
+    GroupingPolicy groupingPolicy = GroupingPolicy::Adaptive
     );
 }

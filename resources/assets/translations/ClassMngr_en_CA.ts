@@ -108,6 +108,22 @@
         <source>Speaking Evaluations</source>
         <translation>Speaking Evaluations</translation>
     </message>
+    <message>
+        <source>Class List</source>
+        <translation>Class List</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>Details</translation>
+    </message>
+    <message>
+        <source>Roster</source>
+        <translation>Roster</translation>
+    </message>
+    <message>
+        <source>Notes</source>
+        <translation>Notes</translation>
+    </message>
 </context>
 <context>
     <name>SpeakingEvalPage</name>
@@ -121,5 +137,15 @@
         <source>Select a class to create reports.</source>
         <translation>Select a class to create reports.</translation>
     </message>
+</context>
+<context>
+    <name>ClassesPage</name>
+    <message><source>Classes</source><translation>Classes</translation></message>
+    <message><source>No classes available</source><translation>No classes available</translation></message>
+    <message><source>No class selected</source><translation>No class selected</translation></message>
+    <message><source>Details</source><translation>Details</translation></message>
+    <message><source>Roster</source><translation>Roster</translation></message>
+    <message><source>Notes</source><translation>Notes</translation></message>
+    <message><source>Class %1</source><translation>Class %1</translation></message>
 </context>
 </TS>
