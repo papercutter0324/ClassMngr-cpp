@@ -61,6 +61,7 @@ class SidebarStructureTests : public QObject
 
 private slots:
     void classListOwnsDynamicClassesAndDeepLinks();
+    void topLevelOrderAndSubPrepStructure();
 };
 
 void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
@@ -145,6 +146,41 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
             QStringLiteral("class"),
             QStringLiteral("class_details")
         })
+        );
+}
+
+void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
+{
+    Sidebar sidebar;
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    const QStringList expectedKeys{
+        QStringLiteral("my_info"),
+        QStringLiteral("classes"),
+        QStringLiteral("my_info_class_roster"),
+        QStringLiteral("speaking_evaluations"),
+        QStringLiteral("sub_prep")
+    };
+
+    for (int index = 0; index < expectedKeys.size(); ++index)
+    {
+        QTreeWidgetItem* item = tree->topLevelItem(index);
+        QVERIFY(item);
+        QCOMPARE(item->data(0, KeyRole).toString(), expectedKeys.at(index));
+    }
+
+    QTreeWidgetItem* subPrep =
+        topLevelWithKey(tree, QStringLiteral("sub_prep"));
+    QVERIFY(subPrep);
+    QCOMPARE(subPrep->childCount(), 0);
+    QCOMPARE(
+        static_cast<NodeType>(
+            subPrep->data(0, Qt::UserRole).toInt()
+            ),
+        NodeType::Page
         );
 }
 

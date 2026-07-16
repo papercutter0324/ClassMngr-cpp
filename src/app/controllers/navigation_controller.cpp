@@ -697,13 +697,6 @@ void NavigationController::handleSubPrep(
         return;
     }
 
-    if (rootClick)
-    {
-        m_sidebar->selectSubPrepSection(
-            QStringLiteral("sub_prep_important")
-            );
-    }
-
     m_pages->showPage(PageType::SubPrep);
     if (rootClick)
     {

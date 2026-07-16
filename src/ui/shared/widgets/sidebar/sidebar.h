@@ -108,10 +108,6 @@ public:
         const QString& sectionName
         );
 
-    void selectSubPrepSection(
-        const QString& sectionName
-        );
-
     void selectCampusSection(
         const QString& sectionName
         );

@@ -1357,7 +1357,6 @@ void Sidebar::onItemClicked(
 
     if (
         item == m_nodes.value("my_info")
-        || item == m_nodes.value("sub_prep")
         || item == m_nodes.value("campus_info")
         )
     {
@@ -1581,35 +1580,6 @@ void Sidebar::selectMyInfoSection(
     }
 
     const QSignalBlocker blocker(m_tree);
-    m_tree->setCurrentItem(sectionItem);
-    m_tree->scrollToItem(sectionItem);
-}
-
-void Sidebar::selectSubPrepSection(
-    const QString& sectionKey
-    )
-{
-    auto* subPrepRoot =
-        m_nodes.value("sub_prep", nullptr);
-
-    if (!subPrepRoot)
-    {
-        return;
-    }
-
-    subPrepRoot->setExpanded(true);
-
-    auto* sectionItem =
-        childWithKey(
-            subPrepRoot,
-            sectionKey
-            );
-
-    if (!sectionItem)
-    {
-        return;
-    }
-
     m_tree->setCurrentItem(sectionItem);
     m_tree->scrollToItem(sectionItem);
 }

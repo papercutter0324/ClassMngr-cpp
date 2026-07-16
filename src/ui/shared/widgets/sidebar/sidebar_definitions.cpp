@@ -51,40 +51,26 @@ QList<TreeNodeSpec> treeStructure()
         },
 
         {
-            "my_info_class_roster",
-            QObject::tr("Rosters"),
-            NodeType::Page
-        },
-
-        {
-            "sub_prep",
-            QObject::tr("Sub Prep"),
-            NodeType::Root,
-
-            {
-                {
-                    "sub_prep_important",
-                    QObject::tr("Important Information"),
-                    NodeType::Page
-                },
-
-                {
-                    "sub_prep_notes",
-                    QObject::tr("Sub Notes"),
-                    NodeType::Page
-                }
-            }
-        },
-
-        {
             "classes",
             QObject::tr("Classes"),
             NodeType::Page
         },
 
         {
+            "my_info_class_roster",
+            QObject::tr("Rosters"),
+            NodeType::Page
+        },
+
+        {
             "speaking_evaluations",
             QObject::tr("Speaking Evaluations"),
+            NodeType::Page
+        },
+
+        {
+            "sub_prep",
+            QObject::tr("Sub Prep"),
             NodeType::Page
         },
 
