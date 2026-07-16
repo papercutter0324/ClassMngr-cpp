@@ -142,20 +142,33 @@ void RosterPage::updateActions()
 void RosterPage::buildUi()
 {
     contentLayout()->setContentsMargins(
-        m_embedded ? 0 : 24,
-        m_embedded ? 0 : 18,
-        m_embedded ? 0 : 24,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
         0
         );
-    contentLayout()->setSpacing(12);
+    contentLayout()->setSpacing(
+        m_embedded
+            ? 12
+            : UiConstants::Pages::Spacing
+        );
 
     m_titleLabel = new QLabel(tr("Class Roster"), this);
     m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(FontManager::getUiFont(20, QFont::DemiBold));
+    m_titleLabel->setFont(
+        FontManager::getUiFont(
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
+            )
+        );
 
     m_subtitleLabel = new QLabel(tr("No class selected"), this);
     m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(FontManager::getUiFont(11));
+    m_subtitleLabel->setFont(
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
+        );
 
     if (m_embedded)
     {
@@ -165,8 +178,15 @@ void RosterPage::buildUi()
     else
     {
         auto* headerLayout = new QVBoxLayout;
-        headerLayout->setContentsMargins(0, 0, 0, 0);
-        headerLayout->setSpacing(2);
+        headerLayout->setContentsMargins(
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin
+            );
+        headerLayout->setSpacing(
+            UiConstants::Pages::HeaderSpacing
+            );
         headerLayout->addWidget(m_titleLabel);
         headerLayout->addWidget(m_subtitleLabel);
         contentLayout()->addLayout(headerLayout);

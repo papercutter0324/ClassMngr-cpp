@@ -341,19 +341,6 @@ void MyInfoPage::handleCalendarDisplayedMonthChanged(
 }
 void MyInfoPage::buildMonthlyCalendarSection()
 {
-    m_scrollContentLayout->addSpacing(
-        UiConstants::Pages::MajorSectionSpacing
-        );
-
-    m_monthlyCalendarHeading =
-        createTopLevelHeading(
-            tr("Monthly Calendar"),
-            m_scrollContent
-            );
-    m_scrollContentLayout->addWidget(
-        m_monthlyCalendarHeading
-        );
-
     auto* card =
         new QFrame(m_scrollContent);
     card->setProperty(

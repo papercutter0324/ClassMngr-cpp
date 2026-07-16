@@ -235,25 +235,37 @@ void ClassesPage::buildUi()
 
     contentLayout()->setContentsMargins(
         UiConstants::Pages::Margin,
-        18,
+        UiConstants::Pages::Margin,
         UiConstants::Pages::Margin,
         0
         );
-    contentLayout()->setSpacing(12);
+    contentLayout()->setSpacing(UiConstants::Pages::Spacing);
 
     auto* headerLayout = new QVBoxLayout;
-    headerLayout->setContentsMargins(0, 0, 0, 0);
-    headerLayout->setSpacing(2);
+    headerLayout->setContentsMargins(
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin
+        );
+    headerLayout->setSpacing(UiConstants::Pages::HeaderSpacing);
 
     m_titleLabel = new QLabel(tr("Classes"), this);
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
-        FontManager::getUiFont(20, QFont::DemiBold)
+        FontManager::getUiFont(
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
+            )
         );
 
     m_subtitleLabel = new QLabel(tr("No class selected"), this);
     m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(FontManager::getUiFont(11));
+    m_subtitleLabel->setFont(
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
+        );
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);

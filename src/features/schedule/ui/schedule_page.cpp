@@ -9,6 +9,7 @@
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/schedule_print_service.h"
+#include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
@@ -526,13 +527,27 @@ void SchedulePage::exportSchedule()
 void SchedulePage::buildUi()
 {
     contentLayout()->setContentsMargins(
-        24,
-        18,
-        24,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
+        UiConstants::Pages::Margin,
         0
         );
 
-    contentLayout()->setSpacing(8);
+    contentLayout()->setSpacing(
+        UiConstants::Pages::Spacing
+        );
+
+    auto* headerLayout =
+        new QVBoxLayout;
+    headerLayout->setContentsMargins(
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin,
+        UiConstants::Pages::HeaderMargin
+        );
+    headerLayout->setSpacing(
+        UiConstants::Pages::HeaderSpacing
+        );
 
     m_titleLabel =
         new QLabel(
@@ -543,8 +558,8 @@ void SchedulePage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
         FontManager::getUiFont(
-            20,
-            QFont::DemiBold
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
             )
         );
 
@@ -556,7 +571,9 @@ void SchedulePage::buildUi()
 
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
 
     m_table =
@@ -587,8 +604,12 @@ void SchedulePage::buildUi()
         );
     m_table->horizontalHeader()->setFixedHeight(HeaderHeight);
 
-    contentLayout()->addWidget(m_titleLabel);
-    contentLayout()->addWidget(m_subtitleLabel);
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addWidget(m_subtitleLabel);
+    contentLayout()->addLayout(headerLayout);
+    contentLayout()->addSpacing(
+        UiConstants::Pages::HeaderContentSpacing
+        );
     contentLayout()->addWidget(m_table);
 
     m_use24HourTimeCheckBox =

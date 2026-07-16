@@ -119,13 +119,15 @@ void ClassDetailsPage::buildUi()
 {
     contentLayout()->setContentsMargins(
         m_embedded ? 0 : UiConstants::Pages::Margin,
-        m_embedded ? 0 : 18,
+        m_embedded ? 0 : UiConstants::Pages::Margin,
         m_embedded ? 0 : UiConstants::Pages::Margin,
         0
         );
 
     contentLayout()->setSpacing(
-        12
+        m_embedded
+            ? 12
+            : UiConstants::Pages::Spacing
         );
 
     m_titleLabel =
@@ -137,8 +139,8 @@ void ClassDetailsPage::buildUi()
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
         FontManager::getUiFont(
-            20,
-            QFont::DemiBold
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
             )
         );
 
@@ -150,7 +152,9 @@ void ClassDetailsPage::buildUi()
 
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
-        FontManager::getUiFont(11)
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
         );
 
     if (m_embedded)
@@ -163,8 +167,15 @@ void ClassDetailsPage::buildUi()
         auto* headerLayout =
             new QVBoxLayout;
 
-        headerLayout->setContentsMargins(0, 0, 0, 0);
-        headerLayout->setSpacing(2);
+        headerLayout->setContentsMargins(
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin,
+            UiConstants::Pages::HeaderMargin
+            );
+        headerLayout->setSpacing(
+            UiConstants::Pages::HeaderSpacing
+            );
         headerLayout->addWidget(m_titleLabel);
         headerLayout->addWidget(m_subtitleLabel);
 
