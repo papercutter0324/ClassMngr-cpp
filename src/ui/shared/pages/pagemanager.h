@@ -33,6 +33,7 @@ class PdfViewerPage;
 enum class PageType
 {
     MyInfo,
+    Calendar,
     MyInfoSchedule,
     MyInfoClassInformation,
     Schedule,
@@ -121,6 +122,8 @@ public:
 
     MyInfoPage* myInfoPage() const;
 
+    MyInfoPage* calendarPage() const;
+
     MyInfoPage* myInfoSchedulePage() const;
 
     MyInfoPage* myInfoClassInformationPage() const;
@@ -182,6 +185,8 @@ private:
     SchedulePage* m_schedulePage = nullptr;
 
     MyInfoPage* m_myInfoPage = nullptr;
+
+    MyInfoPage* m_calendarPage = nullptr;
 
     MyInfoPage* m_myInfoSchedulePage = nullptr;
 

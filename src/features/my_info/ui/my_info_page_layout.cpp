@@ -136,8 +136,11 @@ QString MyInfoPage::pageTitle() const
 {
     switch (m_mode)
     {
-    case MyInfoPageMode::InformationCalendar:
-        return tr("My Information & Calendar");
+    case MyInfoPageMode::Information:
+        return tr("My Details");
+
+    case MyInfoPageMode::Calendar:
+        return tr("Calendar");
 
     case MyInfoPageMode::Schedule:
         return tr("Schedule");
@@ -152,8 +155,11 @@ QString MyInfoPage::pageSubtitle() const
 {
     switch (m_mode)
     {
-    case MyInfoPageMode::InformationCalendar:
-        return tr("Manage your personal details and monthly events.");
+    case MyInfoPageMode::Information:
+        return tr("Manage your personal information and signature.");
+
+    case MyInfoPageMode::Calendar:
+        return tr("View and manage your monthly events and upcoming dates.");
 
     case MyInfoPageMode::Schedule:
         return tr("View and adjust your class schedule.");
@@ -166,7 +172,7 @@ QString MyInfoPage::pageSubtitle() const
 }
 bool MyInfoPage::includesMyInformation() const
 {
-    return m_mode == MyInfoPageMode::InformationCalendar;
+    return m_mode == MyInfoPageMode::Information;
 }
 bool MyInfoPage::includesClassSchedule() const
 {
@@ -178,7 +184,7 @@ bool MyInfoPage::includesClassInformation() const
 }
 bool MyInfoPage::includesMonthlyCalendar() const
 {
-    return m_mode == MyInfoPageMode::InformationCalendar;
+    return m_mode == MyInfoPageMode::Calendar;
 }
 void MyInfoPage::buildClassScheduleSection()
 {

@@ -233,7 +233,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
-    MyInfoPageMode m_mode = MyInfoPageMode::InformationCalendar;
+    MyInfoPageMode m_mode = MyInfoPageMode::Information;
     bool m_loading = false;
     bool m_dirty = false;
     SaveMode m_saveMode = SaveMode::Automatic;
