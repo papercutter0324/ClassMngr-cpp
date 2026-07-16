@@ -12,11 +12,13 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
-#include <QLabel>
 #include <QFont>
+#include <QLabel>
+#include <QLayoutItem>
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QVBoxLayout>
+#include <QWidget>
 
 #include <utility>
 
