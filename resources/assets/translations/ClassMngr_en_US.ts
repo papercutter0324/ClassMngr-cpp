@@ -3045,8 +3045,8 @@
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="754"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="933"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1437"/>
-        <source>Sub Notes</source>
-        <translation>Sub Notes</translation>
+        <source>Additional Notes</source>
+        <translation>Additional Notes</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="726"/>

@@ -239,6 +239,18 @@ void SubPrepPageTests
         page.currentSectionKey(),
         QStringLiteral("sub_prep_notes")
         );
+    bool foundAdditionalNotes = false;
+
+    for (QLabel* label : page.findChildren<QLabel*>())
+    {
+        if (label->text() == QStringLiteral("Additional Notes"))
+        {
+            foundAdditionalNotes = true;
+            break;
+        }
+    }
+
+    QVERIFY(foundAdditionalNotes);
 }
 
 void SubPrepPageTests

@@ -4812,8 +4812,8 @@
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="595"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="748"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="1083"/>
-        <source>Sub Notes</source>
-        <translation>대체 수업 노트</translation>
+        <source>Additional Notes</source>
+        <translation>추가 노트</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="574"/>

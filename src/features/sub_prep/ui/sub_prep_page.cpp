@@ -428,7 +428,7 @@ void SubPrepPage::retranslateUi()
     if (m_subNotesHeading)
     {
         m_subNotesHeading->setText(
-            tr("Sub Notes")
+            tr("Additional Notes")
             );
     }
 
@@ -626,7 +626,7 @@ QString SubPrepPage::currentSectionName() const
         return tr("Important Information");
 
     case SubPrepSection::SubNotes:
-        return tr("Sub Notes");
+        return tr("Additional Notes");
     }
 
     return {};
@@ -1199,7 +1199,7 @@ void SubPrepPage::buildUi()
 
     m_subNotesHeading =
         createTopLevelHeading(
-            tr("Sub Notes"),
+            tr("Additional Notes"),
             m_scrollContent
             );
     m_scrollContentLayout->addWidget(
