@@ -80,7 +80,7 @@ void SubPrepPage::buildUi()
 
     m_printButton =
         new TextFitPushButton(
-            tr("Print Sub Prep"),
+            tr("Generate Sub Prep"),
             m_scrollContent
             );
     m_printButton->setObjectName(
@@ -88,7 +88,7 @@ void SubPrepPage::buildUi()
         );
     m_printButton->setMinimumWidth(130);
     m_printButton->setToolTip(
-        tr("Print all sub prep information as an A4 PDF.")
+        tr("Create a dated Sub Prep package with by-day rosters and optional paper copies.")
         );
     titleRow->addWidget(m_printButton);
 
@@ -455,7 +455,7 @@ void SubPrepPage::buildUi()
         m_printButton,
         &QPushButton::clicked,
         this,
-        &SubPrepPage::printSubPrep
+        &SubPrepPage::generateSubPrep
         );
 }
 

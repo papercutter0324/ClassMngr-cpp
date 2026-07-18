@@ -7,6 +7,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"

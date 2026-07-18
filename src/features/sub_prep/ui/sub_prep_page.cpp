@@ -149,10 +149,10 @@ void SubPrepPage::retranslateUi()
     if (m_printButton)
     {
         m_printButton->setText(
-            tr("Print Sub Prep")
+            tr("Generate Sub Prep")
             );
         m_printButton->setToolTip(
-            tr("Print all sub prep information as an A4 PDF.")
+            tr("Create a dated Sub Prep package with by-day rosters and optional paper copies.")
             );
     }
 
@@ -444,7 +444,7 @@ void SubPrepPage::autosave()
     }
 }
 
-void SubPrepPage::printSubPrep()
+void SubPrepPage::generateSubPrep()
 {
     if (hasUnsavedChanges() && !saveChanges())
     {
@@ -469,7 +469,14 @@ void SubPrepPage::printSubPrep()
                 );
     }
 
+    const ScheduleViewModel fullSchedule =
+        m_scheduleWidget
+            ? m_scheduleWidget->scheduleModel()
+            : ScheduleViewModel();
+
     SubPrepPrintDialog dialog(
+        m_services,
+        fullSchedule,
         calendarEvents,
         currentDate,
         this
@@ -480,58 +487,75 @@ void SubPrepPage::printSubPrep()
         return;
     }
 
-    SubPrepPrintService::Request request;
-    request.parent = this;
-    request.campus = {
+    SubPrepPrintService::Request subPrepRequest;
+    subPrepRequest.parent = this;
+    subPrepRequest.campus = {
         m_officeNumberEdit ? m_officeNumberEdit->text() : QString(),
         m_officeWifiEdit ? m_officeWifiEdit->text() : QString(),
         m_officeWifiPasswordEdit ? m_officeWifiPasswordEdit->text() : QString(),
         m_photocopierCodeEdit ? m_photocopierCodeEdit->text() : QString()
     };
-    request.zoom = {
+    subPrepRequest.zoom = {
         m_zoomLoginIdEdit ? m_zoomLoginIdEdit->text() : QString(),
         m_zoomPasswordEdit ? m_zoomPasswordEdit->text() : QString()
     };
-    request.classMaterials =
+    subPrepRequest.classMaterials =
         m_classMaterialsEdit
             ? m_classMaterialsEdit->toPlainText()
             : QString();
-    request.gradingInstructions =
+    subPrepRequest.gradingInstructions =
         m_gradingInstructionsEdit
             ? m_gradingInstructionsEdit->toPlainText()
             : QString();
-    request.specialInstructions =
+    subPrepRequest.specialInstructions =
         m_specialInstructionsEdit
             ? m_specialInstructionsEdit->toPlainText()
             : QString();
-    request.schedule =
+    subPrepRequest.schedule =
         scheduleForDays(
-            m_scheduleWidget
-                ? m_scheduleWidget->scheduleModel()
-                : ScheduleViewModel(),
+            fullSchedule,
             dialog.selectedDays()
             );
-    request.classInformation =
-        buildClassInformation(request.schedule);
-    request.subNotes =
+    subPrepRequest.classInformation =
+        buildClassInformation(subPrepRequest.schedule);
+    subPrepRequest.subNotes =
         m_subNotesEdit
             ? m_subNotesEdit->toPlainText()
             : QString();
 
-    const SubPrepPrintService::Result result =
-        dialog.selectedAction() == SubPrepPrintDialog::Action::SaveAs
-            ? SubPrepPrintService::saveSubPrepPdf(
-                request,
-                dialog.selectedSavePath()
-                )
-            : SubPrepPrintService::printSubPrep(request);
+    SubPrepPackageService::Request packageRequest;
+    packageRequest.parent = this;
+    packageRequest.services = m_services;
+    packageRequest.subPrep = subPrepRequest;
+    packageRequest.selectedDates = dialog.selectedDates();
+    packageRequest.classIds = dialog.selectedClassIds();
+    packageRequest.useIntensiveSchedule =
+        m_scheduleWidget
+        && m_scheduleWidget->displayState().showIntensive;
+    packageRequest.createFolder = dialog.createFolder();
+    packageRequest.targetRoot = dialog.targetRoot();
+    packageRequest.userName = dialog.userName();
+    packageRequest.replaceExisting = dialog.replaceExisting();
+    packageRequest.printPaperCopies = dialog.printPaperCopies();
+    packageRequest.openFolderAfterGeneration =
+        dialog.openFolderAfterGeneration();
+    const SubPrepPackageService::Result result =
+        SubPrepPackageService::generate(packageRequest);
 
-    if (result.status == SubPrepPrintService::Status::Failed)
+    if (result.status == SubPrepPackageService::Status::Failed)
     {
+        QString message = result.message;
+
+        if (result.folderCreated && !result.outputDirectory.isEmpty())
+        {
+            message += tr("\n\nThe package was created at:\n%1")
+                .arg(result.outputDirectory);
+        }
+
         QMessageBox::warning(
             this,
-            tr("Print Sub Prep"),
-            result.message
+            tr("Generate Sub Prep"),
+            message
             );
     }
 }

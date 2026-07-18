@@ -17,6 +17,7 @@
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "features/roster/services/roster_template_print_service.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QHash>
@@ -130,6 +131,21 @@ QList<Classroom> DataService::getClasses()
     return {classroom};
 }
 
+Classroom DataService::getClassById(
+    int classId
+    )
+{
+    for (const Classroom& classroom : getClasses())
+    {
+        if (classroom.id == classId)
+        {
+            return classroom;
+        }
+    }
+
+    return {};
+}
+
 ClassInfo DataService::loadClassInfo(
     int classId
     )
@@ -148,6 +164,18 @@ ClassInfo DataService::loadClassInfo(
     info.classTimes.append(meeting);
 
     return info;
+}
+
+Roster DataService::loadRoster(
+    int
+    )
+{
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    return roster;
 }
 
 int DataService::getRosterStudentCount(
@@ -508,6 +536,73 @@ PdfPrintService::Result PdfPrintService::printPdfDocument(
 {
     return {
         Status::Canceled,
+        QString()
+    };
+}
+
+PdfPrintService::Result PdfPrintService::printPdfDocuments(
+    const BatchRequest&
+    )
+{
+    return {
+        Status::Canceled,
+        QString()
+    };
+}
+
+QList<RosterTemplatePrintService::TemplateId>
+RosterTemplatePrintService::availableTemplateIds()
+{
+    return {
+        TemplateId::ByDay,
+        TemplateId::Daily,
+        TemplateId::PerClassWithExtraInfo
+    };
+}
+
+QString RosterTemplatePrintService::templateDisplayName(
+    TemplateId templateId
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::Daily:
+        return QStringLiteral("Daily");
+
+    case TemplateId::PerClassWithExtraInfo:
+        return QStringLiteral("Per Class with Extra Info");
+
+    case TemplateId::ByDay:
+    default:
+        return QStringLiteral("By Day");
+    }
+}
+
+int RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(
+    QPageLayout::Orientation orientation
+    )
+{
+    return orientation == QPageLayout::Landscape ? 6 : 3;
+}
+
+QStringList RosterTemplatePrintService::availablePerClassExtraInfoColumns(
+    const QList<RosterTemplatePrintService::RosterClassData>&
+    )
+{
+    return {};
+}
+
+RosterTemplatePrintService::Result
+RosterTemplatePrintService::saveRostersPdf(
+    const QList<RosterTemplatePrintService::RosterClassData>&,
+    const QString&,
+    RosterTemplatePrintService::TemplateId,
+    const QStringList&,
+    QPageLayout::Orientation
+    )
+{
+    return {
+        Status::Sent,
         QString()
     };
 }

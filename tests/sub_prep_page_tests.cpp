@@ -2,6 +2,7 @@
 #include "data/data_service.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 
@@ -11,8 +12,13 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QCheckBox>
+#include <QDateEdit>
+#include <QDir>
+#include <QGridLayout>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QTemporaryDir>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
 namespace ScheduleWidgetTestStubs
@@ -56,6 +62,8 @@ private slots:
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void zoomUnavailableHidesStoredCredentials();
     void printDialogSelectsVacationDaysFromTheCurrentOrFollowingWeek();
+    void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
+    void printDialogRequiresAndSavesMissingUserName();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
 };
 
@@ -561,6 +569,26 @@ void SubPrepPageTests
         {currentWeekVacation},
         wednesday
         );
+    QCOMPARE(dialog.windowTitle(), QStringLiteral("Generate Sub Prep"));
+    QCOMPARE(
+        SubPrepPrintDialog::defaultWeekStart(
+            {currentWeekVacation, nextWeekVacation},
+            wednesday
+            ),
+        QDate(2026, 7, 13)
+        );
+    QCOMPARE(
+        dialog.findChild<QDateEdit*>(
+            QStringLiteral("subPrepWeekOfEdit")
+            ),
+        nullptr
+        );
+    auto* daysLayout = dialog.findChild<QGridLayout*>(
+        QStringLiteral("subPrepDaysLayout")
+        );
+    QVERIFY(daysLayout);
+    QCOMPARE(daysLayout->columnCount(), 3);
+    QCOMPARE(daysLayout->rowCount(), 2);
     QVERIFY(
         dialog.findChild<QCheckBox*>(
             QStringLiteral("subPrepPrintTuesdayCheckBox")
@@ -581,6 +609,20 @@ void SubPrepPageTests
             QStringLiteral("subPrepPrintMondayCheckBox")
             )->isChecked()
         );
+    QCOMPARE(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintTuesdayCheckBox")
+            )->text(),
+        QStringLiteral("Tuesday")
+        );
+    QCOMPARE(
+        dialog.selectedDates(),
+        QList<QDate>({
+            QDate(2026, 7, 14),
+            QDate(2026, 7, 15),
+            QDate(2026, 7, 16)
+        })
+        );
     QVERIFY(
         dialog.findChild<QPushButton*>(
             QStringLiteral("subPrepPrintCancelButton")
@@ -588,13 +630,220 @@ void SubPrepPageTests
         );
     QVERIFY(
         dialog.findChild<QPushButton*>(
-            QStringLiteral("subPrepPrintSaveAsButton")
+            QStringLiteral("subPrepSelectFolderButton")
             )
         );
     QVERIFY(
         dialog.findChild<QPushButton*>(
-            QStringLiteral("subPrepPrintButton")
+            QStringLiteral("subPrepGenerateOkButton")
             )
+        );
+    QVERIFY(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepCreateFolderCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepOpenFolderCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        !dialog.findChild<QCheckBox*>(
+            QStringLiteral("subPrepPrintPaperCopiesCheckBox")
+            )->isChecked()
+        );
+    QVERIFY(
+        !dialog.findChild<QWidget*>(
+            QStringLiteral("subPrepRosterTemplateCombo")
+            )
+        );
+    QString documentsPath =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DocumentsLocation
+            );
+    if (documentsPath.isEmpty())
+    {
+        documentsPath = QDir(
+            QStandardPaths::writableLocation(
+                QStandardPaths::HomeLocation
+                )
+            ).filePath(QStringLiteral("Documents"));
+    }
+    QCOMPARE(
+        QDir::cleanPath(
+            dialog.findChild<QLineEdit*>(
+                QStringLiteral("subPrepTargetFolderEdit")
+                )->text()
+            ),
+        QDir(documentsPath).filePath(QStringLiteral("DYB/Sub_Prep"))
+        );
+}
+
+void SubPrepPageTests
+    ::packageFolderNamesCoverDateRangesAndUnsafeCharacters()
+{
+    QCOMPARE(
+        SubPrepPackageService::datedFolderName(
+            QStringLiteral("Alex"),
+            {QDate(2026, 7, 20)}
+            ),
+        QStringLiteral("Alex (20 Jul 2026)")
+        );
+    QCOMPARE(
+        SubPrepPackageService::datedFolderName(
+            QStringLiteral("Alex"),
+            {QDate(2026, 7, 20), QDate(2026, 7, 22)}
+            ),
+        QStringLiteral("Alex (20 - 22 Jul 2026)")
+        );
+    QCOMPARE(
+        SubPrepPackageService::datedFolderName(
+            QStringLiteral("Alex"),
+            {QDate(2026, 7, 31), QDate(2026, 8, 3)}
+            ),
+        QStringLiteral("Alex (31 Jul - 03 Aug 2026)")
+        );
+    QCOMPARE(
+        SubPrepPackageService::datedFolderName(
+            QStringLiteral("Alex"),
+            {QDate(2026, 12, 31), QDate(2027, 1, 1)}
+            ),
+        QStringLiteral("Alex (31 Dec 2026 - 01 Jan 2027)")
+        );
+    QCOMPARE(
+        SubPrepPackageService::safePathComponent(
+            QStringLiteral("E4 / Susan: 4:00")
+            ),
+        QStringLiteral("E4 - Susan. 4.00")
+        );
+}
+
+void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
+{
+    ApplicationServices services;
+    QTemporaryDir targetRoot;
+    QVERIFY(targetRoot.isValid());
+
+    ScheduleViewModel schedule;
+    schedule.days = {QStringLiteral("Tuesday")};
+    ScheduleRowView row;
+    ScheduleCellView cell;
+    cell.day = QStringLiteral("Tuesday");
+    ScheduleEntry entry;
+    entry.classId = 42;
+    cell.entries.append(entry);
+    row.cells.append(cell);
+    schedule.rows.append(row);
+
+    CalendarEvent vacation;
+    vacation.eventType = QStringLiteral("Vacation");
+    vacation.startDate = QDate(2026, 7, 14);
+    vacation.endDate = QDate(2026, 7, 14);
+
+    SubPrepPrintDialog dialog(
+        &services,
+        schedule,
+        {vacation},
+        QDate(2026, 7, 13)
+        );
+    auto* nameEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepUserNameEdit")
+        );
+    auto* targetEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepTargetFolderEdit")
+        );
+    auto* okButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateOkButton")
+        );
+    auto* createFolderCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepCreateFolderCheckBox")
+        );
+    auto* printPaperCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepPrintPaperCopiesCheckBox")
+        );
+    auto* folderOptions = dialog.findChild<QWidget*>(
+        QStringLiteral("subPrepFolderOptions")
+        );
+    auto* outputPreview = dialog.findChild<QLabel*>(
+        QStringLiteral("subPrepOutputFolderPreview")
+        );
+    auto* validationLabel = dialog.findChild<QLabel*>(
+        QStringLiteral("subPrepGenerationValidationLabel")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(targetEdit);
+    QVERIFY(okButton);
+    QVERIFY(createFolderCheck);
+    QVERIFY(printPaperCheck);
+    QVERIFY(folderOptions);
+    QVERIFY(outputPreview);
+    QVERIFY(validationLabel);
+    auto* rootLayout = qobject_cast<QVBoxLayout*>(dialog.layout());
+    QVERIFY(rootLayout);
+    QCOMPARE(
+        rootLayout->itemAt(rootLayout->indexOf(printPaperCheck))->alignment(),
+        Qt::Alignment(Qt::AlignTop)
+        );
+    QVERIFY(nameEdit->isVisibleTo(&dialog));
+    QVERIFY(!okButton->isEnabled());
+
+    createFolderCheck->setChecked(false);
+    QVERIFY(!folderOptions->isEnabled());
+    QVERIFY(!okButton->isEnabled());
+    printPaperCheck->setChecked(true);
+    QVERIFY(okButton->isEnabled());
+    printPaperCheck->setChecked(false);
+    createFolderCheck->setChecked(true);
+
+    targetEdit->setText(targetRoot.path());
+    nameEdit->setText(QStringLiteral("Jamie"));
+    QVERIFY(okButton->isEnabled());
+    auto* folderLayout = qobject_cast<QGridLayout*>(folderOptions->layout());
+    QVERIFY(folderLayout);
+    QCOMPARE(
+        folderLayout->itemAtPosition(0, 0)->alignment(),
+        Qt::Alignment(Qt::AlignVCenter)
+        );
+    QCOMPARE(
+        folderLayout->itemAtPosition(0, 1)->alignment(),
+        Qt::Alignment(Qt::AlignVCenter)
+        );
+    QCOMPARE(
+        folderLayout->itemAtPosition(0, 2)->alignment(),
+        Qt::Alignment(Qt::AlignVCenter)
+        );
+    QCOMPARE(
+        outputPreview->text(),
+        QStringLiteral(".../Jamie (14 Jul 2026)")
+        );
+
+    dialog.show();
+    QTest::qWait(1);
+    const QSize readySize = dialog.size();
+    QCOMPARE(dialog.minimumSize(), readySize);
+    QCOMPARE(dialog.maximumSize(), readySize);
+    dialog.resize(readySize + QSize(100, 100));
+    QCOMPARE(dialog.size(), readySize);
+    createFolderCheck->setChecked(false);
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral(
+            "Choose Create Sub Prep Folder, Print Paper Copies, or both."
+            )
+        );
+    QTest::qWait(1);
+    QCOMPARE(dialog.size(), readySize);
+
+    createFolderCheck->setChecked(true);
+    okButton->click();
+
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("myInfo/name"))
+            .toString(),
+        QStringLiteral("Jamie")
         );
 }
 

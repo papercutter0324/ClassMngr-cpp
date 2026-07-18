@@ -869,6 +869,8 @@ if(BUILD_TESTING)
         src/features/sub_prep/ui/sub_prep_page_ui.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.cpp
         src/features/sub_prep/ui/sub_prep_print_dialog.h
+        src/features/sub_prep/services/sub_prep_package_service.cpp
+        src/features/sub_prep/services/sub_prep_package_service.h
         src/features/sub_prep/services/sub_prep_print_service.cpp
         src/features/sub_prep/services/sub_prep_print_service.h
         src/ui/shared/pages/basepage.cpp
@@ -1109,6 +1111,51 @@ if(BUILD_TESTING)
 
     set_tests_properties(
         ClassMngrSubPrepPrintPdfTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
+
+    qt_add_executable(ClassMngrSubPrepPackageServiceTests
+        tests/sub_prep_package_service_tests.cpp
+        src/core/fontmanager.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/domain/models/classroom.cpp
+        src/domain/models/roster.cpp
+        src/features/roster/services/roster_template_print_service.cpp
+        src/features/schedule/ui/schedule_time_formatter.cpp
+        src/features/schedule/ui/schedule_view_model.cpp
+        src/features/sub_prep/services/sub_prep_package_service.cpp
+        src/features/sub_prep/services/sub_prep_print_service.cpp
+    )
+
+    target_compile_features(ClassMngrSubPrepPackageServiceTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSubPrepPackageServiceTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSubPrepPackageServiceTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Pdf
+            Qt6::PrintSupport
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrSubPrepPackageServiceTests
+        COMMAND ClassMngrSubPrepPackageServiceTests
+    )
+
+    set_tests_properties(ClassMngrSubPrepPackageServiceTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"

@@ -64,7 +64,7 @@ protected:
 private slots:
     void handleEditableChanged();
     void autosave();
-    void printSubPrep();
+    void generateSubPrep();
 
 private:
     void buildUi();

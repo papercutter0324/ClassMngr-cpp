@@ -74,6 +74,33 @@ QString printJobTitle(
             );
 }
 
+QPageLayout::Orientation pageOrientation(
+    QPdfDocument* document,
+    int pageIndex,
+    QPageLayout::Orientation fallback
+    )
+{
+    if (!document || pageIndex < 0 || pageIndex >= document->pageCount())
+    {
+        return fallback;
+    }
+
+    const QSizeF size = document->pagePointSize(pageIndex);
+
+    if (
+        !size.isValid()
+        || size.isEmpty()
+        || qFuzzyCompare(size.width(), size.height())
+        )
+    {
+        return fallback;
+    }
+
+    return size.width() > size.height()
+        ? QPageLayout::Landscape
+        : QPageLayout::Portrait;
+}
+
 QList<int> allPageIndexes(
     QPdfDocument* document
     )
@@ -681,6 +708,42 @@ Result printPdfDocuments(
         lastPage = std::clamp(printer.toPage(), firstPage, pageCount);
     }
 
+    int firstIncludedGlobalPage = 0;
+    QPdfDocument* firstIncludedDocument = nullptr;
+    int firstIncludedDocumentPage = -1;
+    for (const std::unique_ptr<QPdfDocument>& document : documents)
+    {
+        for (int pageIndex = 0; pageIndex < document->pageCount(); ++pageIndex)
+        {
+            ++firstIncludedGlobalPage;
+            if (
+                firstIncludedGlobalPage >= firstPage
+                && firstIncludedGlobalPage <= lastPage
+                )
+            {
+                firstIncludedDocument = document.get();
+                firstIncludedDocumentPage = pageIndex;
+                break;
+            }
+        }
+
+        if (firstIncludedDocument)
+        {
+            break;
+        }
+    }
+
+    if (firstIncludedDocument)
+    {
+        printer.setPageOrientation(
+            pageOrientation(
+                firstIncludedDocument,
+                firstIncludedDocumentPage,
+                request.pageOrientation
+                )
+            );
+    }
+
     printer.setFullPage(!request.fitToPage);
     PdfPrintDialogSupport::RenderOptions options;
     options.grayscale = printer.colorMode() == QPrinter::GrayScale;
@@ -708,12 +771,23 @@ Result printPdfDocuments(
                 continue;
             }
 
-            if (printedPageCount > 0 && !printer.newPage())
+            if (printedPageCount > 0)
             {
-                painter.end();
-                return failed(
-                    QObject::tr("Unable to create a new printed page.")
+                printer.setPageOrientation(
+                    pageOrientation(
+                        document.get(),
+                        pageIndex,
+                        request.pageOrientation
+                        )
                     );
+
+                if (!printer.newPage())
+                {
+                    painter.end();
+                    return failed(
+                        QObject::tr("Unable to create a new printed page.")
+                        );
+                }
             }
 
             if (!renderPdfPageToPrinter(
