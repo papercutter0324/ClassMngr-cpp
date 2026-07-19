@@ -458,14 +458,10 @@ void SubPrepPage::generateSubPrep()
 
     if (auto* dataService = openDataService(m_services))
     {
-        const QDate currentWeekStart =
-            currentDate.addDays(
-                Qt::Monday - currentDate.dayOfWeek()
-                );
         calendarEvents =
             dataService->loadCalendarEventsInRange(
-                currentWeekStart,
-                currentWeekStart.addDays(11)
+                QDate(1, 1, 1),
+                QDate(9999, 12, 31)
                 );
     }
 

@@ -50,6 +50,11 @@ public:
         const QDate& referenceDate
         );
 
+    [[nodiscard]] static QList<QDate> defaultSelectedDates(
+        const QList<CalendarEvent>& calendarEvents,
+        const QDate& referenceDate
+        );
+
     [[nodiscard]] static QDate defaultWeekStart(
         const QList<CalendarEvent>& calendarEvents,
         const QDate& referenceDate
@@ -57,27 +62,23 @@ public:
 
 private:
     void buildUi();
-    void initializeDays(
-        const QList<CalendarEvent>& calendarEvents,
-        const QDate& referenceDate
-        );
+    void initializeDays();
     void updateFolderControls();
+    void updateVacationMode();
     void updateOutputPreview();
     void updateAcceptEnabled();
     void chooseTargetRoot();
     void acceptGeneration();
-    QStringList vacationDaysForWeek(
-        const QDate& weekStart
-        ) const;
 
     ApplicationServices* m_services = nullptr;
     ScheduleViewModel m_schedule;
-    QList<CalendarEvent> m_initialCalendarEvents;
     bool m_replaceExisting = false;
     QString m_storedUserName;
     QDate m_weekStart;
+    QList<QDate> m_vacationDates;
     QList<QCheckBox*> m_dayChecks;
 
+    QCheckBox* m_nextVacationCheck = nullptr;
     QCheckBox* m_createFolderCheck = nullptr;
     QWidget* m_folderOptions = nullptr;
     QLineEdit* m_targetRootEdit = nullptr;

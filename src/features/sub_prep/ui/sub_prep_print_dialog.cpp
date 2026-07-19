@@ -5,6 +5,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <QCheckBox>
 #include <QDir>
@@ -17,7 +18,9 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSet>
 #include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QVBoxLayout>
 
 namespace
@@ -29,6 +32,7 @@ const QStringList Weekdays{
     QStringLiteral("Thursday"),
     QStringLiteral("Friday")
 };
+constexpr int VacationLookaheadDays = 28;
 
 QDate weekStartFor(
     const QDate& date
@@ -69,33 +73,181 @@ QString displayDay(
     return SubPrepPrintDialog::tr("Friday");
 }
 
-QStringList vacationDaysInWeek(
+bool isWeekday(
+    const QDate& date
+    )
+{
+    return date.dayOfWeek() >= Qt::Monday
+        && date.dayOfWeek() <= Qt::Friday;
+}
+
+QSet<QDate> eventWeekdays(
     const QList<CalendarEvent>& calendarEvents,
-    const QDate& weekStart
+    const QString& eventType
+    )
+{
+    QSet<QDate> dates;
+
+    for (const CalendarEvent& event : calendarEvents)
+    {
+        if (
+            normalizedCalendarEventType(event.eventType) != eventType
+            || !event.startDate.isValid()
+            || !event.endDate.isValid()
+            || event.endDate < event.startDate
+            )
+        {
+            continue;
+        }
+
+        for (
+            QDate date = event.startDate;
+            date.isValid() && date <= event.endDate;
+            date = date.addDays(1)
+            )
+        {
+            if (isWeekday(date))
+            {
+                dates.insert(date);
+            }
+
+            if (date == event.endDate)
+            {
+                break;
+            }
+        }
+    }
+
+    return dates;
+}
+
+bool datesAreConnected(
+    const QDate& previousVacationDate,
+    const QDate& nextVacationDate,
+    const QSet<QDate>& holidayDates
+    )
+{
+    for (
+        QDate date = previousVacationDate.addDays(1);
+        date.isValid() && date < nextVacationDate;
+        date = date.addDays(1)
+        )
+    {
+        if (isWeekday(date) && !holidayDates.contains(date))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+QList<QDate> nextVacationDates(
+    const QList<CalendarEvent>& calendarEvents,
+    const QDate& referenceDate
+    )
+{
+    if (!referenceDate.isValid())
+    {
+        return {};
+    }
+
+    QList<QDate> vacationDates =
+        eventWeekdays(
+            calendarEvents,
+            QStringLiteral("Vacation")
+            ).values();
+    std::sort(vacationDates.begin(), vacationDates.end());
+
+    if (vacationDates.isEmpty())
+    {
+        return {};
+    }
+
+    const QSet<QDate> holidayDates =
+        eventWeekdays(
+            calendarEvents,
+            QStringLiteral("Holiday")
+            );
+    QList<QDate> block;
+
+    for (const QDate& vacationDate : std::as_const(vacationDates))
+    {
+        if (
+            !block.isEmpty()
+            && !datesAreConnected(
+                block.last(),
+                vacationDate,
+                holidayDates
+                )
+            )
+        {
+            if (block.last() >= referenceDate)
+            {
+                return block;
+            }
+            block.clear();
+        }
+
+        block.append(vacationDate);
+    }
+
+    return !block.isEmpty() && block.last() >= referenceDate
+        ? block
+        : QList<QDate>();
+}
+
+QList<QDate> nextVacationDatesWithinLookahead(
+    const QList<CalendarEvent>& calendarEvents,
+    const QDate& referenceDate
+    )
+{
+    const QList<QDate> vacationDates =
+        nextVacationDates(calendarEvents, referenceDate);
+
+    if (vacationDates.isEmpty() || !referenceDate.isValid())
+    {
+        return {};
+    }
+
+    const QDate lookaheadEnd =
+        referenceDate.addDays(VacationLookaheadDays);
+    const bool fallsWithinLookahead = std::any_of(
+        vacationDates.cbegin(),
+        vacationDates.cend(),
+        [&referenceDate, &lookaheadEnd](const QDate& date)
+        {
+            return date >= referenceDate && date <= lookaheadEnd;
+        }
+        );
+
+    return fallsWithinLookahead
+        ? vacationDates
+        : QList<QDate>();
+}
+
+QStringList weekdayNamesForDates(
+    const QList<QDate>& dates
     )
 {
     QStringList days;
 
-    for (int offset = 0; offset < Weekdays.size(); ++offset)
+    for (int index = 0; index < Weekdays.size(); ++index)
     {
-        const QDate date = weekStart.addDays(offset);
-        const bool vacation = std::any_of(
-            calendarEvents.cbegin(),
-            calendarEvents.cend(),
-            [&date](const CalendarEvent& event)
+        const Qt::DayOfWeek dayOfWeek =
+            static_cast<Qt::DayOfWeek>(Qt::Monday + index);
+        const bool selected = std::any_of(
+            dates.cbegin(),
+            dates.cend(),
+            [dayOfWeek](const QDate& date)
             {
-                return normalizedCalendarEventType(event.eventType)
-                    == QStringLiteral("Vacation")
-                    && event.startDate.isValid()
-                    && event.endDate.isValid()
-                    && event.startDate <= date
-                    && event.endDate >= date;
+                return date.dayOfWeek() == dayOfWeek;
             }
             );
 
-        if (vacation)
+        if (selected)
         {
-            days.append(Weekdays.at(offset));
+            days.append(Weekdays.at(index));
         }
     }
 
@@ -114,7 +266,6 @@ SubPrepPrintDialog::SubPrepPrintDialog(
     : QDialog(parent)
     , m_services(services)
     , m_schedule(schedule)
-    , m_initialCalendarEvents(calendarEvents)
 {
     if (m_services && m_services->dataService())
     {
@@ -128,8 +279,12 @@ SubPrepPrintDialog::SubPrepPrintDialog(
                 .trimmed();
     }
 
+    m_vacationDates =
+        defaultSelectedDates(calendarEvents, referenceDate);
+    m_weekStart = defaultWeekStart(calendarEvents, referenceDate);
+
     buildUi();
-    initializeDays(calendarEvents, referenceDate);
+    initializeDays();
     updateFolderControls();
     updateOutputPreview();
     updateAcceptEnabled();
@@ -161,8 +316,22 @@ void SubPrepPrintDialog::buildUi()
     rootLayout->setSpacing(12);
 
     auto* daysGroup = new QGroupBox(tr("Days to Include"), this);
+    daysGroup->setObjectName(QStringLiteral("subPrepDaysGroup"));
     auto* daysLayout = new QGridLayout(daysGroup);
     daysLayout->setObjectName(QStringLiteral("subPrepDaysLayout"));
+
+    const bool hasNearbyVacation = !m_vacationDates.isEmpty();
+    const int firstDayRow = hasNearbyVacation ? 1 : 0;
+
+    if (hasNearbyVacation)
+    {
+        m_nextVacationCheck =
+            new QCheckBox(tr("Next Vacation on the Calendar"), daysGroup);
+        m_nextVacationCheck->setObjectName(
+            QStringLiteral("subPrepNextVacationCheckBox")
+            );
+        daysLayout->addWidget(m_nextVacationCheck, 0, 0, 1, 3);
+    }
 
     for (int index = 0; index < Weekdays.size(); ++index)
     {
@@ -170,7 +339,11 @@ void SubPrepPrintDialog::buildUi()
         auto* checkBox = new QCheckBox(displayDay(day), daysGroup);
         checkBox->setObjectName(checkBoxObjectName(day));
         checkBox->setProperty("day", day);
-        daysLayout->addWidget(checkBox, index / 3, index % 3);
+        daysLayout->addWidget(
+            checkBox,
+            firstDayRow + index / 3,
+            index % 3
+            );
         m_dayChecks.append(checkBox);
 
         connect(
@@ -190,6 +363,16 @@ void SubPrepPrintDialog::buildUi()
     }
 
     rootLayout->addWidget(daysGroup);
+
+    if (m_nextVacationCheck)
+    {
+        connect(
+            m_nextVacationCheck,
+            &QCheckBox::toggled,
+            this,
+            &SubPrepPrintDialog::updateVacationMode
+            );
+    }
 
     m_createFolderCheck =
         new QCheckBox(tr("Create Sub Prep Folder"), this);
@@ -227,11 +410,14 @@ void SubPrepPrintDialog::buildUi()
     folderLayout->addWidget(m_nameLabel, 1, 0, Qt::AlignTop);
     folderLayout->addWidget(m_nameEdit, 1, 1, 1, 2, Qt::AlignTop);
 
+    auto* outputFolderLabel =
+        new QLabel(tr("Output Folder:"), m_folderOptions);
+    outputFolderLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     folderLayout->addWidget(
-        new QLabel(tr("Output Folder:"), m_folderOptions),
+        outputFolderLabel,
         2,
         0,
-        Qt::AlignTop
+        Qt::AlignVCenter
         );
     m_outputPreviewLabel = new QLabel(m_folderOptions);
     m_outputPreviewLabel->setObjectName(
@@ -241,13 +427,30 @@ void SubPrepPrintDialog::buildUi()
     m_outputPreviewLabel->setTextInteractionFlags(
         Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard
         );
+    m_outputPreviewLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    m_outputPreviewLabel->setFixedHeight(
+        2 * m_outputPreviewLabel->fontMetrics().lineSpacing()
+        );
     folderLayout->addWidget(
         m_outputPreviewLabel,
         2,
         1,
         1,
         2,
-        Qt::AlignTop
+        Qt::AlignVCenter
+        );
+
+    const int labelColumnWidth = std::max(
+        targetFolderLabel->sizeHint().width(),
+        outputFolderLabel->sizeHint().width()
+        );
+    const int labelToValueSpacing = std::max(
+        0,
+        folderLayout->horizontalSpacing()
+        );
+    folderLayout->setColumnMinimumWidth(
+        0,
+        labelColumnWidth + labelToValueSpacing
         );
 
     m_openFolderCheck =
@@ -343,15 +546,31 @@ void SubPrepPrintDialog::buildUi()
         this,
         &SubPrepPrintDialog::acceptGeneration
         );
+
+    daysGroup->setSizePolicy(
+        QSizePolicy::Preferred,
+        QSizePolicy::Fixed
+        );
+    daysGroup->setFixedHeight(daysGroup->sizeHint().height());
+    m_createFolderCheck->setFixedHeight(
+        m_createFolderCheck->sizeHint().height()
+        );
+    m_folderOptions->setSizePolicy(
+        QSizePolicy::Preferred,
+        QSizePolicy::Fixed
+        );
+    m_folderOptions->setFixedHeight(
+        m_folderOptions->sizeHint().height()
+        );
+    m_printPaperCheck->setFixedHeight(
+        m_printPaperCheck->sizeHint().height()
+        );
 }
 
-void SubPrepPrintDialog::initializeDays(
-    const QList<CalendarEvent>& calendarEvents,
-    const QDate& referenceDate
-    )
+void SubPrepPrintDialog::initializeDays()
 {
-    m_weekStart = defaultWeekStart(calendarEvents, referenceDate);
-    const QStringList vacationDays = vacationDaysForWeek(m_weekStart);
+    const QStringList vacationDays =
+        weekdayNamesForDates(m_vacationDates);
 
     for (int index = 0; index < m_dayChecks.size(); ++index)
     {
@@ -360,36 +579,13 @@ void SubPrepPrintDialog::initializeDays(
         const QSignalBlocker blocker(checkBox);
         checkBox->setChecked(vacationDays.contains(day));
     }
-}
 
-QStringList SubPrepPrintDialog::vacationDaysForWeek(
-    const QDate& weekStart
-    ) const
-{
-    const QStringList initialDays =
-        vacationDaysInWeek(m_initialCalendarEvents, weekStart);
-
-    if (!initialDays.isEmpty())
+    if (m_nextVacationCheck)
     {
-        return initialDays;
+        const QSignalBlocker blocker(m_nextVacationCheck);
+        m_nextVacationCheck->setChecked(true);
     }
-
-    if (
-        m_services
-        && m_services->dataService()
-        && m_services->dataService()->isOpen()
-        )
-    {
-        return vacationDaysInWeek(
-            m_services->dataService()->loadCalendarEventsInRange(
-                weekStart,
-                weekStart.addDays(4)
-                ),
-            weekStart
-            );
-    }
-
-    return initialDays;
+    updateVacationMode();
 }
 
 void SubPrepPrintDialog::updateFolderControls()
@@ -399,6 +595,37 @@ void SubPrepPrintDialog::updateFolderControls()
         m_folderOptions->setEnabled(createFolder());
     }
     updateOutputPreview();
+}
+
+void SubPrepPrintDialog::updateVacationMode()
+{
+    const bool useNextVacation =
+        m_nextVacationCheck
+        && m_nextVacationCheck->isChecked();
+
+    if (useNextVacation)
+    {
+        const QStringList vacationDays =
+            weekdayNamesForDates(m_vacationDates);
+
+        for (QCheckBox* checkBox : std::as_const(m_dayChecks))
+        {
+            const QSignalBlocker blocker(checkBox);
+            checkBox->setChecked(
+                vacationDays.contains(
+                    checkBox->property("day").toString()
+                    )
+                );
+        }
+    }
+
+    for (QCheckBox* checkBox : std::as_const(m_dayChecks))
+    {
+        checkBox->setEnabled(!useNextVacation);
+    }
+
+    updateOutputPreview();
+    updateAcceptEnabled();
 }
 
 void SubPrepPrintDialog::updateOutputPreview()
@@ -416,9 +643,7 @@ void SubPrepPrintDialog::updateOutputPreview()
 
     if (folderName.isEmpty() || userName().trimmed().isEmpty())
     {
-        m_outputPreviewLabel->setText(
-            tr("Select days and enter your name to preview the output folder.")
-            );
+        m_outputPreviewLabel->clear();
         return;
     }
 
@@ -433,11 +658,26 @@ void SubPrepPrintDialog::updateAcceptEnabled()
 
     if (!createFolder() && !printPaperCopies())
     {
-        error = tr("Choose Create Sub Prep Folder, Print Paper Copies, or both.");
+        error = tr(
+            "Select Create Folder and/or Print Paper Copies to continue."
+            );
     }
     else if (selectedDates().isEmpty())
     {
-        error = tr("Select at least one day to include.");
+        if (createFolder() && userName().trimmed().isEmpty())
+        {
+            error = tr(
+                "Select days and enter your name to preview the output folder."
+                );
+        }
+        else if (createFolder())
+        {
+            error = tr("Select days to preview the output folder.");
+        }
+        else
+        {
+            error = tr("Select at least one day to include.");
+        }
     }
     else if (selectedClassIds().isEmpty())
     {
@@ -539,6 +779,14 @@ void SubPrepPrintDialog::acceptGeneration()
 
 QList<QDate> SubPrepPrintDialog::selectedDates() const
 {
+    if (
+        m_nextVacationCheck
+        && m_nextVacationCheck->isChecked()
+        )
+    {
+        return m_vacationDates;
+    }
+
     QList<QDate> dates;
 
     if (!m_weekStart.isValid())
@@ -631,21 +879,20 @@ QStringList SubPrepPrintDialog::defaultSelectedDays(
     const QDate& referenceDate
     )
 {
-    if (!referenceDate.isValid())
-    {
-        return {};
-    }
+    return weekdayNamesForDates(
+        defaultSelectedDates(calendarEvents, referenceDate)
+        );
+}
 
-    const QDate currentWeek = weekStartFor(referenceDate);
-    const QStringList currentDays =
-        vacationDaysInWeek(calendarEvents, currentWeek);
-
-    if (!currentDays.isEmpty())
-    {
-        return currentDays;
-    }
-
-    return vacationDaysInWeek(calendarEvents, currentWeek.addDays(7));
+QList<QDate> SubPrepPrintDialog::defaultSelectedDates(
+    const QList<CalendarEvent>& calendarEvents,
+    const QDate& referenceDate
+    )
+{
+    return nextVacationDatesWithinLookahead(
+        calendarEvents,
+        referenceDate
+        );
 }
 
 QDate SubPrepPrintDialog::defaultWeekStart(
@@ -653,19 +900,10 @@ QDate SubPrepPrintDialog::defaultWeekStart(
     const QDate& referenceDate
     )
 {
-    if (!referenceDate.isValid())
-    {
-        return {};
-    }
+    const QList<QDate> vacationDates =
+        defaultSelectedDates(calendarEvents, referenceDate);
 
-    const QDate currentWeek = weekStartFor(referenceDate);
-    if (!vacationDaysInWeek(calendarEvents, currentWeek).isEmpty())
-    {
-        return currentWeek;
-    }
-    if (!vacationDaysInWeek(calendarEvents, currentWeek.addDays(7)).isEmpty())
-    {
-        return currentWeek.addDays(7);
-    }
-    return currentWeek;
+    return !vacationDates.isEmpty()
+        ? weekStartFor(vacationDates.first())
+        : weekStartFor(referenceDate);
 }

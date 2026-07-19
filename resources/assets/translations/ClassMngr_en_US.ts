@@ -5817,7 +5817,7 @@ Comments: Please leave a comment about what the student did well and what they n
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="660"/>
-        <source>Choose Create Sub Prep Folder, Print Paper Copies, or both.</source>
+        <source>Select Create Folder and/or Print Paper Copies to continue.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
