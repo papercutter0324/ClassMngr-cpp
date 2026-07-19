@@ -1189,6 +1189,9 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
     auto* validationLabel = dialog.findChild<QLabel*>(
         QStringLiteral("subPrepGenerationValidationLabel")
         );
+    auto* nameHint = dialog.findChild<QLabel*>(
+        QStringLiteral("subPrepUserNameHintLabel")
+        );
     QVERIFY(nameEdit);
     QVERIFY(targetEdit);
     QVERIFY(okButton);
@@ -1199,6 +1202,7 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
     QVERIFY(folderOptions);
     QVERIFY(outputPreview);
     QVERIFY(validationLabel);
+    QVERIFY(nameHint);
     auto* rootLayout = qobject_cast<QVBoxLayout*>(dialog.layout());
     QVERIFY(rootLayout);
     QCOMPARE(
@@ -1206,6 +1210,9 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
         Qt::Alignment(Qt::AlignTop)
         );
     QVERIFY(nameEdit->isVisibleTo(&dialog));
+    QVERIFY(nameHint->isVisibleTo(&dialog));
+    QCOMPARE(nameHint->text(), QStringLiteral("Enter your name to continue."));
+    QVERIFY(nameHint->wordWrap());
     QVERIFY(!okButton->isEnabled());
 
     createFolderCheck->setChecked(false);
@@ -1241,11 +1248,23 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
         folderLayout->itemAtPosition(2, 1)->alignment(),
         Qt::Alignment(Qt::AlignVCenter)
         );
+    QCOMPARE(
+        folderLayout->itemAtPosition(3, 1)->widget(),
+        nameHint
+        );
+    QCOMPARE(
+        folderLayout->itemAtPosition(4, 0)->alignment(),
+        Qt::Alignment(Qt::AlignVCenter)
+        );
+    QCOMPARE(
+        folderLayout->itemAtPosition(4, 1)->alignment(),
+        Qt::Alignment(Qt::AlignVCenter)
+        );
     auto* targetFolderLabel = qobject_cast<QLabel*>(
         folderLayout->itemAtPosition(0, 0)->widget()
         );
     auto* outputFolderLabel = qobject_cast<QLabel*>(
-        folderLayout->itemAtPosition(2, 0)->widget()
+        folderLayout->itemAtPosition(4, 0)->widget()
         );
     QVERIFY(targetFolderLabel);
     QVERIFY(outputFolderLabel);
@@ -1278,6 +1297,7 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
     const QSize readySize = dialog.size();
     QCOMPARE(dialog.minimumSize(), readySize);
     QCOMPARE(dialog.maximumSize(), readySize);
+    QVERIFY(nameHint->geometry().top() > nameEdit->geometry().bottom());
     dialog.resize(readySize + QSize(100, 100));
     QCOMPARE(dialog.size(), readySize);
     createFolderCheck->setChecked(false);

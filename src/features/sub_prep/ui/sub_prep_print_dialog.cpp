@@ -386,6 +386,13 @@ void SubPrepPrintDialog::buildUi()
     m_folderOptions->setObjectName(QStringLiteral("subPrepFolderOptions"));
     auto* folderLayout = new QGridLayout(m_folderOptions);
     folderLayout->setContentsMargins(24, 0, 0, 0);
+    const int sectionSpacing = std::max(
+        0,
+        folderLayout->verticalSpacing()
+        );
+    folderLayout->setVerticalSpacing(0);
+    folderLayout->setRowMinimumHeight(1, sectionSpacing);
+    folderLayout->setRowMinimumHeight(5, sectionSpacing);
 
     auto* targetFolderLabel =
         new QLabel(tr("Target Folder:"), m_folderOptions);
@@ -402,20 +409,27 @@ void SubPrepPrintDialog::buildUi()
         );
     folderLayout->addWidget(selectFolderButton, 0, 2, Qt::AlignVCenter);
 
-    m_nameLabel = new QLabel(tr("Your Name"), m_folderOptions);
+    m_nameLabel = new QLabel(tr("Your Name:"), m_folderOptions);
+    m_nameLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     m_nameEdit = new QLineEdit(m_folderOptions);
     m_nameEdit->setObjectName(QStringLiteral("subPrepUserNameEdit"));
+    auto* nameHint =
+        new QLabel(tr("Enter your name to continue."), m_folderOptions);
+    nameHint->setObjectName(QStringLiteral("subPrepUserNameHintLabel"));
+    nameHint->setWordWrap(true);
     m_nameEdit->setVisible(m_storedUserName.isEmpty());
     m_nameLabel->setVisible(m_storedUserName.isEmpty());
-    folderLayout->addWidget(m_nameLabel, 1, 0, Qt::AlignTop);
-    folderLayout->addWidget(m_nameEdit, 1, 1, 1, 2, Qt::AlignTop);
+    nameHint->setVisible(m_storedUserName.isEmpty());
+    folderLayout->addWidget(m_nameLabel, 2, 0, Qt::AlignVCenter);
+    folderLayout->addWidget(m_nameEdit, 2, 1, 1, 2, Qt::AlignVCenter);
+    folderLayout->addWidget(nameHint, 3, 1, 1, 2, Qt::AlignTop);
 
     auto* outputFolderLabel =
         new QLabel(tr("Output Folder:"), m_folderOptions);
     outputFolderLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     folderLayout->addWidget(
         outputFolderLabel,
-        2,
+        4,
         0,
         Qt::AlignVCenter
         );
@@ -433,7 +447,7 @@ void SubPrepPrintDialog::buildUi()
         );
     folderLayout->addWidget(
         m_outputPreviewLabel,
-        2,
+        4,
         1,
         1,
         2,
@@ -461,13 +475,13 @@ void SubPrepPrintDialog::buildUi()
     m_openFolderCheck->setChecked(true);
     folderLayout->addWidget(
         m_openFolderCheck,
-        3,
+        6,
         1,
         1,
         2,
         Qt::AlignTop
         );
-    folderLayout->setRowStretch(4, 1);
+    folderLayout->setRowStretch(7, 1);
     rootLayout->addWidget(m_folderOptions);
 
     m_printPaperCheck = new QCheckBox(tr("Print Paper Copies"), this);

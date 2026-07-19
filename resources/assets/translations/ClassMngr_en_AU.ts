@@ -5369,7 +5369,7 @@ Comments: Please leave a comment about what the student did well and what they n
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="290"/>
-        <source>Your Name</source>
+        <source>Your Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
