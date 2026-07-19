@@ -151,6 +151,7 @@ QRadioButton {
     spacing: 6px;
 }
 
+QAbstractItemView::indicator,
 QCheckBox::indicator,
 QRadioButton::indicator {
     width: 18px;
@@ -159,6 +160,7 @@ QRadioButton::indicator {
     border: 2px solid #7f8c8d;
 }
 
+QAbstractItemView::indicator,
 QCheckBox::indicator {
     border-radius: 4px;
 }
@@ -167,6 +169,7 @@ QRadioButton::indicator {
     border-radius: 9px;
 }
 
+QAbstractItemView::indicator:hover,
 QCheckBox::indicator:hover,
 QCheckBox::indicator:focus,
 QRadioButton::indicator:hover,
@@ -174,26 +177,37 @@ QRadioButton::indicator:focus {
     border-color: #3daee9;
 }
 
+QAbstractItemView::indicator:checked,
 QCheckBox::indicator:checked {
-    image: url(:/assets/icons/check_dark.svg);
+    image: url(:/assets/icons/check.png);
     background-color: #3daee9;
     border-color: #3daee9;
 }
 
+QAbstractItemView::indicator:indeterminate,
 QCheckBox::indicator:indeterminate {
     background-color: #3daee9;
     border-color: #3daee9;
 }
 
 QRadioButton::indicator:checked {
+    image: url(:/assets/icons/radio_checked.png);
     background-color: #292c30;
-    border: 6px solid #3daee9;
+    border: 2px solid #3daee9;
 }
 
+QAbstractItemView::indicator:disabled,
 QCheckBox::indicator:disabled,
 QRadioButton::indicator:disabled {
     background-color: #31363b;
     border-color: #4b5056;
+}
+
+QAbstractItemView::indicator:checked:disabled,
+QCheckBox::indicator:checked:disabled {
+    image: url(:/assets/icons/check.png);
+    background-color: #31586b;
+    border-color: #31586b;
 }
 
 QComboBox:editable,

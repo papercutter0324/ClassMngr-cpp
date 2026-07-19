@@ -277,6 +277,7 @@ void CampusDashboardPage::applyAdminMode()
 
     if (m_printerDriverUrlUnavailableCheck)
     {
+        m_printerDriverUrlUnavailableCheck->setVisible(m_adminMode);
         m_printerDriverUrlUnavailableCheck->setEnabled(m_adminMode);
     }
 
@@ -284,6 +285,7 @@ void CampusDashboardPage::applyAdminMode()
 
     if (m_photocopierCodeUnavailableCheck)
     {
+        m_photocopierCodeUnavailableCheck->setVisible(m_adminMode);
         m_photocopierCodeUnavailableCheck->setEnabled(m_adminMode);
     }
 

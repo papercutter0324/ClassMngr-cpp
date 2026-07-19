@@ -278,12 +278,12 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/Inter.ttc
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
-        resources/assets/icons/check_dark.svg
-        resources/assets/icons/check_light.svg
+        resources/assets/icons/check.png
         resources/assets/icons/combo_arrow_dark.svg
         resources/assets/icons/combo_arrow_light.svg
         resources/assets/icons/spin_up_dark.svg
         resources/assets/icons/spin_up_light.svg
+        resources/assets/icons/radio_checked.png
         resources/assets/icons/icon_256x256.png
         resources/assets/images/dyb.png
         resources/assets/splash/splash.png
@@ -597,6 +597,48 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrFontManagerTests
         COMMAND ClassMngrFontManagerTests
+    )
+
+    qt_add_executable(ClassMngrCheckboxStyleTests
+        tests/checkbox_style_tests.cpp
+    )
+
+    qt_add_resources(ClassMngrCheckboxStyleTests checkbox_style_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/check.png
+            resources/assets/icons/combo_arrow_dark.svg
+            resources/assets/icons/combo_arrow_light.svg
+            resources/assets/icons/radio_checked.png
+            resources/assets/icons/spin_up_dark.svg
+            resources/assets/icons/spin_up_light.svg
+            resources/assets/styles/dark.qss
+            resources/assets/styles/light.qss
+    )
+
+    target_compile_features(ClassMngrCheckboxStyleTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_link_libraries(ClassMngrCheckboxStyleTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrCheckboxStyleTests
+        COMMAND ClassMngrCheckboxStyleTests
+    )
+
+    set_tests_properties(
+        ClassMngrCheckboxStyleTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrTeacherInfoSectionTests
@@ -1328,6 +1370,65 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrCampusMapTests
         COMMAND ClassMngrCampusMapTests
+    )
+
+    qt_add_executable(ClassMngrCampusDashboardPageTests
+        tests/campus_dashboard_page_tests.cpp
+        src/core/fontmanager.cpp
+        src/core/resource_packs/resource_pack_manager.cpp
+        src/core/settingsmanager.cpp
+        src/core/updater/version.cpp
+        src/features/campus/data/campus_json_codec.cpp
+        src/features/campus/data/campus_json_repository.cpp
+        src/features/campus/ui/campus_dashboard_page.cpp
+        src/features/campus/ui/campus_dashboard_page_address.cpp
+        src/features/campus/ui/campus_dashboard_page_address_ui.cpp
+        src/features/campus/ui/campus_dashboard_page_data.cpp
+        src/features/campus/ui/campus_dashboard_page_detail.cpp
+        src/features/campus/ui/campus_dashboard_page_directions_ui.cpp
+        src/features/campus/ui/campus_dashboard_page_form.cpp
+        src/features/campus/ui/campus_dashboard_page_housing.cpp
+        src/features/campus/ui/campus_dashboard_page_information_ui.cpp
+        src/features/campus/ui/campus_dashboard_page_map_ui.cpp
+        src/features/campus/ui/campus_dashboard_page_ui.cpp
+        src/features/campus/ui/campus_map_preview.cpp
+        src/ui/shared/pages/basepage.cpp
+        src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
+    )
+
+    target_compile_features(ClassMngrCampusDashboardPageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrCampusDashboardPageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrCampusDashboardPageTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrCampusDashboardPageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrCampusDashboardPageTests
+        COMMAND ClassMngrCampusDashboardPageTests
+    )
+
+    set_tests_properties(
+        ClassMngrCampusDashboardPageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
