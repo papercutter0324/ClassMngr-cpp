@@ -64,17 +64,6 @@ QStringList Sidebar::expandedRootKeys() const
         }
     }
 
-    auto* classListRoot =
-        childWithKey(
-            m_nodes.value("my_info", nullptr),
-            QStringLiteral("my_info_class_list")
-            );
-
-    if (classListRoot && classListRoot->isExpanded())
-    {
-        keys.append(QStringLiteral("my_info_class_list"));
-    }
-
     return keys;
 }
 
@@ -96,16 +85,6 @@ void Sidebar::restoreExpandedRootKeys(
         }
     }
 
-    if (auto* classListRoot =
-        childWithKey(
-            m_nodes.value("my_info", nullptr),
-            QStringLiteral("my_info_class_list")
-            ))
-    {
-        classListRoot->setExpanded(
-            keys.contains(QStringLiteral("my_info_class_list"))
-            );
-    }
 }
 
 QStringList Sidebar::selectedKeys() const
@@ -274,4 +253,3 @@ QTreeWidgetItem* Sidebar::createItem(
 // =========================================================
 // Add Class
 // =========================================================
-

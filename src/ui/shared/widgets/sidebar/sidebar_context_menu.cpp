@@ -99,11 +99,7 @@ void Sidebar::showContextMenu(
 
     else if (
         item == m_nodes["classes"]
-        || item
-            == childWithKey(
-                m_nodes.value("my_info", nullptr),
-                QStringLiteral("my_info_class_list")
-                )
+        || item == m_nodes["my_info_class_list"]
         )
     {
         addClassAction();

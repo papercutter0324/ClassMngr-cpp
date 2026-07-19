@@ -2546,8 +2546,8 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
-        <source>Class List</source>
-        <translation>Class List</translation>
+        <source>Individual Class List</source>
+        <translation>Individual Class List</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="17"/>

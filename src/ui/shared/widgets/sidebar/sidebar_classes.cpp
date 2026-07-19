@@ -6,9 +6,9 @@ void Sidebar::addClassNode(
     )
 {
     auto* classListRoot =
-        childWithKey(
-            m_nodes.value("my_info", nullptr),
-            QStringLiteral("my_info_class_list")
+        m_nodes.value(
+            QStringLiteral("my_info_class_list"),
+            nullptr
             );
 
     if (!classListRoot)
@@ -72,9 +72,9 @@ void Sidebar::addClassNode(
 void Sidebar::clearClasses()
 {
     auto* classListRoot =
-        childWithKey(
-            m_nodes.value("my_info", nullptr),
-            QStringLiteral("my_info_class_list")
+        m_nodes.value(
+            QStringLiteral("my_info_class_list"),
+            nullptr
             );
 
     if (!classListRoot)
@@ -159,4 +159,3 @@ int Sidebar::getSelectedClassId() const
 // =========================================================
 // Add Teacher
 // =========================================================
-

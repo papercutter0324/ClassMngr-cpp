@@ -74,26 +74,16 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
         );
     QVERIFY(tree);
 
-    QTreeWidgetItem* myInfo =
-        topLevelWithKey(tree, QStringLiteral("my_info"));
-    QVERIFY(myInfo);
-    QVERIFY(
-        !childWithKey(
-            myInfo,
-            QStringLiteral("my_info_calendar")
-            )
-        );
-    QVERIFY(
-        !childWithKey(
-            myInfo,
-            QStringLiteral("my_info_class_information")
-            )
-        );
+    QTreeWidgetItem* myInformation =
+        topLevelWithKey(tree, QStringLiteral("my_info_information"));
+    QVERIFY(myInformation);
+    QCOMPARE(myInformation->text(0), QStringLiteral("My Information"));
+    QCOMPARE(myInformation->childCount(), 0);
 
     QTreeWidgetItem* classList =
-        childWithKey(myInfo, QStringLiteral("my_info_class_list"));
+        topLevelWithKey(tree, QStringLiteral("my_info_class_list"));
     QVERIFY(classList);
-    QCOMPARE(classList->text(0), QStringLiteral("Class List"));
+    QCOMPARE(classList->text(0), QStringLiteral("Individual Class List"));
     QCOMPARE(classList->childCount(), 1);
     classList->setExpanded(true);
     QVERIFY(
@@ -153,7 +143,6 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
     QCOMPARE(
         navigation.keys,
         QStringList({
-            QStringLiteral("my_info"),
             QStringLiteral("my_info_class_list"),
             QStringLiteral("class"),
             QStringLiteral("class_details")
@@ -170,12 +159,15 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
     QVERIFY(tree);
 
     const QStringList expectedKeys{
-        QStringLiteral("my_info"),
+        QStringLiteral("my_info_information"),
+        QStringLiteral("my_info_schedule"),
         QStringLiteral("my_info_calendar"),
         QStringLiteral("classes"),
         QStringLiteral("my_info_class_roster"),
         QStringLiteral("speaking_evaluations"),
-        QStringLiteral("sub_prep")
+        QStringLiteral("sub_prep"),
+        QStringLiteral("teachers"),
+        QStringLiteral("my_info_class_list")
     };
 
     for (int index = 0; index < expectedKeys.size(); ++index)
@@ -196,10 +188,33 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
         NodeType::Page
         );
 
+    QTreeWidgetItem* schedule =
+        topLevelWithKey(tree, QStringLiteral("my_info_schedule"));
+    QVERIFY(schedule);
+    QCOMPARE(schedule->text(0), QStringLiteral("Schedule"));
+    QCOMPARE(
+        static_cast<NodeType>(
+            schedule->data(0, Qt::UserRole).toInt()
+            ),
+        NodeType::Page
+        );
+
     sidebar.selectMyInfoSection(QStringLiteral("my_info_calendar"));
     QCOMPARE(
         sidebar.selectedKeys(),
         QStringList({QStringLiteral("my_info_calendar")})
+        );
+
+    sidebar.selectMyInfoSection(QStringLiteral("my_info_information"));
+    QCOMPARE(
+        sidebar.selectedKeys(),
+        QStringList({QStringLiteral("my_info_information")})
+        );
+
+    sidebar.selectMyInfoSection(QStringLiteral("my_info_schedule"));
+    QCOMPARE(
+        sidebar.selectedKeys(),
+        QStringList({QStringLiteral("my_info_schedule")})
         );
 
     QTreeWidgetItem* subPrep =

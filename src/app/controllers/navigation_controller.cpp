@@ -438,12 +438,6 @@ void NavigationController::handleNavigation(
         return;
 
     case NodeType::Root:
-        if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("my_info"))
-        {
-            handleMyInfo(data);
-            return;
-        }
-
         if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("sub_prep"))
         {
             handleSubPrep(data);
@@ -569,13 +563,11 @@ void NavigationController::handleNavigation(
             return;
         }
 
-        if (data.routeKey == QStringLiteral("my_info_calendar"))
-        {
-            handleMyInfo(data);
-            return;
-        }
-
-        if (data.keys.first() == QStringLiteral("my_info"))
+        if (
+            data.routeKey == QStringLiteral("my_info_information")
+            || data.routeKey == QStringLiteral("my_info_schedule")
+            || data.routeKey == QStringLiteral("my_info_calendar")
+            )
         {
             handleMyInfo(data);
             return;
@@ -731,14 +723,8 @@ void NavigationController::handleMyInfo(
         return;
     }
 
-    const bool rootClick =
-        data.keys.size() == 1
-        && data.routeKey == QStringLiteral("my_info");
-
     const QString sectionKey =
-        rootClick
-            ? QStringLiteral("my_info_information")
-            : data.routeKey;
+        data.routeKey;
 
     PageType targetPageType =
         PageType::PersonalDetails;
@@ -786,27 +772,17 @@ void NavigationController::handleMyInfo(
 
     m_pages->showPage(targetPageType);
 
-    if (rootClick)
-    {
-        m_sidebar->selectMyInfoSection(
-            QStringLiteral("my_info_information")
-            );
-        m_pages->personalDetailsPage()->scrollToTop();
-    }
-    else
-    {
-        m_sidebar->selectMyInfoSection(
-            selectedSectionKey
-            );
+    m_sidebar->selectMyInfoSection(
+        selectedSectionKey
+        );
 
-        if (sectionKey == QStringLiteral("my_info_calendar"))
-        {
-            m_pages->calendarPage()->scrollToTop();
-        }
-        else if (sectionKey == QStringLiteral("my_info_information"))
-        {
-            m_pages->personalDetailsPage()->scrollToTop();
-        }
+    if (sectionKey == QStringLiteral("my_info_calendar"))
+    {
+        m_pages->calendarPage()->scrollToTop();
+    }
+    else if (sectionKey == QStringLiteral("my_info_information"))
+    {
+        m_pages->personalDetailsPage()->scrollToTop();
     }
 }
 

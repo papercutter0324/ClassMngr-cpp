@@ -354,17 +354,10 @@ void ClassTabNavigationTests::sidebarDefinesClassListAndClassesPage()
             return nullptr;
         };
 
-    const TreeNodeSpec* myInfo =
-        findNode(tree, QStringLiteral("my_info"));
-    QVERIFY(myInfo);
-
     const TreeNodeSpec* classList =
-        findNode(
-            myInfo->children,
-            QStringLiteral("my_info_class_list")
-            );
+        findNode(tree, QStringLiteral("my_info_class_list"));
     QVERIFY(classList);
-    QCOMPARE(classList->label, QStringLiteral("Class List"));
+    QCOMPARE(classList->label, QStringLiteral("Individual Class List"));
     QCOMPARE(classList->type, NodeType::Root);
 
     const TreeNodeSpec* classes =

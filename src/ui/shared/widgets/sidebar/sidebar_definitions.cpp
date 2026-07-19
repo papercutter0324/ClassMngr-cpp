@@ -13,29 +13,15 @@ QList<TreeNodeSpec> treeStructure()
     return
     {
         {
-            "my_info",
-            QObject::tr("My Info"),
-            NodeType::Root,
+            "my_info_information",
+            QObject::tr("My Information"),
+            NodeType::Page
+        },
 
-            {
-                {
-                    "my_info_information",
-                    QObject::tr("My Information"),
-                    NodeType::Page
-                },
-
-                {
-                    "my_info_schedule",
-                    QObject::tr("Schedule"),
-                    NodeType::Page
-                },
-
-                {
-                    "my_info_class_list",
-                    QObject::tr("Class List"),
-                    NodeType::Root
-                }
-            }
+        {
+            "my_info_schedule",
+            QObject::tr("Schedule"),
+            NodeType::Page
         },
 
         {
@@ -86,6 +72,12 @@ QList<TreeNodeSpec> treeStructure()
                     NodeType::Root
                 }
             }
+        },
+
+        {
+            "my_info_class_list",
+            QObject::tr("Individual Class List"),
+            NodeType::Root
         },
 
         {

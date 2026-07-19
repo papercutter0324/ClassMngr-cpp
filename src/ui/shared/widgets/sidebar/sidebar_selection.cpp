@@ -70,8 +70,10 @@ void Sidebar::setDatabaseSectionsVisible(
     m_databaseSectionsVisible = visible;
 
     const QStringList databaseNodeKeys{
-        QStringLiteral("my_info"),
+        QStringLiteral("my_info_information"),
+        QStringLiteral("my_info_schedule"),
         QStringLiteral("my_info_calendar"),
+        QStringLiteral("my_info_class_list"),
         QStringLiteral("my_info_class_roster"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
@@ -146,8 +148,7 @@ void Sidebar::onItemClicked(
     // =====================================================
 
     if (
-        item == m_nodes.value("my_info")
-        || item == m_nodes.value("campus_info")
+        item == m_nodes.value("campus_info")
         )
     {
         const bool previousSelectionInsideGroup =
@@ -353,33 +354,7 @@ void Sidebar::selectMyInfoSection(
         const QSignalBlocker blocker(m_tree);
         m_tree->setCurrentItem(topLevelSection);
         m_tree->scrollToItem(topLevelSection);
-        return;
     }
-
-    auto* myInfoRoot =
-        m_nodes.value("my_info", nullptr);
-
-    if (!myInfoRoot)
-    {
-        return;
-    }
-
-    myInfoRoot->setExpanded(true);
-
-    auto* sectionItem =
-        childWithKey(
-            myInfoRoot,
-            sectionKey
-            );
-
-    if (!sectionItem)
-    {
-        return;
-    }
-
-    const QSignalBlocker blocker(m_tree);
-    m_tree->setCurrentItem(sectionItem);
-    m_tree->scrollToItem(sectionItem);
 }
 
 void Sidebar::selectCampusSection(
@@ -641,4 +616,3 @@ QTreeWidgetItem* Sidebar::childWithText(
 // =========================================================
 // Context Menu
 // =========================================================
-

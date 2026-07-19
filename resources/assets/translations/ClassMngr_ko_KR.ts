@@ -3670,8 +3670,8 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
-        <source>Class List</source>
-        <translation>수업 목록</translation>
+        <source>Individual Class List</source>
+        <translation>개별 수업 목록</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="451"/>
