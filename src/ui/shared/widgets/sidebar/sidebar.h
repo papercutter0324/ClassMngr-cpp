@@ -138,6 +138,8 @@ signals:
 
     void deleteClassRequested();
 
+    void exportClassRequested(int classId);
+
     void addTeacherRequested();
 
     void deleteTeacherRequested();

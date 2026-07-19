@@ -164,265 +164,289 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="330"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="340"/>
         <source>New Database...</source>
         <translation>New Database...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="93"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="331"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="341"/>
         <source>Create a new database</source>
         <translation>Create a new database</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="338"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="348"/>
         <source>Open...</source>
         <translation>Open...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="339"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="349"/>
         <source>Open an existing file</source>
         <translation>Open an existing file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="102"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="346"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="356"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="103"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="347"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="357"/>
         <source>Save the current file</source>
         <translation>Save the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="107"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="354"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="364"/>
         <source>Save As...</source>
         <translation>Save As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="108"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="355"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="365"/>
         <source>Save the file with a new name</source>
         <translation>Save the file with a new name</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="112"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="360"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="370"/>
         <source>Export As...</source>
         <translation>Export As...</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="113"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="361"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="371"/>
         <source>Export the current file</source>
         <translation>Export the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="117"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="368"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
         <source>Close</source>
         <translation>Close</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="118"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="369"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="379"/>
         <source>Close the current file</source>
         <translation>Close the current file</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="376"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="386"/>
         <source>Exit</source>
         <translation>Exit</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="123"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="377"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="387"/>
         <source>Exit the application</source>
         <translation>Exit the application</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="128"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="395"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
         <source>Undo</source>
         <translation>Undo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="129"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="396"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="406"/>
         <source>Undo the last action</source>
         <translation>Undo the last action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="133"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="402"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
         <source>Redo</source>
         <translation>Redo</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="134"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="403"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="413"/>
         <source>Redo the last undone action</source>
         <translation>Redo the last undone action</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="138"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="409"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="419"/>
         <source>Cut</source>
         <translation>Cut</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="139"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="410"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="420"/>
         <source>Cut the selected content</source>
         <translation>Cut the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="143"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="416"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="426"/>
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="144"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="417"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="427"/>
         <source>Copy the selected content</source>
         <translation>Copy the selected content</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="148"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="423"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="433"/>
         <source>Paste</source>
         <translation>Paste</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="149"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="424"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="434"/>
         <source>Paste content from the clipboard</source>
         <translation>Paste content from the clipboard</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="154"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="443"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
         <source>New Class</source>
         <translation>New Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="155"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="444"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="454"/>
         <source>Create a new class</source>
         <translation>Create a new class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="159"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="449"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="160"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="450"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="460"/>
         <source>Delete the selected class</source>
         <translation>Delete the selected class</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="164"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="455"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
+        <source>Import Classes...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="466"/>
+        <source>Import classes from a class package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="471"/>
+        <source>Export Classes...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="472"/>
+        <source>Export selected classes to a class package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="174"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
         <source>New Teacher</source>
         <translation>New Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="456"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="175"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="478"/>
         <source>Create a new teacher</source>
         <translation>Create a new teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="461"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="179"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="462"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="180"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="484"/>
         <source>Delete the selected teacher</source>
         <translation>Delete the selected teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="177"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="187"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="499"/>
         <source>Automatic</source>
         <translation>Automatic</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="178"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="478"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="188"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="500"/>
         <source>Automatically save changes</source>
         <translation>Automatically save changes</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="182"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="505"/>
         <source>Manual</source>
         <translation>Manual</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="183"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="484"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="193"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="506"/>
         <source>Save changes manually</source>
         <translation>Save changes manually</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="191"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="501"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="201"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="523"/>
         <source>Dark Theme</source>
         <translation>Dark Theme</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="502"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="202"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="524"/>
         <source>Use dark theme</source>
         <translation>Use dark theme</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="196"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="507"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="529"/>
         <source>Light Theme</source>
         <translation>Light Theme</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="197"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="508"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="207"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="530"/>
         <source>Use light theme</source>
         <translation>Use light theme</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="205"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="524"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="546"/>
         <source>System Default</source>
         <translation>System Default</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="525"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="547"/>
         <source>Use the system language</source>
         <translation>Use the system language</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="210"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="530"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="220"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="552"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="211"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="531"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="221"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="553"/>
         <source>Use English</source>
         <translation>Use English</translation>
     </message>
@@ -459,210 +483,210 @@
         <translation type="vanished">Use Australian English</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="536"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
         <source>Korean</source>
         <translation>Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="537"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="226"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="559"/>
         <source>Use Korean</source>
         <translation>Use Korean</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="224"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="253"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="562"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="619"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="584"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="641"/>
         <source>Small</source>
         <translation>Small</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="563"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="235"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="585"/>
         <source>Use small font size</source>
         <translation>Use small font size</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="229"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="568"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="590"/>
         <source>Normal</source>
         <translation>Normal</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="230"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="569"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="591"/>
         <source>Use normal font size</source>
         <translation>Use normal font size</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="574"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="631"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="273"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="596"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="653"/>
         <source>Large</source>
         <translation>Large</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="235"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="575"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="245"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="597"/>
         <source>Use large font size</source>
         <translation>Use large font size</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="580"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="249"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="602"/>
         <source>Extra Large</source>
         <translation>Extra Large</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="581"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="250"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="603"/>
         <source>Use extra large font size</source>
         <translation>Use extra large font size</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="248"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="613"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="635"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="249"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="614"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="636"/>
         <source>Show PDF pages with no added spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="254"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="620"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="264"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="642"/>
         <source>Show PDF pages with small spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="625"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="268"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="647"/>
         <source>Medium</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="626"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="269"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="648"/>
         <source>Show PDF pages with medium spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="264"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="632"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="654"/>
         <source>Show PDF pages with large spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="272"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="664"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="686"/>
         <source>Default</source>
         <translation type="unfinished">Default</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="273"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="665"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="687"/>
         <source>Use the current theme&apos;s PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="277"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="670"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="287"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="692"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="278"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="671"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="693"/>
         <source>Use a white PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="676"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="292"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="698"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="677"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="293"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="699"/>
         <source>Use a black PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="289"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="700"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="299"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="722"/>
         <source>Show Sidebar Tooltips</source>
         <translation>Show Sidebar Tooltips</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="290"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="701"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="300"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="723"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>Show full sidebar names in tooltips when they do not fit</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="294"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="706"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="728"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>Animate Overflowing Sidebar Text</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="295"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="707"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="729"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>Animate overflowing sidebar names on hover</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="299"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="712"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="309"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="734"/>
         <source>Show All Korean Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="300"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="713"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="310"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="735"/>
         <source>Show every Korean teacher in the sidebar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="773"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="315"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="795"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="306"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="774"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="316"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="796"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="310"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="779"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="801"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="311"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="780"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="321"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="802"/>
         <source>Show application information</source>
         <translation>Show application information</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="315"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="792"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="325"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="814"/>
         <source>Manage Campuses</source>
         <translation>Manage Campuses</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="316"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="793"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="326"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="815"/>
         <source>Manage campus settings</source>
         <translation>Manage campus settings</translation>
     </message>
@@ -1594,6 +1618,125 @@
     </message>
 </context>
 <context>
+    <name>ClassExportDialog</name>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="58"/>
+        <source>Export Classes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="64"/>
+        <source>Select the classes to include in the package.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="111"/>
+        <source>Select All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="112"/>
+        <source>Clear</source>
+        <translation type="unfinished">Clear</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="122"/>
+        <source>Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ClassImportDialog</name>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="146"/>
+        <source>Import Classes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="152"/>
+        <source>Review how package classes and teachers will be imported.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="161"/>
+        <source>Classes</source>
+        <translation type="unfinished">Classes</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="185"/>
+        <source>Create new class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="186"/>
+        <source>Create another class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="194"/>
+        <source>Replace: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="203"/>
+        <source>Skip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="216"/>
+        <source>Assigned Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="242"/>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="269"/>
+        <source>Create new teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="253"/>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="279"/>
+        <source>Keep local: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="259"/>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="285"/>
+        <source>Replace local: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="266"/>
+        <source>Choose a teacher resolution…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="306"/>
+        <source>No assigned teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="323"/>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="380"/>
+        <source>Two package classes cannot replace the same destination class.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="398"/>
+        <source>Choose a resolution for every ambiguous teacher match.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="411"/>
+        <source>Two package teachers cannot replace the same local teacher.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ClassNotesPage</name>
     <message>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="105"/>
@@ -1985,47 +2128,47 @@
         <translation>Manage</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="105"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="110"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="113"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="118"/>
         <source>Save Mode</source>
         <translation>Save Mode</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="130"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="135"/>
         <source>Theme</source>
         <translation>Theme</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="147"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="152"/>
         <source>Language</source>
         <translation>Language</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="170"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="175"/>
         <source>Font Size</source>
         <translation>Font Size</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="188"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="193"/>
         <source>Documents</source>
         <translation type="unfinished">Documents</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="193"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="198"/>
         <source>Page Spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="209"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="214"/>
         <source>Background Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="226"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="231"/>
         <source>Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2034,12 +2177,12 @@
         <translation type="vanished">English</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="240"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="245"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="254"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="259"/>
         <source>Admin</source>
         <translation>Admin</translation>
     </message>
@@ -2775,7 +2918,7 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="61"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="47"/>
         <source>Speaking Evaluations</source>
         <translation>Speaking Evaluations</translation>
     </message>
@@ -2833,9 +2976,236 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="111"/>
+        <source>Unable to read speaking evaluations: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="133"/>
+        <source>Unable to read speaking evaluation rows: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="204"/>
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="510"/>
+        <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="48"/>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="95"/>
         <source>Class %1</source>
         <translation>Class %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="318"/>
+        <source>%1 — %2 %3–%4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="341"/>
+        <source>%1 contains an invalid %2 schedule entry: %3 %4–%5</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="370"/>
+        <source>%1: %2 conflicts with %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="539"/>
+        <source>The class import plan contains an invalid or duplicate class entry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="550"/>
+        <source>A replacement class is not one of the inferred matches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="557"/>
+        <source>Two package classes cannot replace the same destination class.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="566"/>
+        <source>Only replacement actions may specify a destination class.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="576"/>
+        <source>Every package class must have an import action.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="587"/>
+        <source>The teacher import plan contains an invalid or duplicate teacher entry.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="599"/>
+        <source>An unambiguous teacher match must reuse the local teacher.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="608"/>
+        <source>A selected teacher is not one of the inferred matches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="618"/>
+        <source>Two different package teachers cannot replace the same local teacher.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="633"/>
+        <source>Every package teacher must have an import action.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="674"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="713"/>
+        <source>regular</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="686"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="725"/>
+        <source>intensive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="735"/>
+        <source>Regular schedule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="739"/>
+        <source>Intensive schedule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="745"/>
+        <source>Schedule conflicts prevent this import:
+
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="759"/>
+        <source>%1 failed: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="792"/>
+        <source>Creating an imported teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="800"/>
+        <source>The imported teacher did not receive a database ID.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="835"/>
+        <source>Updating a matched teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="841"/>
+        <source>The matched teacher no longer exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="864"/>
+        <source>Clearing speaking evaluation rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="884"/>
+        <source>Clearing imported class data from %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="922"/>
+        <source>Writing imported class information</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="945"/>
+        <source>Writing imported schedule data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="986"/>
+        <source>Writing imported roster columns</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1016"/>
+        <source>Writing imported roster data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1032"/>
+        <source>Creating an imported speaking evaluation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1062"/>
+        <source>Writing imported speaking evaluation rows</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1089"/>
+        <source>No classes were selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1097"/>
+        <source>Unable to start the class export transaction: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1118"/>
+        <source>The class selection contains an invalid or duplicate class.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1127"/>
+        <source>Class %1 no longer exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1149"/>
+        <source>The assigned teacher for %1 no longer exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1189"/>
+        <source>Unable to finish the class export transaction: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1251"/>
+        <source>Unable to start the class import transaction: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1326"/>
+        <source>Creating an imported class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1335"/>
+        <source>The imported class did not receive a database ID.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1350"/>
+        <source>Updating a replaced class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1379"/>
+        <source>Unable to commit the class import transaction: %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="257"/>
@@ -2882,12 +3252,11 @@
         <translation>End Time</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="17"/>
         <source>My Info</source>
-        <translation>My Info</translation>
+        <translation type="vanished">My Info</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="23"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="17"/>
         <source>My Information</source>
         <translation>My Information</translation>
     </message>
@@ -2900,7 +3269,7 @@
         <translation type="vanished">Monthly Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="67"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="53"/>
         <source>Sub Prep</source>
         <translation>Sub Prep</translation>
     </message>
@@ -2917,7 +3286,7 @@
         <translation type="vanished">Sub Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="49"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
         <source>Classes</source>
         <translation>Classes</translation>
     </message>
@@ -2926,72 +3295,72 @@
         <translation type="vanished">Co-Teachers</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="337"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="329"/>
         <source>Useful Links</source>
         <translation>Useful Links</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="343"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="335"/>
         <source>Dropbox</source>
         <translation>Dropbox</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="351"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="343"/>
         <source>Vacation Calendar</source>
         <translation>Vacation Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="359"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="351"/>
         <source>Yearly Calendar</source>
         <translation>Yearly Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="367"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="359"/>
         <source>Training Website</source>
         <translation>Training Website</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="375"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="367"/>
         <source>NET Website</source>
         <translation>NET Website</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="383"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="375"/>
         <source>LMS Website</source>
         <translation>LMS Website</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="391"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="383"/>
         <source>Highlights Library</source>
         <translation>Highlights Library</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="401"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="393"/>
         <source>Campus Directory</source>
         <translation>Campus Directory</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="407"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="399"/>
         <source>Information</source>
         <translation>Information</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="413"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="405"/>
         <source>Directions</source>
         <translation>Directions</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="419"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="411"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="425"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="417"/>
         <source>Housing</source>
         <translation>Housing</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="431"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="423"/>
         <source>Maps</source>
         <translation>Maps</translation>
     </message>
@@ -3008,251 +3377,251 @@
         <translation type="vanished">Class Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="469"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="461"/>
         <source>Student Evaluations</source>
         <translation>Student Evaluations</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="69"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="475"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="467"/>
         <source>Winter</source>
         <translation>Winter</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="74"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="481"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="473"/>
         <source>Speech Contest</source>
         <translation>Speech Contest</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="79"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="487"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="479"/>
         <source>Summer</source>
         <translation>Summer</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="84"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="493"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="485"/>
         <source>Fall</source>
         <translation>Fall</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="29"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="23"/>
         <source>Schedule</source>
         <translation type="unfinished">Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="43"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="29"/>
         <source>Calendar</source>
         <translation type="unfinished">Calendar</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="55"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="41"/>
         <source>Rosters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="73"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="59"/>
         <source>Korean Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="79"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="65"/>
         <source>My Co-Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="85"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="71"/>
         <source>All Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="93"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="85"/>
         <source>Documents</source>
         <translation>Documents</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="99"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="91"/>
         <source>Guides</source>
         <translation>Guides</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="105"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="97"/>
         <source>Lesson Planning</source>
         <translation>Lesson Planning</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="111"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="103"/>
         <source>PowerPoint Shortcuts</source>
         <translation>PowerPoint Shortcuts</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="119"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="111"/>
         <source>Lesson Templates</source>
         <translation>Lesson Templates</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="125"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="117"/>
         <source>Speaking / Writing</source>
         <translation>Speaking / Writing</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="131"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="123"/>
         <source>Skill / TBL</source>
         <translation>Skill / TBL</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="137"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="129"/>
         <source>Student-Led Activities</source>
         <translation>Student-Led Activities</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="143"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="135"/>
         <source>Middle School OE</source>
         <translation>Middle School OE</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="149"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="141"/>
         <source>Theseus Paragraph Writing</source>
         <translation>Theseus Paragraph Writing</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="155"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="147"/>
         <source>CREO</source>
         <translation>CREO</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="163"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="155"/>
         <source>Online Essay</source>
         <translation>Online Essay</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="169"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="161"/>
         <source>Essay Topic Template</source>
         <translation>Essay Topic Template</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="175"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="167"/>
         <source>Essay Brainstorm</source>
         <translation>Essay Brainstorm</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="181"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="173"/>
         <source>Theseus Paragraphs Explained</source>
         <translation>Theseus Paragraphs Explained</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="189"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="181"/>
         <source>Speaking Evals</source>
         <translation>Speaking Evals</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="195"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="187"/>
         <source>One-to-One Evaluations</source>
         <translation>One-to-One Evaluations</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="201"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="193"/>
         <source>In-Class Presentations</source>
         <translation>In-Class Presentations</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="207"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="199"/>
         <source>Finishing in One Class</source>
         <translation>Finishing in One Class</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="213"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="205"/>
         <source>Topic Options</source>
         <translation>Topic Options</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="219"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="211"/>
         <source>Regular Template</source>
         <translation>Regular Template</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="217"/>
         <source>Athena/Song&apos;s Template</source>
         <translation>Athena/Song&apos;s Template</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="231"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="223"/>
         <source>Winner Certificates</source>
         <translation>Winner Certificates</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="231"/>
         <source>Book Reports</source>
         <translation>Book Reports</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="245"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="237"/>
         <source>Grading Rubric</source>
         <translation>Grading Rubric</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="251"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="243"/>
         <source>Grading Rubric (40%)</source>
         <translation>Grading Rubric (40%)</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="257"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="249"/>
         <source>Student Info Handout</source>
         <translation>Student Info Handout</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="265"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="257"/>
         <source>Training</source>
         <translation>Training</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="271"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="263"/>
         <source>Observation</source>
         <translation>Observation</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="277"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="269"/>
         <source>Reflection</source>
         <translation>Reflection</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="283"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="275"/>
         <source>Final Reflection</source>
         <translation>Final Reflection</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="291"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="283"/>
         <source>Vacation / Sub Prep</source>
         <translation>Vacation / Sub Prep</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="297"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="289"/>
         <source>Applying for Vacation</source>
         <translation>Applying for Vacation</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="303"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="295"/>
         <source>Vacation Guidelines</source>
         <translation>Vacation Guidelines</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="309"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="301"/>
         <source>Vacacation Request Form</source>
         <translation>Vacacation Request Form</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="315"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="307"/>
         <source>Sub Prep Procedures</source>
         <translation>Sub Prep Procedures</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="321"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="313"/>
         <source>Sub Prep Checklist</source>
         <translation>Sub Prep Checklist</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="327"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="319"/>
         <source>Sub Prep Template</source>
         <translation>Sub Prep Template</translation>
     </message>
@@ -3272,22 +3641,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="79"/>
         <source>Individual Class List</source>
         <translation>Individual Class List</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="451"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="443"/>
         <source>Details</source>
         <translation>Details</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="457"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="449"/>
         <source>Roster</source>
         <translation>Roster</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="463"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="455"/>
         <source>Notes</source>
         <translation>Notes</translation>
     </message>
@@ -3318,6 +3687,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1084"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1203"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1216"/>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="102"/>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="174"/>
         <source>No database is open.</source>
@@ -3380,7 +3752,7 @@
     </message>
     <message>
         <location filename="../../../src/features/roster/services/roster_template_print_service.cpp" line="847"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="725"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="740"/>
         <source>Unable to create a temporary print folder.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3800,7 +4172,7 @@
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="266"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="614"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="629"/>
         <source>No classes meet on the selected days.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3815,79 +4187,247 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="606"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="621"/>
         <source>Choose a folder or paper-copy action.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="610"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="625"/>
         <source>Select at least one day to include.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="626"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="641"/>
         <source>Choose a target folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="630"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="645"/>
         <source>Enter your name for the Sub Prep folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="634"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="649"/>
         <source>Unable to create the target folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="644"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="659"/>
         <source>The generated folder path is not safe.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="649"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="664"/>
         <source>The Sub Prep folder already exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="660"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="675"/>
         <source>Unable to create a staging folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="679"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="694"/>
         <source>Unable to preserve the existing Sub Prep folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="694"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="709"/>
         <source>Unable to commit the Sub Prep package. The previous folder remains at:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="703"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="718"/>
         <source>Unable to commit the Sub Prep package.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="747"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="762"/>
         <source>Sub Prep package created.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="757"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="772"/>
         <source>Print Sub Prep Package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="776"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="791"/>
         <source>Sub Prep print job sent.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="787"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="802"/>
         <source>Sub Prep package created, but the folder could not be opened.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="27"/>
+        <source>%1.%2 must be a string.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="36"/>
+        <source>%1.%2 must not be empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="54"/>
+        <source>%1.%2 must be an object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="72"/>
+        <source>%1.%2 must be an array.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="175"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="462"/>
+        <source>%1[%2] must be an object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="346"/>
+        <source>%1.columns[%2] must be a string.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="357"/>
+        <source>%1.column_widths must match the column count.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="369"/>
+        <source>%1.column_widths[%2] must be a number.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="382"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="502"/>
+        <source>%1.rows[%2] must be an array.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="392"/>
+        <source>%1.rows[%2] must match the column count.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="404"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="526"/>
+        <source>%1.rows[%2][%3] must be a string.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="482"/>
+        <source>%1 contains a duplicate evaluation name: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="490"/>
+        <source>%1.rows has too many rows.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="512"/>
+        <source>%1.rows[%2] must contain %3 columns.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="663"/>
+        <source>This is not a ClassMngr class package.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="673"/>
+        <source>package.version must be an integer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="682"/>
+        <source>Unsupported class package version: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="710"/>
+        <source>package.exported_at_utc is not a valid timestamp.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="717"/>
+        <source>The class package does not contain any classes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="732"/>
+        <source>teachers[%1] must be an object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="747"/>
+        <source>Duplicate teacher key: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="760"/>
+        <source>classes[%1] must be an object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="775"/>
+        <source>Duplicate class key: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="783"/>
+        <source>Class %1 references an unknown teacher key: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="802"/>
+        <source>No export path was provided.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="810"/>
+        <source>Unable to open the class package for writing:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="822"/>
+        <source>Unable to write the class package:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="830"/>
+        <source>Unable to finish writing the class package:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="847"/>
+        <source>Unable to open the class package:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="859"/>
+        <source>The class package is not valid JSON:
+%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="867"/>
+        <source>The class package root must be an object.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="108"/>
+        <source>Teacher %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4744,7 +5284,12 @@
         <translation>Add Class</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp" line="60"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp" line="74"/>
+        <source>Export Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp" line="83"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
@@ -4754,7 +5299,7 @@
         <translation>Add Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp" line="77"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp" line="100"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
@@ -4794,6 +5339,53 @@
         <location filename="../../../src/app/controllers/sidebar_controller_prompts.cpp" line="165"/>
         <source>Delete &apos;%1&apos;?</source>
         <translation>Delete &apos;%1&apos;?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="81"/>
+        <source>Export Classes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="80"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="132"/>
+        <source>Classes</source>
+        <translation type="unfinished">Classes</translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="110"/>
+        <source>Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="111"/>
+        <source>Export Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="133"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="189"/>
+        <source>JSON Files (*.json)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="165"/>
+        <source>Exported %1 class(es) to:
+%2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="187"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="202"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="211"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="231"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="263"/>
+        <source>Import Classes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="264"/>
+        <source>Import complete. Created: %1, replaced: %2, skipped: %3.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5497,7 +6089,7 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="152"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="563"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="553"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="83"/>
         <source>Generate Sub Prep</source>
         <translation type="unfinished"></translation>
@@ -5505,7 +6097,7 @@ Retry the entire batch using the PowerPoint template?</source>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="155"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="91"/>
-        <source>Create a dated Sub Prep package with class rosters and optional paper copies.</source>
+        <source>Create a dated Sub Prep package with by-day rosters and optional paper copies.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5534,7 +6126,7 @@ Retry the entire batch using the PowerPoint template?</source>
         <translation>Photocopier Code</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="557"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="547"/>
         <source>
 
 The package was created at:
@@ -5675,183 +6267,152 @@ Comments: Please leave a comment about what the student did well and what they n
 <context>
     <name>SubPrepPrintDialog</name>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="63"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="59"/>
         <source>Monday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="67"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="63"/>
         <source>Tuesday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="71"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="67"/>
         <source>Wednesday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="75"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="71"/>
         <source>Thursday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="77"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="73"/>
         <source>Friday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="180"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="312"/>
         <source>Generate Sub Prep</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="186"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="318"/>
         <source>Days to Include</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="189"/>
-        <source>Week of</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="222"/>
-        <source>Rosters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="229"/>
-        <source>By Day</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="233"/>
-        <source>Per Class with Extra Info</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="240"/>
-        <source>Per-Class Options</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="243"/>
-        <source>Portrait</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="244"/>
-        <source>Landscape</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="253"/>
-        <source>Extra Columns</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="262"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="378"/>
         <source>Create Sub Prep Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="275"/>
-        <source>Target Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="284"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="708"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="406"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="737"/>
         <source>Select Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="290"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="412"/>
         <source>Your Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="299"/>
-        <source>Output Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="314"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="471"/>
         <source>Open Folder After Generation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="322"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="487"/>
         <source>Print Paper Copies</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="336"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="504"/>
         <source>Cancel</source>
         <translation type="unfinished">Cancel</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="338"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="506"/>
         <source>OK</source>
         <translation type="unfinished">OK</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="464"/>
         <source>%1 (%2)</source>
-        <translation type="unfinished">%1 (%2)</translation>
+        <translation type="obsolete">%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="572"/>
-        <source>No extra roster columns are available.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="622"/>
-        <source>%1 of %2 extra columns selected</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="644"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="683"/>
         <source>Select days and enter your name to preview the output folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="660"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="675"/>
         <source>Select Create Folder and/or Print Paper Copies to continue.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="664"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="329"/>
+        <source>Next Vacation on the Calendar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="398"/>
+        <source>Target Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="417"/>
+        <source>Enter your name to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="428"/>
+        <source>Output Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="665"/>
+        <source>.../%1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="689"/>
+        <source>Select days to preview the output folder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="693"/>
         <source>Select at least one day to include.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="668"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="698"/>
         <source>No classes meet on the selected days.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="672"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="702"/>
         <source>Choose a target folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="676"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="706"/>
         <source>Enter your name for the Sub Prep folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="684"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="714"/>
         <source>The target path is not a folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="734"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="763"/>
         <source>Replace Existing Sub Prep Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="735"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_print_dialog.cpp" line="764"/>
         <source>Replace the existing folder and all of its contents?
 
 %1</source>

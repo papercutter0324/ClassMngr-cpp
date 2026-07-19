@@ -7,6 +7,7 @@
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/class_transfer_repository.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/settings_repository.h"

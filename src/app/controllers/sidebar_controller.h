@@ -1,6 +1,8 @@
 #pragma once
 
+#include <QList>
 #include <QObject>
+#include <QString>
 
 class ApplicationServices;
 class Sidebar;
@@ -52,6 +54,9 @@ private slots:
 
     void addClass();
     void deleteClass();
+    void importClasses();
+    void exportClasses();
+    void exportClass(int classId);
 
     // =====================================================
     // Teacher Actions
@@ -93,6 +98,12 @@ private:
         ) const;
 
     void updateActionStates();
+
+    void saveClassExport(
+        const QList<int>& classIds,
+        const QString& suggestedBaseName,
+        const QString& dialogTitle
+        );
 
 private:
 

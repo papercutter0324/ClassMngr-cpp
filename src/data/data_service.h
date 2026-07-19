@@ -5,6 +5,7 @@
 #include "domain/models/campus.h"
 #include "domain/models/class_info.h"
 #include "domain/models/class_conflict.h"
+#include "domain/models/class_transfer.h"
 #include "domain/models/classroom.h"
 #include "domain/models/intensive_slot_state.h"
 #include "domain/models/roster.h"
@@ -24,6 +25,7 @@ class CampusRecordRepository;
 class CalendarEventRepository;
 class ClassInfoRepository;
 class ClassRepository;
+class ClassTransferRepository;
 class IntensiveSlotStateRepository;
 class RosterRepository;
 class SettingsRepository;
@@ -127,6 +129,19 @@ public:
 
     void deleteClass(
         int classId
+        );
+
+    [[nodiscard]] Result<ClassTransferPackage> buildClassTransferPackage(
+        const QList<int>& classIds
+        );
+
+    [[nodiscard]] Result<ClassImportPreview> previewClassImport(
+        const ClassTransferPackage& package
+        );
+
+    [[nodiscard]] Result<ClassImportSummary> importClasses(
+        const ClassTransferPackage& package,
+        const ClassImportPlan& plan
         );
 
 
@@ -323,6 +338,7 @@ private:
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;
     std::unique_ptr<TeacherRepository> m_teacherRepository;
     std::unique_ptr<ClassRepository> m_classRepository;
+    std::unique_ptr<ClassTransferRepository> m_classTransferRepository;
     std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
     std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
     std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;

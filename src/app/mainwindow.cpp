@@ -715,6 +715,16 @@ void MainWindow::setDatabaseBackedActionsEnabled(
         m_actions.deleteClass->setEnabled(enabled);
     }
 
+    if (m_actions.importClasses)
+    {
+        m_actions.importClasses->setEnabled(enabled);
+    }
+
+    if (m_actions.exportClasses)
+    {
+        m_actions.exportClasses->setEnabled(enabled);
+    }
+
     if (m_actions.newTeacher)
     {
         m_actions.newTeacher->setEnabled(enabled);

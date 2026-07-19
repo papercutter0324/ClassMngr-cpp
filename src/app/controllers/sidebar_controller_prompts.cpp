@@ -183,6 +183,16 @@ void SidebarController::updateActionStates()
 
     if (!ds || !ds->isOpen())
     {
+        if (m_actions->importClasses)
+        {
+            m_actions->importClasses->setEnabled(false);
+        }
+
+        if (m_actions->exportClasses)
+        {
+            m_actions->exportClasses->setEnabled(false);
+        }
+
         if (m_actions->deleteClass)
         {
             m_actions->deleteClass->setEnabled(false);
@@ -194,6 +204,18 @@ void SidebarController::updateActionStates()
         }
 
         return;
+    }
+
+    if (m_actions->importClasses)
+    {
+        m_actions->importClasses->setEnabled(true);
+    }
+
+    if (m_actions->exportClasses)
+    {
+        m_actions->exportClasses->setEnabled(
+            !ds->getClasses().isEmpty()
+            );
     }
 
     if (m_actions->deleteClass)

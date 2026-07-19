@@ -62,6 +62,8 @@ public:
 
     QAction* newClass = nullptr;
     QAction* deleteClass = nullptr;
+    QAction* importClasses = nullptr;
+    QAction* exportClasses = nullptr;
     QAction* newTeacher = nullptr;
     QAction* deleteTeacher = nullptr;
 

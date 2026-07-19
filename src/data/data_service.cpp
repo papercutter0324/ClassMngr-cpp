@@ -5,6 +5,7 @@
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/class_transfer_repository.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/settings_repository.h"
@@ -128,6 +129,11 @@ Status DataService::openDatabase(
             m_db
             );
 
+    m_classTransferRepository =
+        std::make_unique<ClassTransferRepository>(
+            m_db
+            );
+
     m_classInfoRepository =
         std::make_unique<ClassInfoRepository>(
             m_db
@@ -164,6 +170,7 @@ void DataService::closeDatabase()
     m_campusRecordRepository.reset();
     m_teacherRepository.reset();
     m_classRepository.reset();
+    m_classTransferRepository.reset();
     m_classInfoRepository.reset();
     m_intensiveSlotStateRepository.reset();
     m_calendarEventRepository.reset();
@@ -377,6 +384,49 @@ void DataService::deleteClass(
             classId
             );
     }
+}
+
+Result<ClassTransferPackage> DataService::buildClassTransferPackage(
+    const QList<int>& classIds
+    )
+{
+    if (!m_classTransferRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("Class transfer is unavailable.")
+            );
+    }
+
+    return m_classTransferRepository->buildPackage(classIds);
+}
+
+Result<ClassImportPreview> DataService::previewClassImport(
+    const ClassTransferPackage& package
+    )
+{
+    if (!m_classTransferRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("Class transfer is unavailable.")
+            );
+    }
+
+    return m_classTransferRepository->previewImport(package);
+}
+
+Result<ClassImportSummary> DataService::importClasses(
+    const ClassTransferPackage& package,
+    const ClassImportPlan& plan
+    )
+{
+    if (!m_classTransferRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("Class transfer is unavailable.")
+            );
+    }
+
+    return m_classTransferRepository->importClasses(package, plan);
 }
 
 bool DataService::saveClassInfo(

@@ -1,6 +1,9 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
+#include <QApplication>
+#include <QMenu>
 #include <QSignalSpy>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QtTest>
 
@@ -61,6 +64,7 @@ class SidebarStructureTests : public QObject
 
 private slots:
     void classListOwnsDynamicClassesAndDeepLinks();
+    void classContextMenuOffersExportForClickedClass();
     void topLevelOrderAndSubPrepStructure();
 };
 
@@ -148,6 +152,65 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
             QStringLiteral("class_details")
         })
         );
+}
+
+void SidebarStructureTests::classContextMenuOffersExportForClickedClass()
+{
+    Sidebar sidebar;
+    sidebar.resize(420, 700);
+    sidebar.addClassNode(QStringLiteral("Alpha"), 11);
+    sidebar.addClassNode(QStringLiteral("Beta"), 22);
+    sidebar.show();
+
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree"));
+    QVERIFY(tree);
+
+    QTreeWidgetItem* classList =
+        topLevelWithKey(tree, QStringLiteral("my_info_class_list"));
+    QVERIFY(classList);
+    classList->setExpanded(true);
+    QTreeWidgetItem* betaClass = classList->child(1);
+    QVERIFY(betaClass);
+    tree->scrollToItem(betaClass);
+
+    QSignalSpy exportSpy(&sidebar, &Sidebar::exportClassRequested);
+    bool foundExportAction = false;
+
+    QTimer::singleShot(0, &sidebar, [&foundExportAction]()
+    {
+        auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+
+        if (!menu)
+        {
+            return;
+        }
+
+        for (QAction* action : menu->actions())
+        {
+            if (action->text() == QStringLiteral("Export Class"))
+            {
+                foundExportAction = true;
+                action->trigger();
+                menu->close();
+                return;
+            }
+        }
+
+        menu->close();
+    });
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &sidebar,
+            "showContextMenu",
+            Qt::DirectConnection,
+            Q_ARG(QPoint, tree->visualItemRect(betaClass).center())
+            )
+        );
+    QVERIFY(foundExportAction);
+    QCOMPARE(exportSpy.count(), 1);
+    QCOMPARE(exportSpy.takeFirst().constFirst().toInt(), 22);
 }
 
 void SidebarStructureTests::topLevelOrderAndSubPrepStructure()

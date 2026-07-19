@@ -740,6 +740,7 @@ if(BUILD_TESTING)
         src/data/repositories/campus_record_repository.cpp
         src/data/repositories/class_info_repository.cpp
         src/data/repositories/class_repository.cpp
+        src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
         src/data/repositories/roster_repository.cpp
         src/data/repositories/settings_repository.cpp
@@ -770,6 +771,53 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrDataServiceLifecycleTests
         COMMAND ClassMngrDataServiceLifecycleTests
+    )
+
+    qt_add_executable(ClassMngrClassTransferTests
+        tests/class_transfer_tests.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/data/data_service.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/repositories/calendar_event_repository.cpp
+        src/data/repositories/campus_record_repository.cpp
+        src/data/repositories/class_info_repository.cpp
+        src/data/repositories/class_repository.cpp
+        src/data/repositories/class_transfer_repository.cpp
+        src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/roster_repository.cpp
+        src/data/repositories/settings_repository.cpp
+        src/data/repositories/speaking_eval_repository.cpp
+        src/data/repositories/teacher_repository.cpp
+        src/domain/models/classroom.cpp
+        src/domain/models/roster.cpp
+        src/features/classes/services/class_transfer_json_codec.cpp
+        src/features/classes/ui/class_export_dialog.cpp
+        src/features/classes/ui/class_import_dialog.cpp
+    )
+
+    target_compile_features(ClassMngrClassTransferTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrClassTransferTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrClassTransferTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrClassTransferTests
+        COMMAND ClassMngrClassTransferTests
     )
 
     qt_add_executable(ClassMngrCalendarImportTests

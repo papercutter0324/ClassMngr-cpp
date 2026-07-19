@@ -92,6 +92,11 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
 
     menu->addSeparator();
 
+    menu->addAction(a.importClasses);
+    menu->addAction(a.exportClasses);
+
+    menu->addSeparator();
+
     menu->addAction(a.newTeacher);
     menu->addAction(a.deleteTeacher);
 }

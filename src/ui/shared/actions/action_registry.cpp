@@ -160,6 +160,16 @@ void ActionRegistry::retranslate()
         tr("Delete the selected class")
         );
     updateActionText(
+        importClasses,
+        tr("Import Classes..."),
+        tr("Import classes from a class package")
+        );
+    updateActionText(
+        exportClasses,
+        tr("Export Classes..."),
+        tr("Export selected classes to a class package")
+        );
+    updateActionText(
         newTeacher,
         tr("New Teacher"),
         tr("Create a new teacher")
@@ -448,6 +458,18 @@ void ActionRegistry::createClassActions()
         createAction(
             tr("Delete Class"),
             tr("Delete the selected class")
+            );
+
+    importClasses =
+        createAction(
+            tr("Import Classes..."),
+            tr("Import classes from a class package")
+            );
+
+    exportClasses =
+        createAction(
+            tr("Export Classes..."),
+            tr("Export selected classes to a class package")
             );
 
     newTeacher =

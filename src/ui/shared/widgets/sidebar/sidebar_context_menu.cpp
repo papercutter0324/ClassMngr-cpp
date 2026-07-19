@@ -56,6 +56,29 @@ void Sidebar::showContextMenu(
     {
         addClassAction();
 
+        QTreeWidgetItem* classItem = item;
+
+        while (
+            classItem
+            && static_cast<NodeType>(
+                classItem->data(0, Qt::UserRole).toInt()) != NodeType::Class
+            )
+        {
+            classItem = classItem->parent();
+        }
+
+        const int classId = classItem
+            ? classItem->data(0, Qt::UserRole + 2).toInt()
+            : -1;
+
+        auto* exportAction = menu.addAction(tr("Export Class"));
+        exportAction->setEnabled(
+            m_databaseSectionsVisible && classId > 0);
+        connect(exportAction, &QAction::triggered, this, [this, classId]()
+        {
+            emit exportClassRequested(classId);
+        });
+
         menu.addAction(
             tr("Delete Class"),
             this,

@@ -33,6 +33,20 @@ void SidebarController::connectActions(ActionRegistry& actions)
         );
 
     connect(
+        actions.importClasses,
+        &QAction::triggered,
+        this,
+        &SidebarController::importClasses
+        );
+
+    connect(
+        actions.exportClasses,
+        &QAction::triggered,
+        this,
+        &SidebarController::exportClasses
+        );
+
+    connect(
         actions.newTeacher,
         &QAction::triggered,
         this,
@@ -68,6 +82,13 @@ void SidebarController::connectActions(ActionRegistry& actions)
         &Sidebar::deleteClassRequested,
         this,
         &SidebarController::deleteClass
+        );
+
+    connect(
+        m_sidebar,
+        &Sidebar::exportClassRequested,
+        this,
+        &SidebarController::exportClass
         );
 
     connect(
