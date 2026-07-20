@@ -87,18 +87,26 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
         QCoreApplication::translate("MenuBuilder", "Manage")
     );
 
-    menu->addAction(a.newClass);
-    menu->addAction(a.deleteClass);
+    QMenu* classMenu =
+        menu->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Class")
+            );
 
-    menu->addSeparator();
+    classMenu->addAction(a.newClass);
+    classMenu->addAction(a.deleteClass);
 
-    menu->addAction(a.importClasses);
-    menu->addAction(a.exportClasses);
+    classMenu->addSeparator();
 
-    menu->addSeparator();
+    classMenu->addAction(a.importClasses);
+    classMenu->addAction(a.exportClasses);
 
-    menu->addAction(a.newTeacher);
-    menu->addAction(a.deleteTeacher);
+    QMenu* teacherMenu =
+        menu->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Teacher")
+            );
+
+    teacherMenu->addAction(a.newTeacher);
+    teacherMenu->addAction(a.deleteTeacher);
 }
 
 void MenuBuilder::buildOptionsMenu(MainWindow* window)
