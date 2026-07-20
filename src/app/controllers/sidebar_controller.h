@@ -64,6 +64,7 @@ private slots:
 
     void addTeacher();
     void deleteTeacher();
+    void importTeachers();
 
 private:
 

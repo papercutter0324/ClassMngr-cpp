@@ -12,6 +12,7 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
+#include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/utils/unsaved_changes_dialog.h"
 
@@ -102,6 +103,20 @@ void PageManager::initialize(
             this
             );
 
+    m_nativeEnglishTeachersPage =
+        new StaffDirectoryPage(
+            m_services,
+            StaffDirectoryKind::NativeEnglishTeachers,
+            this
+            );
+
+    m_gsTeamPage =
+        new StaffDirectoryPage(
+            m_services,
+            StaffDirectoryKind::GsTeam,
+            this
+            );
+
     m_campusDashboard =
         new CampusDashboardPage(
             m_adminMode,
@@ -157,6 +172,12 @@ void PageManager::registerPages()
 
     m_pages[PageType::TeacherInfo] =
         m_teacherPage;
+
+    m_pages[PageType::NativeEnglishTeachers] =
+        m_nativeEnglishTeachersPage;
+
+    m_pages[PageType::GsTeam] =
+        m_gsTeamPage;
 
     m_pages[PageType::CampusDashboard] =
         m_campusDashboard;
@@ -392,6 +413,16 @@ ClassesPage* PageManager::classesPage() const
 TeacherInfoPage* PageManager::teacherPage() const
 {
     return m_teacherPage;
+}
+
+StaffDirectoryPage* PageManager::nativeEnglishTeachersPage() const
+{
+    return m_nativeEnglishTeachersPage;
+}
+
+StaffDirectoryPage* PageManager::gsTeamPage() const
+{
+    return m_gsTeamPage;
 }
 
 CampusDashboardPage* PageManager::campusDashboard() const

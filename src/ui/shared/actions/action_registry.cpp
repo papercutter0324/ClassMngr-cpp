@@ -179,6 +179,11 @@ void ActionRegistry::retranslate()
         tr("Delete Teacher"),
         tr("Delete the selected teacher")
         );
+    updateActionText(
+        importTeachers,
+        tr("Import Teachers..."),
+        tr("Import teachers and campus staff from an Excel workbook")
+        );
 
     if (saveModeState)
     {
@@ -304,12 +309,6 @@ void ActionRegistry::retranslate()
         tr("Animate Overflowing Sidebar Text"),
         tr("Animate overflowing sidebar names on hover")
         );
-    updateActionText(
-        showAllKoreanTeachers,
-        tr("Show All Korean Teachers"),
-        tr("Show every Korean teacher in the sidebar")
-        );
-
     updateActionText(
         checkForUpdates,
         tr("Check for Updates..."),
@@ -482,6 +481,12 @@ void ActionRegistry::createClassActions()
         createAction(
             tr("Delete Teacher"),
             tr("Delete the selected teacher")
+            );
+
+    importTeachers =
+        createAction(
+            tr("Import Teachers..."),
+            tr("Import teachers and campus staff from an Excel workbook")
             );
 }
 
@@ -729,22 +734,12 @@ void ActionRegistry::createOptionActions()
             tr("Animate overflowing sidebar names on hover")
             );
 
-    showAllKoreanTeachers =
-        createCheckableAction(
-            tr("Show All Korean Teachers"),
-            tr("Show every Korean teacher in the sidebar")
-            );
-
     showSidebarTooltips->setChecked(
         SettingsManager::instance().sidebarTooltipsEnabled()
         );
 
     animateSidebarText->setChecked(
         SettingsManager::instance().sidebarMarqueeEnabled()
-        );
-
-    showAllKoreanTeachers->setChecked(
-        SettingsManager::instance().showAllKoreanTeachers()
         );
 
     connect(
@@ -771,17 +766,6 @@ void ActionRegistry::createOptionActions()
         }
         );
 
-    connect(
-        showAllKoreanTeachers,
-        &QAction::toggled,
-        this,
-        [](bool enabled)
-        {
-            SettingsManager::instance().setShowAllKoreanTeachers(
-                enabled
-                );
-        }
-        );
 }
 
 // =========================================================

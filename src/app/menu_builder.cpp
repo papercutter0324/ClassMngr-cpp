@@ -107,6 +107,8 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
 
     teacherMenu->addAction(a.newTeacher);
     teacherMenu->addAction(a.deleteTeacher);
+    teacherMenu->addSeparator();
+    teacherMenu->addAction(a.importTeachers);
 }
 
 void MenuBuilder::buildOptionsMenu(MainWindow* window)
@@ -241,7 +243,6 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
 
     sidebarMenu->addAction(actions.showSidebarTooltips);
     sidebarMenu->addAction(actions.animateSidebarText);
-    sidebarMenu->addAction(actions.showAllKoreanTeachers);
 }
 
 void MenuBuilder::buildHelpMenu(MainWindow* window)

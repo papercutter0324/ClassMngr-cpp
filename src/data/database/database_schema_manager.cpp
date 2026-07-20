@@ -330,6 +330,28 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
         );
 
     query.exec(R"(
+        CREATE TABLE IF NOT EXISTS native_english_teachers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            position TEXT,
+            phone_number TEXT,
+            birthday TEXT,
+            nationality TEXT
+        )
+    )");
+
+    query.exec(R"(
+        CREATE TABLE IF NOT EXISTS gs_team (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            korean_name TEXT,
+            position TEXT,
+            phone_number TEXT,
+            birthday TEXT
+        )
+    )");
+
+    query.exec(R"(
         CREATE TABLE IF NOT EXISTS classes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 

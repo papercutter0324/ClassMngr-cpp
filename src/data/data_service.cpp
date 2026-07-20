@@ -7,10 +7,13 @@
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_transfer_repository.h"
 #include "data/repositories/intensive_slot_state_repository.h"
+#include "data/repositories/gs_team_repository.h"
+#include "data/repositories/native_english_teacher_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "data/repositories/teacher_import_repository.h"
 
 #include <QDir>
 #include <QFile>
@@ -124,6 +127,15 @@ Status DataService::openDatabase(
             m_db
             );
 
+    m_nativeEnglishTeacherRepository =
+        std::make_unique<NativeEnglishTeacherRepository>(m_db);
+
+    m_gsTeamRepository =
+        std::make_unique<GsTeamRepository>(m_db);
+
+    m_teacherImportRepository =
+        std::make_unique<TeacherImportRepository>(m_db);
+
     m_classRepository =
         std::make_unique<ClassRepository>(
             m_db
@@ -166,6 +178,9 @@ Status DataService::openDatabase(
 
 void DataService::closeDatabase()
 {
+    m_teacherImportRepository.reset();
+    m_gsTeamRepository.reset();
+    m_nativeEnglishTeacherRepository.reset();
     m_settingsRepository.reset();
     m_campusRecordRepository.reset();
     m_teacherRepository.reset();
@@ -320,6 +335,64 @@ void DataService::deleteTeacher(
             teacherId
             );
     }
+}
+
+QList<NativeEnglishTeacher> DataService::getNativeEnglishTeachers()
+{
+    return m_nativeEnglishTeacherRepository
+        ? m_nativeEnglishTeacherRepository->getAll()
+        : QList<NativeEnglishTeacher>{};
+}
+
+Status DataService::saveNativeEnglishTeacherDirectory(
+    const QList<NativeEnglishTeacher>& teachers,
+    const QList<int>& deletedIds
+    )
+{
+    if (!m_nativeEnglishTeacherRepository)
+    {
+        return std::unexpected(QStringLiteral("No database is open."));
+    }
+    return m_nativeEnglishTeacherRepository->saveDirectory(teachers, deletedIds);
+}
+
+QList<GsTeamMember> DataService::getGsTeamMembers()
+{
+    return m_gsTeamRepository
+        ? m_gsTeamRepository->getAll()
+        : QList<GsTeamMember>{};
+}
+
+Status DataService::saveGsTeamDirectory(
+    const QList<GsTeamMember>& members,
+    const QList<int>& deletedIds
+    )
+{
+    if (!m_gsTeamRepository)
+    {
+        return std::unexpected(QStringLiteral("No database is open."));
+    }
+    return m_gsTeamRepository->saveDirectory(members, deletedIds);
+}
+
+Result<TeacherImportSummary> DataService::importTeachers(
+    const TeacherImportPlan& plan
+    )
+{
+    if (!m_teacherImportRepository)
+    {
+        return std::unexpected(QStringLiteral("No database is open."));
+    }
+    return m_teacherImportRepository->importTeachers(plan);
+}
+
+QDate DataService::latestTeacherImportDate()
+{
+    const QString value = loadSetting(
+        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting),
+        QString()
+        ).toString();
+    return QDate::fromString(value, Qt::ISODate);
 }
 
 int DataService::createClass(

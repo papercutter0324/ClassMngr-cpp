@@ -788,10 +788,13 @@ if(BUILD_TESTING)
         src/data/repositories/class_repository.cpp
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/gs_team_repository.cpp
+        src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
         src/data/repositories/settings_repository.cpp
         src/data/repositories/speaking_eval_repository.cpp
         src/data/repositories/teacher_repository.cpp
+        src/data/repositories/teacher_import_repository.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
     )
@@ -831,10 +834,13 @@ if(BUILD_TESTING)
         src/data/repositories/class_repository.cpp
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/gs_team_repository.cpp
+        src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
         src/data/repositories/settings_repository.cpp
         src/data/repositories/speaking_eval_repository.cpp
         src/data/repositories/teacher_repository.cpp
+        src/data/repositories/teacher_import_repository.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
         src/features/classes/services/class_transfer_json_codec.cpp
@@ -893,6 +899,111 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrCalendarImportTests
         COMMAND ClassMngrCalendarImportTests
+    )
+
+    qt_add_executable(ClassMngrTeacherImportTests
+        tests/teacher_import_tests.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/repositories/teacher_import_repository.cpp
+        src/features/calendar/calendar_workbook_reader.cpp
+        src/features/teacher/import/sectioned_contact_list_template.cpp
+        src/features/teacher/import/teacher_import_file_validator.cpp
+        src/features/teacher/import/teacher_import_template_registry.cpp
+    )
+
+    target_compile_features(ClassMngrTeacherImportTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTeacherImportTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrTeacherImportTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+            ZLIB::ZLIB
+    )
+
+    add_test(
+        NAME ClassMngrTeacherImportTests
+        COMMAND ClassMngrTeacherImportTests
+    )
+
+    qt_add_executable(ClassMngrTeacherImportDialogTests
+        tests/teacher_import_dialog_tests.cpp
+        src/features/calendar/calendar_workbook_reader.cpp
+        src/features/teacher/import/sectioned_contact_list_template.cpp
+        src/features/teacher/import/teacher_import_file_validator.cpp
+        src/features/teacher/import/teacher_import_template_registry.cpp
+        src/features/teacher/ui/teacher_import_dialog.cpp
+    )
+
+    target_compile_features(ClassMngrTeacherImportDialogTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTeacherImportDialogTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrTeacherImportDialogTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+            ZLIB::ZLIB
+    )
+
+    add_test(
+        NAME ClassMngrTeacherImportDialogTests
+        COMMAND ClassMngrTeacherImportDialogTests
+    )
+
+    qt_add_executable(ClassMngrStaffDirectoryPageTests
+        tests/staff_directory_page_tests.cpp
+        tests/staff_directory_page_test_stubs.cpp
+        src/core/fontmanager.cpp
+        src/features/teacher/ui/staff_directory_page.cpp
+        src/ui/shared/pages/basepage.cpp
+    )
+
+    target_compile_features(ClassMngrStaffDirectoryPageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrStaffDirectoryPageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrStaffDirectoryPageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrStaffDirectoryPageTests
+        COMMAND ClassMngrStaffDirectoryPageTests
+    )
+
+    set_tests_properties(
+        ClassMngrStaffDirectoryPageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrClassTabNavigationModelTests
@@ -1661,6 +1772,9 @@ if(BUILD_TESTING)
             ClassMngrCalendarEventRepositoryTests
             ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests
+            ClassMngrTeacherImportTests
+            ClassMngrTeacherImportDialogTests
+            ClassMngrStaffDirectoryPageTests
             ClassMngrClassTabNavigationModelTests
             ClassMngrSubPrepClassInformationModelTests
             ClassMngrScheduleWidgetTests

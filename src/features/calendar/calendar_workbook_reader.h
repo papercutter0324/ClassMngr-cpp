@@ -20,12 +20,23 @@ struct Style
 {
     QString fillColor;
     QString fontColor;
+    bool filled = false;
+    bool bold = false;
+};
+
+struct Worksheet
+{
+    QString name;
+    QVector<Cell> cells;
 };
 
 struct Workbook
 {
     QStringList sharedStrings;
     QVector<Style> styles;
+    QVector<Worksheet> worksheets;
+
+    // Compatibility view used by the existing calendar parser.
     QVector<Cell> cells;
 };
 

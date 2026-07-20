@@ -6,21 +6,11 @@ void Sidebar::addTeacherNode(
     bool myCoTeacher
     )
 {
-    auto* teachersRoot =
-        m_nodes.value(
-            QStringLiteral("teachers"),
-            nullptr
-            );
-
-    auto* group =
-        teachersRoot
-            ? childWithKey(
-                teachersRoot,
-                myCoTeacher
-                    ? QStringLiteral("teachers_mine")
-                    : QStringLiteral("teachers_all_korean")
-                )
-            : nullptr;
+    auto* group = myCoTeacher
+        ? m_nodes.value(QStringLiteral("co_teachers"), nullptr)
+        : childWithKey(
+            m_nodes.value(QStringLiteral("campus_staff"), nullptr),
+            QStringLiteral("teachers_all_korean"));
 
     if (!group)
     {
@@ -56,81 +46,22 @@ void Sidebar::addTeacherNode(
 
 void Sidebar::clearTeachers()
 {
-    if (!m_nodes.contains("teachers"))
+    auto* coTeachers =
+        m_nodes.value(QStringLiteral("co_teachers"), nullptr);
+    auto* campusStaff =
+        m_nodes.value(QStringLiteral("campus_staff"), nullptr);
+    auto* koreanTeachers =
+        childWithKey(campusStaff, QStringLiteral("teachers_all_korean"));
+
+    if (!coTeachers || !koreanTeachers)
     {
         return;
     }
 
-    m_nodes["teachers"]->takeChildren();
+    coTeachers->takeChildren();
+    koreanTeachers->takeChildren();
 
     m_teacherItems.clear();
 
-    for (const auto& child : treeStructure())
-    {
-        if (child.key != QStringLiteral("teachers"))
-        {
-            continue;
-        }
-
-        for (const auto& group : child.children)
-        {
-            auto* groupItem =
-                createItem(
-                    group.label,
-                    group.type,
-                    false,
-                    group.key
-                    );
-
-            m_nodes["teachers"]->addChild(groupItem);
-        }
-        break;
-    }
-
     updateTreeColumnWidth();
 }
-
-void Sidebar::setAllKoreanTeachersVisible(
-    bool visible
-    )
-{
-    auto* teachersRoot =
-        m_nodes.value(
-            QStringLiteral("teachers"),
-            nullptr
-            );
-
-    auto* allTeachers =
-        teachersRoot
-            ? childWithKey(
-                teachersRoot,
-                QStringLiteral("teachers_all_korean")
-                )
-            : nullptr;
-
-    if (!allTeachers)
-    {
-        return;
-    }
-
-    if (
-        !visible
-        && itemContainsCurrentSelection(
-            allTeachers,
-            m_tree->currentItem()
-            )
-        )
-    {
-        m_tree->clearSelection();
-    }
-
-    allTeachers->setHidden(!visible);
-    updateTreeColumnWidth();
-}
-
-
-
-// =========================================================
-// Update Tree Column Width
-// =========================================================
-

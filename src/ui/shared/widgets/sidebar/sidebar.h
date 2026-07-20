@@ -62,10 +62,6 @@ public:
 
     void clearTeachers();
 
-    void setAllKoreanTeachersVisible(
-        bool visible
-        );
-
     void selectTeacher(
         int teacherId
         );

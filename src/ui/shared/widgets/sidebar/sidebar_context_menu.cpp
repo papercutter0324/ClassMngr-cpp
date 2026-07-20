@@ -109,7 +109,10 @@ void Sidebar::showContextMenu(
     // Teacher Root
     // =====================================================
 
-    else if (item == m_nodes["teachers"])
+    else if (
+        item == m_nodes.value(QStringLiteral("co_teachers"))
+        || item == m_nodes.value(QStringLiteral("campus_staff"))
+        )
     {
         addTeacherAction();
     }

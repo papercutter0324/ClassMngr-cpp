@@ -229,7 +229,8 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
         QStringLiteral("my_info_class_roster"),
         QStringLiteral("speaking_evaluations"),
         QStringLiteral("sub_prep"),
-        QStringLiteral("teachers"),
+        QStringLiteral("co_teachers"),
+        QStringLiteral("campus_staff"),
         QStringLiteral("my_info_class_list")
     };
 
@@ -290,6 +291,24 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
             ),
         NodeType::Page
         );
+
+    QTreeWidgetItem* coTeachers =
+        topLevelWithKey(tree, QStringLiteral("co_teachers"));
+    QVERIFY(coTeachers);
+    QCOMPARE(coTeachers->text(0), QStringLiteral("Co-Teachers"));
+
+    QTreeWidgetItem* campusStaff =
+        topLevelWithKey(tree, QStringLiteral("campus_staff"));
+    QVERIFY(campusStaff);
+    QCOMPARE(campusStaff->text(0), QStringLiteral("Campus Staff"));
+    QCOMPARE(campusStaff->childCount(), 3);
+    QCOMPARE(campusStaff->child(0)->data(0, KeyRole).toString(),
+             QStringLiteral("teachers_all_korean"));
+    QCOMPARE(campusStaff->child(0)->text(0), QStringLiteral("Korean Teachers"));
+    QCOMPARE(campusStaff->child(1)->data(0, KeyRole).toString(),
+             QStringLiteral("native_english_teachers"));
+    QCOMPARE(campusStaff->child(2)->data(0, KeyRole).toString(),
+             QStringLiteral("gs_team"));
 }
 
 QTEST_MAIN(SidebarStructureTests)

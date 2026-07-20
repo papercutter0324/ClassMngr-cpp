@@ -17,6 +17,7 @@
 #include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
+#include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
 #include <QDir>
@@ -461,6 +462,37 @@ void NavigationController::handleNavigation(
     case NodeType::Page:
         if (data.path.isEmpty() || data.keys.isEmpty())
         {
+            return;
+        }
+
+        if (
+            data.routeKey == QStringLiteral("native_english_teachers")
+            || data.routeKey == QStringLiteral("gs_team")
+            )
+        {
+            if (
+                !m_services
+                || !m_services->dataService()
+                || !m_services->dataService()->isOpen()
+                || !m_pages->confirmCurrentPageCanLeave()
+                )
+            {
+                return;
+            }
+
+            StaffDirectoryPage* page =
+                data.routeKey == QStringLiteral("native_english_teachers")
+                    ? m_pages->nativeEnglishTeachersPage()
+                    : m_pages->gsTeamPage();
+            if (!page || !page->loadDirectory())
+            {
+                return;
+            }
+            m_pages->showPage(
+                data.routeKey == QStringLiteral("native_english_teachers")
+                    ? PageType::NativeEnglishTeachers
+                    : PageType::GsTeam
+                );
             return;
         }
 

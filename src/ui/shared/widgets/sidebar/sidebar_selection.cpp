@@ -78,7 +78,8 @@ void Sidebar::setDatabaseSectionsVisible(
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
         QStringLiteral("speaking_evaluations"),
-        QStringLiteral("teachers")
+        QStringLiteral("co_teachers"),
+        QStringLiteral("campus_staff")
     };
 
     bool currentSelectionHidden = false;

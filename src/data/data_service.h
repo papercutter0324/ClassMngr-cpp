@@ -8,9 +8,12 @@
 #include "domain/models/class_transfer.h"
 #include "domain/models/classroom.h"
 #include "domain/models/intensive_slot_state.h"
+#include "domain/models/gs_team_member.h"
+#include "domain/models/native_english_teacher.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 #include "domain/models/teacher.h"
+#include "domain/models/teacher_import.h"
 #include "core/result.h"
 
 #include <QList>
@@ -27,10 +30,13 @@ class ClassInfoRepository;
 class ClassRepository;
 class ClassTransferRepository;
 class IntensiveSlotStateRepository;
+class GsTeamRepository;
+class NativeEnglishTeacherRepository;
 class RosterRepository;
 class SettingsRepository;
 class SpeakingEvalRepository;
 class TeacherRepository;
+class TeacherImportRepository;
 
 // =========================================================
 // Data Service
@@ -105,6 +111,26 @@ public:
     void deleteTeacher(
         int teacherId
         );
+
+    QList<NativeEnglishTeacher> getNativeEnglishTeachers();
+
+    [[nodiscard]] Status saveNativeEnglishTeacherDirectory(
+        const QList<NativeEnglishTeacher>& teachers,
+        const QList<int>& deletedIds
+        );
+
+    QList<GsTeamMember> getGsTeamMembers();
+
+    [[nodiscard]] Status saveGsTeamDirectory(
+        const QList<GsTeamMember>& members,
+        const QList<int>& deletedIds
+        );
+
+    [[nodiscard]] Result<TeacherImportSummary> importTeachers(
+        const TeacherImportPlan& plan
+        );
+
+    [[nodiscard]] QDate latestTeacherImportDate();
 
 
 
@@ -337,6 +363,10 @@ private:
     std::unique_ptr<SettingsRepository> m_settingsRepository;
     std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;
     std::unique_ptr<TeacherRepository> m_teacherRepository;
+    std::unique_ptr<NativeEnglishTeacherRepository>
+        m_nativeEnglishTeacherRepository;
+    std::unique_ptr<GsTeamRepository> m_gsTeamRepository;
+    std::unique_ptr<TeacherImportRepository> m_teacherImportRepository;
     std::unique_ptr<ClassRepository> m_classRepository;
     std::unique_ptr<ClassTransferRepository> m_classTransferRepository;
     std::unique_ptr<ClassInfoRepository> m_classInfoRepository;

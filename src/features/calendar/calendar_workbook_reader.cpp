@@ -7,12 +7,15 @@
 
 #include <zlib.h>
 
+#include <algorithm>
+
 namespace CalendarImport
 {
 namespace
 {
-constexpr int LastMeaningfulRow = 60;
-constexpr int ColumnCount = 26;
+constexpr int LastMeaningfulRow = 1'048'576;
+constexpr int ColumnCount = 16'384;
+constexpr int CellPositionStride = ColumnCount + 1;
 constexpr int MinZipEocdSize = 22;
 constexpr int MaxZipCommentSize = 0xffff;
 constexpr quint32 ZipEocdSignature = 0x06054b50;
@@ -376,6 +379,8 @@ QVector<Style> parseStyles(
     QXmlStreamReader xml(xmlData);
     QVector<QString> fillColors;
     QVector<QString> fontColors;
+    QVector<bool> fillFlags;
+    QVector<bool> fontBoldFlags;
     QVector<Style> styles;
     bool inFills = false;
     bool inFill = false;
@@ -384,6 +389,8 @@ QVector<Style> parseStyles(
     bool inCellXfs = false;
     QString currentFill;
     QString currentFont;
+    bool currentFilled = false;
+    bool currentBold = false;
 
     while (!xml.atEnd())
     {
@@ -407,12 +414,22 @@ QVector<Style> parseStyles(
             {
                 inFill = true;
                 currentFill.clear();
+                currentFilled = false;
+            }
+            else if (name == QStringLiteral("patternFill") && inFill)
+            {
+                const QString pattern =
+                    xml.attributes().value(QStringLiteral("patternType")).toString();
+                currentFilled = !pattern.isEmpty()
+                    && pattern != QStringLiteral("none")
+                    && pattern != QStringLiteral("gray125");
             }
             else if (
                 name == QStringLiteral("fgColor")
                 && inFill
                 )
             {
+                currentFilled = true;
                 currentFill =
                     normalizedColor(
                         xml.attributes()
@@ -428,6 +445,15 @@ QVector<Style> parseStyles(
             {
                 inFont = true;
                 currentFont.clear();
+                currentBold = false;
+            }
+            else if (name == QStringLiteral("b") && inFont)
+            {
+                const QString value =
+                    xml.attributes().value(QStringLiteral("val")).toString();
+                currentBold = value.isEmpty()
+                    || (value != QStringLiteral("0")
+                        && value.compare(QStringLiteral("false"), Qt::CaseInsensitive) != 0);
             }
             else if (
                 name == QStringLiteral("color")
@@ -467,6 +493,7 @@ QVector<Style> parseStyles(
                 {
                     style.fillColor =
                         fillColors[fillId];
+                    style.filled = fillFlags.value(fillId, false);
                 }
                 if (
                     fontOk
@@ -476,6 +503,7 @@ QVector<Style> parseStyles(
                 {
                     style.fontColor =
                         fontColors[fontId];
+                    style.bold = fontBoldFlags.value(fontId, false);
                 }
                 styles.append(style);
             }
@@ -485,6 +513,7 @@ QVector<Style> parseStyles(
             if (name == QStringLiteral("fill") && inFill)
             {
                 fillColors.append(currentFill);
+                fillFlags.append(currentFilled);
                 inFill = false;
             }
             else if (name == QStringLiteral("fills"))
@@ -494,6 +523,7 @@ QVector<Style> parseStyles(
             else if (name == QStringLiteral("font") && inFont)
             {
                 fontColors.append(currentFont);
+                fontBoldFlags.append(currentBold);
                 inFont = false;
             }
             else if (name == QStringLiteral("fonts"))
@@ -539,7 +569,7 @@ QVector<Cell> parseSheet(
             spreadsheetColumn(reference);
         cell.note =
             notesByPosition
-                .value(cell.row * 100 + cell.column)
+                .value(cell.row * CellPositionStride + cell.column)
                 .trimmed();
 
         if (
@@ -615,6 +645,96 @@ QVector<Cell> parseSheet(
     return cells;
 }
 
+struct WorksheetReference
+{
+    QString name;
+    QString relationshipId;
+};
+
+QVector<WorksheetReference> parseWorksheetReferences(
+    const QByteArray& xmlData
+    )
+{
+    QVector<WorksheetReference> result;
+    QXmlStreamReader xml(xmlData);
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+        if (!xml.isStartElement() || xml.name() != QStringLiteral("sheet"))
+        {
+            continue;
+        }
+
+        WorksheetReference reference;
+        reference.name =
+            xml.attributes().value(QStringLiteral("name")).toString();
+        for (const QXmlStreamAttribute& attribute : xml.attributes())
+        {
+            if (attribute.name() == QStringLiteral("id"))
+            {
+                reference.relationshipId = attribute.value().toString();
+                break;
+            }
+        }
+        if (!reference.relationshipId.isEmpty())
+        {
+            result.append(reference);
+        }
+    }
+
+    return result;
+}
+
+QString resolvedWorkbookRelationshipTarget(QString target)
+{
+    target = target.trimmed();
+    if (target.startsWith(QLatin1Char('/')))
+    {
+        target.remove(0, 1);
+        return target;
+    }
+    while (target.startsWith(QStringLiteral("../")))
+    {
+        target.remove(0, 3);
+    }
+    if (!target.startsWith(QStringLiteral("xl/")))
+    {
+        target.prepend(QStringLiteral("xl/"));
+    }
+    return target;
+}
+
+QHash<QString, QString> parseWorkbookRelationships(
+    const QByteArray& xmlData
+    )
+{
+    QHash<QString, QString> result;
+    QXmlStreamReader xml(xmlData);
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+        if (!xml.isStartElement() || xml.name() != QStringLiteral("Relationship"))
+        {
+            continue;
+        }
+        const auto attributes = xml.attributes();
+        const QString id = attributes.value(QStringLiteral("Id")).toString();
+        const QString type = attributes.value(QStringLiteral("Type")).toString();
+        if (!id.isEmpty() && type.endsWith(QStringLiteral("/worksheet")))
+        {
+            result.insert(
+                id,
+                resolvedWorkbookRelationshipTarget(
+                    attributes.value(QStringLiteral("Target")).toString())
+                );
+        }
+    }
+
+    return result;
+}
+
 QHash<int, QString> parseCellNotes(
     const QByteArray& xmlData
     )
@@ -652,7 +772,7 @@ QHash<int, QString> parseCellNotes(
                     name.toString();
                 currentPosition =
                     row > 0 && column > 0
-                        ? row * 100 + column
+                        ? row * CellPositionStride + column
                         : 0;
                 currentText.clear();
             }
@@ -777,11 +897,19 @@ QStringList worksheetNoteEntryNames(
 
 QStringList worksheetNoteEntryNames(
     const QByteArray& data,
-    const QHash<QString, ZipEntry>& entries
+    const QHash<QString, ZipEntry>& entries,
+    const QString& worksheetEntryName
     )
 {
+    const int slash = worksheetEntryName.lastIndexOf(QLatin1Char('/'));
+    const QString directory = slash >= 0
+        ? worksheetEntryName.left(slash + 1)
+        : QString();
+    const QString fileName = slash >= 0
+        ? worksheetEntryName.mid(slash + 1)
+        : worksheetEntryName;
     const QString relationshipsName =
-        QStringLiteral("xl/worksheets/_rels/sheet1.xml.rels");
+        directory + QStringLiteral("_rels/") + fileName + QStringLiteral(".rels");
 
     if (entries.contains(relationshipsName))
     {
@@ -823,12 +951,13 @@ QStringList worksheetNoteEntryNames(
 
 QHash<int, QString> workbookCellNotes(
     const QByteArray& data,
-    const QHash<QString, ZipEntry>& entries
+    const QHash<QString, ZipEntry>& entries,
+    const QString& worksheetEntryName
     )
 {
     QHash<int, QString> notes;
     const QStringList entryNames =
-        worksheetNoteEntryNames(data, entries);
+        worksheetNoteEntryNames(data, entries, worksheetEntryName);
 
     for (const QString& name : entryNames)
     {
@@ -866,9 +995,8 @@ Workbook parseWorkbook(
         zipEntries(data);
 
     const QStringList requiredFiles{
-        QStringLiteral("xl/sharedStrings.xml"),
-        QStringLiteral("xl/styles.xml"),
-        QStringLiteral("xl/worksheets/sheet1.xml")
+        QStringLiteral("xl/workbook.xml"),
+        QStringLiteral("xl/_rels/workbook.xml.rels")
     };
 
     for (const QString& file : requiredFiles)
@@ -886,31 +1014,73 @@ Workbook parseWorkbook(
     }
 
     Workbook workbook;
-    workbook.sharedStrings =
-        parseSharedStrings(
-            zipFileData(
-                data,
-                entries.value(QStringLiteral("xl/sharedStrings.xml"))
-                )
+    if (entries.contains(QStringLiteral("xl/sharedStrings.xml")))
+    {
+        workbook.sharedStrings =
+            parseSharedStrings(
+                zipFileData(
+                    data,
+                    entries.value(QStringLiteral("xl/sharedStrings.xml"))
+                    )
+                );
+    }
+    if (entries.contains(QStringLiteral("xl/styles.xml")))
+    {
+        workbook.styles =
+            parseStyles(
+                zipFileData(
+                    data,
+                    entries.value(QStringLiteral("xl/styles.xml"))
+                    )
+                );
+    }
+    if (workbook.styles.isEmpty())
+    {
+        workbook.styles.append(Style{});
+    }
+    const QVector<WorksheetReference> worksheetReferences =
+        parseWorksheetReferences(
+            zipFileData(data, entries.value(QStringLiteral("xl/workbook.xml")))
             );
-    workbook.styles =
-        parseStyles(
-            zipFileData(
-                data,
-                entries.value(QStringLiteral("xl/styles.xml"))
-                )
-            );
-    workbook.cells =
-        parseSheet(
-            zipFileData(
-                data,
-                entries.value(QStringLiteral("xl/worksheets/sheet1.xml"))
-                ),
-            workbook.sharedStrings,
-            workbookCellNotes(data, entries)
+    const QHash<QString, QString> relationshipTargets =
+        parseWorkbookRelationships(
+            zipFileData(data, entries.value(QStringLiteral("xl/_rels/workbook.xml.rels")))
             );
 
-    if (workbook.cells.isEmpty() || workbook.styles.isEmpty())
+    for (const WorksheetReference& reference : worksheetReferences)
+    {
+        const QString entryName =
+            relationshipTargets.value(reference.relationshipId);
+        if (entryName.isEmpty() || !entries.contains(entryName))
+        {
+            if (errorMessage)
+            {
+                *errorMessage =
+                    QStringLiteral("The spreadsheet is missing worksheet %1.")
+                        .arg(reference.name);
+            }
+            return {};
+        }
+
+        Worksheet worksheet;
+        worksheet.name = reference.name;
+        worksheet.cells = parseSheet(
+            zipFileData(data, entries.value(entryName)),
+            workbook.sharedStrings,
+            workbookCellNotes(data, entries, entryName)
+            );
+        workbook.worksheets.append(worksheet);
+    }
+
+    if (!workbook.worksheets.isEmpty())
+    {
+        workbook.cells = workbook.worksheets.first().cells;
+    }
+
+    const bool allWorksheetsEmpty = std::all_of(
+        workbook.worksheets.cbegin(), workbook.worksheets.cend(),
+        [](const Worksheet& worksheet) { return worksheet.cells.isEmpty(); });
+    if (workbook.worksheets.isEmpty() || allWorksheetsEmpty)
     {
         if (errorMessage)
         {

@@ -159,30 +159,18 @@ void SidebarController::refreshTeacherSidebar()
             );
     }
 
-    const bool showAllKoreanTeachers =
-        m_actions && m_actions->showAllKoreanTeachers
-            ? m_actions->showAllKoreanTeachers->isChecked()
-            : SettingsManager::instance().showAllKoreanTeachers();
-
-    m_sidebar->setAllKoreanTeachersVisible(
-        showAllKoreanTeachers
-        );
-
-    if (showAllKoreanTeachers)
+    for (const Teacher& teacher : sortedTeachers(teachers))
     {
-        for (const Teacher& teacher : sortedTeachers(teachers))
-        {
-            const QString displayName =
-                SidebarNodeNaming::formatTeacherDisplayName(
-                    teacher
-                    );
-
-            m_sidebar->addTeacherNode(
-                displayName,
-                teacher.id,
-                false
+        const QString displayName =
+            SidebarNodeNaming::formatTeacherDisplayName(
+                teacher
                 );
-        }
+
+        m_sidebar->addTeacherNode(
+            displayName,
+            teacher.id,
+            false
+            );
     }
 
     updateActionStates();
@@ -224,4 +212,3 @@ void SidebarController::handleTeacherSaved(
         teacherId
         );
 }
-

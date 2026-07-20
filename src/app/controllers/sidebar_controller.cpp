@@ -61,13 +61,10 @@ void SidebarController::connectActions(ActionRegistry& actions)
         );
 
     connect(
-        actions.showAllKoreanTeachers,
-        &QAction::toggled,
+        actions.importTeachers,
+        &QAction::triggered,
         this,
-        [this](bool)
-        {
-            refreshTeacherSidebar();
-        }
+        &SidebarController::importTeachers
         );
 
     connect(

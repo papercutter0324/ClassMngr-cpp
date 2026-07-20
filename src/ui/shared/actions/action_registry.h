@@ -31,7 +31,6 @@ public:
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;
-    QAction* showAllKoreanTeachers = nullptr;
 
     // =====================================================
     // File
@@ -66,6 +65,7 @@ public:
     QAction* exportClasses = nullptr;
     QAction* newTeacher = nullptr;
     QAction* deleteTeacher = nullptr;
+    QAction* importTeachers = nullptr;
 
     // =====================================================
     // Help

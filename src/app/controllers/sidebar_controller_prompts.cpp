@@ -203,12 +203,22 @@ void SidebarController::updateActionStates()
             m_actions->deleteTeacher->setEnabled(false);
         }
 
+        if (m_actions->importTeachers)
+        {
+            m_actions->importTeachers->setEnabled(false);
+        }
+
         return;
     }
 
     if (m_actions->importClasses)
     {
         m_actions->importClasses->setEnabled(true);
+    }
+
+    if (m_actions->importTeachers)
+    {
+        m_actions->importTeachers->setEnabled(true);
     }
 
     if (m_actions->exportClasses)

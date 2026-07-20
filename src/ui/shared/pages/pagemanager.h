@@ -21,6 +21,7 @@ class MyClassesPage;
 class RostersPage;
 class ClassesPage;
 class TeacherInfoPage;
+class StaffDirectoryPage;
 class CampusDashboardPage;
 class SpeakingEvalPage;
 class SubPrepPage;
@@ -41,6 +42,8 @@ enum class PageType
     Schedule,
     Classes,
     TeacherInfo,
+    NativeEnglishTeachers,
+    GsTeam,
     CampusDashboard,
     Rosters,
     SpeakingEval,
@@ -140,6 +143,10 @@ public:
 
     TeacherInfoPage* teacherPage() const;
 
+    StaffDirectoryPage* nativeEnglishTeachersPage() const;
+
+    StaffDirectoryPage* gsTeamPage() const;
+
     CampusDashboardPage* campusDashboard() const;
 
     SpeakingEvalPage* speakingPage() const;
@@ -203,6 +210,10 @@ private:
     ClassesPage* m_classesPage = nullptr;
 
     TeacherInfoPage* m_teacherPage = nullptr;
+
+    StaffDirectoryPage* m_nativeEnglishTeachersPage = nullptr;
+
+    StaffDirectoryPage* m_gsTeamPage = nullptr;
 
     CampusDashboardPage* m_campusDashboard = nullptr;
 

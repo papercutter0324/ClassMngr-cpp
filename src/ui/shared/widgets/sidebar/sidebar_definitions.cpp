@@ -55,21 +55,30 @@ QList<TreeNodeSpec> treeStructure()
         },
 
         {
-            "teachers",
-            QObject::tr("Korean Teachers"),
-            NodeType::Root,
+            "co_teachers",
+            QObject::tr("Co-Teachers"),
+            NodeType::Root
+        },
 
+        {
+            "campus_staff",
+            QObject::tr("Campus Staff"),
+            NodeType::Root,
             {
                 {
-                    "teachers_mine",
-                    QObject::tr("My Co-Teachers"),
+                    "teachers_all_korean",
+                    QObject::tr("Korean Teachers"),
                     NodeType::Root
                 },
-
                 {
-                    "teachers_all_korean",
-                    QObject::tr("All Teachers"),
-                    NodeType::Root
+                    "native_english_teachers",
+                    QObject::tr("Native English Teachers"),
+                    NodeType::Page
+                },
+                {
+                    "gs_team",
+                    QObject::tr("GS Team"),
+                    NodeType::Page
                 }
             }
         },
