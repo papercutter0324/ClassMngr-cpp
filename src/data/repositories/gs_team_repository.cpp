@@ -36,12 +36,13 @@ QList<GsTeamMember> GsTeamRepository::getAll() const
         FROM gs_team
         ORDER BY CASE position
             WHEN 'Branch Manager' THEN 1
-            WHEN 'M2' THEN 2
-            WHEN 'M1' THEN 3
-            WHEN 'C3' THEN 4
-            WHEN 'C2' THEN 5
-            WHEN 'C1' THEN 6
-            ELSE 7
+            WHEN 'M3' THEN 2
+            WHEN 'M2' THEN 3
+            WHEN 'M1' THEN 4
+            WHEN 'C3' THEN 5
+            WHEN 'C2' THEN 6
+            WHEN 'C1' THEN 7
+            ELSE 8
         END,
         CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
         id

@@ -905,6 +905,7 @@ if(BUILD_TESTING)
         tests/teacher_import_tests.cpp
         src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
+        src/data/repositories/gs_team_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/teacher/import/sectioned_contact_list_template.cpp

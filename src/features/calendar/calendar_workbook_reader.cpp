@@ -429,13 +429,22 @@ QVector<Style> parseStyles(
                 && inFill
                 )
             {
-                currentFilled = true;
+                const QString theme =
+                    xml.attributes()
+                        .value(QStringLiteral("theme"))
+                        .toString();
                 currentFill =
                     normalizedColor(
                         xml.attributes()
                             .value(QStringLiteral("rgb"))
                             .toString()
                         );
+                if (theme == QStringLiteral("0"))
+                {
+                    currentFill = QStringLiteral("FFFFFF");
+                }
+                currentFilled = theme != QStringLiteral("0")
+                    && currentFill != QStringLiteral("FFFFFF");
             }
             else if (name == QStringLiteral("fonts"))
             {

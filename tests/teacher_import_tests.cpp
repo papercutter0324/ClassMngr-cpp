@@ -1,4 +1,5 @@
 #include "data/database/database_schema_manager.h"
+#include "data/repositories/gs_team_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "features/teacher/import/sectioned_contact_list_template.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
@@ -25,7 +26,9 @@ private slots:
     void validatorReportsRecognitionStatusesAndMetadata();
     void registryAcceptsAdditionalTemplateAdapters();
     void unreadableDataFailsValidation();
+    void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void importsIntoSeparateTablesAndPreservesManualFields();
+    void sortsGsTeamPositions();
     void validatesExternalSampleWhenProvided();
 };
 
@@ -143,8 +146,8 @@ QByteArray testWorkbookData(
         R"(<?xml version="1.0" encoding="UTF-8"?>
         <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
           <fonts count="2"><font/><font><b/></font></fonts>
-          <fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/></patternFill></fill></fills>
-          <cellXfs count="3"><xf fontId="0" fillId="0"/><xf fontId="1" fillId="0"/><xf fontId="0" fillId="2"/></cellXfs>
+          <fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor theme="0"/></patternFill></fill></fills>
+          <cellXfs count="4"><xf fontId="0" fillId="0"/><xf fontId="1" fillId="0"/><xf fontId="0" fillId="2"/><xf fontId="0" fillId="3"/></cellXfs>
         </styleSheet>)");
     const QByteArray nameCell = name.isEmpty()
         ? QByteArray()
@@ -165,7 +168,7 @@ QByteArray testWorkbookData(
     const QByteArray sheet2 = QByteArrayLiteral(
         R"(<?xml version="1.0" encoding="UTF-8"?>
         <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>
-          <row r="70"><c r="A70" s="1" t="inlineStr"><is><t>Bold</t></is></c><c r="B70" s="2" t="inlineStr"><is><t>Filled</t></is></c></row>
+          <row r="70"><c r="A70" s="1" t="inlineStr"><is><t>Bold</t></is></c><c r="B70" s="2" t="inlineStr"><is><t>Filled</t></is></c><c r="C70" s="3" t="inlineStr"><is><t>White</t></is></c></row>
         </sheetData></worksheet>)");
 
     return storedZip({
@@ -207,7 +210,7 @@ CalendarImport::Workbook sectionedWorkbook()
         {58, 4, 0, QStringLiteral("010-1111-2222"), {}},
         {58, 5, 0, QStringLiteral("05/09"), {}},
         {60, 1, 0, QStringLiteral("GS"), {}},
-        {61, 3, 0, QStringLiteral("TaylorC1"), {}},
+        {61, 3, 1, QStringLiteral("TaylorM3"), {}},
         {61, 5, 0, QStringLiteral("06/10"), {}}
     };
     workbook.worksheets = {worksheet};
@@ -254,7 +257,7 @@ void TeacherImportTests::parsesSectionedTemplate()
     QCOMPARE(preview->koreanGroups.first().level, QStringLiteral("M1"));
     QCOMPARE(preview->koreanGroups.first().candidates.size(), 1);
     QCOMPARE(preview->koreanGroups.first().candidates.first().teacher.teacherKr,
-             QStringLiteral("홍길동B"));
+             QStringLiteral("홍길동"));
     QVERIFY(preview->koreanGroups.first().candidates.first().selectedByDefault);
     QCOMPARE(preview->koreanGroups.first().candidates.first().teacher.birthday,
              QStringLiteral("02-29"));
@@ -264,9 +267,9 @@ void TeacherImportTests::parsesSectionedTemplate()
     QCOMPARE(preview->nativeEnglishTeachers.at(2).position, QStringLiteral("Instructor"));
     QCOMPARE(preview->gsTeamMembers.size(), 2);
     QCOMPARE(preview->gsTeamMembers.at(0).koreanName, QStringLiteral("김하늘"));
-    QCOMPARE(preview->gsTeamMembers.at(0).position, QStringLiteral("Branch Manager"));
+    QCOMPARE(preview->gsTeamMembers.at(0).position, QStringLiteral("M3"));
     QCOMPARE(preview->gsTeamMembers.at(1).name, QStringLiteral("Taylor"));
-    QCOMPARE(preview->gsTeamMembers.at(1).position, QStringLiteral("C1"));
+    QCOMPARE(preview->gsTeamMembers.at(1).position, QStringLiteral("Branch Manager"));
 }
 
 void TeacherImportTests::invalidVersionIsRecognizedButRejected()
@@ -303,10 +306,13 @@ void TeacherImportTests::readsNamedMultiSheetWorkbookMetadata()
     QCOMPARE(name->value, QStringLiteral("홍길동 E4/6"));
     const auto bold = findCell(workbook.worksheets.at(1), 70, 1);
     const auto filled = findCell(workbook.worksheets.at(1), 70, 2);
+    const auto white = findCell(workbook.worksheets.at(1), 70, 3);
     QVERIFY(bold != workbook.worksheets.at(1).cells.cend());
     QVERIFY(filled != workbook.worksheets.at(1).cells.cend());
+    QVERIFY(white != workbook.worksheets.at(1).cells.cend());
     QVERIFY(workbook.styles.at(bold->style).bold);
     QVERIFY(workbook.styles.at(filled->style).filled);
+    QVERIFY(!workbook.styles.at(white->style).filled);
 }
 
 void TeacherImportTests::validatorReportsRecognitionStatusesAndMetadata()
@@ -372,6 +378,48 @@ void TeacherImportTests::unreadableDataFailsValidation()
         validateTeacherImportData(QByteArrayLiteral("not an xlsx"), registry);
     QCOMPARE(validation.status, TeacherImportFileStatus::Unreadable);
     QVERIFY(!validation.diagnostics.isEmpty());
+}
+
+void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
+{
+    const QString connectionName =
+        QStringLiteral("teacher-import-suffix-test-%1").arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "INSERT INTO teachers (teacher_kr, room_number) VALUES ('홍길동D', 'Old Room')")));
+
+        TeacherImportPlan plan;
+        plan.templateId = QStringLiteral("sectioned-contact-list-v1");
+        plan.sourceDate = QDate(2026, 7, 9);
+        Teacher korean;
+        korean.teacherKr = QStringLiteral("홍길동");
+        korean.roomNumber = QStringLiteral("413");
+        plan.koreanTeachers.append(korean);
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        if (!imported)
+        {
+            QFAIL(qPrintable(imported.error()));
+        }
+        QCOMPARE(imported->koreanTeachers.created, 0);
+        QCOMPARE(imported->koreanTeachers.updated, 1);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT teacher_kr, room_number FROM teachers")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QStringLiteral("홍길동"));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("413"));
+        QVERIFY(!query.next());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
@@ -493,6 +541,56 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
+void TeacherImportTests::sortsGsTeamPositions()
+{
+    const QString connectionName =
+        QStringLiteral("gs-team-order-test-%1").arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+
+        const QStringList positions{
+            QStringLiteral("C1"),
+            QStringLiteral("M1"),
+            QStringLiteral("Branch Manager"),
+            QStringLiteral("C3"),
+            QStringLiteral("M3"),
+            QStringLiteral("C2"),
+            QStringLiteral("M2")
+        };
+        QSqlQuery query(database);
+        for (const QString& position : positions)
+        {
+            query.prepare(QStringLiteral(
+                "INSERT INTO gs_team (name, position) VALUES (?, ?)"));
+            query.addBindValue(position + QStringLiteral(" member"));
+            query.addBindValue(position);
+            QVERIFY(query.exec());
+        }
+
+        GsTeamRepository repository(database);
+        const QList<GsTeamMember> members = repository.getAll();
+        QCOMPARE(members.size(), positions.size());
+        const QStringList expectedPositions{
+            QStringLiteral("Branch Manager"),
+            QStringLiteral("M3"),
+            QStringLiteral("M2"),
+            QStringLiteral("M1"),
+            QStringLiteral("C3"),
+            QStringLiteral("C2"),
+            QStringLiteral("C1")
+        };
+        for (int index = 0; index < expectedPositions.size(); ++index)
+        {
+            QCOMPARE(members.at(index).position, expectedPositions.at(index));
+        }
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
 void TeacherImportTests::validatesExternalSampleWhenProvided()
 {
     const QString path = qEnvironmentVariable("CLASSMNGR_TEACHER_IMPORT_SAMPLE");
@@ -511,6 +609,18 @@ void TeacherImportTests::validatesExternalSampleWhenProvided()
     QCOMPARE(koreanCount, 38);
     QCOMPARE(validation.preview.nativeEnglishTeachers.size(), 10);
     QCOMPARE(validation.preview.gsTeamMembers.size(), 9);
+    const auto positionFor = [&validation](const QString& koreanName) {
+        for (const GsTeamMember& member : validation.preview.gsTeamMembers)
+        {
+            if (member.koreanName == koreanName)
+            {
+                return member.position;
+            }
+        }
+        return QString();
+    };
+    QCOMPARE(positionFor(QStringLiteral("동경태")), QStringLiteral("Branch Manager"));
+    QCOMPARE(positionFor(QStringLiteral("황은미")), QStringLiteral("M3"));
 }
 
 QTEST_GUILESS_MAIN(TeacherImportTests)

@@ -1,5 +1,7 @@
 #include "sectioned_contact_list_template.h"
 
+#include "teacher_import_name_utils.h"
+
 #include <QObject>
 #include <QHash>
 #include <QRegularExpression>
@@ -174,9 +176,10 @@ QPair<QString, bool> cleanedKoreanName(const QString& value)
     const QRegularExpressionMatch match = expression.match(value);
     if (!match.hasMatch())
     {
-        return {value.simplified(), false};
+        return {TeacherImportNameUtils::hangulOnly(value), false};
     }
-    QString name = value.left(match.capturedStart()).trimmed();
+    const QString name =
+        TeacherImportNameUtils::hangulOnly(value.left(match.capturedStart()));
     return {name, true};
 }
 
@@ -198,22 +201,14 @@ QPair<QString, QString> cleanedStaffName(const QString& value)
         name.chop(1);
         name = name.trimmed();
     }
-    QString position = match.captured(1).toUpper();
-    if (position == QStringLiteral("M3"))
-    {
-        position = QStringLiteral("Branch Manager");
-    }
-    return {name, position};
+    return {name, match.captured(1).toUpper()};
 }
 
 bool containsHangul(const QString& value)
 {
     for (const QChar character : value)
     {
-        const ushort code = character.unicode();
-        if ((code >= 0x1100 && code <= 0x11ff)
-            || (code >= 0x3130 && code <= 0x318f)
-            || (code >= 0xac00 && code <= 0xd7af))
+        if (TeacherImportNameUtils::isHangul(character))
         {
             return true;
         }
@@ -232,6 +227,18 @@ bool highlightedName(
     }
     const CalendarImport::Style& style = workbook.styles.at(cell->style);
     return style.bold || style.filled;
+}
+
+bool filledCell(
+    const CalendarImport::Workbook& workbook,
+    const CalendarImport::Cell* cell
+    )
+{
+    if (!cell || cell->style < 0 || cell->style >= workbook.styles.size())
+    {
+        return false;
+    }
+    return workbook.styles.at(cell->style).filled;
 }
 
 QString normalizedIdentity(const QString& value)
@@ -402,7 +409,10 @@ Result<TeacherImportPreview> SectionedContactListTemplate::parse(
                 GsTeamMember member;
                 if (korean) member.koreanName = name;
                 else member.name = name;
-                member.position = position;
+                member.position = position == QStringLiteral("M3")
+                    && filledCell(workbook, cellAt(cells, row, 3))
+                    ? QStringLiteral("Branch Manager")
+                    : position;
                 member.phoneNumber = cellText(cells, row, 4);
                 member.birthday = *birthday;
                 preview.gsTeamMembers.append(member);

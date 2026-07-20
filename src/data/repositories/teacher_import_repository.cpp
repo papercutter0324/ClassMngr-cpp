@@ -1,6 +1,7 @@
 #include "teacher_import_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "features/teacher/import/teacher_import_name_utils.h"
 
 #include <QObject>
 #include <QSet>
@@ -12,6 +13,11 @@ namespace
 QString normalizedName(const QString& value)
 {
     return value.simplified().toCaseFolded();
+}
+
+QString koreanTeacherNameKey(const QString& value)
+{
+    return TeacherImportNameUtils::hangulOnly(value);
 }
 
 QString queryFailure(const QSqlQuery& query, const QString& action)
@@ -29,7 +35,7 @@ Status validatePlan(const TeacherImportPlan& plan)
     QSet<QString> korean;
     for (const Teacher& teacher : plan.koreanTeachers)
     {
-        const QString key = normalizedName(teacher.teacherKr);
+        const QString key = koreanTeacherNameKey(teacher.teacherKr);
         if (key.isEmpty())
         {
             return std::unexpected(QObject::tr("Every imported Korean teacher must have a name."));
@@ -173,6 +179,22 @@ QList<int> matchingIndexes(const QList<T>& values, const QString& key, Name name
     return result;
 }
 
+QList<int> matchingKoreanTeacherIndexes(
+    const QList<Teacher>& teachers,
+    const QString& key
+    )
+{
+    QList<int> result;
+    for (int index = 0; index < teachers.size(); ++index)
+    {
+        if (koreanTeacherNameKey(teachers.at(index).teacherKr) == key)
+        {
+            result.append(index);
+        }
+    }
+    return result;
+}
+
 Status updateLatestDate(QSqlDatabase& database, const QDate& sourceDate)
 {
     QDate current;
@@ -242,9 +264,8 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
 
     for (const Teacher& source : plan.koreanTeachers)
     {
-        const QString key = normalizedName(source.teacherKr);
-        const QList<int> matches = matchingIndexes(
-            korean, key, [](const Teacher& value) { return value.teacherKr; });
+        const QString key = koreanTeacherNameKey(source.teacherKr);
+        const QList<int> matches = matchingKoreanTeacherIndexes(korean, key);
         if (matches.size() > 1)
         {
             return std::unexpected(QObject::tr("More than one stored Korean teacher matches %1.").arg(source.teacherKr));
@@ -261,7 +282,7 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
                      zoom_id, zoom_password, projection_type, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             )");
-            query.addBindValue(source.teacherKr.simplified());
+            query.addBindValue(key);
             query.addBindValue(source.teacherEn.trimmed());
             query.addBindValue(source.preferredRomanization.trimmed());
             query.addBindValue(source.roomNumber.trimmed());
@@ -283,7 +304,7 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         }
 
         const Teacher& existing = korean.at(matches.first());
-        const QString name = source.teacherKr.simplified();
+        const QString name = key;
         const QString room = source.roomNumber.trimmed().isEmpty()
             ? existing.roomNumber : source.roomNumber.trimmed();
         const QString birthday = source.birthday.trimmed().isEmpty()

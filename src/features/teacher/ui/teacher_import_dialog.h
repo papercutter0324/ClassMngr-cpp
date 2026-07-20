@@ -11,6 +11,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QRadioButton;
+class QScrollArea;
 class QVBoxLayout;
 class QWidget;
 
@@ -46,8 +47,12 @@ private:
     QLabel* m_statusLabel = nullptr;
     QLabel* m_templateLabel = nullptr;
     QLabel* m_automaticLabel = nullptr;
+    QLabel* m_koreanHeadingLabel = nullptr;
     QVBoxLayout* m_optionsHostLayout = nullptr;
+    QVBoxLayout* m_checklistsHostLayout = nullptr;
     QWidget* m_optionsWidget = nullptr;
+    QWidget* m_checklistsWidget = nullptr;
+    QScrollArea* m_candidateScrollArea = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_importButton = nullptr;
 
