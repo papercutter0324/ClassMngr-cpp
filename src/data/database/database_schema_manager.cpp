@@ -336,9 +336,17 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             position TEXT,
             phone_number TEXT,
             birthday TEXT,
-            nationality TEXT
+            nationality TEXT,
+            email TEXT
         )
     )");
+
+    ensureTableColumn(
+        database,
+        QStringLiteral("native_english_teachers"),
+        QStringLiteral("email"),
+        QStringLiteral("TEXT")
+        );
 
     query.exec(R"(
         CREATE TABLE IF NOT EXISTS gs_team (

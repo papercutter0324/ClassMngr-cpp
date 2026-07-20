@@ -119,7 +119,7 @@ Result<QList<NativeEnglishTeacher>> loadNativeTeachers(QSqlDatabase& database)
     QList<NativeEnglishTeacher> result;
     QSqlQuery query(database);
     if (!query.exec(R"(
-        SELECT id, name, position, phone_number, birthday, nationality
+        SELECT id, name, position, phone_number, birthday, nationality, email
         FROM native_english_teachers
     )"))
     {
@@ -130,7 +130,8 @@ Result<QList<NativeEnglishTeacher>> loadNativeTeachers(QSqlDatabase& database)
         result.append({
             query.value(0).toInt(), query.value(1).toString(),
             query.value(2).toString(), query.value(3).toString(),
-            query.value(4).toString(), query.value(5).toString()
+            query.value(4).toString(), query.value(5).toString(),
+            query.value(6).toString()
         });
     }
     return result;
@@ -329,14 +330,15 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
             QSqlQuery query(m_database);
             query.prepare(R"(
                 INSERT INTO native_english_teachers
-                    (name, position, phone_number, birthday, nationality)
-                VALUES (?, ?, ?, ?, ?)
+                    (name, position, phone_number, birthday, nationality, email)
+                VALUES (?, ?, ?, ?, ?, ?)
             )");
             query.addBindValue(source.name.simplified());
             query.addBindValue(source.position.trimmed());
             query.addBindValue(source.phoneNumber.trimmed());
             query.addBindValue(source.birthday.trimmed());
             query.addBindValue(source.nationality.trimmed());
+            query.addBindValue(source.email.trimmed());
             if (!query.exec())
             {
                 return std::unexpected(queryFailure(query, QObject::tr("Creating a Native English Teacher")));
@@ -352,9 +354,10 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         if (!source.phoneNumber.trimmed().isEmpty()) updated.phoneNumber = source.phoneNumber.trimmed();
         if (!source.birthday.trimmed().isEmpty()) updated.birthday = source.birthday.trimmed();
         if (!source.nationality.trimmed().isEmpty()) updated.nationality = source.nationality.trimmed();
+        if (!source.email.trimmed().isEmpty()) updated.email = source.email.trimmed();
         if (updated.name == existing.name && updated.position == existing.position
             && updated.phoneNumber == existing.phoneNumber && updated.birthday == existing.birthday
-            && updated.nationality == existing.nationality)
+            && updated.nationality == existing.nationality && updated.email == existing.email)
         {
             ++summary.nativeEnglishTeachers.unchanged;
             continue;
@@ -363,7 +366,7 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         QSqlQuery query(m_database);
         query.prepare(R"(
             UPDATE native_english_teachers
-            SET name=?, position=?, phone_number=?, birthday=?, nationality=?
+            SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
             WHERE id=?
         )");
         query.addBindValue(updated.name);
@@ -371,6 +374,7 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
         query.addBindValue(updated.phoneNumber);
         query.addBindValue(updated.birthday);
         query.addBindValue(updated.nationality);
+        query.addBindValue(updated.email);
         query.addBindValue(existing.id);
         if (!query.exec())
         {

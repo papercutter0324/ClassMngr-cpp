@@ -387,8 +387,8 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QSqlQuery seed(database);
         QVERIFY(seed.exec(R"(
             INSERT INTO native_english_teachers
-                (name, position, phone_number, birthday, nationality)
-            VALUES ('Alex', 'NET', '010-9999-9999', '03-07', 'Canadian')
+                (name, position, phone_number, birthday, nationality, email)
+            VALUES ('Alex', 'NET', '010-9999-9999', '03-07', 'Canadian', 'alex@example.com')
         )"));
 
         TeacherImportPlan plan;
@@ -427,11 +427,12 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QCOMPARE(counts.value(0).toInt(), 1);
 
         QVERIFY(counts.exec(QStringLiteral(
-            "SELECT position, phone_number, nationality FROM native_english_teachers")));
+            "SELECT position, phone_number, nationality, email FROM native_english_teachers")));
         QVERIFY(counts.next());
         QCOMPARE(counts.value(0).toString(), QStringLiteral("Team Leader"));
         QCOMPARE(counts.value(1).toString(), QStringLiteral("010-9999-9999"));
         QCOMPARE(counts.value(2).toString(), QStringLiteral("Canadian"));
+        QCOMPARE(counts.value(3).toString(), QStringLiteral("alex@example.com"));
 
         TeacherImportPlan older = plan;
         older.templateId = QStringLiteral("alternate-template-v2");

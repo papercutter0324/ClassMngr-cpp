@@ -35,9 +35,19 @@ QList<NativeEnglishTeacher> NativeEnglishTeacherRepository::getAll() const
     QSqlQuery query(m_database);
 
     if (!query.exec(R"(
-        SELECT id, name, position, phone_number, birthday, nationality
+        SELECT id, name, position, phone_number, birthday, nationality, email
         FROM native_english_teachers
-        ORDER BY name COLLATE NOCASE, id
+        ORDER BY CASE position
+            WHEN 'Co-ordinator' THEN 1
+            WHEN 'Team Leader' THEN 2
+            WHEN 'M3 Song''s' THEN 3
+            WHEN 'M2 Song''s' THEN 4
+            WHEN 'M1 Song''s' THEN 5
+            WHEN 'E6 Song''s' THEN 6
+            WHEN 'E5 Athena' THEN 7
+            WHEN 'NET' THEN 8
+            ELSE 9
+        END, name COLLATE NOCASE, id
     )"))
     {
         return result;
@@ -52,6 +62,7 @@ QList<NativeEnglishTeacher> NativeEnglishTeacherRepository::getAll() const
         teacher.phoneNumber = query.value(3).toString();
         teacher.birthday = query.value(4).toString();
         teacher.nationality = query.value(5).toString();
+        teacher.email = query.value(6).toString();
         result.append(teacher);
     }
 
@@ -108,13 +119,14 @@ Status NativeEnglishTeacherRepository::saveDirectory(
         teacher.phoneNumber = teacher.phoneNumber.trimmed();
         teacher.birthday = teacher.birthday.trimmed();
         teacher.nationality = teacher.nationality.trimmed();
+        teacher.email = teacher.email.trimmed();
 
         QSqlQuery query(m_database);
         if (teacher.id > 0)
         {
             query.prepare(R"(
                 UPDATE native_english_teachers
-                SET name=?, position=?, phone_number=?, birthday=?, nationality=?
+                SET name=?, position=?, phone_number=?, birthday=?, nationality=?, email=?
                 WHERE id=?
             )");
             query.addBindValue(teacher.name);
@@ -122,20 +134,22 @@ Status NativeEnglishTeacherRepository::saveDirectory(
             query.addBindValue(teacher.phoneNumber);
             query.addBindValue(teacher.birthday);
             query.addBindValue(teacher.nationality);
+            query.addBindValue(teacher.email);
             query.addBindValue(teacher.id);
         }
         else
         {
             query.prepare(R"(
                 INSERT INTO native_english_teachers
-                    (name, position, phone_number, birthday, nationality)
-                VALUES (?, ?, ?, ?, ?)
+                    (name, position, phone_number, birthday, nationality, email)
+                VALUES (?, ?, ?, ?, ?, ?)
             )");
             query.addBindValue(teacher.name);
             query.addBindValue(teacher.position);
             query.addBindValue(teacher.phoneNumber);
             query.addBindValue(teacher.birthday);
             query.addBindValue(teacher.nationality);
+            query.addBindValue(teacher.email);
         }
 
         if (!query.exec())

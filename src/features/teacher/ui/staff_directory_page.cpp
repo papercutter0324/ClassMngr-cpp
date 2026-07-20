@@ -10,13 +10,17 @@
 
 #include <QAbstractItemView>
 #include <QDate>
+#include <QEvent>
 #include <QFont>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
+#include <QComboBox>
+#include <QStyledItemDelegate>
 #include <QTableWidget>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -26,10 +30,102 @@
 namespace
 {
 constexpr int IdRole = Qt::UserRole + 1;
+constexpr int MinimumRowHeight = 42;
+constexpr int MinimumHeaderHeight = 38;
+constexpr int EditorVerticalMargin = 8;
+constexpr int HeaderVerticalPadding = 16;
+
+const QStringList NativeTeacherPositions{
+    QStringLiteral("Co-ordinator"),
+    QStringLiteral("Team Leader"),
+    QStringLiteral("M3 Song's"),
+    QStringLiteral("M2 Song's"),
+    QStringLiteral("M1 Song's"),
+    QStringLiteral("E6 Song's"),
+    QStringLiteral("E5 Athena"),
+    QStringLiteral("NET")
+};
+
+class NativeTeacherPositionDelegate final : public QStyledItemDelegate
+{
+public:
+    using QStyledItemDelegate::QStyledItemDelegate;
+
+    QWidget* createEditor(
+        QWidget* parent,
+        const QStyleOptionViewItem&,
+        const QModelIndex&
+        ) const override
+    {
+        auto* combo = new QComboBox(parent);
+        combo->addItems(NativeTeacherPositions);
+        combo->setEditable(true);
+        combo->setInsertPolicy(QComboBox::NoInsert);
+        combo->lineEdit()->setReadOnly(true);
+        combo->lineEdit()->setAlignment(Qt::AlignCenter);
+        auto* delegate = const_cast<NativeTeacherPositionDelegate*>(this);
+        connect(
+            combo,
+            qOverload<int>(&QComboBox::activated),
+            combo,
+            [delegate, combo](int) {
+                emit delegate->commitData(combo);
+                emit delegate->closeEditor(combo);
+            });
+        return combo;
+    }
+
+    void setEditorData(
+        QWidget* editor,
+        const QModelIndex& index
+        ) const override
+    {
+        auto* combo = qobject_cast<QComboBox*>(editor);
+        if (!combo)
+        {
+            QStyledItemDelegate::setEditorData(editor, index);
+            return;
+        }
+
+        const QString position = index.data(Qt::EditRole).toString();
+        int optionIndex = combo->findText(position);
+        if (optionIndex < 0 && !position.isEmpty())
+        {
+            combo->addItem(position);
+            optionIndex = combo->count() - 1;
+        }
+        combo->setCurrentIndex(optionIndex);
+    }
+
+    void setModelData(
+        QWidget* editor,
+        QAbstractItemModel* model,
+        const QModelIndex& index
+        ) const override
+    {
+        if (const auto* combo = qobject_cast<QComboBox*>(editor))
+        {
+            model->setData(index, combo->currentText(), Qt::EditRole);
+            return;
+        }
+
+        QStyledItemDelegate::setModelData(editor, model, index);
+    }
+
+    void initStyleOption(
+        QStyleOptionViewItem* option,
+        const QModelIndex& index
+        ) const override
+    {
+        QStyledItemDelegate::initStyleOption(option, index);
+        option->displayAlignment = Qt::AlignCenter;
+    }
+};
 
 QTableWidgetItem* textItem(const QString& text, int id = -1)
 {
     auto* item = new QTableWidgetItem(text);
+    item->setTextAlignment(Qt::AlignCenter);
     if (id > 0)
     {
         item->setData(IdRole, id);
@@ -98,20 +194,37 @@ void StaffDirectoryPage::buildUi()
     contentLayout()->addSpacing(UiConstants::Pages::HeaderContentSpacing);
 
     m_table = new QTableWidget(this);
+    m_table->installEventFilter(this);
     m_table->setObjectName(
         m_kind == StaffDirectoryKind::NativeEnglishTeachers
             ? QStringLiteral("nativeEnglishTeachersTable")
             : QStringLiteral("gsTeamTable"));
-    m_table->setColumnCount(5);
+    m_table->setColumnCount(
+        m_kind == StaffDirectoryKind::NativeEnglishTeachers ? 6 : 5);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->setEditTriggers(
         QAbstractItemView::DoubleClicked
         | QAbstractItemView::EditKeyPressed
         | QAbstractItemView::SelectedClicked);
-    m_table->setSortingEnabled(true);
-    m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_table->setSortingEnabled(false);
+    m_table->setDragDropMode(QAbstractItemView::NoDragDrop);
+    m_table->setAlternatingRowColors(true);
+    m_table->setWordWrap(false);
+    m_table->setTextElideMode(Qt::ElideRight);
+    auto* horizontalHeader = m_table->horizontalHeader();
+    horizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
+    horizontalHeader->setDefaultAlignment(Qt::AlignCenter);
+    horizontalHeader->setSectionsMovable(false);
+    horizontalHeader->setSectionsClickable(false);
     m_table->verticalHeader()->setVisible(false);
+    m_table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
+    {
+        m_table->setItemDelegateForColumn(
+            1, new NativeTeacherPositionDelegate(m_table));
+    }
+    updateTableMetrics();
     contentLayout()->addWidget(m_table, 1);
 
     m_addButton = new TextFitPushButton(tr("Add"), this);
@@ -161,8 +274,9 @@ bool StaffDirectoryPage::loadDirectory()
             m_table->setItem(row, 0, textItem(teacher.name, teacher.id));
             m_table->setItem(row, 1, textItem(teacher.position));
             m_table->setItem(row, 2, textItem(teacher.phoneNumber));
-            m_table->setItem(row, 3, textItem(teacher.birthday));
-            m_table->setItem(row, 4, textItem(teacher.nationality));
+            m_table->setItem(row, 3, textItem(teacher.email));
+            m_table->setItem(row, 4, textItem(teacher.birthday));
+            m_table->setItem(row, 5, textItem(teacher.nationality));
         }
     }
     else
@@ -180,8 +294,6 @@ bool StaffDirectoryPage::loadDirectory()
         }
     }
 
-    m_table->setSortingEnabled(true);
-    m_table->sortItems(0, Qt::AscendingOrder);
     m_deletedIds.clear();
     m_dirty = false;
     m_loading = false;
@@ -200,7 +312,6 @@ void StaffDirectoryPage::addRow()
     }
     m_table->setCurrentCell(row, 0);
     m_table->editItem(m_table->item(row, 0));
-    m_table->setSortingEnabled(true);
     markDirty(false);
 }
 
@@ -266,8 +377,9 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             teacher.name = cellText(m_table, row, 0).simplified();
             teacher.position = cellText(m_table, row, 1);
             teacher.phoneNumber = cellText(m_table, row, 2);
-            teacher.birthday = cellText(m_table, row, 3);
-            teacher.nationality = cellText(m_table, row, 4);
+            teacher.email = cellText(m_table, row, 3);
+            teacher.birthday = cellText(m_table, row, 4);
+            teacher.nationality = cellText(m_table, row, 5);
             const QString key = normalizedName(teacher.name);
             if (key.isEmpty() || names.contains(key) || !validateBirthday(teacher.birthday))
             {
@@ -400,12 +512,60 @@ void StaffDirectoryPage::retranslateUi()
         ? tr("View and maintain all Native English Teacher contact information.")
         : tr("View and maintain all GS and CS team contact information."));
     m_table->setHorizontalHeaderLabels(native
-        ? QStringList{tr("Name"), tr("Position"), tr("Phone Number"), tr("Birthday"), tr("Nationality")}
+        ? QStringList{tr("Name"), tr("Position"), tr("Phone Number"), tr("Email"), tr("Birthday"), tr("Nationality")}
         : QStringList{tr("Name"), tr("Korean Name"), tr("Position"), tr("Phone Number"), tr("Birthday")});
     m_addButton->setText(tr("Add"));
     m_deleteButton->setText(tr("Delete"));
     m_discardButton->setText(tr("Discard Changes"));
     updateActions();
+}
+
+void StaffDirectoryPage::changeEvent(QEvent* event)
+{
+    BasePage::changeEvent(event);
+
+    if (event
+        && (event->type() == QEvent::FontChange
+            || event->type() == QEvent::ApplicationFontChange
+            || event->type() == QEvent::StyleChange))
+    {
+        updateTableMetrics();
+    }
+}
+
+bool StaffDirectoryPage::eventFilter(QObject* watched, QEvent* event)
+{
+    if (watched == m_table
+        && event
+        && (event->type() == QEvent::FontChange
+            || event->type() == QEvent::StyleChange))
+    {
+        updateTableMetrics();
+    }
+
+    return BasePage::eventFilter(watched, event);
+}
+
+void StaffDirectoryPage::updateTableMetrics()
+{
+    if (!m_table) return;
+
+    QLineEdit editorProbe;
+    editorProbe.setFont(m_table->font());
+    editorProbe.ensurePolished();
+
+    const int rowHeight = std::max(
+        MinimumRowHeight,
+        editorProbe.sizeHint().height() + EditorVerticalMargin);
+    auto* verticalHeader = m_table->verticalHeader();
+    verticalHeader->setMinimumSectionSize(rowHeight);
+    verticalHeader->setDefaultSectionSize(rowHeight);
+
+    auto* horizontalHeader = m_table->horizontalHeader();
+    const int headerHeight = std::max(
+        MinimumHeaderHeight,
+        horizontalHeader->fontMetrics().height() + HeaderVerticalPadding);
+    horizontalHeader->setFixedHeight(headerHeight);
 }
 
 void StaffDirectoryPage::updateActions()

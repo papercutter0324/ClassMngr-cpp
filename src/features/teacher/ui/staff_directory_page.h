@@ -40,6 +40,10 @@ public:
     void clearDatabaseState() override;
     void retranslateUi() override;
 
+protected:
+    void changeEvent(QEvent* event) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 signals:
     void directorySaved();
 
@@ -51,6 +55,7 @@ private:
     bool saveDirectory(bool showErrors);
     bool validateBirthday(const QString& value) const;
     void updateActions();
+    void updateTableMetrics();
 
     ApplicationServices* m_services = nullptr;
     StaffDirectoryKind m_kind;

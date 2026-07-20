@@ -10,4 +10,5 @@ struct NativeEnglishTeacher
     QString phoneNumber;
     QString birthday;
     QString nationality;
+    QString email;
 };
