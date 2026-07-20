@@ -6,7 +6,9 @@
 #include "ui/shared/styles/roles.h"
 
 #include <QFont>
+#include <QFrame>
 #include <QLabel>
+#include <QScrollArea>
 #include <QShowEvent>
 #include <QVBoxLayout>
 
@@ -76,14 +78,41 @@ void SchedulePage::showEvent(
 void SchedulePage::buildUi()
 {
     contentLayout()->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+    contentLayout()->setSpacing(0);
+
+    m_scrollArea =
+        new QScrollArea(this);
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+    m_scrollArea->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
+        );
+
+    m_scrollContent =
+        new QWidget(m_scrollArea);
+    auto* scrollContentLayout =
+        new QVBoxLayout(m_scrollContent);
+    scrollContentLayout->setContentsMargins(
         UiConstants::Pages::Margin,
         UiConstants::Pages::Margin,
         UiConstants::Pages::Margin,
         UiConstants::Pages::Margin
         );
-    contentLayout()->setSpacing(
+    scrollContentLayout->setSpacing(
         UiConstants::Pages::Spacing
         );
+    scrollContentLayout->setAlignment(Qt::AlignTop);
+
+    m_scrollArea->setWidget(m_scrollContent);
+    contentLayout()->addWidget(m_scrollArea);
 
     auto* headerLayout =
         new QVBoxLayout;
@@ -100,7 +129,7 @@ void SchedulePage::buildUi()
     m_titleLabel =
         new QLabel(
             tr("Weekly Class Schedule"),
-            this
+            m_scrollContent
             );
     m_titleLabel->setObjectName("pageTitle");
     m_titleLabel->setFont(
@@ -113,7 +142,7 @@ void SchedulePage::buildUi()
     m_subtitleLabel =
         new QLabel(
             tr("Generated from registered classes and their meeting times."),
-            this
+            m_scrollContent
             );
     m_subtitleLabel->setObjectName("pageSubtitle");
     m_subtitleLabel->setFont(
@@ -124,20 +153,22 @@ void SchedulePage::buildUi()
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
-    contentLayout()->addLayout(headerLayout);
-    contentLayout()->addSpacing(
+    scrollContentLayout->addLayout(headerLayout);
+    scrollContentLayout->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
         );
 
     m_scheduleWidget =
         new ScheduleWidget(
             m_services,
-            this
+            m_scrollContent
             );
-    contentLayout()->addWidget(
+    scrollContentLayout->addWidget(
         m_scheduleWidget,
-        1
+        0,
+        Qt::AlignTop
         );
+    scrollContentLayout->addStretch();
 
     connect(
         m_scheduleWidget,

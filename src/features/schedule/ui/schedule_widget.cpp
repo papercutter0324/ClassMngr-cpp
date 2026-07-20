@@ -978,13 +978,13 @@ void ScheduleWidget::updateButtons()
     m_showWeekendsCheckBox->setText(tr("Show Weekends"));
     m_showWeekendsCheckBox->setChecked(m_showWeekends);
     m_showIntensiveScheduleCheckBox->setText(
-        tr("Show intensive schedule")
+        tr("Show Intensive Schedule")
         );
     m_showIntensiveScheduleCheckBox->setChecked(m_showIntensive);
-    m_showAllHoursCheckBox->setText(tr("Show all hours"));
+    m_showAllHoursCheckBox->setText(tr("Show All Hours"));
     m_showAllHoursCheckBox->setChecked(m_showAllHours);
     m_showAllHoursCheckBox->setEnabled(m_showIntensive);
-    m_hideEmptyRowsCheckBox->setText(tr("Hide empty rows"));
+    m_hideEmptyRowsCheckBox->setText(tr("Hide Empty Rows"));
     m_hideEmptyRowsCheckBox->setChecked(m_hideEmptyRows);
     m_hideEmptyRowsCheckBox->setEnabled(m_showIntensive);
 

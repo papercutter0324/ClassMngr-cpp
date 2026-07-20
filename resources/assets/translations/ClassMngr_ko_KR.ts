@@ -5607,17 +5607,17 @@
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
-        <source>Show intensive schedule</source>
+        <source>Show Intensive Schedule</source>
         <translation>집중 일정 표시</translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="984"/>
-        <source>Show all hours</source>
+        <source>Show All Hours</source>
         <translation>모든 시간 표시</translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="987"/>
-        <source>Hide empty rows</source>
+        <source>Hide Empty Rows</source>
         <translation>빈 행 숨기기</translation>
     </message>
     <message>

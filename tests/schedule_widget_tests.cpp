@@ -1,5 +1,6 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_widget.h"
 
 #include <QtTest>
@@ -7,6 +8,8 @@
 #include <QCheckBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QTableWidget>
 
 namespace ScheduleWidgetTestStubs
@@ -25,6 +28,7 @@ private slots:
     void persistsAndMirrorsEveryViewOption();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
+    void schedulePageScrollsWithoutResizingSchedule();
 };
 
 void ScheduleWidgetTests::init()
@@ -213,6 +217,37 @@ void ScheduleWidgetTests
     QVERIFY(!cleared.showWeekends);
     QVERIFY(!use24Hour->isChecked());
     QVERIFY(!showWeekends->isChecked());
+}
+
+void ScheduleWidgetTests
+    ::schedulePageScrollsWithoutResizingSchedule()
+{
+    ApplicationServices services;
+    SchedulePage page(&services);
+
+    auto* scrollArea =
+        page.findChild<QScrollArea*>();
+    auto* schedule =
+        page.findChild<ScheduleWidget*>();
+
+    QVERIFY(scrollArea);
+    QVERIFY(schedule);
+    QCOMPARE(
+        scrollArea->verticalScrollBarPolicy(),
+        Qt::ScrollBarAsNeeded
+        );
+
+    page.resize(800, 900);
+    page.show();
+    QCoreApplication::processEvents();
+
+    const int scheduleHeight = schedule->height();
+
+    page.resize(800, 160);
+    QCoreApplication::processEvents();
+
+    QCOMPARE(schedule->height(), scheduleHeight);
+    QVERIFY(scrollArea->verticalScrollBar()->maximum() > 0);
 }
 
 QTEST_MAIN(ScheduleWidgetTests)

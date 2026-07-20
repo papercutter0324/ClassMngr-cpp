@@ -5238,17 +5238,17 @@
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
-        <source>Show intensive schedule</source>
+        <source>Show Intensive Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="984"/>
-        <source>Show all hours</source>
+        <source>Show All Hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="987"/>
-        <source>Hide empty rows</source>
+        <source>Hide Empty Rows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -911,9 +911,13 @@ if(BUILD_TESTING)
         tests/schedule_widget_test_stubs.cpp
         src/domain/models/classroom.cpp
         src/features/schedule/ui/schedule_editor_dialog.h
+        src/features/schedule/ui/schedule_page.cpp
+        src/features/schedule/ui/schedule_page.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
+        src/ui/shared/pages/basepage.cpp
+        src/ui/shared/pages/basepage.h
     )
 
     target_compile_features(ClassMngrScheduleWidgetTests

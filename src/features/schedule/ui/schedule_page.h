@@ -4,6 +4,7 @@
 
 class ApplicationServices;
 class QLabel;
+class QScrollArea;
 class QShowEvent;
 class ScheduleWidget;
 class QWidget;
@@ -36,6 +37,8 @@ private:
     void buildUi();
 
     ApplicationServices* m_services = nullptr;
+    QScrollArea* m_scrollArea = nullptr;
+    QWidget* m_scrollContent = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     ScheduleWidget* m_scheduleWidget = nullptr;
