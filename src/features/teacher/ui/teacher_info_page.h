@@ -4,6 +4,7 @@
 #include "domain/models/teacher.h"
 
 class QScrollArea;
+class QShowEvent;
 class QLabel;
 class QLineEdit;
 class QComboBox;
@@ -52,6 +53,10 @@ signals:
         int teacherId
         );
 
+protected:
+
+    void showEvent(QShowEvent* event) override;
+
 private slots:
 
     void saveTeacher();
@@ -78,6 +83,7 @@ private:
 
     void updateActions();
     void updateFieldWidths();
+    void matchBirthdayWidthToKoreanName();
 
 private:
 
@@ -115,7 +121,10 @@ private:
 
     QLabel* m_teacherKrLabel = nullptr;
     QLabel* m_teacherEnLabel = nullptr;
+    QLabel* m_preferredRomanizationLabel = nullptr;
     QLabel* m_roomNumberLabel = nullptr;
+    QLabel* m_birthdayLabel = nullptr;
+    QLabel* m_phoneNumberLabel = nullptr;
     QLabel* m_internetTypeLabel = nullptr;
     QLabel* m_wifiNameLabel = nullptr;
     QLabel* m_wifiPasswordLabel = nullptr;
@@ -125,7 +134,10 @@ private:
 
     QLineEdit* m_teacherKrEdit = nullptr;
     QLineEdit* m_teacherEnEdit = nullptr;
+    QLineEdit* m_preferredRomanizationEdit = nullptr;
     QLineEdit* m_roomNumberEdit = nullptr;
+    QLineEdit* m_birthdayEdit = nullptr;
+    QLineEdit* m_phoneNumberEdit = nullptr;
 
     QLineEdit* m_wifiNameEdit = nullptr;
     QLineEdit* m_wifiPasswordEdit = nullptr;

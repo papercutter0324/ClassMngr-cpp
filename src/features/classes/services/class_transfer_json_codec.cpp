@@ -40,6 +40,20 @@ Result<QString> requiredString(
     return result;
 }
 
+Result<QString> optionalString(
+    const QJsonObject& object,
+    const QString& key,
+    const QString& context
+    )
+{
+    if (!object.contains(key))
+    {
+        return QString();
+    }
+
+    return requiredString(object, key, context);
+}
+
 Result<QJsonObject> requiredObject(
     const QJsonObject& object,
     const QString& key,
@@ -86,7 +100,11 @@ QJsonObject teacherToJson(
         {QStringLiteral("key"), transferTeacher.key},
         {QStringLiteral("teacher_kr"), teacher.teacherKr},
         {QStringLiteral("teacher_en"), teacher.teacherEn},
+        {QStringLiteral("preferred_romanization"),
+         teacher.preferredRomanization},
         {QStringLiteral("room_number"), teacher.roomNumber},
+        {QStringLiteral("birthday"), teacher.birthday},
+        {QStringLiteral("phone_number"), teacher.phoneNumber},
         {QStringLiteral("wifi_name"), teacher.wifiName},
         {QStringLiteral("wifi_password"), teacher.wifiPassword},
         {QStringLiteral("internet_type"), teacher.internetType},
@@ -130,6 +148,25 @@ Result<ClassTransferTeacher> teacherFromJson(
             context,
             key != QStringLiteral("key")
             );
+
+        if (!value)
+        {
+            return std::unexpected(value.error());
+        }
+
+        *destination = *value;
+    }
+
+    const QList<QPair<QString, QString*>> optionalFields{
+        {QStringLiteral("preferred_romanization"),
+         &teacher.preferredRomanization},
+        {QStringLiteral("birthday"), &teacher.birthday},
+        {QStringLiteral("phone_number"), &teacher.phoneNumber}
+    };
+
+    for (const auto& [key, destination] : optionalFields)
+    {
+        const auto value = optionalString(object, key, context);
 
         if (!value)
         {

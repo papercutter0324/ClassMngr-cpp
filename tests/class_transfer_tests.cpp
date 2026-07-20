@@ -21,7 +21,10 @@ Teacher completeTeacher(
     Teacher teacher;
     teacher.teacherKr = QStringLiteral("김알렉스");
     teacher.teacherEn = englishName;
+    teacher.preferredRomanization = QStringLiteral("Gim Allekseu");
     teacher.roomNumber = QStringLiteral("504");
+    teacher.birthday = QStringLiteral("02-29");
+    teacher.phoneNumber = QStringLiteral("010-1234-5678");
     teacher.wifiName = QStringLiteral("Campus WiFi");
     teacher.wifiPassword = QStringLiteral("wifi-password");
     teacher.internetType = QStringLiteral("Both");
@@ -213,6 +216,12 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
     QCOMPARE(loaded->classes.size(), 1);
     QCOMPARE(loaded->teachers.first().teacher.wifiPassword,
              QStringLiteral("wifi-password"));
+    QCOMPARE(loaded->teachers.first().teacher.preferredRomanization,
+             QStringLiteral("Gim Allekseu"));
+    QCOMPARE(loaded->teachers.first().teacher.birthday,
+             QStringLiteral("02-29"));
+    QCOMPARE(loaded->teachers.first().teacher.phoneNumber,
+             QStringLiteral("010-1234-5678"));
     QCOMPARE(loaded->teachers.first().teacher.zoomPassword,
              QStringLiteral("zoom-password"));
     QCOMPARE(loaded->teachers.first().teacher.notes,
@@ -235,6 +244,26 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
     QJsonObject withUnknownField = ClassTransferJsonCodec::toJson(package);
     withUnknownField.insert(QStringLiteral("future_field"), 42);
     QVERIFY(ClassTransferJsonCodec::fromJson(withUnknownField).has_value());
+
+    QJsonObject legacyJson = ClassTransferJsonCodec::toJson(package);
+    QJsonArray legacyTeachers =
+        legacyJson.value(QStringLiteral("teachers")).toArray();
+    QJsonObject legacyTeacher = legacyTeachers.first().toObject();
+    legacyTeacher.remove(QStringLiteral("preferred_romanization"));
+    legacyTeacher.remove(QStringLiteral("birthday"));
+    legacyTeacher.remove(QStringLiteral("phone_number"));
+    legacyTeachers.replace(0, legacyTeacher);
+    legacyJson.insert(QStringLiteral("teachers"), legacyTeachers);
+
+    const auto legacyPackage =
+        ClassTransferJsonCodec::fromJson(legacyJson);
+    QVERIFY(legacyPackage.has_value());
+    QVERIFY(
+        legacyPackage->teachers.first().teacher
+            .preferredRomanization.isEmpty()
+        );
+    QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
+    QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
 }
 
 void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
@@ -296,6 +325,8 @@ void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
     QCOMPARE(importedFirst.classColor, QStringLiteral("#123456"));
     QCOMPARE(service.getTeacher(importedFirst.teacherId).wifiPassword,
              QStringLiteral("wifi-password"));
+    QCOMPARE(service.getTeacher(importedFirst.teacherId).birthday,
+             QStringLiteral("02-29"));
     QCOMPARE(service.loadRoster(importedFirstId).rows.first().first(),
              QStringLiteral("Jamie"));
     QCOMPARE(
@@ -466,6 +497,12 @@ void ClassTransferTests::teacherReplacementImportsCompleteSnapshot()
              summary ? "" : qPrintable(summary.error()));
     QCOMPARE(service.getTeacher(destinationTeacher).wifiPassword,
              QStringLiteral("wifi-password"));
+    QCOMPARE(
+        service.getTeacher(destinationTeacher).preferredRomanization,
+        QStringLiteral("Gim Allekseu")
+        );
+    QCOMPARE(service.getTeacher(destinationTeacher).phoneNumber,
+             QStringLiteral("010-1234-5678"));
     QCOMPARE(service.getTeacher(destinationTeacher).notes,
              QStringLiteral("Teacher notes\nwith a second line."));
 }

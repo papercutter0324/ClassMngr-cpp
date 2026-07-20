@@ -1,5 +1,7 @@
 #include "data/data_service.h"
 
+#include <QSqlDatabase>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -26,6 +28,11 @@ DatabaseIds populateDatabase(
     Teacher teacher;
     teacher.teacherEn = prefix + QStringLiteral(" Teacher");
     teacher.teacherKr = prefix + QStringLiteral(" Korean Teacher");
+    teacher.preferredRomanization =
+        prefix + QStringLiteral(" Romanization");
+    teacher.roomNumber = prefix + QStringLiteral(" Room");
+    teacher.birthday = QStringLiteral("02-29");
+    teacher.phoneNumber = prefix + QStringLiteral(" Phone");
     teacher.notes = prefix + QStringLiteral(" Teacher Notes");
 
     DatabaseIds ids;
@@ -109,10 +116,15 @@ void verifyDatabase(
             ).toString(),
         prefix
         );
+    const Teacher teacher = service.getTeacher(ids.teacherId);
+    QCOMPARE(teacher.teacherEn, prefix + QStringLiteral(" Teacher"));
     QCOMPARE(
-        service.getTeacher(ids.teacherId).teacherEn,
-        prefix + QStringLiteral(" Teacher")
+        teacher.preferredRomanization,
+        prefix + QStringLiteral(" Romanization")
         );
+    QCOMPARE(teacher.roomNumber, prefix + QStringLiteral(" Room"));
+    QCOMPARE(teacher.birthday, QStringLiteral("02-29"));
+    QCOMPARE(teacher.phoneNumber, prefix + QStringLiteral(" Phone"));
     QCOMPARE(
         service.getClassById(ids.classId).name,
         prefix + QStringLiteral(" Class")
@@ -165,6 +177,7 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void closeAndSwitchReleaseEveryRepository();
+    void existingTeacherSchemaGainsPersonalDetailColumns();
 };
 
 void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
@@ -223,7 +236,77 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
             idsA.classId,
             QStringLiteral("First Semester")
             ).isEmpty()
+    );
+}
+
+void DataServiceLifecycleTests
+    ::existingTeacherSchemaGainsPersonalDetailColumns()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString path =
+        directory.filePath(QStringLiteral("legacy.db"));
+    const QString connectionName =
+        QStringLiteral("legacy-teacher-schema");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(R"(
+            CREATE TABLE teachers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                teacher_kr TEXT,
+                teacher_en TEXT,
+                room_number TEXT,
+                wifi_name TEXT,
+                wifi_password TEXT,
+                internet_type TEXT DEFAULT 'WiFi',
+                zoom_id TEXT,
+                zoom_password TEXT,
+                projection_type TEXT DEFAULT 'HDMI',
+                notes TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO teachers (teacher_en)
+            VALUES ('Legacy Teacher')
+        )"));
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    DataService service;
+    QVERIFY(service.openDatabase(path).has_value());
+
+    const QList<Teacher> teachers = service.getAllTeachers();
+    QCOMPARE(teachers.size(), 1);
+
+    Teacher teacher = teachers.first();
+    QVERIFY(teacher.preferredRomanization.isEmpty());
+    QVERIFY(teacher.birthday.isEmpty());
+    QVERIFY(teacher.phoneNumber.isEmpty());
+
+    teacher.preferredRomanization = QStringLiteral("Legacy Teacheo");
+    teacher.birthday = QStringLiteral("12-31");
+    teacher.phoneNumber = QStringLiteral("010-0000-0000");
+    service.updateTeacher(teacher);
+
+    const Teacher reloaded = service.getTeacher(teacher.id);
+    QCOMPARE(
+        reloaded.preferredRomanization,
+        QStringLiteral("Legacy Teacheo")
         );
+    QCOMPARE(reloaded.birthday, QStringLiteral("12-31"));
+    QCOMPARE(reloaded.phoneNumber, QStringLiteral("010-0000-0000"));
 }
 
 QTEST_MAIN(DataServiceLifecycleTests)

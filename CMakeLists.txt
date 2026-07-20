@@ -677,6 +677,52 @@ if(BUILD_TESTING)
         COMMAND ClassMngrTeacherInfoSectionTests
     )
 
+    qt_add_executable(ClassMngrTeacherInfoPageTests
+        tests/teacher_info_page_tests.cpp
+        tests/teacher_info_page_test_stubs.cpp
+        src/core/fontmanager.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/features/teacher/ui/teacher_info_page.cpp
+        src/ui/shared/pages/basepage.cpp
+        src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/sectioncards/teacher_section_card.cpp
+    )
+
+    target_compile_features(ClassMngrTeacherInfoPageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTeacherInfoPageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrTeacherInfoPageTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrTeacherInfoPageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrTeacherInfoPageTests
+        COMMAND ClassMngrTeacherInfoPageTests
+    )
+
+    set_tests_properties(
+        ClassMngrTeacherInfoPageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrIntensiveSlotStateRepositoryTests
         tests/intensive_slot_state_repository_tests.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
@@ -1609,6 +1655,7 @@ if(BUILD_TESTING)
             ClassMngrUpdaterTests
             ClassMngrResourcePackTests
             ClassMngrFontManagerTests
+            ClassMngrTeacherInfoPageTests
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrCalendarEventRepositoryTests

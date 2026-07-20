@@ -68,7 +68,11 @@ Teacher teacherFromQuery(
     teacher.id =           query.value("id").toInt();
     teacher.teacherKr =    query.value("teacher_kr").toString();
     teacher.teacherEn =    query.value("teacher_en").toString();
+    teacher.preferredRomanization =
+        query.value("preferred_romanization").toString();
     teacher.roomNumber =   query.value("room_number").toString();
+    teacher.birthday =     query.value("birthday").toString();
+    teacher.phoneNumber =  query.value("phone_number").toString();
     teacher.wifiName =     query.value("wifi_name").toString();
     teacher.wifiPassword = query.value("wifi_password").toString();
     teacher.internetType =
@@ -104,7 +108,10 @@ int TeacherRepository::createTeacher(
         INSERT INTO teachers (
             teacher_kr,
             teacher_en,
+            preferred_romanization,
             room_number,
+            birthday,
+            phone_number,
             wifi_name,
             wifi_password,
             internet_type,
@@ -113,12 +120,15 @@ int TeacherRepository::createTeacher(
             projection_type,
             notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
+    query.addBindValue(teacher.preferredRomanization);
     query.addBindValue(teacher.roomNumber);
+    query.addBindValue(teacher.birthday);
+    query.addBindValue(teacher.phoneNumber);
     query.addBindValue(teacher.wifiName);
     query.addBindValue(teacher.wifiPassword);
     query.addBindValue(
@@ -159,7 +169,10 @@ void TeacherRepository::updateTeacher(
         SET
             teacher_kr=?,
             teacher_en=?,
+            preferred_romanization=?,
             room_number=?,
+            birthday=?,
+            phone_number=?,
             wifi_name=?,
             wifi_password=?,
             internet_type=?,
@@ -172,7 +185,10 @@ void TeacherRepository::updateTeacher(
 
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
+    query.addBindValue(teacher.preferredRomanization);
     query.addBindValue(teacher.roomNumber);
+    query.addBindValue(teacher.birthday);
+    query.addBindValue(teacher.phoneNumber);
     query.addBindValue(teacher.wifiName);
     query.addBindValue(teacher.wifiPassword);
     query.addBindValue(

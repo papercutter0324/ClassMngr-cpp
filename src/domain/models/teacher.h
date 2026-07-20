@@ -9,8 +9,11 @@ struct Teacher
 
     QString teacherKr;
     QString teacherEn;
+    QString preferredRomanization;
 
     QString roomNumber;
+    QString birthday;
+    QString phoneNumber;
 
     QString wifiName;
     QString wifiPassword;

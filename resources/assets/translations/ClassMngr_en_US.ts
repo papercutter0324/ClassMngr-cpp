@@ -2128,47 +2128,57 @@
         <translation>Manage</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="110"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="92"/>
+        <source>Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="105"/>
+        <source>Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/menu_builder.cpp" line="118"/>
         <source>Options</source>
         <translation>Options</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="118"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="126"/>
         <source>Save Mode</source>
         <translation>Save Mode</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="135"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="143"/>
         <source>Theme</source>
         <translation>Theme</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="152"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="160"/>
         <source>Language</source>
         <translation>Language</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="175"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="183"/>
         <source>Font Size</source>
         <translation>Font Size</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="193"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="201"/>
         <source>Documents</source>
         <translation type="unfinished">Documents</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="198"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="206"/>
         <source>Page Spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="214"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="222"/>
         <source>Background Color</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="231"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="239"/>
         <source>Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2177,12 +2187,12 @@
         <translation type="vanished">English</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="245"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="253"/>
         <source>Help</source>
         <translation>Help</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="259"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="267"/>
         <source>Admin</source>
         <translation>Admin</translation>
     </message>
@@ -3093,117 +3103,117 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="792"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="796"/>
         <source>Creating an imported teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="800"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="804"/>
         <source>The imported teacher did not receive a database ID.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="835"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="843"/>
         <source>Updating a matched teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="841"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="849"/>
         <source>The matched teacher no longer exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="864"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="872"/>
         <source>Clearing speaking evaluation rows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="884"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="892"/>
         <source>Clearing imported class data from %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="922"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="930"/>
         <source>Writing imported class information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="945"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="953"/>
         <source>Writing imported schedule data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="986"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="994"/>
         <source>Writing imported roster columns</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1016"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1024"/>
         <source>Writing imported roster data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1032"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1040"/>
         <source>Creating an imported speaking evaluation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1062"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1070"/>
         <source>Writing imported speaking evaluation rows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1089"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1097"/>
         <source>No classes were selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1097"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1105"/>
         <source>Unable to start the class export transaction: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1118"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1126"/>
         <source>The class selection contains an invalid or duplicate class.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1127"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1135"/>
         <source>Class %1 no longer exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1149"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1157"/>
         <source>The assigned teacher for %1 no longer exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1189"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1197"/>
         <source>Unable to finish the class export transaction: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1251"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1259"/>
         <source>Unable to start the class import transaction: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1326"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1334"/>
         <source>Creating an imported class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1335"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1343"/>
         <source>The imported class did not receive a database ID.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1350"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1358"/>
         <source>Updating a replaced class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1379"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1387"/>
         <source>Unable to commit the class import transaction: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3687,9 +3697,9 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1084"/>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1203"/>
-        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1216"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1092"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1211"/>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1224"/>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="102"/>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="174"/>
         <source>No database is open.</source>
@@ -4273,155 +4283,155 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="54"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="68"/>
         <source>%1.%2 must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="72"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="86"/>
         <source>%1.%2 must be an array.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="175"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="462"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="211"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="498"/>
         <source>%1[%2] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="346"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="382"/>
         <source>%1.columns[%2] must be a string.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="357"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="393"/>
         <source>%1.column_widths must match the column count.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="369"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="405"/>
         <source>%1.column_widths[%2] must be a number.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="382"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="502"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="418"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="538"/>
         <source>%1.rows[%2] must be an array.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="392"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="428"/>
         <source>%1.rows[%2] must match the column count.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="404"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="526"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="440"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="562"/>
         <source>%1.rows[%2][%3] must be a string.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="482"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="518"/>
         <source>%1 contains a duplicate evaluation name: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="490"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="526"/>
         <source>%1.rows has too many rows.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="512"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="548"/>
         <source>%1.rows[%2] must contain %3 columns.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="663"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="699"/>
         <source>This is not a ClassMngr class package.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="673"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="709"/>
         <source>package.version must be an integer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="682"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="718"/>
         <source>Unsupported class package version: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="710"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="746"/>
         <source>package.exported_at_utc is not a valid timestamp.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="717"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="753"/>
         <source>The class package does not contain any classes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="732"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="768"/>
         <source>teachers[%1] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="747"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="783"/>
         <source>Duplicate teacher key: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="760"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="796"/>
         <source>classes[%1] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="775"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="811"/>
         <source>Duplicate class key: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="783"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="819"/>
         <source>Class %1 references an unknown teacher key: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="802"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="838"/>
         <source>No export path was provided.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="810"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="846"/>
         <source>Unable to open the class package for writing:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="822"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="858"/>
         <source>Unable to write the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="830"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="866"/>
         <source>Unable to finish writing the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="847"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="883"/>
         <source>Unable to open the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="859"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="895"/>
         <source>The class package is not valid JSON:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="867"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="903"/>
         <source>The class package root must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5051,14 +5061,14 @@
 <context>
     <name>SchedulePage</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="47"/>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="102"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="49"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="131"/>
         <source>Weekly Class Schedule</source>
         <translation>Weekly Class Schedule</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="54"/>
-        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="115"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="56"/>
+        <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="144"/>
         <source>Generated from registered classes and their meeting times.</source>
         <translation>Generated from registered classes and their meeting times.</translation>
     </message>
@@ -5213,8 +5223,9 @@
         <translation type="vanished">Show Regular Schedule</translation>
     </message>
     <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
         <source>Show Intensive Schedule</source>
-        <translation type="vanished">Show Intensive Schedule</translation>
+        <translation>Show Intensive Schedule</translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="525"/>
@@ -5234,11 +5245,6 @@
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="973"/>
         <source>Show English Names</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
-        <source>Show Intensive Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5341,49 +5347,44 @@
         <translation>Delete &apos;%1&apos;?</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="81"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="68"/>
         <source>Export Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="80"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="132"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="67"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="120"/>
         <source>Classes</source>
         <translation type="unfinished">Classes</translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="110"/>
-        <source>Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="111"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="98"/>
         <source>Export Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="133"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="189"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="121"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="177"/>
         <source>JSON Files (*.json)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="165"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="153"/>
         <source>Exported %1 class(es) to:
 %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="187"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="202"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="211"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="231"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="263"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="175"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="190"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="199"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="219"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="251"/>
         <source>Import Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="264"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="252"/>
         <source>Import complete. Created: %1, replaced: %2, skipped: %3.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6422,114 +6423,138 @@ Comments: Please leave a comment about what the student did well and what they n
 <context>
     <name>TeacherInfoPage</name>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="151"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="836"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="266"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1064"/>
         <source>Teacher Information</source>
         <translation>Teacher Information</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="162"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="844"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="277"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1072"/>
         <source>View and manage teacher details.</source>
         <translation>View and manage teacher details.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="185"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="851"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="300"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1079"/>
         <source>Teacher Details</source>
         <translation>Teacher Details</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="216"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="872"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="330"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1135"/>
+        <source>Not set</source>
+        <translation>Not set</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="368"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1100"/>
         <source>Korean Name</source>
         <translation>Korean Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="219"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="879"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="371"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1107"/>
         <source>English Name</source>
         <translation>English Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="222"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="886"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="374"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1121"/>
+        <source>Preferred Romanization</source>
+        <translation>Preferred Romanization</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="377"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1114"/>
         <source>Room Number</source>
         <translation>Room Number</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="251"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="858"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="380"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1128"/>
+        <source>Birthday</source>
+        <translation>Birthday</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="383"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1142"/>
+        <source>Phone Number</source>
+        <translation>Phone Number</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="439"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1086"/>
         <source>Connectivity</source>
         <translation>Connectivity</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="286"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="893"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="474"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1149"/>
         <source>Internet Type</source>
         <translation>Internet Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="289"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="900"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="477"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1156"/>
         <source>WiFi Name</source>
         <translation>WiFi Name</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="292"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="907"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="480"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1163"/>
         <source>WiFi Password</source>
         <translation>WiFi Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="324"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="914"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="512"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1170"/>
         <source>Projection Type</source>
         <translation>Projection Type</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="327"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="921"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="515"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1177"/>
         <source>Zoom ID</source>
         <translation>Zoom ID</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="330"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="928"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="518"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1184"/>
         <source>Zoom Password</source>
         <translation>Zoom Password</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="393"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="865"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="581"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1093"/>
         <source>Notes</source>
         <translation>Notes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="490"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="725"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="825"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="687"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="941"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1053"/>
         <source>Teacher Information for %1</source>
         <translation>Teacher Information for %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="567"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="774"/>
         <source>Unsaved Teacher Changes</source>
         <translation>Unsaved Teacher Changes</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="572"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="779"/>
         <source>This teacher has unsaved changes.</source>
         <translation>This teacher has unsaved changes.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="766"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="982"/>
         <source>Save Changes *</source>
         <translation>Save Changes *</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="407"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="767"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="595"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="983"/>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>

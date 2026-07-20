@@ -24,7 +24,10 @@ QVariant TeacherModel::data(const QModelIndex& index, int role) const
     case IdRole: return t.id;
     case KrRole: return t.teacherKr;
     case EnRole: return t.teacherEn;
+    case PreferredRomanizationRole: return t.preferredRomanization;
     case RoomRole: return t.roomNumber;
+    case BirthdayRole: return t.birthday;
+    case PhoneNumberRole: return t.phoneNumber;
     case WifiNameRole: return t.wifiName;
     case WifiPasswordRole: return t.wifiPassword;
     case ZoomIdRole: return t.zoomId;
@@ -41,7 +44,10 @@ QHash<int, QByteArray> TeacherModel::roleNames() const
         { IdRole, "id" },
         { KrRole, "kr" },
         { EnRole, "en" },
+        { PreferredRomanizationRole, "preferredRomanization" },
         { RoomRole, "room" },
+        { BirthdayRole, "birthday" },
+        { PhoneNumberRole, "phoneNumber" },
         { WifiNameRole, "wifiName" },
         { WifiPasswordRole, "wifiPassword" },
         { ZoomIdRole, "zoomId" },
