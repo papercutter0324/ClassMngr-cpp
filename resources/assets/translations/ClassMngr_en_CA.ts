@@ -4903,13 +4903,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="984"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="939"/>
         <source>Show All Hours</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="987"/>
-        <source>Hide Empty Rows</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

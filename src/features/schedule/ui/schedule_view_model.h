@@ -10,7 +10,6 @@
 enum class ScheduleRowFilter
 {
     None,
-    HideEmptyRows,
     TrimEmptyOuterRows
 };
 

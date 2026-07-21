@@ -5617,14 +5617,9 @@
         <translation>영어 이름 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="984"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="939"/>
         <source>Show All Hours</source>
         <translation>모든 시간 표시</translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="987"/>
-        <source>Hide Empty Rows</source>
-        <translation>빈 행 숨기기</translation>
     </message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="992"/>

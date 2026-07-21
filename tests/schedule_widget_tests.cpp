@@ -17,6 +17,7 @@ namespace ScheduleWidgetTestStubs
 extern int savedSlotStates;
 void reset();
 void setDatabaseOpen(bool open);
+QString settingValue(const QString& key);
 }
 
 class ScheduleWidgetTests : public QObject
@@ -26,6 +27,7 @@ class ScheduleWidgetTests : public QObject
 private slots:
     void init();
     void persistsAndMirrorsEveryViewOption();
+    void legacyHourSettingsDoNotCarryForward();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
@@ -62,27 +64,35 @@ void ScheduleWidgetTests
         interactive.findChild<QCheckBox*>(
             QStringLiteral("scheduleShowAllHoursCheckBox")
             );
-    auto* hideEmptyRows =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleHideEmptyRowsCheckBox")
-            );
-
     QVERIFY(use24Hour);
     QVERIFY(showWeekends);
     QVERIFY(showEnglishNames);
     QVERIFY(showIntensive);
     QVERIFY(showAllHours);
-    QVERIFY(hideEmptyRows);
+    QVERIFY(
+        !interactive.findChild<QCheckBox*>(
+            QStringLiteral("scheduleHideEmptyRowsCheckBox")
+            )
+        );
     QCOMPARE(use24Hour->text(), QStringLiteral("Use 24-Hour Time"));
     QCOMPARE(showWeekends->text(), QStringLiteral("Show Weekends"));
     QCOMPARE(showEnglishNames->text(), QStringLiteral("Show English Names"));
+    QCOMPARE(showAllHours->text(), QStringLiteral("Show All Hours"));
+    QVERIFY(!showAllHours->isChecked());
+    QVERIFY(!showAllHours->isEnabled());
 
     use24Hour->setChecked(true);
     showWeekends->setChecked(true);
     showEnglishNames->setChecked(true);
     showIntensive->setChecked(true);
+    QVERIFY(showAllHours->isEnabled());
     showAllHours->setChecked(true);
-    hideEmptyRows->setChecked(false);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_show_all_hours_v2")
+            ),
+        QStringLiteral("true")
+        );
 
     auto* table =
         interactive.findChild<QTableWidget*>(
@@ -112,11 +122,35 @@ void ScheduleWidgetTests
     QVERIFY(state.showKoreanTeacherEnglishNames);
     QVERIFY(state.showIntensive);
     QVERIFY(state.showAllHours);
-    QVERIFY(!state.hideEmptyRows);
     QCOMPARE(
         mirrored.visibleClassIds(),
         QSet<int>{42}
         );
+}
+
+void ScheduleWidgetTests
+    ::legacyHourSettingsDoNotCarryForward()
+{
+    ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_all_hours"),
+        QStringLiteral("true")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_hide_empty_rows"),
+        QStringLiteral("false")
+        );
+
+    ScheduleWidget widget(&services);
+
+    auto* showAllHours =
+        widget.findChild<QCheckBox*>(
+            QStringLiteral("scheduleShowAllHoursCheckBox")
+            );
+
+    QVERIFY(showAllHours);
+    QVERIFY(!showAllHours->isChecked());
+    QVERIFY(!widget.displayState().showAllHours);
 }
 
 void ScheduleWidgetTests
@@ -152,7 +186,7 @@ void ScheduleWidgetTests
         controls->findChildren<QCheckBox*>();
     const auto buttons =
         controls->findChildren<QPushButton*>();
-    QCOMPARE(checkBoxes.size(), 6);
+    QCOMPARE(checkBoxes.size(), 5);
     QCOMPARE(buttons.size(), 1);
     QCOMPARE(buttons.first()->text(), QStringLiteral("Export"));
 
@@ -213,7 +247,6 @@ void ScheduleWidgetTests
     QVERIFY(!cleared.showKoreanTeacherEnglishNames);
     QVERIFY(!cleared.showIntensive);
     QVERIFY(!cleared.showAllHours);
-    QVERIFY(cleared.hideEmptyRows);
     QVERIFY(!cleared.showWeekends);
     QVERIFY(!use24Hour->isChecked());
     QVERIFY(!showWeekends->isChecked());

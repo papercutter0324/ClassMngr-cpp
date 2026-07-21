@@ -85,27 +85,6 @@ QList<ScheduleRow> filteredRows(
         return result.rows;
     }
 
-    if (request.rowFilter == ScheduleRowFilter::HideEmptyRows)
-    {
-        QList<ScheduleRow> rows;
-
-        for (const ScheduleRow& scheduleRow : result.rows)
-        {
-            if (
-                rowHasVisibleContent(
-                    scheduleRow,
-                    result,
-                    request
-                    )
-                )
-            {
-                rows.append(scheduleRow);
-            }
-        }
-
-        return rows;
-    }
-
     int firstVisibleRow = -1;
     int lastVisibleRow = -1;
 

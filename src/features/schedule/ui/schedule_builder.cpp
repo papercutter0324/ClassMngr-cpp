@@ -46,8 +46,7 @@ ScheduleBuilder::ScheduleBuilder(
 
 ScheduleBuildResult ScheduleBuilder::build(
     bool useIntensive,
-    const QStringList& visibleDays,
-    bool showAllHours
+    const QStringList& visibleDays
     ) const
 {
     ScheduleBuildResult result;
@@ -71,9 +70,7 @@ ScheduleBuildResult ScheduleBuilder::build(
 
     QList<ParsedClass> parsedClasses;
     bool hasEarliestHour = false;
-    bool hasLatestHour = false;
     int earliestHour = 0;
-    int latestHour = 0;
     int scheduleOffset = 0;
 
     const QList<Classroom> classes =
@@ -130,20 +127,6 @@ ScheduleBuildResult ScheduleBuilder::build(
 
             if (endTime.isValid())
             {
-                int adjustedEndHour =
-                    endTime.hour();
-
-                if (endTime.minute() == 55)
-                {
-                    ++adjustedEndHour;
-                }
-
-                if (!hasLatestHour || adjustedEndHour > latestHour)
-                {
-                    latestHour = adjustedEndHour;
-                    hasLatestHour = true;
-                }
-
                 if (endTime.minute() == 55)
                 {
                     result.uses55Endings = true;
@@ -172,24 +155,19 @@ ScheduleBuildResult ScheduleBuilder::build(
         }
     }
 
-    const bool showFullIntensiveHours =
-        useIntensive && showAllHours;
-
     const int startHour =
-        showFullIntensiveHours
+        useIntensive
             ? FullIntensiveStartHour
             : hasEarliestHour && earliestHour < DefaultStartHour
                 ? earliestHour
                 : DefaultStartHour;
 
     const int finalHour =
-        showFullIntensiveHours
+        useIntensive
             ? FullIntensiveFinalHour
-            : useIntensive && hasLatestHour
-                ? latestHour
-                : FinalHour;
+            : FinalHour;
 
-    if (showFullIntensiveHours)
+    if (useIntensive)
     {
         scheduleOffset = 0;
         result.uses55Endings = false;

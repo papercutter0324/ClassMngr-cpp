@@ -47,10 +47,8 @@ const QString ShowWeekends =
     QStringLiteral("schedule_show_weekends");
 const QString ShowIntensive =
     QStringLiteral("schedule_show_intensive");
-const QString ShowAllHours =
-    QStringLiteral("schedule_show_all_hours");
-const QString HideEmptyRows =
-    QStringLiteral("schedule_hide_empty_rows");
+const QString ShowAllHoursV2 =
+    QStringLiteral("schedule_show_all_hours_v2");
 }
 
 DataService* openDataService(
@@ -225,7 +223,6 @@ void ScheduleWidget::clearDatabaseState()
     m_showKoreanTeacherEnglishNames = false;
     m_showIntensive = false;
     m_showAllHours = false;
-    m_hideEmptyRows = true;
     m_showWeekends = false;
     m_regularWeekdaySlotTogglingEnabled = false;
     m_intensiveSlotStates.clear();
@@ -249,7 +246,6 @@ ScheduleDisplayState ScheduleWidget::displayState() const
         m_showKoreanTeacherEnglishNames;
     state.showIntensive = m_showIntensive;
     state.showAllHours = m_showAllHours;
-    state.hideEmptyRows = m_hideEmptyRows;
     state.showWeekends = m_showWeekends;
 
     return state;
@@ -337,24 +333,8 @@ void ScheduleWidget::setShowAllHours(
 
     saveBoolSetting(
         openDataService(m_services),
-        SettingsKeys::ShowAllHours,
+        SettingsKeys::ShowAllHoursV2,
         m_showAllHours
-        );
-
-    updateButtons();
-    loadSchedule();
-}
-
-void ScheduleWidget::setHideEmptyRows(
-    bool hideEmptyRows
-    )
-{
-    m_hideEmptyRows = hideEmptyRows;
-
-    saveBoolSetting(
-        openDataService(m_services),
-        SettingsKeys::HideEmptyRows,
-        m_hideEmptyRows
         );
 
     updateButtons();
@@ -617,12 +597,6 @@ void ScheduleWidget::buildUi()
         QStringLiteral("scheduleShowAllHoursCheckBox")
         );
 
-    m_hideEmptyRowsCheckBox =
-        new QCheckBox(this);
-    m_hideEmptyRowsCheckBox->setObjectName(
-        QStringLiteral("scheduleHideEmptyRowsCheckBox")
-        );
-
     m_showIntensiveScheduleCheckBox =
         new QCheckBox(this);
     m_showIntensiveScheduleCheckBox->setObjectName(
@@ -639,7 +613,7 @@ void ScheduleWidget::buildUi()
     auto* primaryOptionsLayout =
         new QVBoxLayout;
     primaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    primaryOptionsLayout->setSpacing(4);
+    primaryOptionsLayout->setSpacing(8);
     primaryOptionsLayout->setAlignment(Qt::AlignTop);
     primaryOptionsLayout->addWidget(
         m_showKoreanTeacherEnglishNamesCheckBox
@@ -649,15 +623,14 @@ void ScheduleWidget::buildUi()
     auto* intensiveOptionsLayout =
         new QVBoxLayout;
     intensiveOptionsLayout->setContentsMargins(20, 0, 0, 0);
-    intensiveOptionsLayout->setSpacing(4);
+    intensiveOptionsLayout->setSpacing(8);
     intensiveOptionsLayout->addWidget(m_showAllHoursCheckBox);
-    intensiveOptionsLayout->addWidget(m_hideEmptyRowsCheckBox);
     primaryOptionsLayout->addLayout(intensiveOptionsLayout);
 
     auto* secondaryOptionsLayout =
         new QVBoxLayout;
     secondaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    secondaryOptionsLayout->setSpacing(4);
+    secondaryOptionsLayout->setSpacing(8);
     secondaryOptionsLayout->setAlignment(Qt::AlignTop);
     secondaryOptionsLayout->addWidget(m_use24HourTimeCheckBox);
     secondaryOptionsLayout->addWidget(m_showWeekendsCheckBox);
@@ -707,13 +680,6 @@ void ScheduleWidget::buildUi()
         &QCheckBox::toggled,
         this,
         &ScheduleWidget::setShowAllHours
-        );
-
-    connect(
-        m_hideEmptyRowsCheckBox,
-        &QCheckBox::toggled,
-        this,
-        &ScheduleWidget::setHideEmptyRows
         );
 
     connect(
@@ -789,19 +755,10 @@ void ScheduleWidget::loadSettings()
     m_showAllHours =
         settingToBool(
             dataService->loadSetting(
-                SettingsKeys::ShowAllHours,
+                SettingsKeys::ShowAllHoursV2,
                 QStringLiteral("false")
                 ),
             false
-            );
-
-    m_hideEmptyRows =
-        settingToBool(
-            dataService->loadSetting(
-                SettingsKeys::HideEmptyRows,
-                QStringLiteral("true")
-                ),
-            true
             );
 }
 
@@ -950,7 +907,6 @@ void ScheduleWidget::updateButtons()
         || !m_showKoreanTeacherEnglishNamesCheckBox
         || !m_showWeekendsCheckBox
         || !m_showAllHoursCheckBox
-        || !m_hideEmptyRowsCheckBox
         || !m_showIntensiveScheduleCheckBox
         || !m_exportButton
         )
@@ -964,7 +920,6 @@ void ScheduleWidget::updateButtons()
         );
     const QSignalBlocker weekendsBlocker(m_showWeekendsCheckBox);
     const QSignalBlocker allHoursBlocker(m_showAllHoursCheckBox);
-    const QSignalBlocker hideEmptyBlocker(m_hideEmptyRowsCheckBox);
     const QSignalBlocker intensiveBlocker(m_showIntensiveScheduleCheckBox);
 
     m_use24HourTimeCheckBox->setText(tr("Use 24-Hour Time"));
@@ -984,9 +939,6 @@ void ScheduleWidget::updateButtons()
     m_showAllHoursCheckBox->setText(tr("Show All Hours"));
     m_showAllHoursCheckBox->setChecked(m_showAllHours);
     m_showAllHoursCheckBox->setEnabled(m_showIntensive);
-    m_hideEmptyRowsCheckBox->setText(tr("Hide Empty Rows"));
-    m_hideEmptyRowsCheckBox->setChecked(m_hideEmptyRows);
-    m_hideEmptyRowsCheckBox->setEnabled(m_showIntensive);
 
     m_exportButton->setText(
         tr("Export")
@@ -1129,8 +1081,8 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
     request.regularWeekdaySlotTogglingEnabled =
         m_regularWeekdaySlotTogglingEnabled;
     request.rowFilter =
-        m_showIntensive && m_hideEmptyRows
-            ? ScheduleRowFilter::HideEmptyRows
+        m_showIntensive && !m_showAllHours
+            ? ScheduleRowFilter::TrimEmptyOuterRows
             : ScheduleRowFilter::None;
 
     return request;
@@ -1150,8 +1102,7 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
     const ScheduleBuildResult result =
         builder.build(
             request.useIntensive,
-            request.days,
-            request.useIntensive && m_showAllHours
+            request.days
             );
 
     return buildScheduleViewModel(

@@ -24,7 +24,6 @@ struct ScheduleDisplayState
     bool showKoreanTeacherEnglishNames = false;
     bool showIntensive = false;
     bool showAllHours = false;
-    bool hideEmptyRows = true;
     bool showWeekends = false;
 };
 
@@ -56,7 +55,6 @@ private slots:
     void setShowKoreanTeacherEnglishNames(bool showEnglishNames);
     void setShowIntensiveSchedule(bool showIntensive);
     void setShowAllHours(bool showAllHours);
-    void setHideEmptyRows(bool hideEmptyRows);
     void setShowWeekends(bool showWeekends);
     void exportSchedule();
     void onCellClicked(
@@ -95,7 +93,6 @@ private:
     bool m_showKoreanTeacherEnglishNames = false;
     bool m_showIntensive = false;
     bool m_showAllHours = false;
-    bool m_hideEmptyRows = true;
     bool m_showWeekends = false;
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
@@ -108,7 +105,6 @@ private:
     QCheckBox* m_showKoreanTeacherEnglishNamesCheckBox = nullptr;
     QCheckBox* m_showWeekendsCheckBox = nullptr;
     QCheckBox* m_showAllHoursCheckBox = nullptr;
-    QCheckBox* m_hideEmptyRowsCheckBox = nullptr;
     QCheckBox* m_showIntensiveScheduleCheckBox = nullptr;
     QPushButton* m_exportButton = nullptr;
 };

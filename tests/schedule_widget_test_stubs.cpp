@@ -49,6 +49,13 @@ void setDatabaseOpen(
 {
     databaseOpen = open;
 }
+
+QString settingValue(
+    const QString& key
+    )
+{
+    return settings.value(key).toString();
+}
 }
 
 ApplicationServices::ApplicationServices()
@@ -288,8 +295,7 @@ ScheduleBuilder::ScheduleBuilder(
 
 ScheduleBuildResult ScheduleBuilder::build(
     bool,
-    const QStringList& visibleDays,
-    bool
+    const QStringList& visibleDays
     ) const
 {
     ScheduleBuildResult result;

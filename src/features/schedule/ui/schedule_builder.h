@@ -45,8 +45,7 @@ public:
 
     ScheduleBuildResult build(
         bool useIntensive,
-        const QStringList& visibleDays,
-        bool showAllHours = false
+        const QStringList& visibleDays
         ) const;
 
 private:
