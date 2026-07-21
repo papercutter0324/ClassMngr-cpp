@@ -23,12 +23,21 @@ void SidebarController::importTeachers()
     const QDate previousDate = dataService->latestTeacherImportDate();
     if (previousDate.isValid() && plan.sourceDate <= previousDate)
     {
+        const bool versionsMatch = plan.sourceDate == previousDate;
+        const QString confirmationMessage =
+            (versionsMatch
+                 ? tr("The selected file's version appears to match the current data. Do you wish to continue?\n"
+                      "    File Version: %1\n"
+                      "    Current Version: %2")
+                 : tr("The selected file appears to be older version than the current data. Do you wish to continue?\n"
+                      "    File Version: %1\n"
+                      "    Current Version: %2"))
+                .arg(plan.sourceDate.toString(Qt::ISODate),
+                     previousDate.toString(Qt::ISODate));
         const auto answer = QMessageBox::question(
             m_sidebar,
-            tr("Import Older Teacher Data"),
-            tr("This file contains teacher data dated %1. The newest imported data is dated %2. Do you want to continue?")
-                .arg(plan.sourceDate.toString(Qt::ISODate),
-                     previousDate.toString(Qt::ISODate)),
+            tr("Import Teachers"),
+            confirmationMessage,
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No);
         if (answer != QMessageBox::Yes)
