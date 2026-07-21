@@ -178,8 +178,13 @@ set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
 set(CLASSMNGR_QT_DEPLOY_POSTAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_EXECUTABLE "$<TARGET_FILE:ClassMngr>")
-set(CLASSMNGR_QT_DEPLOY_QML_PLUGINS "\\$")
-string(APPEND CLASSMNGR_QT_DEPLOY_QML_PLUGINS "{plugins_found}")
+
+if(WIN32 AND CLASSMNGR_MSVC_INSTALL_DIR)
+    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
+        "set(ENV{VCINSTALLDIR} [[${CLASSMNGR_MSVC_INSTALL_DIR}]])\n"
+    )
+endif()
+
 if(UNIX AND NOT APPLE)
     string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
         "find_program(CLASSMNGR_PATCHELF_EXECUTABLE patchelf)\n"
@@ -411,7 +416,7 @@ install(FILES
     DESTINATION licenses/fonts/pretendard
 )
 
-qt_generate_deploy_script(
+qt6_generate_deploy_script(
     TARGET ClassMngr
     OUTPUT_SCRIPT deploy_script
     CONTENT "
@@ -419,7 +424,7 @@ ${CLASSMNGR_QT_DEPLOY_PREAMBLE}
 qt_deploy_qml_imports(TARGET ClassMngr PLUGINS_FOUND plugins_found)
 qt_deploy_runtime_dependencies(
     EXECUTABLE \"${CLASSMNGR_QT_DEPLOY_EXECUTABLE}\"
-    ADDITIONAL_MODULES ${CLASSMNGR_QT_DEPLOY_QML_PLUGINS}
+    ADDITIONAL_MODULES \${plugins_found}
     GENERATE_QT_CONF
 ${CLASSMNGR_QT_DEPLOY_OPTIONS}
 )

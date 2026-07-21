@@ -105,6 +105,9 @@
       "architecture": {
         "value": "x64",
         "strategy": "set"
+      },
+      "cacheVariables": {
+        "CLASSMNGR_PREFER_QT_ZLIB_FALLBACK": "ON"
       }
     },
     {
@@ -117,6 +120,7 @@
       "displayName": "Windows Laptop Release",
       "inherits": "windows-laptop-base",
       "cacheVariables": {
+        "BUILD_TESTING": "OFF",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
         "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
       }
@@ -204,6 +208,11 @@
 
   "buildPresets": [
     {
+      "name": "windows-laptop-build-base",
+      "hidden": true,
+      "jobs": 4
+    },
+    {
       "name": "windows-desktop-debug",
       "configurePreset": "windows-desktop-debug",
       "configuration": "Debug"
@@ -223,16 +232,19 @@
     },
     {
       "name": "windows-laptop-debug",
+      "inherits": "windows-laptop-build-base",
       "configurePreset": "windows-laptop-debug",
       "configuration": "Debug"
     },
     {
       "name": "windows-laptop-release",
+      "inherits": "windows-laptop-build-base",
       "configurePreset": "windows-laptop-release",
       "configuration": "Release"
     },
     {
       "name": "windows-laptop-release-install",
+      "inherits": "windows-laptop-build-base",
       "configurePreset": "windows-laptop-release",
       "configuration": "Release",
       "targets": [
