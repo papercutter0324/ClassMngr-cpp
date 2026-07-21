@@ -174,16 +174,6 @@ QString englishLine(
         );
 }
 
-QString koreanLine(
-    const ScheduleEntry& entry
-    )
-{
-    return QStringLiteral("%1 %2")
-        .arg(entry.teacherKr.trimmed())
-        .arg(entry.roomNumber.trimmed())
-        .simplified();
-}
-
 QString excelDayLabel(
     const QString& day
     )
@@ -429,7 +419,8 @@ void drawEntry(
     QPainter& painter,
     const QRectF& rect,
     const ScheduleEntry& entry,
-    bool excel
+    bool excel,
+    bool showEnglishNames
     )
 {
     painter.save();
@@ -468,7 +459,10 @@ void drawEntry(
             20.0
             ),
         Qt::AlignCenter | Qt::TextWordWrap,
-        koreanLine(entry)
+        scheduleTeacherRoomLine(
+            entry,
+            showEnglishNames
+            )
         );
 
     painter.setFont(englishFont);
@@ -517,7 +511,8 @@ void drawScheduleCell(
     QPainter& painter,
     const QRectF& rect,
     const ScheduleCellView& cell,
-    const PrintPalette& palette
+    const PrintPalette& palette,
+    bool showEnglishNames
     )
 {
     painter.save();
@@ -535,7 +530,8 @@ void drawScheduleCell(
                 painter,
                 rect,
                 cell.entries.first(),
-                palette.excel
+                palette.excel,
+                showEnglishNames
                 );
         }
         else
@@ -554,7 +550,8 @@ void drawScheduleCell(
                         segmentHeight
                         ),
                     cell.entries.at(index),
-                    palette.excel
+                    palette.excel,
+                    showEnglishNames
                     );
             }
         }
@@ -726,6 +723,7 @@ void paintSchedule(
     const SchedulePrintStyle style,
     const Theme currentTheme,
     const QString& userName,
+    bool showEnglishNames,
     const QRectF& bounds
     )
 {
@@ -947,7 +945,8 @@ void paintSchedule(
                     painter,
                     rect,
                     row.cells.at(dayIndex),
-                    palette
+                    palette,
+                    showEnglishNames
                     );
             }
         }
@@ -1033,6 +1032,7 @@ Result saveSchedulePdf(
         request.style,
         request.currentTheme,
         request.userName,
+        request.showEnglishNames,
         printableRect
         );
 

@@ -87,6 +87,7 @@ private slots:
     void intensiveNoFilteringKeepsAllRows();
     void regularSchedulesIgnoreIntensiveTrimming();
     void footerTotalsMatchExcelScreenshotConvention();
+    void teacherRoomLineRespectsSelectedNameLanguage();
 };
 
 void SchedulePrintModelTests::visibleDaysCanIncludeWeekends()
@@ -381,6 +382,27 @@ void SchedulePrintModelTests::footerTotalsMatchExcelScreenshotConvention()
 
     QCOMPARE(model.summary.essayBlocks, 15);
     QCOMPARE(model.summary.scheduledBlocks, 30);
+}
+
+void SchedulePrintModelTests::teacherRoomLineRespectsSelectedNameLanguage()
+{
+    ScheduleEntry scheduleEntry = entry();
+    scheduleEntry.teacherEn = QStringLiteral("Jihye Park");
+
+    QCOMPARE(
+        scheduleTeacherRoomLine(scheduleEntry, false),
+        QStringLiteral("박지혜 413")
+        );
+    QCOMPARE(
+        scheduleTeacherRoomLine(scheduleEntry, true),
+        QStringLiteral("Jihye Park 413")
+        );
+
+    scheduleEntry.teacherEn.clear();
+    QCOMPARE(
+        scheduleTeacherRoomLine(scheduleEntry, true),
+        QStringLiteral("박지혜 413")
+        );
 }
 
 QTEST_MAIN(SchedulePrintModelTests)

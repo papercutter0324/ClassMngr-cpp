@@ -27,6 +27,7 @@
 #include <QHash>
 #include <QLabel>
 #include <QTime>
+#include <QTimer>
 
 #include <utility>
 
@@ -34,12 +35,16 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 int savedSlotStates = 0;
+int printRequestCount = 0;
+bool lastPrintRequestShowsEnglishNames = false;
 bool databaseOpen = true;
 
 void reset()
 {
     settings.clear();
     savedSlotStates = 0;
+    printRequestCount = 0;
+    lastPrintRequestShowsEnglishNames = false;
     databaseOpen = true;
 }
 
@@ -502,6 +507,11 @@ SchedulePrintDialog::SchedulePrintDialog(
     )
     : QDialog(parent)
 {
+    QTimer::singleShot(
+        0,
+        this,
+        &QDialog::accept
+        );
 }
 
 SchedulePrintDialog::Action SchedulePrintDialog::selectedAction() const
@@ -526,9 +536,13 @@ SchedulePrintDialog::selectedOrientation() const
 }
 
 SchedulePrintService::Result SchedulePrintService::printSchedule(
-    const Request&
+    const Request& request
     )
 {
+    ++ScheduleWidgetTestStubs::printRequestCount;
+    ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames =
+        request.showEnglishNames;
+
     return {Status::Canceled, {}};
 }
 

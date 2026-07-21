@@ -15,6 +15,8 @@
 namespace ScheduleWidgetTestStubs
 {
 extern int savedSlotStates;
+extern int printRequestCount;
+extern bool lastPrintRequestShowsEnglishNames;
 void reset();
 void setDatabaseOpen(bool open);
 QString settingValue(const QString& key);
@@ -27,6 +29,7 @@ class ScheduleWidgetTests : public QObject
 private slots:
     void init();
     void persistsAndMirrorsEveryViewOption();
+    void exportUsesSelectedTeacherNameLanguage();
     void legacyHourSettingsDoNotCarryForward();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
@@ -126,6 +129,40 @@ void ScheduleWidgetTests
         mirrored.visibleClassIds(),
         QSet<int>{42}
         );
+}
+
+void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    auto* showEnglishNames =
+        widget.findChild<QCheckBox*>(
+            QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
+            );
+    QVERIFY(showEnglishNames);
+
+    showEnglishNames->setChecked(true);
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "exportSchedule",
+            Qt::DirectConnection
+            )
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
+    QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
+
+    showEnglishNames->setChecked(false);
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "exportSchedule",
+            Qt::DirectConnection
+            )
+        );
+    QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 2);
+    QVERIFY(!ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 }
 
 void ScheduleWidgetTests

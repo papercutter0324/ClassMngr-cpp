@@ -167,31 +167,6 @@ QString joinedEnglishLine(
         );
 }
 
-QString teacherRoomLine(
-    const ScheduleEntry& entry,
-    bool showEnglishName
-    )
-{
-    const QString preferredName =
-        (showEnglishName
-            ? entry.teacherEn
-            : entry.teacherKr)
-            .trimmed();
-    const QString fallbackName =
-        (showEnglishName
-            ? entry.teacherKr
-            : entry.teacherEn)
-            .trimmed();
-
-    return QStringLiteral("%1 %2")
-        .arg(
-            preferredName.isEmpty()
-                ? fallbackName
-                : preferredName,
-            entry.roomNumber.trimmed()
-            )
-        .simplified();
-}
 }
 
 ScheduleWidget::ScheduleWidget(
@@ -463,6 +438,8 @@ void ScheduleWidget::exportSchedule()
     SchedulePrintService::Request request;
     request.parent = this;
     request.model = buildScheduleModel();
+    request.showEnglishNames =
+        m_showKoreanTeacherEnglishNames;
     request.style = dialog.selectedStyle();
     request.pageOrientation = dialog.selectedOrientation();
 
@@ -1131,7 +1108,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
         );
 
     const QString teacherLine =
-        teacherRoomLine(
+        scheduleTeacherRoomLine(
             entry,
             m_showKoreanTeacherEnglishNames
             );
@@ -1202,7 +1179,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
     for (const ScheduleEntry& entry : entries)
     {
         const QString teacherLine =
-            teacherRoomLine(
+            scheduleTeacherRoomLine(
                 entry,
                 m_showKoreanTeacherEnglishNames
                 );

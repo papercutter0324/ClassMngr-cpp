@@ -25,6 +25,7 @@ struct Request
     SchedulePrintStyle style = SchedulePrintStyle::CurrentAppearance;
     Theme currentTheme = Theme::Dark;
     QString userName;
+    bool showEnglishNames = false;
     QPageLayout::Orientation pageOrientation = QPageLayout::Landscape;
 };
 

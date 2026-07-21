@@ -88,6 +88,32 @@ bool scheduleSlotTogglingEnabled(
     bool regularWeekdaySlotTogglingEnabled
     );
 
+inline QString scheduleTeacherRoomLine(
+    const ScheduleEntry& entry,
+    bool showEnglishName
+    )
+{
+    const QString preferredName =
+        (showEnglishName
+            ? entry.teacherEn
+            : entry.teacherKr)
+            .trimmed();
+    const QString fallbackName =
+        (showEnglishName
+            ? entry.teacherKr
+            : entry.teacherEn)
+            .trimmed();
+
+    return QStringLiteral("%1 %2")
+        .arg(
+            preferredName.isEmpty()
+                ? fallbackName
+                : preferredName,
+            entry.roomNumber.trimmed()
+            )
+        .simplified();
+}
+
 QString scheduleSlotState(
     const QString& day,
     const QString& timeLabel,
