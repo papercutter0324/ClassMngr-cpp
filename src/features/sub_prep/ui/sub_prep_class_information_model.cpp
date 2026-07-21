@@ -7,6 +7,7 @@
 #include <limits>
 
 #include <QHash>
+#include <QCoreApplication>
 #include <QTime>
 
 namespace
@@ -34,31 +35,52 @@ QString dayAbbreviation(
 {
     if (day == QStringLiteral("Monday"))
     {
-        return QStringLiteral("Mon");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Mon"
+            );
     }
     if (day == QStringLiteral("Tuesday"))
     {
-        return QStringLiteral("Tues");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Tues"
+            );
     }
     if (day == QStringLiteral("Wednesday"))
     {
-        return QStringLiteral("Wed");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Wed"
+            );
     }
     if (day == QStringLiteral("Thursday"))
     {
-        return QStringLiteral("Thurs");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Thurs"
+            );
     }
     if (day == QStringLiteral("Friday"))
     {
-        return QStringLiteral("Fri");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Fri"
+            );
     }
     if (day == QStringLiteral("Saturday"))
     {
-        return QStringLiteral("Sat");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Sat"
+            );
     }
     if (day == QStringLiteral("Sunday"))
     {
-        return QStringLiteral("Sun");
+        return QCoreApplication::translate(
+            "SubPrepClassInformation",
+            "Sun"
+            );
     }
 
     return day.trimmed();

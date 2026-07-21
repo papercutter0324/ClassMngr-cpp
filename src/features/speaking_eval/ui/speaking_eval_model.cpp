@@ -211,9 +211,31 @@ QVariant SpeakingEvalModel::headerData(
 
     if (orientation == Qt::Horizontal)
     {
-        return SpeakingEval::header(
-            SpeakingEval::columnFromInt(section)
-            );
+        switch (SpeakingEval::columnFromInt(section))
+        {
+        case SpeakingEvalColumn::Index:
+            return {};
+        case SpeakingEvalColumn::EnglishName:
+            return tr("English Name");
+        case SpeakingEvalColumn::KoreanName:
+            return tr("Korean Name");
+        case SpeakingEvalColumn::Grammar:
+            return tr("Grammar");
+        case SpeakingEvalColumn::Pronunciation:
+            return tr("Pronunciation");
+        case SpeakingEvalColumn::Fluency:
+            return tr("Fluency");
+        case SpeakingEvalColumn::Manner:
+            return tr("Manner");
+        case SpeakingEvalColumn::Content:
+            return tr("Content");
+        case SpeakingEvalColumn::OverallEffort:
+            return tr("Overall Effort");
+        case SpeakingEvalColumn::Comments:
+            return tr("Comments");
+        case SpeakingEvalColumn::Notes:
+            return tr("Notes");
+        }
     }
 
     return section + 1;

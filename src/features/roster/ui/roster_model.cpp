@@ -198,7 +198,38 @@ QVariant RosterModel::headerData(
 
     if (orientation == Qt::Horizontal)
     {
-        return columnName(section);
+        const QString name = columnName(section);
+
+        if (name.compare(QStringLiteral("English"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("English");
+        }
+        if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Korean");
+        }
+        if (name.compare(QStringLiteral("Winter"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Winter");
+        }
+        if (name.compare(QStringLiteral("Speech Contest"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Speech Contest");
+        }
+        if (name.compare(QStringLiteral("Summer"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Summer");
+        }
+        if (name.compare(QStringLiteral("Fall"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Fall");
+        }
+        if (name.compare(QStringLiteral("Autumn"), Qt::CaseInsensitive) == 0)
+        {
+            return tr("Autumn");
+        }
+
+        return name;
     }
 
     return section + 1;

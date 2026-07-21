@@ -12,6 +12,8 @@ class QPushButton;
 
 class SpeakingEvalBatchExportDialog : public QDialog
 {
+    Q_OBJECT
+
 public:
     explicit SpeakingEvalBatchExportDialog(
         const QList<SpeakingEvalBatchReportService::StudentReport>& reports,

@@ -136,11 +136,11 @@ void PdfPrintDialog::buildUi()
         UiRoles::Input
         );
     m_pagesCombo->addItem(
-        QStringLiteral("All"),
+        tr("All"),
         PageRangeAll
         );
     m_pagesCombo->addItem(
-        QStringLiteral("Custom"),
+        tr("Custom"),
         PageRangeCustom
         );
     optionsLayout->addWidget(
@@ -192,11 +192,11 @@ void PdfPrintDialog::buildUi()
         UiRoles::Input
         );
     m_colorCombo->addItem(
-        QStringLiteral("Color"),
+        tr("Color"),
         ColorModeColor
         );
     m_colorCombo->addItem(
-        QStringLiteral("Black and White"),
+        tr("Black and White"),
         ColorModeBlackAndWhite
         );
     addOptionWidget(

@@ -37,6 +37,8 @@ using RenderFunction =
 
 class PdfPrintDialog : public QDialog
 {
+    Q_OBJECT
+
 public:
     PdfPrintDialog(
         QWidget* parent,

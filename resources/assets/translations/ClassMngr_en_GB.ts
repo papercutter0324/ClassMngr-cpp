@@ -26,7 +26,7 @@
     <message>
         <location filename="../../../src/ui/shared/dialogs/about_dialog.cpp" line="249"/>
         <source>%1 is a desktop classroom management tool for organizing schedules, rosters, campus information, teacher details, and substitute-prep notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 is a desktop classroom management tool for organising schedules, rosters, campus information, teacher details, and substitute-prep notes.</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/dialogs/about_dialog.cpp" line="257"/>
@@ -164,497 +164,497 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="92"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="340"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="339"/>
         <source>New Database...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="93"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="341"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="340"/>
         <source>Create a new database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="97"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="348"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="347"/>
         <source>Open...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="98"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="349"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="348"/>
         <source>Open an existing file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="102"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="356"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="355"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="103"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="357"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="356"/>
         <source>Save the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="107"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="364"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="363"/>
         <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="108"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="365"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="364"/>
         <source>Save the file with a new name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="112"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="370"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="369"/>
         <source>Export As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="113"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="371"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="370"/>
         <source>Export the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="117"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="377"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="118"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="379"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="378"/>
         <source>Close the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="122"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="386"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="385"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="123"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="387"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="386"/>
         <source>Exit the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="128"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="404"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="129"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="406"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="405"/>
         <source>Undo the last action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="133"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="411"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="134"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="413"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="412"/>
         <source>Redo the last undone action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="138"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="419"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="418"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="139"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="420"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="419"/>
         <source>Cut the selected content</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="143"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="426"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="425"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="144"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="427"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="426"/>
         <source>Copy the selected content</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="148"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="433"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="432"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="149"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="434"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="433"/>
         <source>Paste content from the clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="154"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="452"/>
         <source>New Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="155"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="454"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="453"/>
         <source>Create a new class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="159"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="458"/>
         <source>Delete Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="160"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="460"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="459"/>
         <source>Delete the selected class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="164"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="464"/>
         <source>Import Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="165"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="466"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="465"/>
         <source>Import classes from a class package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="169"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="471"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="470"/>
         <source>Export Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="170"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="472"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="471"/>
         <source>Export selected classes to a class package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="174"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="476"/>
         <source>New Teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="175"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="478"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="477"/>
         <source>Create a new teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="179"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="482"/>
         <source>Delete Teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="180"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="484"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="483"/>
         <source>Delete the selected teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="187"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="499"/>
-        <source>Automatic</source>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="184"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="488"/>
+        <source>Import Teachers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="188"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="500"/>
-        <source>Automatically save changes</source>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="185"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="489"/>
+        <source>Import teachers and campus staff from an Excel workbook</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="192"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="505"/>
-        <source>Manual</source>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="504"/>
+        <source>Automatic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="193"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="506"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="505"/>
+        <source>Automatically save changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="197"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="510"/>
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="198"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="511"/>
         <source>Save changes manually</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="201"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="523"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="528"/>
         <source>Dark Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="202"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="524"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="207"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="529"/>
         <source>Use dark theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="206"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="529"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="211"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="534"/>
         <source>Light Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="207"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="530"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="212"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="535"/>
         <source>Use light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="215"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="546"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="220"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="551"/>
         <source>System Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="216"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="547"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="221"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="552"/>
         <source>Use the system language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="220"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="552"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="557"/>
         <source>English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="221"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="553"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="226"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
         <source>Use English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="225"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="558"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="230"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="563"/>
         <source>Korean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="226"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="559"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="231"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="564"/>
         <source>Use Korean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="234"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="584"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="641"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="268"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="589"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="646"/>
         <source>Small</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="235"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="585"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="590"/>
         <source>Use small font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="239"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="590"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="595"/>
         <source>Normal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="240"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="591"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="245"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="596"/>
         <source>Use normal font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="244"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="273"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="596"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="653"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="249"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="278"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="601"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="658"/>
         <source>Large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="245"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="597"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="250"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="602"/>
         <source>Use large font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="249"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="602"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="254"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="607"/>
         <source>Extra Large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="250"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="603"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="255"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="608"/>
         <source>Use extra large font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="258"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="635"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="263"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="640"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="259"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="636"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="264"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="641"/>
         <source>Show PDF pages with no added spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="264"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="642"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="269"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="647"/>
         <source>Show PDF pages with small spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="268"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="647"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="273"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="652"/>
         <source>Medium</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="269"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="648"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="653"/>
         <source>Show PDF pages with medium spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="274"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="654"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="279"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="659"/>
         <source>Show PDF pages with large spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="282"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="686"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="287"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="691"/>
         <source>Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="283"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="687"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="692"/>
         <source>Use the current theme&apos;s PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="287"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="692"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="292"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="697"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="288"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="693"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="293"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="698"/>
         <source>Use a white PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="292"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="698"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="297"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="703"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="293"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="699"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="298"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="704"/>
         <source>Use a black PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="299"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="722"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="727"/>
         <source>Show Sidebar Tooltips</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="300"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="723"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="728"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="304"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="728"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="309"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="733"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="305"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="729"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="310"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="734"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="309"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="734"/>
-        <source>Show All Korean Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="310"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="735"/>
-        <source>Show every Korean teacher in the sidebar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="315"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="795"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="314"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="779"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="316"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="796"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="315"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="780"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="801"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="319"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="785"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="321"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="802"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="320"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="786"/>
         <source>Show application information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="325"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="814"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="324"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="798"/>
         <source>Manage Campuses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="326"/>
-        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="815"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="325"/>
+        <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="799"/>
         <source>Manage campus settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -752,6 +752,21 @@
     <message>
         <location filename="../../../src/features/calendar/ui/calendar_event_dialog.cpp" line="368"/>
         <source>Repeating</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/calendar/ui/calendar_event_dialog.cpp" line="395"/>
+        <source>Daily</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/calendar/ui/calendar_event_dialog.cpp" line="399"/>
+        <source>Weekly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/calendar/ui/calendar_event_dialog.cpp" line="403"/>
+        <source>Monthly</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -869,7 +884,7 @@
     <message>
         <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="803"/>
         <source>Choose %1 Color</source>
-        <translation type="unfinished">Choose %1 Colour</translation>
+        <translation>Choose %1 Colour</translation>
     </message>
     <message>
         <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1007"/>
@@ -889,7 +904,7 @@
     <message>
         <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1302"/>
         <source>Choose %1 color</source>
-        <translation type="unfinished">Choose %1 colour</translation>
+        <translation>Choose %1 colour</translation>
     </message>
 </context>
 <context>
@@ -1447,7 +1462,7 @@
         <location filename="../../../src/features/classes/ui/class_details_page.cpp" line="403"/>
         <location filename="../../../src/features/classes/ui/class_details_page.cpp" line="693"/>
         <source>No class selected</source>
-        <translation type="unfinished">No class selected</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_details_page.cpp" line="224"/>
@@ -1476,7 +1491,7 @@
     <message>
         <location filename="../../../src/features/classes/ui/class_details_page.cpp" line="439"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_details_page.cpp" line="543"/>
@@ -1614,7 +1629,7 @@
     <message>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="161"/>
         <source>Classes</source>
-        <translation type="unfinished">Classes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="185"/>
@@ -1695,7 +1710,7 @@
     <message>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="105"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="259"/>
@@ -1717,7 +1732,7 @@
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="296"/>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="416"/>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="303"/>
@@ -1735,7 +1750,7 @@
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="377"/>
         <location filename="../../../src/features/classes/ui/class_notes_page.cpp" line="509"/>
         <source>No class selected</source>
-        <translation type="unfinished">No class selected</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1768,8 +1783,43 @@
 <context>
     <name>ClassTimeRow</name>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="211"/>
-        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="359"/>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="24"/>
+        <source>Monday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="28"/>
+        <source>Tuesday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="32"/>
+        <source>Wednesday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="36"/>
+        <source>Thursday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="40"/>
+        <source>Friday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="44"/>
+        <source>Saturday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="48"/>
+        <source>Sunday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="266"/>
+        <location filename="../../../src/ui/shared/widgets/sectioncards/class_time_row.cpp" line="418"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1781,42 +1831,42 @@
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="282"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="747"/>
         <source>Classes</source>
-        <translation>Classes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="243"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="329"/>
         <source>No classes available</source>
-        <translation>No classes available</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="291"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="761"/>
         <source>No class selected</source>
-        <translation>No class selected</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="247"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="323"/>
         <source>Details</source>
-        <translation>Details</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="248"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="324"/>
         <source>Roster</source>
-        <translation>Roster</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="249"/>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="325"/>
         <source>Notes</source>
-        <translation>Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/classes_page.cpp" line="781"/>
         <source>Class %1</source>
-        <translation>Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1977,7 +2027,7 @@
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="52"/>
         <source>Initializing application services...</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialising application services...</translation>
     </message>
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="55"/>
@@ -1997,12 +2047,12 @@
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="64"/>
         <source>Initializing actions...</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialising actions...</translation>
     </message>
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="67"/>
         <source>Initializing controllers...</source>
-        <translation type="unfinished"></translation>
+        <translation>Initialising controllers...</translation>
     </message>
     <message>
         <location filename="../../../src/app/mainwindow.cpp" line="70"/>
@@ -2078,57 +2128,57 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="118"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="120"/>
         <source>Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="126"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="128"/>
         <source>Save Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="143"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="145"/>
         <source>Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="160"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="162"/>
         <source>Language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="183"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="185"/>
         <source>Font Size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="201"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="203"/>
         <source>Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="206"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="208"/>
         <source>Page Spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="222"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="224"/>
         <source>Background Color</source>
         <translation>Background Colour</translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="239"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="241"/>
         <source>Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="253"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="254"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/menu_builder.cpp" line="267"/>
+        <location filename="../../../src/app/menu_builder.cpp" line="268"/>
         <source>Admin</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2145,6 +2195,41 @@
         <location filename="../../../src/features/my_info/ui/my_classes_page.cpp" line="41"/>
         <location filename="../../../src/features/my_info/ui/my_classes_page_ui.cpp" line="56"/>
         <source>Review teacher, class, and roster details.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="127"/>
+        <source>Mon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="131"/>
+        <source>Tues</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="135"/>
+        <source>Wed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="139"/>
+        <source>Thurs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="143"/>
+        <source>Fri</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="147"/>
+        <source>Sat</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="151"/>
+        <source>Sun</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2185,7 +2270,7 @@
     <message>
         <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="748"/>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="790"/>
@@ -2219,17 +2304,6 @@
     </message>
 </context>
 <context>
-    <name>MyInfoPage</name>
-    <message>
-        <source>Choose %1 Color</source>
-        <translation type="vanished">Choose %1 Colour</translation>
-    </message>
-    <message>
-        <source>Choose %1 color</source>
-        <translation type="vanished">Choose %1 colour</translation>
-    </message>
-</context>
-<context>
     <name>PdfPrintDialog</name>
     <message>
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="102"/>
@@ -2243,6 +2317,16 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="139"/>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="143"/>
+        <source>Custom</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="148"/>
         <source>Pages</source>
         <translation type="unfinished"></translation>
@@ -2253,9 +2337,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="195"/>
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="205"/>
         <source>Color</source>
         <translation>Colour</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="199"/>
+        <source>Black and White</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_widgets.cpp" line="249"/>
@@ -2336,6 +2426,11 @@
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_printing.cpp" line="88"/>
         <location filename="../../../src/ui/shared/printing/pdf_print_dialog_printing.cpp" line="124"/>
         <source>No valid printer is available.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/printing/pdf_print_dialog_internal.h" line="19"/>
+        <source>e.g. 1-3, 6, 9-11</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2695,12 +2790,22 @@
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="47"/>
         <source>Speaking Evaluations</source>
-        <translation>Speaking Evaluations</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="79"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="75"/>
+        <source>Native English Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="80"/>
+        <source>GS Team</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="88"/>
         <source>Individual Class List</source>
-        <translation>Individual Class List</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="17"/>
@@ -2720,7 +2825,7 @@
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="35"/>
         <source>Classes</source>
-        <translation type="unfinished">Classes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="41"/>
@@ -2734,296 +2839,296 @@
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="59"/>
-        <source>Korean Teachers</source>
+        <source>Co-Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="65"/>
-        <source>My Co-Teachers</source>
+        <source>Campus Staff</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="71"/>
-        <source>All Teachers</source>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="70"/>
+        <source>Korean Teachers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="85"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="94"/>
         <source>Documents</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="91"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="100"/>
         <source>Guides</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="97"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="106"/>
         <source>Lesson Planning</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="103"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="112"/>
         <source>PowerPoint Shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="111"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="120"/>
         <source>Lesson Templates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="117"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="126"/>
         <source>Speaking / Writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="123"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="132"/>
         <source>Skill / TBL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="129"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="138"/>
         <source>Student-Led Activities</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="135"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="144"/>
         <source>Middle School OE</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="141"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="150"/>
         <source>Theseus Paragraph Writing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="147"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="156"/>
         <source>CREO</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="155"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="164"/>
         <source>Online Essay</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="161"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="170"/>
         <source>Essay Topic Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="167"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="176"/>
         <source>Essay Brainstorm</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="173"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="182"/>
         <source>Theseus Paragraphs Explained</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="181"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="190"/>
         <source>Speaking Evals</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="187"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="196"/>
         <source>One-to-One Evaluations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="193"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="202"/>
         <source>In-Class Presentations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="199"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="208"/>
         <source>Finishing in One Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="205"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="214"/>
         <source>Topic Options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="211"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="220"/>
         <source>Regular Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="217"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="226"/>
         <source>Athena/Song&apos;s Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="223"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="232"/>
         <source>Winner Certificates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="231"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="240"/>
         <source>Book Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="237"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="246"/>
         <source>Grading Rubric</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="243"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="252"/>
         <source>Grading Rubric (40%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="249"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="258"/>
         <source>Student Info Handout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="257"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="266"/>
         <source>Training</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="263"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="272"/>
         <source>Observation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="269"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="278"/>
         <source>Reflection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="275"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="284"/>
         <source>Final Reflection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="283"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="292"/>
         <source>Vacation / Sub Prep</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="289"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="298"/>
         <source>Applying for Vacation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="295"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="304"/>
         <source>Vacation Guidelines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="301"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="310"/>
         <source>Vacacation Request Form</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="307"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="316"/>
         <source>Sub Prep Procedures</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="313"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="322"/>
         <source>Sub Prep Checklist</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="319"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="328"/>
         <source>Sub Prep Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="329"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="338"/>
         <source>Useful Links</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="335"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="344"/>
         <source>Dropbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="343"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="352"/>
         <source>Vacation Calendar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="351"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="360"/>
         <source>Yearly Calendar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="359"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="368"/>
         <source>Training Website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="367"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="376"/>
         <source>NET Website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="375"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="384"/>
         <source>LMS Website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="383"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="392"/>
         <source>Highlights Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="393"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="402"/>
         <source>Campus Directory</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="399"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="408"/>
         <source>Information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="405"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="414"/>
         <source>Directions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="411"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="420"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="417"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="426"/>
         <source>Housing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="423"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="432"/>
         <source>Maps</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="443"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="452"/>
         <source>Details</source>
-        <translation>Details</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="449"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="458"/>
         <source>Roster</source>
-        <translation>Roster</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="455"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="464"/>
         <source>Notes</source>
-        <translation>Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="461"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="470"/>
         <source>Student Evaluations</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3100,7 +3205,7 @@
         <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="48"/>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="95"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="318"/>
@@ -3198,6 +3303,9 @@
     </message>
     <message>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="759"/>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="19"/>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="20"/>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="25"/>
         <source>%1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3426,22 +3534,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="979"/>
+        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="978"/>
         <source>No schedule print file path was provided.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="990"/>
+        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="989"/>
         <source>Unable to configure the schedule print file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="998"/>
+        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="997"/>
         <source>Unable to create the schedule print file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="1021"/>
+        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="1020"/>
         <source>Unable to determine the schedule print area.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3479,7 +3587,7 @@
     <message>
         <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="124"/>
         <source>Report export was canceled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Report export was cancelled.</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="187"/>
@@ -3603,7 +3711,7 @@
     <message>
         <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="1291"/>
         <source>A PDF could not be finalized in the selected folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>A PDF could not be finalised in the selected folder.</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="1319"/>
@@ -3692,25 +3800,25 @@
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="69"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="467"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="476"/>
         <source>Winter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="74"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="473"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="482"/>
         <source>Speech Contest</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="79"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="479"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="488"/>
         <source>Summer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_p.h" line="84"/>
-        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="485"/>
+        <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="494"/>
         <source>Fall</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4012,151 +4120,408 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="211"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="498"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="212"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="499"/>
         <source>%1[%2] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="382"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="383"/>
         <source>%1.columns[%2] must be a string.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="393"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="394"/>
         <source>%1.column_widths must match the column count.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="405"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="406"/>
         <source>%1.column_widths[%2] must be a number.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="418"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="538"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="419"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="539"/>
         <source>%1.rows[%2] must be an array.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="428"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="429"/>
         <source>%1.rows[%2] must match the column count.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="440"/>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="562"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="441"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="563"/>
         <source>%1.rows[%2][%3] must be a string.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="518"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="519"/>
         <source>%1 contains a duplicate evaluation name: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="526"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="527"/>
         <source>%1.rows has too many rows.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="548"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="549"/>
         <source>%1.rows[%2] must contain %3 columns.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="699"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="700"/>
         <source>This is not a ClassMngr class package.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="709"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="710"/>
         <source>package.version must be an integer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="718"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="719"/>
         <source>Unsupported class package version: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="746"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="747"/>
         <source>package.exported_at_utc is not a valid timestamp.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="753"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="754"/>
         <source>The class package does not contain any classes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="768"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="769"/>
         <source>teachers[%1] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="783"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="784"/>
         <source>Duplicate teacher key: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="796"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="797"/>
         <source>classes[%1] must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="811"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="812"/>
         <source>Duplicate class key: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="819"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="820"/>
         <source>Class %1 references an unknown teacher key: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="838"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="839"/>
         <source>No export path was provided.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="846"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="847"/>
         <source>Unable to open the class package for writing:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="858"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="859"/>
         <source>Unable to write the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="866"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="867"/>
         <source>Unable to finish writing the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="883"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="884"/>
         <source>Unable to open the class package:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="895"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="896"/>
         <source>The class package is not valid JSON:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="903"/>
+        <location filename="../../../src/features/classes/services/class_transfer_json_codec.cpp" line="904"/>
         <source>The class package root must be an object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="108"/>
         <source>Teacher %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="83"/>
+        <source>Every GS Team member must have a name or Korean name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="88"/>
+        <source>GS Team names must be unique.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="97"/>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="96"/>
+        <source>Unable to start the directory save transaction.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="108"/>
+        <source>Deleting a GS Team member</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="152"/>
+        <source>Saving a GS Team member</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="158"/>
+        <source>Unable to commit the GS Team directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="84"/>
+        <source>Every Native English Teacher must have a name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="88"/>
+        <source>Native English Teacher names must be unique.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="110"/>
+        <source>Deleting a Native English Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="157"/>
+        <source>Saving a Native English Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="163"/>
+        <source>Unable to commit the Native English Teacher directory.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="32"/>
+        <source>The teacher import date is invalid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="41"/>
+        <source>Every imported Korean teacher must have a name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="45"/>
+        <source>The import contains a duplicate Korean teacher name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="56"/>
+        <source>Every imported Native English Teacher must have a name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="60"/>
+        <source>The import contains a duplicate Native English Teacher name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="73"/>
+        <source>Every imported GS Team member must have a name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="78"/>
+        <source>The import contains a duplicate GS Team name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="98"/>
+        <source>Loading Korean teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="132"/>
+        <source>Loading Native English Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="155"/>
+        <source>Loading GS Team members</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="206"/>
+        <source>Loading the previous teacher import date</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="226"/>
+        <source>Saving the teacher import date</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="250"/>
+        <source>Unable to start the teacher import transaction.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="271"/>
+        <source>More than one stored Korean teacher matches %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="300"/>
+        <source>Creating a Korean teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="334"/>
+        <source>Updating a Korean teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="346"/>
+        <source>More than one stored Native English Teacher matches %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="365"/>
+        <source>Creating a Native English Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="402"/>
+        <source>Updating a Native English Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="416"/>
+        <source>More than one stored GS Team member matches %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="435"/>
+        <source>Creating a GS Team member</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="470"/>
+        <source>Updating a GS Team member</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="483"/>
+        <source>Unable to commit the teacher import transaction.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="120"/>
+        <source>Cell A1 must contain a version date such as 26.07.09ver.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="137"/>
+        <source>The version date in cell A1 is invalid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="156"/>
+        <source>Birthday in row %1 must use month/day format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="165"/>
+        <source>Birthday in row %1 is invalid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="257"/>
+        <source>Sectioned Teacher Contact List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="299"/>
+        <source>The workbook does not contain a worksheet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="307"/>
+        <source>No supported teacher sections were found.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="360"/>
+        <source>Korean teacher name in row %1 is empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="364"/>
+        <source>Korean teacher name in row %1 is duplicated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="381"/>
+        <source>Native English Teacher name in row %1 is duplicated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="405"/>
+        <source>GS Team name in row %1 is duplicated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="439"/>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="86"/>
+        <source>The recognized template contains no importable people.</source>
+        <translation>The recognised template contains no importable people.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="37"/>
+        <source>The selected file is not a readable XLSX workbook.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="49"/>
+        <source>The workbook does not match a supported teacher import template.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="57"/>
+        <source>The workbook matches more than one teacher import template.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="79"/>
+        <source>The recognized template did not provide a valid source date.</source>
+        <translation>The recognised template did not provide a valid source date.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="104"/>
+        <source>The selected file could not be opened: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4387,7 +4752,7 @@
         <location filename="../../../src/features/roster/ui/roster_editor_widget_transfer.cpp" line="112"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="317"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_transfer.cpp" line="134"/>
@@ -4449,7 +4814,25 @@
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="165"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="300"/>
         <source>No class selected</source>
-        <translation type="unfinished">No class selected</translation>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RosterHeaderView</name>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_header_view.cpp" line="164"/>
+        <source>Student Names</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_header_view.cpp" line="166"/>
+        <source>Evaluations</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_header_view.cpp" line="167"/>
+        <source>Student Information</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4561,6 +4944,41 @@
         <source>Duplicate student name pair.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="205"/>
+        <source>English</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="209"/>
+        <source>Korean</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="213"/>
+        <source>Winter</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="217"/>
+        <source>Speech Contest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="221"/>
+        <source>Summer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="225"/>
+        <source>Fall</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_model.cpp" line="229"/>
+        <source>Autumn</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RosterPrintDialog</name>
@@ -4663,7 +5081,7 @@
     <message>
         <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1257"/>
         <source>Classes</source>
-        <translation type="unfinished">Classes</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4684,7 +5102,7 @@
         <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="282"/>
         <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="755"/>
         <source>No classes available</source>
-        <translation type="unfinished">No classes available</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="236"/>
@@ -4695,7 +5113,7 @@
     <message>
         <location filename="../../../src/features/roster/ui/rosters_page.cpp" line="778"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4868,62 +5286,97 @@
 <context>
     <name>ScheduleWidget</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="525"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="482"/>
         <source>Print Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="526"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="483"/>
         <source>Export Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="918"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="852"/>
         <source>No registered class meeting times available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="970"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="902"/>
         <source>Use 24-Hour Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="973"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="905"/>
         <source>Show English Names</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="978"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="910"/>
         <source>Show Weekends</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="913"/>
         <source>Show Intensive Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="939"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="916"/>
         <source>Show All Hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="992"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="921"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1001"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="930"/>
         <source>Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1318"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="937"/>
+        <source>Monday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="941"/>
+        <source>Tuesday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="945"/>
+        <source>Wednesday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="949"/>
+        <source>Thursday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="953"/>
+        <source>Friday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="957"/>
+        <source>Saturday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="961"/>
+        <source>Sunday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1280"/>
         <source>Essay</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1343"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1305"/>
         <source>Lunch</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4984,7 +5437,7 @@
         <location filename="../../../src/app/controllers/sidebar_controller_prompts.cpp" line="95"/>
         <location filename="../../../src/app/controllers/sidebar_controller_prompts.cpp" line="130"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/app/controllers/sidebar_controller_prompts.cpp" line="145"/>
@@ -5001,7 +5454,7 @@
         <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="67"/>
         <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="120"/>
         <source>Classes</source>
-        <translation type="unfinished">Classes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="98"/>
@@ -5032,6 +5485,36 @@
     <message>
         <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="252"/>
         <source>Import complete. Created: %1, replaced: %2, skipped: %3.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="29"/>
+        <source>The selected file&apos;s version appears to match the current data. Do you wish to continue?
+    File Version: %1
+    Current Version: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="32"/>
+        <source>The selected file appears to be older version than the current data. Do you wish to continue?
+    File Version: %1
+    Current Version: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="39"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="55"/>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="74"/>
+        <source>Import Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="75"/>
+        <source>Import complete.
+
+Korean Teachers: %1 created, %2 updated, %3 unchanged
+Native English Teachers: %4 created, %5 updated, %6 unchanged
+GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5259,42 +5742,92 @@ Retry the entire batch using the PowerPoint template?</source>
 <context>
     <name>SpeakingEvalModel</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="373"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="219"/>
+        <source>English Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="221"/>
+        <source>Korean Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="223"/>
+        <source>Grammar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="225"/>
+        <source>Pronunciation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="227"/>
+        <source>Fluency</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="229"/>
+        <source>Manner</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="231"/>
+        <source>Content</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="233"/>
+        <source>Overall Effort</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="235"/>
+        <source>Comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="237"/>
+        <source>Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="395"/>
         <source>Row %1, Col %2: %3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="737"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="759"/>
         <source>English name must be 20 characters or fewer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="746"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="768"/>
         <source>Only standard English letters are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="766"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="788"/>
         <source>Invalid Korean name length.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="772"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="794"/>
         <source>Uncommon Korean name length. Please verify.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="781"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="803"/>
         <source>Invalid score &apos;%1&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="791"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="813"/>
         <source>Comment must be &lt;= %1 characters.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="847"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_model.cpp" line="869"/>
         <source>Duplicate student name pair. Also used on row(s): %1.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5305,7 +5838,7 @@ Retry the entire batch using the PowerPoint template?</source>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="42"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="149"/>
         <source>No classes available</source>
-        <translation>No classes available</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="68"/>
@@ -5376,7 +5909,7 @@ Retry the entire batch using the PowerPoint template?</source>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="275"/>
         <source>Select a class to create reports.</source>
-        <translation>Select a class to create reports.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_name_matching.cpp" line="243"/>
@@ -5503,7 +6036,7 @@ Retry the entire batch using the PowerPoint template?</source>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="46"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="405"/>
         <source>No class selected</source>
-        <translation type="unfinished">No class selected</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="399"/>
@@ -5513,7 +6046,7 @@ Retry the entire batch using the PowerPoint template?</source>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="428"/>
         <source>Class %1</source>
-        <translation type="unfinished">Class %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5655,6 +6188,185 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
 </context>
 <context>
+    <name>StaffDirectoryPage</name>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="56"/>
+        <source>Coordinator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="63"/>
+        <source>Team Leader</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="266"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="554"/>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="267"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="555"/>
+        <source>Delete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="268"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="556"/>
+        <source>Discard Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="269"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="617"/>
+        <source>Save Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="363"/>
+        <source>Delete Directory Entries</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="365"/>
+        <source>Delete the selected entry?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="366"/>
+        <source>Delete the selected %1 entries?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="423"/>
+        <source>Each Native English Teacher needs a unique name and a valid MM-dd birthday.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="453"/>
+        <source>Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="467"/>
+        <source>Save Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="511"/>
+        <source>Unsaved Directory Changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="516"/>
+        <source>This staff directory has unsaved changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="547"/>
+        <source>Native English Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="547"/>
+        <source>GS Team</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="549"/>
+        <source>View and maintain all Native English Teacher contact information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="550"/>
+        <source>View and maintain all GS and CS team contact information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
+        <source>Position</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
+        <source>Phone Number</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <source>Email</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
+        <source>Birthday</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
+        <source>Nationality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
+        <source>Korean Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="617"/>
+        <source>Save Changes *</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>SubPrepClassInformation</name>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="38"/>
+        <source>Mon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="45"/>
+        <source>Tues</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="52"/>
+        <source>Wed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="59"/>
+        <source>Thurs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="66"/>
+        <source>Fri</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="73"/>
+        <source>Sat</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="80"/>
+        <source>Sun</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SubPrepPage</name>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="138"/>
@@ -5735,7 +6447,7 @@ Retry the entire batch using the PowerPoint template?</source>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="218"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="413"/>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="225"/>
@@ -6014,140 +6726,266 @@ Comments: Please leave a comment about what the student did well and what they n
     </message>
 </context>
 <context>
+    <name>TeacherImportDialog</name>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="23"/>
+        <source>Import Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="29"/>
+        <source>File to import from:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="38"/>
+        <source>Select an XLSX teacher list...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="40"/>
+        <source>Browse...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="47"/>
+        <source>Choose a file to import from.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="66"/>
+        <source>Korean Teachers to Import:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="100"/>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="120"/>
+        <source>Select Teacher Import File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="122"/>
+        <source>Excel Workbooks (*.xlsx)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="137"/>
+        <source>Status: Invalid File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="151"/>
+        <source>Status: Valid File</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="154"/>
+        <source>Template: %1
+Version: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="158"/>
+        <source>Automatically Importing
+    GS Team Member(s): %1
+    Native English Teacher(s): %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="196"/>
+        <source>Level</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="199"/>
+        <source>All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="201"/>
+        <source>Select</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="203"/>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="245"/>
+        <source>Select %1 Teachers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="247"/>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="250"/>
+        <source>Room</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TeacherInfoPage</name>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="266"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1064"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="356"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1216"/>
         <source>Teacher Information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="277"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1072"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="367"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1224"/>
         <source>View and manage teacher details.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="300"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1079"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="390"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1231"/>
         <source>Teacher Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="330"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1135"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="421"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1287"/>
         <source>Not set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="368"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1100"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="462"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1252"/>
         <source>Korean Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="371"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1107"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="465"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1259"/>
         <source>English Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="374"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1121"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="468"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1273"/>
         <source>Preferred Romanization</source>
-        <translation type="unfinished"></translation>
+        <translation>Preferred Romanisation</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="377"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1114"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="471"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1266"/>
         <source>Room Number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="380"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1128"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="474"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1280"/>
         <source>Birthday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="383"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1142"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="477"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1294"/>
         <source>Phone Number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="439"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1086"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="533"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1238"/>
         <source>Connectivity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="474"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1149"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="557"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1330"/>
+        <source>Both</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="561"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="581"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1334"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1346"/>
+        <source>N/A</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="577"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1342"/>
+        <source>Any</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="586"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1301"/>
         <source>Internet Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="477"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1156"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="589"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1308"/>
         <source>WiFi Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="480"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1163"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="592"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1315"/>
         <source>WiFi Password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="512"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1170"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="624"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1322"/>
         <source>Projection Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="515"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1177"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="627"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1353"/>
         <source>Zoom ID</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="518"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1184"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="630"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1360"/>
         <source>Zoom Password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="581"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1093"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="693"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1245"/>
         <source>Notes</source>
-        <translation type="unfinished">Notes</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="595"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="983"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="707"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1116"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="687"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="941"/>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1053"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="807"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1074"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1205"/>
         <source>Teacher Information for %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="774"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="905"/>
         <source>Unsaved Teacher Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="779"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="910"/>
         <source>This teacher has unsaved changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="982"/>
+        <location filename="../../../src/features/teacher/ui/teacher_info_page.cpp" line="1115"/>
         <source>Save Changes *</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6381,7 +7219,7 @@ Comments: Please leave a comment about what the student did well and what they n
     <message>
         <location filename="../../../src/core/updater/update_downloader.cpp" line="253"/>
         <source>Unable to finalize update download.</source>
-        <translation type="unfinished"></translation>
+        <translation>Unable to finalise update download.</translation>
     </message>
 </context>
 <context>

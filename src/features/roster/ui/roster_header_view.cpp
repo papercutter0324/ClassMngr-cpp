@@ -160,7 +160,11 @@ void RosterHeaderView::paintGroupRow(
         painter.drawText(
             groupRect.adjusted(6, 0, -6, 0),
             Qt::AlignCenter,
-            group
+            group == RosterUi::studentNamesGroup()
+                ? tr("Student Names")
+                : group == RosterUi::evaluationsGroup()
+                    ? tr("Evaluations")
+                    : tr("Student Information")
             );
 
         painter.setPen(

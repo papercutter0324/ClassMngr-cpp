@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QChar>
+#include <QCoreApplication>
 #include <QString>
 
 namespace PdfPrintDialogPrivate
@@ -15,7 +16,10 @@ constexpr int ColorModeBlackAndWhite = 1;
 
 inline QString customPagesSample()
 {
-    return QStringLiteral("e.g. 1-3, 6, 9-11");
+    return QCoreApplication::translate(
+        "PdfPrintDialog",
+        "e.g. 1-3, 6, 9-11"
+        );
 }
 
 inline bool isAllowedPageRangeCharacter(

@@ -15,6 +15,55 @@
 
 namespace
 {
+QString translatedDay(
+    const QString& day
+    )
+{
+    if (day == QStringLiteral("Monday"))
+    {
+        return ClassTimeRow::tr("Monday");
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return ClassTimeRow::tr("Tuesday");
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return ClassTimeRow::tr("Wednesday");
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return ClassTimeRow::tr("Thursday");
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return ClassTimeRow::tr("Friday");
+    }
+    if (day == QStringLiteral("Saturday"))
+    {
+        return ClassTimeRow::tr("Saturday");
+    }
+    if (day == QStringLiteral("Sunday"))
+    {
+        return ClassTimeRow::tr("Sunday");
+    }
+
+    return day;
+}
+
+QStringList translatedDays()
+{
+    QStringList days;
+    days.reserve(ClassInfoConfig::Days.size());
+
+    for (const QString& day : ClassInfoConfig::Days)
+    {
+        days.append(translatedDay(day));
+    }
+
+    return days;
+}
+
 QStringList periodOptions()
 {
     return {
@@ -132,10 +181,16 @@ ClassTimeRow::ClassTimeRow(
     // Day
     // -------------------------
     m_dayCombo = new NoWheelComboBox(this);
-    m_dayCombo->addItems(ClassInfoConfig::Days);
+    for (const QString& day : ClassInfoConfig::Days)
+    {
+        m_dayCombo->addItem(
+            translatedDay(day),
+            day
+            );
+    }
     applyComboWidth(
         m_dayCombo,
-        ClassInfoConfig::Days,
+        translatedDays(),
         0,
         UiConstants::ClassInfo::TimeRow::DayComboMaxWidth
         );
@@ -279,7 +334,7 @@ ClassTimeRow::ClassTimeRow(
 
 QString ClassTimeRow::day() const
 {
-    return m_dayCombo->currentText();
+    return m_dayCombo->currentData().toString();
 }
 
 QString ClassTimeRow::startTime() const
@@ -299,7 +354,11 @@ void ClassTimeRow::setDay(
     const QString& day
     )
 {
-    m_dayCombo->setCurrentText(day);
+    const int index = m_dayCombo->findData(day);
+    if (index >= 0)
+    {
+        m_dayCombo->setCurrentIndex(index);
+    }
 }
 
 void ClassTimeRow::setStartTime(
@@ -357,6 +416,25 @@ void ClassTimeRow::retranslateUi()
 
     m_removeButton->setText(
         tr("Remove")
+        );
+
+    m_dayCombo->blockSignals(true);
+    for (int index = 0; index < m_dayCombo->count(); ++index)
+    {
+        m_dayCombo->setItemText(
+            index,
+            translatedDay(
+                m_dayCombo->itemData(index).toString()
+                )
+            );
+    }
+    m_dayCombo->blockSignals(false);
+
+    applyComboWidth(
+        m_dayCombo,
+        translatedDays(),
+        0,
+        UiConstants::ClassInfo::TimeRow::DayComboMaxWidth
         );
     applyButtonWidth(
         m_removeButton,

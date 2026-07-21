@@ -930,7 +930,41 @@ void ScheduleWidget::configureColumns(
         tr("Time")
     };
 
-    headers.append(days);
+    for (const QString& day : days)
+    {
+        if (day == QStringLiteral("Monday"))
+        {
+            headers.append(tr("Monday"));
+        }
+        else if (day == QStringLiteral("Tuesday"))
+        {
+            headers.append(tr("Tuesday"));
+        }
+        else if (day == QStringLiteral("Wednesday"))
+        {
+            headers.append(tr("Wednesday"));
+        }
+        else if (day == QStringLiteral("Thursday"))
+        {
+            headers.append(tr("Thursday"));
+        }
+        else if (day == QStringLiteral("Friday"))
+        {
+            headers.append(tr("Friday"));
+        }
+        else if (day == QStringLiteral("Saturday"))
+        {
+            headers.append(tr("Saturday"));
+        }
+        else if (day == QStringLiteral("Sunday"))
+        {
+            headers.append(tr("Sunday"));
+        }
+        else
+        {
+            headers.append(day);
+        }
+    }
 
     m_table->setColumnCount(
         headers.size()

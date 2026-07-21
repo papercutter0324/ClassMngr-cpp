@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QSet>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QStyledItemDelegate>
 #include <QTableWidget>
 #include <QTimer>
@@ -46,6 +47,28 @@ const QStringList NativeTeacherPositions{
     QStringLiteral("NET")
 };
 
+QString nativeTeacherPositionDisplayText(
+    const QString& position
+    )
+{
+    if (position == QStringLiteral("Co-ordinator"))
+    {
+        return QCoreApplication::translate(
+            "StaffDirectoryPage",
+            "Coordinator"
+            );
+    }
+    if (position == QStringLiteral("Team Leader"))
+    {
+        return QCoreApplication::translate(
+            "StaffDirectoryPage",
+            "Team Leader"
+            );
+    }
+
+    return position;
+}
+
 class NativeTeacherPositionDelegate final : public QStyledItemDelegate
 {
 public:
@@ -58,7 +81,13 @@ public:
         ) const override
     {
         auto* combo = new QComboBox(parent);
-        combo->addItems(NativeTeacherPositions);
+        for (const QString& position : NativeTeacherPositions)
+        {
+            combo->addItem(
+                nativeTeacherPositionDisplayText(position),
+                position
+                );
+        }
         combo->setEditable(true);
         combo->setInsertPolicy(QComboBox::NoInsert);
         combo->lineEdit()->setReadOnly(true);
@@ -88,10 +117,10 @@ public:
         }
 
         const QString position = index.data(Qt::EditRole).toString();
-        int optionIndex = combo->findText(position);
+        int optionIndex = combo->findData(position);
         if (optionIndex < 0 && !position.isEmpty())
         {
-            combo->addItem(position);
+            combo->addItem(position, position);
             optionIndex = combo->count() - 1;
         }
         combo->setCurrentIndex(optionIndex);
@@ -105,7 +134,11 @@ public:
     {
         if (const auto* combo = qobject_cast<QComboBox*>(editor))
         {
-            model->setData(index, combo->currentText(), Qt::EditRole);
+            model->setData(
+                index,
+                combo->currentData().toString(),
+                Qt::EditRole
+                );
             return;
         }
 
@@ -118,6 +151,9 @@ public:
         ) const override
     {
         QStyledItemDelegate::initStyleOption(option, index);
+        option->text = nativeTeacherPositionDisplayText(
+            index.data(Qt::DisplayRole).toString()
+            );
         option->displayAlignment = Qt::AlignCenter;
     }
 };
@@ -325,9 +361,10 @@ void StaffDirectoryPage::deleteSelectedRows()
     if (QMessageBox::question(
             this,
             tr("Delete Directory Entries"),
-            tr("Delete the selected %1 entr%2?")
-                .arg(selected.size())
-                .arg(selected.size() == 1 ? tr("y") : tr("ies")),
+            selected.size() == 1
+                ? tr("Delete the selected entry?")
+                : tr("Delete the selected %1 entries?")
+                    .arg(selected.size()),
             QMessageBox::Yes | QMessageBox::No,
             QMessageBox::No) != QMessageBox::Yes)
     {

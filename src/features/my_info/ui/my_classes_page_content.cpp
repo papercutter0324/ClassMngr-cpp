@@ -124,31 +124,31 @@ QString dayAbbreviation(
 {
     if (day == QStringLiteral("Monday"))
     {
-        return QStringLiteral("Mon");
+        return MyClassesPage::tr("Mon");
     }
     if (day == QStringLiteral("Tuesday"))
     {
-        return QStringLiteral("Tues");
+        return MyClassesPage::tr("Tues");
     }
     if (day == QStringLiteral("Wednesday"))
     {
-        return QStringLiteral("Wed");
+        return MyClassesPage::tr("Wed");
     }
     if (day == QStringLiteral("Thursday"))
     {
-        return QStringLiteral("Thurs");
+        return MyClassesPage::tr("Thurs");
     }
     if (day == QStringLiteral("Friday"))
     {
-        return QStringLiteral("Fri");
+        return MyClassesPage::tr("Fri");
     }
     if (day == QStringLiteral("Saturday"))
     {
-        return QStringLiteral("Sat");
+        return MyClassesPage::tr("Sat");
     }
     if (day == QStringLiteral("Sunday"))
     {
-        return QStringLiteral("Sun");
+        return MyClassesPage::tr("Sun");
     }
 
     return day.trimmed();

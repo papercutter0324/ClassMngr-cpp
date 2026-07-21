@@ -249,7 +249,10 @@ int findComboText(
 
     for (int index = 0; index < combo->count(); ++index)
     {
-        if (combo->itemText(index).compare(trimmed, Qt::CaseInsensitive) == 0)
+        const QString storedValue = combo->itemData(index).toString();
+        if ((!storedValue.isEmpty()
+             && storedValue.compare(trimmed, Qt::CaseInsensitive) == 0)
+            || combo->itemText(index).compare(trimmed, Qt::CaseInsensitive) == 0)
         {
             return index;
         }
@@ -542,24 +545,42 @@ void TeacherInfoPage::buildUi()
     m_wifiNameEdit = new QLineEdit;
     m_wifiPasswordEdit = new QLineEdit;
     m_internetTypeCombo = new NoWheelComboBox;
-    m_internetTypeCombo->addItems(
-        {
-            QStringLiteral("WiFi"),
-            QStringLiteral("LAN"),
-            QStringLiteral("Both"),
-            QStringLiteral("N/A")
-        });
+    m_internetTypeCombo->addItem(
+        QStringLiteral("WiFi"),
+        QStringLiteral("WiFi")
+        );
+    m_internetTypeCombo->addItem(
+        QStringLiteral("LAN"),
+        QStringLiteral("LAN")
+        );
+    m_internetTypeCombo->addItem(
+        tr("Both"),
+        QStringLiteral("Both")
+        );
+    m_internetTypeCombo->addItem(
+        tr("N/A"),
+        QStringLiteral("N/A")
+        );
 
     m_zoomIdEdit = new QLineEdit;
     m_zoomPasswordEdit = new QLineEdit;
     m_projectionTypeCombo = new NoWheelComboBox;
-    m_projectionTypeCombo->addItems(
-        {
-            QStringLiteral("HDMI"),
-            QStringLiteral("Zoom"),
-            QStringLiteral("Any"),
-            QStringLiteral("N/A")
-        });
+    m_projectionTypeCombo->addItem(
+        QStringLiteral("HDMI"),
+        QStringLiteral("HDMI")
+        );
+    m_projectionTypeCombo->addItem(
+        QStringLiteral("Zoom"),
+        QStringLiteral("Zoom")
+        );
+    m_projectionTypeCombo->addItem(
+        tr("Any"),
+        QStringLiteral("Any")
+        );
+    m_projectionTypeCombo->addItem(
+        tr("N/A"),
+        QStringLiteral("N/A")
+        );
 
     m_internetTypeLabel =
         createFieldLabel(tr("Internet Type"));
@@ -982,11 +1003,13 @@ Teacher TeacherInfoPage::teacherFromForm() const
         static_cast<BirthdayDateEdit*>(m_birthdayEdit)->birthday();
     updated.phoneNumber = m_phoneNumberEdit->text().trimmed();
 
-    updated.internetType = m_internetTypeCombo->currentText().trimmed();
+    updated.internetType =
+        m_internetTypeCombo->currentData().toString().trimmed();
     updated.wifiName = m_wifiNameEdit->text().trimmed();
     updated.wifiPassword = m_wifiPasswordEdit->text().trimmed();
 
-    updated.projectionType = m_projectionTypeCombo->currentText().trimmed();
+    updated.projectionType =
+        m_projectionTypeCombo->currentData().toString().trimmed();
     updated.zoomId = m_zoomIdEdit->text().trimmed();
     updated.zoomPassword = m_zoomPasswordEdit->text().trimmed();
 
@@ -1297,6 +1320,30 @@ void TeacherInfoPage::retranslateUi()
     {
         m_projectionTypeLabel->setText(
             tr("Projection Type")
+            );
+    }
+
+    if (m_internetTypeCombo)
+    {
+        m_internetTypeCombo->setItemText(
+            findComboText(m_internetTypeCombo, QStringLiteral("Both")),
+            tr("Both")
+            );
+        m_internetTypeCombo->setItemText(
+            findComboText(m_internetTypeCombo, QStringLiteral("N/A")),
+            tr("N/A")
+            );
+    }
+
+    if (m_projectionTypeCombo)
+    {
+        m_projectionTypeCombo->setItemText(
+            findComboText(m_projectionTypeCombo, QStringLiteral("Any")),
+            tr("Any")
+            );
+        m_projectionTypeCombo->setItemText(
+            findComboText(m_projectionTypeCombo, QStringLiteral("N/A")),
+            tr("N/A")
             );
     }
 
