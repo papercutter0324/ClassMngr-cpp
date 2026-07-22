@@ -1,5 +1,6 @@
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_manifest.h"
+#include "core/updater/update_signature_verifier.h"
 #include "core/updater/version.h"
 
 #include <QCryptographicHash>
@@ -141,6 +142,40 @@ QByteArray manifestJsonForPlatforms(
         );
 }
 
+QByteArray signedTestPayload()
+{
+    return QByteArrayLiteral(
+        "ClassMngr signed update test payload\n"
+        );
+}
+
+QString signedTestPublicKey()
+{
+    return QStringLiteral(
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwATl2A7s6TM7zJOqBqLK\n"
+        "JOdItidzZCAj3khX6ocjSpS5aYiB9rADMIp8hiIhAFl3KWnzzQP4O+1weZqFMs9V\n"
+        "ZmV/5MOXJqMjgbZBGkqR2HhhZSzWGS2WGAdR+IuV8bIDuWwG0C87Yr3znrV71Jnz\n"
+        "9YcK4mOVCSbuFAxlQPFDdoxsv4jlhkC0CyHc/NN/LulQ5SlNPjpmb8MtcfA8r/2p\n"
+        "m+r4wQqjLvJ8DUankd6N/RhsY/98NR+ePwgv+P/KJu70dasOCepD9MLmlh+w0l5t\n"
+        "XDWQo+7v88ERhUZ4jy/uRwMBxCJnCs3kXR60yTA4XOb3dv1ikjHIUDAZzh6qid14\n"
+        "CwIDAQAB\n"
+        "-----END PUBLIC KEY-----\n"
+        );
+}
+
+QByteArray signedTestSignature()
+{
+    return QByteArrayLiteral(
+        "nnkIFQaNkYSTdkStT8bERwohSAex57rXY8qVd13/Bw1i6Pifsl3D1/3KVufa6VNK"
+        "8DIIjk4ywBpePKQBvi1hM07prQELnEEE9PCpwOMoSPKaRPmisaXMFlN4VH52sUNzE"
+        "ggztWAAH+rNgo9INrqw8FC9KIQQKU+ymgay7FKNXU+QRAyJCEbp2D6J2u13FvmPG"
+        "pFR4hwZGKYt6RvFomEmH4JmKkwgX0bEEagtoi36cXAuYd+RTfMjTjuKqbeGtUB0F"
+        "0/QRwScJo2LZFq/n/o5JUI8bRwONK7EiK6m7va7QX4Yce81yA6wq8Q5Ek52Hfod"
+        "7DuUZuy3QJ4IoN+f5cCp9A=="
+        );
+}
+
 class OneShotHttpServer : public QObject
 {
     Q_OBJECT
@@ -239,6 +274,8 @@ private slots:
     void manifestRequiresCurrentPlatform();
     void manifestSelectsPlatformArtifact();
     void manifestSelectsWindowsArm64BeforeX64Fallback();
+    void signatureVerifierAcceptsValidSignature();
+    void signatureVerifierRejectsChangedPayload();
     void downloaderRejectsChecksumMismatch();
 };
 
@@ -401,6 +438,33 @@ void UpdaterTests::manifestSelectsWindowsArm64BeforeX64Fallback()
         fallbackArtifact->platformKey,
         QStringLiteral("windows-x64")
         );
+}
+
+void UpdaterTests::signatureVerifierAcceptsValidSignature()
+{
+    const auto status =
+        UpdateSignatureVerifier::verifyDetachedSignature(
+            signedTestPayload(),
+            signedTestSignature(),
+            signedTestPublicKey()
+            );
+
+    if (!status)
+    {
+        QFAIL(qPrintable(status.error()));
+    }
+}
+
+void UpdaterTests::signatureVerifierRejectsChangedPayload()
+{
+    const auto status =
+        UpdateSignatureVerifier::verifyDetachedSignature(
+            signedTestPayload() + QByteArrayLiteral("changed"),
+            signedTestSignature(),
+            signedTestPublicKey()
+            );
+
+    QVERIFY(!status);
 }
 
 void UpdaterTests::downloaderRejectsChecksumMismatch()

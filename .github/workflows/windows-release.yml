@@ -10,6 +10,7 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/build_release_windows.ps1"
+      - "scripts/installer/**"
       - "src/**"
       - "tests/**"
 
@@ -20,8 +21,8 @@ jobs:
     env:
       QT_VERSION: "6.11.1"
       QT_ROOT: "C:\\Qt"
-      QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\win64_msvc2022_64"
-      QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\win64_msvc2022_arm64_cross_compiled"
+      QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
+      QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
 
     steps:
       - name: Check out repository
@@ -39,6 +40,10 @@ jobs:
           python -m pip install --upgrade aqtinstall
           python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT
           python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_arm64_cross_compiled --outputdir $env:QT_ROOT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
 
       - name: Verify MSVC toolsets
         shell: pwsh
@@ -78,7 +83,7 @@ jobs:
 
       - name: Build release artifacts
         shell: pwsh
-        run: .\scripts\build_release_windows.ps1
+        run: .\scripts\build_release_windows.ps1 -X64Preset windows-desktop-release
 
       - name: Verify executable architectures
         shell: pwsh
@@ -128,17 +133,35 @@ jobs:
           }
 
           $script:Dumpbin = Find-Dumpbin
-          Assert-Machine -Exe "build\windows-msvc-x64-release\Release\ClassMngr.exe" -Pattern "machine \(x64\)"
-          Assert-Machine -Exe "build\windows-msvc-arm64-release\Release\ClassMngr.exe" -Pattern "machine \(ARM64\)"
+          Assert-Machine -Exe "build\windows-desktop-release\Release\ClassMngr.exe" -Pattern "machine \(x64\)"
+          Assert-Machine -Exe "build\windows-arm64-release\Release\ClassMngr.exe" -Pattern "machine \(ARM64\)"
+
+          $installers = @(
+              "dist\ClassMngr-*-win-x64.exe",
+              "dist\ClassMngr-*-win-arm64.exe",
+              "dist\checksums-windows.txt"
+          )
+
+          foreach ($installer in $installers) {
+              if (-not (Test-Path -Path $installer)) {
+                  throw "Expected release artifact was not found: $installer"
+              }
+          }
 
       - name: Upload x64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: ClassMngr-windows-x64
-          path: build/windows-msvc-x64-release/Release/
+          path: dist/ClassMngr-*-win-x64.exe
 
       - name: Upload ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: ClassMngr-windows-arm64
-          path: build/windows-msvc-arm64-release/Release/
+          path: dist/ClassMngr-*-win-arm64.exe
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassMngr-windows-checksums
+          path: dist/checksums-windows.txt

@@ -1,12 +1,181 @@
 #include "update_signature_verifier.h"
 
+#include <QRegularExpression>
+
+#if defined(Q_OS_WIN)
+#include <QCryptographicHash>
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <bcrypt.h>
+#include <wincrypt.h>
+#else
 #include <QFile>
 #include <QProcess>
-#include <QRegularExpression>
 #include <QTemporaryDir>
+#endif
 
 namespace
 {
+bool looksBase64Encoded(
+    const QByteArray& data
+    )
+{
+    const QByteArray trimmed =
+        data.trimmed();
+
+    if (trimmed.isEmpty())
+    {
+        return false;
+    }
+
+    static const QRegularExpression pattern(
+        QStringLiteral(R"(^[A-Za-z0-9+/=\r\n\t ]+$)")
+        );
+
+    return pattern.match(
+        QString::fromLatin1(trimmed)
+        ).hasMatch();
+}
+
+#if defined(Q_OS_WIN)
+class LocalPublicKeyInfo
+{
+public:
+    ~LocalPublicKeyInfo()
+    {
+        if (value)
+        {
+            LocalFree(value);
+        }
+    }
+
+    CERT_PUBLIC_KEY_INFO* value = nullptr;
+};
+
+class BCryptKey
+{
+public:
+    ~BCryptKey()
+    {
+        if (value)
+        {
+            BCryptDestroyKey(value);
+        }
+    }
+
+    BCRYPT_KEY_HANDLE value = nullptr;
+};
+
+QByteArray decodePemPublicKey(
+    const QString& publicKeyPem
+    )
+{
+    QByteArray encoded;
+
+    for (QByteArray line : publicKeyPem.toUtf8().split('\n'))
+    {
+        line = line.trimmed();
+
+        if (line.isEmpty() || line.startsWith("-----"))
+        {
+            continue;
+        }
+
+        encoded.append(line);
+    }
+
+    return QByteArray::fromBase64(encoded);
+}
+
+Status verifyWithWindowsCrypto(
+    const QByteArray& payload,
+    const QByteArray& signature,
+    const QString& publicKeyPem
+    )
+{
+    const QByteArray publicKeyDer =
+        decodePemPublicKey(publicKeyPem);
+
+    if (publicKeyDer.isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Update public key is not valid PEM data.")
+            );
+    }
+
+    LocalPublicKeyInfo publicKeyInfo;
+    DWORD publicKeyInfoSize = 0;
+
+    if (
+        !CryptDecodeObjectEx(
+            X509_ASN_ENCODING,
+            X509_PUBLIC_KEY_INFO,
+            reinterpret_cast<const BYTE*>(publicKeyDer.constData()),
+            static_cast<DWORD>(publicKeyDer.size()),
+            CRYPT_DECODE_ALLOC_FLAG,
+            nullptr,
+            &publicKeyInfo.value,
+            &publicKeyInfoSize
+            )
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Update public key must use PEM SubjectPublicKeyInfo format.")
+            );
+    }
+
+    BCryptKey publicKey;
+
+    if (
+        !CryptImportPublicKeyInfoEx2(
+            X509_ASN_ENCODING,
+            publicKeyInfo.value,
+            0,
+            nullptr,
+            &publicKey.value
+            )
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to import the update public key.")
+            );
+    }
+
+    QByteArray digest =
+        QCryptographicHash::hash(
+            payload,
+            QCryptographicHash::Sha256
+            );
+    QByteArray signatureBytes =
+        signature;
+    BCRYPT_PKCS1_PADDING_INFO paddingInfo = {
+        BCRYPT_SHA256_ALGORITHM
+    };
+
+    const NTSTATUS verificationStatus =
+        BCryptVerifySignature(
+            publicKey.value,
+            &paddingInfo,
+            reinterpret_cast<PUCHAR>(digest.data()),
+            static_cast<ULONG>(digest.size()),
+            reinterpret_cast<PUCHAR>(signatureBytes.data()),
+            static_cast<ULONG>(signatureBytes.size()),
+            BCRYPT_PAD_PKCS1
+            );
+
+    if (verificationStatus < 0)
+    {
+        return std::unexpected(
+            QStringLiteral("Update manifest signature is invalid.")
+            );
+    }
+
+    return {};
+}
+#else
 Status writeFile(
     const QString& path,
     const QByteArray& data
@@ -31,55 +200,12 @@ Status writeFile(
     return {};
 }
 
-bool looksBase64Encoded(
-    const QByteArray& data
-    )
-{
-    const QByteArray trimmed =
-        data.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return false;
-    }
-
-    static const QRegularExpression pattern(
-        QStringLiteral(R"(^[A-Za-z0-9+/=\r\n\t ]+$)")
-        );
-
-    return pattern.match(
-        QString::fromLatin1(trimmed)
-        ).hasMatch();
-}
-}
-
-Status UpdateSignatureVerifier::verifyDetachedSignature(
+Status verifyWithOpenSsl(
     const QByteArray& payload,
     const QByteArray& signature,
     const QString& publicKeyPem
     )
 {
-    if (payload.isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("Manifest payload is empty.")
-            );
-    }
-
-    if (signature.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("Manifest signature is empty.")
-            );
-    }
-
-    if (publicKeyPem.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("Update public key is not configured.")
-            );
-    }
-
     QTemporaryDir directory;
 
     if (!directory.isValid())
@@ -107,26 +233,12 @@ Status UpdateSignatureVerifier::verifyDetachedSignature(
         return status;
     }
 
-    if (
-        auto status =
-            writeFile(
-                signaturePath,
-                normalizedSignature(signature)
-                );
-        !status
-        )
+    if (auto status = writeFile(signaturePath, signature); !status)
     {
         return status;
     }
 
-    if (
-        auto status =
-            writeFile(
-                publicKeyPath,
-                publicKeyPem.toUtf8()
-                );
-        !status
-        )
+    if (auto status = writeFile(publicKeyPath, publicKeyPem.toUtf8()); !status)
     {
         return status;
     }
@@ -178,6 +290,53 @@ Status UpdateSignatureVerifier::verifyDetachedSignature(
     }
 
     return {};
+}
+#endif
+}
+
+Status UpdateSignatureVerifier::verifyDetachedSignature(
+    const QByteArray& payload,
+    const QByteArray& signature,
+    const QString& publicKeyPem
+    )
+{
+    if (payload.isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Manifest payload is empty.")
+            );
+    }
+
+    if (signature.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Manifest signature is empty.")
+            );
+    }
+
+    if (publicKeyPem.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Update public key is not configured.")
+            );
+    }
+
+    const QByteArray signatureBytes =
+        normalizedSignature(signature);
+
+#if defined(Q_OS_WIN)
+    return verifyWithWindowsCrypto(
+        payload,
+        signatureBytes,
+        publicKeyPem
+        );
+#else
+    return verifyWithOpenSsl(
+        payload,
+        signatureBytes,
+        publicKeyPem
+        );
+#endif
 }
 
 QByteArray UpdateSignatureVerifier::normalizedSignature(

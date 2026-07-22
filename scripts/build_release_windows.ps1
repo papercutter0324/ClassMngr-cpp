@@ -8,6 +8,19 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+function Invoke-CMakeCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    & cmake @Arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "cmake $($Arguments -join ' ') failed with exit code $LASTEXITCODE."
+    }
+}
+
 function Set-QtPrefixDefault {
     param(
         [Parameter(Mandatory = $true)]
@@ -65,28 +78,45 @@ function Get-QtPresetPrefix {
     return $prefixPath.Value
 }
 
+function Get-ProjectVersion {
+    $cmakeFile = [System.IO.Path]::GetFullPath(
+        [System.IO.Path]::Combine($PSScriptRoot, "..", "CMakeLists.txt")
+    )
+    $cmakeText = Get-Content -LiteralPath $cmakeFile -Raw
+    $match = [regex]::Match(
+        $cmakeText,
+        'project\s*\(\s*ClassMngr\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)',
+        [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+
+    if (-not $match.Success) {
+        throw "Unable to read the ClassMngr version from CMakeLists.txt."
+    }
+
+    return $match.Groups[1].Value
+}
+
 function Require-QtPrefix {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Name
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Value
     )
 
-    $value = [Environment]::GetEnvironmentVariable($Name)
-
-    if ([string]::IsNullOrWhiteSpace($value)) {
+    if ([string]::IsNullOrWhiteSpace($Value)) {
         throw "$Name must point at a Qt MSVC installation."
     }
 
-    if (-not (Test-DirectoryExists -Path $value)) {
-        throw "$Name points to '$value', but that path does not exist."
+    if (-not (Test-DirectoryExists -Path $Value)) {
+        throw "$Name points to '$Value', but that path does not exist."
     }
 }
 
 $desktopQtPrefix = Get-QtPresetPrefix -PresetName "qt-windows-desktop"
 $laptopQtPrefix = Get-QtPresetPrefix -PresetName "qt-windows-laptop"
-$desktopArm64QtPrefix = [System.IO.Path]::Combine(
-    [System.IO.Directory]::GetParent($desktopQtPrefix).FullName,
-    "msvc2022_arm64"
+$environmentX64QtPrefix = [Environment]::GetEnvironmentVariable(
+    "QT_MSVC_X64_PREFIX"
 )
 
 $x64PresetQtPrefixes = @{
@@ -104,6 +134,10 @@ function Resolve-X64Preset {
         return $Preset
     }
 
+    if (-not [string]::IsNullOrWhiteSpace($environmentX64QtPrefix)) {
+        return "windows-desktop-release"
+    }
+
     if (Test-DirectoryExists -Path $desktopQtPrefix) {
         return "windows-desktop-release"
     }
@@ -112,47 +146,130 @@ function Resolve-X64Preset {
         return "windows-laptop-release"
     }
 
-    throw "No Windows x64 Qt prefix was found. Expected '$desktopQtPrefix' for the desktop preset or '$laptopQtPrefix' for the laptop preset."
+    throw "No Windows x64 Qt prefix was found. Set QT_MSVC_X64_PREFIX or install Qt at '$desktopQtPrefix' or '$laptopQtPrefix'."
 }
 
 function Invoke-ReleasePreset {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Preset
+        [string]$Preset,
+        [Parameter(Mandatory = $true)]
+        [string]$QtPrefix
     )
 
-    Write-Host "Building $Preset"
-    cmake --preset $Preset
-    cmake --build --preset $Preset
-    cmake --build --preset "$Preset-install"
-}
+    Write-Host "Building $Preset installer"
 
-$resolvedX64Preset = Resolve-X64Preset -Preset $X64Preset
-$resolvedX64QtPrefix = $x64PresetQtPrefixes[$resolvedX64Preset]
+    $configureArguments = @(
+        "--fresh",
+        "--preset",
+        $Preset,
+        "-DCMAKE_PREFIX_PATH=$QtPrefix"
+    )
+    $signToolName = [Environment]::GetEnvironmentVariable(
+        "CLASSMNGR_INSTALLER_SIGN_TOOL"
+    )
 
-if (-not (Test-DirectoryExists -Path $resolvedX64QtPrefix)) {
-    throw "$resolvedX64Preset Qt prefix '$resolvedX64QtPrefix' does not exist."
-}
-
-Invoke-ReleasePreset -Preset $resolvedX64Preset
-
-if (-not $SkipArm64) {
-    if (Test-DirectoryExists -Path $desktopArm64QtPrefix) {
-        Set-QtPrefixDefault `
-            -Name "QT_MSVC_ARM64_PREFIX" `
-            -Path $desktopArm64QtPrefix
+    if (-not [string]::IsNullOrWhiteSpace($signToolName)) {
+        $configureArguments +=
+            "-DCLASSMNGR_INSTALLER_SIGN_TOOL=$signToolName"
     }
 
-    $arm64QtPrefix = [Environment]::GetEnvironmentVariable("QT_MSVC_ARM64_PREFIX")
+    Invoke-CMakeCommand -Arguments $configureArguments
+    Invoke-CMakeCommand -Arguments @(
+        "--build",
+        "--preset",
+        "$Preset-installer"
+    )
+}
+
+$projectRoot = [System.IO.Path]::GetFullPath(
+    [System.IO.Path]::Combine($PSScriptRoot, "..")
+)
+$outputDirectory = [System.IO.Path]::Combine($projectRoot, "dist")
+$projectVersion = Get-ProjectVersion
+$releaseArtifacts = [System.Collections.Generic.List[string]]::new()
+
+$resolvedX64Preset = Resolve-X64Preset -Preset $X64Preset
+$resolvedX64QtPrefix = if (
+    [string]::IsNullOrWhiteSpace($environmentX64QtPrefix)
+) {
+    $x64PresetQtPrefixes[$resolvedX64Preset]
+} else {
+    $environmentX64QtPrefix
+}
+
+Require-QtPrefix -Name "Windows x64 Qt prefix" -Value $resolvedX64QtPrefix
+$defaultArm64QtPrefix = [System.IO.Path]::Combine(
+    [System.IO.Directory]::GetParent($resolvedX64QtPrefix).FullName,
+    "msvc2022_arm64"
+)
+[Environment]::SetEnvironmentVariable(
+    "QT_MSVC_X64_PREFIX",
+    $resolvedX64QtPrefix
+)
+Invoke-ReleasePreset `
+    -Preset $resolvedX64Preset `
+    -QtPrefix $resolvedX64QtPrefix
+
+$x64Installer = [System.IO.Path]::Combine(
+    $outputDirectory,
+    "ClassMngr-$projectVersion-win-x64.exe"
+)
+
+if (-not [System.IO.File]::Exists($x64Installer)) {
+    throw "Expected x64 installer was not created: $x64Installer"
+}
+
+$releaseArtifacts.Add($x64Installer)
+
+if (-not $SkipArm64) {
+    if (Test-DirectoryExists -Path $defaultArm64QtPrefix) {
+        Set-QtPrefixDefault `
+            -Name "QT_MSVC_ARM64_PREFIX" `
+            -Path $defaultArm64QtPrefix
+    }
+
+    $arm64QtPrefix = [Environment]::GetEnvironmentVariable(
+        "QT_MSVC_ARM64_PREFIX"
+    )
 
     if ([string]::IsNullOrWhiteSpace($arm64QtPrefix)) {
         Write-Host "Skipping Windows ARM64 release because QT_MSVC_ARM64_PREFIX is not set."
     } else {
-        Require-QtPrefix -Name "QT_MSVC_ARM64_PREFIX"
+        Require-QtPrefix `
+            -Name "QT_MSVC_ARM64_PREFIX" `
+            -Value $arm64QtPrefix
+        Invoke-ReleasePreset `
+            -Preset "windows-arm64-release" `
+            -QtPrefix $arm64QtPrefix
 
-        Write-Host "Building Windows ARM64 release"
-        cmake --preset windows-arm64-release
-        cmake --build --preset windows-arm64-release
-        cmake --build --preset windows-arm64-release-install
+        $arm64Installer = [System.IO.Path]::Combine(
+            $outputDirectory,
+            "ClassMngr-$projectVersion-win-arm64.exe"
+        )
+
+        if (-not [System.IO.File]::Exists($arm64Installer)) {
+            throw "Expected ARM64 installer was not created: $arm64Installer"
+        }
+
+        $releaseArtifacts.Add($arm64Installer)
     }
 }
+
+$checksumLines = foreach ($artifact in $releaseArtifacts) {
+    $hash = (Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$hash  $([System.IO.Path]::GetFileName($artifact))"
+}
+$checksumsPath = [System.IO.Path]::Combine(
+    $outputDirectory,
+    "checksums-windows.txt"
+)
+[System.IO.File]::WriteAllLines(
+    $checksumsPath,
+    $checksumLines,
+    [System.Text.UTF8Encoding]::new($false)
+)
+
+Write-Host "Windows release artifacts:"
+$releaseArtifacts | ForEach-Object { Write-Host "  $_" }
+Write-Host "  $checksumsPath"

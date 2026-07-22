@@ -51,7 +51,8 @@
       "name": "qt-windows-arm64",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_ARM64_PREFIX}"
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_ARM64_PREFIX}",
+        "QT_HOST_PATH": "$env{QT_MSVC_X64_PREFIX}"
       }
     },
 
@@ -231,6 +232,14 @@
       ]
     },
     {
+      "name": "windows-desktop-release-installer",
+      "configurePreset": "windows-desktop-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrInstaller"
+      ]
+    },
+    {
       "name": "windows-laptop-debug",
       "inherits": "windows-laptop-build-base",
       "configurePreset": "windows-laptop-debug",
@@ -252,6 +261,15 @@
       ]
     },
     {
+      "name": "windows-laptop-release-installer",
+      "inherits": "windows-laptop-build-base",
+      "configurePreset": "windows-laptop-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrInstaller"
+      ]
+    },
+    {
       "name": "windows-arm64-debug",
       "configurePreset": "windows-arm64-debug",
       "configuration": "Debug"
@@ -267,6 +285,14 @@
       "configuration": "Release",
       "targets": [
         "INSTALL"
+      ]
+    },
+    {
+      "name": "windows-arm64-release-installer",
+      "configurePreset": "windows-arm64-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrInstaller"
       ]
     },
     {

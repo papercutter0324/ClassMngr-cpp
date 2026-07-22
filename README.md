@@ -43,6 +43,7 @@ winget install --id Microsoft.VisualStudioCode -e
 winget install --id Git.Git -e
 winget install --id Kitware.CMake -e
 winget install --id Ninja-build.Ninja -e
+winget install --id JRSoftware.InnoSetup -e
 ```
 
 Install Visual Studio or Visual Studio Build Tools with the C++ workload. In the
@@ -98,6 +99,33 @@ Release presets run `windeployqt` after building. The install preset copies the
 standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole
 installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs,
 plugins, QML files, and license files.
+
+ClassMngr supports 64-bit Windows only. Build an x64 installer with:
+
+```powershell
+cmake --build --preset windows-desktop-release-installer
+
+# Or, on the laptop Qt layout:
+cmake --build --preset windows-laptop-release-installer
+```
+
+The native ARM64 installer uses `windows-arm64-release-installer` and requires
+`QT_MSVC_ARM64_PREFIX` to point at the Qt ARM64 kit and
+`QT_MSVC_X64_PREFIX` to point at the matching x64 host-tools kit. The x64
+installer remains usable on Windows 11 ARM through x64 emulation; no Win32
+installer is produced.
+
+To build every locally available Windows installer and its SHA-256 checksum
+file, run:
+
+```powershell
+.\scripts\build_release_windows.ps1
+```
+
+Installers are written under `dist` as
+`ClassMngr-<version>-win-{x64,arm64}.exe`. They install the matching Visual C++
+runtime prerequisite and support in-place upgrades through a shared application
+identity.
 
 The Windows presets use the Visual Studio generator configured in
 `CMakePresets.json`. If CMake reports that the generator is not installed, either

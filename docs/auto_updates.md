@@ -52,17 +52,38 @@ For local Windows builds, the desktop preset uses
 `C:\Qt\6.11.1\msvc2022_64`, and ARM64 uses `QT_MSVC_ARM64_PREFIX`:
 
 ```powershell
+$env:QT_MSVC_X64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_64"
 $env:QT_MSVC_ARM64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_arm64"
 ```
 
 `scripts/build_release_windows.ps1` auto-selects the desktop or laptop x64
-preset based on the Qt prefix that exists locally. It uses the desktop ARM64
-path as a default only when that directory exists; otherwise set
-`QT_MSVC_ARM64_PREFIX` before running the script to build ARM64.
+preset based on the Qt prefix that exists locally, with
+`QT_MSVC_X64_PREFIX` taking precedence. It uses the sibling `msvc2022_arm64`
+directory beside the selected x64 kit as a default when that directory exists;
+otherwise set `QT_MSVC_ARM64_PREFIX` before running the script to build ARM64.
+The x64 prefix is also passed to Qt as `QT_HOST_PATH`, providing host tools such
+as `qmlimportscanner` while cross-compiling. The script produces the x64 and
+available native ARM64 installers plus `dist/checksums-windows.txt`. ClassMngr
+does not produce a Win32 installer.
+
+Authenticode signing is optional during local development. For a production
+release, configure a named SignTool in Inno Setup and expose its name before
+running the release script:
+
+```powershell
+$env:CLASSMNGR_INSTALLER_SIGN_TOOL="classmngr"
+.\scripts\build_release_windows.ps1
+```
+
+The named tool signs `ClassMngr.exe`, Setup, and the uninstaller. Certificate
+selection and timestamp-server parameters remain part of the machine or CI
+signing configuration so private credentials are not stored in the repository.
 
 `CLASSMNGR_UPDATE_REQUIRE_SIGNATURE` defaults to `ON`. With that default,
 ClassMngr refuses to parse update URLs unless the manifest signature verifies
-with the embedded public key.
+with the embedded public key. Windows verifies RSA/SHA-256 signatures with the
+operating-system cryptography API and does not require `openssl.exe` on the end
+user's `PATH`.
 
 ## Manifest
 

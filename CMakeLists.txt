@@ -12,11 +12,16 @@ project(ClassMngr
     LANGUAGES CXX
 )
 
+if(WIN32)
+    enable_language(RC)
+endif()
+
 include(CTest)
 include(GNUInstallDirs)
 
 add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
+    $<$<CXX_COMPILER_ID:MSVC>:/MP>
 )
 
 # A CMake build directory can retain individual Qt component locations after
@@ -159,6 +164,12 @@ qt_standard_project_setup()
 
 option(CLASSMNGR_RUN_WINDEPLOYQT "Run windeployqt after building ClassMngr on Windows." OFF)
 
+set(CLASSMNGR_WINDOWS_ARM64 OFF)
+if(WIN32 AND (CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64"
+   OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|arm64|aarch64)$"))
+    set(CLASSMNGR_WINDOWS_ARM64 ON)
+endif()
+
 set(CLASSMNGR_WINDEPLOYQT_ENV "")
 if(WIN32 AND MSVC)
     set(CLASSMNGR_MSVC_INSTALL_DIR "")
@@ -178,6 +189,53 @@ set(CLASSMNGR_QT_DEPLOY_PREAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_OPTIONS "")
 set(CLASSMNGR_QT_DEPLOY_POSTAMBLE "")
 set(CLASSMNGR_QT_DEPLOY_EXECUTABLE "$<TARGET_FILE:ClassMngr>")
+set(CLASSMNGR_QT_DEPLOY_TRANSLATION_OPTIONS "")
+set(CLASSMNGR_WINDEPLOYQT_TARGET_ARGS "")
+
+if(CLASSMNGR_WINDOWS_ARM64 AND QT_HOST_PATH)
+    find_program(CLASSMNGR_QT_HOST_QTPATHS_EXECUTABLE
+        NAMES qtpaths6.exe qtpaths.exe
+        PATHS "${QT_HOST_PATH}/bin"
+        NO_DEFAULT_PATH
+        REQUIRED
+    )
+    find_program(CLASSMNGR_QT_HOST_LCONVERT_EXECUTABLE
+        NAMES lconvert.exe
+        PATHS "${QT_HOST_PATH}/bin"
+        NO_DEFAULT_PATH
+        REQUIRED
+    )
+
+    file(TO_CMAKE_PATH "${QT6_INSTALL_PREFIX}"
+        CLASSMNGR_QT_TARGET_INSTALL_PREFIX)
+    file(TO_CMAKE_PATH "${CLASSMNGR_QT_HOST_QTPATHS_EXECUTABLE}"
+        CLASSMNGR_QT_HOST_QTPATHS_EXECUTABLE)
+    set(CLASSMNGR_QT_TARGET_QT_CONF
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrTargetQt.conf")
+    set(CLASSMNGR_QT_TARGET_QTPATHS_WRAPPER
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrTargetQtPaths.bat")
+    configure_file(
+        resources/windows/target-qt.conf.in
+        "${CLASSMNGR_QT_TARGET_QT_CONF}"
+        @ONLY
+        NEWLINE_STYLE CRLF
+    )
+    configure_file(
+        resources/windows/target-qtpaths.bat.in
+        "${CLASSMNGR_QT_TARGET_QTPATHS_WRAPPER}"
+        @ONLY
+        NEWLINE_STYLE CRLF
+    )
+
+    list(APPEND CLASSMNGR_WINDEPLOYQT_TARGET_ARGS
+        --qtpaths "${CLASSMNGR_QT_TARGET_QTPATHS_WRAPPER}")
+    string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
+        "set(__QT_DEPLOY_TARGET_QT_PATHS_PATH [[${CLASSMNGR_QT_TARGET_QTPATHS_WRAPPER}]])\n"
+    )
+    string(APPEND CLASSMNGR_QT_DEPLOY_TRANSLATION_OPTIONS
+        "    LCONVERT [[${CLASSMNGR_QT_HOST_LCONVERT_EXECUTABLE}]]\n"
+    )
+endif()
 
 if(WIN32 AND CLASSMNGR_MSVC_INSTALL_DIR)
     string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
@@ -252,12 +310,35 @@ if(WIN32)
     string(APPEND CLASSMNGR_QT_DEPLOY_PREAMBLE
         "set(QT_DEPLOY_BIN_DIR .)\n"
     )
+    string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
+        "    NO_TRANSLATIONS\n"
+        "    EXCLUDE_PLUGIN_TYPES qmltooling\n"
+        "    EXCLUDE_PLUGINS qsqlibase qsqlmimer qsqloci qsqlodbc qsqlpsql\n"
+    )
+    string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE
+        "qt_deploy_translations(\n"
+        "    LOCALES en ko\n"
+        "${CLASSMNGR_QT_DEPLOY_TRANSLATION_OPTIONS}"
+        ")\n"
+    )
 endif()
 
 qt_add_executable(ClassMngr
     WIN32
     MACOSX_BUNDLE
 )
+
+if(WIN32)
+    configure_file(
+        resources/windows/ClassMngr.rc.in
+        ${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngr.rc
+        @ONLY
+    )
+    target_sources(ClassMngr
+        PRIVATE
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngr.rc
+    )
+endif()
 
 include(cmake/sources.cmake)
 
@@ -388,12 +469,24 @@ target_link_libraries(ClassMngr
         ZLIB::ZLIB
 )
 
+if(WIN32)
+    target_link_libraries(ClassMngr
+        PRIVATE
+            Bcrypt
+            Crypt32
+    )
+endif()
+
 if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
     add_custom_command(TARGET ClassMngr POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E env
             ${CLASSMNGR_WINDEPLOYQT_ENV}
             "$<TARGET_FILE:Qt6::windeployqt>"
             --qmldir "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+            --skip-plugin-types qmltooling
+            --exclude-plugins qsqlibase,qsqlmimer,qsqloci,qsqlodbc,qsqlpsql
+            --translations en,ko
+            ${CLASSMNGR_WINDEPLOYQT_TARGET_ARGS}
             --dir "$<TARGET_FILE_DIR:ClassMngr>"
             "$<TARGET_FILE:ClassMngr>"
         COMMENT "Deploying Qt runtime dependencies"
@@ -434,10 +527,20 @@ ${CLASSMNGR_QT_DEPLOY_POSTAMBLE}
 install(SCRIPT ${deploy_script})
 
 if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P LESS 8)
+        message(FATAL_ERROR
+            "ClassMngr supports only 64-bit Windows targets (x64 or ARM64)."
+        )
+    endif()
+
+    if(CLASSMNGR_WINDOWS_ARM64)
+        set(CLASSMNGR_INSTALLER_ARCH "arm64")
+    else()
+        set(CLASSMNGR_INSTALLER_ARCH "x64")
+    endif()
+
     set(CLASSMNGR_INSTALLER_SOURCE_DIR
-        "${PROJECT_SOURCE_DIR}/dist/ClassMngr-windows-x64"
-        CACHE PATH
-        "Directory packaged by the Windows installer"
+        "${CMAKE_BINARY_DIR}/installer-stage/ClassMngr-windows-${CLASSMNGR_INSTALLER_ARCH}"
     )
     set(CLASSMNGR_INSTALLER_OUTPUT_DIR
         "${PROJECT_SOURCE_DIR}/dist"
@@ -451,35 +554,47 @@ if(WIN32)
     find_program(CLASSMNGR_ISCC_EXECUTABLE
         NAMES ISCC.exe iscc.exe iscc
         PATHS
+            "C:/Program Files/Inno Setup 7"
+            "C:/Program Files (x86)/Inno Setup 7"
             "C:/Program Files (x86)/Inno Setup 6"
             "C:/Program Files/Inno Setup 6"
+    )
+
+    set(CLASSMNGR_INSTALLER_SIGN_TOOL "" CACHE STRING
+        "Optional Inno Setup SignTool name used to sign ClassMngr and Setup"
     )
 
     if(CLASSMNGR_ISCC_EXECUTABLE)
         add_custom_target(ClassMngrInstaller
             COMMAND
+                "${CMAKE_COMMAND}" -E rm -rf
+                "${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+            COMMAND
                 "${CMAKE_COMMAND}"
                 --install "${CMAKE_BINARY_DIR}"
                 --config "$<CONFIG>"
+                --prefix "${CLASSMNGR_INSTALLER_SOURCE_DIR}"
             COMMAND
                 "${CMAKE_COMMAND}" -E env
                 "CLASSMNGR_APP_VERSION=${PROJECT_VERSION}"
+                "CLASSMNGR_INSTALLER_ARCH=${CLASSMNGR_INSTALLER_ARCH}"
                 "CLASSMNGR_INSTALLER_SOURCE_DIR=${CLASSMNGR_INSTALLER_SOURCE_DIR}"
                 "CLASSMNGR_INSTALLER_OUTPUT_DIR=${CLASSMNGR_INSTALLER_OUTPUT_DIR}"
+                "CLASSMNGR_INSTALLER_SIGN_TOOL=${CLASSMNGR_INSTALLER_SIGN_TOOL}"
                 "${CLASSMNGR_ISCC_EXECUTABLE}"
                 "${CLASSMNGR_INSTALLER_SCRIPT}"
             DEPENDS ClassMngr
             BYPRODUCTS
-                "${CLASSMNGR_INSTALLER_OUTPUT_DIR}/ClassMngrSetup-${PROJECT_VERSION}-x64.exe"
+                "${CLASSMNGR_INSTALLER_OUTPUT_DIR}/ClassMngr-${PROJECT_VERSION}-win-${CLASSMNGR_INSTALLER_ARCH}.exe"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-            COMMENT "Building ClassMngr Windows installer"
+            COMMENT "Building ClassMngr Windows ${CLASSMNGR_INSTALLER_ARCH} installer"
             VERBATIM
         )
     else()
         add_custom_target(ClassMngrInstaller
             COMMAND
                 "${CMAKE_COMMAND}" -E echo
-                "Inno Setup Compiler was not found. Install Inno Setup 6 or add ISCC.exe to PATH."
+                "Inno Setup Compiler was not found. Install Inno Setup 7 or 6, or add ISCC.exe to PATH."
             COMMAND
                 "${CMAKE_COMMAND}" -E false
             COMMENT "Inno Setup Compiler is required to build ClassMngrInstaller"
@@ -497,6 +612,7 @@ if(BUILD_TESTING)
         tests/updater_tests.cpp
         src/core/updater/update_downloader.cpp
         src/core/updater/update_manifest.cpp
+        src/core/updater/update_signature_verifier.cpp
         src/core/updater/version.cpp
     )
 
@@ -517,6 +633,14 @@ if(BUILD_TESTING)
             Qt6::Network
             Qt6::Test
     )
+
+    if(WIN32)
+        target_link_libraries(ClassMngrUpdaterTests
+            PRIVATE
+                Bcrypt
+                Crypt32
+        )
+    endif()
 
     add_test(
         NAME ClassMngrUpdaterTests
