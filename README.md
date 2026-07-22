@@ -71,6 +71,24 @@ your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Core, Gui,
 Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
 QuickControls2, QuickWidgets, and LinguistTools.
 
+Set `QT_MSVC_X64_PREFIX` to the Qt kit directory on each Windows machine. The
+same presets work regardless of where that kit is installed:
+
+```powershell
+$qtX64Prefix = "D:\Development\Qt\6.11.1\msvc2022_64"
+[Environment]::SetEnvironmentVariable(
+    "QT_MSVC_X64_PREFIX",
+    $qtX64Prefix,
+    "User"
+)
+$env:QT_MSVC_X64_PREFIX = $qtX64Prefix
+```
+
+Use the local path for the machine, such as
+`C:\Qt\6.11.1\msvc2022_64` on a different installation. On a
+resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass
+`--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+
 Open the project from an x64 Native Tools Command Prompt or Developer
 PowerShell so MSVC is available to VS Code:
 
@@ -80,19 +98,13 @@ code .
 ```
 
 In VS Code, use `CMake: Select Configure Preset` and choose
-`windows-desktop-release`, or `windows-laptop-release` on the laptop Qt layout
-in this repository. To create a standalone release folder from the terminal,
-configure, build, and install the matching release preset:
+`windows-x64-release`. To create a standalone release folder from the terminal,
+configure, build, and install the release preset:
 
 ```powershell
-cmake --preset windows-desktop-release
-cmake --build --preset windows-desktop-release
-cmake --build --preset windows-desktop-release-install
-
-# Or, on the laptop Qt layout:
-cmake --preset windows-laptop-release
-cmake --build --preset windows-laptop-release
-cmake --build --preset windows-laptop-release-install
+cmake --preset windows-x64-release
+cmake --build --preset windows-x64-release
+cmake --build --preset windows-x64-release-install
 ```
 
 Release presets run `windeployqt` after building. The install preset copies the
@@ -103,10 +115,7 @@ plugins, QML files, and license files.
 ClassMngr supports 64-bit Windows only. Build an x64 installer with:
 
 ```powershell
-cmake --build --preset windows-desktop-release-installer
-
-# Or, on the laptop Qt layout:
-cmake --build --preset windows-laptop-release-installer
+cmake --build --preset windows-x64-release-installer
 ```
 
 The native ARM64 installer uses `windows-arm64-release-installer` and requires

@@ -83,7 +83,7 @@ jobs:
 
       - name: Build release artifacts
         shell: pwsh
-        run: .\scripts\build_release_windows.ps1 -X64Preset windows-desktop-release
+        run: .\scripts\build_release_windows.ps1
 
       - name: Verify executable architectures
         shell: pwsh

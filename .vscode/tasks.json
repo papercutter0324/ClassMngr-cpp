@@ -29,7 +29,7 @@
       "command": "cmake",
       "args": [
         "--preset",
-        "windows-laptop-release"
+        "windows-x64-release"
       ],
       "linux": {
         "args": [

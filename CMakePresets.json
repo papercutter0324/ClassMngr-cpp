@@ -34,17 +34,10 @@
       }
     },
     {
-      "name": "qt-windows-desktop",
+      "name": "qt-windows-x64",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "D:/Development/Qt/6.11.1/msvc2022_64"
-      }
-    },
-    {
-      "name": "qt-windows-laptop",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "C:/Qt/6.11.1/msvc2022_64"
+        "CMAKE_PREFIX_PATH": "$env{QT_MSVC_X64_PREFIX}"
       }
     },
     {
@@ -68,11 +61,11 @@
       "generator": "Visual Studio 18 2026"
     },
     {
-      "name": "windows-desktop-base",
+      "name": "windows-x64-base",
       "hidden": true,
       "inherits": [
         "windows-msvc-base",
-        "qt-windows-desktop"
+        "qt-windows-x64"
       ],
       "architecture": {
         "value": "x64",
@@ -83,43 +76,14 @@
       }
     },
     {
-      "name": "windows-desktop-debug",
-      "displayName": "Windows Desktop Debug",
-      "inherits": "windows-desktop-base"
+      "name": "windows-x64-debug",
+      "displayName": "Windows x64 Debug",
+      "inherits": "windows-x64-base"
     },
     {
-      "name": "windows-desktop-release",
-      "displayName": "Windows Desktop Release",
-      "inherits": "windows-desktop-base",
-      "cacheVariables": {
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
-        "CLASSMNGR_RUN_WINDEPLOYQT": "ON"
-      }
-    },
-    {
-      "name": "windows-laptop-base",
-      "hidden": true,
-      "inherits": [
-        "windows-msvc-base",
-        "qt-windows-laptop"
-      ],
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
-      "cacheVariables": {
-        "CLASSMNGR_PREFER_QT_ZLIB_FALLBACK": "ON"
-      }
-    },
-    {
-      "name": "windows-laptop-debug",
-      "displayName": "Windows Laptop Debug",
-      "inherits": "windows-laptop-base"
-    },
-    {
-      "name": "windows-laptop-release",
-      "displayName": "Windows Laptop Release",
-      "inherits": "windows-laptop-base",
+      "name": "windows-x64-release",
+      "displayName": "Windows x64 Release",
+      "inherits": "windows-x64-base",
       "cacheVariables": {
         "BUILD_TESTING": "OFF",
         "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-x64",
@@ -209,61 +173,26 @@
 
   "buildPresets": [
     {
-      "name": "windows-laptop-build-base",
-      "hidden": true,
-      "jobs": 4
-    },
-    {
-      "name": "windows-desktop-debug",
-      "configurePreset": "windows-desktop-debug",
+      "name": "windows-x64-debug",
+      "configurePreset": "windows-x64-debug",
       "configuration": "Debug"
     },
     {
-      "name": "windows-desktop-release",
-      "configurePreset": "windows-desktop-release",
+      "name": "windows-x64-release",
+      "configurePreset": "windows-x64-release",
       "configuration": "Release"
     },
     {
-      "name": "windows-desktop-release-install",
-      "configurePreset": "windows-desktop-release",
+      "name": "windows-x64-release-install",
+      "configurePreset": "windows-x64-release",
       "configuration": "Release",
       "targets": [
         "INSTALL"
       ]
     },
     {
-      "name": "windows-desktop-release-installer",
-      "configurePreset": "windows-desktop-release",
-      "configuration": "Release",
-      "targets": [
-        "ClassMngrInstaller"
-      ]
-    },
-    {
-      "name": "windows-laptop-debug",
-      "inherits": "windows-laptop-build-base",
-      "configurePreset": "windows-laptop-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-laptop-release",
-      "inherits": "windows-laptop-build-base",
-      "configurePreset": "windows-laptop-release",
-      "configuration": "Release"
-    },
-    {
-      "name": "windows-laptop-release-install",
-      "inherits": "windows-laptop-build-base",
-      "configurePreset": "windows-laptop-release",
-      "configuration": "Release",
-      "targets": [
-        "INSTALL"
-      ]
-    },
-    {
-      "name": "windows-laptop-release-installer",
-      "inherits": "windows-laptop-build-base",
-      "configurePreset": "windows-laptop-release",
+      "name": "windows-x64-release-installer",
+      "configurePreset": "windows-x64-release",
       "configuration": "Release",
       "targets": [
         "ClassMngrInstaller"

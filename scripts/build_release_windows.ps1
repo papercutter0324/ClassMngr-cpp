@@ -1,7 +1,4 @@
 param(
-    [ValidateSet("auto", "windows-desktop-release", "windows-laptop-release")]
-    [string]$X64Preset = "auto",
-
     [switch]$SkipArm64
 )
 
@@ -45,39 +42,6 @@ function Test-DirectoryExists {
     return [System.IO.Directory]::Exists($Path)
 }
 
-function Get-QtPresetPrefix {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$PresetName
-    )
-
-    $presetFile = [System.IO.Path]::GetFullPath(
-        [System.IO.Path]::Combine($PSScriptRoot, "..", "CMakePresets.json")
-    )
-    $presets = Get-Content -LiteralPath $presetFile -Raw | ConvertFrom-Json
-    $preset = @($presets.configurePresets) |
-        Where-Object { $_.name -eq $PresetName } |
-        Select-Object -First 1
-
-    if ($null -eq $preset) {
-        throw "CMake preset '$PresetName' was not found."
-    }
-
-    $cacheVariables = $preset.PSObject.Properties["cacheVariables"]
-
-    if ($null -eq $cacheVariables) {
-        throw "CMake preset '$PresetName' does not define cacheVariables."
-    }
-
-    $prefixPath = $cacheVariables.Value.PSObject.Properties["CMAKE_PREFIX_PATH"]
-
-    if ($null -eq $prefixPath) {
-        throw "CMake preset '$PresetName' does not define CMAKE_PREFIX_PATH."
-    }
-
-    return $prefixPath.Value
-}
-
 function Get-ProjectVersion {
     $cmakeFile = [System.IO.Path]::GetFullPath(
         [System.IO.Path]::Combine($PSScriptRoot, "..", "CMakeLists.txt")
@@ -113,41 +77,9 @@ function Require-QtPrefix {
     }
 }
 
-$desktopQtPrefix = Get-QtPresetPrefix -PresetName "qt-windows-desktop"
-$laptopQtPrefix = Get-QtPresetPrefix -PresetName "qt-windows-laptop"
 $environmentX64QtPrefix = [Environment]::GetEnvironmentVariable(
     "QT_MSVC_X64_PREFIX"
 )
-
-$x64PresetQtPrefixes = @{
-    "windows-desktop-release" = $desktopQtPrefix
-    "windows-laptop-release" = $laptopQtPrefix
-}
-
-function Resolve-X64Preset {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Preset
-    )
-
-    if ($Preset -ne "auto") {
-        return $Preset
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($environmentX64QtPrefix)) {
-        return "windows-desktop-release"
-    }
-
-    if (Test-DirectoryExists -Path $desktopQtPrefix) {
-        return "windows-desktop-release"
-    }
-
-    if (Test-DirectoryExists -Path $laptopQtPrefix) {
-        return "windows-laptop-release"
-    }
-
-    throw "No Windows x64 Qt prefix was found. Set QT_MSVC_X64_PREFIX or install Qt at '$desktopQtPrefix' or '$laptopQtPrefix'."
-}
 
 function Invoke-ReleasePreset {
     param(
@@ -189,16 +121,10 @@ $outputDirectory = [System.IO.Path]::Combine($projectRoot, "dist")
 $projectVersion = Get-ProjectVersion
 $releaseArtifacts = [System.Collections.Generic.List[string]]::new()
 
-$resolvedX64Preset = Resolve-X64Preset -Preset $X64Preset
-$resolvedX64QtPrefix = if (
-    [string]::IsNullOrWhiteSpace($environmentX64QtPrefix)
-) {
-    $x64PresetQtPrefixes[$resolvedX64Preset]
-} else {
-    $environmentX64QtPrefix
-}
+$resolvedX64Preset = "windows-x64-release"
+$resolvedX64QtPrefix = $environmentX64QtPrefix
 
-Require-QtPrefix -Name "Windows x64 Qt prefix" -Value $resolvedX64QtPrefix
+Require-QtPrefix -Name "QT_MSVC_X64_PREFIX" -Value $resolvedX64QtPrefix
 $defaultArm64QtPrefix = [System.IO.Path]::Combine(
     [System.IO.Directory]::GetParent($resolvedX64QtPrefix).FullName,
     "msvc2022_arm64"

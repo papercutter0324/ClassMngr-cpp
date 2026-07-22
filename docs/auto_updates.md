@@ -47,20 +47,19 @@ cmake --preset macos-clang-release \
 ```
 
 The Windows release presets are intended to run on a Windows MSVC runner or VM.
-For local Windows builds, the desktop preset uses
-`D:\Development\Qt\6.11.1\msvc2022_64`, the laptop preset uses
-`C:\Qt\6.11.1\msvc2022_64`, and ARM64 uses `QT_MSVC_ARM64_PREFIX`:
+For local Windows builds, set `QT_MSVC_X64_PREFIX` to the installed x64 kit and
+`QT_MSVC_ARM64_PREFIX` to the ARM64 kit when building ARM64:
 
 ```powershell
 $env:QT_MSVC_X64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_64"
 $env:QT_MSVC_ARM64_PREFIX="D:\Development\Qt\6.11.1\msvc2022_arm64"
 ```
 
-`scripts/build_release_windows.ps1` auto-selects the desktop or laptop x64
-preset based on the Qt prefix that exists locally, with
-`QT_MSVC_X64_PREFIX` taking precedence. It uses the sibling `msvc2022_arm64`
-directory beside the selected x64 kit as a default when that directory exists;
-otherwise set `QT_MSVC_ARM64_PREFIX` before running the script to build ARM64.
+`scripts/build_release_windows.ps1` uses the shared `windows-x64-release`
+preset and requires `QT_MSVC_X64_PREFIX`. It uses the sibling
+`msvc2022_arm64` directory beside the selected x64 kit as a default when that
+directory exists; otherwise set `QT_MSVC_ARM64_PREFIX` before running the
+script to build ARM64.
 The x64 prefix is also passed to Qt as `QT_HOST_PATH`, providing host tools such
 as `qmlimportscanner` while cross-compiling. The script produces the x64 and
 available native ARM64 installers plus `dist/checksums-windows.txt`. ClassMngr

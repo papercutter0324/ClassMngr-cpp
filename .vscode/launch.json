@@ -44,7 +44,7 @@
       "name": "Run ClassMngr Windows MSVC Release",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/windows-laptop-release/Release/ClassMngr.exe",
+      "program": "${workspaceFolder}/build/windows-x64-release/Release/ClassMngr.exe",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
