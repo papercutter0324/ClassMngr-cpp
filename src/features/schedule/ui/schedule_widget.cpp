@@ -36,6 +36,11 @@ constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
 constexpr int OptionsColumnSpacing = 32;
+#ifdef Q_OS_MACOS
+constexpr int OptionsRowSpacing = 16;
+#else
+constexpr int OptionsRowSpacing = 8;
+#endif
 
 namespace SettingsKeys
 {
@@ -590,7 +595,7 @@ void ScheduleWidget::buildUi()
     auto* primaryOptionsLayout =
         new QVBoxLayout;
     primaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    primaryOptionsLayout->setSpacing(8);
+    primaryOptionsLayout->setSpacing(OptionsRowSpacing);
     primaryOptionsLayout->setAlignment(Qt::AlignTop);
     primaryOptionsLayout->addWidget(
         m_showKoreanTeacherEnglishNamesCheckBox
@@ -607,7 +612,7 @@ void ScheduleWidget::buildUi()
     auto* secondaryOptionsLayout =
         new QVBoxLayout;
     secondaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    secondaryOptionsLayout->setSpacing(8);
+    secondaryOptionsLayout->setSpacing(OptionsRowSpacing);
     secondaryOptionsLayout->setAlignment(Qt::AlignTop);
     secondaryOptionsLayout->addWidget(m_use24HourTimeCheckBox);
     secondaryOptionsLayout->addWidget(m_showWeekendsCheckBox);
