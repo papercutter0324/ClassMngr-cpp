@@ -266,24 +266,24 @@ set(CLASSMNGR_BAD_SQL_DRIVERS
     libqsqlpsql.dylib
 )
 set(CLASSMNGR_STAGED_SQL_DRIVERS "")
-set(CLASSMNGR_QT_SQL_DRIVER_DIR "\${__QT_DEPLOY_QT_INSTALL_PREFIX}/\${__QT_DEPLOY_QT_INSTALL_PLUGINS}/sqldrivers")
-set(CLASSMNGR_SQL_DRIVER_STAGING_DIR "\${CMAKE_CURRENT_LIST_DIR}/classmngr-deploy-sqldrivers")
-file(MAKE_DIRECTORY "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
+set(CLASSMNGR_QT_SQL_DRIVER_DIR "${__QT_DEPLOY_QT_INSTALL_PREFIX}/${__QT_DEPLOY_QT_INSTALL_PLUGINS}/sqldrivers")
+set(CLASSMNGR_SQL_DRIVER_STAGING_DIR "${CMAKE_CURRENT_LIST_DIR}/classmngr-deploy-sqldrivers")
+file(MAKE_DIRECTORY "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
 foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" AND NOT EXISTS "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
-        file(RENAME "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+    if(EXISTS "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" AND NOT EXISTS "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
+        file(RENAME "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
     endif()
 endforeach()
 foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
-        file(RENAME "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}" "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}")
-        list(APPEND CLASSMNGR_STAGED_SQL_DRIVERS "\${driver}")
+    if(EXISTS "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
+        file(RENAME "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}" "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}")
+        list(APPEND CLASSMNGR_STAGED_SQL_DRIVERS "${driver}")
     endif()
 endforeach()
-set(CLASSMNGR_APP_SQL_DRIVER_DIR "\${QT_DEPLOY_PREFIX}/ClassMngr.app/Contents/PlugIns/sqldrivers")
+set(CLASSMNGR_APP_SQL_DRIVER_DIR "${QT_DEPLOY_PREFIX}/ClassMngr.app/Contents/PlugIns/sqldrivers")
 foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
-        file(REMOVE "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+    if(EXISTS "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
+        file(REMOVE "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
     endif()
 endforeach()
 ]=])
@@ -292,16 +292,16 @@ endforeach()
     )
     string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE [=[
 foreach(driver IN LISTS CLASSMNGR_BAD_SQL_DRIVERS)
-    if(EXISTS "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
-        file(REMOVE "\${CLASSMNGR_APP_SQL_DRIVER_DIR}/\${driver}")
+    if(EXISTS "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
+        file(REMOVE "${CLASSMNGR_APP_SQL_DRIVER_DIR}/${driver}")
     endif()
 endforeach()
 foreach(driver IN LISTS CLASSMNGR_STAGED_SQL_DRIVERS)
-    if(EXISTS "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}")
-        file(RENAME "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/\${driver}" "\${CLASSMNGR_QT_SQL_DRIVER_DIR}/\${driver}")
+    if(EXISTS "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}")
+        file(RENAME "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}/${driver}" "${CLASSMNGR_QT_SQL_DRIVER_DIR}/${driver}")
     endif()
 endforeach()
-file(REMOVE_RECURSE "\${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
+file(REMOVE_RECURSE "${CLASSMNGR_SQL_DRIVER_STAGING_DIR}")
 ]=])
 endif()
 
@@ -525,6 +525,79 @@ ${CLASSMNGR_QT_DEPLOY_POSTAMBLE}
 "
 )
 install(SCRIPT ${deploy_script})
+
+if(APPLE)
+    set(CLASSMNGR_DMG_STAGING_DIR
+        "${CMAKE_BINARY_DIR}/installer-stage"
+    )
+    set(CLASSMNGR_INSTALLER_OUTPUT_DIR
+        "${PROJECT_SOURCE_DIR}/dist"
+        CACHE PATH
+        "Directory where the macOS disk image is written"
+    )
+    set(CLASSMNGR_DMG_OUTPUT
+        "${CLASSMNGR_INSTALLER_OUTPUT_DIR}/ClassMngr-${PROJECT_VERSION}-macos-universal.dmg"
+    )
+
+    find_program(CLASSMNGR_HDIUTIL_EXECUTABLE hdiutil)
+    find_program(CLASSMNGR_CODESIGN_EXECUTABLE codesign)
+
+    if(CLASSMNGR_HDIUTIL_EXECUTABLE AND CLASSMNGR_CODESIGN_EXECUTABLE)
+        add_custom_target(ClassMngrInstaller
+            COMMAND
+                "${CMAKE_COMMAND}" -E rm -rf
+                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Frameworks"
+                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/PlugIns"
+                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Resources/qml"
+            COMMAND
+                "${CMAKE_COMMAND}" -E rm -f
+                "$<TARGET_BUNDLE_DIR:ClassMngr>/Contents/Resources/qt.conf"
+            COMMAND
+                "${CMAKE_COMMAND}" -E rm -rf
+                "${CLASSMNGR_DMG_STAGING_DIR}"
+            COMMAND
+                "${CMAKE_COMMAND}" -E make_directory
+                "${CLASSMNGR_DMG_STAGING_DIR}"
+                "${CLASSMNGR_INSTALLER_OUTPUT_DIR}"
+            COMMAND
+                "${CMAKE_COMMAND}"
+                --install "${CMAKE_BINARY_DIR}"
+                --prefix "${CLASSMNGR_DMG_STAGING_DIR}"
+            COMMAND
+                "${CMAKE_COMMAND}" -E create_symlink
+                "/Applications"
+                "${CLASSMNGR_DMG_STAGING_DIR}/Applications"
+            COMMAND
+                "${CLASSMNGR_CODESIGN_EXECUTABLE}"
+                --force
+                --deep
+                --sign -
+                "${CLASSMNGR_DMG_STAGING_DIR}/ClassMngr.app"
+            COMMAND
+                "${CLASSMNGR_HDIUTIL_EXECUTABLE}" create
+                -volname "ClassMngr ${PROJECT_VERSION}"
+                -srcfolder "${CLASSMNGR_DMG_STAGING_DIR}"
+                -ov
+                -format UDZO
+                "${CLASSMNGR_DMG_OUTPUT}"
+            DEPENDS ClassMngr
+            BYPRODUCTS "${CLASSMNGR_DMG_OUTPUT}"
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+            COMMENT "Building ClassMngr macOS universal disk image"
+            VERBATIM
+        )
+    else()
+        add_custom_target(ClassMngrInstaller
+            COMMAND
+                "${CMAKE_COMMAND}" -E echo
+                "hdiutil and codesign are required. Build the macOS installer on macOS with the standard developer tools installed."
+            COMMAND
+                "${CMAKE_COMMAND}" -E false
+            COMMENT "hdiutil and codesign are required to build ClassMngrInstaller"
+            VERBATIM
+        )
+    endif()
+endif()
 
 if(WIN32)
     if(CMAKE_SIZEOF_VOID_P LESS 8)

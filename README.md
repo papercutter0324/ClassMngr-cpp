@@ -169,29 +169,29 @@ use another Qt installation, make sure it is Qt 6.11.1 or newer and includes Qt
 Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
 QuickControls2, QuickWidgets, and LinguistTools.
 
-Point CMake at that Qt kit and build the release app. The macOS release preset
-builds a universal `arm64;x86_64` app bundle targeting macOS 13.0 or newer.
+Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of
+where Qt is installed. The macOS release preset builds a universal
+`arm64;x86_64` app bundle targeting macOS 13.0 or newer.
 
 ```sh
-cmake --preset macos-clang-release \
-  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.11.1/macos"
+export QT_MACOS_PREFIX="$HOME/Qt/6.11.1/macos"
 
+cmake --preset macos-clang-release
 cmake --build --preset macos-clang-release
-
 cmake --build --preset macos-clang-release-install
 ```
 
-The standalone app bundle is `dist/ClassMngr-macos/ClassMngr.app`. To make a DMG
-for distribution:
+The standalone app bundle is `dist/ClassMngr-macos/ClassMngr.app`. Build the
+versioned universal DMG with:
 
 ```sh
-hdiutil create \
-  -volname ClassMngr \
-  -srcfolder dist/ClassMngr-macos/ClassMngr.app \
-  -ov \
-  -format UDZO \
-  dist/ClassMngr-macos.dmg
+cmake --build --preset macos-clang-release-installer
 ```
+
+To configure from scratch, build the DMG, verify its universal app and code
+signature, and write `dist/checksums-macos.txt` in one step, run
+`scripts/build_release_macos.sh`. The disk image is written as
+`dist/ClassMngr-<version>-macos-universal.dmg`.
 
 Do not distribute or launch the release bundle from `build/macos-clang-release`
 after running deployment tools against it. That build-tree app can mix Qt from
@@ -333,6 +333,6 @@ desktop display stack; they should not require a separate Qt installation.
 - Use release presets when creating distributable builds.
 - Run the app from the installed directory or bundle, not directly from a
   partially copied build tree.
-- If CMake cannot find Qt, check that `CMAKE_PREFIX_PATH` or
-  `QT_LINUX_PREFIX` points at the matching Qt kit for your compiler and CPU
+- If CMake cannot find Qt, check that `QT_MACOS_PREFIX`, `QT_LINUX_PREFIX`, or
+  `CMAKE_PREFIX_PATH` points at the matching Qt kit for your compiler and CPU
   architecture.

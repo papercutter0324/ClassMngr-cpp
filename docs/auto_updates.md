@@ -46,6 +46,18 @@ cmake --preset macos-clang-release \
   -DCLASSMNGR_UPDATE_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----"
 ```
 
+Set `QT_MACOS_PREFIX` to the Qt macOS kit before using the preset. To configure
+from scratch and produce the versioned universal DMG plus
+`dist/checksums-macos.txt`, pass the same cache settings to the release script:
+
+```sh
+export QT_MACOS_PREFIX="$HOME/Qt/6.11.1/macos"
+scripts/build_release_macos.sh \
+  -DCLASSMNGR_UPDATE_MANIFEST_URL="https://..." \
+  -DCLASSMNGR_UPDATE_SIGNATURE_URL="https://..." \
+  -DCLASSMNGR_UPDATE_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----"
+```
+
 The Windows release presets are intended to run on a Windows MSVC runner or VM.
 For local Windows builds, set `QT_MSVC_X64_PREFIX` to the installed x64 kit and
 `QT_MSVC_ARM64_PREFIX` to the ARM64 kit when building ARM64:

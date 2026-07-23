@@ -4,9 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-QT_DIR="${QT_DIR:-${HOME}/Qt/6.11.1/macos}"
+QT_DIR="${QT_DIR:-${QT_MACOS_PREFIX:-${HOME}/Qt/6.11.1/macos}}"
 APP_BUNDLE="${PROJECT_ROOT}/dist/ClassMngr-macos/ClassMngr.app"
-QML_DIR="${QML_DIR:-${PROJECT_ROOT}/src/features/my_info/ui/qml}"
+QML_DIR="${QML_DIR:-${PROJECT_ROOT}/src/features/calendar/ui/qml}"
 
 if [[ $# -gt 0 && "${1}" != -* ]]; then
     APP_BUNDLE="${1}"
@@ -18,7 +18,7 @@ SQL_DRIVER_DIR="${QT_DIR}/plugins/sqldrivers"
 
 if [[ ! -x "${MACDEPLOYQT}" ]]; then
     echo "macdeployqt not found or not executable: ${MACDEPLOYQT}" >&2
-    echo "Set QT_DIR to your Qt macOS installation and try again." >&2
+    echo "Set QT_DIR or QT_MACOS_PREFIX to your Qt macOS installation and try again." >&2
     exit 1
 fi
 
