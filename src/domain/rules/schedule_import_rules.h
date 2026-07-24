@@ -2,10 +2,12 @@
 
 #include "domain/models/schedule_import.h"
 
+#include <QObject>
 #include <QString>
 #include <QStringList>
 
 #include <algorithm>
+#include <utility>
 
 inline QList<QStringList> scheduleImportAllowedDayPatterns(
     const QString& classGrade,
@@ -144,7 +146,7 @@ inline QString scheduleImportMeetingPatternExpectation(
             )
         )
     {
-        return QStringLiteral(
+        return QObject::tr(
             "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
             );
     }
@@ -162,7 +164,7 @@ inline QString scheduleImportMeetingPatternExpectation(
             )
         )
     {
-        return QStringLiteral(
+        return QObject::tr(
             "Expected Monday/Wednesday/Friday or Tuesday/Thursday."
             );
     }
@@ -175,7 +177,7 @@ inline QString scheduleImportMeetingPatternExpectation(
         && songs
         )
     {
-        return QStringLiteral(
+        return QObject::tr(
             "Expected Monday/Wednesday, Monday/Friday, or Tuesday/Thursday."
             );
     }
@@ -185,11 +187,46 @@ inline QString scheduleImportMeetingPatternExpectation(
         || grade == QStringLiteral("M2")
         )
     {
-        return QStringLiteral("Expected one weekday meeting.");
+        return QObject::tr("Expected one weekday meeting.");
     }
-    return QStringLiteral(
+    return QObject::tr(
         "The imported grade and level do not have a supported meeting-pattern rule."
         );
+}
+
+inline QString scheduleImportWeekdayDisplayName(
+    const QString& day
+    )
+{
+    if (day == QStringLiteral("Monday"))
+    {
+        return QObject::tr("Monday");
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return QObject::tr("Tuesday");
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return QObject::tr("Wednesday");
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return QObject::tr("Thursday");
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return QObject::tr("Friday");
+    }
+    if (day == QStringLiteral("Saturday"))
+    {
+        return QObject::tr("Saturday");
+    }
+    if (day == QStringLiteral("Sunday"))
+    {
+        return QObject::tr("Sunday");
+    }
+    return day;
 }
 
 inline QString scheduleImportMeetingPatternError(
@@ -229,7 +266,7 @@ inline QString scheduleImportMeetingPatternError(
             || days.contains(time.day)
             )
         {
-            return QStringLiteral(
+            return QObject::tr(
                 "Each imported class must have exactly one meeting per scheduled weekday."
                 );
         }
@@ -257,14 +294,23 @@ inline QString scheduleImportMeetingPatternError(
         return {};
     }
 
-    return QStringLiteral("%1 Detected: %2.")
+    QStringList displayDays;
+    displayDays.reserve(days.size());
+    for (const QString& day : std::as_const(days))
+    {
+        displayDays.append(
+            scheduleImportWeekdayDisplayName(day)
+            );
+    }
+
+    return QObject::tr("%1 Detected: %2.")
         .arg(
             scheduleImportMeetingPatternExpectation(
                 candidate.classGrade,
                 candidate.classLevel
                 ),
-            days.isEmpty()
-                ? QStringLiteral("no meetings")
-                : days.join(QStringLiteral(", "))
+            displayDays.isEmpty()
+                ? QObject::tr("no meetings")
+                : displayDays.join(QStringLiteral(", "))
             );
 }

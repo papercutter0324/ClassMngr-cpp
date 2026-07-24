@@ -1,5 +1,6 @@
 #include "update_signature_verifier.h"
 
+#include <QObject>
 #include <QRegularExpression>
 
 #if defined(Q_OS_WIN)
@@ -102,7 +103,7 @@ Status verifyWithWindowsCrypto(
     if (publicKeyDer.isEmpty())
     {
         return std::unexpected(
-            QStringLiteral("Update public key is not valid PEM data.")
+            QObject::tr("Update public key is not valid PEM data.")
             );
     }
 
@@ -123,7 +124,9 @@ Status verifyWithWindowsCrypto(
         )
     {
         return std::unexpected(
-            QStringLiteral("Update public key must use PEM SubjectPublicKeyInfo format.")
+            QObject::tr(
+                "Update public key must use PEM SubjectPublicKeyInfo format."
+                )
             );
     }
 
@@ -140,7 +143,7 @@ Status verifyWithWindowsCrypto(
         )
     {
         return std::unexpected(
-            QStringLiteral("Unable to import the update public key.")
+            QObject::tr("Unable to import the update public key.")
             );
     }
 
@@ -169,7 +172,7 @@ Status verifyWithWindowsCrypto(
     if (verificationStatus < 0)
     {
         return std::unexpected(
-            QStringLiteral("Update manifest signature is invalid.")
+            QObject::tr("Update manifest signature is invalid.")
             );
     }
 
@@ -186,14 +189,14 @@ Status writeFile(
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
     {
         return std::unexpected(
-            QStringLiteral("Unable to prepare signature verification file.")
+            QObject::tr("Unable to prepare signature verification file.")
             );
     }
 
     if (file.write(data) != data.size())
     {
         return std::unexpected(
-            QStringLiteral("Unable to write signature verification file.")
+            QObject::tr("Unable to write signature verification file.")
             );
     }
 
@@ -211,7 +214,9 @@ Status verifyWithOpenSsl(
     if (!directory.isValid())
     {
         return std::unexpected(
-            QStringLiteral("Unable to create signature verification workspace.")
+            QObject::tr(
+                "Unable to create signature verification workspace."
+                )
             );
     }
 
@@ -260,7 +265,9 @@ Status verifyWithOpenSsl(
     if (!openssl.waitForStarted())
     {
         return std::unexpected(
-            QStringLiteral("Unable to start OpenSSL for update signature verification.")
+            QObject::tr(
+                "Unable to start OpenSSL for update signature verification."
+                )
             );
     }
 
@@ -270,7 +277,7 @@ Status verifyWithOpenSsl(
         openssl.waitForFinished();
 
         return std::unexpected(
-            QStringLiteral("Update signature verification timed out.")
+            QObject::tr("Update signature verification timed out.")
             );
     }
 
@@ -283,8 +290,8 @@ Status verifyWithOpenSsl(
 
         return std::unexpected(
             details.isEmpty()
-                ? QStringLiteral("Update manifest signature is invalid.")
-                : QStringLiteral("Update manifest signature is invalid: %1")
+                ? QObject::tr("Update manifest signature is invalid.")
+                : QObject::tr("Update manifest signature is invalid: %1")
                     .arg(details)
             );
     }
@@ -303,21 +310,21 @@ Status UpdateSignatureVerifier::verifyDetachedSignature(
     if (payload.isEmpty())
     {
         return std::unexpected(
-            QStringLiteral("Manifest payload is empty.")
+            QObject::tr("Manifest payload is empty.")
             );
     }
 
     if (signature.trimmed().isEmpty())
     {
         return std::unexpected(
-            QStringLiteral("Manifest signature is empty.")
+            QObject::tr("Manifest signature is empty.")
             );
     }
 
     if (publicKeyPem.trimmed().isEmpty())
     {
         return std::unexpected(
-            QStringLiteral("Update public key is not configured.")
+            QObject::tr("Update public key is not configured.")
             );
     }
 

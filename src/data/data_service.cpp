@@ -19,6 +19,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QObject>
 #include <QSqlError>
 #include <QVariant>
 
@@ -517,7 +518,7 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     if (!m_scheduleImportRepository)
     {
         return std::unexpected(
-            QStringLiteral("Schedule import is unavailable.")
+            QObject::tr("Schedule import is unavailable.")
             );
     }
 
@@ -534,7 +535,7 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     if (!m_scheduleImportRepository)
     {
         return std::unexpected(
-            QStringLiteral("Schedule import is unavailable.")
+            QObject::tr("Schedule import is unavailable.")
             );
     }
 

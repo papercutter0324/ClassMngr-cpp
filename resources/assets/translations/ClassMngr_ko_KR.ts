@@ -2034,57 +2034,57 @@
         <translation>애플리케이션 아이콘을 불러오는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="49"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="50"/>
         <source>Creating main window...</source>
         <translation>메인 창을 만드는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="52"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="53"/>
         <source>Initializing application services...</source>
         <translation>애플리케이션 서비스를 초기화하는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="55"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="56"/>
         <source>Configuring window...</source>
         <translation>창을 구성하는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="58"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="59"/>
         <source>Loading pages...</source>
         <translation>페이지 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="61"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="62"/>
         <source>Loading sidebar...</source>
         <translation>사이드바 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="64"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="65"/>
         <source>Initializing actions...</source>
         <translation>작업 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="67"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="68"/>
         <source>Initializing controllers...</source>
         <translation>컨트롤러 초기화 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="70"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="71"/>
         <source>Building menus...</source>
         <translation>메뉴 구성 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="74"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="75"/>
         <source>Connecting signals...</source>
         <translation>신호 연결 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="77"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="78"/>
         <source>Loading recent file...</source>
         <translation>최근 파일 로드 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="88"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="89"/>
         <source>Restoring window layout...</source>
         <translation>창 레이아웃을 복원하는 중...</translation>
     </message>
@@ -2094,7 +2094,7 @@
         <translation>준비 완료...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="105"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="106"/>
         <source> [ADMIN]</source>
         <translation> [관리자]</translation>
     </message>
@@ -2865,6 +2865,7 @@
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="510"/>
         <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="48"/>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="95"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="327"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
@@ -2968,6 +2969,7 @@
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="759"/>
         <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="19"/>
         <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="20"/>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="48"/>
         <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="25"/>
         <source>%1 failed: %2</source>
         <translation>%1 실패: %2</translation>
@@ -3520,6 +3522,8 @@
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1092"/>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1211"/>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1224"/>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="432"/>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="621"/>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="102"/>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="174"/>
         <source>No database is open.</source>
@@ -4413,9 +4417,185 @@
         <translation>저장된 한국인 교사 중 %1과(와) 일치하는 교사가 둘 이상입니다.</translation>
     </message>
     <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="240"/>
+        <source>Every imported class requires a resolution.</source>
+        <translation>가져올 모든 수업에 처리 방법을 지정해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="284"/>
+        <source>%1 contains an invalid time: %2 %3–%4</source>
+        <translation>%1에 잘못된 시간이 있습니다: %2 %3~%4</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="301"/>
+        <source>The proposed schedule overlaps: %1 conflicts with %2 on %3.</source>
+        <translation>적용 예정 일정이 겹칩니다: %3에 %1이(가) %2와(과) 충돌합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="349"/>
+        <source>Writing imported class times</source>
+        <translation>가져온 수업 시간 저장 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="394"/>
+        <source>The import contains an invalid intensive slot state.</source>
+        <translation>가져올 데이터에 잘못된 집중 수업 시간대 상태가 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="407"/>
+        <source>Writing imported intensive slot states</source>
+        <translation>가져온 집중 수업 시간대 상태 저장 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="631"/>
+        <source>Unrecognized timetable cells must be acknowledged before importing.</source>
+        <translation>인식되지 않은 시간표 셀을 확인한 후 가져와야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="654"/>
+        <source>The teacher import plan contains an invalid or duplicate resolution.</source>
+        <translation>교사 가져오기 계획에 잘못되거나 중복된 처리 방법이 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="683"/>
+        <source>The class import plan contains an invalid or duplicate resolution.</source>
+        <translation>수업 가져오기 계획에 잘못되거나 중복된 처리 방법이 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="700"/>
+        <source>Each updated class must have a unique existing target.</source>
+        <translation>업데이트할 각 수업에는 서로 다른 기존 대상이 있어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="718"/>
+        <source>Each imported class must resolve to a unique existing target.</source>
+        <translation>가져올 각 수업은 서로 다른 기존 대상에 연결되어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="731"/>
+        <source>A newly created class cannot have an existing target.</source>
+        <translation>새로 만들 수업에는 기존 대상을 지정할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="758"/>
+        <source>The import contains an invalid class.</source>
+        <translation>가져올 데이터에 잘못된 수업이 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="788"/>
+        <source>Every imported teacher and class requires a resolution.</source>
+        <translation>가져올 모든 교사와 수업에 처리 방법을 지정해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="799"/>
+        <source>Every imported teacher requires a matching resolution.</source>
+        <translation>가져올 모든 교사에 일치하는 처리 방법을 지정해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="825"/>
+        <source>Choose one of the imported rooms for every unresolved Korean teacher.</source>
+        <translation>처리되지 않은 각 한국인 교사에 대해 가져온 강의실 중 하나를 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="846"/>
+        <source>Classes assigned to a skipped Korean teacher must also be skipped.</source>
+        <translation>건너뛴 한국인 교사에게 배정된 수업도 건너뛰어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="865"/>
+        <source>The meeting pattern for %1 %2 is invalid: %3</source>
+        <translation>%1 %2의 수업 시간 패턴이 잘못되었습니다: %3</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="889"/>
+        <source>Choose a valid class color for every imported class.</source>
+        <translation>가져올 각 수업에 유효한 수업 색상을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="900"/>
+        <source>Unable to start the schedule import transaction.</source>
+        <translation>일정 가져오기 트랜잭션을 시작할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="957"/>
+        <source>A selected Korean teacher is no longer available.</source>
+        <translation>선택한 한국인 교사를 더 이상 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="966"/>
+        <source>A created or skipped Korean teacher cannot have an existing target.</source>
+        <translation>새로 만들거나 건너뛸 한국인 교사에는 기존 대상을 지정할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="978"/>
+        <source>Choose a room before updating a Korean teacher.</source>
+        <translation>한국인 교사를 업데이트하기 전에 강의실을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1002"/>
+        <source>A selected class is no longer available.</source>
+        <translation>선택한 수업을 더 이상 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1053"/>
+        <source>A skipped imported class can preserve only its unique exact existing match.</source>
+        <translation>건너뛴 수업은 정확히 일치하는 기존 수업이 하나뿐인 경우에만 해당 수업을 유지할 수 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1129"/>
         <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="300"/>
         <source>Creating a Korean teacher</source>
         <translation>한국인 교사 만드는 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1139"/>
+        <source>A Korean teacher could not be created.</source>
+        <translation>한국인 교사를 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1174"/>
+        <source>Updating a Korean teacher room</source>
+        <translation>한국인 교사 강의실 업데이트 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1226"/>
+        <source>A class cannot be imported because its Korean teacher was skipped.</source>
+        <translation>한국인 교사를 건너뛰었으므로 해당 수업을 가져올 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1258"/>
+        <source>Creating a class</source>
+        <translation>수업 만드는 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1309"/>
+        <source>Updating imported class information</source>
+        <translation>가져온 수업 정보 업데이트 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1343"/>
+        <source>Clearing the previous schedule snapshot</source>
+        <translation>이전 일정 스냅샷 지우는 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1374"/>
+        <source>Clearing the previous intensive slot states</source>
+        <translation>이전 집중 수업 시간대 상태 지우는 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1402"/>
+        <source>Reading My Information name</source>
+        <translation>내 정보 이름 읽는 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1433"/>
+        <source>Saving My Information name</source>
+        <translation>내 정보 이름 저장 중</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1444"/>
+        <source>Unable to commit the schedule import transaction: %1</source>
+        <translation>일정 가져오기 트랜잭션을 커밋할 수 없습니다: %1</translation>
     </message>
     <message>
         <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="334"/>
@@ -4542,6 +4722,290 @@
         <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="104"/>
         <source>The selected file could not be opened: %1</source>
         <translation>선택한 파일을 열 수 없습니다: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1004"/>
+        <source>The intensive schedule&apos;s AM-to-PM transition is ambiguous.</source>
+        <translation>집중 일정에서 오전과 오후가 전환되는 시점이 불분명합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1126"/>
+        <source>This occupied timetable cell was not recognized as a class.</source>
+        <translation>내용이 있는 이 시간표 셀을 수업으로 인식하지 못했습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1181"/>
+        <source>The class time could not be interpreted.</source>
+        <translation>수업 시간을 해석할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1287"/>
+        <source>The workbook could not be read.</source>
+        <translation>통합 문서를 읽을 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1365"/>
+        <source>%1!%2: %3</source>
+        <translation>%1!%2: %3</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1374"/>
+        <source>No supported user schedule blocks were found in the workbook.</source>
+        <translation>통합 문서에서 지원되는 사용자 일정 영역을 찾을 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="128"/>
+        <source>Mon</source>
+        <translation>월</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="132"/>
+        <source>Tues</source>
+        <translation>화</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="136"/>
+        <source>Wed</source>
+        <translation>수</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="140"/>
+        <source>Thurs</source>
+        <translation>목</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="144"/>
+        <source>Fri</source>
+        <translation>금</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="148"/>
+        <source>Sat</source>
+        <translation>토</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="152"/>
+        <source>Sun</source>
+        <translation>일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="287"/>
+        <source>%1 overlaps %2 on %3.</source>
+        <translation>%1이(가) %3에 %2와(과) 겹칩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="364"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="368"/>
+        <source>[Int]</source>
+        <translation>[집중]</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="365"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="367"/>
+        <source>[Reg]</source>
+        <translation>[정규]</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="385"/>
+        <source>Imported meetings: %1. A new class will be created with color %2.</source>
+        <translation>가져온 수업 시간: %1. 색상 %2의 새 수업을 만듭니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="405"/>
+        <source>grade %1 → %2</source>
+        <translation>학년 %1 → %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="415"/>
+        <source>level %1 → %2</source>
+        <translation>레벨 %1 → %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="429"/>
+        <source>Korean teacher %1 → %2</source>
+        <translation>한국인 교사 %1 → %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="439"/>
+        <source>schedule %1 → %2</source>
+        <translation>일정 %1 → %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="454"/>
+        <source>color %1 → %2</source>
+        <translation>색상 %1 → %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="464"/>
+        <source>Imported meetings: %1. No teacher, course, schedule, or color differences.</source>
+        <translation>가져온 수업 시간: %1. 교사, 과정, 일정 또는 색상에 차이가 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="475"/>
+        <source>Imported meetings:</source>
+        <translation>가져온 수업 시간:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="477"/>
+        <source>Changes:</source>
+        <translation>변경 사항:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="486"/>
+        <source>%1 — Room %2</source>
+        <translation>%1 — 강의실 %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="490"/>
+        <source>not set</source>
+        <translation>설정 안 됨</translation>
+    </message>
+    <message>
+        <location filename="../../../src/data/data_service.cpp" line="521"/>
+        <location filename="../../../src/data/data_service.cpp" line="538"/>
+        <source>Schedule import is unavailable.</source>
+        <translation>일정 가져오기를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="149"/>
+        <source>Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday.</source>
+        <translation>월요일/수요일, 월요일/금요일, 수요일/금요일 또는 화요일/목요일 일정이어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="167"/>
+        <source>Expected Monday/Wednesday/Friday or Tuesday/Thursday.</source>
+        <translation>월요일/수요일/금요일 또는 화요일/목요일 일정이어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="180"/>
+        <source>Expected Monday/Wednesday, Monday/Friday, or Tuesday/Thursday.</source>
+        <translation>월요일/수요일, 월요일/금요일 또는 화요일/목요일 일정이어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="190"/>
+        <source>Expected one weekday meeting.</source>
+        <translation>평일 수업이 한 번이어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="192"/>
+        <source>The imported grade and level do not have a supported meeting-pattern rule.</source>
+        <translation>가져온 학년과 레벨에 적용할 수 있는 수업 시간 패턴 규칙이 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="203"/>
+        <source>Monday</source>
+        <translation>월요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="207"/>
+        <source>Tuesday</source>
+        <translation>화요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="211"/>
+        <source>Wednesday</source>
+        <translation>수요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="215"/>
+        <source>Thursday</source>
+        <translation>목요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="219"/>
+        <source>Friday</source>
+        <translation>금요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="223"/>
+        <source>Saturday</source>
+        <translation>토요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="227"/>
+        <source>Sunday</source>
+        <translation>일요일</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="269"/>
+        <source>Each imported class must have exactly one meeting per scheduled weekday.</source>
+        <translation>가져올 각 수업은 일정에 포함된 요일마다 정확히 한 번의 수업이 있어야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="306"/>
+        <source>%1 Detected: %2.</source>
+        <translation>%1 감지된 일정: %2.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="313"/>
+        <source>no meetings</source>
+        <translation>수업 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="106"/>
+        <source>Update public key is not valid PEM data.</source>
+        <translation>업데이트 공개 키가 유효한 PEM 데이터가 아닙니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="127"/>
+        <source>Update public key must use PEM SubjectPublicKeyInfo format.</source>
+        <translation>업데이트 공개 키는 PEM SubjectPublicKeyInfo 형식을 사용해야 합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="146"/>
+        <source>Unable to import the update public key.</source>
+        <translation>업데이트 공개 키를 가져올 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="175"/>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="293"/>
+        <source>Update manifest signature is invalid.</source>
+        <translation>업데이트 매니페스트 서명이 유효하지 않습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="192"/>
+        <source>Unable to prepare signature verification file.</source>
+        <translation>서명 확인 파일을 준비할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="199"/>
+        <source>Unable to write signature verification file.</source>
+        <translation>서명 확인 파일을 쓸 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="217"/>
+        <source>Unable to create signature verification workspace.</source>
+        <translation>서명 확인 작업 공간을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="268"/>
+        <source>Unable to start OpenSSL for update signature verification.</source>
+        <translation>업데이트 서명 확인을 위해 OpenSSL을 시작할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="280"/>
+        <source>Update signature verification timed out.</source>
+        <translation>업데이트 서명 확인 시간이 초과되었습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="294"/>
+        <source>Update manifest signature is invalid: %1</source>
+        <translation>업데이트 매니페스트 서명이 유효하지 않습니다: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="313"/>
+        <source>Manifest payload is empty.</source>
+        <translation>매니페스트 페이로드가 비어 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="320"/>
+        <source>Manifest signature is empty.</source>
+        <translation>매니페스트 서명이 비어 있습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/core/updater/update_signature_verifier.cpp" line="327"/>
+        <source>Update public key is not configured.</source>
+        <translation>업데이트 공개 키가 설정되지 않았습니다.</translation>
     </message>
 </context>
 <context>
@@ -5215,6 +5679,427 @@
     </message>
 </context>
 <context>
+    <name>ScheduleImportDialog</name>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="655"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1292"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2486"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2494"/>
+        <source>Import Schedule</source>
+        <translation>일정 가져오기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="671"/>
+        <source>Choose the schedule type, then continue.</source>
+        <translation>일정 유형을 선택한 후 계속하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="694"/>
+        <source>Back</source>
+        <translation>뒤로</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="699"/>
+        <source>Next</source>
+        <translation>다음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="704"/>
+        <source>Import</source>
+        <translation>가져오기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="754"/>
+        <source>Choose a spreadsheet</source>
+        <translation>스프레드시트 선택</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="771"/>
+        <source>Select an XLSX schedule...</source>
+        <translation>XLSX 일정 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="775"/>
+        <source>Browse...</source>
+        <translation>찾아보기...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="787"/>
+        <source>Schedule type</source>
+        <translation>일정 유형</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="794"/>
+        <source>Normal schedule</source>
+        <translation>정규 일정</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="799"/>
+        <source>Intensive schedule</source>
+        <translation>집중 일정</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="819"/>
+        <source>Worksheet:</source>
+        <translation>워크시트:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="834"/>
+        <source>Choose a file and schedule type.</source>
+        <translation>파일과 일정 유형을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="858"/>
+        <source>Ready to read the workbook.</source>
+        <translation>통합 문서를 읽을 준비가 되었습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="892"/>
+        <source>Choose your schedule section</source>
+        <translation>내 일정 영역 선택</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="914"/>
+        <source>Use the selected spreadsheet name even though it does not match My Information.</source>
+        <translation>내 정보와 일치하지 않더라도 선택한 스프레드시트 이름을 사용합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="947"/>
+        <source>Review and reconcile</source>
+        <translation>검토 및 처리</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1000"/>
+        <source>Select Schedule Import File</source>
+        <translation>일정 가져오기 파일 선택</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1002"/>
+        <source>Excel Workbooks (*.xlsx)</source>
+        <translation>Excel 통합 문서 (*.xlsx)</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1015"/>
+        <source>Choose an XLSX file.</source>
+        <translation>XLSX 파일을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1028"/>
+        <source>Choose an Excel workbook with the .xlsx extension.</source>
+        <translation>.xlsx 확장자의 Excel 통합 문서를 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1038"/>
+        <source>Choose Normal schedule or Intensive schedule.</source>
+        <translation>정규 일정 또는 집중 일정을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1059"/>
+        <source>The selected workbook could not be opened.</source>
+        <translation>선택한 통합 문서를 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1072"/>
+        <source>Invalid workbook: %1</source>
+        <translation>잘못된 통합 문서: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1096"/>
+        <source>Select a worksheet...</source>
+        <translation>워크시트 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1120"/>
+        <source>Workbook loaded. Choose the worksheet to import.</source>
+        <translation>통합 문서를 불러왔습니다. 가져올 워크시트를 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1121"/>
+        <source>Workbook and worksheet are valid.</source>
+        <translation>통합 문서와 워크시트가 유효합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1183"/>
+        <source>Select a detected name...</source>
+        <translation>감지된 이름 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1193"/>
+        <source>Select the detected name...</source>
+        <translation>감지된 이름 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1242"/>
+        <source>My Information has no name. The selected spreadsheet name will be saved after a successful import.</source>
+        <translation>내 정보에 이름이 없습니다. 가져오기에 성공하면 선택한 스프레드시트 이름을 저장합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1248"/>
+        <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
+        <translation>내 정보의 이름은 “%1”이지만 선택한 스프레드시트 영역의 이름은 “%2”입니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1258"/>
+        <source>My Information name: %1</source>
+        <translation>내 정보 이름: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1333"/>
+        <source>Unrecognized cells</source>
+        <translation>인식되지 않은 셀</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1343"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2410"/>
+        <source>%1: %2</source>
+        <translation>%1: %2</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1358"/>
+        <source>I reviewed these cells and want to skip them.</source>
+        <translation>이 셀을 검토했으며 건너뛰겠습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1384"/>
+        <source>Korean teachers and rooms</source>
+        <translation>한국인 교사 및 강의실</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1390"/>
+        <source>Spreadsheet</source>
+        <translation>스프레드시트</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1395"/>
+        <source>Resolution</source>
+        <translation>처리 방법</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1400"/>
+        <source>Imported room</source>
+        <translation>가져온 강의실</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1429"/>
+        <source>Choose a room...</source>
+        <translation>강의실 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1453"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1492"/>
+        <source>Choose a resolution...</source>
+        <translation>처리 방법 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1459"/>
+        <source>Keep existing: %1</source>
+        <translation>기존 항목 유지: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1470"/>
+        <source>Update room globally (%1 affected classes)</source>
+        <translation>강의실을 전체적으로 업데이트(영향받는 수업 %1개)</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1479"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1528"/>
+        <source>Skip affected classes</source>
+        <translation>영향받는 수업 건너뛰기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1502"/>
+        <source>Use existing: %1</source>
+        <translation>기존 항목 사용: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1511"/>
+        <source>Update existing room: %1</source>
+        <translation>기존 강의실 업데이트: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1521"/>
+        <source>Create a new Korean teacher</source>
+        <translation>새 한국인 교사 만들기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1577"/>
+        <source>Classes</source>
+        <translation>수업</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1630"/>
+        <source>Choose Update, Create, or Skip...</source>
+        <translation>업데이트, 만들기 또는 건너뛰기 선택...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1640"/>
+        <source>Update suggested: %1</source>
+        <translation>업데이트 제안: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1663"/>
+        <source>Update existing: %1</source>
+        <translation>기존 항목 업데이트: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1679"/>
+        <source>Create new class</source>
+        <translation>새 수업 만들기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1686"/>
+        <source>Skip imported class</source>
+        <translation>가져온 수업 건너뛰기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1739"/>
+        <source>time unavailable</source>
+        <translation>시간을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1789"/>
+        <source>Select Imported Class Color</source>
+        <translation>가져온 수업 색상 선택</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1824"/>
+        <source>Color %1</source>
+        <translation>색상 %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1873"/>
+        <source>Choose a resolution for every Korean teacher.</source>
+        <translation>각 한국인 교사의 처리 방법을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1899"/>
+        <source>Choose one imported room for this Korean teacher resolution.</source>
+        <translation>이 한국인 교사의 처리 방법에 사용할 가져온 강의실을 하나 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1973"/>
+        <source>Choose an action for every class.</source>
+        <translation>각 수업에 적용할 작업을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1978"/>
+        <source>Choose how this imported row should be reconciled.</source>
+        <translation>가져온 이 행을 처리할 방법을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1988"/>
+        <source>Two imported classes cannot use the same existing class.</source>
+        <translation>가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2001"/>
+        <source>Choose an existing class to update.</source>
+        <translation>업데이트할 기존 수업을 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2048"/>
+        <source>The imported row will be skipped and its unique existing match will keep its current schedule.</source>
+        <translation>가져온 행을 건너뛰고, 정확히 일치하는 기존 수업 하나는 현재 일정을 유지합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2049"/>
+        <source>The imported row will be skipped.</source>
+        <translation>가져온 행을 건너뜁니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2079"/>
+        <source>%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.</source>
+        <translation>%1 %2의 수업 시간 패턴이 잘못되었습니다. 스프레드시트를 수정하거나 이 수업을 건너뛰세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2093"/>
+        <source>Meeting pattern:</source>
+        <translation>수업 시간 패턴:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2111"/>
+        <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
+        <translation>스프레드시트에서 이 수업에 여러 색상을 사용합니다. 선택한 색상을 확인하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2239"/>
+        <source>The proposed schedule has a conflict: %1</source>
+        <translation>적용 예정 일정에 충돌이 있습니다: %1</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2253"/>
+        <source>Acknowledge the unrecognized cells before importing.</source>
+        <translation>인식되지 않은 셀을 확인한 후 가져오세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2280"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2367"/>
+        <source>All required resolutions are complete.</source>
+        <translation>필요한 처리 방법을 모두 지정했습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2284"/>
+        <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
+        <translation>적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2297"/>
+        <source> My Information name will be set to “%1”.</source>
+        <translation> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2396"/>
+        <source>Choose a worksheet.</source>
+        <translation>워크시트를 선택하세요.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2424"/>
+        <source>The selected worksheet contains no supported user schedules.</source>
+        <translation>선택한 워크시트에 지원되는 사용자 일정이 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2456"/>
+        <source>Is this schedule valid and ready to import?</source>
+        <translation>이 일정이 유효하며 가져올 준비가 되었습니까?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2461"/>
+        <source>Confirm Schedule Import</source>
+        <translation>일정 가져오기 확인</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2478"/>
+        <source>No database is open.</source>
+        <translation>열려 있는 데이터베이스가 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2495"/>
+        <source>Schedule imported successfully.
+Korean teachers created: %1
+Korean teacher rooms updated: %2
+Classes created: %3
+Classes updated: %4
+Classes skipped: %5
+Schedules cleared: %6
+Ignored occupied cells: %7%8</source>
+        <translation>일정을 성공적으로 가져왔습니다.
+만든 한국인 교사: %1
+업데이트한 한국인 교사 강의실: %2
+만든 수업: %3
+업데이트한 수업: %4
+건너뛴 수업: %5
+지운 일정: %6
+무시한 내용이 있는 셀: %7%8</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2512"/>
+        <source>
+My Information name was updated.</source>
+        <translation>
+내 정보 이름이 업데이트되었습니다.</translation>
+    </message>
+</context>
+<context>
     <name>SchedulePage</name>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_page.cpp" line="49"/>
@@ -5305,97 +6190,102 @@
 <context>
     <name>ScheduleWidget</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="852"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="888"/>
         <source>No registered class meeting times available.</source>
         <translation>등록된 수업 시간이 없습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="910"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="947"/>
         <source>Show Weekends</source>
         <translation>주말 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="913"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="950"/>
         <source>Show Intensive Schedule</source>
         <translation>집중 일정 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="482"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="503"/>
         <source>Print Schedule</source>
         <translation>일정 인쇄</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="483"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="504"/>
         <source>Export Schedule</source>
         <translation>일정 내보내기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="902"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="939"/>
         <source>Use 24-Hour Time</source>
         <translation>24시간 형식 사용</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="905"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="942"/>
         <source>Show English Names</source>
         <translation>영어 이름 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="916"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="953"/>
         <source>Show All Hours</source>
         <translation>모든 시간 표시</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="921"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="958"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="930"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="961"/>
+        <source>Import Schedule...</source>
+        <translation>일정 가져오기...</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="970"/>
         <source>Time</source>
         <translation>시간</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="937"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="977"/>
         <source>Monday</source>
         <translation>월요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="941"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
         <source>Tuesday</source>
         <translation>화요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="945"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="985"/>
         <source>Wednesday</source>
         <translation>수요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="949"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="989"/>
         <source>Thursday</source>
         <translation>목요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="953"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="993"/>
         <source>Friday</source>
         <translation>금요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="957"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="997"/>
         <source>Saturday</source>
         <translation>토요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="961"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1001"/>
         <source>Sunday</source>
         <translation>일요일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1280"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1325"/>
         <source>Essay</source>
         <translation>에세이</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1305"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1350"/>
         <source>Lunch</source>
         <translation>점심</translation>
     </message>

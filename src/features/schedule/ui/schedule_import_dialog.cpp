@@ -4,6 +4,7 @@
 #include "core/utils/colorutils.h"
 #include "data/data_service.h"
 #include "domain/models/classroom.h"
+#include "domain/rules/schedule_import_rules.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -94,7 +95,7 @@ QString meetingText(
         meetings.append(
             QStringLiteral("%1 %2–%3")
                 .arg(
-                    time.day,
+                    scheduleImportWeekdayDisplayName(time.day),
                     timeDisplay(time.startTime),
                     timeDisplay(time.endTime)
                     )
@@ -122,19 +123,35 @@ QString weekdayLabel(
     const QString& day
     )
 {
-    static const QHash<QString, QString> labels{
-        {QStringLiteral("Monday"), QStringLiteral("Mon")},
-        {QStringLiteral("Tuesday"), QStringLiteral("Tues")},
-        {QStringLiteral("Wednesday"), QStringLiteral("Wed")},
-        {QStringLiteral("Thursday"), QStringLiteral("Thurs")},
-        {QStringLiteral("Friday"), QStringLiteral("Fri")},
-        {QStringLiteral("Saturday"), QStringLiteral("Sat")},
-        {QStringLiteral("Sunday"), QStringLiteral("Sun")}
-    };
-    return labels.value(
-        day,
-        day.trimmed()
-        );
+    if (day == QStringLiteral("Monday"))
+    {
+        return QObject::tr("Mon");
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return QObject::tr("Tues");
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return QObject::tr("Wed");
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return QObject::tr("Thurs");
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return QObject::tr("Fri");
+    }
+    if (day == QStringLiteral("Saturday"))
+    {
+        return QObject::tr("Sat");
+    }
+    if (day == QStringLiteral("Sunday"))
+    {
+        return QObject::tr("Sun");
+    }
+    return day.trimmed();
 }
 
 QString compactTimeDisplay(
@@ -273,7 +290,7 @@ QString projectedScheduleConflict(
                         .arg(
                             label,
                             existing.label,
-                            time.day
+                            scheduleImportWeekdayDisplayName(time.day)
                             );
                 }
             }
@@ -344,11 +361,11 @@ QString classLabel(
             ? QString()
             : usesPreferredTimes
                 ? importingIntensive
-                    ? QStringLiteral(" [Int]")
-                    : QStringLiteral(" [Reg]")
+                    ? QStringLiteral(" ") + QObject::tr("[Int]")
+                    : QStringLiteral(" ") + QObject::tr("[Reg]")
                 : importingIntensive
-                    ? QStringLiteral(" [Reg]")
-                    : QStringLiteral(" [Int]");
+                    ? QStringLiteral(" ") + QObject::tr("[Reg]")
+                    : QStringLiteral(" ") + QObject::tr("[Int]");
     return details.isEmpty()
         ? label
         : QStringLiteral("%1 (%2)%3")
@@ -466,7 +483,7 @@ QString teacherLabel(
     const Teacher& teacher
     )
 {
-    return QStringLiteral("%1 — Room %2")
+    return QObject::tr("%1 — Room %2")
         .arg(
             teacher.teacherKr.trimmed(),
             teacher.roomNumber.trimmed().isEmpty()
