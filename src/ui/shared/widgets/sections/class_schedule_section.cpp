@@ -641,9 +641,6 @@ void ClassScheduleSection::loadSchedules(
         row->setEndTime(time.endTime);
     }
 
-    if (m_regularRows.isEmpty())
-        addRegularRow(false);
-
     for (const ClassTime& time : intensive)
     {
         addRow(m_intensiveGrid, m_intensiveRows, ScheduleType::Intensive, false);
@@ -655,8 +652,6 @@ void ClassScheduleSection::loadSchedules(
         row->setEndTime(time.endTime);
     }
 
-    if (m_intensiveRows.isEmpty())
-        addIntensiveRow(false);
 }
 
 QList<ClassTime> ClassScheduleSection::regularTimes() const
