@@ -12,6 +12,7 @@
 #include "data/repositories/gs_team_repository.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/schedule_import_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -26,6 +27,7 @@
 
 #include <QHash>
 #include <QLabel>
+#include <QSet>
 #include <QTime>
 #include <QTimer>
 
@@ -114,6 +116,50 @@ QVariant DataService::loadSetting(
         key,
         defaultValue
         );
+}
+
+Result<ScheduleImportPreview> DataService::previewScheduleImport(
+    const ScheduleImportUserBlock& user,
+    ScheduleImportKind kind
+    )
+{
+    ScheduleImportPreview preview;
+    preview.kind = kind;
+    preview.user = user;
+    QSet<QString> teacherKeys;
+
+    for (int index = 0; index < user.classes.size(); ++index)
+    {
+        const ScheduleImportClassCandidate& candidate =
+            user.classes[index];
+        if (!teacherKeys.contains(candidate.teacherKey))
+        {
+            teacherKeys.insert(candidate.teacherKey);
+            ScheduleImportTeacherPreview teacher;
+            teacher.teacherKey = candidate.teacherKey;
+            teacher.teacherKr = candidate.teacherKr;
+            teacher.importedRooms = candidate.rooms;
+            preview.teachers.append(teacher);
+        }
+
+        ScheduleImportClassPreview classroom;
+        classroom.candidateIndex = index;
+        preview.classes.append(classroom);
+    }
+
+    return preview;
+}
+
+Result<ScheduleImportSummary> DataService::importSchedule(
+    const ScheduleImportPlan& plan
+    )
+{
+    ScheduleImportSummary summary;
+    summary.classesCreated = plan.candidates.size();
+    summary.ignoredCells = plan.diagnostics.size();
+    summary.profileNameUpdated =
+        plan.saveProfileNameIfBlank;
+    return summary;
 }
 
 QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()

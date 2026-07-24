@@ -8,6 +8,7 @@
 #include <zlib.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace CalendarImport
 {
@@ -372,10 +373,337 @@ QStringList parseSharedStrings(
     return strings;
 }
 
-QVector<Style> parseStyles(
+QString rgbHex(
+    int red,
+    int green,
+    int blue
+    )
+{
+    return QStringLiteral("%1%2%3")
+        .arg(red, 2, 16, QLatin1Char('0'))
+        .arg(green, 2, 16, QLatin1Char('0'))
+        .arg(blue, 2, 16, QLatin1Char('0'))
+        .toUpper();
+}
+
+double hueComponent(
+    double first,
+    double second,
+    double hue
+    )
+{
+    if (hue < 0.0)
+    {
+        hue += 1.0;
+    }
+    if (hue > 1.0)
+    {
+        hue -= 1.0;
+    }
+    if (hue < 1.0 / 6.0)
+    {
+        return first
+            + (second - first) * 6.0 * hue;
+    }
+    if (hue < 0.5)
+    {
+        return second;
+    }
+    if (hue < 2.0 / 3.0)
+    {
+        return first
+            + (second - first)
+                * (2.0 / 3.0 - hue) * 6.0;
+    }
+    return first;
+}
+
+QString tintedColor(
+    QString color,
+    double tint
+    )
+{
+    color = normalizedColor(color);
+    if (color.size() != 6)
+    {
+        return color;
+    }
+
+    bool redOk = false;
+    bool greenOk = false;
+    bool blueOk = false;
+    const double red =
+        color.mid(0, 2).toInt(&redOk, 16) / 255.0;
+    const double green =
+        color.mid(2, 2).toInt(&greenOk, 16) / 255.0;
+    const double blue =
+        color.mid(4, 2).toInt(&blueOk, 16) / 255.0;
+    if (!redOk || !greenOk || !blueOk)
+    {
+        return {};
+    }
+
+    const double maximum =
+        std::max({red, green, blue});
+    const double minimum =
+        std::min({red, green, blue});
+    double hue = 0.0;
+    double saturation = 0.0;
+    double luminance =
+        (maximum + minimum) / 2.0;
+
+    if (maximum != minimum)
+    {
+        const double difference =
+            maximum - minimum;
+        saturation =
+            luminance > 0.5
+                ? difference / (2.0 - maximum - minimum)
+                : difference / (maximum + minimum);
+        if (maximum == red)
+        {
+            hue =
+                (green - blue) / difference
+                + (green < blue ? 6.0 : 0.0);
+        }
+        else if (maximum == green)
+        {
+            hue =
+                (blue - red) / difference + 2.0;
+        }
+        else
+        {
+            hue =
+                (red - green) / difference + 4.0;
+        }
+        hue /= 6.0;
+    }
+
+    tint = std::clamp(tint, -1.0, 1.0);
+    luminance =
+        tint < 0.0
+            ? luminance * (1.0 + tint)
+            : luminance * (1.0 - tint) + tint;
+
+    double tintedRed = luminance;
+    double tintedGreen = luminance;
+    double tintedBlue = luminance;
+    if (saturation > 0.0)
+    {
+        const double second =
+            luminance < 0.5
+                ? luminance * (1.0 + saturation)
+                : luminance + saturation
+                    - luminance * saturation;
+        const double first =
+            2.0 * luminance - second;
+        tintedRed =
+            hueComponent(
+                first,
+                second,
+                hue + 1.0 / 3.0
+                );
+        tintedGreen =
+            hueComponent(first, second, hue);
+        tintedBlue =
+            hueComponent(
+                first,
+                second,
+                hue - 1.0 / 3.0
+                );
+    }
+
+    return rgbHex(
+        static_cast<int>(
+            std::lround(tintedRed * 255.0)
+            ),
+        static_cast<int>(
+            std::lround(tintedGreen * 255.0)
+            ),
+        static_cast<int>(
+            std::lround(tintedBlue * 255.0)
+            )
+        );
+}
+
+QVector<QString> parseThemeColors(
     const QByteArray& xmlData
     )
 {
+    QVector<QString> colors(12);
+    colors[0] = QStringLiteral("FFFFFF");
+    colors[1] = QStringLiteral("000000");
+    static const QHash<QString, int> indices{
+        {QStringLiteral("lt1"), 0},
+        {QStringLiteral("dk1"), 1},
+        {QStringLiteral("lt2"), 2},
+        {QStringLiteral("dk2"), 3},
+        {QStringLiteral("accent1"), 4},
+        {QStringLiteral("accent2"), 5},
+        {QStringLiteral("accent3"), 6},
+        {QStringLiteral("accent4"), 7},
+        {QStringLiteral("accent5"), 8},
+        {QStringLiteral("accent6"), 9},
+        {QStringLiteral("hlink"), 10},
+        {QStringLiteral("folHlink"), 11}
+    };
+    QXmlStreamReader xml(xmlData);
+    bool inColorScheme = false;
+    int currentIndex = -1;
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+        if (xml.isStartElement())
+        {
+            const QString name =
+                xml.name().toString();
+            if (name == QStringLiteral("clrScheme"))
+            {
+                inColorScheme = true;
+            }
+            else if (
+                inColorScheme
+                && indices.contains(name)
+                )
+            {
+                currentIndex = indices.value(name);
+            }
+            else if (
+                currentIndex >= 0
+                && (
+                    name == QStringLiteral("srgbClr")
+                    || name == QStringLiteral("sysClr")
+                    )
+                )
+            {
+                const QString value =
+                    name == QStringLiteral("srgbClr")
+                        ? xml.attributes()
+                            .value(QStringLiteral("val"))
+                            .toString()
+                        : xml.attributes()
+                            .value(QStringLiteral("lastClr"))
+                            .toString();
+                colors[currentIndex] =
+                    normalizedColor(value);
+            }
+        }
+        else if (xml.isEndElement())
+        {
+            const QString name =
+                xml.name().toString();
+            if (name == QStringLiteral("clrScheme"))
+            {
+                inColorScheme = false;
+            }
+            if (indices.contains(name))
+            {
+                currentIndex = -1;
+            }
+        }
+    }
+
+    return colors;
+}
+
+QVector<QString> parseIndexedColors(
+    const QByteArray& xmlData
+    )
+{
+    QVector<QString> colors;
+    QXmlStreamReader xml(xmlData);
+    bool inIndexedColors = false;
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+        if (
+            xml.isStartElement()
+            && xml.name() == QStringLiteral("indexedColors")
+            )
+        {
+            inIndexedColors = true;
+        }
+        else if (
+            inIndexedColors
+            && xml.isStartElement()
+            && xml.name() == QStringLiteral("rgbColor")
+            )
+        {
+            colors.append(
+                normalizedColor(
+                    xml.attributes()
+                        .value(QStringLiteral("rgb"))
+                        .toString()
+                    )
+                );
+        }
+        else if (
+            xml.isEndElement()
+            && xml.name() == QStringLiteral("indexedColors")
+            )
+        {
+            inIndexedColors = false;
+        }
+    }
+
+    return colors;
+}
+
+QString resolvedStyleColor(
+    const QXmlStreamAttributes& attributes,
+    const QVector<QString>& themeColors,
+    const QVector<QString>& indexedColors
+    )
+{
+    QString color =
+        normalizedColor(
+            attributes.value(QStringLiteral("rgb"))
+                .toString()
+            );
+    bool ok = false;
+    const int theme =
+        attributes.value(QStringLiteral("theme"))
+            .toInt(&ok);
+    if (
+        color.isEmpty()
+        && ok
+        && theme >= 0
+        && theme < themeColors.size()
+        )
+    {
+        color = themeColors[theme];
+    }
+
+    const int indexed =
+        attributes.value(QStringLiteral("indexed"))
+            .toInt(&ok);
+    if (
+        color.isEmpty()
+        && ok
+        && indexed >= 0
+        && indexed < indexedColors.size()
+        )
+    {
+        color = indexedColors[indexed];
+    }
+
+    const double tint =
+        attributes.value(QStringLiteral("tint"))
+            .toDouble(&ok);
+    return ok
+        ? tintedColor(color, tint)
+        : normalizedColor(color);
+}
+
+QVector<Style> parseStyles(
+    const QByteArray& xmlData,
+    const QVector<QString>& themeColors
+    )
+{
+    const QVector<QString> indexedColors =
+        parseIndexedColors(xmlData);
     QXmlStreamReader xml(xmlData);
     QVector<QString> fillColors;
     QVector<QString> fontColors;
@@ -429,22 +757,12 @@ QVector<Style> parseStyles(
                 && inFill
                 )
             {
-                const QString theme =
-                    xml.attributes()
-                        .value(QStringLiteral("theme"))
-                        .toString();
                 currentFill =
-                    normalizedColor(
-                        xml.attributes()
-                            .value(QStringLiteral("rgb"))
-                            .toString()
+                    resolvedStyleColor(
+                        xml.attributes(),
+                        themeColors,
+                        indexedColors
                         );
-                if (theme == QStringLiteral("0"))
-                {
-                    currentFill = QStringLiteral("FFFFFF");
-                }
-                currentFilled = theme != QStringLiteral("0")
-                    && currentFill != QStringLiteral("FFFFFF");
             }
             else if (name == QStringLiteral("fonts"))
             {
@@ -470,10 +788,10 @@ QVector<Style> parseStyles(
                 )
             {
                 currentFont =
-                    normalizedColor(
-                        xml.attributes()
-                            .value(QStringLiteral("rgb"))
-                            .toString()
+                    resolvedStyleColor(
+                        xml.attributes(),
+                        themeColors,
+                        indexedColors
                         );
             }
             else if (name == QStringLiteral("cellXfs"))
@@ -522,7 +840,11 @@ QVector<Style> parseStyles(
             if (name == QStringLiteral("fill") && inFill)
             {
                 fillColors.append(currentFill);
-                fillFlags.append(currentFilled);
+                fillFlags.append(
+                    currentFilled
+                    && normalizedColor(currentFill)
+                        != QStringLiteral("FFFFFF")
+                    );
                 inFill = false;
             }
             else if (name == QStringLiteral("fills"))
@@ -658,6 +980,7 @@ struct WorksheetReference
 {
     QString name;
     QString relationshipId;
+    bool visible = true;
 };
 
 QVector<WorksheetReference> parseWorksheetReferences(
@@ -678,6 +1001,14 @@ QVector<WorksheetReference> parseWorksheetReferences(
         WorksheetReference reference;
         reference.name =
             xml.attributes().value(QStringLiteral("name")).toString();
+        const QString state =
+            xml.attributes().value(QStringLiteral("state")).toString();
+        reference.visible =
+            state.compare(QStringLiteral("hidden"), Qt::CaseInsensitive) != 0
+            && state.compare(
+                QStringLiteral("veryHidden"),
+                Qt::CaseInsensitive
+                ) != 0;
         for (const QXmlStreamAttribute& attribute : xml.attributes())
         {
             if (attribute.name() == QStringLiteral("id"))
@@ -689,6 +1020,61 @@ QVector<WorksheetReference> parseWorksheetReferences(
         if (!reference.relationshipId.isEmpty())
         {
             result.append(reference);
+        }
+    }
+
+    return result;
+}
+
+QVector<CellRange> parseMergedRanges(
+    const QByteArray& xmlData
+    )
+{
+    QVector<CellRange> result;
+    QXmlStreamReader xml(xmlData);
+
+    while (!xml.atEnd())
+    {
+        xml.readNext();
+
+        if (
+            !xml.isStartElement()
+            || xml.name() != QStringLiteral("mergeCell")
+            )
+        {
+            continue;
+        }
+
+        const QString reference =
+            xml.attributes().value(QStringLiteral("ref")).toString();
+        const QStringList endpoints =
+            reference.split(QLatin1Char(':'));
+
+        if (endpoints.isEmpty() || endpoints.size() > 2)
+        {
+            continue;
+        }
+
+        const QString first = endpoints.first();
+        const QString last =
+            endpoints.size() == 2
+                ? endpoints.last()
+                : endpoints.first();
+
+        CellRange range;
+        range.firstRow = spreadsheetRow(first);
+        range.firstColumn = spreadsheetColumn(first);
+        range.lastRow = spreadsheetRow(last);
+        range.lastColumn = spreadsheetColumn(last);
+
+        if (
+            range.firstRow > 0
+            && range.firstColumn > 0
+            && range.lastRow >= range.firstRow
+            && range.lastColumn >= range.firstColumn
+            )
+        {
+            result.append(range);
         }
     }
 
@@ -1035,12 +1421,33 @@ Workbook parseWorkbook(
     }
     if (entries.contains(QStringLiteral("xl/styles.xml")))
     {
+        QVector<QString> themeColors =
+            parseThemeColors({});
+        if (
+            entries.contains(
+                QStringLiteral("xl/theme/theme1.xml")
+                )
+            )
+        {
+            themeColors =
+                parseThemeColors(
+                    zipFileData(
+                        data,
+                        entries.value(
+                            QStringLiteral(
+                                "xl/theme/theme1.xml"
+                                )
+                            )
+                        )
+                    );
+        }
         workbook.styles =
             parseStyles(
                 zipFileData(
                     data,
                     entries.value(QStringLiteral("xl/styles.xml"))
-                    )
+                    ),
+                themeColors
                 );
     }
     if (workbook.styles.isEmpty())
@@ -1071,13 +1478,19 @@ Workbook parseWorkbook(
             return {};
         }
 
+        const QByteArray worksheetData =
+            zipFileData(data, entries.value(entryName));
+
         Worksheet worksheet;
         worksheet.name = reference.name;
+        worksheet.visible = reference.visible;
         worksheet.cells = parseSheet(
-            zipFileData(data, entries.value(entryName)),
+            worksheetData,
             workbook.sharedStrings,
             workbookCellNotes(data, entries, entryName)
             );
+        worksheet.mergedRanges =
+            parseMergedRanges(worksheetData);
         workbook.worksheets.append(worksheet);
     }
 

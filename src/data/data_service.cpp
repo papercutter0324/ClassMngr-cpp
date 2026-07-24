@@ -10,6 +10,7 @@
 #include "data/repositories/gs_team_repository.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/schedule_import_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -146,6 +147,11 @@ Status DataService::openDatabase(
             m_db
             );
 
+    m_scheduleImportRepository =
+        std::make_unique<ScheduleImportRepository>(
+            m_db
+            );
+
     m_classInfoRepository =
         std::make_unique<ClassInfoRepository>(
             m_db
@@ -186,6 +192,7 @@ void DataService::closeDatabase()
     m_teacherRepository.reset();
     m_classRepository.reset();
     m_classTransferRepository.reset();
+    m_scheduleImportRepository.reset();
     m_classInfoRepository.reset();
     m_intensiveSlotStateRepository.reset();
     m_calendarEventRepository.reset();
@@ -500,6 +507,38 @@ Result<ClassImportSummary> DataService::importClasses(
     }
 
     return m_classTransferRepository->importClasses(package, plan);
+}
+
+Result<ScheduleImportPreview> DataService::previewScheduleImport(
+    const ScheduleImportUserBlock& user,
+    ScheduleImportKind kind
+    )
+{
+    if (!m_scheduleImportRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("Schedule import is unavailable.")
+            );
+    }
+
+    return m_scheduleImportRepository->preview(
+        user,
+        kind
+        );
+}
+
+Result<ScheduleImportSummary> DataService::importSchedule(
+    const ScheduleImportPlan& plan
+    )
+{
+    if (!m_scheduleImportRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("Schedule import is unavailable.")
+            );
+    }
+
+    return m_scheduleImportRepository->apply(plan);
 }
 
 bool DataService::saveClassInfo(

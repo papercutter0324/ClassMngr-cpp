@@ -176,4 +176,11 @@ void SchedulePage::buildUi()
         this,
         &SchedulePage::classInfoSaved
         );
+
+    connect(
+        m_scheduleWidget,
+        &ScheduleWidget::scheduleImportRequested,
+        this,
+        &SchedulePage::scheduleImportRequested
+        );
 }

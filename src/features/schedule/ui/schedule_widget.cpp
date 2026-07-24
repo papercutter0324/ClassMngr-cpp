@@ -257,6 +257,22 @@ QSet<int> ScheduleWidget::visibleClassIds() const
     return classIds;
 }
 
+void ScheduleWidget::setPreviewModel(
+    const ScheduleViewModel& model
+    )
+{
+    m_previewModel = model;
+    m_hasPreviewModel = true;
+    loadSchedule();
+}
+
+void ScheduleWidget::clearPreviewModel()
+{
+    m_previewModel = {};
+    m_hasPreviewModel = false;
+    loadSchedule();
+}
+
 void ScheduleWidget::setUse24HourTime(
     bool use24h
     )
@@ -592,6 +608,13 @@ void ScheduleWidget::buildUi()
         );
     m_exportButton->setMinimumWidth(120);
 
+    m_importButton =
+        new TextFitPushButton(this);
+    m_importButton->setObjectName(
+        QStringLiteral("scheduleImportButton")
+        );
+    m_importButton->setMinimumWidth(120);
+
     auto* primaryOptionsLayout =
         new QVBoxLayout;
     primaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
@@ -628,6 +651,7 @@ void ScheduleWidget::buildUi()
     controlsLayout->addLayout(optionsLayout);
     controlsLayout->setAlignment(optionsLayout, Qt::AlignTop);
     controlsLayout->addStretch();
+    controlsLayout->addWidget(m_importButton, 0, Qt::AlignTop);
     controlsLayout->addWidget(m_exportButton, 0, Qt::AlignTop);
 
     layout->addWidget(m_controlsWidget);
@@ -669,6 +693,13 @@ void ScheduleWidget::buildUi()
         &QCheckBox::toggled,
         this,
         &ScheduleWidget::setShowIntensiveSchedule
+        );
+
+    connect(
+        m_importButton,
+        &QPushButton::clicked,
+        this,
+        &ScheduleWidget::scheduleImportRequested
         );
 
     connect(
@@ -890,6 +921,7 @@ void ScheduleWidget::updateButtons()
         || !m_showWeekendsCheckBox
         || !m_showAllHoursCheckBox
         || !m_showIntensiveScheduleCheckBox
+        || !m_importButton
         || !m_exportButton
         )
     {
@@ -924,6 +956,9 @@ void ScheduleWidget::updateButtons()
 
     m_exportButton->setText(
         tr("Export")
+        );
+    m_importButton->setText(
+        tr("Import Schedule...")
         );
 }
 
@@ -1106,6 +1141,11 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
 
 ScheduleViewModel ScheduleWidget::buildScheduleModel()
 {
+    if (m_hasPreviewModel)
+    {
+        return m_previewModel;
+    }
+
     reloadSlotStates();
 
     const ScheduleViewRequest request =

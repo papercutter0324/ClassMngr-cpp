@@ -993,12 +993,14 @@ if(BUILD_TESTING)
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
+        src/data/repositories/schedule_import_repository.cpp
         src/data/repositories/settings_repository.cpp
         src/data/repositories/speaking_eval_repository.cpp
         src/data/repositories/teacher_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
+        src/features/classes/config/class_info_config.cpp
     )
 
     target_compile_features(ClassMngrDataServiceLifecycleTests
@@ -1039,12 +1041,14 @@ if(BUILD_TESTING)
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
+        src/data/repositories/schedule_import_repository.cpp
         src/data/repositories/settings_repository.cpp
         src/data/repositories/speaking_eval_repository.cpp
         src/data/repositories/teacher_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
+        src/features/classes/config/class_info_config.cpp
         src/features/classes/services/class_transfer_json_codec.cpp
         src/features/classes/ui/class_export_dialog.cpp
         src/features/classes/ui/class_import_dialog.cpp
@@ -1101,6 +1105,43 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrCalendarImportTests
         COMMAND ClassMngrCalendarImportTests
+    )
+
+    qt_add_executable(ClassMngrScheduleImportTests
+        tests/schedule_import_tests.cpp
+        src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/repositories/class_info_repository.cpp
+        src/data/repositories/class_repository.cpp
+        src/data/repositories/schedule_import_repository.cpp
+        src/data/repositories/teacher_repository.cpp
+        src/domain/models/classroom.cpp
+        src/features/calendar/calendar_workbook_reader.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/schedule/import/schedule_workbook_parser.cpp
+    )
+
+    target_compile_features(ClassMngrScheduleImportTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrScheduleImportTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrScheduleImportTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+            ZLIB::ZLIB
+    )
+
+    add_test(
+        NAME ClassMngrScheduleImportTests
+        COMMAND ClassMngrScheduleImportTests
     )
 
     qt_add_executable(ClassMngrTeacherImportTests
@@ -1303,6 +1344,54 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrScheduleWidgetTests
         COMMAND ClassMngrScheduleWidgetTests
+    )
+
+    qt_add_executable(ClassMngrScheduleImportDialogTests
+        tests/schedule_import_dialog_tests.cpp
+        tests/schedule_widget_test_stubs.cpp
+        src/core/utils/colorutils.cpp
+        src/domain/models/classroom.cpp
+        src/features/calendar/calendar_workbook_reader.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/features/schedule/import/schedule_workbook_parser.cpp
+        src/features/schedule/ui/schedule_editor_dialog.h
+        src/features/schedule/ui/schedule_import_dialog.cpp
+        src/features/schedule/ui/schedule_import_dialog.h
+        src/features/schedule/ui/schedule_print_dialog.h
+        src/features/schedule/ui/schedule_widget.cpp
+        src/features/schedule/ui/schedule_widget.h
+    )
+
+    target_compile_features(ClassMngrScheduleImportDialogTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrScheduleImportDialogTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrScheduleImportDialogTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::PrintSupport
+            Qt6::Sql
+            Qt6::Test
+            Qt6::Widgets
+            ZLIB::ZLIB
+    )
+
+    add_test(
+        NAME ClassMngrScheduleImportDialogTests
+        COMMAND ClassMngrScheduleImportDialogTests
+    )
+
+    set_tests_properties(
+        ClassMngrScheduleImportDialogTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrSubPrepPageTests
@@ -2004,12 +2093,14 @@ if(BUILD_TESTING)
             ClassMngrCalendarEventRepositoryTests
             ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests
+            ClassMngrScheduleImportTests
             ClassMngrTeacherImportTests
             ClassMngrTeacherImportDialogTests
             ClassMngrStaffDirectoryPageTests
             ClassMngrClassTabNavigationModelTests
             ClassMngrSubPrepClassInformationModelTests
             ClassMngrScheduleWidgetTests
+            ClassMngrScheduleImportDialogTests
             ClassMngrSubPrepPageTests
             ClassMngrUniformWidthTabBarTests
             ClassMngrSidebarStructureTests

@@ -8,6 +8,7 @@
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/native_english_teacher_repository.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/schedule_import_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_import_repository.h"

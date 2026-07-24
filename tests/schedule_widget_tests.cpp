@@ -12,6 +12,8 @@
 #include <QScrollBar>
 #include <QTableWidget>
 
+#include <algorithm>
+
 namespace ScheduleWidgetTestStubs
 {
 extern int savedSlotStates;
@@ -30,6 +32,7 @@ private slots:
     void init();
     void persistsAndMirrorsEveryViewOption();
     void exportUsesSelectedTeacherNameLanguage();
+    void importButtonRequestsScheduleImport();
     void legacyHourSettingsDoNotCarryForward();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
@@ -165,6 +168,28 @@ void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
     QVERIFY(!ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 }
 
+void ScheduleWidgetTests::importButtonRequestsScheduleImport()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    auto* importButton =
+        widget.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportButton")
+            );
+    QVERIFY(importButton);
+    QCOMPARE(
+        importButton->text(),
+        QStringLiteral("Import Schedule...")
+        );
+
+    QSignalSpy spy(
+        &widget,
+        &ScheduleWidget::scheduleImportRequested
+        );
+    importButton->click();
+    QCOMPARE(spy.count(), 1);
+}
+
 void ScheduleWidgetTests
     ::legacyHourSettingsDoNotCarryForward()
 {
@@ -224,8 +249,28 @@ void ScheduleWidgetTests
     const auto buttons =
         controls->findChildren<QPushButton*>();
     QCOMPARE(checkBoxes.size(), 5);
-    QCOMPARE(buttons.size(), 1);
-    QCOMPARE(buttons.first()->text(), QStringLiteral("Export"));
+    QCOMPARE(buttons.size(), 2);
+    QVERIFY(
+        std::any_of(
+            buttons.cbegin(),
+            buttons.cend(),
+            [](const QPushButton* button)
+            {
+                return button->text() == QStringLiteral("Export");
+            }
+            )
+        );
+    QVERIFY(
+        std::any_of(
+            buttons.cbegin(),
+            buttons.cend(),
+            [](const QPushButton* button)
+            {
+                return button->text()
+                    == QStringLiteral("Import Schedule...");
+            }
+            )
+        );
 
     for (const QCheckBox* checkBox : checkBoxes)
     {

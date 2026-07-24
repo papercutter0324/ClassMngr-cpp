@@ -12,6 +12,7 @@
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
+#include "domain/models/schedule_import.h"
 #include "domain/models/teacher.h"
 #include "domain/models/teacher_import.h"
 #include "core/result.h"
@@ -33,6 +34,7 @@ class IntensiveSlotStateRepository;
 class GsTeamRepository;
 class NativeEnglishTeacherRepository;
 class RosterRepository;
+class ScheduleImportRepository;
 class SettingsRepository;
 class SpeakingEvalRepository;
 class TeacherRepository;
@@ -168,6 +170,15 @@ public:
     [[nodiscard]] Result<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
         const ClassImportPlan& plan
+        );
+
+    [[nodiscard]] Result<ScheduleImportPreview> previewScheduleImport(
+        const ScheduleImportUserBlock& user,
+        ScheduleImportKind kind
+        );
+
+    [[nodiscard]] Result<ScheduleImportSummary> importSchedule(
+        const ScheduleImportPlan& plan
         );
 
 
@@ -369,6 +380,7 @@ private:
     std::unique_ptr<TeacherImportRepository> m_teacherImportRepository;
     std::unique_ptr<ClassRepository> m_classRepository;
     std::unique_ptr<ClassTransferRepository> m_classTransferRepository;
+    std::unique_ptr<ScheduleImportRepository> m_scheduleImportRepository;
     std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
     std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
     std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;

@@ -24,10 +24,31 @@ struct Style
     bool bold = false;
 };
 
+struct CellRange
+{
+    int firstRow = 0;
+    int firstColumn = 0;
+    int lastRow = 0;
+    int lastColumn = 0;
+
+    [[nodiscard]] bool contains(
+        int row,
+        int column
+        ) const
+    {
+        return row >= firstRow
+            && row <= lastRow
+            && column >= firstColumn
+            && column <= lastColumn;
+    }
+};
+
 struct Worksheet
 {
     QString name;
+    bool visible = true;
     QVector<Cell> cells;
+    QVector<CellRange> mergedRanges;
 };
 
 struct Workbook

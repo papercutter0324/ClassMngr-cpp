@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <QColor>
 #include <QColorDialog>
 #include <QDialog>
@@ -114,6 +115,22 @@ QStringList colorsFromSetting(
         separator,
         Qt::SkipEmptyParts
         );
+}
+
+double linearizedSrgbChannel(int channel)
+{
+    const double srgb = channel / 255.0;
+
+    return srgb <= 0.04045
+        ? srgb / 12.92
+        : std::pow((srgb + 0.055) / 1.055, 2.4);
+}
+
+double relativeLuminance(const QColor& color)
+{
+    return (0.2126 * linearizedSrgbChannel(color.red()))
+        + (0.7152 * linearizedSrgbChannel(color.green()))
+        + (0.0722 * linearizedSrgbChannel(color.blue()));
 }
 
 QStringList normalizeCustomColors(
@@ -248,18 +265,15 @@ QString ColorUtils::getContrastingFontColor(
         return "#000000";
     }
 
-    const int r = color.red();
-    const int g = color.green();
-    const int b = color.blue();
+    const double luminance = relativeLuminance(color);
+    const double blackContrast =
+        (luminance + 0.05) / 0.05;
+    const double whiteContrast =
+        1.05 / (luminance + 0.05);
 
-    const double luminance =
-        (0.299 * r)
-        + (0.587 * g)
-        + (0.114 * b);
-
-    return luminance > 186
-               ? "#000000"
-               : "#FFFFFF";
+    return blackContrast >= whiteContrast
+        ? "#000000"
+        : "#FFFFFF";
 }
 
 QColor ColorUtils::getColor(

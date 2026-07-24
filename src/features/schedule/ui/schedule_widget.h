@@ -44,11 +44,16 @@ public:
     [[nodiscard]] ScheduleDisplayState displayState() const;
     [[nodiscard]] ScheduleViewModel scheduleModel() const;
     [[nodiscard]] QSet<int> visibleClassIds() const;
+    void setPreviewModel(
+        const ScheduleViewModel& model
+        );
+    void clearPreviewModel();
 
 signals:
     void classInfoSaved(
         int classId
         );
+    void scheduleImportRequested();
 
 private slots:
     void setUse24HourTime(bool use24h);
@@ -98,6 +103,8 @@ private:
 
     QMap<QString, QString> m_intensiveSlotStates;
     ScheduleViewModel m_scheduleModel;
+    ScheduleViewModel m_previewModel;
+    bool m_hasPreviewModel = false;
 
     QTableWidget* m_table = nullptr;
     QWidget* m_controlsWidget = nullptr;
@@ -107,4 +114,5 @@ private:
     QCheckBox* m_showAllHoursCheckBox = nullptr;
     QCheckBox* m_showIntensiveScheduleCheckBox = nullptr;
     QPushButton* m_exportButton = nullptr;
+    QPushButton* m_importButton = nullptr;
 };

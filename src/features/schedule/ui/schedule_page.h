@@ -27,6 +27,7 @@ signals:
     void classInfoSaved(
         int classId
         );
+    void scheduleImportRequested();
 
 protected:
     void showEvent(

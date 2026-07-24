@@ -18,6 +18,7 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/dialogs/about_dialog.h"
@@ -454,6 +455,36 @@ void MainWindow::connectSignals()
         m_sidebarController.get(),
         &SidebarController::handleClassInfoSaved
         );
+
+    const auto connectScheduleImport =
+        [this](SchedulePage* page)
+        {
+            connect(
+                page,
+                &SchedulePage::scheduleImportRequested,
+                this,
+                [this, page]()
+                {
+                    ScheduleImportDialog dialog(
+                        m_services.get(),
+                        page
+                        );
+
+                    if (dialog.exec() != QDialog::Accepted)
+                    {
+                        return;
+                    }
+
+                    m_pages->schedulePage()->refresh();
+                    m_pages->mySchedulePage()->refresh();
+                    m_sidebarController->refreshTeacherSidebar();
+                    m_sidebarController->handleClassInfoSaved(-1);
+                }
+                );
+        };
+
+    connectScheduleImport(m_pages->schedulePage());
+    connectScheduleImport(m_pages->mySchedulePage());
 
     connect(
         m_pages->teacherPage(),
