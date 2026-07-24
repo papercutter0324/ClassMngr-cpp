@@ -8,7 +8,7 @@ if(POLICY CMP0219)
 endif()
 
 project(ClassMngr
-    VERSION 0.8.0
+    VERSION 0.9.0
     LANGUAGES CXX
 )
 
