@@ -1,58 +1,33 @@
-# ClassMngr 0.8.0 Release Notes
+# ClassMngr 0.9.0 Release Notes
 
-ClassMngr 0.8.0 adds complete reporting and substitute-preparation workflows,
-more portable class and staff data, and a reorganized workspace for everyday
-classroom management.
+ClassMngr 0.9.0 makes it much easier to bring an existing schedule into the
+app, while refining schedule printing, class setup, and release reliability.
 
-## Speaking Evaluation Reports
+## Import Schedules From Excel
 
-- Create, preview, export, and print speaking-evaluation reports for an
-  individual student or an entire class.
-- Choose either the cross-platform internal report layout or a bundled
-  PowerPoint template when creating reports.
-- Added standard, E5 Athena, and E6 Song's report templates, including a
-  bundled OpenDocument Presentation version of the standard template.
-- Improved student-name matching between rosters and speaking evaluations.
-- Refined the report editor, export/print dialog, internal template layout,
-  and macOS report-generation workflow.
+- Import normal or intensive schedules directly from supported Excel (`.xlsx`)
+  workbooks.
+- Choose the worksheet and the schedule section that belongs to you, with a
+  confirmation step when the spreadsheet name differs from My Information.
+- Preview the imported schedule before making changes.
+- Review every imported Korean teacher, room, and class before applying the
+  import. You can reuse or update an existing record, create a new one, or
+  skip it.
+- The importer identifies invalid or overlapping cells so you can review and
+  explicitly skip them when needed.
 
-## Substitute Preparation
+## Schedule And Class Improvements
 
-- Generate polished substitute-preparation documents for selected days or the
-  next vacation recorded in the calendar.
-- Create an organized substitute-prep folder containing the main document and
-  class rosters, print paper copies, or do both in one step.
-- Substitute documents now include relevant schedule and class information,
-  with clearer layouts, readable black text, and improved notes sections.
+- Schedule printing can now use Korean teachers' preferred English names.
+- Fixed the **Hide empty rows** option so it consistently removes unused hours
+  from schedule views and printed schedules.
+- Improved the Schedule layout on macOS.
+- New classes no longer start with default regular or intensive meeting times.
 
-## Classes, Rosters, And Schedules
+## Reliability And Polish
 
-- Import and export class packages, with a review step to choose how
-  conflicting classes and assigned teachers are handled.
-- Added a unified Classes workspace; the Classes and Rosters areas are now
-  easier to reach from the main navigation.
-- The Schedule is now the default page when a database opens, and its layout
-  and export/print flow have been refined.
-- Added an option to show Korean teachers' English names in schedules.
-- Printing now defaults to two-sided output where supported.
-
-## Teachers And Campus Staff
-
-- Import teacher and campus-staff information from supported Excel workbooks,
-  with validation, selection controls, and safer handling of older data.
-- Added dedicated directories for Native English Teachers and GS/CS Team
-  members.
-- Teacher records can now store a birthday, phone number, and preferred
-  Romanization of a Korean name.
-- Personal details now support importing a digital signature.
-
-## Workspace And Reliability
-
-- Reorganized the sidebar and simplified the menu bar; Calendar and Speaking
-  Evaluations are now top-level areas, and the Calendar has its own page.
-- Improved the consistency of page titles, buttons, checkboxes, radio buttons,
-  dialogs, and light/dark theme states.
-- Expanded Korean and English-language translations, including font-size
-  updates when changing languages.
-- Improved startup feedback and loading time, database-close handling, and
-  guidance when no database is open.
+- Improved messages when importing teacher data whose version is older than or
+  matches the data already in ClassMngr.
+- Updated Korean and English translations.
+- Improved Windows and macOS packaging workflows, including Windows ARM64
+  release support.
