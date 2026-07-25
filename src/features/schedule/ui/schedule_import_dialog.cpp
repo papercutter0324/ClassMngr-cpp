@@ -1658,6 +1658,18 @@ void ScheduleImportDialog::rebuildResolutionControls()
             {
                 continue;
             }
+            const ClassInfo info =
+                dataService->loadClassInfo(classroom.id);
+            if (
+                !scheduleImportClassOptionIsEligible(
+                    candidate,
+                    info,
+                    selectedKind()
+                    )
+                )
+            {
+                continue;
+            }
             addResolutionItem(
                 control.action,
                 tr("Update existing: %1")

@@ -531,42 +531,81 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         }
 
         QList<int> exact;
-        QList<int> sameCourse;
-        QList<int> sameTeacherTime;
-        QList<int> sameTimeOnly;
+        QList<int> sameLevelTeacherRoom;
+        QList<int> sameLevelTeacher;
+        QList<int> sameLevel;
+        QList<int> otherEligible;
 
         for (const Classroom& classroom : classrooms)
         {
             const ClassInfo info =
                 classInfo.value(classroom.id);
-            const bool courseMatches =
-                normalized(info.classGrade)
-                    == normalized(candidate.classGrade)
-                && normalized(info.classLevel)
+            if (
+                !scheduleImportClassOptionIsEligible(
+                    candidate,
+                    info,
+                    kind
+                    )
+                )
+            {
+                continue;
+            }
+
+            const bool levelMatches =
+                normalized(info.classLevel)
                     == normalized(candidate.classLevel);
             const bool teacherMatches =
                 importedTeacherIds.contains(info.teacherId);
-            const bool timeMatches =
-                sharesTime(
-                    selectedTimes(info, kind),
-                    candidate.times
+            const bool roomMatches =
+                std::any_of(
+                    candidate.rooms.cbegin(),
+                    candidate.rooms.cend(),
+                    [&info](const QString& room)
+                    {
+                        return normalized(room)
+                            == normalized(info.roomNumber);
+                    }
+                    );
+            const bool daysMatch =
+                scheduleImportMeetingDaysMatch(
+                    candidate.times,
+                    scheduleImportTimesForKind(info, kind)
                     );
 
-            if (courseMatches && teacherMatches)
+            if (
+                levelMatches
+                && teacherMatches
+                && roomMatches
+                && daysMatch
+                )
             {
                 appendUnique(&exact, classroom.id);
             }
-            else if (courseMatches)
+            else if (
+                levelMatches
+                && teacherMatches
+                && roomMatches
+                )
             {
-                appendUnique(&sameCourse, classroom.id);
+                appendUnique(
+                    &sameLevelTeacherRoom,
+                    classroom.id
+                    );
             }
-            else if (teacherMatches && timeMatches)
+            else if (levelMatches && teacherMatches)
             {
-                appendUnique(&sameTeacherTime, classroom.id);
+                appendUnique(
+                    &sameLevelTeacher,
+                    classroom.id
+                    );
             }
-            else if (timeMatches)
+            else if (levelMatches)
             {
-                appendUnique(&sameTimeOnly, classroom.id);
+                appendUnique(&sameLevel, classroom.id);
+            }
+            else
+            {
+                appendUnique(&otherEligible, classroom.id);
             }
         }
 
@@ -574,15 +613,19 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameCourse)
+        for (int classId : sameLevelTeacherRoom)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameTeacherTime)
+        for (int classId : sameLevelTeacher)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameTimeOnly)
+        for (int classId : sameLevel)
+        {
+            appendUnique(&classPreview.matchingClassIds, classId);
+        }
+        for (int classId : otherEligible)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }

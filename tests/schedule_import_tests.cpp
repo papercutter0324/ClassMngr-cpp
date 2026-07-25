@@ -25,6 +25,7 @@ private slots:
     void appliesIntensiveSlotStatesSnapshot();
     void validatesCourseMeetingPatterns();
     void partitionsRepeatedCourseIntoValidClasses();
+    void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
     void fullSnapshotPreservesUnrelatedData();
     void skippedExactMatchPreservesItsSchedule();
@@ -642,7 +643,7 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
         QStringLiteral("Song's"),
         {QStringLiteral("Monday"), QStringLiteral("Friday")}
         ));
-    QVERIFY(!valid(
+    QVERIFY(valid(
         QStringLiteral("M1"),
         QStringLiteral("Song's"),
         {QStringLiteral("Wednesday"), QStringLiteral("Friday")}
@@ -651,6 +652,16 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
         QStringLiteral("M2"),
         QStringLiteral("Ursa"),
         {QStringLiteral("Tuesday")}
+        ));
+    QVERIFY(valid(
+        QStringLiteral("M2"),
+        QStringLiteral("Ursa"),
+        {QStringLiteral("Thursday")}
+        ));
+    QVERIFY(!valid(
+        QStringLiteral("M2"),
+        QStringLiteral("Ursa"),
+        {QStringLiteral("Tuesday"), QStringLiteral("Thursday")}
         ));
     QVERIFY(valid(
         QStringLiteral("M3"),
@@ -726,6 +737,124 @@ void ScheduleImportTests::partitionsRepeatedCourseIntoValidClasses()
         );
 }
 
+void ScheduleImportTests::filtersClassOptionsByGradeAndDayGroup()
+{
+    ScheduleImportClassCandidate candidate;
+    candidate.classGrade = QStringLiteral("E5");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+
+    ClassInfo existing;
+    existing.classGrade = QStringLiteral("e5");
+    existing.classTimes = {
+        {
+            QStringLiteral("Wednesday"),
+            QStringLiteral("5:00 PM"),
+            QStringLiteral("5:55 PM")
+        }
+    };
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Intensive
+            )
+        );
+
+    existing.classTimes.first().day =
+        QStringLiteral("Tuesday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    candidate.times.first().day =
+        QStringLiteral("Tuesday");
+    existing.classTimes.first().day =
+        QStringLiteral("Thursday");
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    candidate.times.first().day =
+        QStringLiteral("Monday");
+    existing.classTimes.first().day =
+        QStringLiteral("Wednesday");
+    existing.intensiveTimes = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM")
+        }
+    };
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Intensive
+            )
+        );
+
+    candidate.times.first().day =
+        QStringLiteral("Thursday");
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Intensive
+            )
+        );
+    existing.classTimes.first().day =
+        QStringLiteral("Tuesday");
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    existing.classTimes.first().day =
+        QStringLiteral("Friday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    existing.classTimes.first().day =
+        QStringLiteral("Tuesday");
+    existing.classGrade = QStringLiteral("E6");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+}
+
 void ScheduleImportTests::ranksTeacherAndClassMatches()
 {
     const QString connectionName =
@@ -760,6 +889,15 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
             );
         const int otherTeacherId =
             query.lastInsertId().toInt();
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES ('홍길동', '999')"
+                )
+            );
+        const int wrongRoomTeacherId =
+            query.lastInsertId().toInt();
 
         const auto addClass =
             [&query](
@@ -767,7 +905,7 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                 int teacherId,
                 const QString& grade,
                 const QString& level,
-                bool addTime
+                const QString& day
                 )
             {
                 execOrFail(
@@ -790,16 +928,17 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                         .arg(teacherId)
                         .arg(grade, level)
                     );
-                if (addTime)
+                if (!day.isEmpty())
                 {
                     execOrFail(
                         query,
                         QStringLiteral(
                             "INSERT INTO class_times "
                             "(class_id, day, start_time, end_time) "
-                            "VALUES (%1, 'Monday', '4:00 PM', '4:55 PM')"
+                            "VALUES (%1, '%2', '4:00 PM', '4:55 PM')"
                             )
                             .arg(classId)
+                            .arg(day)
                         );
                 }
                 return classId;
@@ -811,31 +950,60 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                 matchingTeacherId,
                 QStringLiteral("E5"),
                 QStringLiteral("Zeus"),
-                false
+                QStringLiteral("Monday")
+                );
+        const int sameTeacherRoomDayGroup =
+            addClass(
+                QStringLiteral("2 Same teacher, room, and day group"),
+                matchingTeacherId,
+                QStringLiteral("E5"),
+                QStringLiteral("Zeus"),
+                QStringLiteral("Friday")
                 );
         const int sameCourse =
             addClass(
-                QStringLiteral("2 Course"),
+                QStringLiteral("3 Course"),
                 otherTeacherId,
                 QStringLiteral("E5"),
                 QStringLiteral("Zeus"),
-                true
+                QStringLiteral("Wednesday")
                 );
-        const int sameTeacherTime =
+        const int sameGrade =
             addClass(
-                QStringLiteral("3 Teacher Time"),
+                QStringLiteral("4 Grade"),
                 matchingTeacherId,
-                QStringLiteral("E6"),
-                QStringLiteral("Hera"),
-                true
+                QStringLiteral("E5"),
+                QStringLiteral("Athena"),
+                QStringLiteral("Monday")
                 );
-        const int sameTime =
+        addClass(
+            QStringLiteral("5 Wrong day group"),
+            matchingTeacherId,
+            QStringLiteral("E5"),
+            QStringLiteral("Zeus"),
+            QStringLiteral("Tuesday")
+            );
+        addClass(
+            QStringLiteral("6 Wrong grade"),
+            matchingTeacherId,
+            QStringLiteral("E6"),
+            QStringLiteral("Hera"),
+            QStringLiteral("Monday")
+            );
+        addClass(
+            QStringLiteral("7 Wrong grade and day group"),
+            otherTeacherId,
+            QStringLiteral("M1"),
+            QStringLiteral("Solis"),
+            QStringLiteral("Thursday")
+            );
+        const int wrongRoom =
             addClass(
-                QStringLiteral("4 Time"),
-                otherTeacherId,
-                QStringLiteral("M1"),
-                QStringLiteral("Solis"),
-                true
+                QStringLiteral("8 Wrong room"),
+                wrongRoomTeacherId,
+                QStringLiteral("E5"),
+                QStringLiteral("Zeus"),
+                QStringLiteral("Monday")
                 );
 
         ScheduleImportClassCandidate candidate;
@@ -865,20 +1033,24 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
         QCOMPARE(preview->teachers.size(), 1);
         QCOMPARE(
             preview->teachers.first().matchingTeacherIds,
-            QList<int>{matchingTeacherId}
+            QList<int>({
+                matchingTeacherId,
+                wrongRoomTeacherId
+            })
             );
         QCOMPARE(
             preview->teachers.first().affectedClassCount,
-            2
+            6
             );
         QCOMPARE(preview->classes.size(), 1);
         QCOMPARE(
             preview->classes.first().matchingClassIds,
             QList<int>({
                 exact,
+                sameTeacherRoomDayGroup,
+                wrongRoom,
                 sameCourse,
-                sameTeacherTime,
-                sameTime
+                sameGrade
             })
             );
         QCOMPARE(
@@ -886,6 +1058,24 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
             exact
             );
         QVERIFY(preview->classes.first().exactMatch);
+
+        const auto intensivePreview =
+            repository.preview(
+                user,
+                ScheduleImportKind::Intensive
+                );
+        QVERIFY(intensivePreview.has_value());
+        QCOMPARE(
+            intensivePreview->classes.first().matchingClassIds,
+            preview->classes.first().matchingClassIds
+            );
+        QCOMPARE(
+            intensivePreview->classes.first().suggestedClassId,
+            exact
+            );
+        QVERIFY(
+            intensivePreview->classes.first().exactMatch
+            );
 
         database.close();
     }
@@ -939,7 +1129,9 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
             QStringLiteral(
                 "INSERT INTO class_times "
                 "(class_id, day, start_time, end_time) "
-                "VALUES (%1, 'Monday', '4:00 PM', '4:55 PM')"
+                "VALUES "
+                "(%1, 'Tuesday', '4:00 PM', '4:55 PM'), "
+                "(%1, 'Thursday', '4:00 PM', '4:55 PM')"
                 )
                 .arg(classOne)
             );
@@ -1009,9 +1201,11 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
                 );
         QVERIFY(preview.has_value());
         QCOMPARE(
-            preview->classes.first().suggestedClassId,
-            classOne
+            preview->classes.first().matchingClassIds,
+            QList<int>{classOne}
             );
+        QCOMPARE(preview->classes.first().suggestedClassId, -1);
+        QVERIFY(!preview->classes.first().exactMatch);
 
         ScheduleImportPlan plan;
         plan.kind = ScheduleImportKind::Normal;

@@ -9,6 +9,106 @@
 #include <algorithm>
 #include <utility>
 
+inline int scheduleImportDayGroup(
+    const QList<ClassTime>& times
+    )
+{
+    int group = 0;
+    for (const ClassTime& time : times)
+    {
+        const QString day =
+            time.day.trimmed().toCaseFolded();
+        const int dayGroup =
+            day == QStringLiteral("monday")
+                || day == QStringLiteral("wednesday")
+                || day == QStringLiteral("friday")
+                ? 1
+                : day == QStringLiteral("tuesday")
+                    || day == QStringLiteral("thursday")
+                    ? 2
+                    : 0;
+        if (dayGroup == 0 || (group != 0 && group != dayGroup))
+        {
+            return 0;
+        }
+        group = dayGroup;
+    }
+    return group;
+}
+
+inline bool scheduleImportDaysAreCompatible(
+    const QList<ClassTime>& importedTimes,
+    const QList<ClassTime>& existingTimes
+    )
+{
+    const int importedGroup =
+        scheduleImportDayGroup(importedTimes);
+    return importedGroup != 0
+        && importedGroup == scheduleImportDayGroup(existingTimes);
+}
+
+inline QStringList scheduleImportMeetingDays(
+    const QList<ClassTime>& times
+    )
+{
+    QStringList days;
+    for (const ClassTime& time : times)
+    {
+        const QString day =
+            time.day.trimmed().toCaseFolded();
+        if (!days.contains(day))
+        {
+            days.append(day);
+        }
+    }
+    days.sort(Qt::CaseInsensitive);
+    return days;
+}
+
+inline bool scheduleImportMeetingDaysMatch(
+    const QList<ClassTime>& importedTimes,
+    const QList<ClassTime>& existingTimes
+    )
+{
+    return scheduleImportDaysAreCompatible(
+        importedTimes,
+        existingTimes
+        )
+        && scheduleImportMeetingDays(importedTimes)
+            == scheduleImportMeetingDays(existingTimes);
+}
+
+inline QList<ClassTime> scheduleImportTimesForKind(
+    const ClassInfo& info,
+    ScheduleImportKind kind
+    )
+{
+    if (
+        kind == ScheduleImportKind::Intensive
+        && !info.intensiveTimes.isEmpty()
+        )
+    {
+        return info.intensiveTimes;
+    }
+    return info.classTimes;
+}
+
+inline bool scheduleImportClassOptionIsEligible(
+    const ScheduleImportClassCandidate& candidate,
+    const ClassInfo& existing,
+    ScheduleImportKind kind
+    )
+{
+    return candidate.classGrade.simplified().compare(
+        existing.classGrade.simplified(),
+        Qt::CaseInsensitive
+        ) == 0
+        && scheduleImportDaysAreCompatible(
+            candidate.times,
+            scheduleImportTimesForKind(existing, kind)
+            );
+}
+
 inline QList<QStringList> scheduleImportAllowedDayPatterns(
     const QString& classGrade,
     const QString& classLevel
@@ -99,6 +199,7 @@ inline QList<QStringList> scheduleImportAllowedDayPatterns(
         return {
             mondayWednesday,
             mondayFriday,
+            wednesdayFriday,
             tuesdayThursday
         };
     }
@@ -178,7 +279,7 @@ inline QString scheduleImportMeetingPatternExpectation(
         )
     {
         return QObject::tr(
-            "Expected Monday/Wednesday, Monday/Friday, or Tuesday/Thursday."
+            "Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday."
             );
     }
     if (
