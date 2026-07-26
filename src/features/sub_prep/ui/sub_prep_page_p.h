@@ -5,6 +5,7 @@
 #include "core/resource_paths.h"
 #include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
+#include "features/classes/models/class_tab_navigation_model.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
@@ -15,6 +16,7 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <algorithm>
 #include <utility>
@@ -24,6 +26,7 @@
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
+#include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLayout>
@@ -38,6 +41,7 @@
 #include <QSizePolicy>
 #include <QTextEdit>
 #include <QTimer>
+#include <QTabWidget>
 #include <QVariant>
 #include <QVBoxLayout>
 #include <QtAssert>
@@ -233,22 +237,6 @@ QLabel* createInlineValue(
     return field;
 }
 
-QFrame* createSeparator(
-    QWidget* parent
-    )
-{
-    auto* separator =
-        new QFrame(parent);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setFrameShadow(QFrame::Sunken);
-    separator->setProperty(
-        "role",
-        UiRoles::Separator
-        );
-
-    return separator;
-}
-
 ScheduleViewModel scheduleForDays(
     const ScheduleViewModel& source,
     const QStringList& selectedDays
@@ -313,4 +301,3 @@ QSet<int> visibleClassIds(
     return classIds;
 }
 }
-

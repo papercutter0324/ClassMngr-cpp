@@ -21,12 +21,15 @@
 #include <QTextEdit>
 #include <QTemporaryDir>
 #include <QStandardPaths>
+#include <QTabBar>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
 namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setDatabaseOpen(bool open);
+void setIncludeAdditionalClass(bool include);
 }
 
 namespace
@@ -74,6 +77,7 @@ class SubPrepPageTests : public QObject
 private slots:
     void init();
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
+    void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void zoomUnavailableHidesStoredCredentials();
     void printDialogSelectsNextVacationBlock();
@@ -190,6 +194,35 @@ void SubPrepPageTests
         importantHeading->alignment()
         );
 
+    auto* gradeTabs =
+        page.findChild<QTabWidget*>(
+            QStringLiteral("subPrepGradeTabs")
+            );
+    QVERIFY(gradeTabs);
+    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(
+        gradeTabs->tabBar()->objectName(),
+        QStringLiteral("subPrepGradeTabBar")
+        );
+
+    auto* levelTabs =
+        gradeTabs
+            ->currentWidget()
+            ->findChild<QTabWidget*>(
+                QStringLiteral("subPrepLevelTabs"),
+                Qt::FindDirectChildrenOnly
+                );
+    QVERIFY(levelTabs);
+    QCOMPARE(levelTabs->count(), 1);
+    QCOMPARE(
+        levelTabs->tabBar()->objectName(),
+        QStringLiteral("subPrepLevelTabBar")
+        );
+    QCOMPARE(
+        levelTabs->currentWidget()->property("classId").toInt(),
+        42
+        );
+
     auto* scheduleCard =
         qobject_cast<SectionCard*>(schedule->parentWidget());
     QVERIFY(scheduleCard);
@@ -278,6 +311,93 @@ void SubPrepPageTests
     }
 
     QVERIFY(foundAdditionalNotes);
+}
+
+void SubPrepPageTests
+    ::gradeAndLevelTabsSelectOneClassAndPreserveSelection()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+
+    ApplicationServices services;
+    SubPrepPage page(&services);
+
+    auto* gradeTabs =
+        page.findChild<QTabWidget*>(
+            QStringLiteral("subPrepGradeTabs")
+            );
+    QVERIFY(gradeTabs);
+    QCOMPARE(gradeTabs->count(), 2);
+
+    int secondGradeIndex = -1;
+
+    for (int index = 0; index < gradeTabs->count(); ++index)
+    {
+        if (gradeTabs->tabText(index) == QStringLiteral("E5"))
+        {
+            secondGradeIndex = index;
+            break;
+        }
+    }
+
+    QVERIFY(secondGradeIndex >= 0);
+    gradeTabs->setCurrentIndex(secondGradeIndex);
+
+    auto* levelTabs =
+        gradeTabs
+            ->currentWidget()
+            ->findChild<QTabWidget*>(
+                QStringLiteral("subPrepLevelTabs"),
+                Qt::FindDirectChildrenOnly
+                );
+    QVERIFY(levelTabs);
+    QCOMPARE(levelTabs->count(), 1);
+    QVERIFY(
+        levelTabs
+            ->tabText(0)
+            .contains(QStringLiteral("Athena"))
+        );
+
+    QCOMPARE(
+        levelTabs->currentWidget()->property("classId").toInt(),
+        43
+        );
+
+    auto* selectedDetails =
+        levelTabs
+            ->currentWidget()
+            ->findChild<QWidget*>(
+                QStringLiteral("subPrepClassDetails")
+                );
+    QVERIFY(selectedDetails);
+    QCOMPARE(
+        selectedDetails->property("classId").toInt(),
+        43
+        );
+
+    page.refresh();
+    QCoreApplication::sendPostedEvents(
+        nullptr,
+        QEvent::DeferredDelete
+        );
+
+    gradeTabs =
+        page.findChild<QTabWidget*>(
+            QStringLiteral("subPrepGradeTabs")
+            );
+    QVERIFY(gradeTabs);
+
+    levelTabs =
+        gradeTabs
+            ->currentWidget()
+            ->findChild<QTabWidget*>(
+                QStringLiteral("subPrepLevelTabs"),
+                Qt::FindDirectChildrenOnly
+                );
+    QVERIFY(levelTabs);
+    QCOMPARE(
+        levelTabs->currentWidget()->property("classId").toInt(),
+        43
+        );
 }
 
 void SubPrepPageTests

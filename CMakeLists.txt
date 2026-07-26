@@ -1402,6 +1402,8 @@ if(BUILD_TESTING)
         src/features/campus/data/campus_json_codec.cpp
         src/features/campus/data/campus_json_repository.cpp
         src/features/classes/config/class_info_config.cpp
+        src/features/classes/models/class_tab_navigation_model.cpp
+        src/features/classes/models/class_tab_navigation_model.h
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
@@ -1420,6 +1422,8 @@ if(BUILD_TESTING)
         src/ui/shared/pages/basepage.h
         src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.h
+        src/ui/shared/widgets/uniform_width_tab_bar.cpp
+        src/ui/shared/widgets/uniform_width_tab_bar.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
     )

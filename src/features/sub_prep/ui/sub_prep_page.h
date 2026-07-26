@@ -12,6 +12,7 @@ class QLineEdit;
 class QPushButton;
 class QScrollArea;
 class QShowEvent;
+class QTabWidget;
 class QTextEdit;
 class QTimer;
 class QVBoxLayout;
@@ -81,6 +82,7 @@ private:
 
     void refreshGeneratedContent();
     void rebuildClassInformation();
+    int currentClassInformationId() const;
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation() const;
     QList<SubPrepClassInformation::TeacherGroup> buildClassInformation(
         const ScheduleViewModel& schedule
@@ -157,6 +159,8 @@ private:
     ScheduleWidget* m_scheduleWidget = nullptr;
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
+    QTabWidget* m_classInformationTabs = nullptr;
+    int m_selectedClassId = -1;
 
     QTimer* m_autosaveTimer = nullptr;
 };

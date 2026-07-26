@@ -40,6 +40,7 @@ int savedSlotStates = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
 bool databaseOpen = true;
+bool includeAdditionalClass = false;
 
 void reset()
 {
@@ -48,6 +49,7 @@ void reset()
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
     databaseOpen = true;
+    includeAdditionalClass = false;
 }
 
 void setDatabaseOpen(
@@ -55,6 +57,13 @@ void setDatabaseOpen(
     )
 {
     databaseOpen = open;
+}
+
+void setIncludeAdditionalClass(
+    bool include
+    )
+{
+    includeAdditionalClass = include;
 }
 
 QString settingValue(
@@ -190,7 +199,18 @@ QList<Classroom> DataService::getClasses()
     Classroom classroom;
     classroom.id = 42;
     classroom.name = QStringLiteral("Hercules");
-    return {classroom};
+
+    QList<Classroom> classrooms{classroom};
+
+    if (ScheduleWidgetTestStubs::includeAdditionalClass)
+    {
+        Classroom additionalClass;
+        additionalClass.id = 43;
+        additionalClass.name = QStringLiteral("Athena");
+        classrooms.append(additionalClass);
+    }
+
+    return classrooms;
 }
 
 Classroom DataService::getClassById(
@@ -214,15 +234,33 @@ ClassInfo DataService::loadClassInfo(
 {
     ClassInfo info;
     info.classId = classId;
-    info.teacherId = 7;
-    info.classGrade = QStringLiteral("E4");
-    info.classLevel = QStringLiteral("Hercules");
-    info.notes = QStringLiteral("Read chapter three.");
+    info.teacherId = classId == 43 ? 8 : 7;
+    info.classGrade =
+        classId == 43
+            ? QStringLiteral("E5")
+            : QStringLiteral("E4");
+    info.classLevel =
+        classId == 43
+            ? QStringLiteral("Athena")
+            : QStringLiteral("Hercules");
+    info.notes =
+        classId == 43
+            ? QStringLiteral("Review the vocabulary list.")
+            : QStringLiteral("Read chapter three.");
 
     ClassTime meeting;
-    meeting.day = QStringLiteral("Tuesday");
-    meeting.startTime = QStringLiteral("4:00 PM");
-    meeting.endTime = QStringLiteral("4:50 PM");
+    meeting.day =
+        classId == 43
+            ? QStringLiteral("Thursday")
+            : QStringLiteral("Tuesday");
+    meeting.startTime =
+        classId == 43
+            ? QStringLiteral("5:00 PM")
+            : QStringLiteral("4:00 PM");
+    meeting.endTime =
+        classId == 43
+            ? QStringLiteral("5:50 PM")
+            : QStringLiteral("4:50 PM");
     info.classTimes.append(meeting);
 
     return info;
@@ -244,8 +282,13 @@ int DataService::getRosterStudentCount(
     int classId
     )
 {
-    return classId == 42
-        ? 12
+    if (classId == 42)
+    {
+        return 12;
+    }
+
+    return classId == 43
+        ? 9
         : 0;
 }
 
@@ -255,16 +298,34 @@ Teacher DataService::getTeacher(
 {
     Teacher teacher;
     teacher.id = teacherId;
-    teacher.teacherEn = QStringLiteral("Susan");
-    teacher.teacherKr = QStringLiteral("김선생");
-    teacher.roomNumber = QStringLiteral("413");
-    teacher.wifiName = QStringLiteral("Susan WiFi");
+    teacher.teacherEn =
+        teacherId == 8
+            ? QStringLiteral("Thomas")
+            : QStringLiteral("Susan");
+    teacher.teacherKr =
+        teacherId == 8
+            ? QStringLiteral("이선생")
+            : QStringLiteral("김선생");
+    teacher.roomNumber =
+        teacherId == 8
+            ? QStringLiteral("512")
+            : QStringLiteral("413");
+    teacher.wifiName =
+        teacherId == 8
+            ? QStringLiteral("Thomas WiFi")
+            : QStringLiteral("Susan WiFi");
     teacher.wifiPassword = QStringLiteral("wifi secret");
-    teacher.zoomId = QStringLiteral("susan.zoom");
+    teacher.zoomId =
+        teacherId == 8
+            ? QStringLiteral("thomas.zoom")
+            : QStringLiteral("susan.zoom");
     teacher.zoomPassword = QStringLiteral("zoom secret");
     teacher.internetType = QStringLiteral("WiFi");
     teacher.projectionType = QStringLiteral("HDMI");
-    teacher.notes = QStringLiteral("Call before class.");
+    teacher.notes =
+        teacherId == 8
+            ? QStringLiteral("Use the classroom projector.")
+            : QStringLiteral("Call before class.");
     return teacher;
 }
 
@@ -361,6 +422,13 @@ ScheduleBuildResult ScheduleBuilder::build(
         {QStringLiteral("16:00")}
         );
 
+    if (ScheduleWidgetTestStubs::includeAdditionalClass)
+    {
+        result.rows.append(
+            {QStringLiteral("17:00")}
+            );
+    }
+
     for (const QString& day : visibleDays)
     {
         result.schedule.insert(day, {});
@@ -378,6 +446,24 @@ ScheduleBuildResult ScheduleBuilder::build(
 
         result.schedule[QStringLiteral("Tuesday")]
             [QStringLiteral("16:00")]
+                .append(entry);
+    }
+
+    if (
+        ScheduleWidgetTestStubs::includeAdditionalClass
+        && visibleDays.contains(QStringLiteral("Thursday"))
+        )
+    {
+        ScheduleEntry entry;
+        entry.classId = 43;
+        entry.teacherKr = QStringLiteral("이선생");
+        entry.teacherEn = QStringLiteral("Thomas");
+        entry.roomNumber = QStringLiteral("512");
+        entry.classGrade = QStringLiteral("E5");
+        entry.classLevel = QStringLiteral("Athena");
+
+        result.schedule[QStringLiteral("Thursday")]
+            [QStringLiteral("17:00")]
                 .append(entry);
     }
 
