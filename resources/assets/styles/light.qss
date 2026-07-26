@@ -566,7 +566,11 @@ QTableWidget[role="schedule_table"]::item {
     border: none;
 }
 
-QTableWidget[role="schedule_table"] QHeaderView::section {
+QTableWidget[role="schedule_table"] QHeaderView::section,
+QTableWidget[role="schedule_table"] QHeaderView::section:hover,
+QTableWidget[role="schedule_table"] QHeaderView::section:pressed {
+    background-color: #deded8;
+    color: #546169;
     border: none;
     border-right: 1px solid #c5c7c3;
     border-bottom: 1px solid #c5c7c3;

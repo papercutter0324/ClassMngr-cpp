@@ -25,6 +25,8 @@
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSignalBlocker>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVariant>
@@ -36,11 +38,55 @@ constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
 constexpr int OptionsColumnSpacing = 32;
+constexpr int TimeCellRole = Qt::UserRole + 1;
+const QString TimeColumnDelegateObjectName =
+    QStringLiteral("scheduleTimeColumnDelegate");
 #ifdef Q_OS_MACOS
 constexpr int OptionsRowSpacing = 16;
 #else
 constexpr int OptionsRowSpacing = 8;
 #endif
+
+class TimeColumnDelegate final : public QStyledItemDelegate
+{
+public:
+    explicit TimeColumnDelegate(
+        QObject* parent
+        )
+        : QStyledItemDelegate(parent)
+    {
+        setObjectName(TimeColumnDelegateObjectName);
+    }
+
+    void paint(
+        QPainter* painter,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        if (!index.data(TimeCellRole).toBool())
+        {
+            QStyledItemDelegate::paint(
+                painter,
+                option,
+                index
+                );
+            return;
+        }
+
+        QStyleOptionViewItem timeOption(option);
+        timeOption.state &=
+            ~(QStyle::State_MouseOver | QStyle::State_Selected);
+        timeOption.state |=
+            QStyle::State_HasFocus;
+
+        QStyledItemDelegate::paint(
+            painter,
+            timeOption,
+            index
+            );
+    }
+};
 
 namespace SettingsKeys
 {
@@ -543,6 +589,10 @@ void ScheduleWidget::buildUi()
     m_table->setSelectionMode(QAbstractItemView::NoSelection);
     m_table->setWordWrap(true);
     m_table->setAlternatingRowColors(false);
+    m_table->setItemDelegateForColumn(
+        0,
+        new TimeColumnDelegate(m_table)
+        );
     m_table->verticalHeader()->setDefaultSectionSize(RowHeight);
     m_table->horizontalHeader()->setFont(
         FontManager::getUiFont(
@@ -551,6 +601,9 @@ void ScheduleWidget::buildUi()
             )
         );
     m_table->horizontalHeader()->setFixedHeight(HeaderHeight);
+    m_table->horizontalHeader()->setSectionsClickable(false);
+    m_table->horizontalHeader()->setHighlightSections(false);
+    m_table->horizontalHeader()->setFocusPolicy(Qt::NoFocus);
 
     layout->addWidget(m_table);
 
@@ -807,6 +860,7 @@ void ScheduleWidget::loadSchedule()
                 );
 
         timeItem->setFlags(Qt::ItemIsEnabled);
+        timeItem->setData(TimeCellRole, true);
         timeItem->setTextAlignment(Qt::AlignCenter);
         timeItem->setFont(
             FontManager::getUiFont(

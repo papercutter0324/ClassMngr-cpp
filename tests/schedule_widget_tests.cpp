@@ -5,11 +5,16 @@
 
 #include <QtTest>
 
+#include <QAbstractItemDelegate>
 #include <QCheckBox>
+#include <QHeaderView>
+#include <QImage>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QStyleOptionViewItem>
 #include <QTableWidget>
 
 #include <algorithm>
@@ -35,6 +40,7 @@ private slots:
     void importButtonRequestsScheduleImport();
     void legacyHourSettingsDoNotCarryForward();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
+    void timeColumnAndHeaderAreNonInteractive();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
 };
@@ -294,6 +300,83 @@ void ScheduleWidgetTests
     QCOMPARE(
         ScheduleWidgetTestStubs::savedSlotStates,
         0
+        );
+}
+
+void ScheduleWidgetTests
+    ::timeColumnAndHeaderAreNonInteractive()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    auto* table =
+        widget.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(table);
+    QCOMPARE(table->selectionMode(), QAbstractItemView::NoSelection);
+
+    QHeaderView* header = table->horizontalHeader();
+    QVERIFY(header);
+    QVERIFY(!header->sectionsClickable());
+    QVERIFY(!header->highlightSections());
+    QCOMPARE(header->focusPolicy(), Qt::NoFocus);
+
+    QTableWidgetItem* timeItem = table->item(0, 0);
+    QVERIFY(timeItem);
+    QVERIFY(!(timeItem->flags() & Qt::ItemIsSelectable));
+
+    QAbstractItemDelegate* timeDelegate =
+        table->itemDelegateForColumn(0);
+    QVERIFY(timeDelegate);
+    QCOMPARE(
+        timeDelegate->objectName(),
+        QStringLiteral("scheduleTimeColumnDelegate")
+        );
+
+    const auto renderTimeItem =
+        [table, timeDelegate](
+            QStyle::State state
+            )
+        {
+            QImage image(
+                QSize(90, 60),
+                QImage::Format_ARGB32_Premultiplied
+                );
+            image.fill(Qt::transparent);
+
+            QStyleOptionViewItem option;
+            option.rect = image.rect();
+            option.state = state;
+            option.palette = table->palette();
+            option.widget = table;
+
+            QPainter painter(&image);
+            timeDelegate->paint(
+                &painter,
+                option,
+                table->model()->index(0, 0)
+                );
+
+            return image;
+        };
+
+    const QStyle::State baseState =
+        QStyle::State_Enabled | QStyle::State_Active;
+    const QImage defaultAppearance =
+        renderTimeItem(baseState);
+
+    QVERIFY(
+        defaultAppearance
+        == renderTimeItem(baseState | QStyle::State_MouseOver)
+        );
+    QVERIFY(
+        defaultAppearance
+        == renderTimeItem(baseState | QStyle::State_Selected)
+        );
+    QVERIFY(
+        defaultAppearance
+        == renderTimeItem(baseState | QStyle::State_HasFocus)
         );
 }
 
