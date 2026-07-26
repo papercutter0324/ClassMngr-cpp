@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <QApplication>
 #include <QEvent>
 #include <QResizeEvent>
 #include <QShowEvent>
@@ -76,6 +77,16 @@ UniformWidthTabWidget::UniformWidthTabWidget(
         );
     uniformTabBar->installEventFilter(
         this
+        );
+
+    const QFont navigationFont =
+        QApplication::font();
+
+    setFont(
+        navigationFont
+        );
+    uniformTabBar->setFont(
+        navigationFont
         );
 
     setTabBar(
@@ -256,6 +267,9 @@ QString UniformWidthTabWidget::kindPropertyValue(
 
     case UniformWidthTabKind::Class:
         return QStringLiteral("class");
+
+    case UniformWidthTabKind::Section:
+        return QStringLiteral("section");
 
     case UniformWidthTabKind::Generic:
         break;

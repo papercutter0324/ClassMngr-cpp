@@ -1,6 +1,8 @@
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QApplication>
+#include <QFile>
+#include <QImage>
 #include <QtTest>
 
 class UniformWidthTabBarTests : public QObject
@@ -11,6 +13,9 @@ private slots:
     void tabSizeHintsUseWidestTabWidth();
     void tabWidgetCentersTabBarWhenTabsFit();
     void tabWidgetAppliesReusableKindProperties();
+    void tabWidgetAppliesSectionKindProperties();
+    void navigationTabsUseSharedTheme_data();
+    void navigationTabsUseSharedTheme();
 };
 
 void UniformWidthTabBarTests::tabSizeHintsUseWidestTabWidth()
@@ -121,6 +126,150 @@ void UniformWidthTabBarTests::tabWidgetAppliesReusableKindProperties()
         Qt::ElideRight
         );
     QVERIFY(tabs.usesScrollButtons());
+}
+
+void UniformWidthTabBarTests::tabWidgetAppliesSectionKindProperties()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Section,
+        QStringLiteral("testSectionTabBar")
+        );
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("testSectionTabBar")
+            );
+
+    QVERIFY(tabBar);
+    QCOMPARE(
+        tabs.tabKind(),
+        UniformWidthTabKind::Section
+        );
+    QCOMPARE(
+        tabs.property("uniformTabKind").toString(),
+        QStringLiteral("section")
+        );
+    QCOMPARE(
+        tabBar->property("uniformTabKind").toString(),
+        QStringLiteral("section")
+        );
+    QCOMPARE(
+        tabs.tabShape(),
+        QTabWidget::Rounded
+        );
+    QVERIFY(tabs.documentMode());
+    QCOMPARE(
+        tabs.elideMode(),
+        Qt::ElideRight
+        );
+    QVERIFY(tabs.usesScrollButtons());
+}
+
+void UniformWidthTabBarTests::navigationTabsUseSharedTheme_data()
+{
+    QTest::addColumn<QString>("stylesheetPath");
+    QTest::addColumn<QColor>("expectedColor");
+
+    QTest::newRow("light")
+        << QStringLiteral("../resources/assets/styles/light.qss")
+        << QColor(QStringLiteral("#deded8"));
+    QTest::newRow("dark")
+        << QStringLiteral("../resources/assets/styles/dark.qss")
+        << QColor(QStringLiteral("#303030"));
+}
+
+void UniformWidthTabBarTests::navigationTabsUseSharedTheme()
+{
+    QFETCH(QString, stylesheetPath);
+    QFETCH(QColor, expectedColor);
+
+    QFile stylesheet(
+        QFINDTESTDATA(stylesheetPath)
+        );
+
+    QVERIFY(stylesheet.open(QIODevice::ReadOnly | QIODevice::Text));
+    qApp->setStyleSheet(
+        QString::fromUtf8(stylesheet.readAll())
+        );
+
+    UniformWidthTabWidget gradeTabs(
+        UniformWidthTabKind::Grade,
+        QStringLiteral("testGradeTabBar")
+        );
+    UniformWidthTabWidget classTabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("testClassTabBar")
+        );
+    UniformWidthTabWidget sectionTabs(
+        UniformWidthTabKind::Section,
+        QStringLiteral("testSectionTabBar")
+        );
+
+    const auto addNavigationTabs =
+        [](UniformWidthTabWidget& tabs)
+        {
+            tabs.addTab(
+                new QWidget(&tabs),
+                QStringLiteral("Current Month")
+                );
+            tabs.addTab(
+                new QWidget(&tabs),
+                QStringLiteral("Next 30 Days")
+                );
+            tabs.resize(640, 200);
+            tabs.show();
+        };
+
+    addNavigationTabs(gradeTabs);
+    addNavigationTabs(classTabs);
+    addNavigationTabs(sectionTabs);
+    QCoreApplication::processEvents();
+
+    auto* gradeTabBar =
+        gradeTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("testGradeTabBar")
+            );
+    auto* classTabBar =
+        classTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("testClassTabBar")
+            );
+    auto* sectionTabBar =
+        sectionTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("testSectionTabBar")
+            );
+
+    QVERIFY(gradeTabBar);
+    QVERIFY(classTabBar);
+    QVERIFY(sectionTabBar);
+
+    const auto tabColor =
+        [](UniformWidthTabBar* tabBar)
+        {
+            const QRect secondTab =
+                tabBar->tabRect(1);
+            const QImage image =
+                tabBar->grab().toImage();
+
+            return image.pixelColor(
+                secondTab.left() + 10,
+                secondTab.top() + 10
+                );
+        };
+
+    QCOMPARE(gradeTabBar->font(), classTabBar->font());
+    QCOMPARE(gradeTabBar->font(), sectionTabBar->font());
+    QCOMPARE(
+        gradeTabBar->tabSizeHint(1),
+        classTabBar->tabSizeHint(1)
+        );
+    QCOMPARE(
+        gradeTabBar->tabSizeHint(1),
+        sectionTabBar->tabSizeHint(1)
+        );
+    QCOMPARE(tabColor(gradeTabBar), expectedColor);
+    QCOMPARE(tabColor(classTabBar), expectedColor);
+    QCOMPARE(tabColor(sectionTabBar), expectedColor);
+    qApp->setStyleSheet({});
 }
 
 int main(

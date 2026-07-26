@@ -410,25 +410,7 @@ void SpeakingEvalPage::rebuildClassTabs(
         m_classTabs && m_classTabs->count() > 0
         );
 
-    if (m_evaluationTabs && m_classTabs && m_classTabs->tabBar())
-    {
-        const int tabFontSize =
-            m_classTabs->tabBar()->font().pointSize();
-
-        const QFont evaluationTabFont =
-            FontManager::getUiFont(
-                tabFontSize > 0
-                    ? tabFontSize
-                    : FontManager::getPlatformFontSize()
-                );
-
-        m_evaluationTabs->setFont(
-            evaluationTabFont
-            );
-        m_evaluationTabs->tabBar()->setFont(
-            evaluationTabFont
-            );
-    }
+    syncEvaluationTabFont();
 
     syncTabWidgetToClass(
         m_classTabs,
@@ -436,6 +418,26 @@ void SpeakingEvalPage::rebuildClassTabs(
         );
 
     m_rebuildingClassTabs = false;
+}
+
+void SpeakingEvalPage::syncEvaluationTabFont()
+{
+    if (!m_evaluationTabs || !m_classTabs || !m_classTabs->tabBar())
+    {
+        return;
+    }
+
+    const QFont evaluationTabFont =
+        m_classTabs->tabBar()->font();
+
+    m_evaluationTabs->setFont(
+        evaluationTabFont
+        );
+    m_evaluationTabs->tabBar()->setFont(
+        evaluationTabFont
+        );
+    m_evaluationTabs->updateGeometry();
+    m_evaluationTabs->tabBar()->updateGeometry();
 }
 
 bool SpeakingEvalPage::activateEvaluation(

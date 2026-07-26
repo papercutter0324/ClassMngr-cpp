@@ -474,7 +474,8 @@ QTabWidget#subPrepClassTabs::pane,
 QTabWidget#myInfoGradeTabs::pane,
 QTabWidget#myInfoClassTabs::pane,
 QTabWidget[uniformTabKind="grade"]::pane,
-QTabWidget[uniformTabKind="class"]::pane {
+QTabWidget[uniformTabKind="class"]::pane,
+QTabWidget[uniformTabKind="section"]::pane {
     border: 0;
     background: transparent;
     margin-top: 8px;
@@ -485,7 +486,8 @@ QTabBar#subPrepClassTabBar::tab,
 QTabBar#myInfoGradeTabBar::tab,
 QTabBar#myInfoClassTabBar::tab,
 QTabBar[uniformTabKind="grade"]::tab,
-QTabBar[uniformTabKind="class"]::tab {
+QTabBar[uniformTabKind="class"]::tab,
+QTabBar[uniformTabKind="section"]::tab {
     background-color: #deded8;
     color: #27313a;
     border: 1px solid #c5c7c3;
@@ -498,19 +500,18 @@ QTabBar#subPrepClassTabBar,
 QTabBar#myInfoGradeTabBar,
 QTabBar#myInfoClassTabBar,
 QTabBar[uniformTabKind="grade"],
-QTabBar[uniformTabKind="class"] {
+QTabBar[uniformTabKind="class"],
+QTabBar[uniformTabKind="section"] {
     qproperty-drawBase: 0;
 }
 
 QTabBar#subPrepGradeTabBar::tab,
-QTabBar#myInfoGradeTabBar::tab,
-QTabBar[uniformTabKind="grade"]::tab {
-    padding: 7px 22px;
-}
-
 QTabBar#subPrepClassTabBar::tab,
+QTabBar#myInfoGradeTabBar::tab,
 QTabBar#myInfoClassTabBar::tab,
-QTabBar[uniformTabKind="class"]::tab {
+QTabBar[uniformTabKind="grade"]::tab,
+QTabBar[uniformTabKind="class"]::tab,
+QTabBar[uniformTabKind="section"]::tab {
     padding: 6px 14px;
 }
 
@@ -519,7 +520,8 @@ QTabBar#subPrepClassTabBar::tab:hover,
 QTabBar#myInfoGradeTabBar::tab:hover,
 QTabBar#myInfoClassTabBar::tab:hover,
 QTabBar[uniformTabKind="grade"]::tab:hover,
-QTabBar[uniformTabKind="class"]::tab:hover {
+QTabBar[uniformTabKind="class"]::tab:hover,
+QTabBar[uniformTabKind="section"]::tab:hover {
     background-color: #f5f5f5;
     border-color: #3daee9;
 }
@@ -529,7 +531,8 @@ QTabBar#subPrepClassTabBar::tab:selected,
 QTabBar#myInfoGradeTabBar::tab:selected,
 QTabBar#myInfoClassTabBar::tab:selected,
 QTabBar[uniformTabKind="grade"]::tab:selected,
-QTabBar[uniformTabKind="class"]::tab:selected {
+QTabBar[uniformTabKind="class"]::tab:selected,
+QTabBar[uniformTabKind="section"]::tab:selected {
     background-color: #3daee9;
     color: #ffffff;
     border-color: #3daee9;

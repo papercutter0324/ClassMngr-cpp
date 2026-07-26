@@ -13,7 +13,8 @@ enum class UniformWidthTabKind
 {
     Generic,
     Grade,
-    Class
+    Class,
+    Section
 };
 
 class UniformWidthTabBar : public QTabBar

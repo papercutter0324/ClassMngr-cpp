@@ -4,6 +4,8 @@ void SpeakingEvalPage::refresh()
 {
     BasePage::refresh();
 
+    syncEvaluationTabFont();
+
     if (m_table)
     {
         m_table->viewport()->update();

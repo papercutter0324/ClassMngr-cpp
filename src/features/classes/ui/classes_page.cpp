@@ -19,6 +19,7 @@
 #include <QFont>
 #include <QLabel>
 #include <QStackedWidget>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -315,7 +316,7 @@ void ClassesPage::buildUi()
     navigationLayout->addWidget(m_classTabsContainer);
 
     m_sectionTabs = new UniformWidthTabWidget(
-        UniformWidthTabKind::Class,
+        UniformWidthTabKind::Section,
         QStringLiteral("classesSectionTabBar"),
         m_navigationContainer
         );
@@ -435,6 +436,21 @@ void ClassesPage::rebuildClassTabs(
         m_classTabsContainer
         );
     gradeTabs->setObjectName("classesGradeTabs");
+
+    if (m_sectionTabs && gradeTabs->tabBar())
+    {
+        const QFont navigationFont =
+            gradeTabs->tabBar()->font();
+
+        m_sectionTabs->setFont(
+            navigationFont
+            );
+        m_sectionTabs->tabBar()->setFont(
+            navigationFont
+            );
+        m_sectionTabs->updateGeometry();
+        m_sectionTabs->tabBar()->updateGeometry();
+    }
 
     const auto connectClassTabs =
         [this](QTabWidget* tabs)

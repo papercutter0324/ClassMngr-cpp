@@ -82,6 +82,8 @@ private:
         int selectedClassId
         );
 
+    void syncEvaluationTabFont();
+
     bool activateEvaluation(
         int classId,
         const QString& evaluationName

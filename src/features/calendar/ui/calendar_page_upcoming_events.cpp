@@ -24,6 +24,7 @@
 #include <QQuickWidget>
 #include <QSignalBlocker>
 #include <QSizePolicy>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTimer>
 #include <QVariant>
@@ -323,7 +324,7 @@ void CalendarPage::buildUpcomingEventsPanel(
 
     m_upcomingEventsTabs =
         new UniformWidthTabWidget(
-            UniformWidthTabKind::Class,
+            UniformWidthTabKind::Section,
             QStringLiteral("calendarUpcomingTabBar"),
             parent
             );
@@ -885,6 +886,9 @@ QString CalendarPage::eventTypeFilterButtonStyle(
 }
 void CalendarPage::syncEventTypeFilterButtons()
 {
+    const QFont navigationFont =
+        FontManager::getUiFont();
+
     for (QPushButton* button : m_eventTypeFilterButtons)
     {
         if (!button)
@@ -901,14 +905,11 @@ void CalendarPage::syncEventTypeFilterButtons()
                 eventType,
                 true
                 );
-        const QFont tagFont =
-            FontManager::getUiFont();
-
         const QSignalBlocker blocker(button);
-        button->setFont(tagFont);
+        button->setFont(navigationFont);
         button->setFixedSize(
-            upcomingEventTagWidth(eventType, tagFont),
-            upcomingEventTagHeight(tagFont)
+            upcomingEventTagWidth(eventType, navigationFont),
+            upcomingEventTagHeight(navigationFont)
             );
         button->setSizePolicy(
             QSizePolicy::Fixed,
@@ -919,9 +920,21 @@ void CalendarPage::syncEventTypeFilterButtons()
             eventTypeFilterButtonStyle(
                 eventType,
                 checked,
-                tagFont
+                navigationFont
                 )
             );
+    }
+
+    if (m_upcomingEventsTabs && m_upcomingEventsTabs->tabBar())
+    {
+        m_upcomingEventsTabs->setFont(
+            navigationFont
+            );
+        m_upcomingEventsTabs->tabBar()->setFont(
+            navigationFont
+            );
+        m_upcomingEventsTabs->updateGeometry();
+        m_upcomingEventsTabs->tabBar()->updateGeometry();
     }
 }
 void CalendarPage::syncCalendarEventTypeColors()

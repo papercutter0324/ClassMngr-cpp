@@ -84,7 +84,7 @@ void SpeakingEvalPage::buildUi()
 
     m_evaluationTabs =
         new UniformWidthTabWidget(
-            UniformWidthTabKind::Class,
+            UniformWidthTabKind::Section,
             QStringLiteral("speakingEvalEvaluationTabBar"),
             m_tabsContainer
             );
@@ -429,4 +429,3 @@ void SpeakingEvalPage::updateHeaderText()
             : m_classroom.name.trimmed()
         );
 }
-
