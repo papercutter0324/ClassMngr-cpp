@@ -1375,7 +1375,9 @@ void RosterTemplatePrintServiceTests::
         QStringLiteral("D"),
         QStringLiteral("E"),
         QStringLiteral("F"),
-        QStringLiteral("G")
+        QStringLiteral("G"),
+        QStringLiteral("H"),
+        QStringLiteral("I")
     };
     const QStringList requested{
         QStringLiteral("A"),
@@ -1384,7 +1386,9 @@ void RosterTemplatePrintServiceTests::
         QStringLiteral("D"),
         QStringLiteral("E"),
         QStringLiteral("F"),
-        QStringLiteral("G")
+        QStringLiteral("G"),
+        QStringLiteral("H"),
+        QStringLiteral("I")
     };
     const QString page =
         perClassPageKey(
@@ -1398,8 +1402,8 @@ void RosterTemplatePrintServiceTests::
             requested,
             QPageLayout::Portrait
             );
-    QVERIFY(hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 2, QStringLiteral("C")));
-    QVERIFY(!hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 3, QStringLiteral("D")));
+    QVERIFY(hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 3, QStringLiteral("D")));
+    QVERIFY(!hasCellValue(portraitValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 4, QStringLiteral("E")));
 
     const QList<RosterTemplatePrintService::RosterCellValue> landscapeValues =
         RosterTemplatePrintService::buildPerClassExtraInfoCellValues(
@@ -1407,15 +1411,15 @@ void RosterTemplatePrintServiceTests::
             requested,
             QPageLayout::Landscape
             );
-    QVERIFY(hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 5, QStringLiteral("F")));
-    QVERIFY(!hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 6, QStringLiteral("G")));
+    QVERIFY(hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 7, QStringLiteral("H")));
+    QVERIFY(!hasCellValue(landscapeValues, page, PerClassHeaderRow, PerClassFirstExtraColumn + 8, QStringLiteral("I")));
     QCOMPARE(
         RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(QPageLayout::Portrait),
-        3
+        4
         );
     QCOMPARE(
         RosterTemplatePrintService::perClassExtraInfoMaxExtraColumns(QPageLayout::Landscape),
-        6
+        8
         );
 }
 

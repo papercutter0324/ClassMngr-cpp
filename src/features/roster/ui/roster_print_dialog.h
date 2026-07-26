@@ -16,6 +16,7 @@ class QLabel;
 class QListWidget;
 class QResizeEvent;
 class QScrollArea;
+class QVBoxLayout;
 class QWidget;
 
 class RosterPrintDialog : public QDialog
@@ -62,6 +63,7 @@ private:
     void loadClasses();
     void retranslateUi();
     void resizeForExtraInfoOptions();
+    void updateMinimumWidthForCurrentClassName();
 
     ApplicationServices* m_services = nullptr;
     int m_currentClassId = -1;
@@ -87,12 +89,15 @@ private:
     QGridLayout* m_extraColumnGridLayout = nullptr;
     QScrollArea* m_extraColumnScrollArea = nullptr;
     QWidget* m_extraColumnOptionsWidget = nullptr;
+    QScrollArea* m_contentScrollArea = nullptr;
+    QWidget* m_contentWidget = nullptr;
+    QVBoxLayout* m_contentLayout = nullptr;
     QList<QCheckBox*> m_extraColumnChecks;
-    QCheckBox* m_livePreviewCheckBox = nullptr;
     QLabel* m_previewLabel = nullptr;
     QLabel* m_previewStatusLabel = nullptr;
     QButtonGroup* m_scopeGroup = nullptr;
     QListWidget* m_classList = nullptr;
+    int m_classListBaseHeight = 0;
     int m_baseMinimumWidth = 0;
     int m_baseMinimumHeight = 0;
 };

@@ -8,6 +8,7 @@
 #include "domain/models/teacher.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
+#include <QAbstractButton>
 #include <QApplication>
 #include <QBoxLayout>
 #include <QButtonGroup>
@@ -51,6 +52,8 @@ constexpr int DialogExpandedHeight = 620;
 constexpr int PreviewHeight = 190;
 constexpr int ExtraColumnGridColumns = 3;
 constexpr int ExtraColumnVisibleRows = 3;
+constexpr int SelectedClassesHeightMultiplier = 2;
+constexpr int SelectedClassesItemSpacing = 4;
 constexpr int MaximumDialogWidthMultiplier = 3;
 constexpr int MaximumDialogWidthDivisor = 2;
 
@@ -310,11 +313,13 @@ void RosterPrintDialog::updateClassListVisibility()
 
     const bool showClassList =
         selectedScope() == RosterTemplatePrintService::Scope::SelectedClasses;
-    const int currentWidth =
-        width();
-
     m_classList->setVisible(showClassList);
     m_classList->setEnabled(showClassList);
+    m_classList->setMinimumHeight(
+        showClassList
+            ? m_classListBaseHeight * SelectedClassesHeightMultiplier
+            : 0
+        );
 
     if (QWidget* parent = m_classList->parentWidget())
     {
@@ -325,17 +330,17 @@ void RosterPrintDialog::updateClassListVisibility()
         }
     }
 
-    if (QLayout* rootLayout = layout())
+    if (m_contentLayout)
     {
-        rootLayout->invalidate();
-        rootLayout->activate();
+        m_contentLayout->invalidate();
+        m_contentLayout->activate();
     }
 
-    if (auto* rootBox = static_cast<QBoxLayout*>(layout()))
+    if (m_contentLayout)
     {
         if (m_previewLabel && m_previewLabel->parentWidget())
         {
-            rootBox->setStretchFactor(
+            m_contentLayout->setStretchFactor(
                 m_previewLabel->parentWidget(),
                 1
                 );
@@ -343,23 +348,16 @@ void RosterPrintDialog::updateClassListVisibility()
 
         if (m_classList->parentWidget())
         {
-            rootBox->setStretchFactor(
+            m_contentLayout->setStretchFactor(
                 m_classList->parentWidget(),
                 showClassList ? 1 : 0
                 );
         }
     }
 
-    if (showClassList)
+    if (m_contentWidget)
     {
-        resize(
-            currentWidth,
-            qMax(height(), DialogExpandedHeight)
-            );
-    }
-    else
-    {
-        adjustSize();
+        m_contentWidget->updateGeometry();
     }
 
     if (
@@ -381,7 +379,6 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
     const bool showExtraInfoOptions =
         templateId
         == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
-
     if (m_extraInfoOptionsGroup)
     {
         m_extraInfoOptionsGroup->setVisible(showExtraInfoOptions);
@@ -435,7 +432,17 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
     }
     else
     {
-        setMinimumHeight(m_baseMinimumHeight);
+        if (m_contentLayout)
+        {
+            m_contentLayout->invalidate();
+            m_contentLayout->activate();
+        }
+
+        if (m_contentWidget)
+        {
+            m_contentWidget->updateGeometry();
+        }
+
         updatePreview();
     }
 }
@@ -544,9 +551,11 @@ void RosterPrintDialog::updateExtraInfoColumns()
         (ExtraColumnGridColumns - 1)
         * m_extraColumnGridLayout->horizontalSpacing();
     m_extraColumnOptionsWidget->setMinimumWidth(optionsWidth);
+    m_extraColumnGridLayout->invalidate();
+    m_extraColumnGridLayout->activate();
     m_extraColumnOptionsWidget->resize(
         optionsWidth,
-        m_extraColumnOptionsWidget->minimumHeight()
+        m_extraColumnGridLayout->sizeHint().height()
         );
 
     updateExtraInfoSelectionLimits();
@@ -639,10 +648,6 @@ void RosterPrintDialog::updatePreview()
             m_previewLabel->height() - 16
             )
         );
-    const bool livePreview =
-        m_livePreviewCheckBox
-        && m_livePreviewCheckBox->isChecked();
-
     QImage preview;
     QString errorMessage;
     RosterTemplatePrintService::Request request;
@@ -656,16 +661,13 @@ void RosterPrintDialog::updatePreview()
     request.perClassExtraInfoOrientation =
         selectedPerClassExtraInfoOrientation();
 
-    if (livePreview)
-    {
-        preview =
-            RosterTemplatePrintService::renderTemplatePreview(
-                request,
-                previewSize,
-                true,
-                &errorMessage
-                );
-    }
+    preview =
+        RosterTemplatePrintService::renderTemplatePreview(
+            request,
+            previewSize,
+            true,
+            &errorMessage
+            );
 
     if (preview.isNull())
     {
@@ -691,8 +693,7 @@ void RosterPrintDialog::updatePreview()
     if (m_previewStatusLabel)
     {
         m_previewStatusLabel->setVisible(
-            livePreview
-            && !errorMessage.trimmed().isEmpty()
+            !errorMessage.trimmed().isEmpty()
             );
         m_previewStatusLabel->setText(
             errorMessage.trimmed().isEmpty()
@@ -713,9 +714,24 @@ void RosterPrintDialog::buildUi()
         );
     resize(DialogWidth, DialogExpandedHeight);
 
-    auto* rootLayout =
+    auto* dialogLayout =
         new QVBoxLayout(this);
-    rootLayout->setSpacing(12);
+    dialogLayout->setContentsMargins(0, 0, 0, 0);
+    dialogLayout->setSpacing(0);
+
+    m_contentScrollArea = new QScrollArea(this);
+    m_contentScrollArea->setObjectName(QStringLiteral("printRosterContentScrollArea"));
+    m_contentScrollArea->setFrameShape(QFrame::NoFrame);
+    m_contentScrollArea->setWidgetResizable(true);
+    m_contentScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_contentScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    m_contentWidget = new QWidget(m_contentScrollArea);
+    m_contentLayout = new QVBoxLayout(m_contentWidget);
+    m_contentLayout->setSpacing(12);
+    m_contentLayout->setSizeConstraint(QLayout::SetMinimumSize);
+    m_contentScrollArea->setWidget(m_contentWidget);
+    dialogLayout->addWidget(m_contentScrollArea);
 
     auto* templateGroupBox =
         new QGroupBox(this);
@@ -837,13 +853,13 @@ void RosterPrintDialog::buildUi()
         Qt::ScrollBarAsNeeded
         );
     m_extraColumnScrollArea->setVerticalScrollBarPolicy(
-        Qt::ScrollBarAlwaysOff
+        Qt::ScrollBarAsNeeded
         );
     m_extraColumnScrollArea->setSizePolicy(
         QSizePolicy::Ignored,
-        QSizePolicy::Minimum
+        QSizePolicy::Fixed
         );
-    m_extraColumnScrollArea->setMinimumHeight(
+    m_extraColumnScrollArea->setFixedHeight(
         optionsHeight
         + m_extraColumnScrollArea->style()->pixelMetric(
             QStyle::PM_ScrollBarExtent
@@ -874,11 +890,6 @@ void RosterPrintDialog::buildUi()
         QSizePolicy::Expanding
         );
 
-    m_livePreviewCheckBox =
-        new QCheckBox(previewSection);
-    m_livePreviewCheckBox->setObjectName(QStringLiteral("livePreviewCheckBox"));
-    m_livePreviewCheckBox->setChecked(true);
-
     m_previewStatusLabel =
         new QLabel(previewSection);
     m_previewStatusLabel->setObjectName(QStringLiteral("previewStatusLabel"));
@@ -886,7 +897,6 @@ void RosterPrintDialog::buildUi()
 
     previewSectionLayout->addWidget(m_rosterPreviewLabel);
     previewSectionLayout->addWidget(m_previewLabel, 1);
-    previewSectionLayout->addWidget(m_livePreviewCheckBox);
     previewSectionLayout->addWidget(m_previewStatusLabel);
 
     templateLayout->addWidget(pageLayoutOptionsWidget);
@@ -933,6 +943,7 @@ void RosterPrintDialog::buildUi()
     m_classList->setTextElideMode(Qt::ElideNone);
     m_classList->setWordWrap(false);
     m_classList->setMinimumWidth(0);
+    m_classList->setSpacing(SelectedClassesItemSpacing);
     m_classList->setSizePolicy(
         QSizePolicy::Ignored,
         QSizePolicy::Expanding
@@ -943,6 +954,7 @@ void RosterPrintDialog::buildUi()
             m_classList
             )
         );
+    m_classListBaseHeight = m_classList->sizeHint().height();
     scopeLayout->addWidget(m_classList);
 
     connect(
@@ -983,9 +995,9 @@ void RosterPrintDialog::buildUi()
     buttonLayout->addWidget(saveAsButton);
     buttonLayout->addWidget(printButton);
 
-    rootLayout->addWidget(templateGroupBox, 1);
-    rootLayout->addWidget(scopeGroupBox);
-    rootLayout->addLayout(buttonLayout);
+    m_contentLayout->addWidget(templateGroupBox, 1);
+    m_contentLayout->addWidget(scopeGroupBox);
+    m_contentLayout->addLayout(buttonLayout);
 
     connect(
         m_templateCombo,
@@ -999,13 +1011,6 @@ void RosterPrintDialog::buildUi()
         &QButtonGroup::idClicked,
         this,
         &RosterPrintDialog::updateExtraInfoSelectionLimits
-        );
-
-    connect(
-        m_livePreviewCheckBox,
-        &QCheckBox::toggled,
-        this,
-        &RosterPrintDialog::updatePreview
         );
 
     connect(
@@ -1037,7 +1042,8 @@ void RosterPrintDialog::buildUi()
         );
 
     m_baseMinimumWidth = minimumWidth();
-    m_baseMinimumHeight = minimumSizeHint().height();
+    m_baseMinimumHeight = DialogExpandedHeight;
+    setMinimumHeight(m_baseMinimumHeight);
 }
 
 void RosterPrintDialog::resizeForExtraInfoOptions()
@@ -1047,15 +1053,11 @@ void RosterPrintDialog::resizeForExtraInfoOptions()
         return;
     }
 
-    if (QLayout* rootLayout = layout())
+    if (m_contentLayout)
     {
-        rootLayout->invalidate();
-        rootLayout->activate();
+        m_contentLayout->invalidate();
+        m_contentLayout->activate();
 
-        const int requiredHeight = qMax(
-            m_baseMinimumHeight,
-            rootLayout->minimumSize().height()
-            );
         const int maximumWidth =
             m_baseMinimumWidth * MaximumDialogWidthMultiplier
             / MaximumDialogWidthDivisor;
@@ -1080,16 +1082,61 @@ void RosterPrintDialog::resizeForExtraInfoOptions()
             }
         }
 
-        setMinimumHeight(requiredHeight);
         resize(
             qBound(
                 m_baseMinimumWidth,
                 qMax(width(), requiredWidth),
                 maximumWidth
                 ),
-            qMax(height(), requiredHeight)
+            height()
             );
+
+        if (m_contentWidget)
+        {
+            m_contentWidget->updateGeometry();
+        }
     }
+}
+
+void RosterPrintDialog::updateMinimumWidthForCurrentClassName()
+{
+    if (!m_scopeGroup || !m_contentLayout)
+    {
+        return;
+    }
+
+    const QAbstractButton* currentClassButton =
+        m_scopeGroup->button(CurrentClassId);
+
+    if (!currentClassButton || !currentClassButton->parentWidget())
+    {
+        return;
+    }
+
+    const QWidget* scopeGroupBox =
+        currentClassButton->parentWidget();
+    const QMargins contentMargins =
+        m_contentLayout->contentsMargins();
+    const int scrollBarWidth = m_contentScrollArea
+        ? m_contentScrollArea->style()->pixelMetric(
+            QStyle::PM_ScrollBarExtent
+            )
+        : 0;
+    const int requiredWidth = qMax(
+        DialogWidth,
+        scopeGroupBox->minimumSizeHint().width()
+            + contentMargins.left()
+            + contentMargins.right()
+            + scrollBarWidth
+        );
+
+    m_baseMinimumWidth = requiredWidth;
+    setMinimumWidth(m_baseMinimumWidth);
+    setMaximumWidth(
+        m_baseMinimumWidth * MaximumDialogWidthMultiplier
+            / MaximumDialogWidthDivisor
+        );
+    resize(qMax(width(), m_baseMinimumWidth), height());
 }
 
 void RosterPrintDialog::loadClasses()
@@ -1174,11 +1221,6 @@ void RosterPrintDialog::retranslateUi()
         }
     }
 
-    if (m_livePreviewCheckBox)
-    {
-        m_livePreviewCheckBox->setText(tr("Live Preview"));
-    }
-
     if (m_pageLayoutLabel)
     {
         m_pageLayoutLabel->setText(tr("Page Layout"));
@@ -1249,6 +1291,8 @@ void RosterPrintDialog::retranslateUi()
             button->setText(tr("Selected Classes"));
         }
     }
+
+    updateMinimumWidthForCurrentClassName();
 
     if (m_classList)
     {
