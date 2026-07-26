@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFile>
 #include <QImage>
+#include <QToolButton>
 #include <QtTest>
 
 class UniformWidthTabBarTests : public QObject
@@ -12,6 +13,9 @@ class UniformWidthTabBarTests : public QObject
 private slots:
     void tabSizeHintsUseWidestTabWidth();
     void tabWidgetCentersTabBarWhenTabsFit();
+    void scrollButtonsBracketOverflowingTabs();
+    void scrollButtonsAreHiddenWhenTabsFit();
+    void resizingDoesNotLeaveTrailingEmptySpace();
     void tabWidgetAppliesReusableKindProperties();
     void tabWidgetAppliesSectionKindProperties();
     void navigationTabsUseSharedTheme_data();
@@ -88,6 +92,143 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
     QCOMPARE(
         tabBar->geometry().x(),
         (tabs.width() - tabBar->width()) / 2
+        );
+}
+
+void UniformWidthTabBarTests::scrollButtonsBracketOverflowingTabs()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("overflowingTabBar")
+        );
+    tabs.resize(420, 200);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("Class level %1").arg(index)
+            );
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("overflowingTabBar")
+            );
+    auto* leftButton =
+        tabBar
+            ? tabBar->findChild<QToolButton*>(
+                QStringLiteral("ScrollLeftButton")
+                )
+            : nullptr;
+    auto* rightButton =
+        tabBar
+            ? tabBar->findChild<QToolButton*>(
+                QStringLiteral("ScrollRightButton")
+                )
+            : nullptr;
+
+    QVERIFY(tabBar);
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QVERIFY(leftButton->isVisible());
+    QVERIFY(rightButton->isVisible());
+    QCOMPARE(leftButton->x(), 0);
+    QCOMPARE(
+        rightButton->geometry().right(),
+        tabBar->width() - 1
+        );
+    QVERIFY(
+        tabBar->tabRect(0).left()
+        > leftButton->geometry().right()
+        );
+}
+
+void UniformWidthTabBarTests::scrollButtonsAreHiddenWhenTabsFit()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("fittingTabBar")
+        );
+    tabs.resize(900, 200);
+
+    for (int index = 0; index < 2; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("Class %1").arg(index)
+            );
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("fittingTabBar")
+            );
+    auto* leftButton =
+        tabBar
+            ? tabBar->findChild<QToolButton*>(
+                QStringLiteral("ScrollLeftButton")
+                )
+            : nullptr;
+    auto* rightButton =
+        tabBar
+            ? tabBar->findChild<QToolButton*>(
+                QStringLiteral("ScrollRightButton")
+                )
+            : nullptr;
+
+    QVERIFY(tabBar);
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QVERIFY(!leftButton->isVisible());
+    QVERIFY(!rightButton->isVisible());
+}
+
+void UniformWidthTabBarTests::resizingDoesNotLeaveTrailingEmptySpace()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("resizedTabBar")
+        );
+    tabs.resize(360, 200);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("A wide class level %1").arg(index)
+            );
+    }
+
+    tabs.setCurrentIndex(6);
+    tabs.show();
+    QCoreApplication::processEvents();
+    tabs.resize(900, 200);
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("resizedTabBar")
+            );
+    auto* rightButton =
+        tabBar
+            ? tabBar->findChild<QToolButton*>(
+                QStringLiteral("ScrollRightButton")
+                )
+            : nullptr;
+
+    QVERIFY(tabBar);
+    QVERIFY(rightButton);
+    QVERIFY(rightButton->isVisible());
+    QVERIFY(
+        tabBar->tabRect(tabBar->count() - 1).right()
+        >= rightButton->x() - 1
         );
 }
 

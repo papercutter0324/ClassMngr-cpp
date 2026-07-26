@@ -4,9 +4,67 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QProxyStyle>
 #include <QResizeEvent>
 #include <QShowEvent>
+#include <QStyleOption>
+#include <QTimer>
+#include <QToolButton>
 #include <QWheelEvent>
+
+namespace
+{
+
+class EdgeAlignedTabBarStyle final : public QProxyStyle
+{
+public:
+    using QProxyStyle::QProxyStyle;
+
+    QRect subElementRect(
+        SubElement element,
+        const QStyleOption* option,
+        const QWidget* widget
+        ) const override
+    {
+        QRect rect =
+            QProxyStyle::subElementRect(
+                element,
+                option,
+                widget
+                );
+
+        const auto* tabBar =
+            qobject_cast<const QTabBar*>(
+                widget
+                );
+
+        if (
+            !tabBar
+            || tabBar->shape() == QTabBar::RoundedWest
+            || tabBar->shape() == QTabBar::RoundedEast
+            || tabBar->shape() == QTabBar::TriangularWest
+            || tabBar->shape() == QTabBar::TriangularEast
+            )
+        {
+            return rect;
+        }
+
+        if (element == QStyle::SE_TabBarScrollLeftButton)
+        {
+            rect.moveLeft(0);
+        }
+        else if (element == QStyle::SE_TabBarScrollRightButton)
+        {
+            rect.moveRight(
+                tabBar->width() - 1
+                );
+        }
+
+        return rect;
+    }
+};
+
+}
 
 UniformWidthTabBar::UniformWidthTabBar(
     QWidget* parent
@@ -15,6 +73,23 @@ UniformWidthTabBar::UniformWidthTabBar(
 {
     setDrawBase(false);
     setExpanding(false);
+
+    auto* edgeAlignedStyle =
+        new EdgeAlignedTabBarStyle(
+            QApplication::style()->name()
+            );
+    edgeAlignedStyle->setParent(this);
+    setStyle(edgeAlignedStyle);
+
+    connect(
+        this,
+        &QTabBar::currentChanged,
+        this,
+        [this]
+        {
+            scheduleScrollControlRefresh();
+        }
+        );
 }
 
 QSize UniformWidthTabBar::tabSizeHint(
@@ -43,11 +118,132 @@ QSize UniformWidthTabBar::tabSizeHint(
     return hint;
 }
 
+int UniformWidthTabBar::naturalWidth() const
+{
+    int width = 0;
+
+    for (int index = 0; index < count(); ++index)
+    {
+        width +=
+            tabSizeHint(index).width();
+    }
+
+    return width;
+}
+
+void UniformWidthTabBar::tabLayoutChange()
+{
+    QTabBar::tabLayoutChange();
+    scheduleScrollControlRefresh();
+}
+
+void UniformWidthTabBar::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QTabBar::resizeEvent(event);
+    refreshScrollControls();
+}
+
+void UniformWidthTabBar::showEvent(
+    QShowEvent* event
+    )
+{
+    QTabBar::showEvent(event);
+    refreshScrollControls();
+}
+
 void UniformWidthTabBar::wheelEvent(
     QWheelEvent* event
     )
 {
     event->ignore();
+}
+
+void UniformWidthTabBar::scheduleScrollControlRefresh()
+{
+    QTimer::singleShot(
+        0,
+        this,
+        [this]
+        {
+            refreshScrollControls();
+        }
+        );
+}
+
+QToolButton* UniformWidthTabBar::scrollButton(
+    const char* objectName
+    ) const
+{
+    return findChild<QToolButton*>(
+        QString::fromLatin1(objectName),
+        Qt::FindDirectChildrenOnly
+        );
+}
+
+void UniformWidthTabBar::refreshScrollControls()
+{
+    QToolButton* leftButton =
+        scrollButton("ScrollLeftButton");
+    QToolButton* rightButton =
+        scrollButton("ScrollRightButton");
+
+    if (!leftButton || !rightButton)
+    {
+        return;
+    }
+
+    const bool scrollingRequired =
+        naturalWidth() > width();
+
+    removeTrailingGap(
+        leftButton,
+        rightButton,
+        scrollingRequired
+        );
+
+    leftButton->setVisible(scrollingRequired);
+    rightButton->setVisible(scrollingRequired);
+
+    if (scrollingRequired)
+    {
+        leftButton->raise();
+        rightButton->raise();
+    }
+}
+
+void UniformWidthTabBar::removeTrailingGap(
+    QToolButton* leftButton,
+    QToolButton* rightButton,
+    bool scrollingRequired
+    )
+{
+    if (count() <= 0)
+    {
+        return;
+    }
+
+    const int rightEdge =
+        scrollingRequired
+            ? rightButton->x()
+            : width();
+
+    for (int step = 0; step < count(); ++step)
+    {
+        const QRect lastTab =
+            tabRect(count() - 1);
+
+        if (
+            lastTab.right() >= rightEdge - 1
+            || !leftButton->isEnabled()
+            )
+        {
+            break;
+        }
+
+        leftButton->click();
+    }
 }
 
 UniformWidthTabWidget::UniformWidthTabWidget(
@@ -199,8 +395,10 @@ void UniformWidthTabWidget::tabRemoved(
 
 void UniformWidthTabWidget::centerTabBar()
 {
-    QTabBar* bar =
-        tabBar();
+    auto* bar =
+        qobject_cast<UniformWidthTabBar*>(
+            tabBar()
+            );
 
     if (
         !bar
@@ -215,7 +413,7 @@ void UniformWidthTabWidget::centerTabBar()
     const int availableWidth =
         width();
     const int naturalWidth =
-        bar->sizeHint().width();
+        bar->naturalWidth();
 
     if (
         availableWidth <= 0

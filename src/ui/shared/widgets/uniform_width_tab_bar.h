@@ -7,6 +7,7 @@ class QResizeEvent;
 class QShowEvent;
 class QEvent;
 class QObject;
+class QToolButton;
 class QWheelEvent;
 
 enum class UniformWidthTabKind
@@ -30,10 +31,35 @@ public:
         int index
         ) const override;
 
+    int naturalWidth() const;
+
 protected:
+    void tabLayoutChange() override;
+
+    void resizeEvent(
+        QResizeEvent* event
+        ) override;
+
+    void showEvent(
+        QShowEvent* event
+        ) override;
+
     void wheelEvent(
         QWheelEvent* event
         ) override;
+
+private:
+    QToolButton* scrollButton(
+        const char* objectName
+        ) const;
+
+    void scheduleScrollControlRefresh();
+    void refreshScrollControls();
+    void removeTrailingGap(
+        QToolButton* leftButton,
+        QToolButton* rightButton,
+        bool scrollingRequired
+        );
 };
 
 class UniformWidthTabWidget : public QTabWidget
