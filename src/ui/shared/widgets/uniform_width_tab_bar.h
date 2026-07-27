@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QTabBar>
 #include <QTabWidget>
 
@@ -7,6 +8,7 @@ class QResizeEvent;
 class QShowEvent;
 class QEvent;
 class QObject;
+class QPaintEvent;
 class QToolButton;
 class QWheelEvent;
 
@@ -18,9 +20,40 @@ enum class UniformWidthTabKind
     Section
 };
 
+enum class UniformWidthTabAppearance
+{
+    Platform,
+    NavigationPill
+};
+
 class UniformWidthTabBar : public QTabBar
 {
     Q_OBJECT
+    Q_PROPERTY(
+        QColor navigationTabFillColor
+        READ navigationTabFillColor
+        WRITE setNavigationTabFillColor
+        )
+    Q_PROPERTY(
+        QColor navigationTabBorderColor
+        READ navigationTabBorderColor
+        WRITE setNavigationTabBorderColor
+        )
+    Q_PROPERTY(
+        QColor navigationTabHoverColor
+        READ navigationTabHoverColor
+        WRITE setNavigationTabHoverColor
+        )
+    Q_PROPERTY(
+        QColor navigationTabSelectedColor
+        READ navigationTabSelectedColor
+        WRITE setNavigationTabSelectedColor
+        )
+    Q_PROPERTY(
+        QColor navigationTabTextColor
+        READ navigationTabTextColor
+        WRITE setNavigationTabTextColor
+        )
 
 public:
     explicit UniformWidthTabBar(
@@ -31,9 +64,34 @@ public:
         int index
         ) const override;
 
+    UniformWidthTabAppearance tabAppearance() const;
+
+    void setTabAppearance(
+        UniformWidthTabAppearance appearance
+        );
+
+    QColor navigationTabFillColor() const;
+    void setNavigationTabFillColor(const QColor& color);
+
+    QColor navigationTabBorderColor() const;
+    void setNavigationTabBorderColor(const QColor& color);
+
+    QColor navigationTabHoverColor() const;
+    void setNavigationTabHoverColor(const QColor& color);
+
+    QColor navigationTabSelectedColor() const;
+    void setNavigationTabSelectedColor(const QColor& color);
+
+    QColor navigationTabTextColor() const;
+    void setNavigationTabTextColor(const QColor& color);
+
     int naturalWidth() const;
 
 protected:
+    void paintEvent(
+        QPaintEvent* event
+        ) override;
+
     void tabLayoutChange() override;
 
     void resizeEvent(
@@ -49,6 +107,12 @@ protected:
         ) override;
 
 private:
+    QSize naturalTabSizeHint(
+        int index
+        ) const;
+
+    void paintNavigationPills();
+
     QToolButton* scrollButton(
         const char* objectName
         ) const;
@@ -60,6 +124,15 @@ private:
         QToolButton* rightButton,
         bool scrollingRequired
         );
+
+private:
+    UniformWidthTabAppearance m_tabAppearance =
+        UniformWidthTabAppearance::Platform;
+    QColor m_navigationTabFillColor;
+    QColor m_navigationTabBorderColor;
+    QColor m_navigationTabHoverColor;
+    QColor m_navigationTabSelectedColor;
+    QColor m_navigationTabTextColor;
 };
 
 class UniformWidthTabWidget : public QTabWidget
@@ -82,6 +155,12 @@ public:
 
     void setTabKind(
         UniformWidthTabKind kind
+        );
+
+    UniformWidthTabAppearance tabAppearance() const;
+
+    void setTabAppearance(
+        UniformWidthTabAppearance appearance
         );
 
 protected:
@@ -115,4 +194,6 @@ private:
 
 private:
     UniformWidthTabKind m_tabKind = UniformWidthTabKind::Generic;
+    UniformWidthTabAppearance m_tabAppearance =
+        UniformWidthTabAppearance::Platform;
 };

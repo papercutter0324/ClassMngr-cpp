@@ -5,6 +5,7 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QFrame>
 #include <QLabel>

@@ -19,6 +19,7 @@ class QTimer;
 class QVBoxLayout;
 class QUndoStack;
 class QWidget;
+class UniformWidthTabWidget;
 class SpeakingEvalDelegate;
 class SpeakingEvalModel;
 
@@ -170,7 +171,7 @@ private:
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
     QTabWidget* m_classTabs = nullptr;
-    QTabWidget* m_evaluationTabs = nullptr;
+    UniformWidthTabWidget* m_evaluationTabs = nullptr;
 
     SpeakingEvalModel* m_model = nullptr;
     SpeakingEvalTableView* m_table = nullptr;

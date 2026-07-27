@@ -21,7 +21,7 @@ class QPushButton;
 class QQuickWidget;
 class QScrollArea;
 class QShowEvent;
-class QTabWidget;
+class UniformWidthTabWidget;
 class QVBoxLayout;
 class QWidget;
 
@@ -166,7 +166,7 @@ private:
     CalendarEventModel* m_calendarModel = nullptr;
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;
     QQuickWidget* m_calendarView = nullptr;
-    QTabWidget* m_upcomingEventsTabs = nullptr;
+    UniformWidthTabWidget* m_upcomingEventsTabs = nullptr;
     std::array<QVBoxLayout*, UpcomingEventsScopeCount> m_upcomingEventLayouts{};
     QList<QPushButton*> m_eventTypeFilterButtons;
     QHash<QString, bool> m_eventTypeFilterStates;

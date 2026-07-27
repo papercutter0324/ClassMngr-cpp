@@ -13,6 +13,7 @@ class QStackedWidget;
 class QTabWidget;
 class QVBoxLayout;
 class RosterEditorWidget;
+class UniformWidthTabWidget;
 class QWidget;
 
 enum class ClassesSection
@@ -88,8 +89,8 @@ private:
     QWidget* m_navigationContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
-    QTabWidget* m_classTabs = nullptr;
-    QTabWidget* m_sectionTabs = nullptr;
+    UniformWidthTabWidget* m_classTabs = nullptr;
+    UniformWidthTabWidget* m_sectionTabs = nullptr;
     QStackedWidget* m_editorStack = nullptr;
     ClassDetailsPage* m_detailsPage = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;

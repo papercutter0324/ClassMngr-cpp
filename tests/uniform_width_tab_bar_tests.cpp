@@ -1,7 +1,9 @@
+#include "features/classes/ui/classes_navigation_tabs.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QApplication>
 #include <QFile>
+#include <QHoverEvent>
 #include <QImage>
 #include <QToolButton>
 #include <QtTest>
@@ -18,6 +20,9 @@ private slots:
     void resizingDoesNotLeaveTrailingEmptySpace();
     void tabWidgetAppliesReusableKindProperties();
     void tabWidgetAppliesSectionKindProperties();
+    void classesNavigationFactoryUsesPillAppearance();
+    void navigationPillAppearance_data();
+    void navigationPillAppearance();
     void navigationTabsUseSharedTheme_data();
     void navigationTabsUseSharedTheme();
 };
@@ -258,6 +263,14 @@ void UniformWidthTabBarTests::tabWidgetAppliesReusableKindProperties()
         QStringLiteral("class")
         );
     QCOMPARE(
+        tabs.tabAppearance(),
+        UniformWidthTabAppearance::NavigationPill
+        );
+    QCOMPARE(
+        tabBar->tabAppearance(),
+        UniformWidthTabAppearance::NavigationPill
+        );
+    QCOMPARE(
         tabs.tabShape(),
         QTabWidget::Rounded
         );
@@ -295,6 +308,14 @@ void UniformWidthTabBarTests::tabWidgetAppliesSectionKindProperties()
         QStringLiteral("section")
         );
     QCOMPARE(
+        tabs.tabAppearance(),
+        UniformWidthTabAppearance::Platform
+        );
+    QCOMPARE(
+        tabBar->tabAppearance(),
+        UniformWidthTabAppearance::Platform
+        );
+    QCOMPARE(
         tabs.tabShape(),
         QTabWidget::Rounded
         );
@@ -304,6 +325,352 @@ void UniformWidthTabBarTests::tabWidgetAppliesSectionKindProperties()
         Qt::ElideRight
         );
     QVERIFY(tabs.usesScrollButtons());
+}
+
+void UniformWidthTabBarTests::classesNavigationFactoryUsesPillAppearance()
+{
+    QWidget owner;
+    const QList<UniformWidthTabWidget*> tabs{
+        ClassesNavigationTabs::create(
+            UniformWidthTabKind::Grade,
+            QStringLiteral("classesGradeTabBar"),
+            &owner
+            ),
+        ClassesNavigationTabs::create(
+            UniformWidthTabKind::Class,
+            QStringLiteral("classesLevelTabBar"),
+            &owner
+            ),
+        ClassesNavigationTabs::create(
+            UniformWidthTabKind::Section,
+            QStringLiteral("classesSectionTabBar"),
+            &owner
+            )
+    };
+
+    QSize expectedTabSize;
+
+    for (UniformWidthTabWidget* tabWidget : tabs)
+    {
+        QVERIFY(tabWidget);
+        tabWidget->addTab(
+            new QWidget(tabWidget),
+            QStringLiteral("Reference")
+            );
+        tabWidget->addTab(
+            new QWidget(tabWidget),
+            QStringLiteral("Reference")
+            );
+
+        auto* tabBar =
+            qobject_cast<UniformWidthTabBar*>(
+                tabWidget->tabBar()
+                );
+
+        QVERIFY(tabBar);
+        QCOMPARE(
+            tabWidget->tabAppearance(),
+            UniformWidthTabAppearance::NavigationPill
+            );
+        QCOMPARE(
+            tabBar->tabAppearance(),
+            UniformWidthTabAppearance::NavigationPill
+            );
+        QCOMPARE(
+            tabWidget->font(),
+            QApplication::font()
+            );
+        QCOMPARE(
+            tabBar->font(),
+            QApplication::font()
+            );
+        QCOMPARE(
+            tabWidget->currentIndex(),
+            0
+            );
+
+        if (expectedTabSize.isEmpty())
+        {
+            expectedTabSize =
+                tabBar->tabSizeHint(0);
+        }
+
+        QCOMPARE(
+            tabBar->tabSizeHint(0),
+            expectedTabSize
+            );
+        QCOMPARE(
+            tabBar->tabSizeHint(1),
+            expectedTabSize
+            );
+    }
+}
+
+void UniformWidthTabBarTests::navigationPillAppearance_data()
+{
+    QTest::addColumn<QColor>("windowColor");
+    QTest::addColumn<QColor>("buttonColor");
+    QTest::addColumn<QColor>("buttonTextColor");
+    QTest::addColumn<QColor>("borderColor");
+    QTest::addColumn<QColor>("hoverColor");
+    QTest::addColumn<QColor>("selectedColor");
+    QTest::addColumn<QColor>("selectedTextColor");
+
+    QTest::newRow("light")
+        << QColor(QStringLiteral("#eff0f1"))
+        << QColor(QStringLiteral("#deded8"))
+        << QColor(QStringLiteral("#27313a"))
+        << QColor(QStringLiteral("#c5c7c3"))
+        << QColor(QStringLiteral("#f5f5f5"))
+        << QColor(QStringLiteral("#3daee9"))
+        << QColor(QStringLiteral("#ff00ff"));
+
+    QTest::newRow("dark")
+        << QColor(QStringLiteral("#202326"))
+        << QColor(QStringLiteral("#303030"))
+        << QColor(QStringLiteral("#f0f0f0"))
+        << QColor(QStringLiteral("#454545"))
+        << QColor(QStringLiteral("#31363b"))
+        << QColor(QStringLiteral("#3daee9"))
+        << QColor(QStringLiteral("#ff00ff"));
+}
+
+void UniformWidthTabBarTests::navigationPillAppearance()
+{
+    QFETCH(QColor, windowColor);
+    QFETCH(QColor, buttonColor);
+    QFETCH(QColor, buttonTextColor);
+    QFETCH(QColor, borderColor);
+    QFETCH(QColor, hoverColor);
+    QFETCH(QColor, selectedColor);
+    QFETCH(QColor, selectedTextColor);
+
+    QPalette navigationPalette =
+        qApp->palette();
+
+    for (const QPalette::ColorGroup group : {
+             QPalette::Active,
+             QPalette::Inactive
+             })
+    {
+        navigationPalette.setColor(
+            group,
+            QPalette::Window,
+            windowColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::Button,
+            buttonColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::ButtonText,
+            buttonTextColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::Mid,
+            borderColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::Light,
+            hoverColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::Highlight,
+            selectedColor
+            );
+        navigationPalette.setColor(
+            group,
+            QPalette::HighlightedText,
+            selectedTextColor
+            );
+    }
+
+    UniformWidthTabWidget gradeTabs(
+        UniformWidthTabKind::Grade,
+        QStringLiteral("pillGradeTabBar")
+        );
+    UniformWidthTabWidget classTabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("pillClassTabBar")
+        );
+    UniformWidthTabWidget sectionTabs(
+        UniformWidthTabKind::Section,
+        QStringLiteral("pillSectionTabBar")
+        );
+
+    const auto configure =
+        [&navigationPalette](UniformWidthTabWidget& tabs)
+        {
+            tabs.setPalette(
+                navigationPalette
+                );
+            tabs.setTabAppearance(
+                UniformWidthTabAppearance::NavigationPill
+                );
+            tabs.addTab(
+                new QWidget(&tabs),
+                QStringLiteral("Reference")
+                );
+            tabs.addTab(
+                new QWidget(&tabs),
+                QStringLiteral("Reference")
+                );
+            tabs.setCurrentIndex(0);
+            tabs.resize(640, 200);
+            tabs.show();
+        };
+
+    configure(gradeTabs);
+    configure(classTabs);
+    configure(sectionTabs);
+    QCoreApplication::processEvents();
+
+    const QList<UniformWidthTabBar*> tabBars{
+        gradeTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("pillGradeTabBar")
+            ),
+        classTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("pillClassTabBar")
+            ),
+        sectionTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("pillSectionTabBar")
+            )
+    };
+
+    QVERIFY(tabBars.at(0));
+    QVERIFY(tabBars.at(1));
+    QVERIFY(tabBars.at(2));
+
+    const QSize expectedSize =
+        tabBars.first()->tabSizeHint(0);
+    const QFont expectedFont =
+        tabBars.first()->font();
+
+    for (UniformWidthTabBar* tabBar : tabBars)
+    {
+        QCOMPARE(
+            tabBar->tabAppearance(),
+            UniformWidthTabAppearance::NavigationPill
+            );
+        QCOMPARE(
+            tabBar->property("uniformTabAppearance").toString(),
+            QStringLiteral("navigationPill")
+            );
+        QCOMPARE(
+            tabBar->tabSizeHint(0),
+            expectedSize
+            );
+        QCOMPARE(
+            tabBar->tabSizeHint(1),
+            expectedSize
+            );
+        QCOMPARE(
+            tabBar->font(),
+            expectedFont
+            );
+
+        const QRect selectedTab =
+            tabBar->tabRect(0);
+        const QRect inactiveTab =
+            tabBar->tabRect(1);
+        const QImage image =
+            tabBar->grab().toImage();
+        const int fillSampleOffset = 8;
+
+        QCOMPARE(
+            image.pixelColor(
+                selectedTab.left() + fillSampleOffset,
+                selectedTab.center().y()
+                ),
+            selectedColor
+            );
+
+        const QColor selectedTextColor(
+            QStringLiteral("#101418")
+            );
+        bool selectedTextIsNearBlack = false;
+
+        for (
+            int y = selectedTab.top();
+            y <= selectedTab.bottom() && !selectedTextIsNearBlack;
+            ++y
+            )
+        {
+            for (int x = selectedTab.left(); x <= selectedTab.right(); ++x)
+            {
+                if (image.pixelColor(x, y) == selectedTextColor)
+                {
+                    selectedTextIsNearBlack = true;
+                    break;
+                }
+            }
+        }
+
+        QVERIFY(selectedTextIsNearBlack);
+        QCOMPARE(
+            image.pixelColor(
+                inactiveTab.left() + fillSampleOffset,
+                inactiveTab.center().y()
+                ),
+            buttonColor
+            );
+        QCOMPARE(
+            image.pixelColor(
+                inactiveTab.left(),
+                inactiveTab.center().y()
+                ),
+            borderColor
+            );
+        QCOMPARE(
+            image.pixelColor(
+                selectedTab.right() - 2,
+                selectedTab.center().y()
+                ).alpha(),
+            0
+            );
+        QCOMPARE(
+            image.pixelColor(
+                selectedTab.left(),
+                selectedTab.top()
+                ).alpha(),
+            0
+            );
+
+        QHoverEvent hoverEvent(
+            QEvent::HoverMove,
+            QPointF(inactiveTab.center()),
+            QPointF(selectedTab.center())
+            );
+        QApplication::sendEvent(
+            tabBar,
+            &hoverEvent
+            );
+        QCoreApplication::processEvents();
+
+        const QImage hoveredImage =
+            tabBar->grab().toImage();
+
+        QCOMPARE(
+            hoveredImage.pixelColor(
+                inactiveTab.left() + fillSampleOffset,
+                inactiveTab.center().y()
+            ),
+            hoverColor
+            );
+
+        QEvent hoverLeaveEvent(
+            QEvent::HoverLeave
+            );
+        QApplication::sendEvent(
+            tabBar,
+            &hoverLeaveEvent
+            );
+    }
 }
 
 void UniformWidthTabBarTests::navigationTabsUseSharedTheme_data()

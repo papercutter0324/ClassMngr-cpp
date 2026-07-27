@@ -89,6 +89,9 @@ void SpeakingEvalPage::buildUi()
             m_tabsContainer
             );
     m_evaluationTabs->setObjectName("speakingEvalEvaluationTabs");
+    m_evaluationTabs->setTabAppearance(
+        UniformWidthTabAppearance::NavigationPill
+        );
     m_evaluationTabs->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Maximum

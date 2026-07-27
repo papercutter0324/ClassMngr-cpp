@@ -7,6 +7,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/ui/class_details_page.h"
+#include "features/classes/ui/classes_navigation_tabs.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/classes/models/class_tab_navigation_model.h"
@@ -315,11 +316,12 @@ void ClassesPage::buildUi()
     m_classTabsLayout->setSpacing(0);
     navigationLayout->addWidget(m_classTabsContainer);
 
-    m_sectionTabs = new UniformWidthTabWidget(
-        UniformWidthTabKind::Section,
-        QStringLiteral("classesSectionTabBar"),
-        m_navigationContainer
-        );
+    m_sectionTabs =
+        ClassesNavigationTabs::create(
+            UniformWidthTabKind::Section,
+            QStringLiteral("classesSectionTabBar"),
+            m_navigationContainer
+            );
     m_sectionTabs->setObjectName("classesSectionTabs");
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Details"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Roster"));
@@ -430,27 +432,13 @@ void ClassesPage::rebuildClassTabs(
             ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
             );
 
-    auto* gradeTabs = new UniformWidthTabWidget(
-        UniformWidthTabKind::Grade,
-        QStringLiteral("classesGradeTabBar"),
-        m_classTabsContainer
-        );
+    auto* gradeTabs =
+        ClassesNavigationTabs::create(
+            UniformWidthTabKind::Grade,
+            QStringLiteral("classesGradeTabBar"),
+            m_classTabsContainer
+            );
     gradeTabs->setObjectName("classesGradeTabs");
-
-    if (m_sectionTabs && gradeTabs->tabBar())
-    {
-        const QFont navigationFont =
-            gradeTabs->tabBar()->font();
-
-        m_sectionTabs->setFont(
-            navigationFont
-            );
-        m_sectionTabs->tabBar()->setFont(
-            navigationFont
-            );
-        m_sectionTabs->updateGeometry();
-        m_sectionTabs->tabBar()->updateGeometry();
-    }
 
     const auto connectClassTabs =
         [this](QTabWidget* tabs)
@@ -480,11 +468,12 @@ void ClassesPage::rebuildClassTabs(
         gradeLayout->setSpacing(8);
         gradeLayout->setAlignment(Qt::AlignTop);
 
-        auto* classTabs = new UniformWidthTabWidget(
-            UniformWidthTabKind::Class,
-            QStringLiteral("classesLevelTabBar"),
-            gradePage
-            );
+        auto* classTabs =
+            ClassesNavigationTabs::create(
+                UniformWidthTabKind::Class,
+                QStringLiteral("classesLevelTabBar"),
+                gradePage
+                );
         classTabs->setObjectName("classesLevelTabs");
 
         for (const ClassTabNavigation::ClassTab& classTab

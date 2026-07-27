@@ -1468,6 +1468,8 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrUniformWidthTabBarTests
         tests/uniform_width_tab_bar_tests.cpp
+        src/features/classes/ui/classes_navigation_tabs.cpp
+        src/features/classes/ui/classes_navigation_tabs.h
         src/ui/shared/widgets/uniform_width_tab_bar.cpp
     )
 
@@ -1492,6 +1494,12 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrUniformWidthTabBarTests
         COMMAND ClassMngrUniformWidthTabBarTests
+    )
+
+    set_tests_properties(
+        ClassMngrUniformWidthTabBarTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrSidebarStructureTests

@@ -503,6 +503,11 @@ QTabBar[uniformTabKind="grade"],
 QTabBar[uniformTabKind="class"],
 QTabBar[uniformTabKind="section"] {
     qproperty-drawBase: 0;
+    qproperty-navigationTabFillColor: #deded8;
+    qproperty-navigationTabBorderColor: #c5c7c3;
+    qproperty-navigationTabHoverColor: #f5f5f5;
+    qproperty-navigationTabSelectedColor: #3daee9;
+    qproperty-navigationTabTextColor: #27313a;
 }
 
 QTabBar#subPrepGradeTabBar::tab,

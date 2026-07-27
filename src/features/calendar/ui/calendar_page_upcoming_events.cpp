@@ -331,6 +331,9 @@ void CalendarPage::buildUpcomingEventsPanel(
     m_upcomingEventsTabs->setObjectName(
         QStringLiteral("calendarUpcomingTabs")
         );
+    m_upcomingEventsTabs->setTabAppearance(
+        UniformWidthTabAppearance::NavigationPill
+        );
     m_upcomingEventsTabs->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Maximum
