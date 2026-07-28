@@ -5,10 +5,13 @@
 #include <QDialog>
 #include <QList>
 
+struct TeacherImportFileValidation;
+
 class QCheckBox;
 class QDialogButtonBox;
 class QLabel;
 class QLineEdit;
+class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QScrollArea;
@@ -38,6 +41,10 @@ private:
 
     void browseForFile();
     void validateSelectedFile();
+    void applyValidation(
+        const TeacherImportFileValidation& validation
+        );
+    void setLoading(bool loading);
     void rebuildOptions();
     void clearOptions();
     void updateImportEnabled();
@@ -45,6 +52,7 @@ private:
     QLineEdit* m_fileEdit = nullptr;
     QPushButton* m_browseButton = nullptr;
     QLabel* m_statusLabel = nullptr;
+    QProgressBar* m_progressBar = nullptr;
     QLabel* m_templateLabel = nullptr;
     QLabel* m_automaticLabel = nullptr;
     QLabel* m_koreanHeadingLabel = nullptr;
@@ -59,4 +67,6 @@ private:
     TeacherImportPreview m_preview;
     QList<GroupControls> m_groupControls;
     bool m_valid = false;
+    bool m_loading = false;
+    quint64 m_validationRequestId = 0;
 };

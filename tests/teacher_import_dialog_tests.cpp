@@ -5,6 +5,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
@@ -37,7 +38,16 @@ void TeacherImportDialogTests::showsFilePromptAndInvalidStatus()
 
     const auto* fileEdit = dialog.findChild<QLineEdit*>(
         QStringLiteral("teacherImportFilePath"));
+    auto* browseButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("teacherImportBrowseButton"));
+    auto* importButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("teacherImportAcceptButton"));
+    auto* progress = dialog.findChild<QProgressBar*>(
+        QStringLiteral("teacherImportProgressBar"));
     QVERIFY(fileEdit);
+    QVERIFY(browseButton);
+    QVERIFY(importButton);
+    QVERIFY(progress);
     QCOMPARE(dialog.width(), 460);
     QCOMPARE(dialog.minimumWidth(), 460);
     QCOMPARE(dialog.maximumWidth(), 460);
@@ -47,7 +57,16 @@ void TeacherImportDialogTests::showsFilePromptAndInvalidStatus()
     QVERIFY(validationLabel->geometry().top() - fileEdit->geometry().bottom() <= 24);
 
     dialog.setFilePath(QStringLiteral("/definitely/missing/teacher-list.xlsx"));
-    QCOMPARE(validationLabel->text(), QStringLiteral("Status: Invalid File"));
+    QCOMPARE(validationLabel->text(), QStringLiteral("Loading workbook..."));
+    QVERIFY(!progress->isHidden());
+    QVERIFY(!browseButton->isEnabled());
+    QVERIFY(!importButton->isEnabled());
+    QTRY_COMPARE_WITH_TIMEOUT(
+        validationLabel->text(),
+        QStringLiteral("Status: Invalid File"),
+        5000);
+    QVERIFY(progress->isHidden());
+    QVERIFY(browseButton->isEnabled());
 }
 
 void TeacherImportDialogTests::suppliedWorkbookBuildsDynamicSelectionUi()
@@ -64,11 +83,14 @@ void TeacherImportDialogTests::suppliedWorkbookBuildsDynamicSelectionUi()
     auto* importButton = dialog.findChild<QPushButton*>(
         QStringLiteral("teacherImportAcceptButton"));
     QVERIFY(importButton);
-    QVERIFY(importButton->isEnabled());
     const auto* validationLabel = dialog.findChild<QLabel*>(
         QStringLiteral("teacherImportValidationStatus"));
     QVERIFY(validationLabel);
-    QCOMPARE(validationLabel->text(), QStringLiteral("Status: Valid File"));
+    QTRY_COMPARE_WITH_TIMEOUT(
+        validationLabel->text(),
+        QStringLiteral("Status: Valid File"),
+        10000);
+    QVERIFY(importButton->isEnabled());
     const auto* templateLabel = dialog.findChild<QLabel*>(
         QStringLiteral("teacherImportTemplateName"));
     const auto* automaticLabel = dialog.findChild<QLabel*>(
@@ -183,7 +205,11 @@ void TeacherImportDialogTests::suppliedWorkbookBuildsDynamicSelectionUi()
     dialog.setFilePath(QStringLiteral("/definitely/missing/teacher-list.xlsx"));
     QVERIFY(!importButton->isEnabled());
     QVERIFY(templateLabel->text().isEmpty());
-    QCOMPARE(validationLabel->text(), QStringLiteral("Status: Invalid File"));
+    QCOMPARE(validationLabel->text(), QStringLiteral("Loading workbook..."));
+    QTRY_COMPARE_WITH_TIMEOUT(
+        validationLabel->text(),
+        QStringLiteral("Status: Invalid File"),
+        5000);
 }
 
 QTEST_MAIN(TeacherImportDialogTests)

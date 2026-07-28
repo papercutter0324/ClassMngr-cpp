@@ -53,6 +53,7 @@ if(DEFINED Qt6_DIR AND EXISTS "${Qt6_DIR}/Qt6Config.cmake")
 endif()
 
 find_package(Qt6 6.11.1 REQUIRED COMPONENTS
+    Concurrent
     Core
     Gui
     Pdf
@@ -454,6 +455,7 @@ target_compile_definitions(ClassMngr
 
 target_link_libraries(ClassMngr
     PRIVATE
+        Qt6::Concurrent
         Qt6::Core
         Qt6::Gui
         Qt6::Network
@@ -1200,6 +1202,7 @@ if(BUILD_TESTING)
 
     target_link_libraries(ClassMngrTeacherImportDialogTests
         PRIVATE
+            Qt6::Concurrent
             Qt6::Core
             Qt6::Gui
             Qt6::Test
@@ -1375,6 +1378,7 @@ if(BUILD_TESTING)
 
     target_link_libraries(ClassMngrScheduleImportDialogTests
         PRIVATE
+            Qt6::Concurrent
             Qt6::Core
             Qt6::Gui
             Qt6::PrintSupport

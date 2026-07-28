@@ -13,6 +13,7 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QPalette>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
@@ -40,6 +41,8 @@ private slots:
     void cleanup();
     void selectsHighestContrastFontColor();
     void requiresFileAndScheduleKind();
+    void reportsAsyncWorkbookFailure();
+    void discardsSupersededAndClosedLoads();
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
     void suppliedWorkbookBuildsStagedReview();
@@ -267,14 +270,35 @@ bool loadSourceSelections(
         dialog->findChild<QComboBox*>(
             QStringLiteral("scheduleImportSheetCombo")
             );
-    if (!normal || !next || !pages || !sheets)
+    auto* progress =
+        dialog->findChild<QProgressBar*>(
+            QStringLiteral("scheduleImportProgressBar")
+            );
+    if (!normal || !next || !pages || !sheets || !progress)
     {
         return false;
     }
 
     normal->setChecked(true);
     next->click();
-    if (pages->currentIndex() != 0)
+    if (
+        pages->currentIndex() != 0
+        || progress->isHidden()
+        || next->isEnabled()
+        )
+    {
+        return false;
+    }
+
+    for (
+        int attempt = 0;
+        attempt < 500 && !progress->isHidden();
+        ++attempt
+        )
+    {
+        QTest::qWait(10);
+    }
+    if (!progress->isHidden())
     {
         return false;
     }
@@ -420,6 +444,175 @@ void ScheduleImportDialogTests
     QVERIFY(next->isEnabled());
 }
 
+void ScheduleImportDialogTests::reportsAsyncWorkbookFailure()
+{
+    ApplicationServices services;
+    ScheduleImportDialog dialog(&services);
+    dialog.setFilePath(
+        QStringLiteral("/definitely/missing/schedule.xlsx")
+        );
+
+    auto* normal =
+        dialog.findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportNormalRadio")
+            );
+    auto* next =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    auto* browse =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportBrowseButton")
+            );
+    auto* status =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportSourceStatus")
+            );
+    auto* progress =
+        dialog.findChild<QProgressBar*>(
+            QStringLiteral("scheduleImportProgressBar")
+            );
+    QVERIFY(normal);
+    QVERIFY(next);
+    QVERIFY(browse);
+    QVERIFY(status);
+    QVERIFY(progress);
+
+    normal->setChecked(true);
+    next->click();
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("Loading workbook...")
+        );
+    QVERIFY(!progress->isHidden());
+    QVERIFY(!next->isEnabled());
+    QVERIFY(!browse->isEnabled());
+
+    QTRY_VERIFY_WITH_TIMEOUT(progress->isHidden(), 5000);
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "The selected workbook could not be opened."
+            )
+        );
+    QVERIFY(next->isEnabled());
+    QVERIFY(browse->isEnabled());
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString malformedPath =
+        directory.filePath(
+            QStringLiteral("malformed.xlsx")
+            );
+    QFile malformedFile(malformedPath);
+    QVERIFY(malformedFile.open(QIODevice::WriteOnly));
+    QCOMPARE(
+        malformedFile.write(
+            QByteArrayLiteral("not an xlsx workbook")
+            ),
+        20
+        );
+    malformedFile.close();
+
+    dialog.setFilePath(malformedPath);
+    next->click();
+    QVERIFY(!progress->isHidden());
+    QVERIFY(!next->isEnabled());
+    QTRY_VERIFY_WITH_TIMEOUT(progress->isHidden(), 5000);
+    QVERIFY(
+        status->text().startsWith(
+            QStringLiteral("Invalid workbook:")
+            )
+        );
+    QVERIFY(next->isEnabled());
+    QVERIFY(browse->isEnabled());
+}
+
+void ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path =
+        writeDialogWorkbook(&directory);
+    QVERIFY(!path.isEmpty());
+
+    ApplicationServices services;
+    ScheduleImportDialog dialog(&services);
+    dialog.setFilePath(path);
+    auto* normal =
+        dialog.findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportNormalRadio")
+            );
+    auto* next =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    auto* status =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportSourceStatus")
+            );
+    auto* progress =
+        dialog.findChild<QProgressBar*>(
+            QStringLiteral("scheduleImportProgressBar")
+            );
+    auto* sheets =
+        dialog.findChild<QComboBox*>(
+            QStringLiteral("scheduleImportSheetCombo")
+            );
+    QVERIFY(normal);
+    QVERIFY(next);
+    QVERIFY(status);
+    QVERIFY(progress);
+    QVERIFY(sheets);
+
+    normal->setChecked(true);
+    next->click();
+    QVERIFY(!progress->isHidden());
+    dialog.setFilePath(
+        QStringLiteral("/replacement/schedule.xlsx")
+        );
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Choose the schedule type, then continue."
+            )
+        );
+    QVERIFY(progress->isHidden());
+    QCOMPARE(sheets->count(), 0);
+    QTest::qWait(100);
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Choose the schedule type, then continue."
+            )
+        );
+    QCOMPARE(sheets->count(), 0);
+
+    auto* closingDialog =
+        new ScheduleImportDialog(&services);
+    closingDialog->setFilePath(path);
+    auto* closingNormal =
+        closingDialog->findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportNormalRadio")
+            );
+    auto* closingNext =
+        closingDialog->findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    auto* closingProgress =
+        closingDialog->findChild<QProgressBar*>(
+            QStringLiteral("scheduleImportProgressBar")
+            );
+    QVERIFY(closingNormal);
+    QVERIFY(closingNext);
+    QVERIFY(closingProgress);
+    closingNormal->setChecked(true);
+    closingNext->click();
+    QVERIFY(!closingProgress->isHidden());
+    delete closingDialog;
+    QTest::qWait(100);
+}
+
 void ScheduleImportDialogTests
     ::compactFlowAndReviewPresentation()
 {
@@ -559,6 +752,13 @@ void ScheduleImportDialogTests
     }
     QVERIFY(!changedDetails.isEmpty());
     QVERIFY(changedDetails.contains(QStringLiteral("Imported Class:")));
+    QVERIFY(
+        changedDetails.contains(
+            QStringLiteral(
+                "<b style=\"color:white\">Changes:</b>"
+                )
+            )
+        );
     const int gradePosition =
         changedDetails.indexOf(QStringLiteral("Grade:"));
     const int levelPosition =

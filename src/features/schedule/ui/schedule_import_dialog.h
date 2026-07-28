@@ -12,6 +12,7 @@ class QComboBox;
 class QDialogButtonBox;
 class QLabel;
 class QLineEdit;
+class QProgressBar;
 class QPushButton;
 class QRadioButton;
 class QScrollArea;
@@ -56,6 +57,12 @@ private:
     QWidget* buildReviewPage();
     void browseForFile();
     bool loadWorkbook();
+    void applyLoadedWorkbook(
+        ScheduleImportWorkbook workbook,
+        const QString& filePath,
+        ScheduleImportKind kind
+        );
+    void setLoading(bool loading);
     void resetUserSelection();
     void updateSelectedSheet();
     void prepareUserSelection();
@@ -84,6 +91,8 @@ private:
     ScheduleImportKind m_loadedKind =
         ScheduleImportKind::Normal;
     bool m_workbookLoaded = false;
+    bool m_loading = false;
+    quint64 m_loadRequestId = 0;
     QString m_profileName;
 
     QStackedWidget* m_pages = nullptr;
@@ -93,6 +102,7 @@ private:
     QRadioButton* m_normalRadio = nullptr;
     QRadioButton* m_intensiveRadio = nullptr;
     QLabel* m_sourceStatus = nullptr;
+    QProgressBar* m_progressBar = nullptr;
     QLabel* m_sheetLabel = nullptr;
     QComboBox* m_sheetCombo = nullptr;
 

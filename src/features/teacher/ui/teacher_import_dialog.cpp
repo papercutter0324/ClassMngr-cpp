@@ -7,15 +7,18 @@
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFutureWatcher>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QtConcurrentRun>
 
 TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     : QDialog(parent)
@@ -51,6 +54,13 @@ TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     QFont statusFont = m_statusLabel->font();
     statusFont.setBold(true);
     m_statusLabel->setFont(statusFont);
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setObjectName(
+        QStringLiteral("teacherImportProgressBar")
+        );
+    m_progressBar->setRange(0, 0);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setVisible(false);
     m_templateLabel = new QLabel(this);
     m_templateLabel->setObjectName(QStringLiteral("teacherImportTemplateName"));
     m_templateLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -68,6 +78,7 @@ TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     m_koreanHeadingLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     m_koreanHeadingLabel->setVisible(false);
     mainLayout->addWidget(m_statusLabel, 0, Qt::AlignTop);
+    mainLayout->addWidget(m_progressBar);
     mainLayout->addSpacing(8);
     mainLayout->addWidget(m_templateLabel, 0, Qt::AlignTop);
     mainLayout->addSpacing(8);
@@ -128,9 +139,59 @@ void TeacherImportDialog::browseForFile()
 
 void TeacherImportDialog::validateSelectedFile()
 {
+    const QString filePath =
+        m_fileEdit->text();
+    const quint64 requestId =
+        ++m_validationRequestId;
+
     clearOptions();
-    const TeacherImportFileValidation validation =
-        validateTeacherImportFile(m_fileEdit->text());
+    m_valid = false;
+    m_statusLabel->setToolTip(QString());
+    m_templateLabel->clear();
+    m_templateLabel->setVisible(false);
+    m_automaticLabel->clear();
+    m_automaticLabel->setVisible(false);
+    m_koreanHeadingLabel->setVisible(false);
+    m_candidateScrollArea->setVisible(false);
+    setLoading(true);
+
+    auto* watcher =
+        new QFutureWatcher<TeacherImportFileValidation>(
+            this
+            );
+    connect(
+        watcher,
+        &QFutureWatcher<TeacherImportFileValidation>::finished,
+        this,
+        [this, watcher, requestId]()
+        {
+            const TeacherImportFileValidation validation =
+                watcher->result();
+            watcher->deleteLater();
+
+            if (requestId != m_validationRequestId)
+            {
+                return;
+            }
+
+            setLoading(false);
+            applyValidation(validation);
+        }
+        );
+    watcher->setFuture(
+        QtConcurrent::run(
+            [filePath]()
+            {
+                return validateTeacherImportFile(filePath);
+            }
+            )
+        );
+}
+
+void TeacherImportDialog::applyValidation(
+    const TeacherImportFileValidation& validation
+    )
+{
     if (!validation.isValid())
     {
         m_valid = false;
@@ -165,6 +226,23 @@ void TeacherImportDialog::validateSelectedFile()
     m_koreanHeadingLabel->setVisible(true);
     m_candidateScrollArea->setVisible(true);
     rebuildOptions();
+    updateImportEnabled();
+}
+
+void TeacherImportDialog::setLoading(
+    bool loading
+    )
+{
+    m_loading = loading;
+    m_progressBar->setVisible(loading);
+    m_fileEdit->setEnabled(!loading);
+    m_browseButton->setEnabled(!loading);
+    if (loading)
+    {
+        m_statusLabel->setText(
+            tr("Loading workbook...")
+            );
+    }
     updateImportEnabled();
 }
 
@@ -329,7 +407,7 @@ TeacherImportPlan TeacherImportDialog::importPlan() const
 
 void TeacherImportDialog::updateImportEnabled()
 {
-    if (!m_valid)
+    if (!m_valid || m_loading)
     {
         m_importButton->setEnabled(false);
         return;

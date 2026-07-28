@@ -20,6 +20,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFutureWatcher>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHash>
@@ -29,6 +30,7 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPalette>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
@@ -43,9 +45,11 @@
 #include <QTime>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QtConcurrentRun>
 
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 namespace
 {
@@ -58,6 +62,14 @@ constexpr int ReviewDialogHeight = 820;
 constexpr int MaximumReviewDialogWidth = 1000;
 constexpr int SourceDialogWidthNumerator = 13;
 constexpr int SourceDialogWidthDenominator = 10;
+
+struct ScheduleWorkbookLoadResult
+{
+    ScheduleImportWorkbook workbook;
+    QString error;
+    bool fileOpened = false;
+    bool succeeded = false;
+};
 
 DataService* openDataService(
     ApplicationServices* services
@@ -536,7 +548,7 @@ QString classDifferences(
 
     return QStringLiteral(
         "%1<br>"
-        "<span style=\"color:%2\"><b>%3</b>"
+        "<span style=\"color:%2\"><b style=\"color:white\">%3</b>"
         "<ul style=\"margin-top:2px; margin-bottom:0px;\">%4</ul>"
         "</span>"
         )
@@ -816,6 +828,8 @@ void ScheduleImportDialog::setFilePath(
     const QString& filePath
     )
 {
+    ++m_loadRequestId;
+    setLoading(false);
     m_fileEdit->setText(filePath);
     m_workbookLoaded = false;
     m_sheetCombo->clear();
@@ -1034,6 +1048,16 @@ QWidget* ScheduleImportDialog::buildSourcePage()
         );
     m_sourceStatus->setWordWrap(true);
     layout->addWidget(m_sourceStatus);
+
+    m_progressBar =
+        new QProgressBar(page);
+    m_progressBar->setObjectName(
+        QStringLiteral("scheduleImportProgressBar")
+        );
+    m_progressBar->setRange(0, 0);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setVisible(false);
+    layout->addWidget(m_progressBar);
     layout->addStretch();
 
     connect(
@@ -1045,6 +1069,8 @@ QWidget* ScheduleImportDialog::buildSourcePage()
     const auto invalidate =
         [this]()
         {
+            ++m_loadRequestId;
+            setLoading(false);
             m_workbookLoaded = false;
             m_sheetCombo->clear();
             m_sheetCombo->setVisible(false);
@@ -1218,31 +1244,102 @@ bool ScheduleImportDialog::loadWorkbook()
         return true;
     }
 
-    QFile file(m_fileEdit->text());
-    if (!file.open(QIODevice::ReadOnly))
+    if (m_loading)
     {
-        m_sourceStatus->setText(
-            tr("The selected workbook could not be opened.")
-            );
-        return false;
+        return true;
     }
 
-    const auto parsed =
-        parseScheduleImportWorkbook(
-            file.readAll(),
-            kind
-            );
-    if (!parsed)
-    {
-        m_sourceStatus->setText(
-            tr("Invalid workbook: %1")
-                .arg(parsed.error())
-            );
-        return false;
-    }
+    const QString filePath =
+        m_fileEdit->text();
+    const quint64 requestId =
+        ++m_loadRequestId;
+    setLoading(true);
 
-    m_workbook = *parsed;
-    m_loadedFilePath = m_fileEdit->text();
+    auto* watcher =
+        new QFutureWatcher<ScheduleWorkbookLoadResult>(
+            this
+            );
+    connect(
+        watcher,
+        &QFutureWatcher<ScheduleWorkbookLoadResult>::finished,
+        this,
+        [this, watcher, requestId, filePath, kind]()
+        {
+            const ScheduleWorkbookLoadResult result =
+                watcher->result();
+            watcher->deleteLater();
+
+            if (requestId != m_loadRequestId)
+            {
+                return;
+            }
+
+            setLoading(false);
+            if (!result.fileOpened)
+            {
+                m_sourceStatus->setText(
+                    tr("The selected workbook could not be opened.")
+                    );
+                updateNavigation();
+                return;
+            }
+            if (!result.succeeded)
+            {
+                m_sourceStatus->setText(
+                    tr("Invalid workbook: %1")
+                        .arg(result.error)
+                    );
+                updateNavigation();
+                return;
+            }
+
+            applyLoadedWorkbook(
+                result.workbook,
+                filePath,
+                kind
+                );
+        }
+        );
+    watcher->setFuture(
+        QtConcurrent::run(
+            [filePath, kind]()
+            {
+                ScheduleWorkbookLoadResult result;
+                QFile file(filePath);
+                if (!file.open(QIODevice::ReadOnly))
+                {
+                    return result;
+                }
+
+                result.fileOpened = true;
+                const auto parsed =
+                    parseScheduleImportWorkbook(
+                        file.readAll(),
+                        kind
+                        );
+                if (!parsed)
+                {
+                    result.error = parsed.error();
+                    return result;
+                }
+
+                result.workbook = *parsed;
+                result.succeeded = true;
+                return result;
+            }
+            )
+        );
+    return true;
+}
+
+void ScheduleImportDialog::applyLoadedWorkbook(
+    ScheduleImportWorkbook workbook,
+    const QString& filePath,
+    ScheduleImportKind kind
+    )
+{
+    m_workbook = std::move(workbook);
+    m_loadedFilePath = filePath;
     m_loadedKind = kind;
     m_workbookLoaded = true;
     const QSignalBlocker sheetComboBlocker(m_sheetCombo);
@@ -1290,7 +1387,29 @@ bool ScheduleImportDialog::loadWorkbook()
     updateSelectedSheet();
     updateNavigation();
     resizeForSourceStage();
-    return true;
+}
+
+void ScheduleImportDialog::setLoading(
+    bool loading
+    )
+{
+    m_loading = loading;
+    m_progressBar->setVisible(loading);
+    m_fileEdit->setEnabled(!loading);
+    m_browseButton->setEnabled(!loading);
+    m_normalRadio->setEnabled(!loading);
+    m_intensiveRadio->setEnabled(!loading);
+    m_sheetCombo->setEnabled(!loading);
+    m_userCombo->setEnabled(!loading);
+    m_nameConfirmation->setEnabled(!loading);
+
+    if (loading)
+    {
+        m_sourceStatus->setText(
+            tr("Loading workbook...")
+            );
+    }
+    updateNavigation();
 }
 
 void ScheduleImportDialog::resetUserSelection()
@@ -2751,7 +2870,7 @@ void ScheduleImportDialog::updateNavigation()
     m_importButton->setVisible(page == ReviewPage);
 
     bool nextEnabled = false;
-    if (page == SourcePage)
+    if (page == SourcePage && !m_loading)
     {
         const bool sourceReady =
             !m_fileEdit->text().trimmed().isEmpty()
