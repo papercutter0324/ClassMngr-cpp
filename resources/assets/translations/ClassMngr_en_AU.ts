@@ -3204,7 +3204,7 @@
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="+39"/>
         <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="-74"/>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="-316"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+375"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+475"/>
         <source>Class %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3989,7 +3989,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+140"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+141"/>
         <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="-65"/>
         <location line="+109"/>
         <source>Days</source>
@@ -4570,7 +4570,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="-339"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="-498"/>
         <source>Mon.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4605,7 +4605,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+135"/>
+        <location line="+293"/>
         <source>%1 overlaps %2 on %3.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4622,12 +4622,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+19"/>
         <source>A new class will be created with color %1.</source>
         <translation>A new class will be created with colour %1.</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+48"/>
         <source>Grade</source>
         <translation>Grade</translation>
     </message>
@@ -4642,17 +4642,17 @@
         <translation>Teacher</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+27"/>
         <source>Color</source>
         <translation>Colour</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>No grade, level, teacher, day, or color differences.</source>
         <translation>No grade, level, teacher, day, or colour differences.</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+13"/>
         <source>Changes:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4667,9 +4667,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-136"/>
         <source>Imported Class:</source>
-        <translation>Imported Class:</translation>
+        <translation type="vanished">Imported Class:</translation>
     </message>
     <message>
         <location filename="../../../src/data/data_service.cpp" line="+521"/>
@@ -5649,95 +5648,96 @@
 <context>
     <name>ScheduleImportDialog</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+386"/>
-        <location line="+829"/>
-        <location line="+1372"/>
-        <location line="+8"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+56"/>
         <source>Import Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-2190"/>
-        <source>Choose the schedule type, then continue.</source>
+        <location line="+68"/>
+        <source>Browse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
-        <source>Back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Next</source>
+        <location line="+23"/>
+        <source>Regular</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+5"/>
-        <source>Import</source>
+        <source>Intensives</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+54"/>
-        <source>Choose a spreadsheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>Select an XLSX schedule...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Browse...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>Schedule type</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Normal schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Intensive schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+20"/>
-        <source>Worksheet:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Choose your schedule section</source>
+        <location line="+21"/>
+        <source>Worksheet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+19"/>
+        <source>Select the schedule to import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+198"/>
+        <source>Choose Regular or Intensives.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+154"/>
+        <location line="+110"/>
+        <source>Workbook and worksheet are valid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-414"/>
+        <source>Click Next to continue.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-104"/>
+        <source>Schedule type</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+677"/>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-734"/>
+        <location line="+226"/>
+        <source>Ready to read the spreadsheet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-37"/>
+        <location line="+546"/>
+        <source>Load</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-709"/>
+        <source>Choose a spreadsheet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Select an XLSX schedule...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+97"/>
         <source>Use the selected spreadsheet name even though it does not match My Information.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-139"/>
+        <location line="+15"/>
         <source>Choose a file and schedule type.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+37"/>
-        <source>Ready to read the workbook.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+56"/>
-        <source>Review and reconcile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+56"/>
+        <location line="+259"/>
         <source>Select Schedule Import File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5757,12 +5757,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>Choose Normal schedule or Intensive schedule.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+51"/>
+        <location line="+61"/>
         <source>The selected workbook could not be opened.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5777,29 +5772,22 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+23"/>
+        <source>Choose the worksheet to import.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location line="+24"/>
-        <source>Workbook loaded. Choose the worksheet to import.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <location line="+92"/>
-        <source>Workbook and worksheet are valid.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-68"/>
         <source>Loading workbook...</source>
         <translation>Loading workbook...</translation>
     </message>
     <message>
-        <location line="+47"/>
-        <location line="+245"/>
+        <location line="+66"/>
         <source>%1: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-231"/>
+        <location line="+14"/>
         <source>The selected worksheet contains no supported user schedules.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5814,52 +5802,103 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+50"/>
         <source>My Information has no name. The selected spreadsheet name will be saved after a successful import.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>My Information name: %1</source>
+        <source>Unrecognized cells</source>
+        <translation type="vanished">Unrecognised cells</translation>
+    </message>
+    <message>
+        <source>Select Imported Class Color</source>
+        <translation type="vanished">Select Imported Class Colour</translation>
+    </message>
+    <message>
+        <source>Color %1</source>
+        <translation type="vanished">Colour %1</translation>
+    </message>
+    <message>
+        <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
+        <translation type="vanished">The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
+    </message>
+    <message>
+        <source>Acknowledge the unrecognized cells before importing.</source>
+        <translation type="vanished">Acknowledge the unrecognised cells before importing.</translation>
+    </message>
+    <message>
+        <location line="+117"/>
+        <source>Choose a worksheet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleImportReviewDialog</name>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+293"/>
+        <location line="+19"/>
+        <source>Review &amp; Reconcile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+75"/>
-        <source>Unrecognized cells</source>
-        <translation>Unrecognised cells</translation>
+        <location line="+59"/>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+5"/>
+        <source>Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <location line="+1282"/>
+        <location line="+8"/>
+        <source>Import Schedule</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-1242"/>
+        <source>Unrecognized cells</source>
+        <translation type="unfinished">Unrecognised cells</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>%1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>I reviewed these cells and want to skip them.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+26"/>
-        <source>Korean teachers and rooms</source>
+        <source>Korean Teachers and Rooms</source>
+        <translation>Korean Teachers and Rooms</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Korean Teacher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Spreadsheet</source>
+        <location line="+8"/>
+        <source>Import Action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Resolution</source>
+        <location line="+8"/>
+        <source>Imported Room</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Imported room</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+29"/>
+        <location line="+51"/>
         <source>Choose a room...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5901,7 +5940,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+67"/>
         <source>Classes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5931,19 +5970,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+57"/>
         <source>time unavailable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+80"/>
         <source>Select Imported Class Color</source>
-        <translation>Select Imported Class Colour</translation>
+        <translation type="unfinished">Select Imported Class Colour</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Color %1</source>
-        <translation>Colour %1</translation>
+        <translation type="vanished">Colour %1</translation>
     </message>
     <message>
         <location line="+49"/>
@@ -5998,7 +6037,7 @@
     <message>
         <location line="+21"/>
         <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
-        <translation>The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
+        <translation type="unfinished">The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
     </message>
     <message>
         <location line="+128"/>
@@ -6008,16 +6047,15 @@
     <message>
         <location line="+14"/>
         <source>Acknowledge the unrecognized cells before importing.</source>
-        <translation>Acknowledge the unrecognised cells before importing.</translation>
+        <translation type="unfinished">Acknowledge the unrecognised cells before importing.</translation>
     </message>
     <message>
         <location line="+27"/>
-        <location line="+237"/>
         <source>All required resolutions are complete.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-233"/>
+        <location line="+4"/>
         <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6027,12 +6065,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+256"/>
-        <source>Choose a worksheet.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+38"/>
+        <location line="+124"/>
         <source>Is this schedule valid and ready to import?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6063,6 +6096,16 @@ Ignored occupied cells: %7%8</source>
         <source>
 My Information name was updated.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="1561"/>
+        <source>Imported Class</source>
+        <translation>Imported Class</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="1577"/>
+        <source>Color</source>
+        <translation>Colour</translation>
     </message>
 </context>
 <context>
@@ -6202,7 +6245,7 @@ My Information name was updated.</source>
     </message>
     <message>
         <location line="+3"/>
-        <source>Import Schedule...</source>
+        <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

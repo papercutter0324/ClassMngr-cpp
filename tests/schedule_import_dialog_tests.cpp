@@ -1,7 +1,11 @@
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QApplication>
@@ -11,6 +15,7 @@
 #include <QFile>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QHeaderView>
 #include <QLabel>
 #include <QPalette>
 #include <QProgressBar>
@@ -20,10 +25,13 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QScreen>
-#include <QStackedWidget>
+#include <QTableWidget>
 #include <QTemporaryDir>
+#include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QtTest>
+
+#include <algorithm>
 
 #include <zlib.h>
 
@@ -45,11 +53,15 @@ private slots:
     void discardsSupersededAndClosedLoads();
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
+    void reviewPreviewUsesSavedScheduleDisplaySettings();
+    void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
 };
 
 namespace
 {
+constexpr int ExpectedSourceDialogWidth = 436;
+
 void appendLe16(
     QByteArray& data,
     quint16 value
@@ -264,8 +276,6 @@ bool loadSourceSelections(
         dialog->findChild<QPushButton*>(
             QStringLiteral("scheduleImportNextButton")
             );
-    auto* pages =
-        dialog->findChild<QStackedWidget*>();
     auto* sheets =
         dialog->findChild<QComboBox*>(
             QStringLiteral("scheduleImportSheetCombo")
@@ -274,7 +284,7 @@ bool loadSourceSelections(
         dialog->findChild<QProgressBar*>(
             QStringLiteral("scheduleImportProgressBar")
             );
-    if (!normal || !next || !pages || !sheets || !progress)
+    if (!normal || !next || !sheets || !progress)
     {
         return false;
     }
@@ -282,8 +292,7 @@ bool loadSourceSelections(
     normal->setChecked(true);
     next->click();
     if (
-        pages->currentIndex() != 0
-        || progress->isHidden()
+        progress->isHidden()
         || next->isEnabled()
         )
     {
@@ -299,6 +308,11 @@ bool loadSourceSelections(
         QTest::qWait(10);
     }
     if (!progress->isHidden())
+    {
+        return false;
+    }
+
+    if (dialog->width() != ExpectedSourceDialogWidth)
     {
         return false;
     }
@@ -374,14 +388,57 @@ void ScheduleImportDialogTests::requiresFileAndScheduleKind()
         dialog.findChild<QLabel*>(
             QStringLiteral("scheduleImportSourceStatus")
             );
+    auto* browse =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportBrowseButton")
+            );
+    auto* scheduleTypeSection =
+        dialog.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportScheduleTypeSection")
+            );
+    auto* fileSection =
+        dialog.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportFileSection")
+            );
     QVERIFY(next);
     QVERIFY(normal);
     QVERIFY(status);
+    QVERIFY(browse);
+    QVERIFY(scheduleTypeSection);
+    QVERIFY(fileSection);
     QVERIFY(!next->isEnabled());
+    QCOMPARE(dialog.width(), ExpectedSourceDialogWidth);
+    QCOMPARE(dialog.minimumHeight(), 520);
+    QCOMPARE(dialog.maximumHeight(), 520);
+    QCOMPARE(next->text(), QStringLiteral("Load"));
+    QCOMPARE(browse->text(), QStringLiteral("Browse"));
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("Choose a file and schedule type.")
+        );
+    QVERIFY(status->alignment().testFlag(Qt::AlignHCenter));
+    QCOMPARE(status->parentWidget()->layout()->indexOf(status), 0);
+    QCOMPARE(status->parentWidget()->layout()->spacing(), 12);
+    QCOMPARE(fileSection->title(), QStringLiteral("Choose a spreadsheet"));
+    QVERIFY(scheduleTypeSection->isHidden());
 
     dialog.setFilePath(
         QStringLiteral("not-an-xlsx-file.txt")
         );
+    QVERIFY(!scheduleTypeSection->isHidden());
+    QCOMPARE(
+        status->text(),
+        QStringLiteral("Ready to read the spreadsheet.")
+        );
+    QCOMPARE(scheduleTypeSection->title(), QStringLiteral("Schedule type"));
+    QCOMPARE(normal->text(), QStringLiteral("Regular"));
+    auto* intensive =
+        dialog.findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportIntensiveRadio")
+            );
+    QVERIFY(intensive);
+    QCOMPARE(intensive->text(), QStringLiteral("Intensives"));
+    QCOMPARE(scheduleTypeSection->layout()->spacing(), 16);
     QVERIFY(!next->isEnabled());
     normal->setChecked(true);
     QVERIFY(next->isEnabled());
@@ -574,7 +631,7 @@ void ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
     QCOMPARE(
         status->text(),
         QStringLiteral(
-            "Choose the schedule type, then continue."
+            "Ready to read the spreadsheet."
             )
         );
     QVERIFY(progress->isHidden());
@@ -583,7 +640,7 @@ void ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
     QCOMPARE(
         status->text(),
         QStringLiteral(
-            "Choose the schedule type, then continue."
+            "Ready to read the spreadsheet."
             )
         );
     QCOMPARE(sheets->count(), 0);
@@ -636,8 +693,31 @@ void ScheduleImportDialogTests
     QCOMPARE(dialog.height(), 520);
     QVERIFY(loadSourceSelections(&dialog));
 
-    auto* pages =
-        dialog.findChild<QStackedWidget*>();
+    auto* sourceStatus =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportSourceStatus")
+            );
+    auto* continuationHint =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportContinuationHint")
+            );
+    auto* continuationSpacer =
+        dialog.findChild<QWidget*>(
+            QStringLiteral("scheduleImportContinuationSpacer")
+            );
+    auto* userSection =
+        dialog.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportUserSection")
+            );
+    auto* worksheetSection =
+        dialog.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportWorksheetSection")
+            );
+    auto* userStatus =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportUserStatus")
+            );
+
     auto* users =
         dialog.findChild<QComboBox*>(
             QStringLiteral("scheduleImportUserCombo")
@@ -646,9 +726,43 @@ void ScheduleImportDialogTests
         dialog.findChild<QPushButton*>(
             QStringLiteral("scheduleImportNextButton")
             );
-    QVERIFY(pages);
     QVERIFY(users);
     QVERIFY(next);
+    QVERIFY(sourceStatus);
+    QVERIFY(continuationHint);
+    QVERIFY(continuationSpacer);
+    QVERIFY(userSection);
+    QVERIFY(worksheetSection);
+    QVERIFY(userStatus);
+    QCOMPARE(next->text(), QStringLiteral("Next"));
+    QCOMPARE(
+        sourceStatus->text(),
+        QStringLiteral("Workbook and worksheet are valid.")
+        );
+    QCOMPARE(
+        continuationHint->text(),
+        QStringLiteral("Click Next to continue.")
+    );
+    QVERIFY(continuationHint->alignment().testFlag(Qt::AlignHCenter));
+    auto* sourceLayout =
+        qobject_cast<QVBoxLayout*>(dialog.layout());
+    QVERIFY(sourceLayout);
+    QCOMPARE(
+        sourceLayout->indexOf(continuationSpacer),
+        sourceLayout->indexOf(userSection) + 1
+        );
+    QCOMPARE(
+        sourceLayout->indexOf(continuationHint),
+        sourceLayout->indexOf(continuationSpacer) + 1
+        );
+    QCOMPARE(continuationSpacer->height(), 8);
+    QCOMPARE(
+        userSection->title(),
+        QStringLiteral("Select the schedule to import")
+        );
+    QCOMPARE(worksheetSection->title(), QStringLiteral("Worksheet"));
+    QVERIFY(!worksheetSection->title().endsWith(QLatin1Char(':')));
+    QVERIFY(userStatus->isHidden());
     QCOMPARE(dialog.findChildren<QDialogButtonBox*>().size(), 1);
     QCOMPARE(
         dialog.findChildren<QPushButton*>(
@@ -660,21 +774,12 @@ void ScheduleImportDialogTests
         dialog.findChildren<QPushButton*>(
             QStringLiteral("scheduleImportBackButton")
             ).size(),
-        1
+        0
         );
-    QCOMPARE(pages->currentIndex(), 0);
     QCOMPARE(dialog.height(), 520);
-    const int expectedWiderWidth =
-        (
-            pages->currentWidget()->sizeHint().width()
-            * 13
-            + 9
-            )
-        / 10;
-    if (dialog.width() < dialog.screen()->availableGeometry().width())
-    {
-        QVERIFY(dialog.width() >= expectedWiderWidth);
-    }
+    QCOMPARE(dialog.minimumHeight(), 520);
+    QCOMPARE(dialog.maximumHeight(), 520);
+    QCOMPARE(dialog.width(), ExpectedSourceDialogWidth);
 
     for (int index = 0; index < users->count(); ++index)
     {
@@ -687,13 +792,175 @@ void ScheduleImportDialogTests
     QVERIFY(next->isEnabled());
     next->click();
     QCoreApplication::processEvents();
-    QCOMPARE(pages->currentIndex(), 1);
-    QVERIFY(dialog.height() > 520);
-    QVERIFY(dialog.height() <= 820);
-    QVERIFY(dialog.width() <= 1000);
+    auto* review =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(review);
+    QVERIFY(review->isVisible());
+    QCOMPARE(dialog.height(), 520);
+    QVERIFY(review->height() > 520);
+    QVERIFY(review->height() <= 820);
+    QVERIFY(review->width() <= 1000);
+
+    auto* reviewHeading =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportReviewHeading")
+            );
+    QVERIFY(reviewHeading);
+    QCOMPARE(reviewHeading->text(), QStringLiteral("Review & Reconcile"));
+
+    auto* teacherSourceHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportTeacherSourceHeader")
+            );
+    auto* teacherActionHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportTeacherActionHeader")
+            );
+    auto* teacherRoomHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportTeacherRoomHeader")
+            );
+    QVERIFY(teacherSourceHeader);
+    QVERIFY(teacherActionHeader);
+    QVERIFY(teacherRoomHeader);
+    auto* teacherGroup =
+        review->findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportTeacherGroup")
+            );
+    QVERIFY(teacherGroup);
+    QCOMPARE(
+        teacherGroup->title(),
+        QStringLiteral("Korean Teachers and Rooms")
+        );
+    QCOMPARE(
+        teacherSourceHeader->text(),
+        QStringLiteral("Korean Teacher")
+        );
+    QCOMPARE(
+        teacherActionHeader->text(),
+        QStringLiteral("Import Action")
+        );
+    QCOMPARE(
+        teacherRoomHeader->text(),
+        QStringLiteral("Imported Room")
+        );
+    const auto roomCombos =
+        review->findChildren<QComboBox*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportTeacherRoom_")
+                )
+            );
+    QVERIFY(!roomCombos.isEmpty());
+    for (const QComboBox* roomCombo : roomCombos)
+    {
+        QCOMPARE(
+            roomCombo->width(),
+            teacherRoomHeader->sizeHint().width()
+            );
+    }
+    const auto teacherActionCombos =
+        review->findChildren<QComboBox*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportTeacherAction_")
+                )
+            );
+    QVERIFY(!teacherActionCombos.isEmpty());
+    int expectedTeacherActionWidth = 0;
+    for (const QComboBox* combo : teacherActionCombos)
+    {
+        QStringList texts;
+        for (int index = 0; index < combo->count(); ++index)
+        {
+            texts.append(combo->itemText(index));
+        }
+        expectedTeacherActionWidth =
+            std::max(
+                expectedTeacherActionWidth,
+                WidgetSizing::comboMinimumWidthForTexts(
+                    combo,
+                    texts
+                    )
+                );
+    }
+    for (const QComboBox* combo : teacherActionCombos)
+    {
+        QCOMPARE(
+            combo->width(),
+            expectedTeacherActionWidth
+            );
+    }
+    auto* firstTeacherSource =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportTeacherSource_0")
+            );
+    auto* firstTeacherAction =
+        review->findChild<QComboBox*>(
+            QStringLiteral("scheduleImportTeacherAction_0")
+            );
+    auto* firstTeacherRoom =
+        review->findChild<QComboBox*>(
+            QStringLiteral("scheduleImportTeacherRoom_0")
+            );
+    QVERIFY(firstTeacherSource);
+    QVERIFY(firstTeacherAction);
+    QVERIFY(firstTeacherRoom);
+    QCOMPARE(
+        firstTeacherAction->geometry().left()
+            - firstTeacherSource->geometry().right()
+            - 1,
+        24
+        );
+    QCOMPARE(
+        firstTeacherRoom->geometry().left()
+            - firstTeacherAction->geometry().right()
+            - 1,
+        24
+        );
+
+    auto* importedClassHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportClassSourceHeader")
+            );
+    auto* classActionHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportClassActionHeader")
+            );
+    auto* classColorHeader =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportClassColorHeader")
+            );
+    QVERIFY(importedClassHeader);
+    QVERIFY(classActionHeader);
+    QVERIFY(classColorHeader);
+    QCOMPARE(
+        importedClassHeader->text(),
+        QStringLiteral("Imported Class")
+        );
+    QCOMPARE(
+        classActionHeader->text(),
+        QStringLiteral("Import Action")
+        );
+    QCOMPARE(
+        classColorHeader->text(),
+        QStringLiteral("Color")
+        );
+
+    auto* classesGroup =
+        review->findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportClassesGroup")
+            );
+    QVERIFY(classesGroup);
+    auto* classGrid =
+        qobject_cast<QGridLayout*>(
+            classesGroup->layout()
+            );
+    QVERIFY(classGrid);
+    QCOMPARE(classGrid->horizontalSpacing(), 12);
+    QCOMPARE(classGrid->verticalSpacing(), 0);
+    QCOMPARE(classGrid->rowMinimumHeight(1), 8);
 
     const auto candidateLabels =
-        dialog.findChildren<QLabel*>(
+        review->findChildren<QLabel*>(
             QRegularExpression(
                 QStringLiteral("^scheduleImportClassCandidate_")
                 )
@@ -704,40 +971,95 @@ void ScheduleImportDialogTests
     QVERIFY(candidateLabels[2]->text().contains(QStringLiteral("M3 Song's")));
     QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Tues.")));
     QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Thurs.")));
+    QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("\n(")));
+    for (const QLabel* candidate : candidateLabels)
+    {
+        QCOMPARE(candidate->minimumWidth(), candidate->maximumWidth());
+    }
 
-    const auto classRows =
-        dialog.findChildren<QWidget*>(
-            QRegularExpression(
-                QStringLiteral("^scheduleImportClassRow_")
-                )
-            );
-    QCOMPARE(classRows.size(), 3);
-    auto* rowLayout =
-        qobject_cast<QGridLayout*>(classRows.first()->layout());
-    QVERIFY(rowLayout);
-    QCOMPARE(classRows.first()->parentWidget()->layout()->spacing(), 8);
     int row = -1;
     int column = -1;
     int rowSpan = -1;
     int columnSpan = -1;
-    rowLayout->getItemPosition(
-        rowLayout->indexOf(candidateLabels.first()),
+    classGrid->getItemPosition(
+        classGrid->indexOf(candidateLabels.first()),
         &row,
         &column,
         &rowSpan,
         &columnSpan
         );
-    QCOMPARE(row, 0);
+    QCOMPARE(row, 2);
     QCOMPARE(column, 0);
+    QCOMPARE(rowSpan, 3);
+    QCOMPARE(columnSpan, 1);
     QVERIFY(
-        rowLayout->itemAt(
-            rowLayout->indexOf(candidateLabels.first())
-            )->alignment().testFlag(Qt::AlignVCenter)
+        classGrid->itemAt(
+            classGrid->indexOf(candidateLabels.first())
+            )->alignment().testFlag(Qt::AlignTop)
         );
+    QCOMPARE(classGrid->rowMinimumHeight(3), 4);
+    QCOMPARE(classGrid->rowMinimumHeight(5), 8);
+
+    const auto classActionCombos =
+        review->findChildren<QComboBox*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportClassAction_")
+                )
+            );
+    QCOMPARE(classActionCombos.size(), 3);
+    int expectedClassActionWidth = 0;
+    for (const QComboBox* combo : classActionCombos)
+    {
+        QStringList texts;
+        for (int index = 0; index < combo->count(); ++index)
+        {
+            texts.append(combo->itemText(index));
+        }
+        expectedClassActionWidth =
+            std::max(
+                expectedClassActionWidth,
+                WidgetSizing::comboMinimumWidthForTexts(
+                    combo,
+                    texts
+                    )
+                );
+    }
+    for (const QComboBox* combo : classActionCombos)
+    {
+        QCOMPARE(
+            combo->width(),
+            expectedClassActionWidth
+            );
+    }
+
+    const auto colorButtons =
+        review->findChildren<QPushButton*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportClassColor_")
+                )
+            );
+    QCOMPARE(colorButtons.size(), 3);
+    for (const QPushButton* colorButton : colorButtons)
+    {
+        QCOMPARE(colorButton->text(), QString());
+        QCOMPARE(
+            colorButton->width(),
+            UiConstants::ClassInfo::Details::ColorPreviewWidth
+            );
+        QCOMPARE(
+            colorButton->height(),
+            UiConstants::ClassInfo::Details::ColorPreviewHeight
+            );
+        QVERIFY(!colorButton->toolTip().isEmpty());
+        QCOMPARE(
+            colorButton->accessibleName(),
+            colorButton->toolTip()
+            );
+    }
 
     QString changedDetails;
     const auto details =
-        dialog.findChildren<QLabel*>(
+        review->findChildren<QLabel*>(
             QRegularExpression(
                 QStringLiteral("^scheduleImportClassDifferences_")
                 )
@@ -751,7 +1073,7 @@ void ScheduleImportDialogTests
         }
     }
     QVERIFY(!changedDetails.isEmpty());
-    QVERIFY(changedDetails.contains(QStringLiteral("Imported Class:")));
+    QVERIFY(!changedDetails.contains(QStringLiteral("Imported Class:")));
     QVERIFY(
         changedDetails.contains(
             QStringLiteral(
@@ -774,16 +1096,27 @@ void ScheduleImportDialogTests
     QVERIFY(levelPosition < teacherPosition);
     QVERIFY(teacherPosition < daysPosition);
     QVERIFY(daysPosition < colorPosition);
+    QVERIFY2(
+        changedDetails.contains(
+            QStringLiteral("— → Tues. 5:00pm - 5:55pm")
+            ),
+        qPrintable(changedDetails)
+        );
     QVERIFY(
         changedDetails.contains(
-            dialog.palette()
+            QStringLiteral("<br>Thurs. 5:00pm - 5:50pm → Thurs. 5:00pm - 5:55pm")
+            )
+        );
+    QVERIFY(
+        changedDetails.contains(
+            review->palette()
                 .color(QPalette::Link)
                 .name(QColor::HexRgb)
             )
         );
 
     const auto combos =
-        dialog.findChildren<QComboBox*>();
+        review->findChildren<QComboBox*>();
     QVERIFY(!combos.isEmpty());
     for (QComboBox* combo : combos)
     {
@@ -820,31 +1153,274 @@ void ScheduleImportDialogTests
     QCOMPARE(wheelCombo->currentIndex(), originalIndex);
 
     auto* scrollArea =
-        dialog.findChild<QScrollArea*>(
+        review->findChild<QScrollArea*>(
             QStringLiteral("scheduleImportResolutionScrollArea")
             );
     QVERIFY(scrollArea);
     const int availableWidth =
-        dialog.screen()
-            ? dialog.screen()->availableGeometry().width()
-            : dialog.width();
+        review->screen()
+            ? review->screen()->availableGeometry().width()
+            : review->width();
     if (
-        dialog.width() < 1000
-        && dialog.width() < availableWidth
+        review->width() < 1000
+        && review->width() < availableWidth
         )
     {
         QVERIFY(!scrollArea->horizontalScrollBar()->isVisible());
     }
 
     auto* back =
-        dialog.findChild<QPushButton*>(
+        review->findChild<QPushButton*>(
             QStringLiteral("scheduleImportBackButton")
             );
     QVERIFY(back);
     back->click();
     QCoreApplication::processEvents();
-    QCOMPARE(pages->currentIndex(), 0);
     QCOMPARE(dialog.height(), 520);
+    QTRY_VERIFY(next->isEnabled());
+}
+
+void ScheduleImportDialogTests
+    ::reviewPreviewUsesSavedScheduleDisplaySettings()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("weekend-teacher");
+    candidate.teacherKr = QStringLiteral("주말 선생님");
+    candidate.rooms = {QStringLiteral("401")};
+    candidate.importedColors = {QStringLiteral("#336699")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Weekend");
+    candidate.times.append(
+        {
+            QStringLiteral("Saturday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM")
+        }
+        );
+    request.user.classes.append(candidate);
+
+    {
+        ScheduleImportReviewDialog review(
+            &services,
+            request
+            );
+        QVERIFY(review.prepare());
+        review.show();
+        QCoreApplication::processEvents();
+
+        auto* table =
+            review.findChild<QTableWidget*>(
+                QStringLiteral("scheduleTable")
+                );
+        QVERIFY(table);
+        QCOMPARE(table->columnCount(), 6);
+        QVERIFY(table->horizontalHeaderItem(5));
+        QCOMPARE(
+            table->horizontalHeaderItem(5)->text(),
+            QStringLiteral("Friday")
+            );
+        QVERIFY(table->item(0, 0));
+        QCOMPARE(
+            table->item(0, 0)->text(),
+            QStringLiteral("9:00 -\n9:55 AM")
+            );
+    }
+
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_use_24h"),
+        QStringLiteral("true")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_weekends"),
+        QStringLiteral("true")
+        );
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+    QCoreApplication::processEvents();
+
+    auto* table =
+        review.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(table);
+    QCOMPARE(table->columnCount(), 8);
+    QVERIFY(table->horizontalHeaderItem(6));
+    QVERIFY(table->horizontalHeaderItem(7));
+    QCOMPARE(
+        table->horizontalHeaderItem(6)->text(),
+        QStringLiteral("Saturday")
+        );
+    QCOMPARE(
+        table->horizontalHeaderItem(7)->text(),
+        QStringLiteral("Sunday")
+        );
+    QVERIFY(table->item(0, 0));
+    QCOMPARE(
+        table->item(0, 0)->text(),
+        QStringLiteral("09:00 - 09:55")
+        );
+    QCOMPARE(
+        table->horizontalHeader()->font().pointSize(),
+        FontManager::adjustedPointSize(8)
+        );
+    QCOMPARE(
+        table->item(0, 0)->font().pointSize(),
+        FontManager::adjustedPointSize(9)
+        );
+    QCOMPARE(table->columnWidth(0), 84);
+    QCOMPARE(table->rowHeight(0), 64);
+
+    auto* scheduledClass =
+        qobject_cast<QLabel*>(
+            table->cellWidget(0, 6)
+            );
+    QVERIFY(scheduledClass);
+    QVERIFY(
+        scheduledClass->text().contains(
+            QStringLiteral("font-size:%1pt").arg(
+                FontManager::adjustedPointSize(11)
+                )
+            )
+        );
+    QVERIFY(
+        scheduledClass->text().contains(
+            QStringLiteral("font-size:%1pt").arg(
+                FontManager::adjustedPointSize(10)
+                )
+            )
+        );
+    QVERIFY(scheduledClass->styleSheet().contains(QStringLiteral("padding:3px")));
+}
+
+void ScheduleImportDialogTests
+    ::intensivePreviewPreservesEssayAndLunchBlocks()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Intensive;
+    request.user.name = QStringLiteral("Alice");
+    const QStringList days{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday")
+    };
+    for (int hour = 9; hour <= 21; ++hour)
+    {
+        for (const QString& day : days)
+        {
+            const QString state =
+                day == QStringLiteral("Monday")
+                && hour >= 11
+                && hour <= 18
+                    ? QStringLiteral("essay")
+                    : day == QStringLiteral("Tuesday")
+                        && hour == 11
+                    ? QStringLiteral("lunch")
+                    : QStringLiteral("empty");
+            request.user.intensiveSlotStates.append(
+                {
+                    day,
+                    QStringLiteral("%1:00").arg(
+                        hour,
+                        2,
+                        10,
+                        QLatin1Char('0')
+                        ),
+                    state
+                }
+                );
+        }
+    }
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+    QCoreApplication::processEvents();
+
+    auto* table =
+        review.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(table);
+    QCOMPARE(table->rowCount(), 8);
+    QVERIFY(table->item(0, 0));
+    QVERIFY(table->item(7, 0));
+    QCOMPARE(
+        table->item(0, 0)->text(),
+        QStringLiteral("11:00 -\n11:50 AM")
+        );
+    QCOMPARE(
+        table->item(7, 0)->text(),
+        QStringLiteral("6:00 -\n6:50 PM")
+        );
+    QCOMPARE(
+        table->verticalScrollBarPolicy(),
+        Qt::ScrollBarAsNeeded
+        );
+    QTRY_VERIFY(table->verticalScrollBar()->maximum() > 0);
+
+    int expectedTableHeight =
+        table->horizontalHeader()->height()
+        + (2 * table->frameWidth());
+    for (int row = 0; row < 6; ++row)
+    {
+        expectedTableHeight += table->rowHeight(row);
+    }
+    QCOMPARE(table->height(), expectedTableHeight);
+
+    QLabel* essay = nullptr;
+    QLabel* lunch = nullptr;
+    const auto labels =
+        review.findChildren<QLabel*>();
+    for (QLabel* label : labels)
+    {
+        if (
+            label->isVisible()
+            && label->property("slot_state").toString()
+                == QStringLiteral("essay")
+            )
+        {
+            essay = label;
+        }
+        else if (
+            label->isVisible()
+            && label->property("slot_state").toString()
+                == QStringLiteral("lunch")
+            )
+        {
+            lunch = label;
+        }
+    }
+
+    QVERIFY(essay);
+    QVERIFY(lunch);
+    QCOMPARE(essay->text(), QStringLiteral("Essay"));
+    QCOMPARE(lunch->text(), QStringLiteral("Lunch"));
+    QCOMPARE(
+        essay->font().pointSize(),
+        FontManager::adjustedPointSize(12)
+        );
+    QCOMPARE(
+        lunch->font().pointSize(),
+        FontManager::adjustedPointSize(12)
+        );
+    QVERIFY(essay->styleSheet().contains(QStringLiteral("padding:4px")));
+    QVERIFY(lunch->styleSheet().contains(QStringLiteral("padding:4px")));
 }
 
 void ScheduleImportDialogTests
@@ -872,12 +1448,8 @@ void ScheduleImportDialogTests
         dialog.findChild<QPushButton*>(
             QStringLiteral("scheduleImportNextButton")
             );
-    auto* pages =
-        dialog.findChild<QStackedWidget*>();
     QVERIFY(next);
-    QVERIFY(pages);
     QVERIFY(loadSourceSelections(&dialog));
-    QCOMPARE(pages->currentIndex(), 0);
 
     auto* users =
         dialog.findChild<QComboBox*>(
@@ -897,10 +1469,13 @@ void ScheduleImportDialogTests
     users->setCurrentIndex(selectedUser);
     QVERIFY(next->isEnabled());
     next->click();
-    QCOMPARE(pages->currentIndex(), 1);
+    QCoreApplication::processEvents();
+    auto* review =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(review);
 
     const auto roomChoices =
-        dialog.findChildren<QComboBox*>(
+        review->findChildren<QComboBox*>(
             QRegularExpression(
                 QStringLiteral(
                     "^scheduleImportTeacherRoom_"
@@ -927,7 +1502,7 @@ void ScheduleImportDialogTests
 
     if (
         auto* acknowledgement =
-            dialog.findChild<QCheckBox*>(
+            review->findChild<QCheckBox*>(
                 QStringLiteral(
                     "scheduleImportWarningAcknowledgement"
                     )
@@ -938,19 +1513,19 @@ void ScheduleImportDialogTests
     }
 
     auto* summary =
-        dialog.findChild<QLabel*>(
+        review->findChild<QLabel*>(
             QStringLiteral("scheduleImportReviewSummary")
             );
     auto* reviewStatus =
-        dialog.findChild<QLabel*>(
+        review->findChild<QLabel*>(
             QStringLiteral("scheduleImportReviewStatus")
             );
     auto* import =
-        dialog.findChild<QPushButton*>(
+        review->findChild<QPushButton*>(
             QStringLiteral("scheduleImportAcceptButton")
             );
     const auto colorButtons =
-        dialog.findChildren<QPushButton*>(
+        review->findChildren<QPushButton*>(
             QRegularExpression(
                 QStringLiteral(
                     "^scheduleImportClassColor_"
@@ -964,21 +1539,22 @@ void ScheduleImportDialogTests
     bool foundSpreadsheetColor = false;
     for (const QPushButton* colorButton : colorButtons)
     {
+        QCOMPARE(colorButton->text(), QString());
         QVERIFY(
-            colorButton->text().startsWith(
-                QStringLiteral("Color #")
+            colorButton->toolTip().contains(
+                QLatin1Char('#')
                 )
             );
         foundSpreadsheetColor =
             foundSpreadsheetColor
-            || !colorButton->text().contains(
+            || !colorButton->toolTip().contains(
                 QStringLiteral("#FFFFFF")
                 );
     }
     QVERIFY(foundSpreadsheetColor);
     bool foundInformativeClassTarget = false;
     const auto classActions =
-        dialog.findChildren<QComboBox*>(
+        review->findChildren<QComboBox*>(
             QRegularExpression(
                 QStringLiteral(
                     "^scheduleImportClassAction_"
@@ -1011,7 +1587,7 @@ void ScheduleImportDialogTests
         );
     QStringList reviewDetails;
     const auto detailLabels =
-        dialog.findChildren<QLabel*>(
+        review->findChildren<QLabel*>(
             QRegularExpression(
                 QStringLiteral(
                     "^scheduleImportClassDifferences_"

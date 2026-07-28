@@ -2893,7 +2893,7 @@
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="+39"/>
         <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="-74"/>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="-316"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+375"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+475"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
@@ -3144,7 +3144,7 @@
         <translation>취소</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+140"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+141"/>
         <location filename="../../../src/ui/shared/widgets/sections/class_schedule_section.cpp" line="-65"/>
         <location line="+109"/>
         <source>Days</source>
@@ -4811,7 +4811,7 @@
         <translation type="vanished">일</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="-180"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="-181"/>
         <source>%1 overlaps %2 on %3.</source>
         <translation>%1이(가) %3에 %2와(과) 겹칩니다.</translation>
     </message>
@@ -4828,12 +4828,12 @@
         <translation>[정규]</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+19"/>
         <source>A new class will be created with color %1.</source>
         <translation>색상 %1의 새 수업을 만듭니다.</translation>
     </message>
     <message>
-        <location line="+37"/>
+        <location line="+48"/>
         <source>Grade</source>
         <translation>학년</translation>
     </message>
@@ -4848,22 +4848,21 @@
         <translation>교사</translation>
     </message>
     <message>
-        <location line="+25"/>
+        <location line="+27"/>
         <source>Color</source>
         <translation>색상</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+9"/>
         <source>No grade, level, teacher, day, or color differences.</source>
         <translation>학년, 레벨, 교사, 요일 또는 색상에 차이가 없습니다.</translation>
     </message>
     <message>
-        <location line="-107"/>
         <source>Imported Class:</source>
-        <translation>가져온 수업:</translation>
+        <translation type="vanished">가져온 수업:</translation>
     </message>
     <message>
-        <location line="-259"/>
+        <location line="-524"/>
         <source>Mon.</source>
         <translation type="unfinished">월</translation>
     </message>
@@ -4898,7 +4897,7 @@
         <translation type="unfinished">일</translation>
     </message>
     <message>
-        <location line="+358"/>
+        <location line="+513"/>
         <source>Changes:</source>
         <translation>변경 사항:</translation>
     </message>
@@ -5732,95 +5731,83 @@
 <context>
     <name>ScheduleImportDialog</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+250"/>
-        <location line="+829"/>
-        <location line="+1372"/>
-        <location line="+8"/>
+        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="+56"/>
         <source>Import Schedule</source>
         <translation>일정 가져오기</translation>
     </message>
     <message>
-        <location line="-2190"/>
         <source>Choose the schedule type, then continue.</source>
-        <translation>일정 유형을 선택한 후 계속하세요.</translation>
+        <translation type="vanished">일정 유형을 선택한 후 계속하세요.</translation>
     </message>
     <message>
-        <location line="+28"/>
         <source>Back</source>
-        <translation>뒤로</translation>
+        <translation type="vanished">뒤로</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+757"/>
         <source>Next</source>
         <translation>다음</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Import</source>
-        <translation>가져오기</translation>
+        <translation type="vanished">가져오기</translation>
     </message>
     <message>
-        <location line="+54"/>
+        <location line="-708"/>
         <source>Choose a spreadsheet</source>
         <translation>스프레드시트 선택</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+15"/>
         <source>Select an XLSX schedule...</source>
         <translation>XLSX 일정 선택...</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Browse...</source>
-        <translation>찾아보기...</translation>
+        <translation type="vanished">찾아보기...</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+16"/>
         <source>Schedule type</source>
         <translation>일정 유형</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Normal schedule</source>
-        <translation>정규 일정</translation>
+        <translation type="vanished">정규 일정</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Intensive schedule</source>
-        <translation>집중 일정</translation>
+        <translation type="vanished">집중 일정</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>Worksheet:</source>
-        <translation>워크시트:</translation>
+        <translation type="vanished">워크시트:</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="-58"/>
+        <location line="+15"/>
         <source>Choose a file and schedule type.</source>
         <translation>파일과 일정 유형을 선택하세요.</translation>
     </message>
     <message>
-        <location line="+37"/>
         <source>Ready to read the workbook.</source>
-        <translation>통합 문서를 읽을 준비가 되었습니다.</translation>
+        <translation type="vanished">통합 문서를 읽을 준비가 되었습니다.</translation>
     </message>
     <message>
-        <location line="-68"/>
         <source>Choose your schedule section</source>
-        <translation>내 일정 영역 선택</translation>
+        <translation type="vanished">내 일정 영역 선택</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+124"/>
         <source>Use the selected spreadsheet name even though it does not match My Information.</source>
         <translation>내 정보와 일치하지 않더라도 선택한 스프레드시트 이름을 사용합니다.</translation>
     </message>
     <message>
-        <location line="+105"/>
-        <source>Review and reconcile</source>
-        <translation>검토 및 처리</translation>
+        <source>Review &amp; Reconcile</source>
+        <translation type="vanished">검토 및 조정</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+135"/>
         <source>Select Schedule Import File</source>
         <translation>일정 가져오기 파일 선택</translation>
     </message>
@@ -5840,12 +5827,11 @@
         <translation>.xlsx 확장자의 Excel 통합 문서를 선택하세요.</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Choose Normal schedule or Intensive schedule.</source>
-        <translation>정규 일정 또는 집중 일정을 선택하세요.</translation>
+        <translation type="vanished">정규 일정 또는 집중 일정을 선택하세요.</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+61"/>
         <source>The selected workbook could not be opened.</source>
         <translation>선택한 통합 문서를 열 수 없습니다.</translation>
     </message>
@@ -5860,18 +5846,11 @@
         <translation>워크시트 선택...</translation>
     </message>
     <message>
-        <location line="+24"/>
         <source>Workbook loaded. Choose the worksheet to import.</source>
-        <translation>통합 문서를 불러왔습니다. 가져올 워크시트를 선택하세요.</translation>
+        <translation type="vanished">통합 문서를 불러왔습니다. 가져올 워크시트를 선택하세요.</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <location line="+92"/>
-        <source>Workbook and worksheet are valid.</source>
-        <translation>통합 문서와 워크시트가 유효합니다.</translation>
-    </message>
-    <message>
-        <location line="+62"/>
+        <location line="+196"/>
         <source>Select a detected name...</source>
         <translation>감지된 이름 선택...</translation>
     </message>
@@ -5881,253 +5860,531 @@
         <translation>감지된 이름 선택...</translation>
     </message>
     <message>
-        <location line="+51"/>
+        <location line="+50"/>
         <source>My Information has no name. The selected spreadsheet name will be saved after a successful import.</source>
         <translation>내 정보에 이름이 없습니다. 가져오기에 성공하면 선택한 스프레드시트 이름을 저장합니다.</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
         <translation>내 정보의 이름은 “%1”이지만 선택한 스프레드시트 영역의 이름은 “%2”입니다.</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>My Information name: %1</source>
-        <translation>내 정보 이름: %1</translation>
+        <translation type="vanished">내 정보 이름: %1</translation>
     </message>
     <message>
-        <location line="+75"/>
         <source>Unrecognized cells</source>
-        <translation>인식되지 않은 셀</translation>
+        <translation type="vanished">인식되지 않은 셀</translation>
     </message>
     <message>
-        <location line="-235"/>
-        <location line="+245"/>
+        <location line="-150"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="-292"/>
+        <location line="-554"/>
+        <location line="+226"/>
+        <source>Ready to read the spreadsheet.</source>
+        <translation>스프레드시트를 읽을 준비가 되었습니다.</translation>
+    </message>
+    <message>
+        <location line="-37"/>
+        <location line="+546"/>
+        <source>Load</source>
+        <translation>불러오기</translation>
+    </message>
+    <message>
+        <location line="-690"/>
+        <source>Browse</source>
+        <translation>찾아보기</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Regular</source>
+        <translation type="unfinished">정규</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Intensives</source>
+        <translation>집중 일정</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <source>Worksheet</source>
+        <translation>워크시트</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Select the schedule to import</source>
+        <translation>가져올 일정 선택</translation>
+    </message>
+    <message>
+        <location line="+198"/>
+        <source>Choose Regular or Intensives.</source>
+        <translation>정규 또는 집중 일정을 선택하세요.</translation>
+    </message>
+    <message>
+        <location line="+154"/>
+        <location line="+110"/>
+        <source>Workbook and worksheet are valid.</source>
+        <translation>통합 문서와 워크시트가 유효합니다.</translation>
+    </message>
+    <message>
+        <location line="-414"/>
+        <source>Click Next to continue.</source>
+        <translation>계속하려면 다음을 클릭하세요.</translation>
+    </message>
+    <message>
+        <location line="+303"/>
+        <source>Choose the worksheet to import.</source>
+        <translation>가져올 워크시트를 선택하세요.</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Loading workbook...</source>
         <translation>통합 문서를 불러오는 중...</translation>
     </message>
     <message>
-        <location line="+307"/>
         <source>I reviewed these cells and want to skip them.</source>
-        <translation>이 셀을 검토했으며 건너뛰겠습니다.</translation>
+        <translation type="vanished">이 셀을 검토했으며 건너뛰겠습니다.</translation>
+    </message>
+    <message>
+        <source>Korean teachers and rooms</source>
+        <translation type="vanished">한국인 교사 및 강의실</translation>
+    </message>
+    <message>
+        <source>Spreadsheet</source>
+        <translation type="vanished">스프레드시트</translation>
+    </message>
+    <message>
+        <source>Resolution</source>
+        <translation type="vanished">처리 방법</translation>
+    </message>
+    <message>
+        <source>Imported room</source>
+        <translation type="vanished">가져온 강의실</translation>
+    </message>
+    <message>
+        <source>Choose a room...</source>
+        <translation type="vanished">강의실 선택...</translation>
+    </message>
+    <message>
+        <source>Choose a resolution...</source>
+        <translation type="vanished">처리 방법 선택...</translation>
+    </message>
+    <message>
+        <source>Keep existing: %1</source>
+        <translation type="vanished">기존 항목 유지: %1</translation>
+    </message>
+    <message>
+        <source>Update room globally (%1 affected classes)</source>
+        <translation type="vanished">강의실을 전체적으로 업데이트(영향받는 수업 %1개)</translation>
+    </message>
+    <message>
+        <source>Skip affected classes</source>
+        <translation type="vanished">영향받는 수업 건너뛰기</translation>
+    </message>
+    <message>
+        <source>Use existing: %1</source>
+        <translation type="vanished">기존 항목 사용: %1</translation>
+    </message>
+    <message>
+        <source>Update existing room: %1</source>
+        <translation type="vanished">기존 강의실 업데이트: %1</translation>
+    </message>
+    <message>
+        <source>Create a new Korean teacher</source>
+        <translation type="vanished">새 한국인 교사 만들기</translation>
+    </message>
+    <message>
+        <source>Classes</source>
+        <translation type="vanished">수업</translation>
+    </message>
+    <message>
+        <source>Choose Update, Create, or Skip...</source>
+        <translation type="vanished">업데이트, 만들기 또는 건너뛰기 선택...</translation>
+    </message>
+    <message>
+        <source>Update suggested: %1</source>
+        <translation type="vanished">업데이트 제안: %1</translation>
+    </message>
+    <message>
+        <source>Update existing: %1</source>
+        <translation type="vanished">기존 항목 업데이트: %1</translation>
+    </message>
+    <message>
+        <source>Create new class</source>
+        <translation type="vanished">새 수업 만들기</translation>
+    </message>
+    <message>
+        <source>Skip imported class</source>
+        <translation type="vanished">가져온 수업 건너뛰기</translation>
+    </message>
+    <message>
+        <source>time unavailable</source>
+        <translation type="vanished">시간을 사용할 수 없음</translation>
+    </message>
+    <message>
+        <source>Select Imported Class Color</source>
+        <translation type="vanished">가져온 수업 색상 선택</translation>
+    </message>
+    <message>
+        <source>Color %1</source>
+        <translation type="vanished">색상 %1</translation>
+    </message>
+    <message>
+        <source>Choose a resolution for every Korean teacher.</source>
+        <translation type="vanished">각 한국인 교사의 처리 방법을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose one imported room for this Korean teacher resolution.</source>
+        <translation type="vanished">이 한국인 교사의 처리 방법에 사용할 가져온 강의실을 하나 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose an action for every class.</source>
+        <translation type="vanished">각 수업에 적용할 작업을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose how this imported row should be reconciled.</source>
+        <translation type="vanished">가져온 이 행을 처리할 방법을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Two imported classes cannot use the same existing class.</source>
+        <translation type="vanished">가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Choose an existing class to update.</source>
+        <translation type="vanished">업데이트할 기존 수업을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The imported row will be skipped and its unique existing match will keep its current schedule.</source>
+        <translation type="vanished">가져온 행을 건너뛰고, 정확히 일치하는 기존 수업 하나는 현재 일정을 유지합니다.</translation>
+    </message>
+    <message>
+        <source>The imported row will be skipped.</source>
+        <translation type="vanished">가져온 행을 건너뜁니다.</translation>
+    </message>
+    <message>
+        <source>%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.</source>
+        <translation type="vanished">%1 %2의 수업 시간 패턴이 잘못되었습니다. 스프레드시트를 수정하거나 이 수업을 건너뛰세요.</translation>
+    </message>
+    <message>
+        <source>Meeting pattern:</source>
+        <translation type="vanished">수업 시간 패턴:</translation>
+    </message>
+    <message>
+        <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
+        <translation type="vanished">스프레드시트에서 이 수업에 여러 색상을 사용합니다. 선택한 색상을 확인하세요.</translation>
+    </message>
+    <message>
+        <source>The proposed schedule has a conflict: %1</source>
+        <translation type="vanished">적용 예정 일정에 충돌이 있습니다: %1</translation>
+    </message>
+    <message>
+        <source>Acknowledge the unrecognized cells before importing.</source>
+        <translation type="vanished">인식되지 않은 셀을 확인한 후 가져오세요.</translation>
+    </message>
+    <message>
+        <source>All required resolutions are complete.</source>
+        <translation type="vanished">필요한 처리 방법을 모두 지정했습니다.</translation>
+    </message>
+    <message>
+        <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
+        <translation type="vanished">적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
+    </message>
+    <message>
+        <source> My Information name will be set to “%1”.</source>
+        <translation type="vanished"> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
+    </message>
+    <message>
+        <location line="+333"/>
+        <source>Choose a worksheet.</source>
+        <translation>워크시트를 선택하세요.</translation>
+    </message>
+    <message>
+        <location line="-253"/>
+        <source>The selected worksheet contains no supported user schedules.</source>
+        <translation>선택한 워크시트에 지원되는 사용자 일정이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Is this schedule valid and ready to import?</source>
+        <translation type="vanished">이 일정이 유효하며 가져올 준비가 되었습니까?</translation>
+    </message>
+    <message>
+        <source>Confirm Schedule Import</source>
+        <translation type="vanished">일정 가져오기 확인</translation>
+    </message>
+    <message>
+        <source>No database is open.</source>
+        <translation type="vanished">열려 있는 데이터베이스가 없습니다.</translation>
+    </message>
+    <message>
+        <source>Schedule imported successfully.
+Korean teachers created: %1
+Korean teacher rooms updated: %2
+Classes created: %3
+Classes updated: %4
+Classes skipped: %5
+Schedules cleared: %6
+Ignored occupied cells: %7%8</source>
+        <translation type="vanished">일정을 성공적으로 가져왔습니다.
+만든 한국인 교사: %1
+업데이트한 한국인 교사 강의실: %2
+만든 수업: %3
+업데이트한 수업: %4
+건너뛴 수업: %5
+지운 일정: %6
+무시한 내용이 있는 셀: %7%8</translation>
+    </message>
+    <message>
+        <source>
+My Information name was updated.</source>
+        <translation type="vanished">
+내 정보 이름이 업데이트되었습니다.</translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleImportReviewDialog</name>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="+293"/>
+        <location line="+19"/>
+        <source>Review &amp; Reconcile</source>
+        <translation type="unfinished">검토 및 조정</translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>Back</source>
+        <translation type="unfinished">뒤로</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Import</source>
+        <translation type="unfinished">가져오기</translation>
+    </message>
+    <message>
+        <location line="+55"/>
+        <location line="+1282"/>
+        <location line="+8"/>
+        <source>Import Schedule</source>
+        <translation type="unfinished">일정 가져오기</translation>
+    </message>
+    <message>
+        <location line="-1242"/>
+        <source>Unrecognized cells</source>
+        <translation type="unfinished">인식되지 않은 셀</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>%1: %2</source>
+        <translation type="unfinished">%1: %2</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>I reviewed these cells and want to skip them.</source>
+        <translation type="unfinished">이 셀을 검토했으며 건너뛰겠습니다.</translation>
     </message>
     <message>
         <location line="+26"/>
-        <source>Korean teachers and rooms</source>
+        <source>Korean Teachers and Rooms</source>
         <translation>한국인 교사 및 강의실</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Spreadsheet</source>
-        <translation>스프레드시트</translation>
+        <location line="+11"/>
+        <source>Korean Teacher</source>
+        <translation type="unfinished">한국인 교사</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Resolution</source>
-        <translation>처리 방법</translation>
+        <location line="+8"/>
+        <source>Import Action</source>
+        <translation>가져오기 방법</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Imported room</source>
+        <location line="+8"/>
+        <source>Imported Room</source>
         <translation>가져온 강의실</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+51"/>
         <source>Choose a room...</source>
-        <translation>강의실 선택...</translation>
+        <translation type="unfinished">강의실 선택...</translation>
     </message>
     <message>
         <location line="+24"/>
         <location line="+39"/>
         <source>Choose a resolution...</source>
-        <translation>처리 방법 선택...</translation>
+        <translation type="unfinished">처리 방법 선택...</translation>
     </message>
     <message>
         <location line="-33"/>
         <source>Keep existing: %1</source>
-        <translation>기존 항목 유지: %1</translation>
+        <translation type="unfinished">기존 항목 유지: %1</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Update room globally (%1 affected classes)</source>
-        <translation>강의실을 전체적으로 업데이트(영향받는 수업 %1개)</translation>
+        <translation type="unfinished">강의실을 전체적으로 업데이트(영향받는 수업 %1개)</translation>
     </message>
     <message>
         <location line="+9"/>
         <location line="+49"/>
         <source>Skip affected classes</source>
-        <translation>영향받는 수업 건너뛰기</translation>
+        <translation type="unfinished">영향받는 수업 건너뛰기</translation>
     </message>
     <message>
         <location line="-26"/>
         <source>Use existing: %1</source>
-        <translation>기존 항목 사용: %1</translation>
+        <translation type="unfinished">기존 항목 사용: %1</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Update existing room: %1</source>
-        <translation>기존 강의실 업데이트: %1</translation>
+        <translation type="unfinished">기존 강의실 업데이트: %1</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Create a new Korean teacher</source>
-        <translation>새 한국인 교사 만들기</translation>
+        <translation type="unfinished">새 한국인 교사 만들기</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+67"/>
         <source>Classes</source>
-        <translation>수업</translation>
+        <translation type="unfinished">수업</translation>
     </message>
     <message>
         <location line="+70"/>
         <source>Choose Update, Create, or Skip...</source>
-        <translation>업데이트, 만들기 또는 건너뛰기 선택...</translation>
+        <translation type="unfinished">업데이트, 만들기 또는 건너뛰기 선택...</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Update suggested: %1</source>
-        <translation>업데이트 제안: %1</translation>
+        <translation type="unfinished">업데이트 제안: %1</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Update existing: %1</source>
-        <translation>기존 항목 업데이트: %1</translation>
+        <translation type="unfinished">기존 항목 업데이트: %1</translation>
     </message>
     <message>
         <location line="+16"/>
         <source>Create new class</source>
-        <translation>새 수업 만들기</translation>
+        <translation type="unfinished">새 수업 만들기</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Skip imported class</source>
-        <translation>가져온 수업 건너뛰기</translation>
+        <translation type="unfinished">가져온 수업 건너뛰기</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+57"/>
         <source>time unavailable</source>
-        <translation>시간을 사용할 수 없음</translation>
+        <translation type="unfinished">시간을 사용할 수 없음</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+80"/>
         <source>Select Imported Class Color</source>
-        <translation>가져온 수업 색상 선택</translation>
+        <translation type="unfinished">가져온 수업 색상 선택</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Color %1</source>
-        <translation>색상 %1</translation>
+        <translation type="vanished">색상 %1</translation>
     </message>
     <message>
         <location line="+49"/>
         <source>Choose a resolution for every Korean teacher.</source>
-        <translation>각 한국인 교사의 처리 방법을 선택하세요.</translation>
+        <translation type="unfinished">각 한국인 교사의 처리 방법을 선택하세요.</translation>
     </message>
     <message>
         <location line="+26"/>
         <source>Choose one imported room for this Korean teacher resolution.</source>
-        <translation>이 한국인 교사의 처리 방법에 사용할 가져온 강의실을 하나 선택하세요.</translation>
+        <translation type="unfinished">이 한국인 교사의 처리 방법에 사용할 가져온 강의실을 하나 선택하세요.</translation>
     </message>
     <message>
         <location line="+74"/>
         <source>Choose an action for every class.</source>
-        <translation>각 수업에 적용할 작업을 선택하세요.</translation>
+        <translation type="unfinished">각 수업에 적용할 작업을 선택하세요.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Choose how this imported row should be reconciled.</source>
-        <translation>가져온 이 행을 처리할 방법을 선택하세요.</translation>
+        <translation type="unfinished">가져온 이 행을 처리할 방법을 선택하세요.</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Two imported classes cannot use the same existing class.</source>
-        <translation>가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
+        <translation type="unfinished">가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Choose an existing class to update.</source>
-        <translation>업데이트할 기존 수업을 선택하세요.</translation>
+        <translation type="unfinished">업데이트할 기존 수업을 선택하세요.</translation>
     </message>
     <message>
         <location line="+53"/>
         <source>The imported row will be skipped and its unique existing match will keep its current schedule.</source>
-        <translation>가져온 행을 건너뛰고, 정확히 일치하는 기존 수업 하나는 현재 일정을 유지합니다.</translation>
+        <translation type="unfinished">가져온 행을 건너뛰고, 정확히 일치하는 기존 수업 하나는 현재 일정을 유지합니다.</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>The imported row will be skipped.</source>
-        <translation>가져온 행을 건너뜁니다.</translation>
+        <translation type="unfinished">가져온 행을 건너뜁니다.</translation>
     </message>
     <message>
         <location line="+30"/>
         <source>%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.</source>
-        <translation>%1 %2의 수업 시간 패턴이 잘못되었습니다. 스프레드시트를 수정하거나 이 수업을 건너뛰세요.</translation>
+        <translation type="unfinished">%1 %2의 수업 시간 패턴이 잘못되었습니다. 스프레드시트를 수정하거나 이 수업을 건너뛰세요.</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>Meeting pattern:</source>
-        <translation>수업 시간 패턴:</translation>
+        <translation type="unfinished">수업 시간 패턴:</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
-        <translation>스프레드시트에서 이 수업에 여러 색상을 사용합니다. 선택한 색상을 확인하세요.</translation>
+        <translation type="unfinished">스프레드시트에서 이 수업에 여러 색상을 사용합니다. 선택한 색상을 확인하세요.</translation>
     </message>
     <message>
         <location line="+128"/>
         <source>The proposed schedule has a conflict: %1</source>
-        <translation>적용 예정 일정에 충돌이 있습니다: %1</translation>
+        <translation type="unfinished">적용 예정 일정에 충돌이 있습니다: %1</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>Acknowledge the unrecognized cells before importing.</source>
-        <translation>인식되지 않은 셀을 확인한 후 가져오세요.</translation>
+        <translation type="unfinished">인식되지 않은 셀을 확인한 후 가져오세요.</translation>
     </message>
     <message>
         <location line="+27"/>
-        <location line="+237"/>
         <source>All required resolutions are complete.</source>
-        <translation>필요한 처리 방법을 모두 지정했습니다.</translation>
+        <translation type="unfinished">필요한 처리 방법을 모두 지정했습니다.</translation>
     </message>
     <message>
-        <location line="-233"/>
+        <location line="+4"/>
         <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
-        <translation>적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
+        <translation type="unfinished">적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
     </message>
     <message>
         <location line="+13"/>
         <source> My Information name will be set to “%1”.</source>
-        <translation> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
+        <translation type="unfinished"> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
     </message>
     <message>
-        <location line="+256"/>
-        <source>Choose a worksheet.</source>
-        <translation>워크시트를 선택하세요.</translation>
-    </message>
-    <message>
-        <location line="-1484"/>
-        <source>The selected worksheet contains no supported user schedules.</source>
-        <translation>선택한 워크시트에 지원되는 사용자 일정이 없습니다.</translation>
-    </message>
-    <message>
-        <location line="+1522"/>
+        <location line="+124"/>
         <source>Is this schedule valid and ready to import?</source>
-        <translation>이 일정이 유효하며 가져올 준비가 되었습니까?</translation>
+        <translation type="unfinished">이 일정이 유효하며 가져올 준비가 되었습니까?</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Confirm Schedule Import</source>
-        <translation>일정 가져오기 확인</translation>
+        <translation type="unfinished">일정 가져오기 확인</translation>
     </message>
     <message>
         <location line="+17"/>
         <source>No database is open.</source>
-        <translation>열려 있는 데이터베이스가 없습니다.</translation>
+        <translation type="unfinished">열려 있는 데이터베이스가 없습니다.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -6139,7 +6396,7 @@ Classes updated: %4
 Classes skipped: %5
 Schedules cleared: %6
 Ignored occupied cells: %7%8</source>
-        <translation>일정을 성공적으로 가져왔습니다.
+        <translation type="unfinished">일정을 성공적으로 가져왔습니다.
 만든 한국인 교사: %1
 업데이트한 한국인 교사 강의실: %2
 만든 수업: %3
@@ -6152,8 +6409,18 @@ Ignored occupied cells: %7%8</source>
         <location line="+17"/>
         <source>
 My Information name was updated.</source>
-        <translation>
+        <translation type="unfinished">
 내 정보 이름이 업데이트되었습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="1561"/>
+        <source>Imported Class</source>
+        <translation>가져온 수업</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="1577"/>
+        <source>Color</source>
+        <translation>색상</translation>
     </message>
 </context>
 <context>
@@ -6293,8 +6560,8 @@ My Information name was updated.</source>
     </message>
     <message>
         <location line="+3"/>
-        <source>Import Schedule...</source>
-        <translation>일정 가져오기...</translation>
+        <source>Import</source>
+        <translation>가져오기</translation>
     </message>
     <message>
         <location line="+9"/>

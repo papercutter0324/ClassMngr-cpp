@@ -185,7 +185,7 @@ void ScheduleWidgetTests::importButtonRequestsScheduleImport()
     QVERIFY(importButton);
     QCOMPARE(
         importButton->text(),
-        QStringLiteral("Import Schedule...")
+        QStringLiteral("Import")
         );
 
     QSignalSpy spy(
@@ -273,7 +273,7 @@ void ScheduleWidgetTests
             [](const QPushButton* button)
             {
                 return button->text()
-                    == QStringLiteral("Import Schedule...");
+                    == QStringLiteral("Import");
             }
             )
         );

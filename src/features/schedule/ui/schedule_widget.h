@@ -44,6 +44,12 @@ public:
     [[nodiscard]] ScheduleDisplayState displayState() const;
     [[nodiscard]] ScheduleViewModel scheduleModel() const;
     [[nodiscard]] QSet<int> visibleClassIds() const;
+    void setMaximumVisibleRows(
+        int maximumVisibleRows
+        );
+    void setCompactPreview(
+        bool compactPreview
+        );
     void setPreviewModel(
         const ScheduleViewModel& model
         );
@@ -105,6 +111,8 @@ private:
     ScheduleViewModel m_scheduleModel;
     ScheduleViewModel m_previewModel;
     bool m_hasPreviewModel = false;
+    int m_maximumVisibleRows = 0;
+    bool m_compactPreview = false;
 
     QTableWidget* m_table = nullptr;
     QWidget* m_controlsWidget = nullptr;

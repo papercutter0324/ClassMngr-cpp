@@ -3,22 +3,19 @@
 #include "domain/models/schedule_import.h"
 
 #include <QDialog>
-#include <QList>
 #include <QString>
 
 class ApplicationServices;
 class QCheckBox;
 class QComboBox;
 class QDialogButtonBox;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QProgressBar;
 class QPushButton;
 class QRadioButton;
-class QScrollArea;
-class QStackedWidget;
-class QVBoxLayout;
-class ScheduleWidget;
+class ScheduleImportReviewDialog;
 
 class ScheduleImportDialog final : public QDialog
 {
@@ -35,26 +32,7 @@ public:
         );
 
 private:
-    struct TeacherControl
-    {
-        QString teacherKey;
-        QComboBox* action = nullptr;
-        QComboBox* room = nullptr;
-    };
-
-    struct ClassControl
-    {
-        int candidateIndex = -1;
-        QString teacherKey;
-        QComboBox* action = nullptr;
-        QPushButton* colorButton = nullptr;
-        QString color;
-        QLabel* details = nullptr;
-    };
-
     void buildUi();
-    QWidget* buildSourcePage();
-    QWidget* buildReviewPage();
     void browseForFile();
     bool loadWorkbook();
     void applyLoadedWorkbook(
@@ -63,30 +41,25 @@ private:
         ScheduleImportKind kind
         );
     void setLoading(bool loading);
+    void setSourceStatus(
+        const QString& text,
+        bool showContinuationHint = false
+        );
     void resetUserSelection();
     void updateSelectedSheet();
     void prepareUserSelection();
     void updateUserSelection();
-    bool buildReview();
-    void rebuildResolutionControls();
-    void chooseClassColor(int candidateIndex);
-    void updateClassColorButton(ClassControl* control);
-    void updateReviewState();
     void updateNavigation();
-    void resizeForSourceStage();
-    void resizeForReviewStage();
-    void goBack();
+    void enforceStaticSize();
     void goNext();
-    void applyImport();
+    void openReviewDialog();
 
     [[nodiscard]] ScheduleImportKind selectedKind() const;
     [[nodiscard]] const ScheduleImportSheet* selectedSheet() const;
     [[nodiscard]] const ScheduleImportUserBlock* selectedUser() const;
-    [[nodiscard]] ScheduleImportPlan importPlan() const;
 
     ApplicationServices* m_services = nullptr;
     ScheduleImportWorkbook m_workbook;
-    ScheduleImportPreview m_preview;
     QString m_loadedFilePath;
     ScheduleImportKind m_loadedKind =
         ScheduleImportKind::Normal;
@@ -95,35 +68,25 @@ private:
     quint64 m_loadRequestId = 0;
     QString m_profileName;
 
-    QStackedWidget* m_pages = nullptr;
-    QWidget* m_sourcePage = nullptr;
     QLineEdit* m_fileEdit = nullptr;
     QPushButton* m_browseButton = nullptr;
+    QGroupBox* m_fileSection = nullptr;
+    QGroupBox* m_scheduleTypeSection = nullptr;
     QRadioButton* m_normalRadio = nullptr;
     QRadioButton* m_intensiveRadio = nullptr;
     QLabel* m_sourceStatus = nullptr;
     QProgressBar* m_progressBar = nullptr;
-    QLabel* m_sheetLabel = nullptr;
+    QGroupBox* m_worksheetSection = nullptr;
     QComboBox* m_sheetCombo = nullptr;
 
-    QWidget* m_userSection = nullptr;
+    QGroupBox* m_userSection = nullptr;
     QLabel* m_userStatus = nullptr;
     QComboBox* m_userCombo = nullptr;
     QCheckBox* m_nameConfirmation = nullptr;
-
-    ScheduleWidget* m_previewWidget = nullptr;
-    QLabel* m_warningLabel = nullptr;
-    QCheckBox* m_warningAcknowledgement = nullptr;
-    QWidget* m_resolutionContent = nullptr;
-    QVBoxLayout* m_resolutionLayout = nullptr;
-    QScrollArea* m_resolutionScrollArea = nullptr;
-    QLabel* m_reviewStatus = nullptr;
-    QLabel* m_reviewSummary = nullptr;
-    QList<TeacherControl> m_teacherControls;
-    QList<ClassControl> m_classControls;
+    QWidget* m_continuationSpacer = nullptr;
+    QLabel* m_continuationHint = nullptr;
 
     QDialogButtonBox* m_buttons = nullptr;
-    QPushButton* m_backButton = nullptr;
     QPushButton* m_nextButton = nullptr;
-    QPushButton* m_importButton = nullptr;
+    ScheduleImportReviewDialog* m_reviewDialog = nullptr;
 };

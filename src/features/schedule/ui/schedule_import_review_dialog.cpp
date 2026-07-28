@@ -1,0 +1,2662 @@
+#include "schedule_import_review_dialog.h"
+
+#include "core/application_services.h"
+#include "core/utils/colorutils.h"
+#include "data/data_service.h"
+#include "domain/models/classroom.h"
+#include "domain/rules/schedule_import_rules.h"
+#include "features/classes/config/class_info_config.h"
+#include "features/schedule/ui/schedule_import_dialog_shared.h"
+#include "features/schedule/ui/schedule_time_formatter.h"
+#include "features/schedule/ui/schedule_view_model.h"
+#include "features/schedule/ui/schedule_widget.h"
+#include "features/teacher/import/teacher_import_name_utils.h"
+#include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/utils/widget_sizing.h"
+#include "ui/shared/widgets/no_wheel_combobox.h"
+
+#include <QCheckBox>
+#include <QColor>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QHash>
+#include <QHeaderView>
+#include <QLabel>
+#include <QMessageBox>
+#include <QPalette>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QScreen>
+#include <QScrollBar>
+#include <QSet>
+#include <QSizePolicy>
+#include <QStyle>
+#include <QTableWidget>
+#include <QTime>
+#include <QTimer>
+#include <QVBoxLayout>
+
+#include <algorithm>
+#include <limits>
+#include <utility>
+
+namespace
+{
+constexpr int ActionRole = Qt::UserRole;
+constexpr int TargetRole = Qt::UserRole + 1;
+constexpr int ReviewDialogHeight = 820;
+constexpr int MaximumReviewDialogWidth = 1000;
+constexpr int ClassInfoColumnWidth = 260;
+constexpr int MaximumPreviewVisibleRows = 6;
+constexpr int ReconciliationColumnSpacing = 24;
+constexpr int ClassColumnSpacing = 12;
+constexpr int ClassEntrySpacing = 8;
+constexpr int ClassControlSpacing = 4;
+
+int timeMinutes(
+    const QString& value
+    )
+{
+    QTime time;
+    const QStringList formats{
+        QStringLiteral("h:mm AP"),
+        QStringLiteral("h:mmAP"),
+        QStringLiteral("H:mm"),
+        QStringLiteral("HH:mm")
+    };
+    for (const QString& format : formats)
+    {
+        time =
+            QTime::fromString(
+                value.trimmed(),
+                format
+                );
+        if (time.isValid())
+        {
+            break;
+        }
+    }
+    return time.isValid()
+        ? time.hour() * 60 + time.minute()
+        : -1;
+}
+
+int weekdayIndex(
+    const QString& day
+    );
+
+QString weekdayLabel(
+    const QString& day
+    );
+
+int weekdayIndex(
+    const QString& day
+    )
+{
+    const int index =
+        ClassInfoConfig::Days.indexOf(day.trimmed());
+    return index >= 0
+        ? index
+        : std::numeric_limits<int>::max();
+}
+
+QString weekdayLabel(
+    const QString& day
+    )
+{
+    if (day == QStringLiteral("Monday"))
+    {
+        return QObject::tr("Mon.");
+    }
+    if (day == QStringLiteral("Tuesday"))
+    {
+        return QObject::tr("Tues.");
+    }
+    if (day == QStringLiteral("Wednesday"))
+    {
+        return QObject::tr("Wed.");
+    }
+    if (day == QStringLiteral("Thursday"))
+    {
+        return QObject::tr("Thurs.");
+    }
+    if (day == QStringLiteral("Friday"))
+    {
+        return QObject::tr("Fri.");
+    }
+    if (day == QStringLiteral("Saturday"))
+    {
+        return QObject::tr("Sat.");
+    }
+    if (day == QStringLiteral("Sunday"))
+    {
+        return QObject::tr("Sun.");
+    }
+    return day.trimmed();
+}
+
+QString compactTimeDisplay(
+    const QString& value
+    )
+{
+    const QTime time =
+        QTime::fromString(
+            value,
+            QStringLiteral("h:mm AP")
+            );
+    if (!time.isValid())
+    {
+        return value;
+    }
+
+    const QString minutePart =
+        time.minute() == 0
+            ? QString()
+            : QStringLiteral(":%1")
+                  .arg(time.minute(), 2, 10, QLatin1Char('0'));
+    return QStringLiteral("%1%2%3")
+        .arg(
+            time.hour() == 0 || time.hour() == 12
+                ? 12
+                : time.hour() % 12
+            )
+        .arg(minutePart)
+        .arg(time.hour() < 12 ? QStringLiteral("am") : QStringLiteral("pm"));
+}
+
+QString reconciliationTimeDisplay(
+    const QString& value
+    )
+{
+    const QTime time =
+        QTime::fromString(
+            value,
+            QStringLiteral("h:mm AP")
+            );
+    if (!time.isValid())
+    {
+        return value.toHtmlEscaped();
+    }
+
+    return QStringLiteral("%1:%2%3")
+        .arg(
+            time.hour() == 0 || time.hour() == 12
+                ? 12
+                : time.hour() % 12
+            )
+        .arg(
+            time.minute(),
+            2,
+            10,
+            QLatin1Char('0')
+            )
+        .arg(
+            time.hour() < 12
+                ? QStringLiteral("am")
+                : QStringLiteral("pm")
+            );
+}
+
+QString reconciliationMeetingText(
+    const ClassTime& time
+    )
+{
+    return QStringLiteral("%1 %2 - %3")
+        .arg(
+            weekdayLabel(time.day).toHtmlEscaped(),
+            reconciliationTimeDisplay(time.startTime),
+            reconciliationTimeDisplay(time.endTime)
+            );
+}
+
+QList<ClassTime> orderedMeetings(
+    QList<ClassTime> times
+    )
+{
+    std::stable_sort(
+        times.begin(),
+        times.end(),
+        [](const ClassTime& left, const ClassTime& right)
+        {
+            const int leftDay = weekdayIndex(left.day);
+            const int rightDay = weekdayIndex(right.day);
+            if (leftDay != rightDay)
+            {
+                return leftDay < rightDay;
+            }
+            return timeMinutes(left.startTime)
+                < timeMinutes(right.startTime);
+        }
+        );
+    return times;
+}
+
+QString meetingDifferenceText(
+    const QList<ClassTime>& existingTimes,
+    const QList<ClassTime>& importedTimes
+    )
+{
+    const QList<ClassTime> orderedExisting =
+        orderedMeetings(existingTimes);
+    const QList<ClassTime> orderedImported =
+        orderedMeetings(importedTimes);
+    QStringList lines;
+    int existingIndex = 0;
+    int importedIndex = 0;
+    while (
+        existingIndex < orderedExisting.size()
+        || importedIndex < orderedImported.size()
+        )
+    {
+        const bool hasExisting =
+            existingIndex < orderedExisting.size();
+        const bool hasImported =
+            importedIndex < orderedImported.size();
+        const int existingDay =
+            hasExisting
+                ? weekdayIndex(orderedExisting[existingIndex].day)
+                : std::numeric_limits<int>::max();
+        const int importedDay =
+            hasImported
+                ? weekdayIndex(orderedImported[importedIndex].day)
+                : std::numeric_limits<int>::max();
+        const bool sameDay =
+            hasExisting
+            && hasImported
+            && orderedExisting[existingIndex].day.compare(
+                orderedImported[importedIndex].day,
+                Qt::CaseInsensitive
+                ) == 0;
+        const bool existingDayComesFirst =
+            hasExisting
+            && hasImported
+            && !sameDay
+            && (
+                existingDay < importedDay
+                || (
+                    existingDay == importedDay
+                    && orderedExisting[existingIndex].day.compare(
+                        orderedImported[importedIndex].day,
+                        Qt::CaseInsensitive
+                        ) < 0
+                    )
+                );
+        const bool useExisting =
+            hasExisting
+            && (
+                !hasImported
+                || existingDayComesFirst
+                );
+        const bool useImported =
+            hasImported
+            && (
+                !hasExisting
+                || (
+                    !sameDay
+                    && !existingDayComesFirst
+                    )
+                );
+        const QString existing =
+            hasExisting && !useImported
+                ? reconciliationMeetingText(orderedExisting[existingIndex])
+                : QStringLiteral("—");
+        const QString imported =
+            hasImported && !useExisting
+                ? reconciliationMeetingText(orderedImported[importedIndex])
+                : QStringLiteral("—");
+        lines.append(
+            QStringLiteral("%1 → %2")
+                .arg(existing, imported)
+            );
+
+        if (hasExisting && !useImported)
+        {
+            ++existingIndex;
+        }
+        if (hasImported && !useExisting)
+        {
+            ++importedIndex;
+        }
+    }
+
+    return lines.join(QStringLiteral("<br>"));
+}
+
+QString compactMeetingText(
+    const QList<ClassTime>& times
+    )
+{
+    QList<ClassTime> orderedTimes = times;
+    std::sort(
+        orderedTimes.begin(),
+        orderedTimes.end(),
+        [](const ClassTime& left, const ClassTime& right)
+        {
+            const int leftDay = weekdayIndex(left.day);
+            const int rightDay = weekdayIndex(right.day);
+            if (leftDay != rightDay)
+            {
+                return leftDay < rightDay;
+            }
+            return timeMinutes(left.startTime)
+                < timeMinutes(right.startTime);
+        }
+        );
+
+    QStringList text;
+    for (const ClassTime& time : orderedTimes)
+    {
+        text.append(
+            QStringLiteral("%1 %2")
+                .arg(
+                    weekdayLabel(time.day),
+                    compactTimeDisplay(time.startTime)
+                    )
+            );
+    }
+    return text.join(QStringLiteral(" / "));
+}
+
+QStringList meetingKeys(
+    const QList<ClassTime>& times
+    )
+{
+    QStringList keys;
+    for (const ClassTime& time : times)
+    {
+        keys.append(
+            QStringLiteral("%1\x1f%2\x1f%3")
+                .arg(
+                    time.day,
+                    time.startTime,
+                    time.endTime
+                    )
+            );
+    }
+    keys.sort(Qt::CaseInsensitive);
+    return keys;
+}
+
+bool timesOverlap(
+    const ClassTime& left,
+    const ClassTime& right
+    )
+{
+    if (left.day != right.day)
+    {
+        return false;
+    }
+    const int leftStart = timeMinutes(left.startTime);
+    const int leftEnd = timeMinutes(left.endTime);
+    const int rightStart = timeMinutes(right.startTime);
+    const int rightEnd = timeMinutes(right.endTime);
+    return leftStart >= 0
+        && rightStart >= 0
+        && leftEnd > leftStart
+        && rightEnd > rightStart
+        && leftStart < rightEnd
+        && rightStart < leftEnd;
+}
+
+QString projectedScheduleConflict(
+    const ScheduleImportUserBlock& user
+    )
+{
+    struct Occurrence
+    {
+        QString label;
+        ClassTime time;
+    };
+    QList<Occurrence> occurrences;
+
+    for (const ScheduleImportClassCandidate& candidate : user.classes)
+    {
+        const QString label =
+            QStringLiteral("%1 %2")
+                .arg(
+                    candidate.classGrade,
+                    candidate.classLevel
+                    );
+        for (const ClassTime& time : candidate.times)
+        {
+            for (const Occurrence& existing : occurrences)
+            {
+                if (timesOverlap(time, existing.time))
+                {
+                    return QObject::tr(
+                        "%1 overlaps %2 on %3."
+                        )
+                        .arg(
+                            label,
+                            existing.label,
+                            scheduleImportWeekdayDisplayName(time.day)
+                            );
+                }
+            }
+            occurrences.append({label, time});
+        }
+    }
+
+    return {};
+}
+
+QString classLabel(
+    DataService* dataService,
+    int classId,
+    ScheduleImportKind kind
+    )
+{
+    const Classroom classroom =
+        dataService->getClassById(classId);
+    const ClassInfo info =
+        dataService->loadClassInfo(classId);
+    const QString course =
+        QStringLiteral("%1 %2")
+            .arg(
+                info.classGrade,
+                info.classLevel
+                )
+            .simplified();
+
+    const QString label =
+        !course.isEmpty()
+            ? course
+            : !classroom.name.trimmed().isEmpty()
+                ? classroom.name.trimmed()
+                : QObject::tr("Class %1").arg(classId);
+    const Teacher teacher =
+        dataService->getTeacher(info.teacherId);
+    const bool importingIntensive =
+        kind == ScheduleImportKind::Intensive;
+    const QList<ClassTime>& preferredTimes =
+        importingIntensive
+            ? info.intensiveTimes
+            : info.classTimes;
+    const QList<ClassTime>& fallbackTimes =
+        importingIntensive
+            ? info.classTimes
+            : info.intensiveTimes;
+    const bool usesPreferredTimes =
+        !preferredTimes.isEmpty();
+    const QList<ClassTime>& times =
+        usesPreferredTimes
+            ? preferredTimes
+            : fallbackTimes;
+    const QString schedule =
+        compactMeetingText(times);
+    QStringList detailParts;
+    if (!teacher.teacherKr.trimmed().isEmpty())
+    {
+        detailParts.append(teacher.teacherKr.trimmed());
+    }
+    if (!schedule.isEmpty())
+    {
+        detailParts.append(schedule);
+    }
+    const QString details =
+        detailParts.join(QLatin1Char(' '));
+    const QString scheduleTag =
+        schedule.isEmpty()
+            ? QString()
+            : usesPreferredTimes
+                ? importingIntensive
+                    ? QStringLiteral(" ") + QObject::tr("[Int]")
+                    : QStringLiteral(" ") + QObject::tr("[Reg]")
+                : importingIntensive
+                    ? QStringLiteral(" ") + QObject::tr("[Reg]")
+                    : QStringLiteral(" ") + QObject::tr("[Int]");
+    return details.isEmpty()
+        ? label
+        : QStringLiteral("%1 (%2)%3")
+              .arg(label, details, scheduleTag);
+}
+
+QString classDifferences(
+    DataService* dataService,
+    const ScheduleImportClassCandidate& candidate,
+    int targetClassId,
+    ScheduleImportKind kind,
+    const QString& classColor,
+    const QColor& changesColor
+    )
+{
+    if (!dataService || targetClassId <= 0)
+    {
+        return QObject::tr(
+                   "A new class will be created with color %1."
+                   )
+            .arg(classColor)
+            .toHtmlEscaped();
+    }
+
+    const auto differenceItem =
+        [](const QString& label,
+           const QString& existing,
+           const QString& imported)
+        {
+            return QStringLiteral(
+                "<li><b>%1:</b> %2 → %3</li>"
+                )
+                .arg(
+                    label.toHtmlEscaped(),
+                    existing.toHtmlEscaped(),
+                    imported.toHtmlEscaped()
+                    );
+        };
+    const auto meetingDifferenceItem =
+        [](const QString& label,
+           const QString& differences)
+        {
+            return QStringLiteral(
+                "<li><b>%1:</b><br>%2</li>"
+                )
+                .arg(
+                    label.toHtmlEscaped(),
+                    differences
+                    );
+        };
+
+    const ClassInfo existing =
+        dataService->loadClassInfo(targetClassId);
+    const Teacher existingTeacher =
+        dataService->getTeacher(existing.teacherId);
+    const QList<ClassTime> existingTimes =
+        kind == ScheduleImportKind::Intensive
+            ? existing.intensiveTimes
+            : existing.classTimes;
+    QStringList differences;
+
+    if (existing.classGrade != candidate.classGrade)
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Grade"),
+                existing.classGrade,
+                candidate.classGrade
+                )
+            );
+    }
+    if (existing.classLevel != candidate.classLevel)
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Level"),
+                existing.classLevel,
+                candidate.classLevel
+                )
+            );
+    }
+    if (
+        TeacherImportNameUtils::hangulOnly(
+            existingTeacher.teacherKr
+            ) != candidate.teacherKey
+        )
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Teacher"),
+                existingTeacher.teacherKr,
+                candidate.teacherKr
+                )
+            );
+    }
+    if (meetingKeys(existingTimes) != meetingKeys(candidate.times))
+    {
+        differences.append(
+            meetingDifferenceItem(
+                QObject::tr("Days"),
+                meetingDifferenceText(
+                    existingTimes,
+                    candidate.times
+                    )
+                )
+            );
+    }
+    if (
+        existing.classColor.compare(
+            classColor,
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        differences.append(
+            differenceItem(
+                QObject::tr("Color"),
+                existing.classColor,
+                classColor
+                )
+            );
+    }
+
+    if (differences.isEmpty())
+    {
+        return QObject::tr(
+                   "No grade, level, teacher, day, or color differences."
+                   )
+            .toHtmlEscaped();
+    }
+
+    return QStringLiteral(
+        "<span style=\"color:%1\"><b style=\"color:white\">%2</b>"
+        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%3</ul>"
+        "</span>"
+        )
+        .arg(
+            changesColor.name(QColor::HexRgb),
+            QObject::tr("Changes:").toHtmlEscaped(),
+            differences.join(QString())
+            );
+}
+
+QString teacherLabel(
+    const Teacher& teacher
+    )
+{
+    return QObject::tr("%1 — Room %2")
+        .arg(
+            teacher.teacherKr.trimmed(),
+            teacher.roomNumber.trimmed().isEmpty()
+                ? QObject::tr("not set")
+                : teacher.roomNumber.trimmed()
+            );
+}
+
+int configuredValueOrder(
+    const QStringList& configuredValues,
+    const QString& value
+    )
+{
+    for (int index = 0; index < configuredValues.size(); ++index)
+    {
+        if (
+            configuredValues[index].compare(
+                value.trimmed(),
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            return index;
+        }
+    }
+    return std::numeric_limits<int>::max();
+}
+
+bool importedClassLess(
+    const ScheduleImportClassCandidate& left,
+    const ScheduleImportClassCandidate& right
+    )
+{
+    const int leftGrade =
+        configuredValueOrder(
+            ClassInfoConfig::Grades,
+            left.classGrade
+            );
+    const int rightGrade =
+        configuredValueOrder(
+            ClassInfoConfig::Grades,
+            right.classGrade
+            );
+    if (leftGrade != rightGrade)
+    {
+        return leftGrade < rightGrade;
+    }
+    if (
+        leftGrade == std::numeric_limits<int>::max()
+        && left.classGrade.compare(
+            right.classGrade,
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        return left.classGrade.compare(
+            right.classGrade,
+            Qt::CaseInsensitive
+            ) < 0;
+    }
+
+    const QString configuredGrade =
+        leftGrade == std::numeric_limits<int>::max()
+            ? left.classGrade.trimmed()
+            : ClassInfoConfig::Grades[leftGrade];
+    const QStringList levels =
+        ClassInfoConfig::levelsForGrade(
+            configuredGrade
+            );
+    const int leftLevel =
+        configuredValueOrder(levels, left.classLevel);
+    const int rightLevel =
+        configuredValueOrder(levels, right.classLevel);
+    if (leftLevel != rightLevel)
+    {
+        return leftLevel < rightLevel;
+    }
+    if (
+        leftLevel == std::numeric_limits<int>::max()
+        && left.classLevel.compare(
+            right.classLevel,
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        return left.classLevel.compare(
+            right.classLevel,
+            Qt::CaseInsensitive
+            ) < 0;
+    }
+    return false;
+}
+
+void addResolutionItem(
+    QComboBox* combo,
+    const QString& text,
+    int action,
+    int target = -1
+    )
+{
+    combo->addItem(text);
+    const int index = combo->count() - 1;
+    combo->setItemData(index, action, ActionRole);
+    combo->setItemData(index, target, TargetRole);
+}
+
+QStringList comboItemTexts(
+    const QComboBox* combo
+    )
+{
+    QStringList texts;
+    if (!combo)
+    {
+        return texts;
+    }
+
+    texts.reserve(combo->count());
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        texts.append(combo->itemText(index));
+    }
+    return texts;
+}
+
+void applyUniformComboWidth(
+    const QList<QComboBox*>& combos
+    )
+{
+    int width = 0;
+    for (const QComboBox* combo : combos)
+    {
+        width =
+            std::max(
+                width,
+                WidgetSizing::comboMinimumWidthForTexts(
+                    combo,
+                    comboItemTexts(combo)
+                    )
+                );
+    }
+
+    for (QComboBox* combo : combos)
+    {
+        if (combo)
+        {
+            combo->setFixedWidth(width);
+        }
+    }
+}
+
+int findActionIndex(
+    QComboBox* combo,
+    int action,
+    int target = -2
+    )
+{
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (combo->itemData(index, ActionRole).toInt() != action)
+        {
+            continue;
+        }
+        if (
+            target == -2
+            || combo->itemData(index, TargetRole).toInt() == target
+            )
+        {
+            return index;
+        }
+    }
+    return -1;
+}
+
+ScheduleViewModel previewModel(
+    const ScheduleImportUserBlock& user,
+    bool useIntensive,
+    const ScheduleDisplayState& displayState
+    )
+{
+    const QStringList days =
+        visibleScheduleDays(
+            displayState.showWeekends
+            );
+
+    QSet<int> starts;
+    QHash<QString, QList<ScheduleEntry>> entries;
+    QHash<QString, QString> slotStates;
+    bool uses55Endings = false;
+
+    for (const IntensiveSlotState& state :
+         user.intensiveSlotStates)
+    {
+        const int start =
+            timeMinutes(state.startTime);
+        if (start < 0)
+        {
+            continue;
+        }
+        starts.insert(start);
+        slotStates.insert(
+            state.day
+                + QLatin1Char('\x1f')
+                + QString::number(start),
+            state.state
+            );
+    }
+
+    for (const ScheduleImportClassCandidate& candidate : user.classes)
+    {
+        ScheduleEntry entry;
+        entry.teacherKr = candidate.teacherKr;
+        entry.roomNumber =
+            candidate.rooms.isEmpty()
+                ? QString()
+                : candidate.rooms.first();
+        entry.classGrade = candidate.classGrade;
+        entry.classLevel = candidate.classLevel;
+        entry.classColor =
+            candidate.importedColors.isEmpty()
+                ? QStringLiteral("#FFFFFF")
+                : candidate.importedColors.first();
+        entry.fontColor =
+            ColorUtils::getContrastingFontColor(
+                QColor(entry.classColor)
+                );
+
+        for (const ClassTime& time : candidate.times)
+        {
+            const int start =
+                timeMinutes(time.startTime);
+            if (start < 0)
+            {
+                continue;
+            }
+            starts.insert(start);
+            const int end =
+                timeMinutes(time.endTime);
+            if (end >= 0 && end % 60 == 55)
+            {
+                uses55Endings = true;
+            }
+            entries[
+                time.day
+                + QLatin1Char('\x1f')
+                + QString::number(start)
+                ].append(entry);
+        }
+    }
+
+    QList<int> sortedStarts =
+        starts.values();
+    std::sort(
+        sortedStarts.begin(),
+        sortedStarts.end()
+        );
+
+    ScheduleViewModel model;
+    model.days = days;
+    model.uses55Endings =
+        !useIntensive
+        && uses55Endings;
+
+    for (int start : sortedStarts)
+    {
+        ScheduleRowView row;
+        const QTime startTime(
+            start / 60,
+            start % 60
+            );
+        row.timeLabel =
+            startTime.toString(
+                QStringLiteral("HH:mm")
+                );
+        row.timeRangeLabel =
+            ScheduleTimeFormatter::rangeLabel(
+                row.timeLabel,
+                model.uses55Endings,
+                displayState.use24HourTime
+                );
+
+        for (const QString& day : days)
+        {
+            ScheduleCellView cell;
+            cell.day = day;
+            cell.timeLabel = row.timeLabel;
+            cell.entries =
+                entries.value(
+                    day
+                    + QLatin1Char('\x1f')
+                    + QString::number(start)
+                    );
+            cell.defaultSlotState =
+                scheduleEmptySlotState();
+            cell.slotState =
+                slotStates.value(
+                    day
+                        + QLatin1Char('\x1f')
+                        + QString::number(start),
+                    scheduleEmptySlotState()
+                    );
+            row.maxEntryCount =
+                std::max(
+                    row.maxEntryCount,
+                    static_cast<int>(
+                        cell.entries.size()
+                        )
+                    );
+            if (!cell.entries.isEmpty())
+            {
+                ++model.summary.scheduledBlocks;
+            }
+            else if (
+                cell.slotState
+                    == scheduleEssaySlotState()
+                )
+            {
+                ++model.summary.essayBlocks;
+                ++model.summary.scheduledBlocks;
+            }
+            row.cells.append(cell);
+        }
+
+        model.rows.append(row);
+    }
+
+    if (!useIntensive)
+    {
+        return model;
+    }
+
+    int firstVisibleRow = -1;
+    int lastVisibleRow = -1;
+    for (int rowIndex = 0;
+         rowIndex < model.rows.size();
+         ++rowIndex)
+    {
+        const ScheduleRowView& row = model.rows[rowIndex];
+        const bool hasVisibleContent =
+            std::any_of(
+                row.cells.cbegin(),
+                row.cells.cend(),
+                [](const ScheduleCellView& cell)
+                {
+                    return !cell.entries.isEmpty()
+                        || cell.slotState != scheduleEmptySlotState();
+                }
+                );
+        if (!hasVisibleContent)
+        {
+            continue;
+        }
+
+        if (firstVisibleRow < 0)
+        {
+            firstVisibleRow = rowIndex;
+        }
+        lastVisibleRow = rowIndex;
+    }
+
+    model.rows = firstVisibleRow >= 0
+        ? model.rows.mid(
+            firstVisibleRow,
+            lastVisibleRow - firstVisibleRow + 1
+            )
+        : QList<ScheduleRowView>();
+
+    return model;
+}
+}
+
+ScheduleImportReviewDialog::ScheduleImportReviewDialog(
+    ApplicationServices* services,
+    ScheduleImportReviewRequest request,
+    QWidget* parent
+    )
+    : QDialog(parent)
+    , m_services(services)
+    , m_request(std::move(request))
+{
+    setWindowTitle(tr("Review & Reconcile"));
+    setModal(true);
+    buildUi();
+}
+
+void ScheduleImportReviewDialog::buildUi()
+{
+    auto* outerLayout =
+        new QVBoxLayout(this);
+    m_reviewPage =
+        new QWidget(this);
+    m_reviewPage->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Ignored
+        );
+    auto* layout =
+        new QVBoxLayout(m_reviewPage);
+    auto* heading =
+        new QLabel(
+            tr("Review & Reconcile"),
+            m_reviewPage
+            );
+    heading->setObjectName(
+        QStringLiteral("scheduleImportReviewHeading")
+        );
+    QFont headingFont = heading->font();
+    headingFont.setBold(true);
+    heading->setFont(headingFont);
+    layout->addWidget(heading);
+
+    m_previewWidget =
+        new ScheduleWidget(
+            m_services,
+            m_reviewPage,
+            ScheduleMode::ReadOnly
+            );
+    m_previewWidget->setObjectName(
+        QStringLiteral("scheduleImportPreview")
+        );
+    m_previewWidget->setCompactPreview(true);
+    m_previewWidget->setMaximumVisibleRows(
+        MaximumPreviewVisibleRows
+        );
+    layout->addWidget(m_previewWidget);
+
+    m_resolutionScrollArea =
+        new QScrollArea(m_reviewPage);
+    m_resolutionScrollArea->setObjectName(
+        QStringLiteral("scheduleImportResolutionScrollArea")
+        );
+    m_resolutionScrollArea->setWidgetResizable(true);
+    m_resolutionContent =
+        new QWidget(m_resolutionScrollArea);
+    m_resolutionLayout =
+        new QVBoxLayout(m_resolutionContent);
+    m_resolutionScrollArea->setWidget(m_resolutionContent);
+    layout->addWidget(m_resolutionScrollArea, 1);
+
+    m_reviewStatus =
+        new QLabel(m_reviewPage);
+    m_reviewStatus->setObjectName(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    m_reviewStatus->setWordWrap(true);
+    layout->addWidget(m_reviewStatus);
+
+    m_reviewSummary =
+        new QLabel(m_reviewPage);
+    m_reviewSummary->setObjectName(
+        QStringLiteral("scheduleImportReviewSummary")
+        );
+    m_reviewSummary->setWordWrap(true);
+    layout->addWidget(m_reviewSummary);
+    outerLayout->addWidget(m_reviewPage, 1);
+
+    m_buttons =
+        new QDialogButtonBox(
+            QDialogButtonBox::Cancel,
+            this
+            );
+    m_backButton =
+        m_buttons->addButton(
+            tr("Back"),
+            QDialogButtonBox::ActionRole
+            );
+    m_importButton =
+        m_buttons->addButton(
+            tr("Import"),
+            QDialogButtonBox::AcceptRole
+            );
+    m_backButton->setObjectName(
+        QStringLiteral("scheduleImportBackButton")
+        );
+    m_importButton->setObjectName(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    m_importButton->setEnabled(false);
+    outerLayout->addWidget(m_buttons);
+
+    connect(
+        m_buttons,
+        &QDialogButtonBox::rejected,
+        this,
+        &QDialog::reject
+        );
+    connect(
+        m_backButton,
+        &QPushButton::clicked,
+        this,
+        &QDialog::reject
+        );
+    connect(
+        m_importButton,
+        &QPushButton::clicked,
+        this,
+        &ScheduleImportReviewDialog::applyImport
+        );
+}
+
+bool ScheduleImportReviewDialog::prepare()
+{
+    if (m_prepared)
+    {
+        return true;
+    }
+
+    DataService* dataService =
+        openScheduleImportDataService(m_services);
+    if (!dataService)
+    {
+        return false;
+    }
+
+    const auto preview =
+        dataService->previewScheduleImport(
+            m_request.user,
+            m_request.kind
+            );
+    if (!preview)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Import Schedule"),
+            preview.error()
+            );
+        return false;
+    }
+
+    m_preview = *preview;
+    m_previewWidget->setPreviewModel(
+        previewModel(
+            m_preview.user,
+            m_request.kind == ScheduleImportKind::Intensive,
+            m_previewWidget->displayState()
+            )
+        );
+    rebuildResolutionControls();
+    updateReviewState();
+    m_prepared = true;
+    resizeForReviewStage();
+    QTimer::singleShot(
+        0,
+        this,
+        &ScheduleImportReviewDialog::resizeForReviewStage
+        );
+    return true;
+}
+
+void ScheduleImportReviewDialog::rebuildResolutionControls()
+{
+    while (QLayoutItem* item =
+           m_resolutionLayout->takeAt(0))
+    {
+        if (QWidget* widget = item->widget())
+        {
+            delete widget;
+        }
+        delete item;
+    }
+
+    m_teacherControls.clear();
+    m_classControls.clear();
+
+    DataService* dataService =
+        openScheduleImportDataService(m_services);
+    if (!dataService)
+    {
+        return;
+    }
+
+    if (!m_preview.user.diagnostics.isEmpty())
+    {
+        auto* warnings =
+            new QGroupBox(
+                tr("Unrecognized cells"),
+                m_resolutionContent
+                );
+        auto* warningsLayout =
+            new QVBoxLayout(warnings);
+        QStringList lines;
+        for (const ScheduleImportDiagnostic& diagnostic :
+             m_preview.user.diagnostics)
+        {
+            lines.append(
+                tr("%1: %2")
+                    .arg(
+                        diagnostic.cellReference,
+                        diagnostic.value.trimmed()
+                        )
+                );
+        }
+        m_warningLabel =
+            new QLabel(
+                lines.join(QLatin1Char('\n')),
+                warnings
+                );
+        m_warningLabel->setWordWrap(true);
+        m_warningAcknowledgement =
+            new QCheckBox(
+                tr("I reviewed these cells and want to skip them."),
+                warnings
+                );
+        m_warningAcknowledgement->setObjectName(
+            QStringLiteral("scheduleImportWarningAcknowledgement")
+            );
+        warningsLayout->addWidget(m_warningLabel);
+        warningsLayout->addWidget(
+            m_warningAcknowledgement
+            );
+        m_resolutionLayout->addWidget(warnings);
+        connect(
+            m_warningAcknowledgement,
+            &QCheckBox::toggled,
+            this,
+            &ScheduleImportReviewDialog::updateReviewState
+            );
+    }
+    else
+    {
+        m_warningLabel = nullptr;
+        m_warningAcknowledgement = nullptr;
+    }
+
+    auto* teachersGroup =
+        new QGroupBox(
+            tr("Korean Teachers and Rooms"),
+            m_resolutionContent
+            );
+    teachersGroup->setObjectName(
+        QStringLiteral("scheduleImportTeacherGroup")
+        );
+    auto* teacherGrid =
+        new QGridLayout(teachersGroup);
+    teacherGrid->setHorizontalSpacing(
+        ReconciliationColumnSpacing
+        );
+    teacherGrid->setColumnStretch(0, 0);
+    teacherGrid->setColumnStretch(1, 0);
+    teacherGrid->setColumnStretch(2, 0);
+    teacherGrid->setColumnStretch(3, 1);
+    auto* spreadsheetTeacherHeader =
+        new QLabel(
+            tr("Korean Teacher"),
+            teachersGroup
+            );
+    spreadsheetTeacherHeader->setObjectName(
+        QStringLiteral("scheduleImportTeacherSourceHeader")
+        );
+    auto* teacherActionHeader =
+        new QLabel(
+            tr("Import Action"),
+            teachersGroup
+            );
+    teacherActionHeader->setObjectName(
+        QStringLiteral("scheduleImportTeacherActionHeader")
+        );
+    auto* importedRoomHeader =
+        new QLabel(
+            tr("Imported Room"),
+            teachersGroup
+            );
+    importedRoomHeader->setObjectName(
+        QStringLiteral("scheduleImportTeacherRoomHeader")
+        );
+    teacherGrid->addWidget(
+        spreadsheetTeacherHeader,
+        0,
+        0
+        );
+    teacherGrid->addWidget(
+        teacherActionHeader,
+        0,
+        1
+        );
+    teacherGrid->addWidget(
+        importedRoomHeader,
+        0,
+        2
+        );
+    const int importedRoomColumnWidth =
+        importedRoomHeader->sizeHint().width();
+
+    for (int row = 0;
+         row < m_preview.teachers.size();
+         ++row)
+    {
+        const ScheduleImportTeacherPreview& preview =
+            m_preview.teachers[row];
+        TeacherControl control;
+        control.teacherKey = preview.teacherKey;
+        control.action =
+            new NoWheelComboBox(teachersGroup);
+        control.room =
+            new NoWheelComboBox(teachersGroup);
+        control.action->setObjectName(
+            QStringLiteral("scheduleImportTeacherAction_%1")
+                .arg(row)
+            );
+        control.room->setObjectName(
+            QStringLiteral("scheduleImportTeacherRoom_%1")
+                .arg(row)
+            );
+        control.room->setFixedWidth(
+            importedRoomColumnWidth
+            );
+
+        if (preview.importedRooms.size() > 1)
+        {
+            control.room->addItem(
+                tr("Choose a room..."),
+                QString()
+                );
+        }
+        for (const QString& room : preview.importedRooms)
+        {
+            control.room->addItem(room, room);
+        }
+
+        if (preview.matchingTeacherIds.size() == 1)
+        {
+            const int teacherId =
+                preview.matchingTeacherIds.first();
+            const Teacher existing =
+                dataService->getTeacher(teacherId);
+            const bool exactRoom =
+                preview.importedRooms.size() == 1
+                && existing.roomNumber.trimmed()
+                    == preview.importedRooms.first().trimmed();
+
+            if (!exactRoom)
+            {
+                addResolutionItem(
+                    control.action,
+                    tr("Choose a resolution..."),
+                    -1
+                    );
+            }
+            addResolutionItem(
+                control.action,
+                tr("Keep existing: %1")
+                    .arg(teacherLabel(existing)),
+                static_cast<int>(
+                    ScheduleImportTeacherAction::Reuse
+                    ),
+                teacherId
+                );
+            if (!exactRoom)
+            {
+                addResolutionItem(
+                    control.action,
+                    tr("Update room globally (%1 affected classes)")
+                        .arg(preview.affectedClassCount),
+                    static_cast<int>(
+                        ScheduleImportTeacherAction::UpdateRoom
+                        ),
+                    teacherId
+                    );
+                addResolutionItem(
+                    control.action,
+                    tr("Skip affected classes"),
+                    static_cast<int>(
+                        ScheduleImportTeacherAction::Skip
+                        )
+                    );
+            }
+        }
+        else
+        {
+            if (!preview.matchingTeacherIds.isEmpty())
+            {
+                addResolutionItem(
+                    control.action,
+                    tr("Choose a resolution..."),
+                    -1
+                    );
+            }
+            for (int teacherId : preview.matchingTeacherIds)
+            {
+                const Teacher existing =
+                    dataService->getTeacher(teacherId);
+                addResolutionItem(
+                    control.action,
+                    tr("Use existing: %1")
+                        .arg(teacherLabel(existing)),
+                    static_cast<int>(
+                        ScheduleImportTeacherAction::Reuse
+                        ),
+                    teacherId
+                    );
+                addResolutionItem(
+                    control.action,
+                    tr("Update existing room: %1")
+                        .arg(teacherLabel(existing)),
+                    static_cast<int>(
+                        ScheduleImportTeacherAction::UpdateRoom
+                        ),
+                    teacherId
+                    );
+            }
+            addResolutionItem(
+                control.action,
+                tr("Create a new Korean teacher"),
+                static_cast<int>(
+                    ScheduleImportTeacherAction::Create
+                    )
+                );
+            addResolutionItem(
+                control.action,
+                tr("Skip affected classes"),
+                static_cast<int>(
+                    ScheduleImportTeacherAction::Skip
+                    )
+                );
+        }
+
+        auto* spreadsheetTeacher =
+            new QLabel(
+                QStringLiteral("%1 (%2)")
+                    .arg(
+                        preview.teacherKr,
+                        preview.importedRooms.join(
+                            QStringLiteral(", ")
+                            )
+                        ),
+                teachersGroup
+                );
+        spreadsheetTeacher->setObjectName(
+            QStringLiteral("scheduleImportTeacherSource_%1")
+                .arg(row)
+            );
+        spreadsheetTeacher->setSizePolicy(
+            QSizePolicy::Maximum,
+            QSizePolicy::Preferred
+            );
+        teacherGrid->addWidget(
+            spreadsheetTeacher,
+            row + 1,
+            0,
+            Qt::AlignRight | Qt::AlignVCenter
+            );
+        teacherGrid->addWidget(
+            control.action,
+            row + 1,
+            1
+            );
+        teacherGrid->addWidget(
+            control.room,
+            row + 1,
+            2
+            );
+        connect(
+            control.action,
+            &QComboBox::currentIndexChanged,
+            this,
+            &ScheduleImportReviewDialog::updateReviewState
+            );
+        connect(
+            control.room,
+            &QComboBox::currentIndexChanged,
+            this,
+            &ScheduleImportReviewDialog::updateReviewState
+            );
+        m_teacherControls.append(control);
+    }
+    QList<QComboBox*> teacherActionCombos;
+    teacherActionCombos.reserve(
+        m_teacherControls.size()
+        );
+    for (const TeacherControl& control :
+         std::as_const(m_teacherControls))
+    {
+        teacherActionCombos.append(
+            control.action
+            );
+    }
+    applyUniformComboWidth(
+        teacherActionCombos
+        );
+    m_resolutionLayout->addWidget(teachersGroup);
+
+    auto* classesGroup =
+        new QGroupBox(
+            tr("Classes"),
+            m_resolutionContent
+            );
+    classesGroup->setObjectName(
+        QStringLiteral("scheduleImportClassesGroup")
+        );
+    auto* classGrid =
+        new QGridLayout(classesGroup);
+    classGrid->setHorizontalSpacing(
+        ClassColumnSpacing
+        );
+    classGrid->setVerticalSpacing(0);
+    classGrid->setColumnMinimumWidth(
+        0,
+        ClassInfoColumnWidth
+        );
+    classGrid->setColumnStretch(0, 0);
+    classGrid->setColumnStretch(1, 0);
+    classGrid->setColumnStretch(2, 0);
+    classGrid->setColumnStretch(3, 1);
+
+    auto* importedClassHeader =
+        new QLabel(
+            tr("Imported Class"),
+            classesGroup
+            );
+    importedClassHeader->setObjectName(
+        QStringLiteral("scheduleImportClassSourceHeader")
+        );
+    auto* classActionHeader =
+        new QLabel(
+            tr("Import Action"),
+            classesGroup
+            );
+    classActionHeader->setObjectName(
+        QStringLiteral("scheduleImportClassActionHeader")
+        );
+    auto* classColorHeader =
+        new QLabel(
+            tr("Color"),
+            classesGroup
+            );
+    classColorHeader->setObjectName(
+        QStringLiteral("scheduleImportClassColorHeader")
+        );
+    classGrid->addWidget(
+        importedClassHeader,
+        0,
+        0
+        );
+    classGrid->addWidget(
+        classActionHeader,
+        0,
+        1
+        );
+    classGrid->addWidget(
+        classColorHeader,
+        0,
+        2
+        );
+    classGrid->setRowMinimumHeight(
+        1,
+        ClassEntrySpacing
+        );
+
+    const QList<Classroom> allClasses =
+        dataService->getClasses();
+    QList<ScheduleImportClassPreview> orderedClasses =
+        m_preview.classes;
+    std::stable_sort(
+        orderedClasses.begin(),
+        orderedClasses.end(),
+        [this](
+            const ScheduleImportClassPreview& left,
+            const ScheduleImportClassPreview& right
+            )
+        {
+            return importedClassLess(
+                m_preview.user.classes[left.candidateIndex],
+                m_preview.user.classes[right.candidateIndex]
+                );
+        }
+        );
+
+    QList<QComboBox*> classActionCombos;
+    classActionCombos.reserve(
+        orderedClasses.size()
+        );
+    int classGridRow = 2;
+
+    for (const ScheduleImportClassPreview& preview :
+         orderedClasses)
+    {
+        const ScheduleImportClassCandidate& candidate =
+            m_preview.user.classes[
+                preview.candidateIndex
+                ];
+        ClassControl control;
+        control.candidateIndex =
+            preview.candidateIndex;
+        control.teacherKey =
+            candidate.teacherKey;
+        control.action =
+            new NoWheelComboBox(classesGroup);
+        control.colorButton =
+            new QPushButton(classesGroup);
+        control.color =
+            candidate.importedColors.isEmpty()
+                ? QStringLiteral("#FFFFFF")
+                : candidate.importedColors.first().toUpper();
+        control.details =
+            new QLabel(classesGroup);
+        control.action->setObjectName(
+            QStringLiteral("scheduleImportClassAction_%1")
+                .arg(preview.candidateIndex)
+            );
+        control.details->setObjectName(
+            QStringLiteral("scheduleImportClassDifferences_%1")
+                .arg(preview.candidateIndex)
+            );
+        control.colorButton->setObjectName(
+            QStringLiteral("scheduleImportClassColor_%1")
+                .arg(preview.candidateIndex)
+            );
+        control.details->setWordWrap(true);
+        control.details->setTextFormat(Qt::RichText);
+        updateClassColorButton(&control);
+
+        if (
+            !preview.exactMatch
+            && !preview.matchingClassIds.isEmpty()
+            )
+        {
+            addResolutionItem(
+                control.action,
+                tr("Choose Update, Create, or Skip..."),
+                -1
+                );
+        }
+
+        QSet<int> addedTargets;
+        for (int classId : preview.matchingClassIds)
+        {
+            addResolutionItem(
+                control.action,
+                tr("Update suggested: %1")
+                    .arg(
+                        classLabel(
+                            dataService,
+                            classId,
+                            m_request.kind
+                            )
+                        ),
+                static_cast<int>(
+                    ScheduleImportClassAction::UpdateExisting
+                    ),
+                classId
+                );
+            addedTargets.insert(classId);
+        }
+        for (const Classroom& classroom : allClasses)
+        {
+            if (addedTargets.contains(classroom.id))
+            {
+                continue;
+            }
+            const ClassInfo info =
+                dataService->loadClassInfo(classroom.id);
+            if (
+                !scheduleImportClassOptionIsEligible(
+                    candidate,
+                    info,
+                    m_request.kind
+                    )
+                )
+            {
+                continue;
+            }
+            addResolutionItem(
+                control.action,
+                tr("Update existing: %1")
+                    .arg(
+                        classLabel(
+                            dataService,
+                            classroom.id,
+                            m_request.kind
+                            )
+                        ),
+                static_cast<int>(
+                    ScheduleImportClassAction::UpdateExisting
+                    ),
+                classroom.id
+                );
+        }
+        addResolutionItem(
+            control.action,
+            tr("Create new class"),
+            static_cast<int>(
+                ScheduleImportClassAction::CreateNew
+                )
+            );
+        addResolutionItem(
+            control.action,
+            tr("Skip imported class"),
+            static_cast<int>(
+                ScheduleImportClassAction::Skip
+                ),
+            preview.suggestedClassId
+            );
+
+        if (preview.exactMatch)
+        {
+            control.action->setCurrentIndex(
+                findActionIndex(
+                    control.action,
+                    static_cast<int>(
+                        ScheduleImportClassAction::UpdateExisting
+                        ),
+                    preview.suggestedClassId
+                    )
+                );
+        }
+        else if (preview.matchingClassIds.isEmpty())
+        {
+            control.action->setCurrentIndex(
+                findActionIndex(
+                    control.action,
+                    static_cast<int>(
+                        ScheduleImportClassAction::CreateNew
+                        )
+                    )
+                );
+        }
+
+        const QString importedMeetings =
+            compactMeetingText(candidate.times);
+        auto* importedClassLabel =
+            new QLabel(
+                QStringLiteral("%1 %2 — %3\n(%4)")
+                    .arg(
+                        candidate.classGrade,
+                        candidate.classLevel,
+                        candidate.teacherKr,
+                        importedMeetings.isEmpty()
+                            ? tr("time unavailable")
+                            : importedMeetings
+                        ),
+                classesGroup
+                );
+        importedClassLabel->setObjectName(
+            QStringLiteral("scheduleImportClassCandidate_%1")
+                .arg(preview.candidateIndex)
+            );
+        importedClassLabel->setWordWrap(true);
+        importedClassLabel->setFixedWidth(
+            ClassInfoColumnWidth
+            );
+        importedClassLabel->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Preferred
+            );
+        classGrid->addWidget(
+            importedClassLabel,
+            classGridRow,
+            0,
+            3,
+            1,
+            Qt::AlignTop
+            );
+        classGrid->addWidget(
+            control.action,
+            classGridRow,
+            1,
+            Qt::AlignTop
+            );
+        classGrid->addWidget(
+            control.colorButton,
+            classGridRow,
+            2,
+            Qt::AlignTop
+            );
+        classGrid->setRowMinimumHeight(
+            classGridRow + 1,
+            ClassControlSpacing
+            );
+        classGrid->addWidget(
+            control.details,
+            classGridRow + 2,
+            1,
+            1,
+            2
+            );
+        classGrid->setRowMinimumHeight(
+            classGridRow + 3,
+            ClassEntrySpacing
+            );
+        connect(
+            control.action,
+            &QComboBox::currentIndexChanged,
+            this,
+            &ScheduleImportReviewDialog::updateReviewState
+            );
+        connect(
+            control.colorButton,
+            &QPushButton::clicked,
+            this,
+            [this, candidateIndex = preview.candidateIndex]()
+            {
+                chooseClassColor(candidateIndex);
+            }
+            );
+        classActionCombos.append(
+            control.action
+            );
+        m_classControls.append(control);
+        classGridRow += 4;
+    }
+    applyUniformComboWidth(
+        classActionCombos
+        );
+    m_resolutionLayout->addWidget(classesGroup);
+    m_resolutionLayout->addStretch();
+}
+
+void ScheduleImportReviewDialog::chooseClassColor(
+    int candidateIndex
+    )
+{
+    for (ClassControl& control : m_classControls)
+    {
+        if (control.candidateIndex != candidateIndex)
+        {
+            continue;
+        }
+
+        const QColor selected =
+            ColorUtils::getColor(
+                QColor(control.color),
+                this,
+                tr("Select Imported Class Color"),
+                openScheduleImportDataService(m_services)
+                );
+        if (!selected.isValid())
+        {
+            return;
+        }
+
+        control.color =
+            selected.name(QColor::HexRgb)
+                .toUpper();
+        updateClassColorButton(&control);
+        updateReviewState();
+        return;
+    }
+}
+
+void ScheduleImportReviewDialog::updateClassColorButton(
+    ClassControl* control
+    )
+{
+    if (!control || !control->colorButton)
+    {
+        return;
+    }
+
+    QColor color(control->color);
+    if (!color.isValid())
+    {
+        color = QColor(QStringLiteral("#FFFFFF"));
+        control->color = QStringLiteral("#FFFFFF");
+    }
+    const QString description =
+        QStringLiteral("%1 (%2)")
+            .arg(
+                tr("Select Imported Class Color"),
+                control->color
+                );
+    control->colorButton->setText(QString());
+    control->colorButton->setToolTip(description);
+    control->colorButton->setAccessibleName(description);
+    control->colorButton->setFixedSize(
+        UiConstants::ClassInfo::Details::ColorPreviewWidth,
+        UiConstants::ClassInfo::Details::ColorPreviewHeight
+        );
+    control->colorButton->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Fixed
+        );
+    control->colorButton->setStyleSheet(
+        QStringLiteral(
+            "QPushButton {"
+            "background-color:%1;"
+            "border:1px solid #777;"
+            "border-radius:4px;"
+            "padding:0;"
+            "}"
+            )
+            .arg(control->color)
+        );
+}
+
+void ScheduleImportReviewDialog::updateReviewState()
+{
+    bool valid = true;
+    QString message;
+    QSet<QString> skippedTeachers;
+    QHash<QString, int> teacherActions;
+    QHash<QString, int> teacherTargets;
+    QHash<QString, QString> teacherRooms;
+    int teacherCreates = 0;
+    int teacherUpdates = 0;
+    int teacherSkips = 0;
+
+    for (const TeacherControl& control : m_teacherControls)
+    {
+        const int action =
+            control.action->currentData(
+                ActionRole
+                ).toInt();
+        const QString room =
+            control.room->currentData().toString();
+        teacherActions.insert(control.teacherKey, action);
+        teacherTargets.insert(
+            control.teacherKey,
+            control.action->currentData(TargetRole).toInt()
+            );
+        teacherRooms.insert(control.teacherKey, room);
+
+        if (action < 0)
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message =
+                    tr("Choose a resolution for every Korean teacher.");
+            }
+            continue;
+        }
+        if (
+            (
+                action == static_cast<int>(
+                    ScheduleImportTeacherAction::Create
+                    )
+                || action == static_cast<int>(
+                    ScheduleImportTeacherAction::UpdateRoom
+                    )
+                || (
+                    action == static_cast<int>(
+                        ScheduleImportTeacherAction::Reuse
+                        )
+                    && control.room->findData(QString()) >= 0
+                    )
+                )
+            && room.isEmpty()
+            )
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message =
+                    tr("Choose one imported room for this Korean teacher resolution.");
+            }
+            continue;
+        }
+        if (
+            action == static_cast<int>(
+                ScheduleImportTeacherAction::Skip
+                )
+            )
+        {
+            skippedTeachers.insert(
+                control.teacherKey
+                );
+            ++teacherSkips;
+        }
+        else if (
+            action == static_cast<int>(
+                ScheduleImportTeacherAction::Create
+                )
+            )
+        {
+            ++teacherCreates;
+        }
+        else if (
+            action == static_cast<int>(
+                ScheduleImportTeacherAction::UpdateRoom
+                )
+            )
+        {
+            ++teacherUpdates;
+        }
+    }
+
+    QSet<int> targets;
+    QHash<int, int> classActions;
+    QHash<int, int> classTargets;
+    int creates = 0;
+    int updates = 0;
+    int skips = 0;
+
+    for (const ClassControl& control : m_classControls)
+    {
+        if (skippedTeachers.contains(control.teacherKey))
+        {
+            const int skipIndex =
+                findActionIndex(
+                    control.action,
+                    static_cast<int>(
+                        ScheduleImportClassAction::Skip
+                        )
+                    );
+            if (skipIndex >= 0)
+            {
+                control.action->setCurrentIndex(skipIndex);
+            }
+        }
+
+        const int action =
+            control.action->currentData(
+                ActionRole
+                ).toInt();
+        const int target =
+            control.action->currentData(
+                TargetRole
+                ).toInt();
+        classActions.insert(control.candidateIndex, action);
+        classTargets.insert(control.candidateIndex, target);
+
+        if (action < 0)
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message =
+                    tr("Choose an action for every class.");
+            }
+            if (control.details)
+            {
+                control.details->setText(
+                    tr("Choose how this imported row should be reconciled.")
+                    );
+            }
+            continue;
+        }
+
+        if (target > 0 && targets.contains(target))
+        {
+            valid = false;
+            message =
+                tr("Two imported classes cannot use the same existing class.");
+        }
+
+        if (
+            action == static_cast<int>(
+                ScheduleImportClassAction::UpdateExisting
+                )
+            )
+        {
+            if (target <= 0)
+            {
+                valid = false;
+                message =
+                    tr("Choose an existing class to update.");
+            }
+            ++updates;
+            if (control.details)
+            {
+                control.details->setText(
+                    classDifferences(
+                        openScheduleImportDataService(m_services),
+                        m_preview.user.classes[
+                            control.candidateIndex
+                        ],
+                        target,
+                        m_request.kind,
+                        control.color,
+                        control.details->palette().color(
+                            QPalette::Link
+                            )
+                        )
+                    );
+            }
+        }
+        else if (
+            action == static_cast<int>(
+                ScheduleImportClassAction::CreateNew
+                )
+            )
+        {
+            ++creates;
+            if (control.details)
+            {
+                control.details->setText(
+                    classDifferences(
+                        openScheduleImportDataService(m_services),
+                        m_preview.user.classes[
+                            control.candidateIndex
+                        ],
+                        -1,
+                        m_request.kind,
+                        control.color,
+                        control.details->palette().color(
+                            QPalette::Link
+                            )
+                        )
+                    );
+            }
+        }
+        else
+        {
+            ++skips;
+            if (control.details)
+            {
+                control.details->setText(
+                    target > 0
+                        ? tr("The imported row will be skipped and its unique existing match will keep its current schedule.")
+                        : tr("The imported row will be skipped.")
+                );
+            }
+        }
+
+        if (control.colorButton)
+        {
+            control.colorButton->setEnabled(
+                action != static_cast<int>(
+                    ScheduleImportClassAction::Skip
+                    )
+                );
+        }
+
+        if (
+            action != static_cast<int>(
+                ScheduleImportClassAction::Skip
+                )
+            )
+        {
+            const ScheduleImportClassCandidate& candidate =
+                m_preview.user.classes[
+                    control.candidateIndex
+                    ];
+            if (!candidate.meetingPatternError.isEmpty())
+            {
+                valid = false;
+                if (message.isEmpty())
+                {
+                    message =
+                        tr("%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.")
+                            .arg(
+                                candidate.classGrade,
+                                candidate.classLevel
+                                );
+                }
+                if (control.details)
+                {
+                    control.details->setText(
+                        control.details->text()
+                        + QStringLiteral(
+                            "<br><span style=\"color:#b91c1c\"><b>%1</b> %2</span>"
+                            )
+                            .arg(
+                                tr("Meeting pattern:").toHtmlEscaped(),
+                                candidate.meetingPatternError
+                                    .toHtmlEscaped()
+                                )
+                        );
+                }
+            }
+            if (
+                candidate.importedColors.size() > 1
+                && control.details
+                )
+            {
+                control.details->setText(
+                    control.details->text()
+                    + QStringLiteral(
+                        "<br><span style=\"color:%1\">%2</span>"
+                        )
+                        .arg(
+                            control.details->palette()
+                                .color(QPalette::Link)
+                                .name(QColor::HexRgb),
+                            tr("The spreadsheet uses multiple colors for this class; confirm the selected color.")
+                                .toHtmlEscaped()
+                            )
+                    );
+            }
+        }
+
+        if (target > 0)
+        {
+            targets.insert(target);
+        }
+    }
+
+    DataService* dataService =
+        openScheduleImportDataService(m_services);
+    ScheduleImportUserBlock projected;
+    projected.name = m_preview.user.name;
+    projected.intensiveSlotStates =
+        m_preview.user.intensiveSlotStates;
+
+    if (dataService)
+    {
+        for (const ClassControl& control : m_classControls)
+        {
+            const int action =
+                classActions.value(
+                    control.candidateIndex,
+                    -1
+                    );
+            const int target =
+                classTargets.value(
+                    control.candidateIndex,
+                    -1
+                    );
+
+            if (
+                action == static_cast<int>(
+                    ScheduleImportClassAction::Skip
+                    )
+                )
+            {
+                if (target <= 0)
+                {
+                    continue;
+                }
+
+                const ClassInfo info =
+                    dataService->loadClassInfo(target);
+                ScheduleImportClassCandidate preserved;
+                preserved.teacherKr =
+                    dataService->getTeacher(
+                        info.teacherId
+                        ).teacherKr;
+                preserved.rooms = {
+                    dataService->getTeacher(
+                        info.teacherId
+                        ).roomNumber
+                };
+                preserved.classGrade = info.classGrade;
+                preserved.classLevel = info.classLevel;
+                preserved.importedColors = {
+                    info.classColor.isEmpty()
+                        ? QStringLiteral("#FFFFFF")
+                        : info.classColor
+                };
+                preserved.times =
+                    m_request.kind
+                            == ScheduleImportKind::Intensive
+                        ? info.intensiveTimes
+                        : info.classTimes;
+                projected.classes.append(preserved);
+                continue;
+            }
+
+            if (action < 0)
+            {
+                continue;
+            }
+
+            ScheduleImportClassCandidate candidate =
+                m_preview.user.classes[
+                    control.candidateIndex
+                    ];
+            candidate.importedColors = {
+                control.color
+            };
+            const int teacherAction =
+                teacherActions.value(
+                    candidate.teacherKey,
+                    -1
+                    );
+            QString room =
+                teacherRooms.value(candidate.teacherKey);
+            if (
+                teacherAction == static_cast<int>(
+                    ScheduleImportTeacherAction::Reuse
+                    )
+                )
+            {
+                room =
+                    dataService->getTeacher(
+                        teacherTargets.value(
+                            candidate.teacherKey,
+                            -1
+                            )
+                        ).roomNumber;
+            }
+            candidate.rooms =
+                room.trimmed().isEmpty()
+                    ? QStringList{}
+                    : QStringList{room.trimmed()};
+            projected.classes.append(candidate);
+        }
+    }
+    else
+    {
+        projected = m_preview.user;
+    }
+
+    m_previewWidget->setPreviewModel(
+        previewModel(
+            projected,
+            m_request.kind == ScheduleImportKind::Intensive,
+            m_previewWidget->displayState()
+            )
+        );
+    const QString conflict =
+        projectedScheduleConflict(projected);
+    if (!conflict.isEmpty())
+    {
+        valid = false;
+        if (message.isEmpty())
+        {
+            message =
+                tr("The proposed schedule has a conflict: %1")
+                    .arg(conflict);
+        }
+    }
+
+    if (
+        m_warningAcknowledgement
+        && !m_warningAcknowledgement->isChecked()
+        )
+    {
+        valid = false;
+        if (message.isEmpty())
+        {
+            message =
+                tr("Acknowledge the unrecognized cells before importing.");
+            }
+    }
+
+    int cleared = 0;
+    if (dataService)
+    {
+        for (const Classroom& classroom : dataService->getClasses())
+        {
+            const ClassInfo info =
+                dataService->loadClassInfo(classroom.id);
+            const bool hasSelectedTimes =
+                m_request.kind == ScheduleImportKind::Intensive
+                    ? !info.intensiveTimes.isEmpty()
+                    : !info.classTimes.isEmpty();
+            if (
+                hasSelectedTimes
+                && !targets.contains(classroom.id)
+                )
+            {
+                ++cleared;
+            }
+        }
+    }
+
+    m_reviewStatus->setText(
+        valid
+            ? tr("All required resolutions are complete.")
+            : message
+        );
+    m_reviewSummary->setText(
+        tr("Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
+           "%4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; "
+           "%8 occupied cell(s) acknowledged and ignored.%9")
+            .arg(teacherCreates)
+            .arg(teacherUpdates)
+            .arg(teacherSkips)
+            .arg(creates)
+            .arg(updates)
+            .arg(skips)
+            .arg(cleared)
+            .arg(m_preview.user.diagnostics.size())
+            .arg(
+                m_request.profileName.trimmed().isEmpty()
+                    ? tr(" My Information name will be set to “%1”.")
+                        .arg(m_preview.user.name)
+                    : QString()
+                )
+        );
+    m_importButton->setEnabled(valid);
+}
+
+void ScheduleImportReviewDialog::resizeForReviewStage()
+{
+    if (
+        !m_resolutionScrollArea
+        || !m_resolutionContent
+        || !m_previewWidget
+        || !m_buttons
+        || !layout()
+        )
+    {
+        return;
+    }
+
+    if (m_resolutionLayout)
+    {
+        m_resolutionLayout->activate();
+    }
+    if (m_reviewPage)
+    {
+        if (m_reviewPage->layout())
+        {
+            m_reviewPage->layout()->activate();
+        }
+    }
+    layout()->activate();
+
+    const int scrollBarExtent =
+        style()->pixelMetric(
+            QStyle::PM_ScrollBarExtent,
+            nullptr,
+            m_resolutionScrollArea
+            );
+    const int resolutionWidth =
+        std::max(
+            m_resolutionContent->sizeHint().width(),
+            m_resolutionContent->minimumSizeHint().width()
+            )
+        + (2 * m_resolutionScrollArea->frameWidth())
+        + scrollBarExtent;
+
+    int previewWidth =
+        m_previewWidget->sizeHint().width();
+    if (
+        auto* table =
+            m_previewWidget->findChild<QTableWidget*>(
+                QStringLiteral("scheduleTable")
+                )
+        )
+    {
+        previewWidth =
+            std::max(
+                previewWidth,
+                table->horizontalHeader()->length()
+                    + (2 * table->frameWidth())
+                );
+    }
+
+    int reviewContentWidth =
+        std::max(resolutionWidth, previewWidth);
+    if (m_reviewPage)
+    {
+        if (m_reviewPage->layout())
+        {
+            const QMargins pageMargins =
+                m_reviewPage->layout()->contentsMargins();
+            reviewContentWidth +=
+                pageMargins.left()
+                + pageMargins.right();
+        }
+    }
+
+    const QMargins outerMargins =
+        layout()->contentsMargins();
+    int targetWidth =
+        std::max(
+            reviewContentWidth,
+            m_buttons->sizeHint().width()
+            )
+        + outerMargins.left()
+        + outerMargins.right();
+    targetWidth =
+        std::min(
+            targetWidth,
+            MaximumReviewDialogWidth
+            );
+    int targetHeight =
+        ReviewDialogHeight;
+
+    if (QScreen* targetScreen = screen())
+    {
+        const QSize available =
+            targetScreen->availableGeometry().size();
+        targetWidth =
+            std::min(targetWidth, available.width());
+        targetHeight =
+            std::min(targetHeight, available.height());
+    }
+    resize(
+        std::max(1, targetWidth),
+        std::max(1, targetHeight)
+        );
+}
+
+void ScheduleImportReviewDialog::applyImport()
+{
+    updateReviewState();
+    if (!m_importButton->isEnabled())
+    {
+        return;
+    }
+
+    const ScheduleImportPlan plan =
+        importPlan();
+    const QString confirmation =
+        m_reviewSummary->text()
+        + QStringLiteral("\n\n")
+        + tr("Is this schedule valid and ready to import?");
+
+    if (
+        QMessageBox::question(
+            this,
+            tr("Confirm Schedule Import"),
+            confirmation,
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+            ) != QMessageBox::Yes
+        )
+    {
+        return;
+    }
+
+    DataService* dataService =
+        openScheduleImportDataService(m_services);
+    const auto summary =
+        dataService
+            ? dataService->importSchedule(plan)
+            : Result<ScheduleImportSummary>(
+                std::unexpected(
+                    tr("No database is open.")
+                    )
+                );
+
+    if (!summary)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Import Schedule"),
+            summary.error()
+            );
+        return;
+    }
+
+    QMessageBox::information(
+        this,
+        tr("Import Schedule"),
+        tr("Schedule imported successfully.\n"
+           "Korean teachers created: %1\n"
+           "Korean teacher rooms updated: %2\n"
+           "Classes created: %3\n"
+           "Classes updated: %4\n"
+           "Classes skipped: %5\n"
+           "Schedules cleared: %6\n"
+           "Ignored occupied cells: %7%8")
+            .arg(summary->teachersCreated)
+            .arg(summary->teachersUpdated)
+            .arg(summary->classesCreated)
+            .arg(summary->classesUpdated)
+            .arg(summary->classesSkipped)
+            .arg(summary->schedulesCleared)
+            .arg(summary->ignoredCells)
+            .arg(
+                summary->profileNameUpdated
+                    ? tr("\nMy Information name was updated.")
+                    : QString()
+                )
+        );
+    accept();
+}
+
+ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
+{
+    ScheduleImportPlan plan;
+    plan.kind = m_request.kind;
+    plan.selectedUserName =
+        m_preview.user.name;
+    plan.saveProfileNameIfBlank =
+        m_request.profileName.trimmed().isEmpty();
+    plan.unknownCellsAcknowledged =
+        !m_warningAcknowledgement
+        || m_warningAcknowledgement->isChecked();
+    plan.candidates =
+        m_preview.user.classes;
+    plan.intensiveSlotStates =
+        m_preview.user.intensiveSlotStates;
+    plan.diagnostics =
+        m_preview.user.diagnostics;
+
+    for (const TeacherControl& control : m_teacherControls)
+    {
+        ScheduleImportTeacherResolution resolution;
+        resolution.teacherKey =
+            control.teacherKey;
+        resolution.action =
+            static_cast<ScheduleImportTeacherAction>(
+                control.action->currentData(
+                    ActionRole
+                    ).toInt()
+                );
+        resolution.targetTeacherId =
+            control.action->currentData(
+                TargetRole
+                ).toInt();
+        resolution.selectedRoom =
+            control.room->currentData().toString();
+        plan.teachers.append(resolution);
+    }
+
+    for (const ClassControl& control : m_classControls)
+    {
+        ScheduleImportClassResolution resolution;
+        resolution.candidateIndex =
+            control.candidateIndex;
+        resolution.action =
+            static_cast<ScheduleImportClassAction>(
+                control.action->currentData(
+                    ActionRole
+                    ).toInt()
+                );
+        resolution.targetClassId =
+            control.action->currentData(
+                TargetRole
+                ).toInt();
+        resolution.classColor =
+            control.color;
+        resolution.fontColor =
+            ColorUtils::getContrastingFontColor(
+                QColor(control.color)
+                );
+        plan.classes.append(resolution);
+    }
+
+    return plan;
+}

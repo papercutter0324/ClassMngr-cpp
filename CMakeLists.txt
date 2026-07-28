@@ -1360,7 +1360,13 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_import_dialog.cpp
         src/features/schedule/ui/schedule_import_dialog.h
+        src/features/schedule/ui/schedule_import_dialog_shared.cpp
+        src/features/schedule/ui/schedule_import_dialog_shared.h
+        src/features/schedule/ui/schedule_import_review_dialog.cpp
+        src/features/schedule/ui/schedule_import_review_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
+        src/features/schedule/ui/schedule_time_formatter.cpp
+        src/features/schedule/ui/schedule_time_formatter.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
         src/ui/shared/widgets/no_wheel_combobox.cpp

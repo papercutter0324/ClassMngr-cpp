@@ -37,6 +37,13 @@ namespace
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 60;
+constexpr int CompactPreviewTimeColumnWidth = 84;
+constexpr int CompactPreviewHeaderHeight = 36;
+constexpr int CompactPreviewRowHeight = 50;
+constexpr int CompactPreviewRowBaseHeight = 24;
+constexpr int CompactPreviewRowHeightPerEntry = 40;
+constexpr int PreviewFontSizeReduction = 4;
+constexpr int PreviewTimeFontSizeReduction = 2;
 constexpr int OptionsColumnSpacing = 32;
 constexpr int TimeCellRole = Qt::UserRole + 1;
 const QString TimeColumnDelegateObjectName =
@@ -170,15 +177,17 @@ QString escaped(
 
 QString classCellStyle(
     const QString& classColor,
-    const QString& fontColor
+    const QString& fontColor,
+    int padding,
+    int borderRadius
     )
 {
     return QStringLiteral(
         "QLabel {"
         "background:%1;"
         "color:%2;"
-        "padding:4px;"
-        "border-radius:6px;"
+        "padding:%3px;"
+        "border-radius:%4px;"
         "}"
         )
         .arg(
@@ -190,6 +199,9 @@ QString classCellStyle(
             fontColor.isEmpty()
                 ? QStringLiteral("#000000")
                 : fontColor
+            )
+        .arg(padding)
+        .arg(borderRadius
             );
 }
 
@@ -301,6 +313,35 @@ QSet<int> ScheduleWidget::visibleClassIds() const
     }
 
     return classIds;
+}
+
+void ScheduleWidget::setMaximumVisibleRows(
+    int maximumVisibleRows
+    )
+{
+    const int normalizedMaximum =
+        std::max(0, maximumVisibleRows);
+
+    if (m_maximumVisibleRows == normalizedMaximum)
+    {
+        return;
+    }
+
+    m_maximumVisibleRows = normalizedMaximum;
+    loadSchedule();
+}
+
+void ScheduleWidget::setCompactPreview(
+    bool compactPreview
+    )
+{
+    if (m_compactPreview == compactPreview)
+    {
+        return;
+    }
+
+    m_compactPreview = compactPreview;
+    loadSchedule();
 }
 
 void ScheduleWidget::setPreviewModel(
@@ -835,6 +876,28 @@ void ScheduleWidget::loadSchedule()
         return;
     }
 
+    const int headerFontSize =
+        m_compactPreview
+            ? 12 - PreviewFontSizeReduction
+            : 12;
+    const int headerHeight =
+        m_compactPreview
+            ? CompactPreviewHeaderHeight
+            : HeaderHeight;
+    const int rowHeight =
+        m_compactPreview
+            ? CompactPreviewRowHeight
+            : RowHeight;
+
+    m_table->verticalHeader()->setDefaultSectionSize(rowHeight);
+    m_table->horizontalHeader()->setFont(
+        FontManager::getUiFont(
+            headerFontSize,
+            QFont::DemiBold
+            )
+        );
+    m_table->horizontalHeader()->setFixedHeight(headerHeight);
+
     m_scheduleModel =
         buildScheduleModel();
 
@@ -864,7 +927,9 @@ void ScheduleWidget::loadSchedule()
         timeItem->setTextAlignment(Qt::AlignCenter);
         timeItem->setFont(
             FontManager::getUiFont(
-                11,
+                m_compactPreview
+                    ? 11 - PreviewTimeFontSizeReduction
+                    : 11,
                 QFont::Medium
                 )
             );
@@ -927,8 +992,11 @@ void ScheduleWidget::loadSchedule()
         m_table->setRowHeight(
             rowIndex,
             std::max(
-                RowHeight,
-                28 + (maxEntryCount * 48)
+                rowHeight,
+                m_compactPreview
+                    ? CompactPreviewRowBaseHeight
+                        + (maxEntryCount * CompactPreviewRowHeightPerEntry)
+                    : 28 + (maxEntryCount * 48)
                 )
             );
     }
@@ -960,7 +1028,7 @@ void ScheduleWidget::loadSchedule()
 
         m_table->setRowHeight(
             0,
-            RowHeight
+            rowHeight
             );
     }
 
@@ -1012,7 +1080,7 @@ void ScheduleWidget::updateButtons()
         tr("Export")
         );
     m_importButton->setText(
-        tr("Import Schedule...")
+        tr("Import")
         );
 }
 
@@ -1073,7 +1141,9 @@ void ScheduleWidget::configureColumns(
 
     m_table->setColumnWidth(
         0,
-        TimeColumnWidth
+        m_compactPreview
+            ? CompactPreviewTimeColumnWidth
+            : TimeColumnWidth
         );
 
     for (int column = 1; column < headers.size(); ++column)
@@ -1119,11 +1189,27 @@ void ScheduleWidget::updateTableMinimumHeight()
         return;
     }
 
+    const int rowCount =
+        m_table->rowCount();
+    const bool hasHiddenRows =
+        m_maximumVisibleRows > 0
+        && rowCount > m_maximumVisibleRows;
+    const int visibleRowCount =
+        hasHiddenRows
+            ? m_maximumVisibleRows
+            : rowCount;
+
+    m_table->setVerticalScrollBarPolicy(
+        hasHiddenRows
+            ? Qt::ScrollBarAsNeeded
+            : Qt::ScrollBarAlwaysOff
+        );
+
     int tableHeight =
         m_table->horizontalHeader()->height()
         + (m_table->frameWidth() * 2);
 
-    for (int row = 0; row < m_table->rowCount(); ++row)
+    for (int row = 0; row < visibleRowCount; ++row)
     {
         tableHeight +=
             m_table->rowHeight(row);
@@ -1236,7 +1322,9 @@ QWidget* ScheduleWidget::createScheduleLabel(
     label->setStyleSheet(
         classCellStyle(
             entry.classColor,
-            entry.fontColor
+            entry.fontColor,
+            m_compactPreview ? 3 : 4,
+            m_compactPreview ? 5 : 6
             )
         );
 
@@ -1268,11 +1356,17 @@ QWidget* ScheduleWidget::createScheduleLabel(
                     .toHtmlEscaped()
                 )
             .arg(
-                FontManager::getKoreanFont().pointSize()
+                FontManager::getKoreanFont(
+                    FontManager::stdKoreanFont
+                    - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                    ).pointSize()
                 )
             .arg(escaped(teacherLine))
             .arg(
-                FontManager::adjustedPointSize(14)
+                FontManager::adjustedPointSize(
+                    14
+                    - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                    )
                 )
             .arg(escaped(englishLine))
         );
@@ -1302,7 +1396,9 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
         label->setStyleSheet(
             classCellStyle(
                 entries.first().classColor,
-                entries.first().fontColor
+                entries.first().fontColor,
+                m_compactPreview ? 3 : 4,
+                m_compactPreview ? 5 : 6
                 )
             );
     }
@@ -1327,7 +1423,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
 
         html +=
             QStringLiteral(
-                "<div style=\"margin-bottom:8px; text-align:center; line-height:1.2;\">"
+                "<div style=\"margin-bottom:%7px; text-align:center; line-height:1.2;\">"
                 "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
                 "<div style=\"color:%1; font-size:%5pt; font-weight:400;\">%6</div>"
                 "</div>"
@@ -1339,13 +1435,20 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
                         .toHtmlEscaped()
                     )
                 .arg(
-                    FontManager::getKoreanFont().pointSize()
+                    FontManager::getKoreanFont(
+                        FontManager::stdKoreanFont
+                        - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                        ).pointSize()
                     )
                 .arg(escaped(teacherLine))
                 .arg(
-                    FontManager::adjustedPointSize(14)
+                    FontManager::adjustedPointSize(
+                        14
+                        - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                        )
                     )
-                .arg(escaped(englishLine));
+                .arg(escaped(englishLine))
+                .arg(m_compactPreview ? 6 : 8);
     }
 
     FontManager::setManagedRichText(
@@ -1381,7 +1484,8 @@ QWidget* ScheduleWidget::createSlotLabel(
 
         label->setFont(
             FontManager::getUiFont(
-                16,
+                16
+                    - (m_compactPreview ? PreviewFontSizeReduction : 0),
                 QFont::Bold,
                 true
                 )
@@ -1392,10 +1496,12 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "QLabel {"
                 "background:white;"
                 "color:black;"
-                "border-radius:6px;"
-                "padding:6px;"
+                "border-radius:%1px;"
+                "padding:%2px;"
                 "}"
                 )
+                .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 4 : 6)
             );
     }
     else if (cell.slotState == scheduleLunchSlotState())
@@ -1406,7 +1512,8 @@ QWidget* ScheduleWidget::createSlotLabel(
 
         label->setFont(
             FontManager::getUiFont(
-                16,
+                16
+                    - (m_compactPreview ? PreviewFontSizeReduction : 0),
                 QFont::Black,
                 true
                 )
@@ -1417,10 +1524,12 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "QLabel {"
                 "background:#DCDCDC;"
                 "color:black;"
-                "border-radius:6px;"
-                "padding:6px;"
+                "border-radius:%1px;"
+                "padding:%2px;"
                 "}"
                 )
+                .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 4 : 6)
             );
     }
     else
