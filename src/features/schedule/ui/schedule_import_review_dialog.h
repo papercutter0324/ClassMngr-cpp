@@ -14,6 +14,8 @@ class QDialogButtonBox;
 class QLabel;
 class QPushButton;
 class QScrollArea;
+class QSplitter;
+class QTabWidget;
 class QVBoxLayout;
 class ScheduleWidget;
 
@@ -64,12 +66,18 @@ private:
     bool m_prepared = false;
 
     QWidget* m_reviewPage = nullptr;
+    QSplitter* m_reviewSplitter = nullptr;
     ScheduleWidget* m_previewWidget = nullptr;
     QLabel* m_warningLabel = nullptr;
     QCheckBox* m_warningAcknowledgement = nullptr;
-    QWidget* m_resolutionContent = nullptr;
-    QVBoxLayout* m_resolutionLayout = nullptr;
-    QScrollArea* m_resolutionScrollArea = nullptr;
+    QTabWidget* m_resolutionTabs = nullptr;
+    QScrollArea* m_warningScrollArea = nullptr;
+    QScrollArea* m_teacherScrollArea = nullptr;
+    QScrollArea* m_classScrollArea = nullptr;
+    QWidget* m_teacherContent = nullptr;
+    QWidget* m_classContent = nullptr;
+    QVBoxLayout* m_teacherLayout = nullptr;
+    QVBoxLayout* m_classLayout = nullptr;
     QLabel* m_reviewStatus = nullptr;
     QLabel* m_reviewSummary = nullptr;
     QList<TeacherControl> m_teacherControls;

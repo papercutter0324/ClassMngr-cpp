@@ -12,28 +12,27 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "ui/shared/constants/gui_constants.h"
-#include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QCheckBox>
 #include <QColor>
 #include <QComboBox>
 #include <QDialogButtonBox>
-#include <QGridLayout>
-#include <QGroupBox>
+#include <QFrame>
 #include <QHash>
 #include <QHeaderView>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPalette>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScreen>
-#include <QScrollBar>
 #include <QSet>
 #include <QSizePolicy>
-#include <QStyle>
+#include <QSplitter>
 #include <QTableWidget>
+#include <QTabWidget>
 #include <QTime>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -47,13 +46,9 @@ namespace
 constexpr int ActionRole = Qt::UserRole;
 constexpr int TargetRole = Qt::UserRole + 1;
 constexpr int ReviewDialogHeight = 820;
-constexpr int MaximumReviewDialogWidth = 1000;
-constexpr int ClassInfoColumnWidth = 260;
+constexpr int MaximumReviewDialogWidth = 1180;
 constexpr int MaximumPreviewVisibleRows = 6;
-constexpr int ReconciliationColumnSpacing = 24;
-constexpr int ClassColumnSpacing = 12;
-constexpr int ClassEntrySpacing = 8;
-constexpr int ClassControlSpacing = 4;
+constexpr int PreferredResolutionPaneWidth = 380;
 
 int timeMinutes(
     const QString& value
@@ -761,47 +756,79 @@ void addResolutionItem(
     combo->setItemData(index, target, TargetRole);
 }
 
-QStringList comboItemTexts(
-    const QComboBox* combo
+void configureCompactActionCombo(
+    QComboBox* combo
     )
 {
-    QStringList texts;
     if (!combo)
     {
-        return texts;
+        return;
     }
 
-    texts.reserve(combo->count());
-    for (int index = 0; index < combo->count(); ++index)
-    {
-        texts.append(combo->itemText(index));
-    }
-    return texts;
+    combo->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Fixed
+        );
+    combo->setSizeAdjustPolicy(
+        QComboBox::AdjustToMinimumContentsLengthWithIcon
+        );
+    combo->setMinimumContentsLength(14);
 }
 
-void applyUniformComboWidth(
-    const QList<QComboBox*>& combos
+QFrame* createReconciliationCard(
+    QWidget* parent,
+    const QString& objectName
     )
 {
-    int width = 0;
-    for (const QComboBox* combo : combos)
+    auto* card =
+        new QFrame(parent);
+    card->setObjectName(objectName);
+    card->setFrameShape(QFrame::StyledPanel);
+    card->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Maximum
+        );
+    return card;
+}
+
+void addLabeledControlRow(
+    QVBoxLayout* layout,
+    const QString& labelText,
+    QWidget* control,
+    QWidget* parent
+    )
+{
+    auto* row =
+        new QHBoxLayout();
+    auto* label =
+        new QLabel(labelText, parent);
+    label->setMinimumWidth(label->sizeHint().width());
+    row->addWidget(label);
+    row->addWidget(control, 1);
+    layout->addLayout(row);
+}
+
+void clearLayout(
+    QLayout* layout
+    )
+{
+    if (!layout)
     {
-        width =
-            std::max(
-                width,
-                WidgetSizing::comboMinimumWidthForTexts(
-                    combo,
-                    comboItemTexts(combo)
-                    )
-                );
+        return;
     }
 
-    for (QComboBox* combo : combos)
+    while (QLayoutItem* item = layout->takeAt(0))
     {
-        if (combo)
+        if (QWidget* widget = item->widget())
         {
-            combo->setFixedWidth(width);
+            delete widget;
         }
+        else if (QLayout* childLayout = item->layout())
+        {
+            clearLayout(childLayout);
+            delete childLayout;
+        }
+        delete item;
     }
 }
 
@@ -1064,10 +1091,28 @@ void ScheduleImportReviewDialog::buildUi()
     heading->setFont(headingFont);
     layout->addWidget(heading);
 
+    m_reviewSplitter =
+        new QSplitter(
+            Qt::Horizontal,
+            m_reviewPage
+            );
+    m_reviewSplitter->setObjectName(
+        QStringLiteral("scheduleImportReviewSplitter")
+        );
+    m_reviewSplitter->setChildrenCollapsible(false);
+
+    auto* previewPane =
+        new QWidget(m_reviewSplitter);
+    previewPane->setObjectName(
+        QStringLiteral("scheduleImportPreviewPane")
+        );
+    auto* previewLayout =
+        new QVBoxLayout(previewPane);
+    previewLayout->setContentsMargins(0, 0, 0, 0);
     m_previewWidget =
         new ScheduleWidget(
             m_services,
-            m_reviewPage,
+            previewPane,
             ScheduleMode::ReadOnly
             );
     m_previewWidget->setObjectName(
@@ -1077,20 +1122,63 @@ void ScheduleImportReviewDialog::buildUi()
     m_previewWidget->setMaximumVisibleRows(
         MaximumPreviewVisibleRows
         );
-    layout->addWidget(m_previewWidget);
+    previewLayout->addWidget(m_previewWidget, 1);
 
-    m_resolutionScrollArea =
-        new QScrollArea(m_reviewPage);
-    m_resolutionScrollArea->setObjectName(
-        QStringLiteral("scheduleImportResolutionScrollArea")
+    m_resolutionTabs =
+        new QTabWidget(m_reviewSplitter);
+    m_resolutionTabs->setObjectName(
+        QStringLiteral("scheduleImportResolutionTabs")
         );
-    m_resolutionScrollArea->setWidgetResizable(true);
-    m_resolutionContent =
-        new QWidget(m_resolutionScrollArea);
-    m_resolutionLayout =
-        new QVBoxLayout(m_resolutionContent);
-    m_resolutionScrollArea->setWidget(m_resolutionContent);
-    layout->addWidget(m_resolutionScrollArea, 1);
+
+    m_teacherScrollArea =
+        new QScrollArea(m_resolutionTabs);
+    m_teacherScrollArea->setObjectName(
+        QStringLiteral("scheduleImportTeacherScrollArea")
+        );
+    m_teacherScrollArea->setWidgetResizable(true);
+    m_teacherScrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+        );
+    m_teacherContent =
+        new QWidget(m_teacherScrollArea);
+    m_teacherContent->setObjectName(
+        QStringLiteral("scheduleImportTeacherGroup")
+        );
+    m_teacherLayout =
+        new QVBoxLayout(m_teacherContent);
+    m_teacherScrollArea->setWidget(m_teacherContent);
+    m_resolutionTabs->addTab(
+        m_teacherScrollArea,
+        tr("Korean Teachers and Rooms")
+        );
+
+    m_classScrollArea =
+        new QScrollArea(m_resolutionTabs);
+    m_classScrollArea->setObjectName(
+        QStringLiteral("scheduleImportClassScrollArea")
+        );
+    m_classScrollArea->setWidgetResizable(true);
+    m_classScrollArea->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAlwaysOff
+        );
+    m_classContent =
+        new QWidget(m_classScrollArea);
+    m_classContent->setObjectName(
+        QStringLiteral("scheduleImportClassesGroup")
+        );
+    m_classLayout =
+        new QVBoxLayout(m_classContent);
+    m_classScrollArea->setWidget(m_classContent);
+    m_resolutionTabs->addTab(
+        m_classScrollArea,
+        tr("Classes")
+        );
+
+    m_reviewSplitter->addWidget(previewPane);
+    m_reviewSplitter->addWidget(m_resolutionTabs);
+    m_reviewSplitter->setStretchFactor(0, 3);
+    m_reviewSplitter->setStretchFactor(1, 2);
+    layout->addWidget(m_reviewSplitter, 1);
 
     m_reviewStatus =
         new QLabel(m_reviewPage);
@@ -1204,18 +1292,25 @@ bool ScheduleImportReviewDialog::prepare()
 
 void ScheduleImportReviewDialog::rebuildResolutionControls()
 {
-    while (QLayoutItem* item =
-           m_resolutionLayout->takeAt(0))
-    {
-        if (QWidget* widget = item->widget())
-        {
-            delete widget;
-        }
-        delete item;
-    }
+    clearLayout(m_teacherLayout);
+    clearLayout(m_classLayout);
 
     m_teacherControls.clear();
     m_classControls.clear();
+    m_warningLabel = nullptr;
+    m_warningAcknowledgement = nullptr;
+
+    if (m_warningScrollArea)
+    {
+        const int warningTabIndex =
+            m_resolutionTabs->indexOf(m_warningScrollArea);
+        if (warningTabIndex >= 0)
+        {
+            m_resolutionTabs->removeTab(warningTabIndex);
+        }
+        delete m_warningScrollArea;
+        m_warningScrollArea = nullptr;
+    }
 
     DataService* dataService =
         openScheduleImportDataService(m_services);
@@ -1226,11 +1321,17 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
 
     if (!m_preview.user.diagnostics.isEmpty())
     {
+        m_warningScrollArea =
+            new QScrollArea(m_resolutionTabs);
+        m_warningScrollArea->setObjectName(
+            QStringLiteral("scheduleImportWarningScrollArea")
+            );
+        m_warningScrollArea->setWidgetResizable(true);
+        m_warningScrollArea->setHorizontalScrollBarPolicy(
+            Qt::ScrollBarAlwaysOff
+            );
         auto* warnings =
-            new QGroupBox(
-                tr("Unrecognized cells"),
-                m_resolutionContent
-                );
+            new QWidget(m_warningScrollArea);
         auto* warningsLayout =
             new QVBoxLayout(warnings);
         QStringList lines;
@@ -1263,7 +1364,14 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         warningsLayout->addWidget(
             m_warningAcknowledgement
             );
-        m_resolutionLayout->addWidget(warnings);
+        warningsLayout->addStretch();
+        m_warningScrollArea->setWidget(warnings);
+        m_resolutionTabs->insertTab(
+            0,
+            m_warningScrollArea,
+            tr("Unrecognized cells")
+            );
+        m_resolutionTabs->setCurrentWidget(m_warningScrollArea);
         connect(
             m_warningAcknowledgement,
             &QCheckBox::toggled,
@@ -1271,70 +1379,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             &ScheduleImportReviewDialog::updateReviewState
             );
     }
-    else
-    {
-        m_warningLabel = nullptr;
-        m_warningAcknowledgement = nullptr;
-    }
 
-    auto* teachersGroup =
-        new QGroupBox(
-            tr("Korean Teachers and Rooms"),
-            m_resolutionContent
-            );
-    teachersGroup->setObjectName(
-        QStringLiteral("scheduleImportTeacherGroup")
-        );
-    auto* teacherGrid =
-        new QGridLayout(teachersGroup);
-    teacherGrid->setHorizontalSpacing(
-        ReconciliationColumnSpacing
-        );
-    teacherGrid->setColumnStretch(0, 0);
-    teacherGrid->setColumnStretch(1, 0);
-    teacherGrid->setColumnStretch(2, 0);
-    teacherGrid->setColumnStretch(3, 1);
-    auto* spreadsheetTeacherHeader =
-        new QLabel(
-            tr("Korean Teacher"),
-            teachersGroup
-            );
-    spreadsheetTeacherHeader->setObjectName(
-        QStringLiteral("scheduleImportTeacherSourceHeader")
-        );
-    auto* teacherActionHeader =
-        new QLabel(
-            tr("Import Action"),
-            teachersGroup
-            );
-    teacherActionHeader->setObjectName(
-        QStringLiteral("scheduleImportTeacherActionHeader")
-        );
-    auto* importedRoomHeader =
-        new QLabel(
-            tr("Imported Room"),
-            teachersGroup
-            );
-    importedRoomHeader->setObjectName(
-        QStringLiteral("scheduleImportTeacherRoomHeader")
-        );
-    teacherGrid->addWidget(
-        spreadsheetTeacherHeader,
-        0,
-        0
-        );
-    teacherGrid->addWidget(
-        teacherActionHeader,
-        0,
-        1
-        );
-    teacherGrid->addWidget(
-        importedRoomHeader,
-        0,
-        2
-        );
-    const int importedRoomColumnWidth =
-        importedRoomHeader->sizeHint().width();
 
     for (int row = 0;
          row < m_preview.teachers.size();
@@ -1345,9 +1390,11 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         TeacherControl control;
         control.teacherKey = preview.teacherKey;
         control.action =
-            new NoWheelComboBox(teachersGroup);
+            new NoWheelComboBox(m_teacherContent);
         control.room =
-            new NoWheelComboBox(teachersGroup);
+            new NoWheelComboBox(m_teacherContent);
+        configureCompactActionCombo(control.action);
+        configureCompactActionCombo(control.room);
         control.action->setObjectName(
             QStringLiteral("scheduleImportTeacherAction_%1")
                 .arg(row)
@@ -1356,10 +1403,6 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             QStringLiteral("scheduleImportTeacherRoom_%1")
                 .arg(row)
             );
-        control.room->setFixedWidth(
-            importedRoomColumnWidth
-            );
-
         if (preview.importedRooms.size() > 1)
         {
             control.room->addItem(
@@ -1469,6 +1512,14 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 );
         }
 
+        auto* teacherCard =
+            createReconciliationCard(
+                m_teacherContent,
+                QStringLiteral("scheduleImportTeacherCard_%1")
+                    .arg(row)
+                );
+        auto* teacherCardLayout =
+            new QVBoxLayout(teacherCard);
         auto* spreadsheetTeacher =
             new QLabel(
                 QStringLiteral("%1 (%2)")
@@ -1478,31 +1529,34 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                             QStringLiteral(", ")
                             )
                         ),
-                teachersGroup
+                teacherCard
                 );
         spreadsheetTeacher->setObjectName(
             QStringLiteral("scheduleImportTeacherSource_%1")
                 .arg(row)
             );
+        QFont teacherFont = spreadsheetTeacher->font();
+        teacherFont.setBold(true);
+        spreadsheetTeacher->setFont(teacherFont);
+        spreadsheetTeacher->setWordWrap(true);
         spreadsheetTeacher->setSizePolicy(
-            QSizePolicy::Maximum,
+            QSizePolicy::Expanding,
             QSizePolicy::Preferred
             );
-        teacherGrid->addWidget(
-            spreadsheetTeacher,
-            row + 1,
-            0,
-            Qt::AlignRight | Qt::AlignVCenter
+        teacherCardLayout->addWidget(
+            spreadsheetTeacher
             );
-        teacherGrid->addWidget(
+        addLabeledControlRow(
+            teacherCardLayout,
+            tr("Import Action"),
             control.action,
-            row + 1,
-            1
+            teacherCard
             );
-        teacherGrid->addWidget(
+        addLabeledControlRow(
+            teacherCardLayout,
+            tr("Imported Room"),
             control.room,
-            row + 1,
-            2
+            teacherCard
             );
         connect(
             control.action,
@@ -1516,90 +1570,10 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             this,
             &ScheduleImportReviewDialog::updateReviewState
             );
+        m_teacherLayout->addWidget(teacherCard);
         m_teacherControls.append(control);
     }
-    QList<QComboBox*> teacherActionCombos;
-    teacherActionCombos.reserve(
-        m_teacherControls.size()
-        );
-    for (const TeacherControl& control :
-         std::as_const(m_teacherControls))
-    {
-        teacherActionCombos.append(
-            control.action
-            );
-    }
-    applyUniformComboWidth(
-        teacherActionCombos
-        );
-    m_resolutionLayout->addWidget(teachersGroup);
-
-    auto* classesGroup =
-        new QGroupBox(
-            tr("Classes"),
-            m_resolutionContent
-            );
-    classesGroup->setObjectName(
-        QStringLiteral("scheduleImportClassesGroup")
-        );
-    auto* classGrid =
-        new QGridLayout(classesGroup);
-    classGrid->setHorizontalSpacing(
-        ClassColumnSpacing
-        );
-    classGrid->setVerticalSpacing(0);
-    classGrid->setColumnMinimumWidth(
-        0,
-        ClassInfoColumnWidth
-        );
-    classGrid->setColumnStretch(0, 0);
-    classGrid->setColumnStretch(1, 0);
-    classGrid->setColumnStretch(2, 0);
-    classGrid->setColumnStretch(3, 1);
-
-    auto* importedClassHeader =
-        new QLabel(
-            tr("Imported Class"),
-            classesGroup
-            );
-    importedClassHeader->setObjectName(
-        QStringLiteral("scheduleImportClassSourceHeader")
-        );
-    auto* classActionHeader =
-        new QLabel(
-            tr("Import Action"),
-            classesGroup
-            );
-    classActionHeader->setObjectName(
-        QStringLiteral("scheduleImportClassActionHeader")
-        );
-    auto* classColorHeader =
-        new QLabel(
-            tr("Color"),
-            classesGroup
-            );
-    classColorHeader->setObjectName(
-        QStringLiteral("scheduleImportClassColorHeader")
-        );
-    classGrid->addWidget(
-        importedClassHeader,
-        0,
-        0
-        );
-    classGrid->addWidget(
-        classActionHeader,
-        0,
-        1
-        );
-    classGrid->addWidget(
-        classColorHeader,
-        0,
-        2
-        );
-    classGrid->setRowMinimumHeight(
-        1,
-        ClassEntrySpacing
-        );
+    m_teacherLayout->addStretch();
 
     const QList<Classroom> allClasses =
         dataService->getClasses();
@@ -1620,12 +1594,6 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         }
         );
 
-    QList<QComboBox*> classActionCombos;
-    classActionCombos.reserve(
-        orderedClasses.size()
-        );
-    int classGridRow = 2;
-
     for (const ScheduleImportClassPreview& preview :
          orderedClasses)
     {
@@ -1639,15 +1607,16 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         control.teacherKey =
             candidate.teacherKey;
         control.action =
-            new NoWheelComboBox(classesGroup);
+            new NoWheelComboBox(m_classContent);
+        configureCompactActionCombo(control.action);
         control.colorButton =
-            new QPushButton(classesGroup);
+            new QPushButton(m_classContent);
         control.color =
             candidate.importedColors.isEmpty()
                 ? QStringLiteral("#FFFFFF")
                 : candidate.importedColors.first().toUpper();
         control.details =
-            new QLabel(classesGroup);
+            new QLabel(m_classContent);
         control.action->setObjectName(
             QStringLiteral("scheduleImportClassAction_%1")
                 .arg(preview.candidateIndex)
@@ -1772,6 +1741,14 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
 
         const QString importedMeetings =
             compactMeetingText(candidate.times);
+        auto* classCard =
+            createReconciliationCard(
+                m_classContent,
+                QStringLiteral("scheduleImportClassCard_%1")
+                    .arg(preview.candidateIndex)
+                );
+        auto* classCardLayout =
+            new QVBoxLayout(classCard);
         auto* importedClassLabel =
             new QLabel(
                 QStringLiteral("%1 %2 — %3\n(%4)")
@@ -1783,54 +1760,37 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                             ? tr("time unavailable")
                             : importedMeetings
                         ),
-                classesGroup
+                classCard
                 );
         importedClassLabel->setObjectName(
             QStringLiteral("scheduleImportClassCandidate_%1")
                 .arg(preview.candidateIndex)
             );
+        QFont classFont = importedClassLabel->font();
+        classFont.setBold(true);
+        importedClassLabel->setFont(classFont);
         importedClassLabel->setWordWrap(true);
-        importedClassLabel->setFixedWidth(
-            ClassInfoColumnWidth
-            );
         importedClassLabel->setSizePolicy(
-            QSizePolicy::Fixed,
+            QSizePolicy::Expanding,
             QSizePolicy::Preferred
             );
-        classGrid->addWidget(
-            importedClassLabel,
-            classGridRow,
-            0,
-            3,
-            1,
-            Qt::AlignTop
+        classCardLayout->addWidget(
+            importedClassLabel
             );
-        classGrid->addWidget(
+        addLabeledControlRow(
+            classCardLayout,
+            tr("Import Action"),
             control.action,
-            classGridRow,
-            1,
-            Qt::AlignTop
+            classCard
             );
-        classGrid->addWidget(
+        addLabeledControlRow(
+            classCardLayout,
+            tr("Color"),
             control.colorButton,
-            classGridRow,
-            2,
-            Qt::AlignTop
+            classCard
             );
-        classGrid->setRowMinimumHeight(
-            classGridRow + 1,
-            ClassControlSpacing
-            );
-        classGrid->addWidget(
-            control.details,
-            classGridRow + 2,
-            1,
-            1,
-            2
-            );
-        classGrid->setRowMinimumHeight(
-            classGridRow + 3,
-            ClassEntrySpacing
+        classCardLayout->addWidget(
+            control.details
             );
         connect(
             control.action,
@@ -1847,17 +1807,10 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 chooseClassColor(candidateIndex);
             }
             );
-        classActionCombos.append(
-            control.action
-            );
+        m_classLayout->addWidget(classCard);
         m_classControls.append(control);
-        classGridRow += 4;
     }
-    applyUniformComboWidth(
-        classActionCombos
-        );
-    m_resolutionLayout->addWidget(classesGroup);
-    m_resolutionLayout->addStretch();
+    m_classLayout->addStretch();
 }
 
 void ScheduleImportReviewDialog::chooseClassColor(
@@ -2420,8 +2373,8 @@ void ScheduleImportReviewDialog::updateReviewState()
 void ScheduleImportReviewDialog::resizeForReviewStage()
 {
     if (
-        !m_resolutionScrollArea
-        || !m_resolutionContent
+        !m_reviewSplitter
+        || !m_resolutionTabs
         || !m_previewWidget
         || !m_buttons
         || !layout()
@@ -2430,10 +2383,8 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
         return;
     }
 
-    if (m_resolutionLayout)
-    {
-        m_resolutionLayout->activate();
-    }
+    m_teacherLayout->activate();
+    m_classLayout->activate();
     if (m_reviewPage)
     {
         if (m_reviewPage->layout())
@@ -2443,19 +2394,8 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
     }
     layout()->activate();
 
-    const int scrollBarExtent =
-        style()->pixelMetric(
-            QStyle::PM_ScrollBarExtent,
-            nullptr,
-            m_resolutionScrollArea
-            );
     const int resolutionWidth =
-        std::max(
-            m_resolutionContent->sizeHint().width(),
-            m_resolutionContent->minimumSizeHint().width()
-            )
-        + (2 * m_resolutionScrollArea->frameWidth())
-        + scrollBarExtent;
+        PreferredResolutionPaneWidth;
 
     int previewWidth =
         m_previewWidget->sizeHint().width();
@@ -2475,7 +2415,9 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
     }
 
     int reviewContentWidth =
-        std::max(resolutionWidth, previewWidth);
+        previewWidth
+        + resolutionWidth
+        + m_reviewSplitter->handleWidth();
     if (m_reviewPage)
     {
         if (m_reviewPage->layout())
@@ -2517,6 +2459,9 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
     resize(
         std::max(1, targetWidth),
         std::max(1, targetHeight)
+        );
+    m_reviewSplitter->setSizes(
+        {previewWidth, resolutionWidth}
         );
 }
 
