@@ -1360,6 +1360,7 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
+        src/ui/shared/widgets/no_wheel_combobox.cpp
     )
 
     target_compile_features(ClassMngrScheduleImportDialogTests

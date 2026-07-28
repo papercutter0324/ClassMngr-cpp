@@ -41,6 +41,7 @@ int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
 bool databaseOpen = true;
 bool includeAdditionalClass = false;
+bool matchImportedClasses = false;
 
 void reset()
 {
@@ -50,6 +51,7 @@ void reset()
     lastPrintRequestShowsEnglishNames = false;
     databaseOpen = true;
     includeAdditionalClass = false;
+    matchImportedClasses = false;
 }
 
 void setDatabaseOpen(
@@ -64,6 +66,13 @@ void setIncludeAdditionalClass(
     )
 {
     includeAdditionalClass = include;
+}
+
+void setMatchImportedClasses(
+    bool match
+    )
+{
+    matchImportedClasses = match;
 }
 
 QString settingValue(
@@ -153,6 +162,16 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
 
         ScheduleImportClassPreview classroom;
         classroom.candidateIndex = index;
+        if (
+            ScheduleWidgetTestStubs::matchImportedClasses
+            && candidate.classGrade == QStringLiteral("E4")
+            && candidate.classLevel == QStringLiteral("Hercules")
+            )
+        {
+            classroom.matchingClassIds = {43};
+            classroom.suggestedClassId = 43;
+            classroom.exactMatch = true;
+        }
         preview.classes.append(classroom);
     }
 

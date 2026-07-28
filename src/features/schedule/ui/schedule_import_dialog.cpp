@@ -5,10 +5,12 @@
 #include "data/data_service.h"
 #include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
+#include "features/classes/config/class_info_config.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -18,31 +20,44 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHash>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPalette>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
+#include <QScreen>
+#include <QScrollBar>
 #include <QSet>
+#include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QStackedWidget>
+#include <QStyle>
+#include <QTableWidget>
 #include <QTime>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <limits>
 
 namespace
 {
 constexpr int ActionRole = Qt::UserRole;
 constexpr int TargetRole = Qt::UserRole + 1;
 constexpr int SourcePage = 0;
-constexpr int UserPage = 1;
-constexpr int ReviewPage = 2;
+constexpr int ReviewPage = 1;
+constexpr int CompactDialogHeight = 520;
+constexpr int ReviewDialogHeight = 820;
+constexpr int MaximumReviewDialogWidth = 1000;
+constexpr int SourceDialogWidthNumerator = 13;
+constexpr int SourceDialogWidthDenominator = 10;
 
 DataService* openDataService(
     ApplicationServices* services
@@ -85,23 +100,47 @@ QString timeDisplay(
         : value;
 }
 
+int weekdayIndex(
+    const QString& day
+    );
+
+QString weekdayLabel(
+    const QString& day
+    );
+
 QString meetingText(
     const QList<ClassTime>& times
     )
 {
+    QList<ClassTime> orderedTimes = times;
+    std::stable_sort(
+        orderedTimes.begin(),
+        orderedTimes.end(),
+        [](const ClassTime& left, const ClassTime& right)
+        {
+            const int leftDay = weekdayIndex(left.day);
+            const int rightDay = weekdayIndex(right.day);
+            if (leftDay != rightDay)
+            {
+                return leftDay < rightDay;
+            }
+            return timeMinutes(left.startTime)
+                < timeMinutes(right.startTime);
+        }
+        );
+
     QStringList meetings;
-    for (const ClassTime& time : times)
+    for (const ClassTime& time : orderedTimes)
     {
         meetings.append(
             QStringLiteral("%1 %2–%3")
                 .arg(
-                    scheduleImportWeekdayDisplayName(time.day),
+                    weekdayLabel(time.day),
                     timeDisplay(time.startTime),
                     timeDisplay(time.endTime)
                     )
             );
     }
-    meetings.sort(Qt::CaseInsensitive);
     return meetings.join(QStringLiteral(", "));
 }
 
@@ -109,14 +148,11 @@ int weekdayIndex(
     const QString& day
     )
 {
-    static const QStringList weekdays{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday")
-    };
-    return weekdays.indexOf(day);
+    const int index =
+        ClassInfoConfig::Days.indexOf(day.trimmed());
+    return index >= 0
+        ? index
+        : std::numeric_limits<int>::max();
 }
 
 QString weekdayLabel(
@@ -125,31 +161,31 @@ QString weekdayLabel(
 {
     if (day == QStringLiteral("Monday"))
     {
-        return QObject::tr("Mon");
+        return QObject::tr("Mon.");
     }
     if (day == QStringLiteral("Tuesday"))
     {
-        return QObject::tr("Tues");
+        return QObject::tr("Tues.");
     }
     if (day == QStringLiteral("Wednesday"))
     {
-        return QObject::tr("Wed");
+        return QObject::tr("Wed.");
     }
     if (day == QStringLiteral("Thursday"))
     {
-        return QObject::tr("Thurs");
+        return QObject::tr("Thurs.");
     }
     if (day == QStringLiteral("Friday"))
     {
-        return QObject::tr("Fri");
+        return QObject::tr("Fri.");
     }
     if (day == QStringLiteral("Saturday"))
     {
-        return QObject::tr("Sat");
+        return QObject::tr("Sat.");
     }
     if (day == QStringLiteral("Sunday"))
     {
-        return QObject::tr("Sun");
+        return QObject::tr("Sun.");
     }
     return day.trimmed();
 }
@@ -377,17 +413,44 @@ QString classDifferences(
     const ScheduleImportClassCandidate& candidate,
     int targetClassId,
     ScheduleImportKind kind,
-    const QString& classColor
+    const QString& classColor,
+    const QColor& changesColor
     )
 {
+    const QString importedClass =
+        QStringLiteral("<b>%1</b> %2")
+            .arg(
+                QObject::tr("Imported Class:").toHtmlEscaped(),
+                meetingText(candidate.times).toHtmlEscaped()
+                );
+
     if (!dataService || targetClassId <= 0)
     {
-        return QObject::tr(
-            "Imported meetings: %1. A new class will be created with color %2."
-            )
-            .arg(meetingText(candidate.times))
-            .arg(classColor);
+        return QStringLiteral("%1<br>%2")
+            .arg(
+                importedClass,
+                QObject::tr(
+                    "A new class will be created with color %1."
+                    )
+                    .arg(classColor)
+                    .toHtmlEscaped()
+                );
     }
+
+    const auto differenceItem =
+        [](const QString& label,
+           const QString& existing,
+           const QString& imported)
+        {
+            return QStringLiteral(
+                "<li><b>%1:</b> %2 → %3</li>"
+                )
+                .arg(
+                    label.toHtmlEscaped(),
+                    existing.toHtmlEscaped(),
+                    imported.toHtmlEscaped()
+                    );
+        };
 
     const ClassInfo existing =
         dataService->loadClassInfo(targetClassId);
@@ -402,21 +465,21 @@ QString classDifferences(
     if (existing.classGrade != candidate.classGrade)
     {
         differences.append(
-            QObject::tr("grade %1 → %2")
-                .arg(
-                    existing.classGrade,
-                    candidate.classGrade
-                    )
+            differenceItem(
+                QObject::tr("Grade"),
+                existing.classGrade,
+                candidate.classGrade
+                )
             );
     }
     if (existing.classLevel != candidate.classLevel)
     {
         differences.append(
-            QObject::tr("level %1 → %2")
-                .arg(
-                    existing.classLevel,
-                    candidate.classLevel
-                    )
+            differenceItem(
+                QObject::tr("Level"),
+                existing.classLevel,
+                candidate.classLevel
+                )
             );
     }
     if (
@@ -426,21 +489,21 @@ QString classDifferences(
         )
     {
         differences.append(
-            QObject::tr("Korean teacher %1 → %2")
-                .arg(
-                    existingTeacher.teacherKr,
-                    candidate.teacherKr
-                    )
+            differenceItem(
+                QObject::tr("Teacher"),
+                existingTeacher.teacherKr,
+                candidate.teacherKr
+                )
             );
     }
     if (meetingKeys(existingTimes) != meetingKeys(candidate.times))
     {
         differences.append(
-            QObject::tr("schedule %1 → %2")
-                .arg(
-                    meetingText(existingTimes),
-                    meetingText(candidate.times)
-                    )
+            differenceItem(
+                QObject::tr("Days"),
+                meetingText(existingTimes),
+                meetingText(candidate.times)
+                )
             );
     }
     if (
@@ -451,31 +514,37 @@ QString classDifferences(
         )
     {
         differences.append(
-            QObject::tr("color %1 → %2")
-                .arg(
-                    existing.classColor,
-                    classColor
-                    )
+            differenceItem(
+                QObject::tr("Color"),
+                existing.classColor,
+                classColor
+                )
             );
     }
 
     if (differences.isEmpty())
     {
-        return QObject::tr(
-            "Imported meetings: %1. No teacher, course, schedule, or color differences."
-            )
-            .arg(meetingText(candidate.times));
+        return QStringLiteral("%1<br>%2")
+            .arg(
+                importedClass,
+                QObject::tr(
+                    "No grade, level, teacher, day, or color differences."
+                    )
+                    .toHtmlEscaped()
+                );
     }
 
     return QStringLiteral(
-        "<b>%1</b> %2<br>"
-        "<span style=\"color:#b45309\"><b>%3</b> %4</span>"
+        "%1<br>"
+        "<span style=\"color:%2\"><b>%3</b>"
+        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%4</ul>"
+        "</span>"
         )
         .arg(
-            QObject::tr("Imported meetings:").toHtmlEscaped(),
-            meetingText(candidate.times).toHtmlEscaped(),
+            importedClass,
+            changesColor.name(QColor::HexRgb),
             QObject::tr("Changes:").toHtmlEscaped(),
-            differences.join(QStringLiteral("; ")).toHtmlEscaped()
+            differences.join(QString())
             );
 }
 
@@ -490,6 +559,91 @@ QString teacherLabel(
                 ? QObject::tr("not set")
                 : teacher.roomNumber.trimmed()
             );
+}
+
+int configuredValueOrder(
+    const QStringList& configuredValues,
+    const QString& value
+    )
+{
+    for (int index = 0; index < configuredValues.size(); ++index)
+    {
+        if (
+            configuredValues[index].compare(
+                value.trimmed(),
+                Qt::CaseInsensitive
+                ) == 0
+            )
+        {
+            return index;
+        }
+    }
+    return std::numeric_limits<int>::max();
+}
+
+bool importedClassLess(
+    const ScheduleImportClassCandidate& left,
+    const ScheduleImportClassCandidate& right
+    )
+{
+    const int leftGrade =
+        configuredValueOrder(
+            ClassInfoConfig::Grades,
+            left.classGrade
+            );
+    const int rightGrade =
+        configuredValueOrder(
+            ClassInfoConfig::Grades,
+            right.classGrade
+            );
+    if (leftGrade != rightGrade)
+    {
+        return leftGrade < rightGrade;
+    }
+    if (
+        leftGrade == std::numeric_limits<int>::max()
+        && left.classGrade.compare(
+            right.classGrade,
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        return left.classGrade.compare(
+            right.classGrade,
+            Qt::CaseInsensitive
+            ) < 0;
+    }
+
+    const QString configuredGrade =
+        leftGrade == std::numeric_limits<int>::max()
+            ? left.classGrade.trimmed()
+            : ClassInfoConfig::Grades[leftGrade];
+    const QStringList levels =
+        ClassInfoConfig::levelsForGrade(
+            configuredGrade
+            );
+    const int leftLevel =
+        configuredValueOrder(levels, left.classLevel);
+    const int rightLevel =
+        configuredValueOrder(levels, right.classLevel);
+    if (leftLevel != rightLevel)
+    {
+        return leftLevel < rightLevel;
+    }
+    if (
+        leftLevel == std::numeric_limits<int>::max()
+        && left.classLevel.compare(
+            right.classLevel,
+            Qt::CaseInsensitive
+            ) != 0
+        )
+    {
+        return left.classLevel.compare(
+            right.classLevel,
+            Qt::CaseInsensitive
+            ) < 0;
+    }
+    return false;
 }
 
 void addResolutionItem(
@@ -654,8 +808,8 @@ ScheduleImportDialog::ScheduleImportDialog(
 {
     setWindowTitle(tr("Import Schedule"));
     setModal(true);
-    resize(1100, 820);
     buildUi();
+    resizeForSourceStage();
 }
 
 void ScheduleImportDialog::setFilePath(
@@ -667,10 +821,12 @@ void ScheduleImportDialog::setFilePath(
     m_sheetCombo->clear();
     m_sheetCombo->setVisible(false);
     m_sheetLabel->setVisible(false);
+    resetUserSelection();
     m_sourceStatus->setText(
         tr("Choose the schedule type, then continue.")
         );
     updateNavigation();
+    resizeForSourceStage();
 }
 
 void ScheduleImportDialog::buildUi()
@@ -679,8 +835,12 @@ void ScheduleImportDialog::buildUi()
         new QVBoxLayout(this);
     m_pages =
         new QStackedWidget(this);
-    m_pages->addWidget(buildSourcePage());
-    m_pages->addWidget(buildUserPage());
+    m_pages->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Ignored
+        );
+    m_sourcePage = buildSourcePage();
+    m_pages->addWidget(m_sourcePage);
     m_pages->addWidget(buildReviewPage());
     layout->addWidget(m_pages, 1);
 
@@ -747,6 +907,10 @@ QWidget* ScheduleImportDialog::buildSourcePage()
 {
     auto* page =
         new QWidget(this);
+    page->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Ignored
+        );
     auto* layout =
         new QVBoxLayout(page);
     auto* heading =
@@ -820,7 +984,7 @@ QWidget* ScheduleImportDialog::buildSourcePage()
             page
             );
     m_sheetCombo =
-        new QComboBox(page);
+        new NoWheelComboBox(page);
     m_sheetCombo->setObjectName(
         QStringLiteral("scheduleImportSheetCombo")
         );
@@ -828,6 +992,37 @@ QWidget* ScheduleImportDialog::buildSourcePage()
     layout->addWidget(m_sheetCombo);
     m_sheetLabel->setVisible(false);
     m_sheetCombo->setVisible(false);
+
+    m_userSection =
+        new QGroupBox(
+            tr("Choose your schedule section"),
+            page
+            );
+    auto* userLayout =
+        new QVBoxLayout(m_userSection);
+    m_userStatus =
+        new QLabel(m_userSection);
+    m_userStatus->setWordWrap(true);
+    userLayout->addWidget(m_userStatus);
+
+    m_userCombo =
+        new NoWheelComboBox(m_userSection);
+    m_userCombo->setObjectName(
+        QStringLiteral("scheduleImportUserCombo")
+        );
+    userLayout->addWidget(m_userCombo);
+
+    m_nameConfirmation =
+        new QCheckBox(
+            tr("Use the selected spreadsheet name even though it does not match My Information."),
+            m_userSection
+            );
+    m_nameConfirmation->setObjectName(
+        QStringLiteral("scheduleImportNameConfirmation")
+        );
+    userLayout->addWidget(m_nameConfirmation);
+    m_userSection->setVisible(false);
+    layout->addWidget(m_userSection);
 
     m_sourceStatus =
         new QLabel(
@@ -854,10 +1049,12 @@ QWidget* ScheduleImportDialog::buildSourcePage()
             m_sheetCombo->clear();
             m_sheetCombo->setVisible(false);
             m_sheetLabel->setVisible(false);
+            resetUserSelection();
             m_sourceStatus->setText(
                 tr("Ready to read the workbook.")
                 );
             updateNavigation();
+            resizeForSourceStage();
         };
     connect(
         m_normalRadio,
@@ -875,51 +1072,13 @@ QWidget* ScheduleImportDialog::buildSourcePage()
         m_sheetCombo,
         &QComboBox::currentIndexChanged,
         this,
-        &ScheduleImportDialog::updateNavigation
+        [this]()
+        {
+            updateSelectedSheet();
+            updateNavigation();
+            resizeForSourceStage();
+        }
         );
-
-    return page;
-}
-
-QWidget* ScheduleImportDialog::buildUserPage()
-{
-    auto* page =
-        new QWidget(this);
-    auto* layout =
-        new QVBoxLayout(page);
-    auto* heading =
-        new QLabel(
-            tr("Choose your schedule section"),
-            page
-            );
-    QFont headingFont = heading->font();
-    headingFont.setBold(true);
-    heading->setFont(headingFont);
-    layout->addWidget(heading);
-
-    m_userStatus =
-        new QLabel(page);
-    m_userStatus->setWordWrap(true);
-    layout->addWidget(m_userStatus);
-
-    m_userCombo =
-        new QComboBox(page);
-    m_userCombo->setObjectName(
-        QStringLiteral("scheduleImportUserCombo")
-        );
-    layout->addWidget(m_userCombo);
-
-    m_nameConfirmation =
-        new QCheckBox(
-            tr("Use the selected spreadsheet name even though it does not match My Information."),
-            page
-            );
-    m_nameConfirmation->setObjectName(
-        QStringLiteral("scheduleImportNameConfirmation")
-        );
-    layout->addWidget(m_nameConfirmation);
-    layout->addStretch();
-
     connect(
         m_userCombo,
         &QComboBox::currentIndexChanged,
@@ -940,6 +1099,10 @@ QWidget* ScheduleImportDialog::buildReviewPage()
 {
     auto* page =
         new QWidget(this);
+    page->setSizePolicy(
+        QSizePolicy::Ignored,
+        QSizePolicy::Ignored
+        );
     auto* layout =
         new QVBoxLayout(page);
     auto* heading =
@@ -963,15 +1126,18 @@ QWidget* ScheduleImportDialog::buildReviewPage()
         );
     layout->addWidget(m_previewWidget);
 
-    auto* scrollArea =
+    m_resolutionScrollArea =
         new QScrollArea(page);
-    scrollArea->setWidgetResizable(true);
+    m_resolutionScrollArea->setObjectName(
+        QStringLiteral("scheduleImportResolutionScrollArea")
+        );
+    m_resolutionScrollArea->setWidgetResizable(true);
     m_resolutionContent =
-        new QWidget(scrollArea);
+        new QWidget(m_resolutionScrollArea);
     m_resolutionLayout =
         new QVBoxLayout(m_resolutionContent);
-    scrollArea->setWidget(m_resolutionContent);
-    layout->addWidget(scrollArea, 1);
+    m_resolutionScrollArea->setWidget(m_resolutionContent);
+    layout->addWidget(m_resolutionScrollArea, 1);
 
     m_reviewStatus =
         new QLabel(page);
@@ -1079,6 +1245,7 @@ bool ScheduleImportDialog::loadWorkbook()
     m_loadedFilePath = m_fileEdit->text();
     m_loadedKind = kind;
     m_workbookLoaded = true;
+    const QSignalBlocker sheetComboBlocker(m_sheetCombo);
     m_sheetCombo->clear();
 
     QList<int> visibleIndexes;
@@ -1120,14 +1287,84 @@ bool ScheduleImportDialog::loadWorkbook()
             ? tr("Workbook loaded. Choose the worksheet to import.")
             : tr("Workbook and worksheet are valid.")
         );
+    updateSelectedSheet();
     updateNavigation();
+    resizeForSourceStage();
     return true;
+}
+
+void ScheduleImportDialog::resetUserSelection()
+{
+    if (m_userCombo)
+    {
+        const QSignalBlocker blocker(m_userCombo);
+        m_userCombo->clear();
+    }
+    if (m_nameConfirmation)
+    {
+        m_nameConfirmation->setChecked(false);
+        m_nameConfirmation->setVisible(false);
+    }
+    if (m_userStatus)
+    {
+        m_userStatus->clear();
+    }
+    if (m_userSection)
+    {
+        m_userSection->setVisible(false);
+    }
+}
+
+void ScheduleImportDialog::updateSelectedSheet()
+{
+    resetUserSelection();
+    const ScheduleImportSheet* sheet =
+        selectedSheet();
+    if (!sheet)
+    {
+        return;
+    }
+
+    if (sheet->users.isEmpty())
+    {
+        if (!sheet->diagnostics.isEmpty())
+        {
+            QStringList diagnostics;
+            for (const ScheduleImportDiagnostic& diagnostic :
+                 sheet->diagnostics)
+            {
+                diagnostics.append(
+                    tr("%1: %2")
+                        .arg(
+                            diagnostic.cellReference,
+                            diagnostic.message
+                            )
+                    );
+            }
+            m_sourceStatus->setText(
+                diagnostics.join(QLatin1Char('\n'))
+                );
+        }
+        else
+        {
+            m_sourceStatus->setText(
+                tr("The selected worksheet contains no supported user schedules.")
+                );
+        }
+        return;
+    }
+
+    m_sourceStatus->setText(
+        tr("Workbook and worksheet are valid.")
+        );
+    prepareUserSelection();
 }
 
 void ScheduleImportDialog::prepareUserSelection()
 {
     const ScheduleImportSheet* sheet =
         selectedSheet();
+    const QSignalBlocker userComboBlocker(m_userCombo);
     m_userCombo->clear();
     m_nameConfirmation->setChecked(false);
 
@@ -1219,7 +1456,9 @@ void ScheduleImportDialog::prepareUserSelection()
             );
     }
 
+    m_userSection->setVisible(true);
     updateUserSelection();
+    resizeForSourceStage();
 }
 
 void ScheduleImportDialog::updateUserSelection()
@@ -1411,9 +1650,9 @@ void ScheduleImportDialog::rebuildResolutionControls()
         TeacherControl control;
         control.teacherKey = preview.teacherKey;
         control.action =
-            new QComboBox(teachersGroup);
+            new NoWheelComboBox(teachersGroup);
         control.room =
-            new QComboBox(teachersGroup);
+            new NoWheelComboBox(teachersGroup);
         control.action->setObjectName(
             QStringLiteral("scheduleImportTeacherAction_%1")
                 .arg(row)
@@ -1577,13 +1816,30 @@ void ScheduleImportDialog::rebuildResolutionControls()
             tr("Classes"),
             m_resolutionContent
             );
-    auto* classForm =
-        new QFormLayout(classesGroup);
+    auto* classListLayout =
+        new QVBoxLayout(classesGroup);
+    classListLayout->setSpacing(8);
     const QList<Classroom> allClasses =
         dataService->getClasses();
+    QList<ScheduleImportClassPreview> orderedClasses =
+        m_preview.classes;
+    std::stable_sort(
+        orderedClasses.begin(),
+        orderedClasses.end(),
+        [this](
+            const ScheduleImportClassPreview& left,
+            const ScheduleImportClassPreview& right
+            )
+        {
+            return importedClassLess(
+                m_preview.user.classes[left.candidateIndex],
+                m_preview.user.classes[right.candidateIndex]
+                );
+        }
+        );
 
     for (const ScheduleImportClassPreview& preview :
-         m_preview.classes)
+         orderedClasses)
     {
         const ScheduleImportClassCandidate& candidate =
             m_preview.user.classes[
@@ -1595,7 +1851,7 @@ void ScheduleImportDialog::rebuildResolutionControls()
         control.teacherKey =
             candidate.teacherKey;
         control.action =
-            new QComboBox(classesGroup);
+            new NoWheelComboBox(classesGroup);
         control.colorButton =
             new QPushButton(classesGroup);
         control.color =
@@ -1726,18 +1982,17 @@ void ScheduleImportDialog::rebuildResolutionControls()
                 );
         }
 
-        auto* classResolution =
+        auto* classRow =
             new QWidget(classesGroup);
-        auto* classResolutionLayout =
-            new QVBoxLayout(classResolution);
-        classResolutionLayout->setContentsMargins(0, 0, 0, 0);
-        auto* actionAndColor =
-            new QHBoxLayout;
-        actionAndColor->setContentsMargins(0, 0, 0, 0);
-        actionAndColor->addWidget(control.action, 1);
-        actionAndColor->addWidget(control.colorButton);
-        classResolutionLayout->addLayout(actionAndColor);
-        classResolutionLayout->addWidget(control.details);
+        classRow->setObjectName(
+            QStringLiteral("scheduleImportClassRow_%1")
+                .arg(preview.candidateIndex)
+            );
+        auto* classRowLayout =
+            new QGridLayout(classRow);
+        classRowLayout->setContentsMargins(0, 0, 0, 0);
+        classRowLayout->setVerticalSpacing(4);
+        classRowLayout->setColumnStretch(1, 1);
         const QString importedMeetings =
             compactMeetingText(candidate.times);
         auto* importedClassLabel =
@@ -1758,10 +2013,16 @@ void ScheduleImportDialog::rebuildResolutionControls()
                 .arg(preview.candidateIndex)
             );
         importedClassLabel->setWordWrap(true);
-        classForm->addRow(
+        classRowLayout->addWidget(
             importedClassLabel,
-            classResolution
+            0,
+            0,
+            Qt::AlignVCenter
             );
+        classRowLayout->addWidget(control.action, 0, 1);
+        classRowLayout->addWidget(control.colorButton, 0, 2);
+        classRowLayout->addWidget(control.details, 1, 1, 1, 2);
+        classListLayout->addWidget(classRow);
         connect(
             control.action,
             &QComboBox::currentIndexChanged,
@@ -2023,7 +2284,10 @@ void ScheduleImportDialog::updateReviewState()
                         ],
                         target,
                         selectedKind(),
-                        control.color
+                        control.color,
+                        control.details->palette().color(
+                            QPalette::Link
+                            )
                         )
                     );
             }
@@ -2045,7 +2309,10 @@ void ScheduleImportDialog::updateReviewState()
                         ],
                         -1,
                         selectedKind(),
-                        control.color
+                        control.color,
+                        control.details->palette().color(
+                            QPalette::Link
+                            )
                         )
                     );
             }
@@ -2117,9 +2384,12 @@ void ScheduleImportDialog::updateReviewState()
                 control.details->setText(
                     control.details->text()
                     + QStringLiteral(
-                        "<br><span style=\"color:#b45309\">%1</span>"
+                        "<br><span style=\"color:%1\">%2</span>"
                         )
                         .arg(
+                            control.details->palette()
+                                .color(QPalette::Link)
+                                .name(QColor::HexRgb),
                             tr("The spreadsheet uses multiple colors for this class; confirm the selected color.")
                                 .toHtmlEscaped()
                             )
@@ -2314,6 +2584,159 @@ void ScheduleImportDialog::updateReviewState()
     updateNavigation();
 }
 
+void ScheduleImportDialog::resizeForSourceStage()
+{
+    if (!m_sourcePage || !m_buttons || !layout())
+    {
+        return;
+    }
+
+    if (m_sourcePage->layout())
+    {
+        m_sourcePage->layout()->activate();
+    }
+    layout()->activate();
+
+    const QMargins outerMargins =
+        layout()->contentsMargins();
+    const int contentWidth =
+        std::max(
+            m_sourcePage->sizeHint().width(),
+            m_buttons->sizeHint().width()
+            );
+    int targetWidth =
+        (
+            contentWidth
+            * SourceDialogWidthNumerator
+            + SourceDialogWidthDenominator
+            - 1
+            )
+        / SourceDialogWidthDenominator
+        + outerMargins.left()
+        + outerMargins.right();
+    int targetHeight =
+        CompactDialogHeight;
+
+    if (QScreen* targetScreen = screen())
+    {
+        const QSize available =
+            targetScreen->availableGeometry().size();
+        targetWidth =
+            std::min(targetWidth, available.width());
+        targetHeight =
+            std::min(targetHeight, available.height());
+    }
+    resize(
+        std::max(1, targetWidth),
+        std::max(1, targetHeight)
+        );
+    m_pages->updateGeometry();
+    update();
+}
+
+void ScheduleImportDialog::resizeForReviewStage()
+{
+    if (
+        !m_resolutionScrollArea
+        || !m_resolutionContent
+        || !m_previewWidget
+        || !m_buttons
+        || !layout()
+        )
+    {
+        return;
+    }
+
+    if (m_resolutionLayout)
+    {
+        m_resolutionLayout->activate();
+    }
+    if (QWidget* reviewPage = m_pages->widget(ReviewPage))
+    {
+        if (reviewPage->layout())
+        {
+            reviewPage->layout()->activate();
+        }
+    }
+    layout()->activate();
+
+    const int scrollBarExtent =
+        style()->pixelMetric(
+            QStyle::PM_ScrollBarExtent,
+            nullptr,
+            m_resolutionScrollArea
+            );
+    const int resolutionWidth =
+        std::max(
+            m_resolutionContent->sizeHint().width(),
+            m_resolutionContent->minimumSizeHint().width()
+            )
+        + (2 * m_resolutionScrollArea->frameWidth())
+        + scrollBarExtent;
+
+    int previewWidth =
+        m_previewWidget->sizeHint().width();
+    if (
+        auto* table =
+            m_previewWidget->findChild<QTableWidget*>(
+                QStringLiteral("scheduleTable")
+                )
+        )
+    {
+        previewWidth =
+            std::max(
+                previewWidth,
+                table->horizontalHeader()->length()
+                    + (2 * table->frameWidth())
+                );
+    }
+
+    int reviewContentWidth =
+        std::max(resolutionWidth, previewWidth);
+    if (QWidget* reviewPage = m_pages->widget(ReviewPage))
+    {
+        if (reviewPage->layout())
+        {
+            const QMargins pageMargins =
+                reviewPage->layout()->contentsMargins();
+            reviewContentWidth +=
+                pageMargins.left()
+                + pageMargins.right();
+        }
+    }
+
+    const QMargins outerMargins =
+        layout()->contentsMargins();
+    int targetWidth =
+        std::max(
+            reviewContentWidth,
+            m_buttons->sizeHint().width()
+            )
+        + outerMargins.left()
+        + outerMargins.right();
+    targetWidth =
+        std::min(
+            targetWidth,
+            MaximumReviewDialogWidth
+            );
+    int targetHeight =
+        ReviewDialogHeight;
+
+    if (QScreen* targetScreen = screen())
+    {
+        const QSize available =
+            targetScreen->availableGeometry().size();
+        targetWidth =
+            std::min(targetWidth, available.width());
+        targetHeight =
+            std::min(targetHeight, available.height());
+    }
+    resize(
+        std::max(1, targetWidth),
+        std::max(1, targetHeight)
+        );
+}
+
 void ScheduleImportDialog::updateNavigation()
 {
     if (!m_pages)
@@ -2330,41 +2753,38 @@ void ScheduleImportDialog::updateNavigation()
     bool nextEnabled = false;
     if (page == SourcePage)
     {
-        nextEnabled =
+        const bool sourceReady =
             !m_fileEdit->text().trimmed().isEmpty()
             && (
                 m_normalRadio->isChecked()
                 || m_intensiveRadio->isChecked()
                 );
-        if (
-            m_workbookLoaded
-            && m_sheetCombo->isVisible()
-            )
+        if (!m_workbookLoaded)
         {
-            nextEnabled =
-                nextEnabled
-                && m_sheetCombo->currentData().toInt() >= 0;
+            nextEnabled = sourceReady;
         }
-    }
-    else if (page == UserPage)
-    {
-        const ScheduleImportUserBlock* user =
-            selectedUser();
-        const bool mismatch =
-            user
-            && !m_profileName.isEmpty()
-            && normalizedScheduleImportUserName(
-                user->name
-                )
-                != normalizedScheduleImportUserName(
-                    m_profileName
+        else
+        {
+            const ScheduleImportUserBlock* user =
+                selectedUser();
+            const bool mismatch =
+                user
+                && !m_profileName.isEmpty()
+                && normalizedScheduleImportUserName(
+                    user->name
+                    )
+                    != normalizedScheduleImportUserName(
+                        m_profileName
+                        );
+            nextEnabled =
+                sourceReady
+                && selectedSheet()
+                && user
+                && (
+                    !mismatch
+                    || m_nameConfirmation->isChecked()
                     );
-        nextEnabled =
-            user
-            && (
-                !mismatch
-                || m_nameConfirmation->isChecked()
-                );
+        }
     }
 
     m_nextButton->setEnabled(nextEnabled);
@@ -2383,11 +2803,10 @@ void ScheduleImportDialog::updateNavigation()
 
 void ScheduleImportDialog::goBack()
 {
-    if (m_pages->currentIndex() > SourcePage)
+    if (m_pages->currentIndex() == ReviewPage)
     {
-        m_pages->setCurrentIndex(
-            m_pages->currentIndex() - 1
-            );
+        m_pages->setCurrentIndex(SourcePage);
+        resizeForSourceStage();
     }
     updateNavigation();
 }
@@ -2398,7 +2817,15 @@ void ScheduleImportDialog::goNext()
         m_pages->currentIndex();
     if (page == SourcePage)
     {
+        const bool workbookWasLoaded =
+            m_workbookLoaded
+            && m_loadedFilePath == m_fileEdit->text()
+            && m_loadedKind == selectedKind();
         if (!loadWorkbook())
+        {
+            return;
+        }
+        if (!workbookWasLoaded)
         {
             return;
         }
@@ -2410,44 +2837,22 @@ void ScheduleImportDialog::goNext()
             updateNavigation();
             return;
         }
-        if (selectedSheet()->users.isEmpty())
+        if (!m_userSection->isVisible())
         {
-            if (!selectedSheet()->diagnostics.isEmpty())
-            {
-                QStringList diagnostics;
-                for (const ScheduleImportDiagnostic& diagnostic :
-                     selectedSheet()->diagnostics)
-                {
-                    diagnostics.append(
-                        tr("%1: %2")
-                            .arg(
-                                diagnostic.cellReference,
-                                diagnostic.message
-                                )
-                        );
-                }
-                m_sourceStatus->setText(
-                    diagnostics.join(QLatin1Char('\n'))
-                    );
-            }
-            else
-            {
-                m_sourceStatus->setText(
-                    tr("The selected worksheet contains no supported user schedules.")
-                    );
-            }
+            updateSelectedSheet();
             return;
         }
-        prepareUserSelection();
-        m_pages->setCurrentIndex(UserPage);
-    }
-    else if (page == UserPage)
-    {
         if (!selectedUser() || !buildReview())
         {
             return;
         }
         m_pages->setCurrentIndex(ReviewPage);
+        resizeForReviewStage();
+        QTimer::singleShot(
+            0,
+            this,
+            &ScheduleImportDialog::resizeForReviewStage
+            );
     }
     updateNavigation();
 }

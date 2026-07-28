@@ -14,6 +14,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QRadioButton;
+class QScrollArea;
 class QStackedWidget;
 class QVBoxLayout;
 class ScheduleWidget;
@@ -52,10 +53,11 @@ private:
 
     void buildUi();
     QWidget* buildSourcePage();
-    QWidget* buildUserPage();
     QWidget* buildReviewPage();
     void browseForFile();
     bool loadWorkbook();
+    void resetUserSelection();
+    void updateSelectedSheet();
     void prepareUserSelection();
     void updateUserSelection();
     bool buildReview();
@@ -64,6 +66,8 @@ private:
     void updateClassColorButton(ClassControl* control);
     void updateReviewState();
     void updateNavigation();
+    void resizeForSourceStage();
+    void resizeForReviewStage();
     void goBack();
     void goNext();
     void applyImport();
@@ -83,6 +87,7 @@ private:
     QString m_profileName;
 
     QStackedWidget* m_pages = nullptr;
+    QWidget* m_sourcePage = nullptr;
     QLineEdit* m_fileEdit = nullptr;
     QPushButton* m_browseButton = nullptr;
     QRadioButton* m_normalRadio = nullptr;
@@ -91,6 +96,7 @@ private:
     QLabel* m_sheetLabel = nullptr;
     QComboBox* m_sheetCombo = nullptr;
 
+    QWidget* m_userSection = nullptr;
     QLabel* m_userStatus = nullptr;
     QComboBox* m_userCombo = nullptr;
     QCheckBox* m_nameConfirmation = nullptr;
@@ -100,6 +106,7 @@ private:
     QCheckBox* m_warningAcknowledgement = nullptr;
     QWidget* m_resolutionContent = nullptr;
     QVBoxLayout* m_resolutionLayout = nullptr;
+    QScrollArea* m_resolutionScrollArea = nullptr;
     QLabel* m_reviewStatus = nullptr;
     QLabel* m_reviewSummary = nullptr;
     QList<TeacherControl> m_teacherControls;

@@ -2,19 +2,254 @@
 #include "core/utils/colorutils.h"
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
+#include "ui/shared/widgets/no_wheel_combobox.h"
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialogButtonBox>
+#include <QFile>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
+#include <QPalette>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QScreen>
 #include <QStackedWidget>
+#include <QTemporaryDir>
+#include <QWheelEvent>
 #include <QtTest>
+
+#include <zlib.h>
+
+namespace ScheduleWidgetTestStubs
+{
+void reset();
+void setMatchImportedClasses(bool match);
+}
+
+class ScheduleImportDialogTests : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void cleanup();
+    void selectsHighestContrastFontColor();
+    void requiresFileAndScheduleKind();
+    void mismatchedProfileRequiresConfirmation();
+    void compactFlowAndReviewPresentation();
+    void suppliedWorkbookBuildsStagedReview();
+};
 
 namespace
 {
-bool advanceToUserPage(
+void appendLe16(
+    QByteArray& data,
+    quint16 value
+    )
+{
+    data.append(static_cast<char>(value & 0xff));
+    data.append(static_cast<char>((value >> 8) & 0xff));
+}
+
+void appendLe32(
+    QByteArray& data,
+    quint32 value
+    )
+{
+    appendLe16(data, static_cast<quint16>(value & 0xffff));
+    appendLe16(data, static_cast<quint16>((value >> 16) & 0xffff));
+}
+
+struct TestZipEntry
+{
+    QByteArray name;
+    QByteArray contents;
+    quint32 crc = 0;
+    quint32 localOffset = 0;
+};
+
+QByteArray storedZip(
+    QList<TestZipEntry> entries
+    )
+{
+    QByteArray result;
+    for (TestZipEntry& entry : entries)
+    {
+        entry.localOffset =
+            static_cast<quint32>(result.size());
+        entry.crc =
+            static_cast<quint32>(
+                crc32(
+                    crc32(0L, Z_NULL, 0),
+                    reinterpret_cast<const Bytef*>(
+                        entry.contents.constData()
+                        ),
+                    static_cast<uInt>(
+                        entry.contents.size()
+                        )
+                    )
+                );
+        appendLe32(result, 0x04034b50);
+        appendLe16(result, 20);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe32(result, entry.crc);
+        appendLe32(result, entry.contents.size());
+        appendLe32(result, entry.contents.size());
+        appendLe16(result, entry.name.size());
+        appendLe16(result, 0);
+        result.append(entry.name);
+        result.append(entry.contents);
+    }
+
+    const quint32 centralOffset =
+        static_cast<quint32>(result.size());
+    for (const TestZipEntry& entry : entries)
+    {
+        appendLe32(result, 0x02014b50);
+        appendLe16(result, 20);
+        appendLe16(result, 20);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe32(result, entry.crc);
+        appendLe32(result, entry.contents.size());
+        appendLe32(result, entry.contents.size());
+        appendLe16(result, entry.name.size());
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe16(result, 0);
+        appendLe32(result, 0);
+        appendLe32(result, entry.localOffset);
+        result.append(entry.name);
+    }
+
+    const quint32 centralSize =
+        static_cast<quint32>(result.size())
+        - centralOffset;
+    appendLe32(result, 0x06054b50);
+    appendLe16(result, 0);
+    appendLe16(result, 0);
+    appendLe16(result, entries.size());
+    appendLe16(result, entries.size());
+    appendLe32(result, centralSize);
+    appendLe32(result, centralOffset);
+    appendLe16(result, 0);
+    return result;
+}
+
+QByteArray dialogWorkbookData()
+{
+    const QByteArray workbook = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+                  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <sheets>
+            <sheet name="Current" sheetId="1" r:id="rId1"/>
+            <sheet name="Alternate" sheetId="2" r:id="rId2"/>
+          </sheets>
+        </workbook>)");
+    const QByteArray relationships = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+          <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+          <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+        </Relationships>)");
+    const QByteArray styles = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <fonts count="1"><font><color rgb="FF000000"/></font></fonts>
+          <fills count="3">
+            <fill><patternFill patternType="none"/></fill>
+            <fill><patternFill patternType="gray125"/></fill>
+            <fill><patternFill patternType="solid"><fgColor rgb="FF6D9EEB"/></patternFill></fill>
+          </fills>
+          <cellXfs count="2">
+            <xf fontId="0" fillId="0"/>
+            <xf fontId="0" fillId="2"/>
+          </cellXfs>
+        </styleSheet>)");
+    const QByteArray sheet1 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Alice</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" t="inlineStr"><is><t>박선생 (415)&#10;M3-Song's</t></is></c>
+            </row>
+            <row r="3">
+              <c r="A3" t="inlineStr"><is><t>5:00~5:55</t></is></c>
+              <c r="C3" s="1" t="inlineStr"><is><t>최선생 (416)&#10;E4-Hercules</t></is></c>
+              <c r="E3" s="1" t="inlineStr"><is><t>최선생 (416)&#10;E4-Hercules</t></is></c>
+            </row>
+            <row r="4">
+              <c r="A4" t="inlineStr"><is><t>6:00~6:55</t></is></c>
+              <c r="D4" t="inlineStr"><is><t>김선생 (413)&#10;E4-Theseus</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+    const QByteArray sheet2 = QByteArrayLiteral(
+        R"(<?xml version="1.0" encoding="UTF-8"?>
+        <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+          <sheetData>
+            <row r="1">
+              <c r="A1" t="inlineStr"><is><t>Charlie</t></is></c>
+              <c r="B1" t="inlineStr"><is><t>MON</t></is></c>
+              <c r="C1" t="inlineStr"><is><t>TUE</t></is></c>
+              <c r="D1" t="inlineStr"><is><t>WED</t></is></c>
+              <c r="E1" t="inlineStr"><is><t>THU</t></is></c>
+              <c r="F1" t="inlineStr"><is><t>FRI</t></is></c>
+            </row>
+            <row r="2">
+              <c r="A2" t="inlineStr"><is><t>4:00~4:55</t></is></c>
+              <c r="B2" t="inlineStr"><is><t>이선생 (512)&#10;E5-Athena</t></is></c>
+            </row>
+          </sheetData>
+        </worksheet>)");
+
+    return storedZip({
+        {QByteArrayLiteral("xl/workbook.xml"), workbook},
+        {QByteArrayLiteral("xl/_rels/workbook.xml.rels"), relationships},
+        {QByteArrayLiteral("xl/styles.xml"), styles},
+        {QByteArrayLiteral("xl/worksheets/sheet1.xml"), sheet1},
+        {QByteArrayLiteral("xl/worksheets/sheet2.xml"), sheet2}
+    });
+}
+
+QString writeDialogWorkbook(
+    QTemporaryDir* directory
+    )
+{
+    const QString path =
+        directory->filePath(QStringLiteral("schedule.xlsx"));
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+    {
+        return {};
+    }
+    file.write(dialogWorkbookData());
+    file.close();
+    return path;
+}
+
+bool loadSourceSelections(
     ScheduleImportDialog* dialog
     )
 {
@@ -39,9 +274,9 @@ bool advanceToUserPage(
 
     normal->setChecked(true);
     next->click();
-    if (pages->currentIndex() == 1)
+    if (pages->currentIndex() != 0)
     {
-        return true;
+        return false;
     }
 
     for (int index = 0; index < sheets->count(); ++index)
@@ -51,8 +286,13 @@ bool advanceToUserPage(
             continue;
         }
         sheets->setCurrentIndex(index);
-        next->click();
-        if (pages->currentIndex() == 1)
+        if (
+            auto* users =
+                dialog->findChild<QComboBox*>(
+                    QStringLiteral("scheduleImportUserCombo")
+                    );
+            users && users->isVisible()
+            )
         {
             return true;
         }
@@ -61,16 +301,10 @@ bool advanceToUserPage(
 }
 }
 
-class ScheduleImportDialogTests : public QObject
+void ScheduleImportDialogTests::cleanup()
 {
-    Q_OBJECT
-
-private slots:
-    void selectsHighestContrastFontColor();
-    void requiresFileAndScheduleKind();
-    void mismatchedProfileRequiresConfirmation();
-    void suppliedWorkbookBuildsStagedReview();
-};
+    ScheduleWidgetTestStubs::reset();
+}
 
 void ScheduleImportDialogTests::selectsHighestContrastFontColor()
 {
@@ -138,16 +372,11 @@ void ScheduleImportDialogTests::requiresFileAndScheduleKind()
 void ScheduleImportDialogTests
     ::mismatchedProfileRequiresConfirmation()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     const QString path =
-        qEnvironmentVariable(
-            "CLASSMNGR_SCHEDULE_IMPORT_SAMPLE"
-            );
-    if (path.isEmpty())
-    {
-        QSKIP(
-            "Set CLASSMNGR_SCHEDULE_IMPORT_SAMPLE to validate profile-name confirmation."
-            );
-    }
+        writeDialogWorkbook(&directory);
+    QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
     services.dataService()->saveSetting(
@@ -156,7 +385,10 @@ void ScheduleImportDialogTests
         );
     ScheduleImportDialog dialog(&services);
     dialog.setFilePath(path);
-    QVERIFY(advanceToUserPage(&dialog));
+    dialog.show();
+    QCoreApplication::processEvents();
+    QCOMPARE(dialog.height(), 520);
+    QVERIFY(loadSourceSelections(&dialog));
 
     auto* users =
         dialog.findChild<QComboBox*>(
@@ -189,6 +421,233 @@ void ScheduleImportDialogTests
 }
 
 void ScheduleImportDialogTests
+    ::compactFlowAndReviewPresentation()
+{
+    ScheduleWidgetTestStubs::reset();
+    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path =
+        writeDialogWorkbook(&directory);
+    QVERIFY(!path.isEmpty());
+
+    ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Alice")
+        );
+    ScheduleImportDialog dialog(&services);
+    dialog.setFilePath(path);
+    dialog.show();
+    QCoreApplication::processEvents();
+    QCOMPARE(dialog.height(), 520);
+    QVERIFY(loadSourceSelections(&dialog));
+
+    auto* pages =
+        dialog.findChild<QStackedWidget*>();
+    auto* users =
+        dialog.findChild<QComboBox*>(
+            QStringLiteral("scheduleImportUserCombo")
+            );
+    auto* next =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    QVERIFY(pages);
+    QVERIFY(users);
+    QVERIFY(next);
+    QCOMPARE(dialog.findChildren<QDialogButtonBox*>().size(), 1);
+    QCOMPARE(
+        dialog.findChildren<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            ).size(),
+        1
+        );
+    QCOMPARE(
+        dialog.findChildren<QPushButton*>(
+            QStringLiteral("scheduleImportBackButton")
+            ).size(),
+        1
+        );
+    QCOMPARE(pages->currentIndex(), 0);
+    QCOMPARE(dialog.height(), 520);
+    const int expectedWiderWidth =
+        (
+            pages->currentWidget()->sizeHint().width()
+            * 13
+            + 9
+            )
+        / 10;
+    if (dialog.width() < dialog.screen()->availableGeometry().width())
+    {
+        QVERIFY(dialog.width() >= expectedWiderWidth);
+    }
+
+    for (int index = 0; index < users->count(); ++index)
+    {
+        if (users->itemData(index).toInt() >= 0)
+        {
+            users->setCurrentIndex(index);
+            break;
+        }
+    }
+    QVERIFY(next->isEnabled());
+    next->click();
+    QCoreApplication::processEvents();
+    QCOMPARE(pages->currentIndex(), 1);
+    QVERIFY(dialog.height() > 520);
+    QVERIFY(dialog.height() <= 820);
+    QVERIFY(dialog.width() <= 1000);
+
+    const auto candidateLabels =
+        dialog.findChildren<QLabel*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportClassCandidate_")
+                )
+            );
+    QCOMPARE(candidateLabels.size(), 3);
+    QVERIFY(candidateLabels[0]->text().contains(QStringLiteral("E4 Theseus")));
+    QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("E4 Hercules")));
+    QVERIFY(candidateLabels[2]->text().contains(QStringLiteral("M3 Song's")));
+    QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Tues.")));
+    QVERIFY(candidateLabels[1]->text().contains(QStringLiteral("Thurs.")));
+
+    const auto classRows =
+        dialog.findChildren<QWidget*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportClassRow_")
+                )
+            );
+    QCOMPARE(classRows.size(), 3);
+    auto* rowLayout =
+        qobject_cast<QGridLayout*>(classRows.first()->layout());
+    QVERIFY(rowLayout);
+    QCOMPARE(classRows.first()->parentWidget()->layout()->spacing(), 8);
+    int row = -1;
+    int column = -1;
+    int rowSpan = -1;
+    int columnSpan = -1;
+    rowLayout->getItemPosition(
+        rowLayout->indexOf(candidateLabels.first()),
+        &row,
+        &column,
+        &rowSpan,
+        &columnSpan
+        );
+    QCOMPARE(row, 0);
+    QCOMPARE(column, 0);
+    QVERIFY(
+        rowLayout->itemAt(
+            rowLayout->indexOf(candidateLabels.first())
+            )->alignment().testFlag(Qt::AlignVCenter)
+        );
+
+    QString changedDetails;
+    const auto details =
+        dialog.findChildren<QLabel*>(
+            QRegularExpression(
+                QStringLiteral("^scheduleImportClassDifferences_")
+                )
+            );
+    for (const QLabel* detail : details)
+    {
+        if (detail->text().contains(QStringLiteral("<ul")))
+        {
+            changedDetails = detail->text();
+            break;
+        }
+    }
+    QVERIFY(!changedDetails.isEmpty());
+    QVERIFY(changedDetails.contains(QStringLiteral("Imported Class:")));
+    const int gradePosition =
+        changedDetails.indexOf(QStringLiteral("Grade:"));
+    const int levelPosition =
+        changedDetails.indexOf(QStringLiteral("Level:"));
+    const int teacherPosition =
+        changedDetails.indexOf(QStringLiteral("Teacher:"));
+    const int daysPosition =
+        changedDetails.indexOf(QStringLiteral("Days:"));
+    const int colorPosition =
+        changedDetails.indexOf(QStringLiteral("Color:"));
+    QVERIFY(gradePosition >= 0);
+    QVERIFY(gradePosition < levelPosition);
+    QVERIFY(levelPosition < teacherPosition);
+    QVERIFY(teacherPosition < daysPosition);
+    QVERIFY(daysPosition < colorPosition);
+    QVERIFY(
+        changedDetails.contains(
+            dialog.palette()
+                .color(QPalette::Link)
+                .name(QColor::HexRgb)
+            )
+        );
+
+    const auto combos =
+        dialog.findChildren<QComboBox*>();
+    QVERIFY(!combos.isEmpty());
+    for (QComboBox* combo : combos)
+    {
+        QVERIFY(qobject_cast<NoWheelComboBox*>(combo));
+    }
+    QComboBox* wheelCombo = nullptr;
+    for (QComboBox* combo : combos)
+    {
+        if (
+            combo->objectName().startsWith(
+                QStringLiteral("scheduleImportClassAction_")
+                )
+            && combo->count() > 1
+            )
+        {
+            wheelCombo = combo;
+            break;
+        }
+    }
+    QVERIFY(wheelCombo);
+    const int originalIndex =
+        wheelCombo->currentIndex();
+    QWheelEvent wheelEvent(
+        QPointF(4, 4),
+        QPointF(4, 4),
+        QPoint(),
+        QPoint(0, 120),
+        Qt::NoButton,
+        Qt::NoModifier,
+        Qt::NoScrollPhase,
+        false
+        );
+    QApplication::sendEvent(wheelCombo, &wheelEvent);
+    QCOMPARE(wheelCombo->currentIndex(), originalIndex);
+
+    auto* scrollArea =
+        dialog.findChild<QScrollArea*>(
+            QStringLiteral("scheduleImportResolutionScrollArea")
+            );
+    QVERIFY(scrollArea);
+    const int availableWidth =
+        dialog.screen()
+            ? dialog.screen()->availableGeometry().width()
+            : dialog.width();
+    if (
+        dialog.width() < 1000
+        && dialog.width() < availableWidth
+        )
+    {
+        QVERIFY(!scrollArea->horizontalScrollBar()->isVisible());
+    }
+
+    auto* back =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportBackButton")
+            );
+    QVERIFY(back);
+    back->click();
+    QCoreApplication::processEvents();
+    QCOMPARE(pages->currentIndex(), 0);
+    QCOMPARE(dialog.height(), 520);
+}
+
+void ScheduleImportDialogTests
     ::suppliedWorkbookBuildsStagedReview()
 {
     const QString path =
@@ -217,8 +676,8 @@ void ScheduleImportDialogTests
         dialog.findChild<QStackedWidget*>();
     QVERIFY(next);
     QVERIFY(pages);
-    QVERIFY(advanceToUserPage(&dialog));
-    QCOMPARE(pages->currentIndex(), 1);
+    QVERIFY(loadSourceSelections(&dialog));
+    QCOMPARE(pages->currentIndex(), 0);
 
     auto* users =
         dialog.findChild<QComboBox*>(
@@ -238,7 +697,7 @@ void ScheduleImportDialogTests
     users->setCurrentIndex(selectedUser);
     QVERIFY(next->isEnabled());
     next->click();
-    QCOMPARE(pages->currentIndex(), 2);
+    QCOMPARE(pages->currentIndex(), 1);
 
     const auto roomChoices =
         dialog.findChildren<QComboBox*>(
@@ -334,7 +793,7 @@ void ScheduleImportDialogTests
                 foundInformativeClassTarget
                 || action->itemText(index).contains(
                     QStringLiteral(
-                        "E4 Hercules (김선생 Tues 4pm) [Reg]"
+                        "E4 Hercules (김선생 Tues. 4pm) [Reg]"
                         )
                     );
         }

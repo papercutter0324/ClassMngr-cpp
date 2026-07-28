@@ -841,68 +841,68 @@
 <context>
     <name>CalendarPage</name>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="69"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="155"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="70"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="156"/>
         <source>Calendar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="82"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="162"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="83"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="163"/>
         <source>View and manage your monthly events and upcoming dates.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="169"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="309"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="170"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="310"/>
         <source>Upcoming Events</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="175"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="343"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="176"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="347"/>
         <source>Current Month</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="176"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="350"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="177"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="354"/>
         <source>Next 30 Days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="177"/>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="357"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page.cpp" line="178"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="361"/>
         <source>Next 10 Events</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="654"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="658"/>
         <source>No upcoming events.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="803"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="807"/>
         <source>Choose %1 Color</source>
         <translation>Choose %1 Colour</translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1007"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1023"/>
         <source>All day</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1015"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1031"/>
         <source>Unknown Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1020"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1036"/>
         <source>Unconfirmed Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1302"/>
+        <location filename="../../../src/features/calendar/ui/calendar_page_upcoming_events.cpp" line="1318"/>
         <source>Choose %1 color</source>
         <translation>Choose %1 colour</translation>
     </message>
@@ -1554,13 +1554,13 @@
         <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="247"/>
         <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="507"/>
         <source>Grade</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Grade</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="248"/>
         <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="514"/>
         <source>Level</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Level</translation>
     </message>
     <message>
         <location filename="../../../src/ui/shared/widgets/sections/class_details_section.cpp" line="249"/>
@@ -1827,44 +1827,44 @@
 <context>
     <name>ClassesPage</name>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="242"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="282"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="747"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="244"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="284"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="752"/>
         <source>Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="243"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="329"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="245"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="332"/>
         <source>No classes available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="291"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="761"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="293"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="766"/>
         <source>No class selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="247"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="323"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="249"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="326"/>
         <source>Details</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="248"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="324"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="250"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="327"/>
         <source>Roster</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="249"/>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="325"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="251"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="328"/>
         <source>Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="781"/>
+        <location filename="../../../src/features/classes/ui/classes_page.cpp" line="786"/>
         <source>Class %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2125,7 +2125,7 @@
     <message>
         <location filename="../../../src/app/menu_builder.cpp" line="105"/>
         <source>Teacher</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Teacher</translation>
     </message>
     <message>
         <location filename="../../../src/app/menu_builder.cpp" line="120"/>
@@ -3204,7 +3204,6 @@
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="510"/>
         <location filename="../../../src/features/classes/ui/class_export_dialog.cpp" line="48"/>
         <location filename="../../../src/features/classes/ui/class_import_dialog.cpp" line="95"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="327"/>
         <source>Class %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3304,10 +3303,6 @@
     </message>
     <message>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="759"/>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="19"/>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="20"/>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="48"/>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="25"/>
         <source>%1 failed: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3452,8 +3447,6 @@
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1092"/>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1211"/>
         <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="1224"/>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="432"/>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="621"/>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="102"/>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="174"/>
         <source>No database is open.</source>
@@ -4272,654 +4265,57 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="83"/>
-        <source>Every GS Team member must have a name or Korean name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="88"/>
-        <source>GS Team names must be unique.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="97"/>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="96"/>
-        <source>Unable to start the directory save transaction.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="108"/>
-        <source>Deleting a GS Team member</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="152"/>
-        <source>Saving a GS Team member</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/gs_team_repository.cpp" line="158"/>
-        <source>Unable to commit the GS Team directory.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="84"/>
-        <source>Every Native English Teacher must have a name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="88"/>
-        <source>Native English Teacher names must be unique.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="110"/>
-        <source>Deleting a Native English Teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="157"/>
-        <source>Saving a Native English Teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/native_english_teacher_repository.cpp" line="163"/>
-        <source>Unable to commit the Native English Teacher directory.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="32"/>
-        <source>The teacher import date is invalid.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="41"/>
-        <source>Every imported Korean teacher must have a name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="45"/>
-        <source>The import contains a duplicate Korean teacher name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="56"/>
-        <source>Every imported Native English Teacher must have a name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="60"/>
-        <source>The import contains a duplicate Native English Teacher name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="73"/>
-        <source>Every imported GS Team member must have a name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="78"/>
-        <source>The import contains a duplicate GS Team name.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="98"/>
-        <source>Loading Korean teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="132"/>
-        <source>Loading Native English Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="155"/>
-        <source>Loading GS Team members</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="206"/>
-        <source>Loading the previous teacher import date</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="226"/>
-        <source>Saving the teacher import date</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="250"/>
-        <source>Unable to start the teacher import transaction.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="271"/>
-        <source>More than one stored Korean teacher matches %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="240"/>
-        <source>Every imported class requires a resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="284"/>
-        <source>%1 contains an invalid time: %2 %3–%4</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="301"/>
-        <source>The proposed schedule overlaps: %1 conflicts with %2 on %3.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="349"/>
-        <source>Writing imported class times</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="394"/>
-        <source>The import contains an invalid intensive slot state.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="407"/>
-        <source>Writing imported intensive slot states</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="631"/>
         <source>Unrecognized timetable cells must be acknowledged before importing.</source>
-        <translation>Unrecognised timetable cells must be acknowledged before importing.</translation>
+        <translation type="vanished">Unrecognised timetable cells must be acknowledged before importing.</translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="654"/>
-        <source>The teacher import plan contains an invalid or duplicate resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="683"/>
-        <source>The class import plan contains an invalid or duplicate resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="700"/>
-        <source>Each updated class must have a unique existing target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="718"/>
-        <source>Each imported class must resolve to a unique existing target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="731"/>
-        <source>A newly created class cannot have an existing target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="758"/>
-        <source>The import contains an invalid class.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="788"/>
-        <source>Every imported teacher and class requires a resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="799"/>
-        <source>Every imported teacher requires a matching resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="825"/>
-        <source>Choose one of the imported rooms for every unresolved Korean teacher.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="846"/>
-        <source>Classes assigned to a skipped Korean teacher must also be skipped.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="865"/>
-        <source>The meeting pattern for %1 %2 is invalid: %3</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="889"/>
         <source>Choose a valid class color for every imported class.</source>
-        <translation>Choose a valid class colour for every imported class.</translation>
+        <translation type="vanished">Choose a valid class colour for every imported class.</translation>
     </message>
     <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="900"/>
-        <source>Unable to start the schedule import transaction.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="957"/>
-        <source>A selected Korean teacher is no longer available.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="966"/>
-        <source>A created or skipped Korean teacher cannot have an existing target.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="978"/>
-        <source>Choose a room before updating a Korean teacher.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1002"/>
-        <source>A selected class is no longer available.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1053"/>
-        <source>A skipped imported class can preserve only its unique exact existing match.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1129"/>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="300"/>
-        <source>Creating a Korean teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1139"/>
-        <source>A Korean teacher could not be created.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1174"/>
-        <source>Updating a Korean teacher room</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1226"/>
-        <source>A class cannot be imported because its Korean teacher was skipped.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1258"/>
-        <source>Creating a class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1309"/>
-        <source>Updating imported class information</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1343"/>
-        <source>Clearing the previous schedule snapshot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1374"/>
-        <source>Clearing the previous intensive slot states</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1402"/>
-        <source>Reading My Information name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1433"/>
-        <source>Saving My Information name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/schedule_import_repository.cpp" line="1444"/>
-        <source>Unable to commit the schedule import transaction: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="334"/>
-        <source>Updating a Korean teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="346"/>
-        <source>More than one stored Native English Teacher matches %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="365"/>
-        <source>Creating a Native English Teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="402"/>
-        <source>Updating a Native English Teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="416"/>
-        <source>More than one stored GS Team member matches %1.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="435"/>
-        <source>Creating a GS Team member</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="470"/>
-        <source>Updating a GS Team member</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/data/repositories/teacher_import_repository.cpp" line="483"/>
-        <source>Unable to commit the teacher import transaction.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="120"/>
-        <source>Cell A1 must contain a version date such as 26.07.09ver.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="137"/>
-        <source>The version date in cell A1 is invalid.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="156"/>
-        <source>Birthday in row %1 must use month/day format.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="165"/>
-        <source>Birthday in row %1 is invalid.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="257"/>
-        <source>Sectioned Teacher Contact List</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="299"/>
-        <source>The workbook does not contain a worksheet.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="307"/>
-        <source>No supported teacher sections were found.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="360"/>
-        <source>Korean teacher name in row %1 is empty.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="364"/>
-        <source>Korean teacher name in row %1 is duplicated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="381"/>
-        <source>Native English Teacher name in row %1 is duplicated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="405"/>
-        <source>GS Team name in row %1 is duplicated.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/sectioned_contact_list_template.cpp" line="439"/>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="86"/>
         <source>The recognized template contains no importable people.</source>
-        <translation>The recognised template contains no importable people.</translation>
+        <translation type="vanished">The recognised template contains no importable people.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="37"/>
-        <source>The selected file is not a readable XLSX workbook.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="49"/>
-        <source>The workbook does not match a supported teacher import template.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="57"/>
-        <source>The workbook matches more than one teacher import template.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="79"/>
         <source>The recognized template did not provide a valid source date.</source>
-        <translation>The recognised template did not provide a valid source date.</translation>
+        <translation type="vanished">The recognised template did not provide a valid source date.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/teacher/import/teacher_import_file_validator.cpp" line="104"/>
-        <source>The selected file could not be opened: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1004"/>
-        <source>The intensive schedule&apos;s AM-to-PM transition is ambiguous.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1126"/>
         <source>This occupied timetable cell was not recognized as a class.</source>
-        <translation>This occupied timetable cell was not recognised as a class.</translation>
+        <translation type="vanished">This occupied timetable cell was not recognised as a class.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1181"/>
-        <source>The class time could not be interpreted.</source>
-        <translation type="unfinished"></translation>
+        <source>A new class will be created with color %1.</source>
+        <translation type="vanished">A new class will be created with colour %1.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1287"/>
-        <source>The workbook could not be read.</source>
-        <translation type="unfinished"></translation>
+        <source>Grade</source>
+        <translation type="vanished">Grade</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1365"/>
-        <source>%1!%2: %3</source>
-        <translation type="unfinished"></translation>
+        <source>Level</source>
+        <translation type="vanished">Level</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/import/schedule_workbook_parser.cpp" line="1374"/>
-        <source>No supported user schedule blocks were found in the workbook.</source>
-        <translation type="unfinished"></translation>
+        <source>Teacher</source>
+        <translation type="vanished">Teacher</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="128"/>
-        <source>Mon</source>
-        <translation type="unfinished"></translation>
+        <source>Color</source>
+        <translation type="vanished">Colour</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="132"/>
-        <source>Tues</source>
-        <translation type="unfinished"></translation>
+        <source>No grade, level, teacher, day, or color differences.</source>
+        <translation type="vanished">No grade, level, teacher, day, or colour differences.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="136"/>
-        <source>Wed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="140"/>
-        <source>Thurs</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="144"/>
-        <source>Fri</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="148"/>
-        <source>Sat</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="152"/>
-        <source>Sun</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="287"/>
-        <source>%1 overlaps %2 on %3.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="364"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="368"/>
-        <source>[Int]</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="365"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="367"/>
-        <source>[Reg]</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="385"/>
-        <source>Imported meetings: %1. A new class will be created with color %2.</source>
-        <translation>Imported meetings: %1. A new class will be created with colour %2.</translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="405"/>
-        <source>grade %1 → %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="415"/>
-        <source>level %1 → %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="429"/>
-        <source>Korean teacher %1 → %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="439"/>
-        <source>schedule %1 → %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="454"/>
-        <source>color %1 → %2</source>
-        <translation>colour %1 → %2</translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="464"/>
-        <source>Imported meetings: %1. No teacher, course, schedule, or color differences.</source>
-        <translation>Imported meetings: %1. No teacher, course, schedule, or colour differences.</translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="475"/>
-        <source>Imported meetings:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="477"/>
-        <source>Changes:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="486"/>
-        <source>%1 — Room %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="490"/>
-        <source>not set</source>
-        <translation type="unfinished"></translation>
+        <source>Imported Class:</source>
+        <translation type="vanished">Imported Class:</translation>
     </message>
     <message>
         <location filename="../../../src/data/data_service.cpp" line="521"/>
         <location filename="../../../src/data/data_service.cpp" line="538"/>
         <source>Schedule import is unavailable.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="149"/>
-        <source>Expected Monday/Wednesday, Monday/Friday, Wednesday/Friday, or Tuesday/Thursday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="167"/>
-        <source>Expected Monday/Wednesday/Friday or Tuesday/Thursday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="180"/>
-        <source>Expected Monday/Wednesday, Monday/Friday, or Tuesday/Thursday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="190"/>
-        <source>Expected one weekday meeting.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="192"/>
-        <source>The imported grade and level do not have a supported meeting-pattern rule.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="203"/>
-        <source>Monday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="207"/>
-        <source>Tuesday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="211"/>
-        <source>Wednesday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="215"/>
-        <source>Thursday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="219"/>
-        <source>Friday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="223"/>
-        <source>Saturday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="227"/>
-        <source>Sunday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="269"/>
-        <source>Each imported class must have exactly one meeting per scheduled weekday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="306"/>
-        <source>%1 Detected: %2.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/domain/rules/schedule_import_rules.h" line="313"/>
-        <source>no meetings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5447,103 +4843,98 @@
 <context>
     <name>RosterPrintDialog</name>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="238"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="241"/>
         <source>Save Rosters As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="240"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="243"/>
         <source>PDF Documents (*.pdf)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="618"/>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1209"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="627"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1251"/>
         <source>%1 of %2 selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="700"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="701"/>
         <source>Live preview unavailable.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="966"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="978"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="971"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="983"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="976"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="988"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1155"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1202"/>
         <source>Print Rosters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1161"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1208"/>
         <source>Template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1179"/>
-        <source>Live Preview</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1184"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1226"/>
         <source>Page Layout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1189"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1231"/>
         <source>Extra Info Columns</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1215"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1257"/>
         <source>Roster Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1222"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1264"/>
         <source>Portrait</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1227"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1269"/>
         <source>Landscape</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1235"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1277"/>
         <source>All Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1242"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1284"/>
         <source>Current Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1243"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1285"/>
         <source>Current Class (%1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1249"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1291"/>
         <source>Selected Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1257"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="1301"/>
         <source>Classes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5662,414 +5053,24 @@
 <context>
     <name>ScheduleImportDialog</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="655"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1292"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2486"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2494"/>
-        <source>Import Schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="671"/>
-        <source>Choose the schedule type, then continue.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="694"/>
-        <source>Back</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="699"/>
-        <source>Next</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="704"/>
-        <source>Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="754"/>
-        <source>Choose a spreadsheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="771"/>
-        <source>Select an XLSX schedule...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="775"/>
-        <source>Browse...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="787"/>
-        <source>Schedule type</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="794"/>
-        <source>Normal schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="799"/>
-        <source>Intensive schedule</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="819"/>
-        <source>Worksheet:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="834"/>
-        <source>Choose a file and schedule type.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="858"/>
-        <source>Ready to read the workbook.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="892"/>
-        <source>Choose your schedule section</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="914"/>
-        <source>Use the selected spreadsheet name even though it does not match My Information.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="947"/>
-        <source>Review and reconcile</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1000"/>
-        <source>Select Schedule Import File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1002"/>
-        <source>Excel Workbooks (*.xlsx)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1015"/>
-        <source>Choose an XLSX file.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1028"/>
-        <source>Choose an Excel workbook with the .xlsx extension.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1038"/>
-        <source>Choose Normal schedule or Intensive schedule.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1059"/>
-        <source>The selected workbook could not be opened.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1072"/>
-        <source>Invalid workbook: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1096"/>
-        <source>Select a worksheet...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1120"/>
-        <source>Workbook loaded. Choose the worksheet to import.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1121"/>
-        <source>Workbook and worksheet are valid.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1183"/>
-        <source>Select a detected name...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1193"/>
-        <source>Select the detected name...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1242"/>
-        <source>My Information has no name. The selected spreadsheet name will be saved after a successful import.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1248"/>
-        <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1258"/>
-        <source>My Information name: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1333"/>
         <source>Unrecognized cells</source>
-        <translation>Unrecognised cells</translation>
+        <translation type="vanished">Unrecognised cells</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1343"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2410"/>
-        <source>%1: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1358"/>
-        <source>I reviewed these cells and want to skip them.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1384"/>
-        <source>Korean teachers and rooms</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1390"/>
-        <source>Spreadsheet</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1395"/>
-        <source>Resolution</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1400"/>
-        <source>Imported room</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1429"/>
-        <source>Choose a room...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1453"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1492"/>
-        <source>Choose a resolution...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1459"/>
-        <source>Keep existing: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1470"/>
-        <source>Update room globally (%1 affected classes)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1479"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1528"/>
-        <source>Skip affected classes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1502"/>
-        <source>Use existing: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1511"/>
-        <source>Update existing room: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1521"/>
-        <source>Create a new Korean teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1577"/>
-        <source>Classes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1630"/>
-        <source>Choose Update, Create, or Skip...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1640"/>
-        <source>Update suggested: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1663"/>
-        <source>Update existing: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1679"/>
-        <source>Create new class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1686"/>
-        <source>Skip imported class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1739"/>
-        <source>time unavailable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1789"/>
         <source>Select Imported Class Color</source>
-        <translation>Select Imported Class Colour</translation>
+        <translation type="vanished">Select Imported Class Colour</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1824"/>
         <source>Color %1</source>
-        <translation>Colour %1</translation>
+        <translation type="vanished">Colour %1</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1873"/>
-        <source>Choose a resolution for every Korean teacher.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1899"/>
-        <source>Choose one imported room for this Korean teacher resolution.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1973"/>
-        <source>Choose an action for every class.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1978"/>
-        <source>Choose how this imported row should be reconciled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="1988"/>
-        <source>Two imported classes cannot use the same existing class.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2001"/>
-        <source>Choose an existing class to update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2048"/>
-        <source>The imported row will be skipped and its unique existing match will keep its current schedule.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2049"/>
-        <source>The imported row will be skipped.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2079"/>
-        <source>%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2093"/>
-        <source>Meeting pattern:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2111"/>
         <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
-        <translation>The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
+        <translation type="vanished">The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2239"/>
-        <source>The proposed schedule has a conflict: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2253"/>
         <source>Acknowledge the unrecognized cells before importing.</source>
-        <translation>Acknowledge the unrecognised cells before importing.</translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2280"/>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2367"/>
-        <source>All required resolutions are complete.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2284"/>
-        <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2297"/>
-        <source> My Information name will be set to “%1”.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2396"/>
-        <source>Choose a worksheet.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2424"/>
-        <source>The selected worksheet contains no supported user schedules.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2456"/>
-        <source>Is this schedule valid and ready to import?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2461"/>
-        <source>Confirm Schedule Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2478"/>
-        <source>No database is open.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2495"/>
-        <source>Schedule imported successfully.
-Korean teachers created: %1
-Korean teacher rooms updated: %2
-Classes created: %3
-Classes updated: %4
-Classes skipped: %5
-Schedules cleared: %6
-Ignored occupied cells: %7%8</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/schedule/ui/schedule_import_dialog.cpp" line="2512"/>
-        <source>
-My Information name was updated.</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">Acknowledge the unrecognised cells before importing.</translation>
     </message>
 </context>
 <context>
@@ -6163,102 +5164,102 @@ My Information name was updated.</source>
 <context>
     <name>ScheduleWidget</name>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="503"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="549"/>
         <source>Print Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="504"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="550"/>
         <source>Export Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="888"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="942"/>
         <source>No registered class meeting times available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="939"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="993"/>
         <source>Use 24-Hour Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="942"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="996"/>
         <source>Show English Names</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="947"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1001"/>
         <source>Show Weekends</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="950"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1004"/>
         <source>Show Intensive Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="953"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1007"/>
         <source>Show All Hours</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="958"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1012"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="961"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1015"/>
         <source>Import Schedule...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="970"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1024"/>
         <source>Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="977"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1031"/>
         <source>Monday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="981"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1035"/>
         <source>Tuesday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="985"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1039"/>
         <source>Wednesday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="989"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1043"/>
         <source>Thursday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="993"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1047"/>
         <source>Friday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="997"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1051"/>
         <source>Saturday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1001"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1055"/>
         <source>Sunday</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1325"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1379"/>
         <source>Essay</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1350"/>
+        <location filename="../../../src/features/schedule/ui/schedule_widget.cpp" line="1404"/>
         <source>Lunch</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6367,36 +5368,6 @@ My Information name was updated.</source>
     <message>
         <location filename="../../../src/app/controllers/sidebar_controller_transfer.cpp" line="252"/>
         <source>Import complete. Created: %1, replaced: %2, skipped: %3.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="29"/>
-        <source>The selected file&apos;s version appears to match the current data. Do you wish to continue?
-    File Version: %1
-    Current Version: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="32"/>
-        <source>The selected file appears to be older version than the current data. Do you wish to continue?
-    File Version: %1
-    Current Version: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="39"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="55"/>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="74"/>
-        <source>Import Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/app/controllers/sidebar_controller_teacher_import.cpp" line="75"/>
-        <source>Import complete.
-
-Korean Teachers: %1 created, %2 updated, %3 unchanged
-Native English Teachers: %4 created, %5 updated, %6 unchanged
-GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6717,79 +5688,79 @@ Retry the entire batch using the PowerPoint template?</source>
 <context>
     <name>SpeakingEvalPage</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="42"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="149"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="44"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="152"/>
         <source>No classes available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="68"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="131"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="150"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="166"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="176"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="186"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="171"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="70"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="133"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="152"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="168"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="178"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="188"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="174"/>
         <source>Import Names</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="73"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="184"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="75"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="187"/>
         <source>Create Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="74"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="185"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="76"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="188"/>
         <source>Export / Print Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="92"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="216"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="94"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="219"/>
         <source>Korean Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="95"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="221"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="97"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
         <source>Open Korean typing website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="102"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="233"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="104"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="236"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="132"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="134"/>
         <source>No roster data found.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="151"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="153"/>
         <source>Roster must contain &apos;English&apos; and &apos;Korean&apos; columns.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="167"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="169"/>
         <source>Names are already up to date.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="187"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="189"/>
         <source>Roster names imported successfully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="274"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="276"/>
         <source>Import or enter a student name to create reports.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="275"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="277"/>
         <source>Select a class to create reports.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6910,23 +5881,23 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="32"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="398"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="401"/>
         <source>Speaking Evaluation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="46"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="405"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="408"/>
         <source>No class selected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="399"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="402"/>
         <source>%1 Speaking Evaluation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="428"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="431"/>
         <source>Class %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7070,147 +6041,6 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
 </context>
 <context>
-    <name>StaffDirectoryPage</name>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="56"/>
-        <source>Coordinator</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="63"/>
-        <source>Team Leader</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="266"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="554"/>
-        <source>Add</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="267"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="555"/>
-        <source>Delete</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="268"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="556"/>
-        <source>Discard Changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="269"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="617"/>
-        <source>Save Changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="363"/>
-        <source>Delete Directory Entries</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="365"/>
-        <source>Delete the selected entry?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="366"/>
-        <source>Delete the selected %1 entries?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="423"/>
-        <source>Each Native English Teacher needs a unique name and a valid MM-dd birthday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="453"/>
-        <source>Each GS Team member needs a unique name or Korean name and a valid MM-dd birthday.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="467"/>
-        <source>Save Directory</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="511"/>
-        <source>Unsaved Directory Changes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="516"/>
-        <source>This staff directory has unsaved changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="547"/>
-        <source>Native English Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="547"/>
-        <source>GS Team</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="549"/>
-        <source>View and maintain all Native English Teacher contact information.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="550"/>
-        <source>View and maintain all GS and CS team contact information.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
-        <source>Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
-        <source>Position</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
-        <source>Phone Number</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <source>Email</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
-        <source>Birthday</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="552"/>
-        <source>Nationality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="553"/>
-        <source>Korean Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/staff_directory_page.cpp" line="617"/>
-        <source>Save Changes *</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>SubPrepClassInformation</name>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_class_information_model.cpp" line="38"/>
@@ -7345,7 +6175,7 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="239"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="145"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="212"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="176"/>
         <source>WiFi Password</source>
         <translation type="unfinished"></translation>
@@ -7364,7 +6194,7 @@ Retry the entire batch using the PowerPoint template?</source>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="260"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="163"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="230"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="250"/>
         <source>Zoom Password</source>
         <translation type="unfinished"></translation>
@@ -7390,68 +6220,68 @@ The package was created at:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="36"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="47"/>
         <source>No scheduled class information available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="99"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="166"/>
         <source>Level</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Level</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="108"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="175"/>
         <source>Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="117"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="184"/>
         <source># of Students</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="126"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="193"/>
         <source>Room</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="136"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="203"/>
         <source>WiFi Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="154"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="221"/>
         <source>Zoom ID</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="173"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="240"/>
         <source>Internet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="182"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="249"/>
         <source>Projection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="198"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="265"/>
         <source>Class Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="238"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="297"/>
         <source>Co-Teacher Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="353"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="559"/>
         <source>Scoring: 0 / 20 / 40 / 60 / 80 / 100
 Comments: Please leave a comment about what the student did well and what they need to work on.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="362"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="568"/>
         <source>N/A</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7604,112 +6434,6 @@ Comments: Please leave a comment about what the student did well and what they n
         <source>Replace the existing folder and all of its contents?
 
 %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TeacherImportDialog</name>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="23"/>
-        <source>Import Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="29"/>
-        <source>File to import from:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="38"/>
-        <source>Select an XLSX teacher list...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="40"/>
-        <source>Browse...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="47"/>
-        <source>Choose a file to import from.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="66"/>
-        <source>Korean Teachers to Import:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="100"/>
-        <source>Import</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="120"/>
-        <source>Select Teacher Import File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="122"/>
-        <source>Excel Workbooks (*.xlsx)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="137"/>
-        <source>Status: Invalid File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="151"/>
-        <source>Status: Valid File</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="154"/>
-        <source>Template: %1
-Version: %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="158"/>
-        <source>Automatically Importing
-    GS Team Member(s): %1
-    Native English Teacher(s): %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="196"/>
-        <source>Level</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="199"/>
-        <source>All</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="201"/>
-        <source>Select</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="203"/>
-        <source>None</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="245"/>
-        <source>Select %1 Teachers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="247"/>
-        <source>Name</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../../src/features/teacher/ui/teacher_import_dialog.cpp" line="250"/>
-        <source>Room</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
