@@ -277,6 +277,7 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             teacher_kr TEXT,
             teacher_en TEXT,
             preferred_romanization TEXT,
+            preferred_name TEXT,
 
             room_number TEXT,
             birthday TEXT,
@@ -298,6 +299,13 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
         database,
         QStringLiteral("teachers"),
         QStringLiteral("preferred_romanization"),
+        QStringLiteral("TEXT")
+        );
+
+    ensureTableColumn(
+        database,
+        QStringLiteral("teachers"),
+        QStringLiteral("preferred_name"),
         QStringLiteral("TEXT")
         );
 

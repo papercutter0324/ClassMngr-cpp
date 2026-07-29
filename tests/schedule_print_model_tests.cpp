@@ -388,6 +388,7 @@ void SchedulePrintModelTests::teacherRoomLineRespectsSelectedNameLanguage()
 {
     ScheduleEntry scheduleEntry = entry();
     scheduleEntry.teacherEn = QStringLiteral("Jihye Park");
+    scheduleEntry.teacherPreferredName = QStringLiteral("J. Park");
 
     QCOMPARE(
         scheduleTeacherRoomLine(scheduleEntry, false),
@@ -395,9 +396,10 @@ void SchedulePrintModelTests::teacherRoomLineRespectsSelectedNameLanguage()
         );
     QCOMPARE(
         scheduleTeacherRoomLine(scheduleEntry, true),
-        QStringLiteral("Jihye Park 413")
+        QStringLiteral("J. Park 413")
         );
 
+    scheduleEntry.teacherPreferredName.clear();
     scheduleEntry.teacherEn.clear();
     QCOMPARE(
         scheduleTeacherRoomLine(scheduleEntry, true),

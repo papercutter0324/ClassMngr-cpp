@@ -76,13 +76,7 @@ QString SidebarNodeNaming::formatClassDisplayName(
     // ============================================
 
     QString teacherName =
-        teacher.teacherEn.trimmed();
-
-    if (teacherName.isEmpty())
-    {
-        teacherName =
-            teacher.teacherKr.trimmed();
-    }
+        teacher.preferredDisplayName();
 
     if (teacherName.isEmpty())
     {
@@ -187,47 +181,12 @@ QString SidebarNodeNaming::formatTeacherDisplayName(
     const Teacher& teacher
     )
 {
-    const QString teacherEn =
-        teacher.teacherEn.trimmed();
+    const QString preferredName =
+        teacher.preferredDisplayName();
 
-    const QString teacherKr =
-        teacher.teacherKr.trimmed();
-
-    // ============================================
-    // Both names
-    // ============================================
-
-    if (!teacherEn.isEmpty() &&
-        !teacherKr.isEmpty())
-    {
-        return QString("%1 (%2)")
-        .arg(teacherEn)
-            .arg(teacherKr);
-    }
-
-    // ============================================
-    // Korean only
-    // ============================================
-
-    if (!teacherKr.isEmpty())
-    {
-        return teacherKr;
-    }
-
-    // ============================================
-    // English only
-    // ============================================
-
-    if (!teacherEn.isEmpty())
-    {
-        return teacherEn;
-    }
-
-    // ============================================
-    // Empty
-    // ============================================
-
-    return "New Teacher";
+    return preferredName.isEmpty()
+        ? QStringLiteral("New Teacher")
+        : preferredName;
 }
 
 bool SidebarNodeNaming::teacherDisplayLessThan(

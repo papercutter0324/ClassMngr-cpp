@@ -8132,8 +8132,20 @@ Version: %2</source>
     <message>
         <location line="-791"/>
         <location line="+805"/>
-        <source>Preferred Romanization</source>
-        <translation>선호 로마자 표기</translation>
+        <source>Preferred Spelling</source>
+        <translation>선호 표기</translation>
+    </message>
+    <message>
+        <source>Preferred Name</source>
+        <translation>선호 이름</translation>
+    </message>
+    <message>
+        <source>Select Preferred Name</source>
+        <translation>선호 이름 선택</translation>
+    </message>
+    <message>
+        <source>Choose the name to display for this teacher.</source>
+        <translation>이 교사에게 표시할 이름을 선택하세요.</translation>
     </message>
     <message>
         <location line="-802"/>

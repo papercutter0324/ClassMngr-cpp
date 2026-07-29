@@ -30,6 +30,8 @@ DatabaseIds populateDatabase(
     teacher.teacherKr = prefix + QStringLiteral(" Korean Teacher");
     teacher.preferredRomanization =
         prefix + QStringLiteral(" Romanization");
+    teacher.preferredName =
+        prefix + QStringLiteral(" Preferred Name");
     teacher.roomNumber = prefix + QStringLiteral(" Room");
     teacher.birthday = QStringLiteral("02-29");
     teacher.phoneNumber = prefix + QStringLiteral(" Phone");
@@ -122,6 +124,10 @@ void verifyDatabase(
         teacher.preferredRomanization,
         prefix + QStringLiteral(" Romanization")
         );
+    QCOMPARE(
+        teacher.preferredName,
+        prefix + QStringLiteral(" Preferred Name")
+        );
     QCOMPARE(teacher.roomNumber, prefix + QStringLiteral(" Room"));
     QCOMPARE(teacher.birthday, QStringLiteral("02-29"));
     QCOMPARE(teacher.phoneNumber, prefix + QStringLiteral(" Phone"));
@@ -132,6 +138,10 @@ void verifyDatabase(
     QCOMPARE(
         service.loadClassInfo(ids.classId).notes,
         prefix + QStringLiteral(" Class Notes")
+        );
+    QCOMPARE(
+        service.loadClassInfo(ids.classId).teacherPreferredName,
+        prefix + QStringLiteral(" Preferred Name")
         );
     QCOMPARE(service.loadIntensiveSlotStates().size(), 1);
     QCOMPARE(
@@ -292,10 +302,12 @@ void DataServiceLifecycleTests
 
     Teacher teacher = teachers.first();
     QVERIFY(teacher.preferredRomanization.isEmpty());
+    QVERIFY(teacher.preferredName.isEmpty());
     QVERIFY(teacher.birthday.isEmpty());
     QVERIFY(teacher.phoneNumber.isEmpty());
 
     teacher.preferredRomanization = QStringLiteral("Legacy Teacheo");
+    teacher.preferredName = QStringLiteral("Legacy Teacher");
     teacher.birthday = QStringLiteral("12-31");
     teacher.phoneNumber = QStringLiteral("010-0000-0000");
     service.updateTeacher(teacher);
@@ -305,6 +317,7 @@ void DataServiceLifecycleTests
         reloaded.preferredRomanization,
         QStringLiteral("Legacy Teacheo")
         );
+    QCOMPARE(reloaded.preferredName, QStringLiteral("Legacy Teacher"));
     QCOMPARE(reloaded.birthday, QStringLiteral("12-31"));
     QCOMPARE(reloaded.phoneNumber, QStringLiteral("010-0000-0000"));
 }

@@ -102,6 +102,7 @@ QJsonObject teacherToJson(
         {QStringLiteral("teacher_en"), teacher.teacherEn},
         {QStringLiteral("preferred_romanization"),
          teacher.preferredRomanization},
+        {QStringLiteral("preferred_name"), teacher.preferredName},
         {QStringLiteral("room_number"), teacher.roomNumber},
         {QStringLiteral("birthday"), teacher.birthday},
         {QStringLiteral("phone_number"), teacher.phoneNumber},
@@ -160,6 +161,7 @@ Result<ClassTransferTeacher> teacherFromJson(
     const QList<QPair<QString, QString*>> optionalFields{
         {QStringLiteral("preferred_romanization"),
          &teacher.preferredRomanization},
+        {QStringLiteral("preferred_name"), &teacher.preferredName},
         {QStringLiteral("birthday"), &teacher.birthday},
         {QStringLiteral("phone_number"), &teacher.phoneNumber}
     };

@@ -18,6 +18,7 @@
 #include <QFont>
 #include <QFrame>
 #include <QGridLayout>
+#include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
@@ -27,6 +28,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QShowEvent>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QSpacerItem>
 #include <QTextEdit>
@@ -43,6 +45,7 @@ namespace
 
 constexpr int TeacherNameFieldWidth = 140;
 constexpr int TeacherPreferredRomanizationFieldWidth = 180;
+constexpr int TeacherPreferredNameFieldWidth = 180;
 constexpr int TeacherRoomNumberFieldWidth = 115;
 constexpr int TeacherPhoneNumberFieldWidth = 160;
 constexpr int BirthdayReferenceYear = 2000;
@@ -409,6 +412,10 @@ void TeacherInfoPage::buildUi()
     m_preferredRomanizationEdit->setObjectName(
         QStringLiteral("preferredRomanizationEdit")
         );
+    m_preferredNameCombo = new NoWheelComboBox;
+    m_preferredNameCombo->setObjectName(
+        QStringLiteral("preferredNameCombo")
+        );
     m_roomNumberEdit = new QLineEdit;
     m_roomNumberEdit->setObjectName(
         QStringLiteral("roomNumberEdit")
@@ -441,6 +448,11 @@ void TeacherInfoPage::buildUi()
         QSizePolicy::Maximum
         );
     WidgetSizing::installTextAwareFieldWidth(
+        m_preferredNameCombo,
+        TeacherPreferredNameFieldWidth,
+        QSizePolicy::Maximum
+        );
+    WidgetSizing::installTextAwareFieldWidth(
         m_roomNumberEdit,
         TeacherRoomNumberFieldWidth,
         QSizePolicy::Maximum
@@ -465,7 +477,10 @@ void TeacherInfoPage::buildUi()
         createFieldLabel(tr("English Name"));
 
     m_preferredRomanizationLabel =
-        createFieldLabel(tr("Preferred Romanization"));
+        createFieldLabel(tr("Preferred Spelling"));
+
+    m_preferredNameLabel =
+        createFieldLabel(tr("Preferred Name"));
 
     m_roomNumberLabel =
         createFieldLabel(tr("Room Number"));
@@ -485,10 +500,15 @@ void TeacherInfoPage::buildUi()
     detailsGrid->addWidget(
         m_preferredRomanizationLabel, 0, 2);
 
+    detailsGrid->addWidget(
+        m_preferredNameLabel, 0, 3);
+
     detailsGrid->addWidget(m_teacherEnEdit, 1, 0, Qt::AlignLeft);
     detailsGrid->addWidget(m_teacherKrEdit, 1, 1, Qt::AlignLeft);
     detailsGrid->addWidget(
         m_preferredRomanizationEdit, 1, 2, Qt::AlignLeft);
+    detailsGrid->addWidget(
+        m_preferredNameCombo, 1, 3, Qt::AlignLeft);
 
     detailsGrid->addItem(
         new QSpacerItem(
@@ -519,7 +539,8 @@ void TeacherInfoPage::buildUi()
     detailsGrid->setColumnStretch(0, 0);
     detailsGrid->setColumnStretch(1, 0);
     detailsGrid->setColumnStretch(2, 0);
-    detailsGrid->setColumnStretch(3, 1);
+    detailsGrid->setColumnStretch(3, 0);
+    detailsGrid->setColumnStretch(4, 1);
 
     m_detailsCard->contentLayout()->addLayout(detailsGrid);
 
@@ -714,8 +735,6 @@ void TeacherInfoPage::buildUi()
 
     for (auto* edit : {
              m_teacherKrEdit,
-             m_teacherEnEdit,
-             m_preferredRomanizationEdit,
              m_roomNumberEdit,
              m_birthdayEdit,
              m_phoneNumberEdit,
@@ -730,8 +749,28 @@ void TeacherInfoPage::buildUi()
             &QLineEdit::textChanged,
             this,
             &TeacherInfoPage::handleFieldChanged
-            );
+        );
     }
+
+    const auto handlePreferredNameInputChanged = [this]
+    {
+        updatePreferredNameChoices(true);
+        handleFieldChanged();
+    };
+
+    connect(
+        m_teacherEnEdit,
+        &QLineEdit::textChanged,
+        this,
+        handlePreferredNameInputChanged
+        );
+
+    connect(
+        m_preferredRomanizationEdit,
+        &QLineEdit::textChanged,
+        this,
+        handlePreferredNameInputChanged
+        );
 
     connect(
         m_teacherKrEdit,
@@ -763,6 +802,13 @@ void TeacherInfoPage::buildUi()
 
     connect(
         m_projectionTypeCombo,
+        &QComboBox::currentTextChanged,
+        this,
+        &TeacherInfoPage::handleFieldChanged
+        );
+
+    connect(
+        m_preferredNameCombo,
         &QComboBox::currentTextChanged,
         this,
         &TeacherInfoPage::handleFieldChanged
@@ -815,6 +861,8 @@ void TeacherInfoPage::loadTeacher(
 
     m_preferredRomanizationEdit->setText(
         teacher.preferredRomanization);
+
+    updatePreferredNameChoices(false);
 
     m_roomNumberEdit->setText(
         teacher.roomNumber);
@@ -997,6 +1045,8 @@ Teacher TeacherInfoPage::teacherFromForm() const
     updated.teacherEn = m_teacherEnEdit->text().trimmed();
     updated.preferredRomanization =
         m_preferredRomanizationEdit->text().trimmed();
+    updated.preferredName =
+        m_preferredNameCombo->currentText().trimmed();
 
     updated.roomNumber = m_roomNumberEdit->text().trimmed();
     updated.birthday =
@@ -1027,6 +1077,8 @@ bool TeacherInfoPage::formDiffersFromTeacher() const
         || updated.teacherEn != m_teacher.teacherEn.trimmed()
         || updated.preferredRomanization
             != m_teacher.preferredRomanization.trimmed()
+        || updated.preferredName
+            != m_teacher.preferredName.trimmed()
         || updated.roomNumber != m_teacher.roomNumber.trimmed()
         || updated.birthday != m_teacher.birthday.trimmed()
         || updated.phoneNumber != m_teacher.phoneNumber.trimmed()
@@ -1132,6 +1184,10 @@ void TeacherInfoPage::updateFieldWidths()
         TeacherPreferredRomanizationFieldWidth
         );
     WidgetSizing::updateTextAwareFieldWidth(
+        m_preferredNameCombo,
+        TeacherPreferredNameFieldWidth
+        );
+    WidgetSizing::updateTextAwareFieldWidth(
         m_roomNumberEdit,
         TeacherRoomNumberFieldWidth
         );
@@ -1177,6 +1233,77 @@ void TeacherInfoPage::matchBirthdayWidthToKoreanName()
                 );
 
     m_birthdayEdit->setFixedWidth(koreanNameWidth);
+}
+
+void TeacherInfoPage::updatePreferredNameChoices(
+    bool promptForSelection
+    )
+{
+    if (!m_preferredNameCombo)
+    {
+        return;
+    }
+
+    const int previousChoiceCount =
+        m_preferredNameCombo->count();
+    const QString previousSelection =
+        m_preferredNameCombo->currentText();
+
+    Teacher teacher;
+    teacher.teacherEn = m_teacherEnEdit->text();
+    teacher.preferredRomanization =
+        m_preferredRomanizationEdit->text();
+
+    const QStringList choices =
+        teacher.preferredNameChoices();
+
+    QSignalBlocker blocker(m_preferredNameCombo);
+    m_preferredNameCombo->clear();
+    m_preferredNameCombo->addItems(choices);
+    m_preferredNameCombo->setEnabled(!choices.isEmpty());
+
+    int selectedIndex =
+        m_loading
+            ? choices.indexOf(m_teacher.preferredName.trimmed())
+            : choices.indexOf(previousSelection);
+
+    if (selectedIndex < 0)
+    {
+        selectedIndex =
+            choices.indexOf(m_teacher.preferredName.trimmed());
+    }
+
+    if (selectedIndex < 0 && !choices.isEmpty())
+    {
+        selectedIndex = 0;
+    }
+
+    m_preferredNameCombo->setCurrentIndex(selectedIndex);
+
+    if (
+        !m_loading
+        && promptForSelection
+        && previousChoiceCount == 1
+        && choices.size() == 2
+        )
+    {
+        bool accepted = false;
+        const QString selectedName =
+            QInputDialog::getItem(
+                this,
+                tr("Select Preferred Name"),
+                tr("Choose the name to display for this teacher."),
+                choices,
+                selectedIndex,
+                false,
+                &accepted
+                );
+
+        if (accepted)
+        {
+            m_preferredNameCombo->setCurrentText(selectedName);
+        }
+    }
 }
 
 Teacher TeacherInfoPage::teacher() const
@@ -1270,7 +1397,14 @@ void TeacherInfoPage::retranslateUi()
     if (m_preferredRomanizationLabel)
     {
         m_preferredRomanizationLabel->setText(
-            tr("Preferred Romanization")
+            tr("Preferred Spelling")
+            );
+    }
+
+    if (m_preferredNameLabel)
+    {
+        m_preferredNameLabel->setText(
+            tr("Preferred Name")
             );
     }
 

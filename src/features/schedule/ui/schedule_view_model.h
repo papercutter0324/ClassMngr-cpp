@@ -95,19 +95,21 @@ inline QString scheduleTeacherRoomLine(
 {
     const QString preferredName =
         (showEnglishName
-            ? entry.teacherEn
+            ? entry.teacherPreferredName
             : entry.teacherKr)
             .trimmed();
     const QString fallbackName =
         (showEnglishName
-            ? entry.teacherKr
+            ? entry.teacherEn
             : entry.teacherEn)
             .trimmed();
 
     return QStringLiteral("%1 %2")
         .arg(
             preferredName.isEmpty()
-                ? fallbackName
+                ? (fallbackName.isEmpty()
+                    ? entry.teacherKr.trimmed()
+                    : fallbackName)
                 : preferredName,
             entry.roomNumber.trimmed()
             )

@@ -1,11 +1,15 @@
 #include "features/teacher/ui/teacher_info_page.h"
 
+#include <QApplication>
 #include <QCalendarWidget>
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
 #include <QLineEdit>
 #include <QLocale>
 #include <QMetaObject>
+#include <QInputDialog>
+#include <QTimer>
 #include <QtTest>
 
 namespace
@@ -62,6 +66,8 @@ class TeacherInfoPageTests : public QObject
 
 private slots:
     void personalDetailsUseRequestedTwoRowOrder();
+    void preferredNameListsAvailableNameChoices();
+    void promptsWhenSecondPreferredNameChoiceIsAdded();
     void birthdayUsesCalendarMonthAndDayOnly();
 };
 
@@ -75,6 +81,8 @@ void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
         QStringLiteral("teacherKrEdit"));
     auto* romanization = page.findChild<QLineEdit*>(
         QStringLiteral("preferredRomanizationEdit"));
+    auto* preferredName = page.findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo"));
     auto* room = page.findChild<QLineEdit*>(
         QStringLiteral("roomNumberEdit"));
     auto* birthday = page.findChild<QLineEdit*>(
@@ -86,6 +94,7 @@ void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
     verifyPosition(grid, english, 1, 0);
     verifyPosition(grid, korean, 1, 1);
     verifyPosition(grid, romanization, 1, 2);
+    verifyPosition(grid, preferredName, 1, 3);
     verifyPosition(grid, room, 4, 0);
     verifyPosition(grid, birthday, 4, 1);
     verifyPosition(grid, phone, 4, 2);
@@ -94,6 +103,81 @@ void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
     page.show();
     QCoreApplication::processEvents();
     QCOMPARE(birthday->width(), korean->width());
+}
+
+void TeacherInfoPageTests::preferredNameListsAvailableNameChoices()
+{
+    TeacherInfoPage page(nullptr);
+
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Alex Kim");
+    teacher.preferredRomanization = QStringLiteral("Gim Allekseu");
+    teacher.preferredName = QStringLiteral("Gim Allekseu");
+    page.loadTeacher(teacher);
+
+    auto* preferredName = page.findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo"));
+    QVERIFY(preferredName);
+    QCOMPARE(preferredName->count(), 2);
+    QCOMPARE(preferredName->itemText(0), QStringLiteral("Alex Kim"));
+    QCOMPARE(preferredName->itemText(1), QStringLiteral("Gim Allekseu"));
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
+
+    teacher.preferredRomanization.clear();
+    teacher.preferredName.clear();
+    page.loadTeacher(teacher);
+
+    QCOMPARE(preferredName->count(), 1);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Alex Kim"));
+}
+
+void TeacherInfoPageTests::promptsWhenSecondPreferredNameChoiceIsAdded()
+{
+    TeacherInfoPage page(nullptr);
+
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Alex Kim");
+    page.loadTeacher(teacher);
+
+    auto* preferredSpelling = page.findChild<QLineEdit*>(
+        QStringLiteral("preferredRomanizationEdit"));
+    auto* preferredName = page.findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo"));
+    QVERIFY(preferredSpelling);
+    QVERIFY(preferredName);
+
+    bool dialogShown = false;
+    QTimer::singleShot(
+        0,
+        [&dialogShown]
+        {
+            auto* dialog = qobject_cast<QInputDialog*>(
+                QApplication::activeModalWidget()
+                );
+            dialogShown = dialog
+                && dialog->windowTitle()
+                    == QStringLiteral("Select Preferred Name");
+
+            if (!dialog)
+            {
+                return;
+            }
+
+            if (auto* choices = dialog->findChild<QComboBox*>())
+            {
+                choices->setCurrentIndex(1);
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferredSpelling->setText(QStringLiteral("Gim Allekseu"));
+
+    QVERIFY(dialogShown);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
 }
 
 void TeacherInfoPageTests::birthdayUsesCalendarMonthAndDayOnly()

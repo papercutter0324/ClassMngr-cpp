@@ -769,16 +769,17 @@ Result<int> insertTeacher(
     QSqlQuery query(database);
     query.prepare(R"(
         INSERT INTO teachers (
-            teacher_kr, teacher_en, preferred_romanization,
+            teacher_kr, teacher_en, preferred_romanization, preferred_name,
             room_number, birthday, phone_number,
             wifi_name, wifi_password, internet_type,
             zoom_id, zoom_password, projection_type, notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
     query.addBindValue(teacher.preferredRomanization);
+    query.addBindValue(teacher.preferredName);
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.birthday);
     query.addBindValue(teacher.phoneNumber);
@@ -817,7 +818,7 @@ Status updateTeacher(
     QSqlQuery query(database);
     query.prepare(R"(
         UPDATE teachers SET
-            teacher_kr=?, teacher_en=?, preferred_romanization=?,
+            teacher_kr=?, teacher_en=?, preferred_romanization=?, preferred_name=?,
             room_number=?, birthday=?, phone_number=?,
             wifi_name=?, wifi_password=?, internet_type=?,
             zoom_id=?, zoom_password=?, projection_type=?, notes=?
@@ -826,6 +827,7 @@ Status updateTeacher(
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
     query.addBindValue(teacher.preferredRomanization);
+    query.addBindValue(teacher.preferredName);
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.birthday);
     query.addBindValue(teacher.phoneNumber);

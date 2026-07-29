@@ -7787,8 +7787,20 @@ Version: %2</source>
     <message>
         <location line="-791"/>
         <location line="+805"/>
-        <source>Preferred Romanization</source>
-        <translation type="unfinished"></translation>
+        <source>Preferred Spelling</source>
+        <translation>Preferred Spelling</translation>
+    </message>
+    <message>
+        <source>Preferred Name</source>
+        <translation>Preferred Name</translation>
+    </message>
+    <message>
+        <source>Select Preferred Name</source>
+        <translation>Select Preferred Name</translation>
+    </message>
+    <message>
+        <source>Choose the name to display for this teacher.</source>
+        <translation>Choose the name to display for this teacher.</translation>
     </message>
     <message>
         <location line="-802"/>
