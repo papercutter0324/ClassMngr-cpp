@@ -1,6 +1,7 @@
 #include "schedule_import_review_dialog.h"
 
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
 #include "data/data_service.h"
 #include "domain/models/classroom.h"
@@ -1086,12 +1087,30 @@ void ScheduleImportReviewDialog::buildUi()
             m_reviewPage
             );
     heading->setObjectName(
-        QStringLiteral("scheduleImportReviewHeading")
+        QStringLiteral("pageTitle")
         );
-    QFont headingFont = heading->font();
-    headingFont.setBold(true);
-    heading->setFont(headingFont);
+    heading->setFont(
+        FontManager::getUiFont(
+            UiConstants::Pages::TitleFontSize,
+            QFont::Bold
+            )
+        );
     layout->addWidget(heading);
+
+    auto* subtitle =
+        new QLabel(
+            tr("Review imported classes and resolve any conflicts before continuing."),
+            m_reviewPage
+            );
+    subtitle->setObjectName(
+        QStringLiteral("pageSubtitle")
+        );
+    subtitle->setFont(
+        FontManager::getUiFont(
+            UiConstants::Pages::SubtitleFontSize
+            )
+        );
+    layout->addWidget(subtitle);
 
     m_reviewSplitter =
         new QSplitter(
@@ -1108,7 +1127,6 @@ void ScheduleImportReviewDialog::buildUi()
     m_previewPane->setObjectName(
         QStringLiteral("scheduleImportPreviewPane")
         );
-    m_previewPane->setFixedWidth(InitialPreviewWidth);
     auto* previewLayout =
         new QVBoxLayout(m_previewPane);
     previewLayout->setContentsMargins(0, 0, 0, 0);
@@ -1175,11 +1193,6 @@ void ScheduleImportReviewDialog::buildUi()
     m_teacherLayout =
         new QVBoxLayout(m_teacherContent);
     m_teacherScrollArea->setWidget(m_teacherContent);
-    m_resolutionTabs->addTab(
-        m_teacherScrollArea,
-        tr("Korean Teachers and Rooms")
-        );
-
     m_classScrollArea =
         new QScrollArea(m_resolutionTabs);
     m_classScrollArea->setObjectName(
@@ -1201,6 +1214,11 @@ void ScheduleImportReviewDialog::buildUi()
         m_classScrollArea,
         tr("Classes")
         );
+    m_resolutionTabs->addTab(
+        m_teacherScrollArea,
+        tr("Korean Teachers")
+        );
+    m_resolutionTabs->setCurrentWidget(m_classScrollArea);
 
     m_reviewSplitter->addWidget(m_previewPane);
     m_reviewSplitter->addWidget(m_resolutionTabs);
@@ -1395,11 +1413,11 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         warningsLayout->addStretch();
         m_warningScrollArea->setWidget(warnings);
         m_resolutionTabs->insertTab(
-            0,
+            2,
             m_warningScrollArea,
             tr("Unrecognized cells")
             );
-        m_resolutionTabs->setCurrentWidget(m_warningScrollArea);
+        m_resolutionTabs->setCurrentWidget(m_classScrollArea);
         connect(
             m_warningAcknowledgement,
             &QCheckBox::toggled,

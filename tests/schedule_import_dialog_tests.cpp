@@ -24,6 +24,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QSplitterHandle>
 #include <QTableWidget>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -804,10 +805,31 @@ void ScheduleImportDialogTests
 
     auto* reviewHeading =
         review->findChild<QLabel*>(
-            QStringLiteral("scheduleImportReviewHeading")
+            QStringLiteral("pageTitle")
             );
     QVERIFY(reviewHeading);
     QCOMPARE(reviewHeading->text(), QStringLiteral("Review & Reconcile"));
+    QCOMPARE(
+        reviewHeading->font().pointSize(),
+        UiConstants::Pages::TitleFontSize
+        );
+    QVERIFY(reviewHeading->font().bold());
+
+    auto* reviewSubtitle =
+        review->findChild<QLabel*>(
+            QStringLiteral("pageSubtitle")
+            );
+    QVERIFY(reviewSubtitle);
+    QCOMPARE(
+        reviewSubtitle->text(),
+        QStringLiteral(
+            "Review imported classes and resolve any conflicts before continuing."
+            )
+        );
+    QCOMPARE(
+        reviewSubtitle->font().pointSize(),
+        UiConstants::Pages::SubtitleFontSize
+        );
 
     auto* splitter =
         review->findChild<QSplitter*>(
@@ -825,8 +847,8 @@ void ScheduleImportDialogTests
             );
     QVERIFY(tabs);
     QCOMPARE(tabs->count(), 2);
-    QCOMPARE(tabs->tabText(0), QStringLiteral("Korean Teachers and Rooms"));
-    QCOMPARE(tabs->tabText(1), QStringLiteral("Classes"));
+    QCOMPARE(tabs->tabText(0), QStringLiteral("Classes"));
+    QCOMPARE(tabs->tabText(1), QStringLiteral("Korean Teachers"));
     auto* preview =
         review->findChild<QWidget*>(
             QStringLiteral("scheduleImportPreview")
@@ -866,7 +888,7 @@ void ScheduleImportDialogTests
             );
     QVERIFY(teacherScrollArea);
     QVERIFY(classScrollArea);
-    QCOMPARE(tabs->currentWidget(), teacherScrollArea);
+    QCOMPARE(tabs->currentWidget(), classScrollArea);
     QCOMPARE(
         teacherScrollArea->horizontalScrollBarPolicy(),
         Qt::ScrollBarAlwaysOff
@@ -922,9 +944,32 @@ void ScheduleImportDialogTests
     QVERIFY(firstTeacherCard->isAncestorOf(firstTeacherAction));
     QVERIFY(firstTeacherCard->isAncestorOf(firstTeacherRoom));
 
-    tabs->setCurrentWidget(classScrollArea);
+    tabs->setCurrentWidget(teacherScrollArea);
     QCoreApplication::processEvents();
-    QCOMPARE(tabs->currentWidget(), classScrollArea);
+    QCOMPARE(tabs->currentWidget(), teacherScrollArea);
+
+    const int initialPreviewWidth = preview->width();
+    QSplitterHandle* splitterHandle = splitter->handle(1);
+    QVERIFY(splitterHandle);
+    const QPoint handleCenter = splitterHandle->rect().center();
+    QTest::mousePress(
+        splitterHandle,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        handleCenter
+        );
+    QTest::mouseMove(
+        splitterHandle,
+        handleCenter + QPoint(100, 0)
+        );
+    QTest::mouseRelease(
+        splitterHandle,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        handleCenter + QPoint(100, 0)
+        );
+    QCoreApplication::processEvents();
+    QVERIFY(preview->width() > initialPreviewWidth);
     const auto classCards =
         review->findChildren<QFrame*>(
             QRegularExpression(
@@ -1175,8 +1220,14 @@ void ScheduleImportDialogTests
     QVERIFY(warningScrollArea);
     QVERIFY(acknowledgement);
     QCOMPARE(tabs->count(), 3);
-    QCOMPARE(tabs->tabText(0), QStringLiteral("Unrecognized cells"));
-    QCOMPARE(tabs->currentWidget(), warningScrollArea);
+    QCOMPARE(tabs->tabText(0), QStringLiteral("Classes"));
+    QCOMPARE(tabs->tabText(2), QStringLiteral("Unrecognized cells"));
+    QCOMPARE(
+        tabs->currentWidget(),
+        review.findChild<QScrollArea*>(
+            QStringLiteral("scheduleImportClassScrollArea")
+            )
+        );
     QCOMPARE(
         warningScrollArea->horizontalScrollBarPolicy(),
         Qt::ScrollBarAlwaysOff
