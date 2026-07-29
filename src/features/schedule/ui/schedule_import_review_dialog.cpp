@@ -517,7 +517,8 @@ QString classDifferences(
     int targetClassId,
     ScheduleImportKind kind,
     const QString& classColor,
-    const QColor& changesColor
+    const QColor& changesColor,
+    const QColor& changesHeadingColor
     )
 {
     if (!dataService || targetClassId <= 0)
@@ -637,12 +638,13 @@ QString classDifferences(
     }
 
     return QStringLiteral(
-        "<span style=\"color:%1\"><b style=\"color:white\">%2</b>"
-        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%3</ul>"
+        "<span style=\"color:%1\"><b style=\"color:%2\">%3</b>"
+        "<ul style=\"margin-top:2px; margin-bottom:0px;\">%4</ul>"
         "</span>"
         )
         .arg(
             changesColor.name(QColor::HexRgb),
+            changesHeadingColor.name(QColor::HexRgb),
             QObject::tr("Changes:").toHtmlEscaped(),
             differences.join(QString())
             );
@@ -2137,6 +2139,9 @@ void ScheduleImportReviewDialog::updateReviewState()
                         control.color,
                         control.details->palette().color(
                             QPalette::Link
+                            ),
+                        control.details->palette().color(
+                            QPalette::Text
                             )
                         )
                     );
@@ -2162,6 +2167,9 @@ void ScheduleImportReviewDialog::updateReviewState()
                         control.color,
                         control.details->palette().color(
                             QPalette::Link
+                            ),
+                        control.details->palette().color(
+                            QPalette::Text
                             )
                         )
                     );
