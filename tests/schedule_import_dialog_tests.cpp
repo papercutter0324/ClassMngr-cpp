@@ -52,6 +52,7 @@ private slots:
     void requiresFileAndScheduleKind();
     void reportsAsyncWorkbookFailure();
     void discardsSupersededAndClosedLoads();
+    void acceptedReviewCanTearDownSourceDialog();
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
     void reviewWarningsUseDedicatedTab();
@@ -670,6 +671,43 @@ void ScheduleImportDialogTests::discardsSupersededAndClosedLoads()
     QVERIFY(!closingProgress->isHidden());
     delete closingDialog;
     QTest::qWait(100);
+}
+
+void ScheduleImportDialogTests
+    ::acceptedReviewCanTearDownSourceDialog()
+{
+    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path =
+        writeDialogWorkbook(&directory);
+    QVERIFY(!path.isEmpty());
+
+    ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("myInfo/name"),
+        QStringLiteral("Alice")
+        );
+
+    ScheduleImportDialog dialog(&services);
+    dialog.setFilePath(path);
+    dialog.show();
+    QCoreApplication::processEvents();
+    QVERIFY(loadSourceSelections(&dialog));
+
+    auto* next =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportNextButton")
+            );
+    QVERIFY(next);
+    QVERIFY(next->isEnabled());
+    next->click();
+
+    auto* review =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(review);
+    review->accept();
+    QCOMPARE(dialog.result(), QDialog::Accepted);
 }
 
 void ScheduleImportDialogTests

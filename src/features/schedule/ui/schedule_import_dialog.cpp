@@ -974,7 +974,7 @@ void ScheduleImportDialog::openReviewDialog()
         );
     connect(
         review,
-        &QObject::destroyed,
+        &QDialog::rejected,
         this,
         [this]()
         {

@@ -3,6 +3,7 @@
 #include "domain/models/schedule_import.h"
 
 #include <QDialog>
+#include <QPointer>
 #include <QString>
 
 class ApplicationServices;
@@ -88,5 +89,5 @@ private:
 
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_nextButton = nullptr;
-    ScheduleImportReviewDialog* m_reviewDialog = nullptr;
+    QPointer<ScheduleImportReviewDialog> m_reviewDialog;
 };
