@@ -1,167 +1,156 @@
-name: Windows Release Artifacts
+name: Windows Release Builds
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "scripts/installer/**"
+      - "src/**"
   pull_request:
     paths:
       - ".github/workflows/windows-release.yml"
       - "CMakeLists.txt"
       - "CMakePresets.json"
       - "cmake/**"
+      - "licenses/**"
       - "resources/**"
-      - "scripts/build_release_windows.ps1"
       - "scripts/installer/**"
       - "src/**"
-      - "tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.11.1"
+  QT_ROOT: "C:\\Qt"
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
+  QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
 
 jobs:
   build:
-    name: Windows MSVC x64 and ARM64
-    runs-on: windows-2022
-    env:
-      QT_VERSION: "6.11.1"
-      QT_ROOT: "C:\\Qt"
-      QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
-      QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
+    name: Windows ${{ matrix.display_name }}
+    runs-on: windows-2025
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - display_name: x64
+            preset: windows-x64-release
+            qt_prefix: "C:\\Qt\\6.11.1\\msvc2022_64"
+            artifact_arch: x64
+            machine_pattern: 'machine \(x64\)'
+          - display_name: ARM64
+            preset: windows-arm64-release
+            qt_prefix: "C:\\Qt\\6.11.1\\msvc2022_arm64"
+            artifact_arch: arm64
+            machine_pattern: 'machine \(ARM64\)'
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.x"
+          python-version: "3.13"
 
-      - name: Install Qt
+      - name: Install aqtinstall
         shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade aqtinstall
-          python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT
-          python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_arm64_cross_compiled --outputdir $env:QT_ROOT
+        run: python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+
+      - name: Install Qt x64 host tools
+        shell: pwsh
+        run: >-
+          python -m aqt install-qt
+          windows desktop $env:QT_VERSION win64_msvc2022_64
+          --outputdir $env:QT_ROOT
+          --modules qtdeclarative qtpdf qttools
+
+      - name: Install Qt ARM64 target
+        if: matrix.artifact_arch == 'arm64'
+        shell: pwsh
+        run: >-
+          python -m aqt install-qt
+          windows desktop $env:QT_VERSION win64_msvc2022_arm64_cross_compiled
+          --outputdir $env:QT_ROOT
+          --modules qtdeclarative qtpdf qttools
 
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --yes --no-progress
 
-      - name: Verify MSVC toolsets
+      - name: Configure
+        shell: pwsh
+        run: >-
+          cmake --fresh --preset "${{ matrix.preset }}"
+          "-DCMAKE_PREFIX_PATH=${{ matrix.qt_prefix }}"
+          -DBUILD_TESTING=OFF
+
+      - name: Build installer
+        shell: pwsh
+        run: cmake --build --preset "${{ matrix.preset }}-installer" --parallel
+
+      - name: Verify architecture and create checksum
         shell: pwsh
         run: |
+          $executable = "build\${{ matrix.preset }}\Release\ClassMngr.exe"
+
+          if (-not (Test-Path -LiteralPath $executable)) {
+              throw "Expected executable was not found: $executable"
+          }
+
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-
-          if (-not (Test-Path -LiteralPath $vswhere)) {
-              throw "vswhere.exe was not found."
-          }
-
-          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-
-          if ([string]::IsNullOrWhiteSpace($vsPath)) {
-              throw "No Visual Studio installation with MSVC tools was found."
-          }
-
-          $tools = Get-ChildItem -LiteralPath (Join-Path $vsPath "VC\Tools\MSVC") |
-              Sort-Object Name -Descending |
+          $vsPath = & $vswhere -latest -products * -property installationPath
+          $dumpbin = Get-ChildItem -Path (
+              Join-Path $vsPath "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe"
+          ) |
+              Sort-Object FullName -Descending |
               Select-Object -First 1
 
-          if ($null -eq $tools) {
-              throw "No MSVC toolset directory was found."
+          if ($null -eq $dumpbin) {
+              throw "dumpbin.exe was not found in the Visual Studio installation."
           }
 
-          $requiredTools = @(
-              "bin\Hostx64\x64\cl.exe",
-              "bin\Hostx64\arm64\cl.exe"
-          )
+          $headers = (& $dumpbin.FullName /headers $executable 2>&1) -join "`n"
 
-          foreach ($tool in $requiredTools) {
-              $toolPath = Join-Path $tools.FullName $tool
-
-              if (-not (Test-Path -LiteralPath $toolPath)) {
-                  throw "Required MSVC tool was not found: $toolPath"
-              }
+          if ($headers -notmatch '${{ matrix.machine_pattern }}') {
+              throw "Executable did not have the expected ${{ matrix.display_name }} architecture."
           }
-
-      - name: Build release artifacts
-        shell: pwsh
-        run: .\scripts\build_release_windows.ps1
-
-      - name: Verify executable architectures
-        shell: pwsh
-        run: |
-          function Find-Dumpbin {
-              $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-
-              if (-not (Test-Path -LiteralPath $vswhere)) {
-                  throw "vswhere.exe was not found."
-              }
-
-              $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-
-              if ([string]::IsNullOrWhiteSpace($vsPath)) {
-                  throw "No Visual Studio installation with MSVC tools was found."
-              }
-
-              $tools = Get-ChildItem -LiteralPath (Join-Path $vsPath "VC\Tools\MSVC") |
-                  Sort-Object Name -Descending |
-                  Select-Object -First 1
-
-              if ($null -eq $tools) {
-                  throw "No MSVC toolset directory was found."
-              }
-
-              return Join-Path $tools.FullName "bin\Hostx64\x64\dumpbin.exe"
-          }
-
-          function Assert-Machine {
-              param(
-                  [Parameter(Mandatory = $true)]
-                  [string]$Exe,
-                  [Parameter(Mandatory = $true)]
-                  [string]$Pattern
-              )
-
-              if (-not (Test-Path -LiteralPath $Exe)) {
-                  throw "Expected executable was not found: $Exe"
-              }
-
-              $headers = & $script:Dumpbin /headers $Exe 2>&1
-              $text = $headers -join "`n"
-
-              if ($text -notmatch $Pattern) {
-                  throw "Executable '$Exe' did not match expected machine pattern '$Pattern'."
-              }
-          }
-
-          $script:Dumpbin = Find-Dumpbin
-          Assert-Machine -Exe "build\windows-desktop-release\Release\ClassMngr.exe" -Pattern "machine \(x64\)"
-          Assert-Machine -Exe "build\windows-arm64-release\Release\ClassMngr.exe" -Pattern "machine \(ARM64\)"
 
           $installers = @(
-              "dist\ClassMngr-*-win-x64.exe",
-              "dist\ClassMngr-*-win-arm64.exe",
-              "dist\checksums-windows.txt"
+              Get-ChildItem -Path "dist\ClassMngr-*-win-${{ matrix.artifact_arch }}.exe"
           )
 
-          foreach ($installer in $installers) {
-              if (-not (Test-Path -Path $installer)) {
-                  throw "Expected release artifact was not found: $installer"
-              }
+          if ($installers.Count -ne 1) {
+              throw "Expected exactly one installer, found $($installers.Count)."
           }
 
-      - name: Upload x64 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ClassMngr-windows-x64
-          path: dist/ClassMngr-*-win-x64.exe
+          $hash = (
+              Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256
+          ).Hash.ToLowerInvariant()
+          $checksumPath = "dist\checksums-windows-${{ matrix.artifact_arch }}.txt"
+          "$hash  $($installers[0].Name)" |
+              Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
 
-      - name: Upload ARM64 artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v7
         with:
-          name: ClassMngr-windows-arm64
-          path: dist/ClassMngr-*-win-arm64.exe
-
-      - name: Upload checksums
-        uses: actions/upload-artifact@v4
-        with:
-          name: ClassMngr-windows-checksums
-          path: dist/checksums-windows.txt
+          name: ClassMngr-windows-${{ matrix.artifact_arch }}
+          path: |
+            dist/ClassMngr-*-win-${{ matrix.artifact_arch }}.exe
+            dist/checksums-windows-${{ matrix.artifact_arch }}.txt
+          if-no-files-found: error

@@ -1,0 +1,128 @@
+name: Linux x64 Release Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/linux-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/linux-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "src/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.11.1"
+
+jobs:
+  build:
+    name: Linux x86_64
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      QT_ROOT: ${{ github.workspace }}/Qt
+      QT_LINUX_PREFIX: ${{ github.workspace }}/Qt/6.11.1/gcc_64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential \
+            libcups2-dev \
+            libgl1-mesa-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
+            libxcb1-dev \
+            libxcb-cursor-dev \
+            libxcb-icccm4-dev \
+            libxcb-image0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-randr0-dev \
+            libxcb-render-util0-dev \
+            libxcb-shape0-dev \
+            libxcb-sync-dev \
+            libxcb-xfixes0-dev \
+            libxcb-xinerama0-dev \
+            libxcb-xkb-dev \
+            ninja-build \
+            patchelf \
+            zlib1g-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install Qt
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          python -m aqt install-qt \
+            linux desktop "${QT_VERSION}" linux_gcc_64 \
+            --outputdir "${QT_ROOT}" \
+            --modules qtdeclarative qtpdf qttools
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake --fresh --preset linux-gcc-release \
+            "-DCMAKE_PREFIX_PATH=${QT_LINUX_PREFIX}" \
+            "-DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/dist/ClassMngr-linux-x86_64" \
+            -DBUILD_TESTING=OFF
+
+      - name: Build and install
+        shell: bash
+        run: |
+          cmake --build --preset linux-gcc-release --parallel
+          cmake --install build/linux-gcc-release
+
+      - name: Verify architecture and package
+        shell: bash
+        run: |
+          executable="dist/ClassMngr-linux-x86_64/bin/ClassMngr"
+
+          test -x "${executable}"
+          file "${executable}"
+          file "${executable}" | grep -q "ELF 64-bit.*x86-64"
+
+          tar -C dist \
+            -czf dist/ClassMngr-linux-x86_64.tar.gz \
+            ClassMngr-linux-x86_64
+
+          (
+            cd dist
+            sha256sum ClassMngr-linux-x86_64.tar.gz > checksums-linux.txt
+          )
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClassMngr-linux-x86_64
+          path: |
+            dist/ClassMngr-linux-x86_64.tar.gz
+            dist/checksums-linux.txt
+          if-no-files-found: error
