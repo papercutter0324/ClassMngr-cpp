@@ -1,28 +1,44 @@
 # ClassMngr 0.9.0 Release Notes
 
-ClassMngr 0.9.0 makes it much easier to bring an existing schedule into the
-app, while refining schedule printing, class setup, and release reliability.
+ClassMngr 0.9.0 introduces Excel schedule import and makes the surrounding
+workflows faster, clearer, and more dependable. This release also refines
+schedule and roster printing, class setup, Sub Prep, and navigation throughout
+the app.
 
 ## Import Schedules From Excel
 
-- Import normal or intensive schedules directly from supported Excel (`.xlsx`)
+- Import normal or intensive schedules from supported Excel (`.xlsx`)
   workbooks.
-- Choose the worksheet and the schedule section that belongs to you, with a
+- Choose the worksheet and schedule section that belong to you, with a
   confirmation step when the spreadsheet name differs from My Information.
-- Preview the imported schedule before making changes.
-- Review every imported Korean teacher, room, and class before applying the
-  import. You can reuse or update an existing record, create a new one, or
-  skip it.
-- The importer identifies invalid or overlapping cells so you can review and
-  explicitly skip them when needed.
+- Preview an imported schedule before applying any changes.
+- Review imported Korean teachers, rooms, and classes in a redesigned,
+  easier-to-scan reconciliation view. Reuse or update existing records, create
+  new ones, or skip entries as needed.
+- Improved matching helps ClassMngr reconcile imported schedule information
+  with the records already in your data.
+- Invalid or overlapping cells are identified so they can be reviewed and
+  skipped explicitly when necessary.
+- Spreadsheet imports now run in the background, keeping ClassMngr responsive
+  while the workbook is being read.
 
-## Schedule And Class Improvements
+## Schedule, Roster, And Class Improvements
 
-- Schedule printing can now use Korean teachers' preferred English names.
+- Schedule tables have clearer styling, and schedule printing can use Korean
+  teachers' preferred English names.
 - Fixed the **Hide empty rows** option so it consistently removes unused hours
   from schedule views and printed schedules.
 - Improved the Schedule layout on macOS.
+- The Roster print dialog is easier to work with on smaller screens, with a
+  refined layout and vertical scrolling for its options.
 - New classes no longer start with default regular or intensive meeting times.
+- Sub Prep now provides a simpler grade and class selector.
+
+## Interface Refinements
+
+- Standardized tab bars and improved page layouts across the app.
+- Improved button font styling on the Calendar, Roster, Classes, and Speaking
+  Evaluation pages.
 
 ## Reliability And Polish
 
