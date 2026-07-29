@@ -13,8 +13,21 @@
 #include <QPushButton>
 #include <QSizePolicy>
 
+#include <array>
+
 namespace
 {
+constexpr int DefaultClassDurationMinutes = 55;
+constexpr int LatestEndTimeMinutes = 21 * 60 + 55;
+
+constexpr std::array<int, 5> EndTimeDurations{
+    DefaultClassDurationMinutes,
+    85,
+    115,
+    175,
+    235
+};
+
 QString translatedDay(
     const QString& day
     )
@@ -329,6 +342,7 @@ ClassTimeRow::ClassTimeRow(
         );
     layout->setSizeConstraint(QLayout::SetMinimumSize);
 
+    m_previousStartMinutes = currentStartMinutes();
     updateEndTimes();
 }
 
@@ -509,76 +523,102 @@ QString ClassTimeRow::fromTotalMinutes(
         .arg(period);
 }
 
-QString ClassTimeRow::computeDefaultEndTime() const
+int ClassTimeRow::currentStartMinutes() const
 {
-    const int start =
-        toTotalMinutes(
-            m_startHourCombo->currentText(),
-            m_startMinuteCombo->currentText().mid(1),
-            m_startPeriodCombo->currentText()
-            );
-
-    return fromTotalMinutes(
-        start + 50
+    return toTotalMinutes(
+        m_startHourCombo->currentText(),
+        m_startMinuteCombo->currentText().mid(1),
+        m_startPeriodCombo->currentText()
         );
+}
+
+int ClassTimeRow::durationForEndTime(
+    const QString& endTime
+    ) const
+{
+    const QStringList parts = endTime.split(' ');
+
+    if (parts.size() != 2)
+    {
+        return DefaultClassDurationMinutes;
+    }
+
+    const QStringList timeParts = parts.first().split(':');
+
+    if (timeParts.size() != 2)
+    {
+        return DefaultClassDurationMinutes;
+    }
+
+    int duration = toTotalMinutes(
+        timeParts.first(),
+        timeParts.last(),
+        parts.last()
+        ) - m_previousStartMinutes;
+
+    if (duration <= 0)
+    {
+        duration += 24 * 60;
+    }
+
+    return std::ranges::contains(
+        EndTimeDurations,
+        duration
+        )
+        ? duration
+        : DefaultClassDurationMinutes;
+}
+
+QStringList ClassTimeRow::endTimeOptions(
+    int startMinutes
+    ) const
+{
+    QStringList options;
+    options.reserve(static_cast<qsizetype>(EndTimeDurations.size()));
+
+    for (const int duration : EndTimeDurations)
+    {
+        const int endMinutes = startMinutes + duration;
+
+        if (endMinutes <= LatestEndTimeMinutes)
+        {
+            options.append(fromTotalMinutes(endMinutes));
+        }
+    }
+
+    return options;
 }
 
 void ClassTimeRow::updateEndTimes()
 {
     m_endCombo->blockSignals(true);
 
-    const QString currentEnd =
-        m_endCombo->currentText();
+    const int duration = durationForEndTime(
+        m_endCombo->currentText()
+        );
+    const int startMinutes = currentStartMinutes();
+    const QStringList validEndTimes = endTimeOptions(startMinutes);
+    const QString matchingEndTime = fromTotalMinutes(
+        startMinutes + duration
+        );
 
     m_endCombo->clear();
-
-    const int start =
-        toTotalMinutes(
-            m_startHourCombo->currentText(),
-            m_startMinuteCombo->currentText().mid(1),
-            m_startPeriodCombo->currentText()
-            );
-
-    QStringList validEndTimes;
-
-    for (int offset = 10;
-         offset <= 240;
-         offset += 10)
-    {
-        validEndTimes.append(
-            fromTotalMinutes(
-                start + offset
-                )
-            );
-    }
-
     m_endCombo->addItems(
         validEndTimes
         );
 
-    if (validEndTimes.contains(currentEnd))
+    if (validEndTimes.contains(matchingEndTime))
     {
         m_endCombo->setCurrentText(
-            currentEnd
+            matchingEndTime
             );
     }
-    else
+    else if (!validEndTimes.isEmpty())
     {
-        const QString defaultEnd =
-            computeDefaultEndTime();
-
-        if (validEndTimes.contains(defaultEnd))
-        {
-            m_endCombo->setCurrentText(
-                defaultEnd
-                );
-        }
-        else if (!validEndTimes.isEmpty())
-        {
-            m_endCombo->setCurrentIndex(0);
-        }
+        m_endCombo->setCurrentIndex(0);
     }
 
+    m_previousStartMinutes = startMinutes;
     m_endCombo->blockSignals(false);
 
     emit rowChanged();

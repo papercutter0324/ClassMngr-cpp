@@ -845,6 +845,42 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    qt_add_executable(ClassMngrClassTimeRowTests
+        tests/class_time_row_tests.cpp
+        src/features/classes/config/class_info_config.cpp
+        src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/sectioncards/class_time_row.cpp
+    )
+
+    target_compile_features(ClassMngrClassTimeRowTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrClassTimeRowTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrClassTimeRowTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrClassTimeRowTests
+        COMMAND ClassMngrClassTimeRowTests
+    )
+
+    set_tests_properties(
+        ClassMngrClassTimeRowTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrTeacherInfoSectionTests
         tests/teacher_info_section_tests.cpp
         src/core/fontmanager.cpp

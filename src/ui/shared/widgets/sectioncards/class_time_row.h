@@ -57,7 +57,9 @@ private:
 
     static QString fromTotalMinutes(int totalMinutes);
 
-    QString computeDefaultEndTime() const;
+    int currentStartMinutes() const;
+    int durationForEndTime(const QString& endTime) const;
+    QStringList endTimeOptions(int startMinutes) const;
 
 private:
     ScheduleType m_type;
@@ -73,4 +75,6 @@ private:
 
     QComboBox* m_endCombo = nullptr;
     QPushButton* m_removeButton = nullptr;
+
+    int m_previousStartMinutes = 0;
 };
