@@ -782,6 +782,7 @@ void ScheduleImportDialogTests
     QCOMPARE(dialog.minimumHeight(), 520);
     QCOMPARE(dialog.maximumHeight(), 520);
     QCOMPARE(dialog.width(), ExpectedSourceDialogWidth);
+    QVERIFY(users->height() >= users->sizeHint().height());
 
     for (int index = 0; index < users->count(); ++index)
     {

@@ -19,6 +19,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
@@ -545,6 +546,7 @@ void ScheduleImportDialog::applyLoadedWorkbook(
         );
     updateSelectedSheet();
     updateNavigation();
+    enforceStaticSize();
 }
 
 void ScheduleImportDialog::setLoading(
@@ -804,6 +806,7 @@ void ScheduleImportDialog::updateUserSelection()
         user != nullptr
         );
     updateNavigation();
+    enforceStaticSize();
 }
 
 void ScheduleImportDialog::updateNavigation()
@@ -858,8 +861,6 @@ void ScheduleImportDialog::enforceStaticSize()
 {
     int targetWidth =
         SourceDialogWidth;
-    int targetHeight =
-        SourceDialogHeight;
 
     if (QScreen* targetScreen = screen())
     {
@@ -867,8 +868,28 @@ void ScheduleImportDialog::enforceStaticSize()
             targetScreen->availableGeometry().size();
         targetWidth =
             std::min(targetWidth, available.width());
+    }
+
+    QLayout* dialogLayout =
+        layout();
+    if (dialogLayout)
+    {
+        dialogLayout->invalidate();
+    }
+    const int layoutHeight =
+        dialogLayout
+        ? dialogLayout->totalHeightForWidth(targetWidth)
+        : 0;
+    int targetHeight =
+        std::max(SourceDialogHeight, layoutHeight);
+
+    if (QScreen* targetScreen = screen())
+    {
         targetHeight =
-            std::min(targetHeight, available.height());
+            std::min(
+                targetHeight,
+                targetScreen->availableGeometry().height()
+                );
     }
 
     setFixedHeight(
