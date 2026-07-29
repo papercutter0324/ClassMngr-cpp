@@ -48,6 +48,8 @@ constexpr int TargetRole = Qt::UserRole + 1;
 constexpr int ReviewDialogHeight = 820;
 constexpr int MaximumReviewDialogWidth = 1180;
 constexpr int MaximumPreviewVisibleRows = 6;
+constexpr int InitialPreviewWidth = 540;
+constexpr int PreviewHeadingSpacer = 16;
 constexpr int PreferredResolutionPaneWidth = 380;
 
 int timeMinutes(
@@ -1101,18 +1103,37 @@ void ScheduleImportReviewDialog::buildUi()
         );
     m_reviewSplitter->setChildrenCollapsible(false);
 
-    auto* previewPane =
+    m_previewPane =
         new QWidget(m_reviewSplitter);
-    previewPane->setObjectName(
+    m_previewPane->setObjectName(
         QStringLiteral("scheduleImportPreviewPane")
         );
+    m_previewPane->setFixedWidth(InitialPreviewWidth);
     auto* previewLayout =
-        new QVBoxLayout(previewPane);
+        new QVBoxLayout(m_previewPane);
     previewLayout->setContentsMargins(0, 0, 0, 0);
+    previewLayout->setSpacing(0);
+    m_previewHeading =
+        new QLabel(
+            tr("Schedule Preview"),
+            m_previewPane
+            );
+    m_previewHeading->setObjectName(
+        QStringLiteral("scheduleImportPreviewHeading")
+        );
+    m_previewHeading->setAlignment(
+        Qt::AlignHCenter | Qt::AlignTop
+        );
+    previewLayout->addWidget(
+        m_previewHeading,
+        0,
+        Qt::AlignTop
+        );
+    previewLayout->addSpacing(PreviewHeadingSpacer);
     m_previewWidget =
         new ScheduleWidget(
             m_services,
-            previewPane,
+            m_previewPane,
             ScheduleMode::ReadOnly
             );
     m_previewWidget->setObjectName(
@@ -1122,7 +1143,14 @@ void ScheduleImportReviewDialog::buildUi()
     m_previewWidget->setMaximumVisibleRows(
         MaximumPreviewVisibleRows
         );
-    previewLayout->addWidget(m_previewWidget, 1);
+    m_previewWidget->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Expanding
+        );
+    previewLayout->addWidget(
+        m_previewWidget,
+        1
+        );
 
     m_resolutionTabs =
         new QTabWidget(m_reviewSplitter);
@@ -1174,10 +1202,10 @@ void ScheduleImportReviewDialog::buildUi()
         tr("Classes")
         );
 
-    m_reviewSplitter->addWidget(previewPane);
+    m_reviewSplitter->addWidget(m_previewPane);
     m_reviewSplitter->addWidget(m_resolutionTabs);
-    m_reviewSplitter->setStretchFactor(0, 3);
-    m_reviewSplitter->setStretchFactor(1, 2);
+    m_reviewSplitter->setStretchFactor(0, 0);
+    m_reviewSplitter->setStretchFactor(1, 1);
     layout->addWidget(m_reviewSplitter, 1);
 
     m_reviewStatus =
@@ -1774,19 +1802,43 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             QSizePolicy::Expanding,
             QSizePolicy::Preferred
             );
-        classCardLayout->addWidget(
-            importedClassLabel
+        auto* classHeaderLayout = new QHBoxLayout();
+        classHeaderLayout->setContentsMargins(0, 0, 0, 0);
+        classHeaderLayout->setSpacing(8);
+        auto* colorLayout = new QVBoxLayout();
+        colorLayout->setContentsMargins(0, 0, 0, 0);
+        colorLayout->setSpacing(0);
+        auto* colorLabel =
+            new QLabel(
+                tr("Color"),
+                classCard
+                );
+        colorLabel->setObjectName(
+            QStringLiteral("scheduleImportClassColorLabel_%1")
+                .arg(preview.candidateIndex)
             );
+        colorLabel->setAlignment(Qt::AlignRight | Qt::AlignTop);
+        colorLayout->addWidget(
+            colorLabel,
+            0,
+            Qt::AlignRight | Qt::AlignTop
+            );
+        colorLayout->addWidget(
+            control.colorButton,
+            0,
+            Qt::AlignRight | Qt::AlignTop
+            );
+        classHeaderLayout->addWidget(
+            importedClassLabel,
+            1,
+            Qt::AlignLeft | Qt::AlignBottom
+            );
+        classHeaderLayout->addLayout(colorLayout);
+        classCardLayout->addLayout(classHeaderLayout);
         addLabeledControlRow(
             classCardLayout,
             tr("Import Action"),
             control.action,
-            classCard
-            );
-        addLabeledControlRow(
-            classCardLayout,
-            tr("Color"),
-            control.colorButton,
             classCard
             );
         classCardLayout->addWidget(
@@ -2296,6 +2348,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             m_previewWidget->displayState()
             )
         );
+    updatePreviewVisibleRows();
     const QString conflict =
         projectedScheduleConflict(projected);
     if (!conflict.isEmpty())
@@ -2397,22 +2450,8 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
     const int resolutionWidth =
         PreferredResolutionPaneWidth;
 
-    int previewWidth =
-        m_previewWidget->sizeHint().width();
-    if (
-        auto* table =
-            m_previewWidget->findChild<QTableWidget*>(
-                QStringLiteral("scheduleTable")
-                )
-        )
-    {
-        previewWidth =
-            std::max(
-                previewWidth,
-                table->horizontalHeader()->length()
-                    + (2 * table->frameWidth())
-                );
-    }
+    const int previewWidth =
+        InitialPreviewWidth;
 
     int reviewContentWidth =
         previewWidth
@@ -2462,6 +2501,82 @@ void ScheduleImportReviewDialog::resizeForReviewStage()
         );
     m_reviewSplitter->setSizes(
         {previewWidth, resolutionWidth}
+        );
+    updatePreviewVisibleRows();
+}
+
+void ScheduleImportReviewDialog::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QDialog::resizeEvent(event);
+
+    if (!m_prepared)
+    {
+        return;
+    }
+
+    if (m_previewPane && m_previewPane->layout())
+    {
+        m_previewPane->layout()->activate();
+    }
+    updatePreviewVisibleRows();
+}
+
+void ScheduleImportReviewDialog::updatePreviewVisibleRows()
+{
+    if (
+        !m_previewPane
+        || !m_previewHeading
+        || !m_previewWidget
+        )
+    {
+        return;
+    }
+
+    auto* table =
+        m_previewWidget->findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    if (!table)
+    {
+        return;
+    }
+
+    int maximumVisibleRows =
+        MaximumPreviewVisibleRows;
+    if (height() > ReviewDialogHeight)
+    {
+        const int availableTableHeight =
+            m_previewPane->contentsRect().height()
+            - m_previewHeading->height()
+            - PreviewHeadingSpacer;
+        int usedHeight =
+            table->horizontalHeader()->height()
+            + (2 * table->frameWidth());
+        int visibleRows = 0;
+
+        for (int row = 0; row < table->rowCount(); ++row)
+        {
+            const int rowHeight = table->rowHeight(row);
+            if (usedHeight + rowHeight > availableTableHeight)
+            {
+                break;
+            }
+
+            usedHeight += rowHeight;
+            ++visibleRows;
+        }
+
+        maximumVisibleRows =
+            std::max(
+                MaximumPreviewVisibleRows,
+                visibleRows
+                );
+    }
+
+    m_previewWidget->setMaximumVisibleRows(
+        maximumVisibleRows
         );
 }
 

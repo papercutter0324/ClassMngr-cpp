@@ -13,6 +13,7 @@ class QComboBox;
 class QDialogButtonBox;
 class QLabel;
 class QPushButton;
+class QResizeEvent;
 class QScrollArea;
 class QSplitter;
 class QTabWidget;
@@ -56,7 +57,13 @@ private:
     void updateClassColorButton(ClassControl* control);
     void updateReviewState();
     void resizeForReviewStage();
+    void updatePreviewVisibleRows();
     void applyImport();
+
+protected:
+    void resizeEvent(
+        QResizeEvent* event
+        ) override;
 
     [[nodiscard]] ScheduleImportPlan importPlan() const;
 
@@ -67,6 +74,8 @@ private:
 
     QWidget* m_reviewPage = nullptr;
     QSplitter* m_reviewSplitter = nullptr;
+    QWidget* m_previewPane = nullptr;
+    QLabel* m_previewHeading = nullptr;
     ScheduleWidget* m_previewWidget = nullptr;
     QLabel* m_warningLabel = nullptr;
     QCheckBox* m_warningAcknowledgement = nullptr;

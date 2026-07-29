@@ -753,6 +753,10 @@ void ScheduleWidget::buildUi()
     m_controlsWidget->setHidden(
         m_mode == ScheduleMode::ReadOnly
         );
+    if (m_mode == ScheduleMode::ReadOnly)
+    {
+        layout->addStretch();
+    }
 
     connect(
         m_use24HourTimeCheckBox,

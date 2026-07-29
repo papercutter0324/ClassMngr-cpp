@@ -831,9 +831,30 @@ void ScheduleImportDialogTests
         review->findChild<QWidget*>(
             QStringLiteral("scheduleImportPreview")
             );
+    auto* previewHeading =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportPreviewHeading")
+            );
     QVERIFY(preview);
+    QVERIFY(previewHeading);
+    QCOMPARE(
+        previewHeading->text(),
+        QStringLiteral("Schedule Preview")
+        );
+    QVERIFY(
+        previewHeading->alignment().testFlag(
+            Qt::AlignHCenter
+            )
+        );
+    QCOMPARE(
+        preview->geometry().top()
+        - previewHeading->geometry().bottom()
+        - 1,
+        16
+        );
     QVERIFY(splitter->widget(0)->isAncestorOf(preview));
     QCOMPARE(splitter->widget(1), tabs);
+    QCOMPARE(preview->width(), 540);
 
     auto* teacherScrollArea =
         review->findChild<QScrollArea*>(
@@ -966,6 +987,46 @@ void ScheduleImportDialogTests
             colorButton->toolTip()
             );
     }
+    auto* firstColorLabel =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportClassColorLabel_0")
+            );
+    auto* firstClassCandidate =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportClassCandidate_0")
+            );
+    auto* firstColorButton =
+        review->findChild<QPushButton*>(
+            QStringLiteral("scheduleImportClassColor_0")
+            );
+    auto* firstClassAction =
+        review->findChild<QComboBox*>(
+            QStringLiteral("scheduleImportClassAction_0")
+            );
+    QVERIFY(firstColorLabel);
+    QVERIFY(firstClassCandidate);
+    QVERIFY(firstColorButton);
+    QVERIFY(firstClassAction);
+    QCOMPARE(firstColorLabel->text(), QStringLiteral("Color"));
+    QVERIFY(
+        firstColorLabel->alignment().testFlag(Qt::AlignRight)
+        );
+    QCOMPARE(
+        firstClassCandidate->geometry().bottom(),
+        firstColorButton->geometry().bottom()
+        );
+    QVERIFY(
+        firstClassCandidate->geometry().right()
+        < firstColorLabel->geometry().left()
+        );
+    QVERIFY(
+        firstColorButton->geometry().bottom()
+        < firstClassAction->geometry().top()
+        );
+    QCOMPARE(
+        firstColorButton->geometry().right(),
+        firstClassAction->geometry().right()
+        );
 
     QString changedDetails;
     const auto details =
@@ -1195,7 +1256,27 @@ void ScheduleImportDialogTests
         review.findChild<QTableWidget*>(
             QStringLiteral("scheduleTable")
             );
+    auto* preview =
+        review.findChild<QWidget*>(
+            QStringLiteral("scheduleImportPreview")
+            );
     QVERIFY(table);
+    QVERIFY(preview);
+    QCOMPARE(table->geometry().top(), 0);
+    QVERIFY(preview->height() > table->height());
+    auto* tabs =
+        review.findChild<QTabWidget*>(
+            QStringLiteral("scheduleImportResolutionTabs")
+            );
+    QVERIFY(tabs);
+    const int initialTabsWidth = tabs->width();
+    review.resize(
+        review.width() + 200,
+        review.height()
+        );
+    QCoreApplication::processEvents();
+    QCOMPARE(preview->width(), 540);
+    QVERIFY(tabs->width() > initialTabsWidth);
     QCOMPARE(table->columnCount(), 8);
     QVERIFY(table->horizontalHeaderItem(6));
     QVERIFY(table->horizontalHeaderItem(7));
@@ -1325,6 +1406,21 @@ void ScheduleImportDialogTests
         expectedTableHeight += table->rowHeight(row);
     }
     QCOMPARE(table->height(), expectedTableHeight);
+
+    review.resize(
+        review.width(),
+        review.height() + 400
+        );
+    QTRY_VERIFY(table->verticalScrollBar()->maximum() == 0);
+
+    int expandedTableHeight =
+        table->horizontalHeader()->height()
+        + (2 * table->frameWidth());
+    for (int row = 0; row < table->rowCount(); ++row)
+    {
+        expandedTableHeight += table->rowHeight(row);
+    }
+    QCOMPARE(table->height(), expandedTableHeight);
 
     QLabel* essay = nullptr;
     QLabel* lunch = nullptr;
