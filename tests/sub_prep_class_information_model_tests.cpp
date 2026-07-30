@@ -112,6 +112,7 @@ void SubPrepClassInformationModelTests
     alice.id = 10;
     alice.teacherEn = QStringLiteral("Alice");
     alice.teacherKr = QStringLiteral("앨리스");
+    alice.preferredName = QStringLiteral("Alice Kim");
     alice.notes = QStringLiteral("One teacher note");
 
     Teacher bob;
@@ -173,7 +174,7 @@ void SubPrepClassInformationModelTests
             );
 
     QCOMPARE(groups.size(), 2);
-    QCOMPARE(groups.at(0).displayName, QStringLiteral("Alice"));
+    QCOMPARE(groups.at(0).displayName, QStringLiteral("Alice Kim"));
     QCOMPARE(
         groups.at(0).classListText,
         QStringLiteral("E4 Hercules / E6 Poseidon")

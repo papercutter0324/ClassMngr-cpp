@@ -89,7 +89,7 @@ Result<QList<Teacher>> loadKoreanTeachers(QSqlDatabase& database)
     QList<Teacher> result;
     QSqlQuery query(database);
     if (!query.exec(R"(
-        SELECT id, teacher_kr, teacher_en, preferred_romanization,
+        SELECT id, teacher_kr, teacher_en, preferred_romanization, preferred_name,
                room_number, birthday, phone_number, wifi_name, wifi_password,
                internet_type, zoom_id, zoom_password, projection_type, notes
         FROM teachers
@@ -105,16 +105,17 @@ Result<QList<Teacher>> loadKoreanTeachers(QSqlDatabase& database)
         teacher.teacherKr = query.value(1).toString();
         teacher.teacherEn = query.value(2).toString();
         teacher.preferredRomanization = query.value(3).toString();
-        teacher.roomNumber = query.value(4).toString();
-        teacher.birthday = query.value(5).toString();
-        teacher.phoneNumber = query.value(6).toString();
-        teacher.wifiName = query.value(7).toString();
-        teacher.wifiPassword = query.value(8).toString();
-        teacher.internetType = query.value(9).toString();
-        teacher.zoomId = query.value(10).toString();
-        teacher.zoomPassword = query.value(11).toString();
-        teacher.projectionType = query.value(12).toString();
-        teacher.notes = query.value(13).toString();
+        teacher.preferredName = query.value(4).toString();
+        teacher.roomNumber = query.value(5).toString();
+        teacher.birthday = query.value(6).toString();
+        teacher.phoneNumber = query.value(7).toString();
+        teacher.wifiName = query.value(8).toString();
+        teacher.wifiPassword = query.value(9).toString();
+        teacher.internetType = query.value(10).toString();
+        teacher.zoomId = query.value(11).toString();
+        teacher.zoomPassword = query.value(12).toString();
+        teacher.projectionType = query.value(13).toString();
+        teacher.notes = query.value(14).toString();
         result.append(teacher);
     }
     return result;
@@ -276,15 +277,16 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
             QSqlQuery query(m_database);
             query.prepare(R"(
                 INSERT INTO teachers
-                    (teacher_kr, teacher_en, preferred_romanization,
+                    (teacher_kr, teacher_en, preferred_romanization, preferred_name,
                      room_number, birthday, phone_number,
                      wifi_name, wifi_password, internet_type,
                      zoom_id, zoom_password, projection_type, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             )");
             query.addBindValue(key);
             query.addBindValue(source.teacherEn.trimmed());
             query.addBindValue(source.preferredRomanization.trimmed());
+            query.addBindValue(source.preferredName.trimmed());
             query.addBindValue(source.roomNumber.trimmed());
             query.addBindValue(source.birthday.trimmed());
             query.addBindValue(source.phoneNumber.trimmed());

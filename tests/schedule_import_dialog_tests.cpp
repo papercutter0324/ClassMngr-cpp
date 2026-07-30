@@ -1112,6 +1112,7 @@ void ScheduleImportDialogTests
         firstClassAction->geometry().right()
         );
 
+    const QLabel* changedDetailsLabel = nullptr;
     QString changedDetails;
     const auto details =
         review->findChildren<QLabel*>(
@@ -1123,17 +1124,24 @@ void ScheduleImportDialogTests
     {
         if (detail->text().contains(QStringLiteral("<ul")))
         {
+            changedDetailsLabel = detail;
             changedDetails = detail->text();
             break;
         }
     }
+    QVERIFY(changedDetailsLabel);
     QVERIFY(!changedDetails.isEmpty());
     QVERIFY(!changedDetails.contains(QStringLiteral("Imported Class:")));
     QVERIFY(
         changedDetails.contains(
             QStringLiteral(
-                "<b style=\"color:white\">Changes:</b>"
+                "<b style=\"color:%1\">Changes:</b>"
                 )
+                .arg(
+                    changedDetailsLabel->palette()
+                        .color(QPalette::Text)
+                        .name(QColor::HexRgb)
+                    )
             )
         );
     const int gradePosition =

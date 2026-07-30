@@ -84,6 +84,7 @@ private:
     void updateActions();
     void updateFieldWidths();
     void matchBirthdayWidthToKoreanName();
+    void updatePreferredNameChoices(bool promptForSelection);
 
 private:
 
@@ -122,6 +123,7 @@ private:
     QLabel* m_teacherKrLabel = nullptr;
     QLabel* m_teacherEnLabel = nullptr;
     QLabel* m_preferredRomanizationLabel = nullptr;
+    QLabel* m_preferredNameLabel = nullptr;
     QLabel* m_roomNumberLabel = nullptr;
     QLabel* m_birthdayLabel = nullptr;
     QLabel* m_phoneNumberLabel = nullptr;
@@ -135,6 +137,7 @@ private:
     QLineEdit* m_teacherKrEdit = nullptr;
     QLineEdit* m_teacherEnEdit = nullptr;
     QLineEdit* m_preferredRomanizationEdit = nullptr;
+    QComboBox* m_preferredNameCombo = nullptr;
     QLineEdit* m_roomNumberEdit = nullptr;
     QLineEdit* m_birthdayEdit = nullptr;
     QLineEdit* m_phoneNumberEdit = nullptr;

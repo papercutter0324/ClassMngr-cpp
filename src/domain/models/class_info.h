@@ -19,6 +19,7 @@ struct ClassInfo
 
     QString teacherKr;
     QString teacherEn;
+    QString teacherPreferredName;
     QString roomNumber;
     QString wifiName;
     QString wifiPassword;

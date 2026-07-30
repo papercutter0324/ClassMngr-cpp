@@ -491,6 +491,7 @@ ClassInfo ClassInfoRepository::loadClassInfo(
 
             t.teacher_kr,
             t.teacher_en,
+            t.preferred_name,
             t.room_number,
             t.wifi_name,
             t.wifi_password,
@@ -520,6 +521,8 @@ ClassInfo ClassInfoRepository::loadClassInfo(
         info.teacherId =    query.value("teacher_id").toInt();
         info.teacherKr =    query.value("teacher_kr").toString();
         info.teacherEn =    query.value("teacher_en").toString();
+        info.teacherPreferredName =
+            query.value("preferred_name").toString();
         info.roomNumber =   query.value("room_number").toString();
         info.wifiName =     query.value("wifi_name").toString();
         info.wifiPassword = query.value("wifi_password").toString();

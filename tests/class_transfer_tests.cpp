@@ -22,6 +22,7 @@ Teacher completeTeacher(
     teacher.teacherKr = QStringLiteral("김알렉스");
     teacher.teacherEn = englishName;
     teacher.preferredRomanization = QStringLiteral("Gim Allekseu");
+    teacher.preferredName = QStringLiteral("Gim Allekseu");
     teacher.roomNumber = QStringLiteral("504");
     teacher.birthday = QStringLiteral("02-29");
     teacher.phoneNumber = QStringLiteral("010-1234-5678");
@@ -218,6 +219,8 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
              QStringLiteral("wifi-password"));
     QCOMPARE(loaded->teachers.first().teacher.preferredRomanization,
              QStringLiteral("Gim Allekseu"));
+    QCOMPARE(loaded->teachers.first().teacher.preferredName,
+             QStringLiteral("Gim Allekseu"));
     QCOMPARE(loaded->teachers.first().teacher.birthday,
              QStringLiteral("02-29"));
     QCOMPARE(loaded->teachers.first().teacher.phoneNumber,
@@ -250,6 +253,7 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
         legacyJson.value(QStringLiteral("teachers")).toArray();
     QJsonObject legacyTeacher = legacyTeachers.first().toObject();
     legacyTeacher.remove(QStringLiteral("preferred_romanization"));
+    legacyTeacher.remove(QStringLiteral("preferred_name"));
     legacyTeacher.remove(QStringLiteral("birthday"));
     legacyTeacher.remove(QStringLiteral("phone_number"));
     legacyTeachers.replace(0, legacyTeacher);
@@ -262,6 +266,7 @@ void ClassTransferTests::jsonRoundTripPreservesCompletePackage()
         legacyPackage->teachers.first().teacher
             .preferredRomanization.isEmpty()
         );
+    QVERIFY(legacyPackage->teachers.first().teacher.preferredName.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.birthday.isEmpty());
     QVERIFY(legacyPackage->teachers.first().teacher.phoneNumber.isEmpty());
 }

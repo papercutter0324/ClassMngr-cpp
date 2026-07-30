@@ -14,6 +14,7 @@ public:
         KrRole,
         EnRole,
         PreferredRomanizationRole,
+        PreferredNameRole,
         RoomRole,
         BirthdayRole,
         PhoneNumberRole,

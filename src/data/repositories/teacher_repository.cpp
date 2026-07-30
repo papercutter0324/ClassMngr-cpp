@@ -70,6 +70,8 @@ Teacher teacherFromQuery(
     teacher.teacherEn =    query.value("teacher_en").toString();
     teacher.preferredRomanization =
         query.value("preferred_romanization").toString();
+    teacher.preferredName =
+        query.value("preferred_name").toString();
     teacher.roomNumber =   query.value("room_number").toString();
     teacher.birthday =     query.value("birthday").toString();
     teacher.phoneNumber =  query.value("phone_number").toString();
@@ -109,6 +111,7 @@ int TeacherRepository::createTeacher(
             teacher_kr,
             teacher_en,
             preferred_romanization,
+            preferred_name,
             room_number,
             birthday,
             phone_number,
@@ -120,12 +123,13 @@ int TeacherRepository::createTeacher(
             projection_type,
             notes
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     )");
 
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
     query.addBindValue(teacher.preferredRomanization);
+    query.addBindValue(teacher.preferredName);
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.birthday);
     query.addBindValue(teacher.phoneNumber);
@@ -170,6 +174,7 @@ void TeacherRepository::updateTeacher(
             teacher_kr=?,
             teacher_en=?,
             preferred_romanization=?,
+            preferred_name=?,
             room_number=?,
             birthday=?,
             phone_number=?,
@@ -186,6 +191,7 @@ void TeacherRepository::updateTeacher(
     query.addBindValue(teacher.teacherKr);
     query.addBindValue(teacher.teacherEn);
     query.addBindValue(teacher.preferredRomanization);
+    query.addBindValue(teacher.preferredName);
     query.addBindValue(teacher.roomNumber);
     query.addBindValue(teacher.birthday);
     query.addBindValue(teacher.phoneNumber);

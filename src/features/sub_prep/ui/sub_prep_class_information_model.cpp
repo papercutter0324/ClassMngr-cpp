@@ -172,20 +172,12 @@ QString teacherName(
     const Teacher& teacher
     )
 {
-    const QString english =
-        teacher.teacherEn.trimmed();
+    const QString preferredName =
+        teacher.preferredDisplayName();
 
-    if (!english.isEmpty())
-    {
-        return english;
-    }
-
-    const QString korean =
-        teacher.teacherKr.trimmed();
-
-    return korean.isEmpty()
+    return preferredName.isEmpty()
         ? QStringLiteral("N/A")
-        : korean;
+        : preferredName;
 }
 
 int gradeOrder(
