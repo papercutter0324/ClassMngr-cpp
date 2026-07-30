@@ -70,7 +70,9 @@ jobs:
             "--outputdir", $env:QT_ROOT,
             "--base", "https://download.qt.io",
             "--timeout", "30",
-            "--modules", "qtdeclarative", "qtpdf", "qttools"
+            # Qt Declarative and the command-line tools are included in the
+            # Qt 6.11 base package; Qt Pdf remains a separate extension.
+            "--modules", "qtpdf"
           )
 
           $maxAttempts = 3
