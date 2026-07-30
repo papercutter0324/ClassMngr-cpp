@@ -54,24 +54,43 @@ jobs:
           cd $Env:GITHUB_WORKSPACE
           python -m aqt list-qt windows desktop
 
-      - name: Install Qt x64 host tools (with retries, official mirror, verbose)
+      - name: Install Qt x64 host tools (with retries)
         shell: pwsh
         run: |
-          cd $Env:GITHUB_WORKSPACE
-          $tries = 0
-          $max = 3
-          while ($true) {
-            try {
-              python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT --modules qtdeclarative qtpdf qttools --mirror=official --verbose
+          Set-Location $Env:GITHUB_WORKSPACE
+
+          $arguments = @(
+            "-m", "aqt",
+            "install-qt",
+            "windows", "desktop",
+            $env:QT_VERSION,
+            "win64_msvc2022_64",
+            "--outputdir", $env:QT_ROOT,
+            "--base", "https://download.qt.io",
+            "--timeout", "30",
+            "--modules", "qtdeclarative", "qtpdf", "qttools"
+          )
+
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            & python @arguments
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
               break
-            } catch {
-              $tries++
-              Write-Host "aqt install failed (attempt $tries): $_"
-              if ($tries -ge $max) {
-                throw "aqt install failed after $max attempts"
-              }
-              Start-Sleep -Seconds 10
             }
+
+            if ($attempt -eq $maxAttempts) {
+              throw "aqt install failed after $maxAttempts attempts (exit code $exitCode)"
+            }
+
+            Write-Warning "aqt install failed on attempt $attempt (exit code $exitCode); retrying..."
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+
+          $qtCmake = Join-Path $env:QT_MSVC_X64_PREFIX "bin\qt-cmake.bat"
+          if (-not (Test-Path -LiteralPath $qtCmake)) {
+            throw "Qt installation is incomplete: $qtCmake was not found"
           }
 
       - name: Install Inno Setup
