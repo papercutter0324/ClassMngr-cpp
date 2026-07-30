@@ -88,47 +88,127 @@ jobs:
         shell: pwsh
         run: cmake --build --preset "windows-x64-release-installer" --parallel
 
-      - name: Verify architecture and create checksum
+      - name: Diagnostics — environment, build and tooling
+        shell: pwsh
+        run: |
+          cd $Env:GITHUB_WORKSPACE
+
+          Write-Host "=== Basic environment ==="
+          Write-Host "User: $env:USERNAME"
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          python --version 2>&1 | Write-Host
+          pip --version 2>&1 | Write-Host
+          python -m pip list --disable-pip-version-check 2>&1 | Select-Object -First 50 | Write-Host
+
+          Write-Host "=== CMake ==="
+          Get-Command cmake -ErrorAction SilentlyContinue | Format-List
+          cmake --version 2>&1 | Write-Host
+
+          Write-Host "=== Top-level workspace listing ==="
+          Get-ChildItem -Path . -Force | Select-Object Name,Mode,Length | Format-Table -AutoSize
+
+          Write-Host "=== Build directory (top levels) ==="
+          if (Test-Path build) { Get-ChildItem -Path build -Depth 2 -Force -ErrorAction SilentlyContinue | Select-Object FullName,Length | Format-Table -AutoSize } else { Write-Host "build not found" }
+
+          Write-Host "=== Dist directory contents ==="
+          if (Test-Path dist) {
+            Get-ChildItem -Path dist -File -Recurse -ErrorAction SilentlyContinue | Select-Object Name,FullName,Length | Format-Table -AutoSize
+          } else {
+            Write-Host "dist not found"
+          }
+
+          Write-Host "=== Locate vswhere and Visual Studio paths ==="
+          $vswhereGuess = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          Write-Host "vswhere guess: $vswhereGuess"
+          if (Test-Path $vswhereGuess) {
+            Write-Host "vswhere found at guessed path"
+            & $vswhereGuess -latest -products * -property installationPath 2>&1 | ForEach-Object { Write-Host "VS install: $_" }
+          } else {
+            Write-Host "vswhere not found at guessed location; trying PATH"
+            Get-Command vswhere.exe -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "vswhere in PATH: $($_.Source)" }
+          }
+
+          Write-Host "=== Try to find dumpbin.exe candidates ==="
+          $vsPaths = @()
+          try { $vsPaths = (& $vswhereGuess -latest -products * -property installationPath) 2>$null } catch { }
+          if (-not $vsPaths) {
+            try { $vsPaths = (& vswhere -latest -products * -property installationPath) 2>$null } catch { }
+          }
+          $dumpbinCandidates = @()
+          foreach ($p in $vsPaths) {
+            $dumpbinCandidates += Get-ChildItem -Path (Join-Path $p "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe") -ErrorAction SilentlyContinue
+          }
+          $dumpbinFromPath = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+          if ($dumpbinFromPath) { $dumpbinCandidates += Get-Item $dumpbinFromPath.Source }
+          if ($dumpbinCandidates.Count -eq 0) {
+            Write-Host "No dumpbin.exe candidates found. PATH dumpbin: $dumpbinFromPath"
+          } else {
+            Write-Host "dumpbin candidates:"
+            $dumpbinCandidates | Select-Object FullName | Format-Table -AutoSize
+            $chosen = $dumpbinCandidates | Sort-Object FullName -Descending | Select-Object -First 1
+            Write-Host "Using dumpbin: $($chosen.FullName)"
+            # Show a short header sample for the executable (if it exists)
+            $exe = "build\\windows-x64-release\\Release\\ClassMngr.exe"
+            if (Test-Path -LiteralPath $exe) {
+              & $chosen.FullName /headers $exe 2>&1 | Select-Object -First 60 | ForEach-Object { Write-Host $_ }
+            } else {
+              Write-Host "Executable not present at $exe — build step may have failed earlier"
+            }
+          }
+
+      - name: Verify architecture and create checksum (more robust)
         shell: pwsh
         run: |
           $executable = "build\windows-x64-release\Release\ClassMngr.exe"
 
           if (-not (Test-Path -LiteralPath $executable)) {
+              Write-Host "ERROR: Expected executable was not found: $executable"
+              Write-Host "Listing build directory to help debugging:"
+              if (Test-Path build) { Get-ChildItem -Path build -Recurse -File | Select-Object FullName,Length | Format-Table -AutoSize }
               throw "Expected executable was not found: $executable"
           }
 
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $vsPath = & $vswhere -latest -products * -property installationPath
-          $dumpbin = Get-ChildItem -Path (
-              Join-Path $vsPath "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe"
-          ) |
-              Sort-Object FullName -Descending |
-              Select-Object -First 1
+          # Find dumpbin robustly
+          $dumpbin = $null
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (Test-Path $vswhere) {
+            $vsPath = (& $vswhere -latest -products * -property installationPath) 2>$null
+            foreach ($p in $vsPath) {
+              $candidate = Get-ChildItem -Path (Join-Path $p "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe") -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+              if ($candidate) { $dumpbin = $candidate; break }
+            }
+          }
+          if (-not $dumpbin) {
+            $cmd = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $dumpbin = Get-Item $cmd.Source }
+          }
 
           if ($null -eq $dumpbin) {
+              Write-Host "ERROR: dumpbin.exe was not found. Searched vswhere guessed path and PATH."
+              Write-Host "Please ensure Visual Studio Build Tools (dumpbin) are available on the runner."
               throw "dumpbin.exe was not found in the Visual Studio installation."
           }
 
           $headers = (& $dumpbin.FullName /headers $executable 2>&1) -join "`n"
+          Write-Host "=== dumpbin /headers sample ==="
+          $headers.Split("`n") | Select-Object -First 60 | ForEach-Object { Write-Host $_ }
 
           if ($headers -notmatch 'machine \(x64\)') {
               throw "Executable did not have the expected x64 architecture."
           }
 
-          $installers = @(
-              Get-ChildItem -Path "dist\ClassMngr-*-win-x64.exe"
-          )
-
+          # Find installers; be explicit and.verbose for debugging
+          $installers = Get-ChildItem -Path "dist" -Filter "*win-x64.exe" -File -ErrorAction SilentlyContinue
+          Write-Host "Installers found: $($installers.Count)"
           if ($installers.Count -ne 1) {
+              Write-Host "Detailed dist contents:"
+              if (Test-Path dist) { Get-ChildItem -Path dist -Recurse -File | Select-Object FullName,Length | Format-Table -AutoSize }
               throw "Expected exactly one installer, found $($installers.Count)."
           }
 
-          $hash = (
-              Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256
-          ).Hash.ToLowerInvariant()
+          $hash = (Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
           $checksumPath = "dist\checksums-windows-x64.txt"
-          "$hash  $($installers[0].Name)" |
-              Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
+          "$hash  $($installers[0].Name)" | Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
