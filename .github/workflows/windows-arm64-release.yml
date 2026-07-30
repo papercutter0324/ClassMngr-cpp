@@ -25,6 +25,9 @@ concurrency:
 env:
   QT_VERSION: "6.11.1"
   QT_ROOT: "C:\\Qt"
+  # The ARM64 kit is cross-compiled, so its CMake package needs native x64
+  # Qt tools from an installation with the same Qt version.
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
   QT_MSVC_ARM64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_arm64"
 
 jobs:
@@ -55,6 +58,59 @@ jobs:
         run: |
           cd $Env:GITHUB_WORKSPACE
           python -m aqt list-qt windows desktop
+
+      - name: Install Qt x64 host tools (with retries)
+        shell: pwsh
+        run: |
+          Set-Location $Env:GITHUB_WORKSPACE
+
+          # Qt's ARM64 package is cross-compiled.  QT_HOST_PATH must refer to
+          # native tools, including qtpaths and lconvert, from the same Qt
+          # version.  qttools supplies lconvert; qtpdf keeps the host and
+          # target module sets aligned.
+          $arguments = @(
+            "-m", "aqt",
+            "install-qt",
+            "windows", "desktop",
+            $env:QT_VERSION,
+            "win64_msvc2022_64",
+            "--outputdir", $env:QT_ROOT,
+            "--base", "https://download.qt.io",
+            "--timeout", "30",
+            "--modules", "qttools", "qtpdf"
+          )
+
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            & python @arguments
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
+              break
+            }
+
+            if ($attempt -eq $maxAttempts) {
+              throw "aqt host-tools installation failed after $maxAttempts attempts (exit code $exitCode)"
+            }
+
+            Write-Warning "aqt host-tools installation failed on attempt $attempt (exit code $exitCode); retrying..."
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+
+          $qtpaths = @(
+            @(
+              (Join-Path $env:QT_MSVC_X64_PREFIX "bin\\qtpaths6.exe"),
+              (Join-Path $env:QT_MSVC_X64_PREFIX "bin\\qtpaths.exe")
+            ) | Where-Object { Test-Path -LiteralPath $_ }
+          )
+          if ($qtpaths.Count -eq 0) {
+            throw "Qt host installation is incomplete: qtpaths was not found under $env:QT_MSVC_X64_PREFIX\\bin"
+          }
+
+          $lconvert = Join-Path $env:QT_MSVC_X64_PREFIX "bin\\lconvert.exe"
+          if (-not (Test-Path -LiteralPath $lconvert)) {
+            throw "Qt host installation is incomplete: $lconvert was not found"
+          }
 
       - name: Install Qt ARM64 target (with retries)
         shell: pwsh
@@ -105,7 +161,7 @@ jobs:
         shell: pwsh
         run: |
           cd $Env:GITHUB_WORKSPACE
-          cmake --fresh --preset "windows-arm64-release" "-DCMAKE_PREFIX_PATH=$env:QT_MSVC_ARM64_PREFIX" -DBUILD_TESTING=OFF
+          cmake --fresh --preset "windows-arm64-release" "-DCMAKE_PREFIX_PATH=$env:QT_MSVC_ARM64_PREFIX" "-DQT_HOST_PATH=$env:QT_MSVC_X64_PREFIX" -DBUILD_TESTING=OFF
 
       - name: Build installer
         shell: pwsh
