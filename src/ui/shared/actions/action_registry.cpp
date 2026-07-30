@@ -3,11 +3,13 @@
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/constants/options.h"
+#include "ui/shared/styles/themed_icon_utils.h"
 
 #include <QAction>
 #include <QActionGroup>
 #include <QKeySequence>
 #include <QApplication>
+#include <QIcon>
 #include <QStyle>
 
 namespace
@@ -25,6 +27,16 @@ void updateActionText(
 
     action->setText(text);
     action->setStatusTip(statusTip);
+}
+
+QIcon themedThemeIcon(
+    QIcon::ThemeIcon icon
+    )
+{
+    return ThemedIconUtils::recolor(
+        QIcon::fromTheme(icon),
+        QApplication::palette()
+        );
 }
 }
 
@@ -326,6 +338,98 @@ void ActionRegistry::retranslate()
         );
 }
 
+void ActionRegistry::refreshThemedIcons()
+{
+    if (newFile)
+    {
+        newFile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_FileIcon
+                )
+            );
+    }
+
+    if (openFile)
+    {
+        openFile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogOpenButton
+                )
+            );
+    }
+
+    if (saveFile)
+    {
+        saveFile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogSaveButton
+                )
+            );
+    }
+
+    if (saveAsFile)
+    {
+        saveAsFile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogSaveButton
+                )
+            );
+    }
+
+    if (closeFile)
+    {
+        closeFile->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_DialogCloseButton
+                )
+            );
+    }
+
+    if (exitApp)
+    {
+        exitApp->setIcon(
+            QApplication::style()->standardIcon(
+                QStyle::SP_MessageBoxInformation
+                )
+            );
+    }
+
+    if (undo)
+    {
+        undo->setIcon(
+            themedThemeIcon(QIcon::ThemeIcon::EditUndo)
+            );
+    }
+
+    if (redo)
+    {
+        redo->setIcon(
+            themedThemeIcon(QIcon::ThemeIcon::EditRedo)
+            );
+    }
+
+    if (cut)
+    {
+        cut->setIcon(
+            themedThemeIcon(QIcon::ThemeIcon::EditCut)
+            );
+    }
+
+    if (copy)
+    {
+        copy->setIcon(
+            themedThemeIcon(QIcon::ThemeIcon::EditCopy)
+            );
+    }
+
+    if (paste)
+    {
+        paste->setIcon(
+            themedThemeIcon(QIcon::ThemeIcon::EditPaste)
+            );
+    }
+}
+
 // =========================================================
 // File Actions
 // =========================================================
@@ -400,35 +504,35 @@ void ActionRegistry::createEditActions()
 {
     undo =
         createAction(
-            QIcon::fromTheme(QIcon::ThemeIcon::EditUndo),
+            themedThemeIcon(QIcon::ThemeIcon::EditUndo),
             tr("Undo"),
             tr("Undo the last action")
             );
 
     redo =
         createAction(
-            QIcon::fromTheme(QIcon::ThemeIcon::EditRedo),
+            themedThemeIcon(QIcon::ThemeIcon::EditRedo),
             tr("Redo"),
             tr("Redo the last undone action")
             );
 
     cut =
         createAction(
-            QIcon::fromTheme(QIcon::ThemeIcon::EditCut),
+            themedThemeIcon(QIcon::ThemeIcon::EditCut),
             tr("Cut"),
             tr("Cut the selected content")
             );
 
     copy =
         createAction(
-            QIcon::fromTheme(QIcon::ThemeIcon::EditCopy),
+            themedThemeIcon(QIcon::ThemeIcon::EditCopy),
             tr("Copy"),
             tr("Copy the selected content")
             );
 
     paste =
         createAction(
-            QIcon::fromTheme(QIcon::ThemeIcon::EditPaste),
+            themedThemeIcon(QIcon::ThemeIcon::EditPaste),
             tr("Paste"),
             tr("Paste content from the clipboard")
             );

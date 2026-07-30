@@ -17,6 +17,7 @@ public:
 
     void createActions();
     void retranslate();
+    void refreshThemedIcons();
 
     // =====================================================
     // Option States (NEW SYSTEM)

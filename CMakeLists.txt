@@ -846,6 +846,41 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    qt_add_executable(ClassMngrFileDialogIconStyleTests
+        tests/file_dialog_icon_style_tests.cpp
+        src/ui/shared/styles/file_dialog_icon_style.cpp
+        src/ui/shared/styles/themed_icon_utils.cpp
+    )
+
+    target_compile_features(ClassMngrFileDialogIconStyleTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrFileDialogIconStyleTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrFileDialogIconStyleTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrFileDialogIconStyleTests
+        COMMAND ClassMngrFileDialogIconStyleTests
+    )
+
+    set_tests_properties(
+        ClassMngrFileDialogIconStyleTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrClassTimeRowTests
         tests/class_time_row_tests.cpp
         src/features/classes/config/class_info_config.cpp

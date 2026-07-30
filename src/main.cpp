@@ -9,6 +9,7 @@
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
+#include "ui/shared/styles/file_dialog_icon_style.h"
 #include "core/utils/platform.h"
 
 #include <QApplication>
@@ -144,7 +145,14 @@ int main(int argc, char *argv[])
 
     processStartupTimer.start();
 
+    QApplication::setAttribute(
+        Qt::AA_DontUseNativeDialogs
+        );
     QApplication app(argc, argv);
+
+    app.setStyle(
+        new FileDialogIconStyle()
+        );
 
     const StartupPerformanceMode startupPerformance =
         startupPerformanceMode(
