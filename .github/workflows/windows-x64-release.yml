@@ -62,7 +62,7 @@ jobs:
           $max = 3
           while ($true) {
             try {
-              python -m aqt --verbose install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT --modules qtdeclarative qtpdf qttools --mirror=official
+              python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT --modules qtdeclarative qtpdf qttools --mirror=official --verbose
               break
             } catch {
               $tries++
