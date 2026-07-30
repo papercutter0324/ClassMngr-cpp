@@ -229,8 +229,46 @@ Status validateProjectedSchedule(
         QString label;
         ClassTime time;
     };
+    struct ProjectedClass
+    {
+        QString label;
+        QList<ClassTime> times;
+    };
 
-    QList<Scheduled> projected;
+    QHash<int, ProjectedClass> projectedClasses;
+    const bool preservesAbsentIntensiveClasses =
+        plan.kind == ScheduleImportKind::Intensive
+        && plan.intensiveMode
+            == ScheduleImportIntensiveMode::UpdateExisting;
+
+    if (preservesAbsentIntensiveClasses)
+    {
+        for (
+            auto iterator = existingInfo.cbegin();
+            iterator != existingInfo.cend();
+            ++iterator
+            )
+        {
+            const QList<ClassTime> times =
+                selectedTimes(iterator.value(), plan.kind);
+            if (times.isEmpty())
+            {
+                continue;
+            }
+            projectedClasses.insert(
+                iterator.key(),
+                {
+                    QStringLiteral("%1 %2")
+                        .arg(
+                            iterator.value().classGrade,
+                            iterator.value().classLevel
+                            )
+                        .simplified(),
+                    times
+                }
+                );
+        }
+    }
 
     for (int index = 0; index < plan.candidates.size(); ++index)
     {
@@ -248,24 +286,30 @@ Status validateProjectedSchedule(
         const ScheduleImportClassCandidate& candidate =
             plan.candidates[index];
 
-        QList<ClassTime> times;
         if (resolution.action == ScheduleImportClassAction::Skip)
         {
             if (
-                resolution.targetClassId > 0
+                !preservesAbsentIntensiveClasses
+                && resolution.targetClassId > 0
                 && existingInfo.contains(resolution.targetClassId)
                 )
             {
-                times =
-                    selectedTimes(
-                        existingInfo.value(resolution.targetClassId),
-                        plan.kind
-                        );
+                const ClassInfo info =
+                    existingInfo.value(resolution.targetClassId);
+                projectedClasses.insert(
+                    resolution.targetClassId,
+                    {
+                        QStringLiteral("%1 %2")
+                            .arg(
+                                info.classGrade,
+                                info.classLevel
+                                )
+                            .simplified(),
+                        selectedTimes(info, plan.kind)
+                    }
+                    );
             }
-        }
-        else
-        {
-            times = candidate.times;
+            continue;
         }
 
         const QString label =
@@ -274,8 +318,21 @@ Status validateProjectedSchedule(
                     candidate.classGrade,
                     candidate.classLevel
                     );
+        const int projectedId =
+            resolution.action
+                == ScheduleImportClassAction::UpdateExisting
+                ? resolution.targetClassId
+                : -(index + 1);
+        projectedClasses.insert(
+            projectedId,
+            {label, candidate.times}
+            );
+    }
 
-        for (const ClassTime& time : times)
+    QList<Scheduled> projected;
+    for (const ProjectedClass& classroom : projectedClasses)
+    {
+        for (const ClassTime& time : classroom.times)
         {
             Interval interval;
             if (!intervalFor(time, &interval))
@@ -285,7 +342,7 @@ Status validateProjectedSchedule(
                         "%1 contains an invalid time: %2 %3–%4"
                         )
                         .arg(
-                            label,
+                            classroom.label,
                             time.day,
                             time.startTime,
                             time.endTime
@@ -302,7 +359,7 @@ Status validateProjectedSchedule(
                             "The proposed schedule overlaps: %1 conflicts with %2 on %3."
                             )
                             .arg(
-                                label,
+                                classroom.label,
                                 other.label,
                                 time.day
                                 )
@@ -310,7 +367,7 @@ Status validateProjectedSchedule(
                 }
             }
 
-            projected.append({label, time});
+            projected.append({classroom.label, time});
         }
     }
 
@@ -453,6 +510,16 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     ScheduleImportPreview result;
     result.kind = kind;
     result.user = user;
+    result.inventory.classCount = classrooms.size();
+    for (const ClassInfo& info : classInfo)
+    {
+        result.inventory.hasRegularHours =
+            result.inventory.hasRegularHours
+            || !info.classTimes.isEmpty();
+        result.inventory.hasIntensiveHours =
+            result.inventory.hasIntensiveHours
+            || !info.intensiveTimes.isEmpty();
+    }
 
     QSet<QString> seenTeacherKeys;
     for (const ScheduleImportClassCandidate& candidate : user.classes)
@@ -531,10 +598,12 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         }
 
         QList<int> exact;
-        QList<int> sameLevelTeacherRoom;
-        QList<int> sameLevelTeacher;
-        QList<int> sameLevel;
-        QList<int> otherEligible;
+        QList<int> sameCourseTeacherRoomSameDays;
+        QList<int> sameCourseTeacherRoom;
+        QList<int> sameCourseTeacherSameDays;
+        QList<int> sameCourseTeacher;
+        QList<int> sameCourseSameDays;
+        QList<int> sameCourse;
 
         for (const Classroom& classroom : classrooms)
         {
@@ -551,9 +620,6 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
                 continue;
             }
 
-            const bool levelMatches =
-                normalized(info.classLevel)
-                    == normalized(candidate.classLevel);
             const bool teacherMatches =
                 importedTeacherIds.contains(info.teacherId);
             const bool roomMatches =
@@ -566,46 +632,76 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
                             == normalized(info.roomNumber);
                     }
                     );
-            const bool daysMatch =
-                scheduleImportMeetingDaysMatch(
+            const QList<ClassTime> targetTimes =
+                scheduleImportTargetTimesForKind(info, kind);
+            const bool targetDaysMatch =
+                !targetTimes.isEmpty()
+                && scheduleImportMeetingDaysMatch(
                     candidate.times,
-                    scheduleImportTimesForKind(info, kind)
+                    targetTimes
+                    );
+            const QList<ClassTime> referenceTimes =
+                scheduleImportTimesForKind(info, kind);
+            const bool referenceDaysMatch =
+                !referenceTimes.isEmpty()
+                && scheduleImportMeetingDaysMatch(
+                    candidate.times,
+                    referenceTimes
                     );
 
             if (
-                levelMatches
-                && teacherMatches
+                teacherMatches
                 && roomMatches
-                && daysMatch
+                && targetDaysMatch
                 )
             {
                 appendUnique(&exact, classroom.id);
             }
             else if (
-                levelMatches
-                && teacherMatches
+                teacherMatches
+                && roomMatches
+                && referenceDaysMatch
+                )
+            {
+                appendUnique(
+                    &sameCourseTeacherRoomSameDays,
+                    classroom.id
+                    );
+            }
+            else if (
+                teacherMatches
                 && roomMatches
                 )
             {
                 appendUnique(
-                    &sameLevelTeacherRoom,
+                    &sameCourseTeacherRoom,
                     classroom.id
                     );
             }
-            else if (levelMatches && teacherMatches)
+            else if (teacherMatches && referenceDaysMatch)
             {
                 appendUnique(
-                    &sameLevelTeacher,
+                    &sameCourseTeacherSameDays,
                     classroom.id
                     );
             }
-            else if (levelMatches)
+            else if (teacherMatches)
             {
-                appendUnique(&sameLevel, classroom.id);
+                appendUnique(
+                    &sameCourseTeacher,
+                    classroom.id
+                    );
+            }
+            else if (referenceDaysMatch)
+            {
+                appendUnique(
+                    &sameCourseSameDays,
+                    classroom.id
+                    );
             }
             else
             {
-                appendUnique(&otherEligible, classroom.id);
+                appendUnique(&sameCourse, classroom.id);
             }
         }
 
@@ -613,19 +709,27 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameLevelTeacherRoom)
+        for (int classId : sameCourseTeacherRoomSameDays)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameLevelTeacher)
+        for (int classId : sameCourseTeacherRoom)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : sameLevel)
+        for (int classId : sameCourseTeacherSameDays)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
-        for (int classId : otherEligible)
+        for (int classId : sameCourseTeacher)
+        {
+            appendUnique(&classPreview.matchingClassIds, classId);
+        }
+        for (int classId : sameCourseSameDays)
+        {
+            appendUnique(&classPreview.matchingClassIds, classId);
+        }
+        for (int classId : sameCourse)
         {
             appendUnique(&classPreview.matchingClassIds, classId);
         }
@@ -635,7 +739,59 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
             classPreview.suggestedClassId =
                 exact.first();
             classPreview.exactMatch = true;
+            classPreview.matchConfidence =
+                ScheduleImportClassMatchConfidence::Confident;
+            classPreview.matchExplanation =
+                QObject::tr(
+                    "One existing class matches the imported grade, level, Korean teacher, room, and meeting days."
+                    );
             exactTargets.insert(exact.first());
+        }
+        else if (!classPreview.matchingClassIds.isEmpty())
+        {
+            classPreview.suggestedClassId =
+                classPreview.matchingClassIds.first();
+            classPreview.matchConfidence =
+                ScheduleImportClassMatchConfidence::Possible;
+
+            bool hasTargetHours = false;
+            bool hasOtherHours = false;
+            for (int classId : classPreview.matchingClassIds)
+            {
+                const ClassInfo info = classInfo.value(classId);
+                hasTargetHours =
+                    hasTargetHours
+                    || !scheduleImportTargetTimesForKind(
+                        info,
+                        kind
+                        ).isEmpty();
+                hasOtherHours =
+                    hasOtherHours
+                    || !scheduleImportTimesForKind(
+                        info,
+                        kind
+                        ).isEmpty();
+            }
+
+            classPreview.matchExplanation =
+                hasTargetHours
+                    ? QObject::tr(
+                        "Possible existing classes share the imported grade and level and have a compatible weekday group."
+                        )
+                    : hasOtherHours
+                        ? QObject::tr(
+                            "Possible existing classes have hours only in the other schedule type; their grade, level, and weekday group are compatible."
+                            )
+                        : QObject::tr(
+                            "Possible existing classes share the imported grade and level but have no schedule hours to compare."
+                            );
+        }
+        else
+        {
+            classPreview.matchExplanation =
+                QObject::tr(
+                    "No existing class has the same grade and level with a compatible weekday group."
+                    );
         }
 
         result.classes.append(classPreview);
@@ -662,6 +818,21 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     {
         return std::unexpected(
             QObject::tr("No database is open.")
+            );
+    }
+
+    if (
+        plan.kind == ScheduleImportKind::Intensive
+        && plan.intensiveMode
+            != ScheduleImportIntensiveMode::UpdateExisting
+        && plan.intensiveMode
+            != ScheduleImportIntensiveMode::ReplaceWithNew
+        )
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Choose how the existing intensive schedule should be handled."
+                )
             );
     }
 
@@ -1226,6 +1397,10 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         plan.kind == ScheduleImportKind::Intensive
             ? QStringLiteral("class_intensive_times")
             : QStringLiteral("class_times");
+    const bool preservesAbsentIntensiveClasses =
+        plan.kind == ScheduleImportKind::Intensive
+        && plan.intensiveMode
+            == ScheduleImportIntensiveMode::UpdateExisting;
     QHash<int, QList<ClassTime>> finalTimes;
     for (int index = 0; index < plan.candidates.size(); ++index)
     {
@@ -1241,7 +1416,8 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         {
             ++summary.classesSkipped;
             if (
-                resolution.targetClassId > 0
+                !preservesAbsentIntensiveClasses
+                && resolution.targetClassId > 0
                 && existingInfo.contains(resolution.targetClassId)
                 )
             {
@@ -1357,23 +1533,54 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         finalTimes.insert(classId, candidate.times);
     }
 
-    for (const Classroom& classroom : existingClasses)
+    if (!preservesAbsentIntensiveClasses)
     {
-        const bool hadTimes =
-            !selectedTimes(
-                existingInfo.value(classroom.id),
-                plan.kind
-                ).isEmpty();
-        if (
-            hadTimes
-            && !finalTimes.contains(classroom.id)
-            )
+        for (const Classroom& classroom : existingClasses)
         {
-            ++summary.schedulesCleared;
+            const bool hadTimes =
+                !selectedTimes(
+                    existingInfo.value(classroom.id),
+                    plan.kind
+                    ).isEmpty();
+            if (
+                hadTimes
+                && !finalTimes.contains(classroom.id)
+                )
+            {
+                ++summary.schedulesCleared;
+            }
         }
     }
 
-    if (
+    if (preservesAbsentIntensiveClasses)
+    {
+        query.prepare(
+            QStringLiteral(
+                "DELETE FROM %1 WHERE class_id=?"
+                )
+                .arg(timeTable)
+            );
+        for (
+            auto iterator = finalTimes.cbegin();
+            iterator != finalTimes.cend();
+            ++iterator
+            )
+        {
+            query.bindValue(0, iterator.key());
+            if (!query.exec())
+            {
+                return std::unexpected(
+                    queryFailure(
+                        query,
+                        QObject::tr(
+                            "Clearing an existing intensive class schedule"
+                            )
+                        )
+                    );
+            }
+        }
+    }
+    else if (
         !query.exec(
             QStringLiteral("DELETE FROM %1")
                 .arg(timeTable)

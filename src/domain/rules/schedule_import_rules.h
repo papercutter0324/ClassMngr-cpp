@@ -83,14 +83,27 @@ inline QList<ClassTime> scheduleImportTimesForKind(
     ScheduleImportKind kind
     )
 {
-    if (
+    const QList<ClassTime>& preferred =
         kind == ScheduleImportKind::Intensive
-        && !info.intensiveTimes.isEmpty()
-        )
+            ? info.intensiveTimes
+            : info.classTimes;
+    if (!preferred.isEmpty())
     {
-        return info.intensiveTimes;
+        return preferred;
     }
-    return info.classTimes;
+    return kind == ScheduleImportKind::Intensive
+        ? info.classTimes
+        : info.intensiveTimes;
+}
+
+inline QList<ClassTime> scheduleImportTargetTimesForKind(
+    const ClassInfo& info,
+    ScheduleImportKind kind
+    )
+{
+    return kind == ScheduleImportKind::Intensive
+        ? info.intensiveTimes
+        : info.classTimes;
 }
 
 inline bool scheduleImportClassOptionIsEligible(
@@ -103,9 +116,16 @@ inline bool scheduleImportClassOptionIsEligible(
         existing.classGrade.simplified(),
         Qt::CaseInsensitive
         ) == 0
-        && scheduleImportDaysAreCompatible(
-            candidate.times,
-            scheduleImportTimesForKind(existing, kind)
+        && candidate.classLevel.simplified().compare(
+            existing.classLevel.simplified(),
+            Qt::CaseInsensitive
+            ) == 0
+        && (
+            scheduleImportTimesForKind(existing, kind).isEmpty()
+            || scheduleImportDaysAreCompatible(
+                candidate.times,
+                scheduleImportTimesForKind(existing, kind)
+                )
             );
 }
 

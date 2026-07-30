@@ -13,6 +13,19 @@ enum class ScheduleImportKind
     Intensive
 };
 
+enum class ScheduleImportIntensiveMode
+{
+    UpdateExisting,
+    ReplaceWithNew
+};
+
+enum class ScheduleImportClassMatchConfidence
+{
+    None,
+    Possible,
+    Confident
+};
+
 struct ScheduleImportDiagnostic
 {
     QString sheetName;
@@ -72,11 +85,22 @@ struct ScheduleImportClassPreview
     QList<int> matchingClassIds;
     int suggestedClassId = -1;
     bool exactMatch = false;
+    ScheduleImportClassMatchConfidence matchConfidence =
+        ScheduleImportClassMatchConfidence::None;
+    QString matchExplanation;
+};
+
+struct ScheduleImportInventory
+{
+    int classCount = 0;
+    bool hasRegularHours = false;
+    bool hasIntensiveHours = false;
 };
 
 struct ScheduleImportPreview
 {
     ScheduleImportKind kind = ScheduleImportKind::Normal;
+    ScheduleImportInventory inventory;
     ScheduleImportUserBlock user;
     QList<ScheduleImportTeacherPreview> teachers;
     QList<ScheduleImportClassPreview> classes;
@@ -120,6 +144,8 @@ struct ScheduleImportClassResolution
 struct ScheduleImportPlan
 {
     ScheduleImportKind kind = ScheduleImportKind::Normal;
+    ScheduleImportIntensiveMode intensiveMode =
+        ScheduleImportIntensiveMode::UpdateExisting;
     QString selectedUserName;
     bool saveProfileNameIfBlank = false;
     bool unknownCellsAcknowledged = false;

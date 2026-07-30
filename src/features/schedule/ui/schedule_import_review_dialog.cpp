@@ -20,6 +20,7 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFrame>
+#include <QGroupBox>
 #include <QHash>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -27,6 +28,7 @@
 #include <QMessageBox>
 #include <QPalette>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QScrollArea>
 #include <QScreen>
 #include <QSet>
@@ -52,6 +54,8 @@ constexpr int MaximumPreviewVisibleRows = 6;
 constexpr int InitialPreviewWidth = 540;
 constexpr int PreviewHeadingSpacer = 16;
 constexpr int PreferredResolutionPaneWidth = 380;
+constexpr int RegularPreviewFirstHour = 16;
+constexpr int RegularPreviewLastHour = 21;
 
 int timeMinutes(
     const QString& value
@@ -876,22 +880,25 @@ ScheduleViewModel previewModel(
     QHash<QString, QString> slotStates;
     bool uses55Endings = false;
 
-    for (const IntensiveSlotState& state :
-         user.intensiveSlotStates)
+    if (useIntensive)
     {
-        const int start =
-            timeMinutes(state.startTime);
-        if (start < 0)
+        for (const IntensiveSlotState& state :
+             user.intensiveSlotStates)
         {
-            continue;
+            const int start =
+                timeMinutes(state.startTime);
+            if (start < 0)
+            {
+                continue;
+            }
+            starts.insert(start);
+            slotStates.insert(
+                state.day
+                    + QLatin1Char('\x1f')
+                    + QString::number(start),
+                state.state
+                );
         }
-        starts.insert(start);
-        slotStates.insert(
-            state.day
-                + QLatin1Char('\x1f')
-                + QString::number(start),
-            state.state
-            );
     }
 
     for (const ScheduleImportClassCandidate& candidate : user.classes)
@@ -933,6 +940,16 @@ ScheduleViewModel previewModel(
                 + QLatin1Char('\x1f')
                 + QString::number(start)
                 ].append(entry);
+        }
+    }
+
+    if (!useIntensive)
+    {
+        for (int hour = RegularPreviewFirstHour;
+             hour <= RegularPreviewLastHour;
+             ++hour)
+        {
+            starts.insert(hour * 60);
         }
     }
 
@@ -979,14 +996,20 @@ ScheduleViewModel previewModel(
                     + QString::number(start)
                     );
             cell.defaultSlotState =
-                scheduleEmptySlotState();
+                useIntensive
+                    ? scheduleEmptySlotState()
+                    : scheduleEssaySlotState();
             cell.slotState =
-                slotStates.value(
-                    day
-                        + QLatin1Char('\x1f')
-                        + QString::number(start),
-                    scheduleEmptySlotState()
-                    );
+                useIntensive
+                    ? slotStates.value(
+                        day
+                            + QLatin1Char('\x1f')
+                            + QString::number(start),
+                        scheduleEmptySlotState()
+                        )
+                    : cell.entries.isEmpty()
+                        ? scheduleEssaySlotState()
+                        : scheduleEmptySlotState();
             row.maxEntryCount =
                 std::max(
                     row.maxEntryCount,
@@ -1113,6 +1136,45 @@ void ScheduleImportReviewDialog::buildUi()
             )
         );
     layout->addWidget(subtitle);
+
+    m_intensiveModeSection =
+        new QGroupBox(
+            tr("Existing intensive schedule"),
+            m_reviewPage
+            );
+    m_intensiveModeSection->setObjectName(
+        QStringLiteral("scheduleImportIntensiveModeSection")
+        );
+    auto* intensiveModeLayout =
+        new QVBoxLayout(m_intensiveModeSection);
+    auto* intensiveModePrompt =
+        new QLabel(
+            tr("How should this import handle the existing intensive schedule?"),
+            m_intensiveModeSection
+            );
+    intensiveModePrompt->setWordWrap(true);
+    m_updateIntensiveRadio =
+        new QRadioButton(
+            tr("Update existing intensive schedule"),
+            m_intensiveModeSection
+            );
+    m_updateIntensiveRadio->setObjectName(
+        QStringLiteral("scheduleImportUpdateIntensiveRadio")
+        );
+    m_replaceIntensiveRadio =
+        new QRadioButton(
+            tr("Create a brand-new intensive schedule"),
+            m_intensiveModeSection
+            );
+    m_replaceIntensiveRadio->setObjectName(
+        QStringLiteral("scheduleImportReplaceIntensiveRadio")
+        );
+    m_updateIntensiveRadio->setChecked(true);
+    intensiveModeLayout->addWidget(intensiveModePrompt);
+    intensiveModeLayout->addWidget(m_updateIntensiveRadio);
+    intensiveModeLayout->addWidget(m_replaceIntensiveRadio);
+    m_intensiveModeSection->setVisible(false);
+    layout->addWidget(m_intensiveModeSection);
 
     m_reviewSplitter =
         new QSplitter(
@@ -1287,6 +1349,18 @@ void ScheduleImportReviewDialog::buildUi()
         this,
         &ScheduleImportReviewDialog::applyImport
         );
+    connect(
+        m_updateIntensiveRadio,
+        &QRadioButton::toggled,
+        this,
+        &ScheduleImportReviewDialog::updateReviewState
+        );
+    connect(
+        m_replaceIntensiveRadio,
+        &QRadioButton::toggled,
+        this,
+        &ScheduleImportReviewDialog::updateReviewState
+        );
 }
 
 bool ScheduleImportReviewDialog::prepare()
@@ -1319,6 +1393,11 @@ bool ScheduleImportReviewDialog::prepare()
     }
 
     m_preview = *preview;
+    m_intensiveModeSection->setVisible(
+        m_request.kind == ScheduleImportKind::Intensive
+        && m_preview.inventory.hasIntensiveHours
+        );
+    m_updateIntensiveRadio->setChecked(true);
     m_previewWidget->setPreviewModel(
         previewModel(
             m_preview.user,
@@ -1698,7 +1777,9 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         {
             addResolutionItem(
                 control.action,
-                tr("Update suggested: %1")
+                (classId == preview.suggestedClassId
+                    ? tr("Update suggested: %1")
+                    : tr("Update existing: %1"))
                     .arg(
                         classLabel(
                             dataService,
@@ -1763,7 +1844,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             preview.suggestedClassId
             );
 
-        if (preview.exactMatch)
+        if (preview.suggestedClassId > 0)
         {
             control.action->setCurrentIndex(
                 findActionIndex(
@@ -1855,6 +1936,21 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             );
         classHeaderLayout->addLayout(colorLayout);
         classCardLayout->addLayout(classHeaderLayout);
+        auto* matchStatus =
+            new QLabel(
+                preview.matchExplanation,
+                classCard
+                );
+        matchStatus->setObjectName(
+            QStringLiteral("scheduleImportClassMatch_%1")
+                .arg(preview.candidateIndex)
+            );
+        matchStatus->setWordWrap(true);
+        matchStatus->setProperty(
+            "matchConfidence",
+            static_cast<int>(preview.matchConfidence)
+            );
+        classCardLayout->addWidget(matchStatus);
         addLabeledControlRow(
             classCardLayout,
             tr("Import Action"),
@@ -1966,6 +2062,10 @@ void ScheduleImportReviewDialog::updateReviewState()
 {
     bool valid = true;
     QString message;
+    const bool preservesAbsentIntensiveClasses =
+        m_request.kind == ScheduleImportKind::Intensive
+        && m_updateIntensiveRadio
+        && m_updateIntensiveRadio->isChecked();
     QSet<QString> skippedTeachers;
     QHash<QString, int> teacherActions;
     QHash<QString, int> teacherTargets;
@@ -2361,6 +2461,39 @@ void ScheduleImportReviewDialog::updateReviewState()
                     : QStringList{room.trimmed()};
             projected.classes.append(candidate);
         }
+
+        if (preservesAbsentIntensiveClasses)
+        {
+            for (const Classroom& classroom : dataService->getClasses())
+            {
+                if (targets.contains(classroom.id))
+                {
+                    continue;
+                }
+
+                const ClassInfo info =
+                    dataService->loadClassInfo(classroom.id);
+                if (info.intensiveTimes.isEmpty())
+                {
+                    continue;
+                }
+
+                ScheduleImportClassCandidate preserved;
+                const Teacher teacher =
+                    dataService->getTeacher(info.teacherId);
+                preserved.teacherKr = teacher.teacherKr;
+                preserved.rooms = {teacher.roomNumber};
+                preserved.classGrade = info.classGrade;
+                preserved.classLevel = info.classLevel;
+                preserved.importedColors = {
+                    info.classColor.isEmpty()
+                        ? QStringLiteral("#FFFFFF")
+                        : info.classColor
+                };
+                preserved.times = info.intensiveTimes;
+                projected.classes.append(preserved);
+            }
+        }
     }
     else
     {
@@ -2402,7 +2535,7 @@ void ScheduleImportReviewDialog::updateReviewState()
     }
 
     int cleared = 0;
-    if (dataService)
+    if (dataService && !preservesAbsentIntensiveClasses)
     {
         for (const Classroom& classroom : dataService->getClasses())
         {
@@ -2428,9 +2561,9 @@ void ScheduleImportReviewDialog::updateReviewState()
             : message
         );
     m_reviewSummary->setText(
-        tr("Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
+        tr("Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
            "%4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; "
-           "%8 occupied cell(s) acknowledged and ignored.%9")
+           "%8 occupied cell(s) acknowledged and ignored.%9%10")
             .arg(teacherCreates)
             .arg(teacherUpdates)
             .arg(teacherSkips)
@@ -2444,6 +2577,13 @@ void ScheduleImportReviewDialog::updateReviewState()
                     ? tr(" My Information name will be set to “%1”.")
                         .arg(m_preview.user.name)
                     : QString()
+                )
+            .arg(
+                m_request.kind != ScheduleImportKind::Intensive
+                    ? QString()
+                    : preservesAbsentIntensiveClasses
+                        ? tr(" Existing intensive hours for classes absent from the workbook will be retained.")
+                        : tr(" A brand-new intensive schedule will replace existing intensive hours not explicitly preserved.")
                 )
         );
     m_importButton->setEnabled(valid);
@@ -2686,6 +2826,11 @@ ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
 {
     ScheduleImportPlan plan;
     plan.kind = m_request.kind;
+    plan.intensiveMode =
+        m_replaceIntensiveRadio
+        && m_replaceIntensiveRadio->isChecked()
+            ? ScheduleImportIntensiveMode::ReplaceWithNew
+            : ScheduleImportIntensiveMode::UpdateExisting;
     plan.selectedUserName =
         m_preview.user.name;
     plan.saveProfileNameIfBlank =

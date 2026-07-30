@@ -39,7 +39,10 @@
 namespace ScheduleWidgetTestStubs
 {
 void reset();
+void setIncludeAdditionalClass(bool include);
 void setMatchImportedClasses(bool match);
+void setPossibleImportedClasses(bool match);
+void setExistingIntensiveHours(bool exists);
 }
 
 class ScheduleImportDialogTests : public QObject
@@ -56,6 +59,9 @@ private slots:
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
     void reviewWarningsUseDedicatedTab();
+    void intensiveModeChoiceReflectsExistingSchedule();
+    void regularPreviewShowsFullEssayGrid();
+    void possibleMatchIsPreselectedForUpdate();
     void reviewPreviewUsesSavedScheduleDisplaySettings();
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
@@ -1280,6 +1286,199 @@ void ScheduleImportDialogTests
         Qt::ScrollBarAlwaysOff
         );
     QVERIFY(warningScrollArea->isAncestorOf(acknowledgement));
+}
+
+void ScheduleImportDialogTests
+    ::intensiveModeChoiceReflectsExistingSchedule()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Intensive;
+    request.user.name = QStringLiteral("Alice");
+
+    {
+        ScheduleImportReviewDialog review(
+            &services,
+            request
+            );
+        QVERIFY(review.prepare());
+        auto* section =
+            review.findChild<QGroupBox*>(
+                QStringLiteral("scheduleImportIntensiveModeSection")
+                );
+        QVERIFY(section);
+        QVERIFY(section->isHidden());
+    }
+
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+    QCoreApplication::processEvents();
+
+    auto* section =
+        review.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportIntensiveModeSection")
+            );
+    auto* update =
+        review.findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportUpdateIntensiveRadio")
+            );
+    auto* replace =
+        review.findChild<QRadioButton*>(
+            QStringLiteral("scheduleImportReplaceIntensiveRadio")
+            );
+    auto* summary =
+        review.findChild<QLabel*>(
+            QStringLiteral("scheduleImportReviewSummary")
+            );
+    QVERIFY(section);
+    QVERIFY(update);
+    QVERIFY(replace);
+    QVERIFY(summary);
+    QVERIFY(section->isVisible());
+    QVERIFY(update->isChecked());
+    QVERIFY(
+        summary->text().contains(
+            QStringLiteral("will be retained")
+            )
+        );
+
+    replace->setChecked(true);
+    QCoreApplication::processEvents();
+    QVERIFY(replace->isChecked());
+    QVERIFY(
+        summary->text().contains(
+            QStringLiteral("brand-new intensive schedule")
+            )
+        );
+
+    request.kind = ScheduleImportKind::Normal;
+    ScheduleImportReviewDialog regularReview(
+        &services,
+        request
+        );
+    QVERIFY(regularReview.prepare());
+    auto* regularSection =
+        regularReview.findChild<QGroupBox*>(
+            QStringLiteral("scheduleImportIntensiveModeSection")
+            );
+    QVERIFY(regularSection);
+    QVERIFY(regularSection->isHidden());
+}
+
+void ScheduleImportDialogTests::regularPreviewShowsFullEssayGrid()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("김선생");
+    candidate.teacherKr = QStringLiteral("김선생");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E6");
+    candidate.classLevel = QStringLiteral("Hera");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+    QCoreApplication::processEvents();
+
+    auto* table =
+        review.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(table);
+    QCOMPARE(table->rowCount(), 6);
+    QVERIFY(table->item(0, 0));
+    QVERIFY(table->item(5, 0));
+    QCOMPARE(
+        table->item(0, 0)->text(),
+        QStringLiteral("4:00 -\n4:55 PM")
+        );
+    QCOMPARE(
+        table->item(5, 0)->text(),
+        QStringLiteral("9:00 -\n9:55 PM")
+        );
+
+    for (int row = 0; row < table->rowCount(); ++row)
+    {
+        for (int column = 1; column < table->columnCount(); ++column)
+        {
+            auto* cell =
+                qobject_cast<QLabel*>(
+                    table->cellWidget(row, column)
+                    );
+            QVERIFY(cell);
+            if (row == 0 && column == 1)
+            {
+                QVERIFY(cell->text() != QStringLiteral("Essay"));
+            }
+            else
+            {
+                QCOMPARE(cell->text(), QStringLiteral("Essay"));
+            }
+        }
+    }
+}
+
+void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("김선생");
+    candidate.teacherKr = QStringLiteral("김선생");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+
+    auto* action =
+        review.findChild<QComboBox*>(
+            QStringLiteral("scheduleImportClassAction_0")
+            );
+    QVERIFY(action);
+    QCOMPARE(
+        action->currentData(Qt::UserRole).toInt(),
+        static_cast<int>(ScheduleImportClassAction::UpdateExisting)
+        );
+    QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
 }
 
 void ScheduleImportDialogTests

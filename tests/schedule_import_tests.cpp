@@ -27,6 +27,10 @@ private slots:
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
+    void reportsScheduleInventoryStates_data();
+    void reportsScheduleInventoryStates();
+    void regularImportMatchesIntensiveOnlyClasses();
+    void intensiveModesPreserveOrReplaceAbsentHours();
     void fullSnapshotPreservesUnrelatedData();
     void skippedExactMatchPreservesItsSchedule();
     void conflictsRollBackBeforeWrites();
@@ -853,6 +857,47 @@ void ScheduleImportTests::filtersClassOptionsByGradeAndDayGroup()
             ScheduleImportKind::Normal
             )
         );
+
+    existing.classGrade = QStringLiteral("E5");
+    existing.classLevel = QStringLiteral("Zeus");
+    candidate.classLevel = QStringLiteral("Zeus");
+    existing.classTimes.clear();
+    existing.intensiveTimes.first().day =
+        QStringLiteral("Thursday");
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    candidate.times.first().day =
+        QStringLiteral("Monday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    existing.intensiveTimes.clear();
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+    existing.classLevel = QStringLiteral("Athena");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            candidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
 }
 
 void ScheduleImportTests::ranksTeacherAndClassMatches()
@@ -968,14 +1013,13 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                 QStringLiteral("Zeus"),
                 QStringLiteral("Wednesday")
                 );
-        const int sameGrade =
-            addClass(
-                QStringLiteral("4 Grade"),
-                matchingTeacherId,
-                QStringLiteral("E5"),
-                QStringLiteral("Athena"),
-                QStringLiteral("Monday")
-                );
+        addClass(
+            QStringLiteral("4 Grade"),
+            matchingTeacherId,
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("Monday")
+            );
         addClass(
             QStringLiteral("5 Wrong day group"),
             matchingTeacherId,
@@ -1049,8 +1093,7 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                 exact,
                 sameTeacherRoomDayGroup,
                 wrongRoom,
-                sameCourse,
-                sameGrade
+                sameCourse
             })
             );
         QCOMPARE(
@@ -1058,6 +1101,13 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
             exact
             );
         QVERIFY(preview->classes.first().exactMatch);
+        QCOMPARE(
+            preview->classes.first().matchConfidence,
+            ScheduleImportClassMatchConfidence::Confident
+            );
+        QCOMPARE(preview->inventory.classCount, 8);
+        QVERIFY(preview->inventory.hasRegularHours);
+        QVERIFY(!preview->inventory.hasIntensiveHours);
 
         const auto intensivePreview =
             repository.preview(
@@ -1074,8 +1124,438 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
             exact
             );
         QVERIFY(
-            intensivePreview->classes.first().exactMatch
+            !intensivePreview->classes.first().exactMatch
             );
+        QCOMPARE(
+            intensivePreview->classes.first().matchConfidence,
+            ScheduleImportClassMatchConfidence::Possible
+            );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::reportsScheduleInventoryStates_data()
+{
+    QTest::addColumn<bool>("classExists");
+    QTest::addColumn<bool>("hasRegularHours");
+    QTest::addColumn<bool>("hasIntensiveHours");
+
+    QTest::newRow("no classes")
+        << false << false << false;
+    QTest::newRow("classes without hours")
+        << true << false << false;
+    QTest::newRow("regular hours only")
+        << true << true << false;
+    QTest::newRow("intensive hours only")
+        << true << false << true;
+    QTest::newRow("regular and intensive hours")
+        << true << true << true;
+}
+
+void ScheduleImportTests::reportsScheduleInventoryStates()
+{
+    QFETCH(bool, classExists);
+    QFETCH(bool, hasRegularHours);
+    QFETCH(bool, hasIntensiveHours);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-inventory-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+        QSqlQuery query(database);
+
+        if (classExists)
+        {
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "INSERT INTO classes (name) VALUES ('Inventory')"
+                    )
+                );
+            const int classId =
+                query.lastInsertId().toInt();
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "INSERT INTO class_info "
+                    "(class_id, class_grade, class_level) "
+                    "VALUES (%1, 'E5', 'Zeus')"
+                    )
+                    .arg(classId)
+                );
+            if (hasRegularHours)
+            {
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO class_times "
+                        "(class_id, day, start_time, end_time) "
+                        "VALUES (%1, 'Monday', '4:00 PM', '4:55 PM')"
+                        )
+                        .arg(classId)
+                    );
+            }
+            if (hasIntensiveHours)
+            {
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO class_intensive_times "
+                        "(class_id, day, start_time, end_time) "
+                        "VALUES (%1, 'Wednesday', '9:00 AM', '9:50 AM')"
+                        )
+                        .arg(classId)
+                    );
+            }
+        }
+
+        ScheduleImportUserBlock user;
+        ScheduleImportRepository repository(database);
+        for (ScheduleImportKind kind :
+             {ScheduleImportKind::Normal,
+              ScheduleImportKind::Intensive})
+        {
+            const auto preview =
+                repository.preview(user, kind);
+            QVERIFY(preview.has_value());
+            QCOMPARE(
+                preview->inventory.classCount,
+                classExists ? 1 : 0
+                );
+            QCOMPARE(
+                preview->inventory.hasRegularHours,
+                hasRegularHours
+                );
+            QCOMPARE(
+                preview->inventory.hasIntensiveHours,
+                hasIntensiveHours
+                );
+        }
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::regularImportMatchesIntensiveOnlyClasses()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-cross-kind-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+        QSqlQuery query(database);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES ('홍길동', '413')"
+                )
+            );
+        const int teacherId =
+            query.lastInsertId().toInt();
+
+        const auto addClass =
+            [&query, teacherId](
+                const QString& level,
+                const QString& intensiveDay
+                )
+            {
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO classes (name) VALUES ('%1')"
+                        )
+                        .arg(level)
+                    );
+                const int classId =
+                    query.lastInsertId().toInt();
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO class_info "
+                        "(class_id, teacher_id, class_grade, class_level) "
+                        "VALUES (%1, %2, 'E5', '%3')"
+                        )
+                        .arg(classId)
+                        .arg(teacherId)
+                        .arg(level)
+                    );
+                if (!intensiveDay.isEmpty())
+                {
+                    execOrFail(
+                        query,
+                        QStringLiteral(
+                            "INSERT INTO class_intensive_times "
+                            "(class_id, day, start_time, end_time) "
+                            "VALUES (%1, '%2', '9:00 AM', '9:50 AM')"
+                            )
+                            .arg(classId)
+                            .arg(intensiveDay)
+                        );
+                }
+                return classId;
+            };
+
+        const int sameFamily =
+            addClass(
+                QStringLiteral("Zeus"),
+                QStringLiteral("Monday")
+                );
+        addClass(
+            QStringLiteral("Zeus"),
+            QStringLiteral("Tuesday")
+            );
+        const int noHours =
+            addClass(
+                QStringLiteral("Zeus"),
+                QString()
+                );
+        addClass(
+            QStringLiteral("Athena"),
+            QString()
+            );
+
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QStringLiteral("홍길동");
+        candidate.teacherKr = QStringLiteral("홍길동");
+        candidate.rooms = {QStringLiteral("413")};
+        candidate.classGrade = QStringLiteral("E5");
+        candidate.classLevel = QStringLiteral("Zeus");
+        candidate.times = {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
+            }
+        };
+        ScheduleImportUserBlock user;
+        user.name = QStringLiteral("Alice");
+        user.classes = {candidate};
+
+        ScheduleImportRepository repository(database);
+        const auto preview =
+            repository.preview(
+                user,
+                ScheduleImportKind::Normal
+                );
+        QVERIFY(preview.has_value());
+        QCOMPARE(preview->inventory.classCount, 4);
+        QVERIFY(!preview->inventory.hasRegularHours);
+        QVERIFY(preview->inventory.hasIntensiveHours);
+        QCOMPARE(
+            preview->classes.first().matchingClassIds,
+            QList<int>({sameFamily, noHours})
+            );
+        QCOMPARE(
+            preview->classes.first().suggestedClassId,
+            sameFamily
+            );
+        QVERIFY(!preview->classes.first().exactMatch);
+        QCOMPARE(
+            preview->classes.first().matchConfidence,
+            ScheduleImportClassMatchConfidence::Possible
+            );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-intensive-mode-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+        QSqlQuery query(database);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO teachers (teacher_kr, room_number) "
+                "VALUES ('홍길동', '413')"
+                )
+            );
+        const int teacherId =
+            query.lastInsertId().toInt();
+
+        const auto addClass =
+            [&query, teacherId](
+                const QString& level,
+                const QString& intensiveDay
+                )
+            {
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO classes (name) VALUES ('%1')"
+                        )
+                        .arg(level)
+                    );
+                const int classId =
+                    query.lastInsertId().toInt();
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO class_info "
+                        "(class_id, teacher_id, class_grade, class_level) "
+                        "VALUES (%1, %2, 'E5', '%3')"
+                        )
+                        .arg(classId)
+                        .arg(teacherId)
+                        .arg(level)
+                    );
+                execOrFail(
+                    query,
+                    QStringLiteral(
+                        "INSERT INTO class_intensive_times "
+                        "(class_id, day, start_time, end_time) "
+                        "VALUES (%1, '%2', '9:00 AM', '9:50 AM')"
+                        )
+                        .arg(classId)
+                        .arg(intensiveDay)
+                    );
+                return classId;
+            };
+
+        const int importedClass =
+            addClass(
+                QStringLiteral("Zeus"),
+                QStringLiteral("Monday")
+                );
+        const int absentClass =
+            addClass(
+                QStringLiteral("Apollo"),
+                QStringLiteral("Tuesday")
+                );
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO class_times "
+                "(class_id, day, start_time, end_time) "
+                "VALUES (%1, 'Friday', '4:00 PM', '4:55 PM')"
+                )
+                .arg(importedClass)
+            );
+
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QStringLiteral("홍길동");
+        candidate.teacherKr = QStringLiteral("홍길동");
+        candidate.rooms = {QStringLiteral("413")};
+        candidate.classGrade = QStringLiteral("E5");
+        candidate.classLevel = QStringLiteral("Zeus");
+        candidate.times = {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("10:00 AM"),
+                QStringLiteral("10:50 AM")
+            },
+            {
+                QStringLiteral("Wednesday"),
+                QStringLiteral("10:00 AM"),
+                QStringLiteral("10:50 AM")
+            }
+        };
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Intensive;
+        plan.intensiveMode =
+            ScheduleImportIntensiveMode::UpdateExisting;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {candidate};
+        plan.teachers = {
+            {
+                QStringLiteral("홍길동"),
+                ScheduleImportTeacherAction::Reuse,
+                teacherId,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                importedClass,
+                QStringLiteral("#123456"),
+                QStringLiteral("#FFFFFF")
+            }
+        };
+
+        ScheduleImportRepository repository(database);
+        const auto updated =
+            repository.apply(plan);
+        const QString updateError =
+            updated.has_value() ? QString() : updated.error();
+        QVERIFY2(updated.has_value(), qPrintable(updateError));
+        QCOMPARE(updated->schedulesCleared, 0);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT COUNT(*) FROM class_intensive_times "
+                "WHERE class_id=%1"
+                )
+                .arg(absentClass)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 1);
+
+        plan.intensiveMode =
+            ScheduleImportIntensiveMode::ReplaceWithNew;
+        const auto replaced =
+            repository.apply(plan);
+        const QString replaceError =
+            replaced.has_value() ? QString() : replaced.error();
+        QVERIFY2(replaced.has_value(), qPrintable(replaceError));
+        QCOMPARE(replaced->schedulesCleared, 1);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT COUNT(*) FROM class_intensive_times "
+                "WHERE class_id=%1"
+                )
+                .arg(absentClass)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT COUNT(*) FROM class_times "
+                "WHERE class_id=%1"
+                )
+                .arg(importedClass)
+            );
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 1);
 
         database.close();
     }
@@ -1204,7 +1684,7 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
             preview->classes.first().matchingClassIds,
             QList<int>{classOne}
             );
-        QCOMPARE(preview->classes.first().suggestedClassId, -1);
+        QCOMPARE(preview->classes.first().suggestedClassId, classOne);
         QVERIFY(!preview->classes.first().exactMatch);
 
         ScheduleImportPlan plan;

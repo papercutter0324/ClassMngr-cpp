@@ -11,8 +11,10 @@ class ApplicationServices;
 class QCheckBox;
 class QComboBox;
 class QDialogButtonBox;
+class QGroupBox;
 class QLabel;
 class QPushButton;
+class QRadioButton;
 class QResizeEvent;
 class QScrollArea;
 class QSplitter;
@@ -73,6 +75,9 @@ protected:
     bool m_prepared = false;
 
     QWidget* m_reviewPage = nullptr;
+    QGroupBox* m_intensiveModeSection = nullptr;
+    QRadioButton* m_updateIntensiveRadio = nullptr;
+    QRadioButton* m_replaceIntensiveRadio = nullptr;
     QSplitter* m_reviewSplitter = nullptr;
     QWidget* m_previewPane = nullptr;
     QLabel* m_previewHeading = nullptr;

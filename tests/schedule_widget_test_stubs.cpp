@@ -42,6 +42,8 @@ bool lastPrintRequestShowsEnglishNames = false;
 bool databaseOpen = true;
 bool includeAdditionalClass = false;
 bool matchImportedClasses = false;
+bool possibleImportedClasses = false;
+bool existingIntensiveHours = false;
 
 void reset()
 {
@@ -52,6 +54,8 @@ void reset()
     databaseOpen = true;
     includeAdditionalClass = false;
     matchImportedClasses = false;
+    possibleImportedClasses = false;
+    existingIntensiveHours = false;
 }
 
 void setDatabaseOpen(
@@ -73,6 +77,20 @@ void setMatchImportedClasses(
     )
 {
     matchImportedClasses = match;
+}
+
+void setPossibleImportedClasses(
+    bool match
+    )
+{
+    possibleImportedClasses = match;
+}
+
+void setExistingIntensiveHours(
+    bool exists
+    )
+{
+    existingIntensiveHours = exists;
 }
 
 QString settingValue(
@@ -144,6 +162,18 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     ScheduleImportPreview preview;
     preview.kind = kind;
     preview.user = user;
+    const QList<Classroom> classrooms = getClasses();
+    preview.inventory.classCount = classrooms.size();
+    for (const Classroom& classroom : classrooms)
+    {
+        const ClassInfo info = loadClassInfo(classroom.id);
+        preview.inventory.hasRegularHours =
+            preview.inventory.hasRegularHours
+            || !info.classTimes.isEmpty();
+        preview.inventory.hasIntensiveHours =
+            preview.inventory.hasIntensiveHours
+            || !info.intensiveTimes.isEmpty();
+    }
     QSet<QString> teacherKeys;
 
     for (int index = 0; index < user.classes.size(); ++index)
@@ -163,14 +193,31 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
         ScheduleImportClassPreview classroom;
         classroom.candidateIndex = index;
         if (
-            ScheduleWidgetTestStubs::matchImportedClasses
+            (
+                ScheduleWidgetTestStubs::matchImportedClasses
+                || ScheduleWidgetTestStubs::possibleImportedClasses
+                )
             && candidate.classGrade == QStringLiteral("E4")
             && candidate.classLevel == QStringLiteral("Hercules")
             )
         {
             classroom.matchingClassIds = {43};
             classroom.suggestedClassId = 43;
-            classroom.exactMatch = true;
+            classroom.exactMatch =
+                ScheduleWidgetTestStubs::matchImportedClasses;
+            classroom.matchConfidence =
+                ScheduleWidgetTestStubs::matchImportedClasses
+                    ? ScheduleImportClassMatchConfidence::Confident
+                    : ScheduleImportClassMatchConfidence::Possible;
+            classroom.matchExplanation =
+                ScheduleWidgetTestStubs::matchImportedClasses
+                    ? QStringLiteral("Confident existing class match.")
+                    : QStringLiteral("Possible existing class match.");
+        }
+        else
+        {
+            classroom.matchExplanation =
+                QStringLiteral("No existing class match.");
         }
         preview.classes.append(classroom);
     }
@@ -281,6 +328,12 @@ ClassInfo DataService::loadClassInfo(
             ? QStringLiteral("5:50 PM")
             : QStringLiteral("4:50 PM");
     info.classTimes.append(meeting);
+    if (ScheduleWidgetTestStubs::existingIntensiveHours)
+    {
+        meeting.startTime = QStringLiteral("9:00 AM");
+        meeting.endTime = QStringLiteral("9:50 AM");
+        info.intensiveTimes.append(meeting);
+    }
 
     return info;
 }
