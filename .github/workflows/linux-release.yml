@@ -77,14 +77,40 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: List Qt modules
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          echo "Available modules for ${QT_VERSION}:"
+          # Show available modules for diagnostics; don't fail the job here
+          python -m aqt list-qt linux desktop --modules "${QT_VERSION}" linux_gcc_64 || true
+
       - name: Install Qt
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
-          python -m aqt install-qt \
-            linux desktop "${QT_VERSION}" linux_gcc_64 \
-            --outputdir "${QT_ROOT}" \
-            --modules qtdeclarative qtpdf qttools
+
+          # Query available modules and store into a variable
+          available=$(python -m aqt list-qt linux desktop --modules "${QT_VERSION}" linux_gcc_64 2>/dev/null || true)
+          echo "Available modules output:\n$available"
+
+          # Decide modules to install: prefer qtdeclarative qtpdf qttools, but only request what exists
+          modules=""
+          echo "$available" | grep -q "qtdeclarative" && modules="${modules} qtdeclarative"
+          echo "$available" | grep -q "qtpdf" && modules="${modules} qtpdf"
+          echo "$available" | grep -q "qttools" && modules="${modules} qttools"
+          modules="$(echo $modules)"
+
+          if [ -z "$modules" ]; then
+            echo "No requested modules found; installing default Qt package set for ${QT_VERSION}."
+            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+              --outputdir "${QT_ROOT}"
+          else
+            echo "Installing Qt modules: $modules"
+            python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
+              --outputdir "${QT_ROOT}" \
+              --modules $modules
+          fi
 
       - name: Configure
         shell: bash
