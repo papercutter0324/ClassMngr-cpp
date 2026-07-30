@@ -1,0 +1,140 @@
+name: Windows x64 Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-x64-release.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "licenses/**"
+      - "resources/**"
+      - "scripts/installer/**"
+      - "src/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.11.1"
+  QT_ROOT: "C:\\Qt"
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
+
+jobs:
+  build:
+    name: Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install aqtinstall
+        shell: pwsh
+        run: |
+          cd $Env:GITHUB_WORKSPACE
+          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+
+      - name: Show available Qt versions
+        shell: pwsh
+        run: |
+          cd $Env:GITHUB_WORKSPACE
+          python -m aqt list-qt windows desktop
+
+      - name: Install Qt x64 host tools (with retries, official mirror, verbose)
+        shell: pwsh
+        run: |
+          cd $Env:GITHUB_WORKSPACE
+          $tries = 0
+          $max = 3
+          while ($true) {
+            try {
+              python -m aqt --verbose install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir $env:QT_ROOT --modules qtdeclarative qtpdf qttools --mirror=official
+              break
+            } catch {
+              $tries++
+              Write-Host "aqt install failed (attempt $tries): $_"
+              if ($tries -ge $max) {
+                throw "aqt install failed after $max attempts"
+              }
+              Start-Sleep -Seconds 10
+            }
+          }
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+
+      - name: Configure
+        shell: pwsh
+        run: |
+          cd $Env:GITHUB_WORKSPACE
+          cmake --fresh --preset "windows-x64-release" "-DCMAKE_PREFIX_PATH=$env:QT_MSVC_X64_PREFIX" -DBUILD_TESTING=OFF
+
+      - name: Build installer
+        shell: pwsh
+        run: cmake --build --preset "windows-x64-release-installer" --parallel
+
+      - name: Verify architecture and create checksum
+        shell: pwsh
+        run: |
+          $executable = "build\windows-x64-release\Release\ClassMngr.exe"
+
+          if (-not (Test-Path -LiteralPath $executable)) {
+              throw "Expected executable was not found: $executable"
+          }
+
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsPath = & $vswhere -latest -products * -property installationPath
+          $dumpbin = Get-ChildItem -Path (
+              Join-Path $vsPath "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe"
+          ) |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+
+          if ($null -eq $dumpbin) {
+              throw "dumpbin.exe was not found in the Visual Studio installation."
+          }
+
+          $headers = (& $dumpbin.FullName /headers $executable 2>&1) -join "`n"
+
+          if ($headers -notmatch 'machine \(x64\)') {
+              throw "Executable did not have the expected x64 architecture."
+          }
+
+          $installers = @(
+              Get-ChildItem -Path "dist\ClassMngr-*-win-x64.exe"
+          )
+
+          if ($installers.Count -ne 1) {
+              throw "Expected exactly one installer, found $($installers.Count)."
+          }
+
+          $hash = (
+              Get-FileHash -LiteralPath $installers[0].FullName -Algorithm SHA256
+          ).Hash.ToLowerInvariant()
+          $checksumPath = "dist\checksums-windows-x64.txt"
+          "$hash  $($installers[0].Name)" |
+              Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClassMngr-windows-x64
+          path: |
+            dist/ClassMngr-*-win-x64.exe
+            dist/checksums-windows-x64.txt
+          if-no-files-found: error
