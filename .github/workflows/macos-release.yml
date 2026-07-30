@@ -62,7 +62,7 @@ jobs:
           python -m aqt install-qt \
             mac desktop "${QT_VERSION}" clang_64 \
             --outputdir "${QT_ROOT}" \
-            --modules qtdeclarative qtpdf qttools
+            --modules qtpdf
 
       - name: Build and verify disk image
         shell: bash
