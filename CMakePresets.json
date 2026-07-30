@@ -58,7 +58,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
-      "generator": "Visual Studio 18 2026"
+      "generator": "Visual Studio 17 2022"
     },
     {
       "name": "windows-x64-base",
