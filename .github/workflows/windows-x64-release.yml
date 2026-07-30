@@ -42,11 +42,13 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install aqtinstall
+      - name: Install aqtinstall with Qt 6.11 Windows support
         shell: pwsh
         run: |
           cd $Env:GITHUB_WORKSPACE
-          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          # aqtinstall 3.3.0 predates Qt 6.11's architecture-specific
+          # Windows repository layout. Pin the upstream fix until released.
+          python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
 
       - name: Show available Qt versions
         shell: pwsh
