@@ -77,9 +77,9 @@ QPointF SpeakingEvalReportWidget::reportPoint(
     ) const
 {
     const QSizeF reportSize =
-        usesAdvancedTemplate()
-            ? AdvancedReportSize
-            : RegularReportSize;
+        speakingEvalReportTemplateLayout(
+            reportTemplate()
+            ).pageSize;
     const qreal scale =
         std::min(
             width() / reportSize.width(),
@@ -104,9 +104,9 @@ QRect SpeakingEvalReportWidget::reportRect(
     ) const
 {
     const QSizeF reportSize =
-        usesAdvancedTemplate()
-            ? AdvancedReportSize
-            : RegularReportSize;
+        speakingEvalReportTemplateLayout(
+            reportTemplate()
+            ).pageSize;
     const qreal scale =
         std::min(
             width() / reportSize.width(),
@@ -218,7 +218,11 @@ void SpeakingEvalReportWidget::updateCommentEditor()
             ? QStringLiteral("Just Another Hand")
             : QStringLiteral("Segoe UI Semibold")
         );
-    const qreal scale = width() / RegularReportSize.width();
+    const qreal scale =
+        width()
+        / speakingEvalReportTemplateLayout(
+            reportTemplate()
+            ).pageSize.width();
     font.setPixelSize(
         qRound(
             (usesAdvancedTemplate() ? 15.0 : 18.0) * scale

@@ -1,5 +1,7 @@
 #include "speaking_eval_page_p.h"
 
+#include "features/my_info/data/personal_details_repository.h"
+
 void SpeakingEvalPage::refresh()
 {
     BasePage::refresh();
@@ -288,18 +290,24 @@ void SpeakingEvalPage::showReports()
     }
 
     ClassInfo classInfo;
+    QByteArray signatureImage;
 
     if (m_services && m_services->dataService())
     {
+        DataService* dataService =
+            m_services->dataService();
         classInfo =
-            m_services
-                ->dataService()
-                ->loadClassInfo(m_classroom.id);
+            dataService->loadClassInfo(m_classroom.id);
+        signatureImage =
+            PersonalDetailsRepository(dataService)
+                .load()
+                .signatureImage;
     }
 
     SpeakingEvalReportDialog dialog(
         m_model->rows(),
         classInfo,
+        signatureImage,
         this
         );
 
@@ -334,13 +342,25 @@ void SpeakingEvalPage::exportReports()
     }
 
     ClassInfo classInfo;
+    QByteArray signatureImage;
     if (m_services && m_services->dataService())
     {
-        classInfo = m_services->dataService()->loadClassInfo(m_classroom.id);
+        DataService* dataService =
+            m_services->dataService();
+        classInfo =
+            dataService->loadClassInfo(m_classroom.id);
+        signatureImage =
+            PersonalDetailsRepository(dataService)
+                .load()
+                .signatureImage;
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
-        buildSpeakingEvalStudentReports(m_model->rows(), classInfo);
+        buildSpeakingEvalStudentReports(
+            m_model->rows(),
+            classInfo,
+            signatureImage
+            );
 
     int currentReportIndex = 0;
     const int selectedRow = m_table ? m_table->currentIndex().row() : -1;

@@ -82,7 +82,8 @@ void SpeakingEvalBatchReportServiceTests::internalRendererCreatesReadablePdf()
     advancedData.englishName = QStringLiteral("Athena Student");
     advancedData.classLabel = QStringLiteral("E5 Athena");
     advancedData.date = QStringLiteral("Jul. 2026");
-    advancedData.useAdvancedTemplate = true;
+    advancedData.reportTemplate =
+        SpeakingEvalReportTemplate::Advanced;
     request.reports = {
         { QStringLiteral("Gildong (\uD64D\uAE38\uB3D9)"), data },
         { QStringLiteral("Athena Student"), advancedData }
@@ -200,7 +201,8 @@ void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWh
     advancedData.englishName = QStringLiteral("Advanced Student");
     advancedData.classLabel = QStringLiteral("E5 Athena");
     advancedData.date = QStringLiteral("Jul. 2026");
-    advancedData.useAdvancedTemplate = true;
+    advancedData.reportTemplate =
+        SpeakingEvalReportTemplate::Advanced;
     request.reports = {
         { QStringLiteral("PowerPoint Student"), data },
         { QStringLiteral("Second PowerPoint Student"), secondStandardData },

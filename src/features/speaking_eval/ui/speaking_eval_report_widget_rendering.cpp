@@ -10,10 +10,12 @@ void SpeakingEvalReportWidget::paintReport(
         return;
     }
 
+    const SpeakingEvalReportTemplateLayout& templateLayout =
+        speakingEvalReportTemplateLayout(
+            reportTemplate()
+            );
     const QSizeF reportSize =
-        usesAdvancedTemplate()
-            ? AdvancedReportSize
-            : RegularReportSize;
+        templateLayout.pageSize;
 
     const qreal scale =
         std::min(
@@ -345,7 +347,11 @@ void SpeakingEvalReportWidget::paintReport(
         Qt::AlignLeft | Qt::AlignVCenter,
         tr("Native Teacher Signature:")
         );
+    drawSignatureImage(
+        painter,
+        m_data.signatureImage,
+        templateLayout.signatureBounds
+        );
 
     painter->restore();
 }
-

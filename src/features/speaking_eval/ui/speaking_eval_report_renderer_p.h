@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QFontMetricsF>
+#include <QImage>
 #include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPixmap>
@@ -16,8 +17,6 @@
 namespace
 {
 
-constexpr QSizeF RegularReportSize(540.0, 780.0);
-constexpr QSizeF AdvancedReportSize(540.0, 780.0);
 constexpr QRectF RegularBorderRect(
     17.71654,
     18.66228,
@@ -648,6 +647,36 @@ void drawLogo(
         );
 }
 
+void drawSignatureImage(
+    QPainter* painter,
+    const QByteArray& imageData,
+    const QRectF& bounds
+    )
+{
+    if (!painter || imageData.isEmpty() || !bounds.isValid())
+    {
+        return;
+    }
+
+    QImage signature;
+    if (!signature.loadFromData(imageData) || signature.isNull())
+    {
+        return;
+    }
+
+    QSizeF fittedSize(signature.size());
+    fittedSize.scale(bounds.size(), Qt::KeepAspectRatio);
+    const QRectF fittedBounds(
+        QPointF(
+            bounds.right() - fittedSize.width(),
+            bounds.bottom() - fittedSize.height()
+            ),
+        fittedSize
+        );
+
+    painter->drawImage(fittedBounds, signature);
+}
+
 void drawAdvancedInfoField(
     QPainter* painter,
     const QRectF& rect,
@@ -843,7 +872,12 @@ void drawAdvancedReport(
     };
 
     painter->fillRect(
-        QRectF(QPointF(), AdvancedReportSize),
+        QRectF(
+            QPointF(),
+            speakingEvalReportTemplateLayout(
+                SpeakingEvalReportTemplate::Advanced
+                ).pageSize
+            ),
         Qt::white
         );
     painter->fillRect(
@@ -1162,7 +1196,13 @@ void drawAdvancedReport(
         Qt::AlignCenter,
         QStringLiteral("Native Teacher Signature:")
         );
+    drawSignatureImage(
+        painter,
+        data.signatureImage,
+        speakingEvalReportTemplateLayout(
+            data.reportTemplate
+            ).signatureBounds
+        );
 }
 
 } // namespace
-

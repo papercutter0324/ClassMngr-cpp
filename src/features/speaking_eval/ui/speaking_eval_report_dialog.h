@@ -13,7 +13,8 @@ class QPlainTextEdit;
 [[nodiscard]] QList<SpeakingEvalBatchReportService::StudentReport>
 buildSpeakingEvalStudentReports(
     const SpeakingEvalRows& rows,
-    const ClassInfo& classInfo
+    const ClassInfo& classInfo,
+    const QByteArray& signatureImage = {}
     );
 
 class SpeakingEvalReportDialog : public QDialog
@@ -24,6 +25,13 @@ public:
     explicit SpeakingEvalReportDialog(
         const SpeakingEvalRows& rows,
         const ClassInfo& classInfo,
+        QWidget* parent = nullptr
+        );
+
+    explicit SpeakingEvalReportDialog(
+        const SpeakingEvalRows& rows,
+        const ClassInfo& classInfo,
+        const QByteArray& signatureImage,
         QWidget* parent = nullptr
         );
 

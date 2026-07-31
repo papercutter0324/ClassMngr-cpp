@@ -36,7 +36,7 @@ QString classLabel(
     return parts.join(QLatin1Char(' '));
 }
 
-bool usesAdvancedTemplate(
+SpeakingEvalReportTemplate reportTemplateForClass(
     const ClassInfo& info
     )
 {
@@ -45,7 +45,7 @@ bool usesAdvancedTemplate(
     const QString level =
         info.classLevel.trimmed();
 
-    return (
+    const bool usesAdvancedTemplate = (
                grade.compare(
                    QStringLiteral("E5"),
                    Qt::CaseInsensitive
@@ -65,6 +65,10 @@ bool usesAdvancedTemplate(
                    Qt::CaseInsensitive
                    ) == 0
                );
+
+    return usesAdvancedTemplate
+        ? SpeakingEvalReportTemplate::Advanced
+        : SpeakingEvalReportTemplate::Standard;
 }
 
 QString studentDisplayName(
@@ -126,9 +130,9 @@ SpeakingEvalReportData reportDataForRow(
     data.notes = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::Notes)
         );
-    data.useAdvancedTemplate = usesAdvancedTemplate(classInfo);
+    data.reportTemplate = reportTemplateForClass(classInfo);
     data.date = QDate::currentDate().toString(
-        data.useAdvancedTemplate
+        data.reportTemplate == SpeakingEvalReportTemplate::Advanced
             ? QStringLiteral("MMM. yyyy")
             : QStringLiteral("MMMM yyyy")
         );
@@ -156,7 +160,8 @@ SpeakingEvalReportData reportDataForRow(
 QList<SpeakingEvalBatchReportService::StudentReport>
 buildSpeakingEvalStudentReports(
     const SpeakingEvalRows& rows,
-    const ClassInfo& classInfo
+    const ClassInfo& classInfo,
+    const QByteArray& signatureImage
     )
 {
     QList<SpeakingEvalBatchReportService::StudentReport> reports;
@@ -168,9 +173,10 @@ buildSpeakingEvalStudentReports(
             continue;
         }
 
-        reports.append(
-            { displayName, reportDataForRow(rows, classInfo, row), row }
-            );
+        SpeakingEvalReportData report =
+            reportDataForRow(rows, classInfo, row);
+        report.signatureImage = signatureImage;
+        reports.append({ displayName, report, row });
     }
     return reports;
 }
@@ -182,6 +188,25 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     )
     : SpeakingEvalReportDialog(
         buildSpeakingEvalStudentReports(rows, classInfo),
+        0,
+        parent,
+        true
+        )
+{
+}
+
+SpeakingEvalReportDialog::SpeakingEvalReportDialog(
+    const SpeakingEvalRows& rows,
+    const ClassInfo& classInfo,
+    const QByteArray& signatureImage,
+    QWidget* parent
+    )
+    : SpeakingEvalReportDialog(
+        buildSpeakingEvalStudentReports(
+            rows,
+            classInfo,
+            signatureImage
+            ),
         0,
         parent,
         true

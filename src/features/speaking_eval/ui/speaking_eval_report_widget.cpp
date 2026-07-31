@@ -83,12 +83,11 @@ bool SpeakingEvalReportWidget::isInteractive() const
 
 QSize SpeakingEvalReportWidget::sizeHint() const
 {
-    if (usesAdvancedTemplate())
-    {
-        return QSize(810, 1170);
-    }
-
-    return QSize(810, 1170);
+    const QSizeF reportSize =
+        speakingEvalReportTemplateLayout(
+            reportTemplate()
+            ).pageSize;
+    return (reportSize * 1.5).toSize();
 }
 
 QSize SpeakingEvalReportWidget::minimumSizeHint() const
@@ -98,5 +97,12 @@ QSize SpeakingEvalReportWidget::minimumSizeHint() const
 
 bool SpeakingEvalReportWidget::usesAdvancedTemplate() const
 {
-    return m_data.useAdvancedTemplate;
+    return speakingEvalReportTemplateLayout(
+        reportTemplate()
+        ).usesAdvancedScoreTable;
+}
+
+SpeakingEvalReportTemplate SpeakingEvalReportWidget::reportTemplate() const
+{
+    return m_data.reportTemplate;
 }

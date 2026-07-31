@@ -1,5 +1,8 @@
 #pragma once
 
+#include "features/speaking_eval/ui/speaking_eval_report_template.h"
+
+#include <QByteArray>
 #include <QWidget>
 
 #include <array>
@@ -19,7 +22,9 @@ struct SpeakingEvalReportData
     QString comments;
     QString notes;
     std::array<QString, 6> scores;
-    bool useAdvancedTemplate = false;
+    QByteArray signatureImage;
+    SpeakingEvalReportTemplate reportTemplate =
+        SpeakingEvalReportTemplate::Standard;
 };
 
 class SpeakingEvalReportWidget : public QWidget
@@ -51,6 +56,8 @@ public:
         ) const;
 
     bool usesAdvancedTemplate() const;
+
+    [[nodiscard]] SpeakingEvalReportTemplate reportTemplate() const;
 
 signals:
     void scoreEdited(

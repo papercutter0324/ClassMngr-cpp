@@ -2,6 +2,7 @@
 
 #include <QtTest>
 
+#include <QBuffer>
 #include <QImage>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -15,6 +16,7 @@ private slots:
     void regularTemplateMatchesReferenceAndHighlightsScores();
     void advancedTemplateUsesPortraitSizeAndEmbeddedLogo();
     void interactiveTemplateEditsScoresAndComments();
+    void signatureUsesTemplateBoundsAndKeepsAspectRatio();
 };
 
 void SpeakingEvalReportWidgetTests::regularTemplateUsesPortraitSize()
@@ -62,7 +64,8 @@ void SpeakingEvalReportWidgetTests::interactiveTemplateEditsScoresAndComments()
     QCOMPARE(scoreSpy.at(1).at(1).toString(), QString());
 
     SpeakingEvalReportData advancedData;
-    advancedData.useAdvancedTemplate = true;
+    advancedData.reportTemplate =
+        SpeakingEvalReportTemplate::Advanced;
     report.setReportData(advancedData);
     const QPoint advancedGrammarAPlusCell(
         qRound((17.28 + 134.97 + 36.9) * 1.5),
@@ -260,7 +263,8 @@ void SpeakingEvalReportWidgetTests::advancedTemplateUsesPortraitSizeAndEmbeddedL
         QStringLiteral("A"),
         QStringLiteral("A+")
     };
-    data.useAdvancedTemplate = true;
+    data.reportTemplate =
+        SpeakingEvalReportTemplate::Advanced;
     report.setReportData(data);
 
     QCOMPARE(
@@ -487,6 +491,108 @@ void SpeakingEvalReportWidgetTests::advancedTemplateUsesPortraitSizeAndEmbeddedL
         scorePixels > 10,
         "The student's score was not rendered in the adjacent criteria cell."
         );
+}
+
+void SpeakingEvalReportWidgetTests::
+signatureUsesTemplateBoundsAndKeepsAspectRatio()
+{
+    QImage sourceSignature(
+        QSize(400, 100),
+        QImage::Format_ARGB32_Premultiplied
+        );
+    sourceSignature.fill(QColor(0, 255, 0));
+
+    QByteArray signatureData;
+    QBuffer signatureBuffer(&signatureData);
+    QVERIFY(signatureBuffer.open(QIODevice::WriteOnly));
+    QVERIFY(sourceSignature.save(&signatureBuffer, "PNG"));
+
+    for (
+        const SpeakingEvalReportTemplate reportTemplate : {
+            SpeakingEvalReportTemplate::Standard,
+            SpeakingEvalReportTemplate::Advanced
+            }
+        )
+    {
+        SpeakingEvalReportData data;
+        data.reportTemplate = reportTemplate;
+        data.signatureImage = signatureData;
+
+        SpeakingEvalReportWidget report;
+        report.setReportData(data);
+
+        QImage rendered(
+            QSize(540, 780),
+            QImage::Format_ARGB32_Premultiplied
+            );
+        rendered.fill(Qt::white);
+        QPainter painter(&rendered);
+        report.paintReport(&painter, QRectF(rendered.rect()));
+        painter.end();
+
+        const QRectF configuredBounds =
+            speakingEvalReportTemplateLayout(
+                reportTemplate
+                ).signatureBounds;
+        int left = rendered.width();
+        int top = rendered.height();
+        int right = -1;
+        int bottom = -1;
+        for (
+            int y = qFloor(configuredBounds.top());
+            y < qCeil(configuredBounds.bottom());
+            ++y
+            )
+        {
+            for (
+                int x = qFloor(configuredBounds.left());
+                x < qCeil(configuredBounds.right());
+                ++x
+                )
+            {
+                const QColor color = rendered.pixelColor(x, y);
+                if (
+                    color.green() > 240
+                    && color.red() < 10
+                    && color.blue() < 10
+                    )
+                {
+                    left = qMin(left, x);
+                    top = qMin(top, y);
+                    right = qMax(right, x);
+                    bottom = qMax(bottom, y);
+                }
+            }
+        }
+
+        QVERIFY2(
+            right >= left && bottom >= top,
+            "The configured signature image was not rendered."
+            );
+        const int renderedWidth = right - left + 1;
+        const int renderedHeight = bottom - top + 1;
+        QVERIFY(
+            qAbs(
+                (static_cast<qreal>(renderedWidth) / renderedHeight)
+                - 4.0
+                )
+            < 0.2
+            );
+        QVERIFY(
+            qAbs(
+                (right + 1)
+                - qRound(configuredBounds.right())
+                )
+            <= 1
+            );
+        QVERIFY(
+            qAbs(
+                (bottom + 1)
+                - qRound(configuredBounds.bottom())
+                )
+            <= 1
+            );
+    }
 }
 
 QTEST_MAIN(SpeakingEvalReportWidgetTests)

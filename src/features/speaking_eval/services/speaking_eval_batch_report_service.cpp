@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -16,6 +17,7 @@
 #include <QPainter>
 #include <QPdfWriter>
 #include <QProcess>
+#include <QMap>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
@@ -318,7 +320,8 @@ bool copyResourceToFile(
 QJsonObject powerPointJob(
     const SpeakingEvalReportData& data,
     const QString& pptxPath,
-    const QString& pdfPath
+    const QString& pdfPath,
+    const QString& signaturePath
     )
 {
     QJsonArray scores;
@@ -327,10 +330,38 @@ QJsonObject powerPointJob(
         scores.append(score);
     }
 
+    const SpeakingEvalReportTemplateLayout& templateLayout =
+        speakingEvalReportTemplateLayout(
+            data.reportTemplate
+            );
+
     return {
         { QStringLiteral("pptxPath"), QDir::toNativeSeparators(pptxPath) },
         { QStringLiteral("pdfPath"), QDir::toNativeSeparators(pdfPath) },
-        { QStringLiteral("advanced"), data.useAdvancedTemplate },
+        {
+            QStringLiteral("advanced"),
+            templateLayout.usesAdvancedScoreTable
+        },
+        {
+            QStringLiteral("signaturePath"),
+            QDir::toNativeSeparators(signaturePath)
+        },
+        {
+            QStringLiteral("signatureLeft"),
+            templateLayout.signatureBounds.left()
+        },
+        {
+            QStringLiteral("signatureTop"),
+            templateLayout.signatureBounds.top()
+        },
+        {
+            QStringLiteral("signatureWidth"),
+            templateLayout.signatureBounds.width()
+        },
+        {
+            QStringLiteral("signatureHeight"),
+            templateLayout.signatureBounds.height()
+        },
         { QStringLiteral("englishName"), data.englishName },
         { QStringLiteral("koreanName"), data.koreanName },
         { QStringLiteral("classLabel"), data.classLabel },
@@ -341,6 +372,55 @@ QJsonObject powerPointJob(
         { QStringLiteral("overallGrade"), overallGrade(data.scores) },
         { QStringLiteral("scores"), scores }
     };
+}
+
+bool prepareSignatureImage(
+    const SpeakingEvalReportData& data,
+    const QString& directory,
+    QString* signaturePath,
+    QString* errorMessage
+    )
+{
+    if (!signaturePath)
+    {
+        return false;
+    }
+
+    signaturePath->clear();
+    if (data.signatureImage.isEmpty())
+    {
+        return true;
+    }
+
+    QImage signature;
+    if (!signature.loadFromData(data.signatureImage) || signature.isNull())
+    {
+        return true;
+    }
+
+    const QString path =
+        QDir(directory).filePath(
+            QStringLiteral("signature-%1.png")
+                .arg(
+                    QUuid::createUuid().toString(
+                        QUuid::WithoutBraces
+                        )
+                    )
+            );
+    if (!signature.save(path, "PNG"))
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QObject::tr(
+                    "The signature image could not be prepared for the report."
+                    );
+        }
+        return false;
+    }
+
+    *signaturePath = path;
+    return true;
 }
 
 bool writeUtf8File(
@@ -444,6 +524,31 @@ function Set-Fill($shape, [int]$color) {
     $shape.Fill.ForeColor.RGB = $color
 }
 
+function Add-Signature(
+    $shapes,
+    [string]$path,
+    [double]$left,
+    [double]$top,
+    [double]$maximumWidth,
+    [double]$maximumHeight
+) {
+    if ([string]::IsNullOrWhiteSpace($path)) {
+        return
+    }
+
+    $picture = $shapes.AddPicture($path, 0, -1, 0, 0, -1, -1)
+    $picture.Name = 'Signature_Image'
+    $picture.LockAspectRatio = -1
+    $scale = [Math]::Min(
+        $maximumWidth / $picture.Width,
+        $maximumHeight / $picture.Height
+    )
+    $picture.Width = $picture.Width * $scale
+    $picture.Height = $picture.Height * $scale
+    $picture.Left = $left + $maximumWidth - $picture.Width
+    $picture.Top = $top + $maximumHeight - $picture.Height
+}
+
 $data = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
 $pptxPath = [string]$data.pptxPath
 $pdfPath = [string]$data.pdfPath
@@ -503,6 +608,14 @@ try {
             }
         }
     }
+
+    Add-Signature `
+        $shapes `
+        ([string]$data.signaturePath) `
+        ([double]$data.signatureLeft) `
+        ([double]$data.signatureTop) `
+        ([double]$data.signatureWidth) `
+        ([double]$data.signatureHeight)
 
     $presentation.SaveAs($pdfPath, [int]32)
 }
@@ -593,6 +706,25 @@ on setCellFill(tableShape, rowIndex, columnIndex, rgbValue)
     end tell
 end setCellFill
 
+on addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, maximumWidth, maximumHeight)
+    if signaturePath is "" then return
+
+    tell application "Microsoft PowerPoint"
+        set signaturePicture to make new picture at end of shapes of reportSlide with properties {file name:signaturePath}
+        set pictureWidth to width of signaturePicture
+        set pictureHeight to height of signaturePicture
+        set scaleFactor to maximumWidth / pictureWidth
+        if (maximumHeight / pictureHeight) is less than scaleFactor then
+            set scaleFactor to maximumHeight / pictureHeight
+        end if
+        set width of signaturePicture to pictureWidth * scaleFactor
+        set height of signaturePicture to pictureHeight * scaleFactor
+        set left position of signaturePicture to signatureLeft + maximumWidth - (width of signaturePicture)
+        set top of signaturePicture to signatureTop + maximumHeight - (height of signaturePicture)
+        set name of signaturePicture to "Signature_Image"
+    end tell
+end addSignature
+
 on openPresentationCount()
     tell application "Microsoft PowerPoint"
         set openPresentations to presentations
@@ -617,8 +749,13 @@ end waitForOpenedPresentation
 on run argv
     set pptxPath to item 1 of argv
     set isAdvanced to (item 2 of argv is "true")
-    set jobCount to item 3 of argv as integer
-    set argumentIndex to 4
+    set signaturePath to item 3 of argv
+    set signatureLeft to item 4 of argv as real
+    set signatureTop to item 5 of argv as real
+    set signatureWidth to item 6 of argv as real
+    set signatureHeight to item 7 of argv as real
+    set jobCount to item 8 of argv as integer
+    set argumentIndex to 9
     set greyFill to {217, 217, 217}
     set yellowFill to {255, 255, 0}
     set reportPresentation to missing value
@@ -637,6 +774,8 @@ on run argv
             end if
             set exportStep to "accessing slide 1"
             set reportSlide to slide (1) of reportPresentation
+            set exportStep to "adding the signature image"
+            my addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, signatureWidth, signatureHeight)
             set exportStep to "resolving report text shapes"
             set englishNameShape to my requireShape(reportSlide, "English_Name")
             set koreanNameShape to my requireShape(reportSlide, "Korean_Name")
@@ -764,15 +903,13 @@ bool renderPowerPointPdf(
             QStringLiteral("export.applescript")
 #endif
             );
+    const SpeakingEvalReportTemplateLayout& templateLayout =
+        speakingEvalReportTemplateLayout(
+            data.reportTemplate
+            );
     const QString resourcePath =
         ResourcePaths::Documents::filePath(
-            data.useAdvancedTemplate
-                ? QStringLiteral(
-                        "Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
-                    )
-                : QStringLiteral(
-                        "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
-                    )
+            templateLayout.powerPointResourcePath
             );
 
     if (!copyResourceToFile(resourcePath, pptxPath, errorMessage))
@@ -780,10 +917,26 @@ bool renderPowerPointPdf(
         return false;
     }
 
+    QString signaturePath;
+    if (!prepareSignatureImage(
+            data,
+            workingDirectory,
+            &signaturePath,
+            errorMessage
+            ))
+    {
+        return false;
+    }
+
     const QByteArray jobJson =
         QByteArrayLiteral("\xEF\xBB\xBF")
         + QJsonDocument(
-            powerPointJob(data, pptxPath, documentPath)
+            powerPointJob(
+                data,
+                pptxPath,
+                documentPath,
+                signaturePath
+                )
             ).toJson(QJsonDocument::Compact);
 
     if (!writeUtf8File(jobPath, jobJson, errorMessage))
@@ -852,9 +1005,14 @@ bool renderPowerPointPdf(
         {
             scriptPath,
             pptxPath,
-            data.useAdvancedTemplate
+            templateLayout.usesAdvancedScoreTable
                 ? QStringLiteral("true")
                 : QStringLiteral("false"),
+            signaturePath,
+            QString::number(templateLayout.signatureBounds.left()),
+            QString::number(templateLayout.signatureBounds.top()),
+            QString::number(templateLayout.signatureBounds.width()),
+            QString::number(templateLayout.signatureBounds.height()),
             QStringLiteral("1"),
             data.englishName,
             documentPath,
@@ -938,7 +1096,7 @@ bool renderMacPowerPointTemplateBatch(
     const QList<StudentReport>& reports,
     const QStringList& documentPaths,
     const QList<int>& reportIndexes,
-    bool useAdvancedTemplate,
+    SpeakingEvalReportTemplate reportTemplate,
     QTemporaryDir* stagingDirectory,
     QString* errorMessage
     )
@@ -967,23 +1125,33 @@ bool renderMacPowerPointTemplateBatch(
         QDir(workingDirectory).filePath(
             QStringLiteral("export-%1.applescript").arg(exportId)
             );
-    const auto removeWorkingFiles = [&pptxPath, &scriptPath]()
+    QString signaturePath;
+    const auto removeWorkingFiles =
+        [&pptxPath, &scriptPath, &signaturePath]()
     {
         QFile::remove(pptxPath);
         QFile::remove(scriptPath);
+        if (!signaturePath.isEmpty())
+        {
+            QFile::remove(signaturePath);
+        }
     };
+    const SpeakingEvalReportTemplateLayout& templateLayout =
+        speakingEvalReportTemplateLayout(
+            reportTemplate
+            );
     const QString resourcePath =
         ResourcePaths::Documents::filePath(
-            useAdvancedTemplate
-                ? QStringLiteral(
-                        "Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
-                    )
-                : QStringLiteral(
-                        "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
-                    )
+            templateLayout.powerPointResourcePath
             );
 
     if (!copyResourceToFile(resourcePath, pptxPath, errorMessage)
+        || !prepareSignatureImage(
+            reports.at(reportIndexes.constFirst()).report,
+            workingDirectory,
+            &signaturePath,
+            errorMessage
+            )
         || !writeUtf8File(
             scriptPath,
             macPowerPointScript().toUtf8(),
@@ -1009,9 +1177,14 @@ bool renderMacPowerPointTemplateBatch(
     QStringList arguments{
         scriptPath,
         pptxPath,
-        useAdvancedTemplate
+        templateLayout.usesAdvancedScoreTable
             ? QStringLiteral("true")
             : QStringLiteral("false"),
+        signaturePath,
+        QString::number(templateLayout.signatureBounds.left()),
+        QString::number(templateLayout.signatureBounds.top()),
+        QString::number(templateLayout.signatureBounds.width()),
+        QString::number(templateLayout.signatureBounds.height()),
         QString::number(reportIndexes.size())
     };
     for (const int reportIndex : reportIndexes)
@@ -1123,32 +1296,34 @@ bool renderMacPowerPointPdfs(
         return false;
     }
 
-    QList<int> standardReportIndexes;
-    QList<int> advancedReportIndexes;
+    QMap<SpeakingEvalReportTemplate, QList<int>> reportIndexesByTemplate;
     for (int index = 0; index < reports.size(); ++index)
     {
-        (reports.at(index).report.useAdvancedTemplate
-             ? advancedReportIndexes
-             : standardReportIndexes)
-            .append(index);
+        reportIndexesByTemplate[
+            reports.at(index).report.reportTemplate
+            ].append(index);
     }
 
-    return renderMacPowerPointTemplateBatch(
-               reports,
-               documentPaths,
-               standardReportIndexes,
-               false,
-               stagingDirectory,
-               errorMessage
-               )
-        && renderMacPowerPointTemplateBatch(
-            reports,
-            documentPaths,
-            advancedReportIndexes,
-            true,
-            stagingDirectory,
-            errorMessage
-            );
+    for (
+        auto iterator = reportIndexesByTemplate.cbegin();
+        iterator != reportIndexesByTemplate.cend();
+        ++iterator
+        )
+    {
+        if (!renderMacPowerPointTemplateBatch(
+                reports,
+                documentPaths,
+                iterator.value(),
+                iterator.key(),
+                stagingDirectory,
+                errorMessage
+                ))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 #endif
 
