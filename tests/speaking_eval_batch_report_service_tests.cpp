@@ -1,12 +1,15 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 
 #include <QtTest>
 
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QPdfDocument>
 #include <QPdfSelection>
+#include <QPushButton>
 #include <QTemporaryDir>
 
 class SpeakingEvalBatchReportServiceTests : public QObject
@@ -17,7 +20,9 @@ private slots:
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
     void internalRendererCreatesReadablePdf();
+    void singleReportCanBeSavedToAnExactFilePath();
     void overwriteExistingReportWhenAllowed();
+    void previewDialogOffersActionsForTheSelectedReport();
     void powerPointAvailabilityMessageIsAvailable();
     void powerPointRendererCreatesReadablePdfWhenAvailable();
 };
@@ -146,6 +151,78 @@ void SpeakingEvalBatchReportServiceTests::overwriteExistingReportWhenAllowed()
     QCOMPARE(document.load(targetPath), QPdfDocument::Error::None);
     QCOMPARE(document.pageCount(), 1);
     QVERIFY(!QFileInfo::exists(targetPath + QStringLiteral(".classmngr-backup")));
+}
+
+void SpeakingEvalBatchReportServiceTests::singleReportCanBeSavedToAnExactFilePath()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData data;
+    data.englishName = QStringLiteral("Selected Student");
+    data.classLabel = QStringLiteral("E5 Zeus");
+    data.date = QStringLiteral("July 2026");
+    data.scores.fill(QStringLiteral("A"));
+
+    const QString targetPath =
+        QDir(outputDirectory.path()).filePath(
+            QStringLiteral("Custom report name.pdf")
+            );
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = { { QStringLiteral("Selected Student"), data } };
+    request.savePdf = true;
+    request.outputFilePath = targetPath;
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+
+    QVERIFY2(
+        result.status == SpeakingEvalBatchReportService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QCOMPARE(result.savedPdfPaths, QStringList{ targetPath });
+
+    QPdfDocument document;
+    QCOMPARE(document.load(targetPath), QPdfDocument::Error::None);
+    QCOMPARE(document.pageCount(), 1);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    previewDialogOffersActionsForTheSelectedReport()
+{
+    SpeakingEvalReportData firstReport;
+    firstReport.englishName = QStringLiteral("First Student");
+    SpeakingEvalReportData secondReport;
+    secondReport.englishName = QStringLiteral("Second Student");
+
+    SpeakingEvalReportDialog dialog(
+        {
+            { QStringLiteral("First Student"), firstReport },
+            { QStringLiteral("Second Student"), secondReport }
+        },
+        1
+        );
+
+    auto* studentSelector = dialog.findChild<QComboBox*>(
+        QStringLiteral("speakingEvalReportStudentSelector")
+        );
+    auto* printButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalReportPrintButton")
+        );
+    auto* saveAsPdfButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalReportSaveAsPdfButton")
+        );
+
+    QVERIFY(studentSelector);
+    QCOMPARE(studentSelector->currentIndex(), 1);
+    QCOMPARE(studentSelector->currentText(), QStringLiteral("Second Student"));
+    QVERIFY(printButton);
+    QCOMPARE(printButton->text(), QStringLiteral("Print"));
+    QVERIFY(printButton->isEnabled());
+    QVERIFY(saveAsPdfButton);
+    QCOMPARE(saveAsPdfButton->text(), QStringLiteral("Save As PDF"));
+    QVERIFY(saveAsPdfButton->isEnabled());
 }
 
 void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailable()

@@ -1338,6 +1338,48 @@ bool targetFilePaths(
         return false;
     }
 
+    if (!request.outputFilePath.trimmed().isEmpty())
+    {
+        if (request.reports.size() != 1)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "An exact PDF file can be selected only for one report."
+                    );
+            }
+            return false;
+        }
+
+        const QFileInfo targetInfo(request.outputFilePath);
+        QDir targetDirectory(targetInfo.absolutePath());
+        if (!targetDirectory.exists()
+            && !QDir().mkpath(targetDirectory.path()))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "The selected PDF folder could not be created."
+                    );
+            }
+            return false;
+        }
+
+        const QString targetPath = targetInfo.absoluteFilePath();
+        if (!request.overwriteExisting && QFileInfo::exists(targetPath))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr("A PDF named \"%1\" already exists.")
+                    .arg(targetInfo.fileName());
+            }
+            return false;
+        }
+
+        *targetPaths = { targetPath };
+        return true;
+    }
+
     QDir outputDirectory(request.outputDirectory);
     if (!outputDirectory.exists() && !QDir().mkpath(outputDirectory.path()))
     {
@@ -1652,9 +1694,11 @@ Result exportReports(
         return failed(QObject::tr("Choose PDF saving, printing, or both."));
     }
 
-    if (request.savePdf && request.outputDirectory.trimmed().isEmpty())
+    if (request.savePdf
+        && request.outputDirectory.trimmed().isEmpty()
+        && request.outputFilePath.trimmed().isEmpty())
     {
-        return failed(QObject::tr("Choose a folder for the PDF reports."));
+        return failed(QObject::tr("Choose a destination for the PDF reports."));
     }
 
     if (request.renderer == Renderer::PowerPoint
@@ -1786,12 +1830,16 @@ Result exportReports(
 
     if (request.printReports)
     {
+        const bool printingOneReport =
+            request.reports.size() == 1;
         const PdfPrintService::Result printResult =
             PdfPrintService::printPdfDocuments(
                 {
                     request.parent,
                     stagedPdfPaths,
-                    QObject::tr("Print Speaking Evaluation Reports"),
+                    printingOneReport
+                        ? QObject::tr("Print Speaking Evaluation Report")
+                        : QObject::tr("Print Speaking Evaluation Reports"),
                     QPageLayout::Portrait,
                     QPageSize::A4,
                     true

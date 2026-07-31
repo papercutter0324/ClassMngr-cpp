@@ -50,11 +50,18 @@ signals:
         );
 
 private:
+    [[nodiscard]] const SpeakingEvalBatchReportService::StudentReport*
+    currentReport() const;
+
     void updateReport();
 
     void moveToPreviousStudent();
 
     void moveToNextStudent();
+
+    void printCurrentReport();
+
+    void saveCurrentReportAsPdf();
 
 private:
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;

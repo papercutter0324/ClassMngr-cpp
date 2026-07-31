@@ -2148,6 +2148,7 @@ if(BUILD_TESTING)
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/updater/version.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp

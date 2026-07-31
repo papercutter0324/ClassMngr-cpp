@@ -44,6 +44,9 @@ struct Request
     bool printReports = false;
     bool overwriteExisting = false;
     QString outputDirectory;
+    // An exact destination for a single-report save-as request. When set,
+    // outputDirectory is ignored.
+    QString outputFilePath;
     std::function<bool(int completed, int total, const QString& studentName)>
         progressCallback;
 };

@@ -4,12 +4,16 @@
 
 #include <QComboBox>
 #include <QDate>
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include <array>
@@ -253,6 +257,9 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     m_studentSelector =
         new QComboBox(this);
 
+    m_studentSelector->setObjectName(
+        QStringLiteral("speakingEvalReportStudentSelector")
+        );
     m_studentSelector->setSizeAdjustPolicy(
         QComboBox::AdjustToContents
         );
@@ -313,12 +320,32 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     auto* buttonLayout =
         new QHBoxLayout;
 
+    auto* printButton =
+        new TextFitPushButton(
+            tr("Print"),
+            this
+            );
+    printButton->setObjectName(
+        QStringLiteral("speakingEvalReportPrintButton")
+        );
+
+    auto* saveAsPdfButton =
+        new TextFitPushButton(
+            tr("Save As PDF"),
+            this
+            );
+    saveAsPdfButton->setObjectName(
+        QStringLiteral("speakingEvalReportSaveAsPdfButton")
+        );
+
     auto* closeButton =
         new TextFitPushButton(
             tr("Close"),
             this
             );
 
+    buttonLayout->addWidget(printButton);
+    buttonLayout->addWidget(saveAsPdfButton);
     buttonLayout->addStretch();
     buttonLayout->addWidget(closeButton);
     layout->addLayout(buttonLayout);
@@ -344,6 +371,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     m_studentSelector->setEnabled(hasStudents);
     previousButton->setEnabled(hasStudents);
     nextButton->setEnabled(hasStudents);
+    printButton->setEnabled(hasStudents);
+    saveAsPdfButton->setEnabled(hasStudents);
     m_notesEdit->setEnabled(hasStudents);
     m_report->setInteractive(m_interactive && hasStudents);
     if (hasStudents)
@@ -467,6 +496,18 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         }
         );
     connect(
+        printButton,
+        &QPushButton::clicked,
+        this,
+        &SpeakingEvalReportDialog::printCurrentReport
+        );
+    connect(
+        saveAsPdfButton,
+        &QPushButton::clicked,
+        this,
+        &SpeakingEvalReportDialog::saveCurrentReportAsPdf
+        );
+    connect(
         closeButton,
         &QPushButton::clicked,
         this,
@@ -474,6 +515,24 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         );
 
     updateReport();
+}
+
+const SpeakingEvalBatchReportService::StudentReport*
+SpeakingEvalReportDialog::currentReport() const
+{
+    if (!m_studentSelector)
+    {
+        return nullptr;
+    }
+
+    const int reportIndex =
+        m_studentSelector->currentData().toInt();
+    if (reportIndex < 0 || reportIndex >= m_reports.size())
+    {
+        return nullptr;
+    }
+
+    return &m_reports.at(reportIndex);
 }
 
 void SpeakingEvalReportDialog::updateReport()
@@ -535,4 +594,109 @@ void SpeakingEvalReportDialog::moveToNextStudent()
         (m_studentSelector->currentIndex() + 1)
         % m_studentSelector->count()
         );
+}
+
+void SpeakingEvalReportDialog::printCurrentReport()
+{
+    const SpeakingEvalBatchReportService::StudentReport* selectedReport =
+        currentReport();
+    if (!selectedReport)
+    {
+        return;
+    }
+
+    SpeakingEvalBatchReportService::Request request;
+    request.parent = this;
+    request.reports = { *selectedReport };
+    request.renderer =
+        SpeakingEvalBatchReportService::Renderer::Internal;
+    request.printReports = true;
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    if (result.status
+        == SpeakingEvalBatchReportService::Status::Failed
+        || result.status
+            == SpeakingEvalBatchReportService::Status::InternalRendererFailed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Report Printing Failed"),
+            result.message
+            );
+    }
+}
+
+void SpeakingEvalReportDialog::saveCurrentReportAsPdf()
+{
+    const SpeakingEvalBatchReportService::StudentReport* selectedReport =
+        currentReport();
+    if (!selectedReport)
+    {
+        return;
+    }
+
+    const QString documentsDirectory =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DocumentsLocation
+            );
+    const QString suggestedFileName =
+        SpeakingEvalBatchReportService::safeFileName(
+            selectedReport->report.englishName,
+            selectedReport->report.koreanName
+            );
+
+    QFileDialog dialog(
+        this,
+        tr("Save Speaking Evaluation Report As"),
+        documentsDirectory,
+        tr("PDF Documents (*.pdf)")
+        );
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    dialog.setDefaultSuffix(QStringLiteral("pdf"));
+    dialog.selectFile(suggestedFileName);
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const QStringList selectedFiles =
+        dialog.selectedFiles();
+    if (selectedFiles.isEmpty())
+    {
+        return;
+    }
+
+    QString savePath =
+        selectedFiles.constFirst();
+    if (QFileInfo(savePath).suffix().isEmpty())
+    {
+        savePath += QStringLiteral(".pdf");
+    }
+
+    SpeakingEvalBatchReportService::Request request;
+    request.parent = this;
+    request.reports = { *selectedReport };
+    request.renderer =
+        SpeakingEvalBatchReportService::Renderer::Internal;
+    request.savePdf = true;
+    request.overwriteExisting = true;
+    request.outputFilePath = savePath;
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    if (result.status
+        == SpeakingEvalBatchReportService::Status::Failed
+        || result.status
+            == SpeakingEvalBatchReportService::Status::InternalRendererFailed)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Save PDF Failed"),
+            result.message
+            );
+    }
 }
