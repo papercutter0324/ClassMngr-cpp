@@ -43,6 +43,8 @@ struct PrintPalette
     QColor emptyBackground;
     QColor essayBackground;
     QColor lunchBackground;
+    QColor testingBackground;
+    QColor testingMarker;
     QColor bodyText;
     bool excel = false;
 };
@@ -111,6 +113,8 @@ PrintPalette paletteFor(
             Qt::white,
             Qt::white,
             QColor(QStringLiteral("#DCDCDC")),
+            QColor(QStringLiteral("#FFF0B8")),
+            QColor(QStringLiteral("#B66A00")),
             Qt::black,
             true
         };
@@ -129,6 +133,8 @@ PrintPalette paletteFor(
             Qt::white,
             Qt::white,
             QColor(QStringLiteral("#DCDCDC")),
+            QColor(QStringLiteral("#FFF0B8")),
+            QColor(QStringLiteral("#B66A00")),
             Qt::black,
             false
         };
@@ -145,6 +151,8 @@ PrintPalette paletteFor(
         Qt::white,
         Qt::white,
         QColor(QStringLiteral("#DCDCDC")),
+        QColor(QStringLiteral("#4B3D20")),
+        QColor(QStringLiteral("#FFD166")),
         Qt::black,
         false
     };
@@ -589,6 +597,46 @@ void drawScheduleCell(
                 ),
             Qt::black
             );
+    }
+    else if (cell.slotState == scheduleTestingSlotState())
+    {
+        painter.fillRect(
+            rect,
+            palette.testingBackground
+            );
+
+        QString text =
+            QObject::tr("Testing");
+        const QString room =
+            cell.testingRoom.trimmed();
+        if (!room.isEmpty())
+        {
+            text +=
+                QObject::tr("\nRm: %1").arg(room);
+        }
+
+        drawCenteredText(
+            painter,
+            rect,
+            text,
+            printUiFont(
+                palette.excel ? 14 : 15,
+                QFont::Bold
+                ),
+            palette.excel
+                ? Qt::black
+                : palette.testingMarker
+            );
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(palette.testingMarker);
+        constexpr qreal MarkerSize = 16.0;
+        QPolygonF marker;
+        marker
+            << rect.topRight() - QPointF(MarkerSize, 0.0)
+            << rect.topRight()
+            << rect.topRight() + QPointF(0.0, MarkerSize);
+        painter.drawPolygon(marker);
     }
     else
     {

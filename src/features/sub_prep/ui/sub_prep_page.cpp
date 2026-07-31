@@ -527,7 +527,8 @@ void SubPrepPage::generateSubPrep()
     packageRequest.classIds = dialog.selectedClassIds();
     packageRequest.useIntensiveSchedule =
         m_scheduleWidget
-        && m_scheduleWidget->displayState().showIntensive;
+        && m_scheduleWidget->displayState().displayMode
+            == ScheduleDisplayMode::Intensive;
     packageRequest.createFolder = dialog.createFolder();
     packageRequest.targetRoot = dialog.targetRoot();
     packageRequest.userName = dialog.userName();

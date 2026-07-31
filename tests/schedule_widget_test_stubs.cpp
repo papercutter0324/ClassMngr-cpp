@@ -17,6 +17,7 @@
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
+#include "data/repositories/testing_block_repository.h"
 #include "features/schedule/ui/schedule_builder.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -36,11 +37,14 @@
 namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
+QHash<QString, QString> testingBlocks;
 int savedSlotStates = 0;
+int savedTestingBlocks = 0;
 int printRequestCount = 0;
 bool lastPrintRequestShowsEnglishNames = false;
 bool databaseOpen = true;
 bool includeAdditionalClass = false;
+bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
 bool possibleImportedClasses = false;
 bool existingIntensiveHours = false;
@@ -49,11 +53,14 @@ bool includeAlternativeMatchingClass = false;
 void reset()
 {
     settings.clear();
+    testingBlocks.clear();
     savedSlotStates = 0;
+    savedTestingBlocks = 0;
     printRequestCount = 0;
     lastPrintRequestShowsEnglishNames = false;
     databaseOpen = true;
     includeAdditionalClass = false;
+    includeMiddleSchoolClasses = false;
     matchImportedClasses = false;
     possibleImportedClasses = false;
     existingIntensiveHours = false;
@@ -72,6 +79,13 @@ void setIncludeAdditionalClass(
     )
 {
     includeAdditionalClass = include;
+}
+
+void setIncludeMiddleSchoolClasses(
+    bool include
+    )
+{
+    includeMiddleSchoolClasses = include;
 }
 
 void setMatchImportedClasses(
@@ -107,6 +121,18 @@ QString settingValue(
     )
 {
     return settings.value(key).toString();
+}
+
+void setTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room
+    )
+{
+    testingBlocks.insert(
+        day + QLatin1Char('\x1f') + startTime,
+        room
+        );
 }
 }
 
@@ -267,6 +293,69 @@ void DataService::saveIntensiveSlotState(
     )
 {
     ++ScheduleWidgetTestStubs::savedSlotStates;
+}
+
+Result<QList<TestingBlock>> DataService::loadTestingBlocks()
+{
+    QList<TestingBlock> blocks;
+
+    for (
+        auto iterator =
+            ScheduleWidgetTestStubs::testingBlocks.cbegin();
+        iterator !=
+            ScheduleWidgetTestStubs::testingBlocks.cend();
+        ++iterator
+        )
+    {
+        const QStringList keyParts =
+            iterator.key().split(QLatin1Char('\x1f'));
+        if (keyParts.size() != 2)
+        {
+            continue;
+        }
+
+        blocks.append(
+            {
+                keyParts.at(0),
+                keyParts.at(1),
+                iterator.value()
+            }
+            );
+    }
+
+    return blocks;
+}
+
+Status DataService::saveTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room
+    )
+{
+    ScheduleWidgetTestStubs::setTestingBlock(
+        day,
+        startTime,
+        room
+        );
+    ++ScheduleWidgetTestStubs::savedTestingBlocks;
+    return {};
+}
+
+Status DataService::deleteTestingBlock(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    ScheduleWidgetTestStubs::testingBlocks.remove(
+        day + QLatin1Char('\x1f') + startTime
+        );
+    return {};
+}
+
+Status DataService::clearTestingBlocks()
+{
+    ScheduleWidgetTestStubs::testingBlocks.clear();
+    return {};
 }
 
 QList<Classroom> DataService::getClasses()
@@ -562,6 +651,33 @@ ScheduleBuildResult ScheduleBuilder::build(
                 .append(entry);
     }
 
+    if (ScheduleWidgetTestStubs::includeMiddleSchoolClasses)
+    {
+        if (visibleDays.contains(QStringLiteral("Monday")))
+        {
+            ScheduleEntry entry;
+            entry.classId = 44;
+            entry.teacherEn = QStringLiteral("M2 Teacher");
+            entry.classGrade = QStringLiteral("M2");
+            entry.classLevel = QStringLiteral("Ursa");
+            result.schedule[QStringLiteral("Monday")]
+                [QStringLiteral("16:00")]
+                    .append(entry);
+        }
+
+        if (visibleDays.contains(QStringLiteral("Wednesday")))
+        {
+            ScheduleEntry entry;
+            entry.classId = 45;
+            entry.teacherEn = QStringLiteral("M1 Teacher");
+            entry.classGrade = QStringLiteral("M1");
+            entry.classLevel = QStringLiteral("Solis");
+            result.schedule[QStringLiteral("Wednesday")]
+                [QStringLiteral("16:00")]
+                    .append(entry);
+        }
+    }
+
     return result;
 }
 
@@ -578,6 +694,18 @@ QString scheduleEssaySlotState()
 QString scheduleLunchSlotState()
 {
     return QStringLiteral("lunch");
+}
+
+QString scheduleTestingSlotState()
+{
+    return QStringLiteral("testing");
+}
+
+bool scheduleModeUsesIntensiveTimes(
+    ScheduleDisplayMode mode
+    )
+{
+    return mode == ScheduleDisplayMode::Intensive;
 }
 
 QString nextScheduleSlotState(
@@ -680,19 +808,84 @@ ScheduleViewModel buildScheduleViewModel(
                 result.schedule
                     .value(day)
                     .value(sourceRow.label);
+
+            bool removedAffectedEntry = false;
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                )
+            {
+                for (
+                    int entryIndex = cell.entries.size() - 1;
+                    entryIndex >= 0;
+                    --entryIndex
+                    )
+                {
+                    const QString grade =
+                        cell.entries
+                            .at(entryIndex)
+                            .classGrade
+                            .trimmed()
+                            .toUpper();
+                    if (
+                        grade == QStringLiteral("M2")
+                        || grade == QStringLiteral("M3")
+                        || (
+                            request.testingAffectsM1
+                            && grade == QStringLiteral("M1")
+                            )
+                        )
+                    {
+                        cell.entries.removeAt(entryIndex);
+                        removedAffectedEntry = true;
+                    }
+                }
+            }
+
             cell.defaultSlotState =
                 scheduleDefaultSlotState(
                     day,
                     sourceRow.label,
-                    request.useIntensive
+                    scheduleModeUsesIntensiveTimes(
+                        request.displayMode
+                        )
                     );
             cell.slotState = cell.defaultSlotState;
             cell.slotTogglingEnabled =
                 scheduleSlotTogglingEnabled(
                     day,
-                    request.useIntensive,
+                    scheduleModeUsesIntensiveTimes(
+                        request.displayMode
+                        ),
                     request.regularWeekdaySlotTogglingEnabled
                     );
+
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                && cell.entries.isEmpty()
+                )
+            {
+                const QString key =
+                    scheduleSlotKey(
+                        day,
+                        sourceRow.label
+                        );
+                if (request.testingBlockRooms.contains(key))
+                {
+                    cell.slotState =
+                        scheduleTestingSlotState();
+                    cell.testingRoom =
+                        request.testingBlockRooms.value(key);
+                }
+                else if (removedAffectedEntry)
+                {
+                    cell.slotState =
+                        scheduleEssaySlotState();
+                }
+                cell.testingBlockCreationEnabled =
+                    cell.slotState == scheduleEssaySlotState();
+            }
             row.cells.append(cell);
         }
 

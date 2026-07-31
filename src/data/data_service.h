@@ -8,6 +8,7 @@
 #include "domain/models/class_transfer.h"
 #include "domain/models/classroom.h"
 #include "domain/models/intensive_slot_state.h"
+#include "domain/models/testing_block.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/roster.h"
@@ -39,6 +40,7 @@ class SettingsRepository;
 class SpeakingEvalRepository;
 class TeacherRepository;
 class TeacherImportRepository;
+class TestingBlockRepository;
 
 // =========================================================
 // Data Service
@@ -220,6 +222,25 @@ public:
         const QString& defaultState = QStringLiteral("essay")
         );
 
+    // =====================================================
+    // Testing Blocks
+    // =====================================================
+
+    [[nodiscard]] Result<QList<TestingBlock>> loadTestingBlocks();
+
+    [[nodiscard]] Status saveTestingBlock(
+        const QString& day,
+        const QString& startTime,
+        const QString& room
+        );
+
+    [[nodiscard]] Status deleteTestingBlock(
+        const QString& day,
+        const QString& startTime
+        );
+
+    [[nodiscard]] Status clearTestingBlocks();
+
 
 
     // =====================================================
@@ -383,6 +404,7 @@ private:
     std::unique_ptr<ScheduleImportRepository> m_scheduleImportRepository;
     std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
     std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
+    std::unique_ptr<TestingBlockRepository> m_testingBlockRepository;
     std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;
     std::unique_ptr<RosterRepository> m_rosterRepository;
     std::unique_ptr<SpeakingEvalRepository> m_speakingEvalRepository;

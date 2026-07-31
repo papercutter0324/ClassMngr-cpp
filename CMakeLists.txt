@@ -1066,6 +1066,33 @@ if(BUILD_TESTING)
         COMMAND ClassMngrIntensiveSlotStateRepositoryTests
     )
 
+    qt_add_executable(ClassMngrTestingBlockRepositoryTests
+        tests/testing_block_repository_tests.cpp
+        src/data/repositories/testing_block_repository.cpp
+    )
+
+    target_compile_features(ClassMngrTestingBlockRepositoryTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTestingBlockRepositoryTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrTestingBlockRepositoryTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrTestingBlockRepositoryTests
+        COMMAND ClassMngrTestingBlockRepositoryTests
+    )
+
     qt_add_executable(ClassMngrCalendarEventRepositoryTests
         tests/calendar_event_repository_tests.cpp
         src/data/repositories/calendar_event_repository.cpp
@@ -1104,6 +1131,7 @@ if(BUILD_TESTING)
         src/data/repositories/class_repository.cpp
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/testing_block_repository.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
@@ -1152,6 +1180,7 @@ if(BUILD_TESTING)
         src/data/repositories/class_repository.cpp
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
+        src/data/repositories/testing_block_repository.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
@@ -1430,8 +1459,12 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_page.cpp
         src/features/schedule/ui/schedule_page.h
         src/features/schedule/ui/schedule_print_dialog.h
+        src/features/schedule/ui/schedule_settings_dialog.cpp
+        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
+        src/features/schedule/ui/testing_block_dialog.cpp
+        src/features/schedule/ui/testing_block_dialog.h
         src/ui/shared/pages/basepage.cpp
         src/ui/shared/pages/basepage.h
     )
@@ -1477,10 +1510,14 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_import_review_dialog.cpp
         src/features/schedule/ui/schedule_import_review_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
+        src/features/schedule/ui/schedule_settings_dialog.cpp
+        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_time_formatter.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
+        src/features/schedule/ui/testing_block_dialog.cpp
+        src/features/schedule/ui/testing_block_dialog.h
         src/ui/shared/widgets/no_wheel_combobox.cpp
     )
 
@@ -1529,6 +1566,8 @@ if(BUILD_TESTING)
         src/features/classes/models/class_tab_navigation_model.h
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
+        src/features/schedule/ui/schedule_settings_dialog.cpp
+        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
         src/features/sub_prep/ui/sub_prep_page.cpp
         src/features/sub_prep/ui/sub_prep_page_class_information.cpp
@@ -1549,6 +1588,8 @@ if(BUILD_TESTING)
         src/ui/shared/widgets/uniform_width_tab_bar.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
+        src/features/schedule/ui/testing_block_dialog.cpp
+        src/features/schedule/ui/testing_block_dialog.h
     )
 
     target_compile_features(ClassMngrSubPrepPageTests
@@ -2236,6 +2277,7 @@ if(BUILD_TESTING)
             ClassMngrTeacherInfoPageTests
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
+            ClassMngrTestingBlockRepositoryTests
             ClassMngrCalendarEventRepositoryTests
             ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests

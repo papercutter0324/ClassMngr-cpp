@@ -15,6 +15,7 @@
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
+#include "data/repositories/testing_block_repository.h"
 
 #include <QDir>
 #include <QFile>
@@ -163,6 +164,11 @@ Status DataService::openDatabase(
             m_db
             );
 
+    m_testingBlockRepository =
+        std::make_unique<TestingBlockRepository>(
+            m_db
+            );
+
     m_calendarEventRepository =
         std::make_unique<CalendarEventRepository>(
             m_db
@@ -196,6 +202,7 @@ void DataService::closeDatabase()
     m_scheduleImportRepository.reset();
     m_classInfoRepository.reset();
     m_intensiveSlotStateRepository.reset();
+    m_testingBlockRepository.reset();
     m_calendarEventRepository.reset();
     m_rosterRepository.reset();
     m_speakingEvalRepository.reset();
@@ -617,6 +624,68 @@ void DataService::saveIntensiveSlotState(
             defaultState
             );
     }
+}
+
+Result<QList<TestingBlock>> DataService::loadTestingBlocks()
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->loadTestingBlocks();
+}
+
+Status DataService::saveTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room
+    )
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->saveTestingBlock(
+        day,
+        startTime,
+        room
+        );
+}
+
+Status DataService::deleteTestingBlock(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->deleteTestingBlock(
+        day,
+        startTime
+        );
+}
+
+Status DataService::clearTestingBlocks()
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->clearTestingBlocks();
 }
 
 QList<CalendarEvent> DataService::loadCalendarEventsForDate(

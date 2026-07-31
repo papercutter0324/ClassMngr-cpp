@@ -299,6 +299,7 @@ private slots:
     void generatedPdfUsesA4Orientation();
     void contentStaysInsideHalfInchMargins();
     void themedEmptyCellsAndOffTableAreaStayWhite();
+    void rendersTestingCellAndRoom();
 };
 
 void SchedulePrintPdfTests::generatedPdfUsesA4Orientation()
@@ -392,6 +393,65 @@ void SchedulePrintPdfTests::contentStaysInsideHalfInchMargins()
         QVERIFY(bounds.right() <= image.width() - marginPixels + TolerancePixels);
         QVERIFY(bounds.bottom() <= image.height() - marginPixels + TolerancePixels);
     }
+}
+
+void SchedulePrintPdfTests::rendersTestingCellAndRoom()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SchedulePrintService::Request request =
+        requestFor(
+            SchedulePrintStyle::LightTheme,
+            QPageLayout::Landscape
+            );
+    ScheduleCellView& cell =
+        request.model.rows.first().cells.first();
+    cell.slotState =
+        scheduleTestingSlotState();
+    cell.testingRoom =
+        QStringLiteral("Library");
+
+    const QString path =
+        savePdf(
+            temporaryDirectory,
+            request,
+            QStringLiteral("testing.pdf")
+            );
+    QVERIFY(!path.isEmpty());
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    const QImage image =
+        renderFirstPage(document);
+    QVERIFY(!image.isNull());
+    const QRectF targetRect =
+        scheduleTargetRect(
+            image,
+            request.model,
+            false
+            );
+    const QPoint testingCenter =
+        scaledSchedulePoint(
+            targetRect,
+            TimeColumnWidth + (DayColumnWidth / 2.0),
+            HeaderHeight + (RowHeight / 2.0),
+            request.model
+            );
+    const QPoint markerPoint =
+        scaledSchedulePoint(
+            targetRect,
+            TimeColumnWidth + DayColumnWidth - 5.0,
+            HeaderHeight + 5.0,
+            request.model
+            );
+
+    const QColor centerColor =
+        image.pixelColor(testingCenter);
+    const QColor markerColor =
+        image.pixelColor(markerPoint);
+    QVERIFY(!isWhitePixel(centerColor));
+    QVERIFY(markerColor != centerColor);
 }
 
 void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()

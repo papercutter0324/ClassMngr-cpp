@@ -13,6 +13,7 @@ struct DatabaseIds
     int classId = -1;
     int eventId = -1;
     int campusId = -1;
+    bool testingBlockSaved = false;
 };
 
 DatabaseIds populateDatabase(
@@ -66,6 +67,12 @@ DatabaseIds populateDatabase(
         QStringLiteral("lunch"),
         QStringLiteral("essay")
         );
+    ids.testingBlockSaved =
+        service.saveTestingBlock(
+            QStringLiteral("Wednesday"),
+            QStringLiteral("16:00"),
+            prefix + QStringLiteral(" Testing Room")
+            ).has_value();
 
     CalendarEvent event;
     event.title = prefix + QStringLiteral(" Event");
@@ -112,6 +119,7 @@ void verifyDatabase(
     const DatabaseIds& ids
     )
 {
+    QVERIFY(ids.testingBlockSaved);
     QCOMPARE(
         service.loadSetting(
             QStringLiteral("lifecycle/value")
@@ -144,6 +152,14 @@ void verifyDatabase(
         prefix + QStringLiteral(" Preferred Name")
         );
     QCOMPARE(service.loadIntensiveSlotStates().size(), 1);
+    const Result<QList<TestingBlock>> testingBlocks =
+        service.loadTestingBlocks();
+    QVERIFY(testingBlocks);
+    QCOMPARE(testingBlocks->size(), 1);
+    QCOMPARE(
+        testingBlocks->first().room,
+        prefix + QStringLiteral(" Testing Room")
+        );
     QCOMPARE(
         service.getCalendarEvent(ids.eventId).title,
         prefix + QStringLiteral(" Event")
@@ -210,6 +226,10 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     QVERIFY(service.getAllTeachers().isEmpty());
     QVERIFY(service.getClasses().isEmpty());
     QVERIFY(service.loadIntensiveSlotStates().isEmpty());
+    const Result<QList<TestingBlock>> emptyTestingBlocks =
+        service.loadTestingBlocks();
+    QVERIFY(emptyTestingBlocks);
+    QVERIFY(emptyTestingBlocks->isEmpty());
     QVERIFY(
         service.loadCalendarEventsForDate(
             QDate(2026, 7, 17)
@@ -239,6 +259,7 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     QVERIFY(service.getAllTeachers().isEmpty());
     QVERIFY(service.getClasses().isEmpty());
     QVERIFY(service.loadIntensiveSlotStates().isEmpty());
+    QVERIFY(!service.loadTestingBlocks());
     QVERIFY(service.getAllCampuses().isEmpty());
     QVERIFY(service.loadRoster(idsA.classId).rows.isEmpty());
     QVERIFY(
@@ -320,6 +341,22 @@ void DataServiceLifecycleTests
     QCOMPARE(reloaded.preferredName, QStringLiteral("Legacy Teacher"));
     QCOMPARE(reloaded.birthday, QStringLiteral("12-31"));
     QCOMPARE(reloaded.phoneNumber, QStringLiteral("010-0000-0000"));
+
+    QVERIFY(
+        service.saveTestingBlock(
+            QStringLiteral("Thursday"),
+            QStringLiteral("17:00"),
+            QStringLiteral("Legacy Room")
+            )
+        );
+    const Result<QList<TestingBlock>> testingBlocks =
+        service.loadTestingBlocks();
+    QVERIFY(testingBlocks);
+    QCOMPARE(testingBlocks->size(), 1);
+    QCOMPARE(
+        testingBlocks->first().room,
+        QStringLiteral("Legacy Room")
+        );
 }
 
 QTEST_MAIN(DataServiceLifecycleTests)

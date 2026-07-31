@@ -1,21 +1,26 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/ui/testing_block_dialog.h"
 
 #include <QtTest>
 
 #include <QAbstractItemDelegate>
+#include <QApplication>
 #include <QCheckBox>
 #include <QHeaderView>
 #include <QImage>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
+#include <QTimer>
 
 #include <algorithm>
 
@@ -26,6 +31,12 @@ extern int printRequestCount;
 extern bool lastPrintRequestShowsEnglishNames;
 void reset();
 void setDatabaseOpen(bool open);
+void setIncludeMiddleSchoolClasses(bool include);
+void setTestingBlock(
+    const QString& day,
+    const QString& startTime,
+    const QString& room
+    );
 QString settingValue(const QString& key);
 }
 
@@ -39,6 +50,8 @@ private slots:
     void exportUsesSelectedTeacherNameLanguage();
     void importButtonRequestsScheduleImport();
     void legacyHourSettingsDoNotCarryForward();
+    void testingModeFiltersClassesAndDisplaysSavedBlock();
+    void testingBlockDialogTrimsRoomAndSupportsRemoval();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void timeColumnAndHeaderAreNonInteractive();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
@@ -56,49 +69,56 @@ void ScheduleWidgetTests
     ApplicationServices services;
     ScheduleWidget interactive(&services);
 
-    auto* use24Hour =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleUse24HourTimeCheckBox")
+    auto* intensive =
+        interactive.findChild<QPushButton*>(
+            QStringLiteral("scheduleIntensiveModeButton")
             );
-    auto* showWeekends =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowWeekendsCheckBox")
+    auto* settings =
+        interactive.findChild<QPushButton*>(
+            QStringLiteral("scheduleSettingsButton")
             );
-    auto* showEnglishNames =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
-            );
-    auto* showIntensive =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowIntensiveCheckBox")
-            );
-    auto* showAllHours =
-        interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowAllHoursCheckBox")
-            );
-    QVERIFY(use24Hour);
-    QVERIFY(showWeekends);
-    QVERIFY(showEnglishNames);
-    QVERIFY(showIntensive);
-    QVERIFY(showAllHours);
-    QVERIFY(
-        !interactive.findChild<QCheckBox*>(
-            QStringLiteral("scheduleHideEmptyRowsCheckBox")
-            )
-        );
-    QCOMPARE(use24Hour->text(), QStringLiteral("Use 24-Hour Time"));
-    QCOMPARE(showWeekends->text(), QStringLiteral("Show Weekends"));
-    QCOMPARE(showEnglishNames->text(), QStringLiteral("Show English Names"));
-    QCOMPARE(showAllHours->text(), QStringLiteral("Show All Hours"));
-    QVERIFY(!showAllHours->isChecked());
-    QVERIFY(!showAllHours->isEnabled());
+    QVERIFY(intensive);
+    QVERIFY(settings);
 
-    use24Hour->setChecked(true);
-    showWeekends->setChecked(true);
-    showEnglishNames->setChecked(true);
-    showIntensive->setChecked(true);
-    QVERIFY(showAllHours->isEnabled());
-    showAllHours->setChecked(true);
+    intensive->click();
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_display_mode")
+            ),
+        QStringLiteral("intensive")
+        );
+
+    QTimer::singleShot(
+        0,
+        []()
+        {
+            auto* dialog =
+                qobject_cast<ScheduleSettingsDialog*>(
+                    QApplication::activeModalWidget()
+                    );
+            QVERIFY(dialog);
+
+            const QStringList settingNames{
+                QStringLiteral("scheduleSettingsUse24HourTime"),
+                QStringLiteral("scheduleSettingsShowEnglishNames"),
+                QStringLiteral("scheduleSettingsShowWeekends"),
+                QStringLiteral("scheduleSettingsShowAllIntensiveHours"),
+                QStringLiteral("scheduleSettingsTestingAffectsM1")
+            };
+
+            for (const QString& name : settingNames)
+            {
+                auto* check =
+                    dialog->findChild<QCheckBox*>(name);
+                QVERIFY(check);
+                check->setChecked(true);
+            }
+
+            dialog->accept();
+        }
+        );
+    settings->click();
+
     QCOMPARE(
         ScheduleWidgetTestStubs::settingValue(
             QStringLiteral("schedule_show_all_hours_v2")
@@ -132,8 +152,12 @@ void ScheduleWidgetTests
     QVERIFY(state.use24HourTime);
     QVERIFY(state.showWeekends);
     QVERIFY(state.showKoreanTeacherEnglishNames);
-    QVERIFY(state.showIntensive);
     QVERIFY(state.showAllHours);
+    QVERIFY(state.testingAffectsM1);
+    QCOMPARE(
+        state.displayMode,
+        ScheduleDisplayMode::Intensive
+        );
     QCOMPARE(
         mirrored.visibleClassIds(),
         QSet<int>{42}
@@ -143,15 +167,12 @@ void ScheduleWidgetTests
 void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
 {
     ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_korean_teacher_english_names"),
+        QStringLiteral("true")
+        );
     ScheduleWidget widget(&services);
 
-    auto* showEnglishNames =
-        widget.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
-            );
-    QVERIFY(showEnglishNames);
-
-    showEnglishNames->setChecked(true);
     QVERIFY(
         QMetaObject::invokeMethod(
             &widget,
@@ -162,7 +183,11 @@ void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
     QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 
-    showEnglishNames->setChecked(false);
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_korean_teacher_english_names"),
+        QStringLiteral("false")
+        );
+    widget.refreshSchedule();
     QVERIFY(
         QMetaObject::invokeMethod(
             &widget,
@@ -211,14 +236,120 @@ void ScheduleWidgetTests
 
     ScheduleWidget widget(&services);
 
-    auto* showAllHours =
-        widget.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowAllHoursCheckBox")
-            );
-
-    QVERIFY(showAllHours);
-    QVERIFY(!showAllHours->isChecked());
     QVERIFY(!widget.displayState().showAllHours);
+}
+
+void ScheduleWidgetTests
+    ::testingModeFiltersClassesAndDisplaysSavedBlock()
+{
+    ScheduleWidgetTestStubs::setIncludeMiddleSchoolClasses(true);
+    ScheduleWidgetTestStubs::setTestingBlock(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Library")
+        );
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    QCOMPARE(
+        widget.visibleClassIds(),
+        QSet<int>({42, 44, 45})
+        );
+
+    auto* testingButton =
+        widget.findChild<QPushButton*>(
+            QStringLiteral("scheduleTestingModeButton")
+            );
+    auto* banner =
+        widget.findChild<QLabel*>(
+            QStringLiteral("scheduleTestingBanner")
+            );
+    auto* table =
+        widget.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(testingButton);
+    QVERIFY(banner);
+    QVERIFY(table);
+
+    testingButton->click();
+    QCOMPARE(
+        widget.displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    QCOMPARE(
+        widget.visibleClassIds(),
+        QSet<int>({42, 45})
+        );
+    QVERIFY(banner->isVisibleTo(&widget));
+    QVERIFY(banner->text().contains(QStringLiteral("M2 and M3")));
+
+    auto* monday =
+        qobject_cast<QLabel*>(
+            table->cellWidget(0, 1)
+            );
+    QVERIFY(monday);
+    QVERIFY(monday->text().contains(QStringLiteral("Testing")));
+    QVERIFY(monday->text().contains(QStringLiteral("Library")));
+    QCOMPARE(
+        monday->property("slot_state").toString(),
+        scheduleTestingSlotState()
+        );
+
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_testing_affects_m1"),
+        QStringLiteral("true")
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
+    QVERIFY(banner->text().contains(QStringLiteral("M1, M2, and M3")));
+    auto* wednesday =
+        qobject_cast<QLabel*>(
+            table->cellWidget(0, 3)
+            );
+    QVERIFY(wednesday);
+    QCOMPARE(wednesday->text(), QStringLiteral("Essay"));
+    QVERIFY(
+        wednesday
+            ->property("testing_block_creation_enabled")
+            .toBool()
+        );
+}
+
+void ScheduleWidgetTests
+    ::testingBlockDialogTrimsRoomAndSupportsRemoval()
+{
+    TestingBlockDialog addDialog(
+        QString(),
+        false
+        );
+    auto* room =
+        addDialog.findChild<QLineEdit*>(
+            QStringLiteral("testingBlockRoomEdit")
+            );
+    QVERIFY(room);
+    room->setText(QStringLiteral("  Library  "));
+    QCOMPARE(addDialog.room(), QStringLiteral("Library"));
+    QVERIFY(!addDialog.removeRequested());
+    QVERIFY(
+        !addDialog.findChild<QPushButton*>(
+            QStringLiteral("testingBlockRemoveButton")
+            )
+        );
+
+    TestingBlockDialog editDialog(
+        QStringLiteral("402"),
+        true
+        );
+    auto* remove =
+        editDialog.findChild<QPushButton*>(
+            QStringLiteral("testingBlockRemoveButton")
+            );
+    QVERIFY(remove);
+    remove->click();
+    QCOMPARE(editDialog.result(), QDialog::Accepted);
+    QVERIFY(editDialog.removeRequested());
 }
 
 void ScheduleWidgetTests
@@ -249,13 +380,21 @@ void ScheduleWidgetTests
     QVERIFY(controls->isHidden());
     QVERIFY(table);
     QCOMPARE(table->rowCount(), 1);
+    QCOMPARE(
+        widget.displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_display_mode")
+            ),
+        QStringLiteral("intensive")
+        );
 
-    const auto checkBoxes =
-        controls->findChildren<QCheckBox*>();
     const auto buttons =
         controls->findChildren<QPushButton*>();
-    QCOMPARE(checkBoxes.size(), 5);
-    QCOMPARE(buttons.size(), 2);
+    QVERIFY(controls->findChildren<QCheckBox*>().isEmpty());
+    QCOMPARE(buttons.size(), 6);
     QVERIFY(
         std::any_of(
             buttons.cbegin(),
@@ -277,11 +416,6 @@ void ScheduleWidgetTests
             }
             )
         );
-
-    for (const QCheckBox* checkBox : checkBoxes)
-    {
-        QVERIFY(!checkBox->isVisibleTo(&widget));
-    }
 
     for (const QPushButton* button : buttons)
     {
@@ -388,19 +522,19 @@ void ScheduleWidgetTests
 
     QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
 
-    auto* use24Hour =
-        widget.findChild<QCheckBox*>(
-            QStringLiteral("scheduleUse24HourTimeCheckBox")
-            );
-    auto* showWeekends =
-        widget.findChild<QCheckBox*>(
-            QStringLiteral("scheduleShowWeekendsCheckBox")
-            );
-
-    QVERIFY(use24Hour);
-    QVERIFY(showWeekends);
-    use24Hour->setChecked(true);
-    showWeekends->setChecked(true);
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_use_24h"),
+        QStringLiteral("true")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_weekends"),
+        QStringLiteral("true")
+        );
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    widget.refreshSchedule();
 
     ScheduleWidgetTestStubs::setDatabaseOpen(false);
     widget.clearDatabaseState();
@@ -410,11 +544,19 @@ void ScheduleWidgetTests
         widget.displayState();
     QVERIFY(!cleared.use24HourTime);
     QVERIFY(!cleared.showKoreanTeacherEnglishNames);
-    QVERIFY(!cleared.showIntensive);
     QVERIFY(!cleared.showAllHours);
     QVERIFY(!cleared.showWeekends);
-    QVERIFY(!use24Hour->isChecked());
-    QVERIFY(!showWeekends->isChecked());
+    QVERIFY(!cleared.testingAffectsM1);
+    QCOMPARE(
+        cleared.displayMode,
+        ScheduleDisplayMode::Regular
+        );
+    auto* regular =
+        widget.findChild<QPushButton*>(
+            QStringLiteral("scheduleRegularModeButton")
+            );
+    QVERIFY(regular);
+    QVERIFY(regular->isChecked());
 }
 
 void ScheduleWidgetTests

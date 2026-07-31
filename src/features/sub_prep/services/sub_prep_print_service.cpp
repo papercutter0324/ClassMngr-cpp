@@ -188,6 +188,32 @@ QString scheduleCellHtml(
                 .arg(htmlText(translate("Lunch")));
         }
 
+        if (cell.slotState == scheduleTestingSlotState())
+        {
+            const QString room =
+                cell.testingRoom.trimmed();
+            const QString roomLine =
+                room.isEmpty()
+                    ? QString()
+                    : QStringLiteral("<br/><span>%1</span>")
+                        .arg(
+                            htmlText(
+                                translate("Rm: %1")
+                                    .arg(room)
+                                )
+                            );
+
+            return QStringLiteral(
+                "<div class=\"schedule-slot testing\">"
+                "<span class=\"testing-marker\">&#9701;</span> %1%2"
+                "</div>"
+                )
+                .arg(
+                    htmlText(translate("Testing")),
+                    roomLine
+                    );
+        }
+
         return QString();
     }
 
@@ -827,6 +853,8 @@ QString documentStyleSheet()
         ".schedule-slot { font-weight:700; padding:6px 3px; }"
         ".essay { background:#ffffff; color:#000000; font-size:12pt; font-style:normal; font-weight:700; }"
         ".lunch { background:#dcdcdc; color:#000000; }"
+        ".testing { background:#fff0b8; color:#4a3500; border:1px solid #d39b25; }"
+        ".testing-marker { color:#b66a00; font-size:13pt; }"
         ".empty { background:#f8fbfc; border:1px solid #d1dce1; color:#000000; "
         "font-style:italic; padding:9px; }"
         )

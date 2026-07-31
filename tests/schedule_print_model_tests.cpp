@@ -53,7 +53,10 @@ ScheduleViewRequest requestFor(
 {
     ScheduleViewRequest request;
     request.days = days;
-    request.useIntensive = useIntensive;
+    request.displayMode =
+        useIntensive
+            ? ScheduleDisplayMode::Intensive
+            : ScheduleDisplayMode::Regular;
 
     return request;
 }
@@ -88,6 +91,7 @@ private slots:
     void regularSchedulesIgnoreIntensiveTrimming();
     void footerTotalsMatchExcelScreenshotConvention();
     void teacherRoomLineRespectsSelectedNameLanguage();
+    void testingModeFiltersAffectedGradesAndPreservesPriority();
 };
 
 void SchedulePrintModelTests::visibleDaysCanIncludeWeekends()
@@ -200,7 +204,8 @@ void SchedulePrintModelTests::persistedOverridesRespectTogglingRules()
         scheduleLunchSlotState()
         );
 
-    request.useIntensive = true;
+    request.displayMode =
+        ScheduleDisplayMode::Intensive;
     model =
         buildScheduleViewModel(
             result,
@@ -404,6 +409,108 @@ void SchedulePrintModelTests::teacherRoomLineRespectsSelectedNameLanguage()
     QCOMPARE(
         scheduleTeacherRoomLine(scheduleEntry, true),
         QStringLiteral("박지혜 413")
+        );
+}
+
+void SchedulePrintModelTests
+    ::testingModeFiltersAffectedGradesAndPreservesPriority()
+{
+    const QStringList days{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday")
+    };
+    ScheduleBuildResult result =
+        blankResult(
+            days,
+            {QStringLiteral("16:00")}
+            );
+
+    ScheduleEntry elementary = entry(1);
+    elementary.classGrade = QStringLiteral("E5");
+    ScheduleEntry m2 = entry(2);
+    m2.classGrade = QStringLiteral(" m2 ");
+    ScheduleEntry m1 = entry(3);
+    m1.classGrade = QStringLiteral("M1");
+    ScheduleEntry m3 = entry(4);
+    m3.classGrade = QStringLiteral("m3");
+
+    result.schedule[QStringLiteral("Monday")]
+        [QStringLiteral("16:00")] = {elementary, m2};
+    result.schedule[QStringLiteral("Tuesday")]
+        [QStringLiteral("16:00")] = {m2};
+    result.schedule[QStringLiteral("Wednesday")]
+        [QStringLiteral("16:00")] = {m1};
+    result.schedule[QStringLiteral("Thursday")]
+        [QStringLiteral("16:00")] = {m3};
+
+    ScheduleViewRequest request;
+    request.days = days;
+    request.displayMode =
+        ScheduleDisplayMode::Testing;
+    request.testingBlockRooms.insert(
+        scheduleSlotKey(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            ),
+        QStringLiteral("Hidden Room")
+        );
+    request.testingBlockRooms.insert(
+        scheduleSlotKey(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("16:00")
+            ),
+        QStringLiteral("402")
+        );
+    request.testingBlockRooms.insert(
+        scheduleSlotKey(
+            QStringLiteral("Wednesday"),
+            QStringLiteral("16:00")
+            ),
+        QStringLiteral("Library")
+        );
+
+    ScheduleViewModel model =
+        buildScheduleViewModel(result, request);
+
+    const ScheduleRowView& row =
+        model.rows.first();
+    QCOMPARE(row.cells.at(0).entries.size(), 1);
+    QCOMPARE(
+        row.cells.at(0).entries.first().classGrade,
+        QStringLiteral("E5")
+        );
+    QVERIFY(row.cells.at(0).testingRoom.isEmpty());
+    QCOMPARE(
+        row.cells.at(1).slotState,
+        scheduleTestingSlotState()
+        );
+    QCOMPARE(
+        row.cells.at(1).testingRoom,
+        QStringLiteral("402")
+        );
+    QCOMPARE(row.cells.at(2).entries.size(), 1);
+    QCOMPARE(
+        row.cells.at(3).slotState,
+        scheduleEssaySlotState()
+        );
+    QVERIFY(
+        row.cells.at(3).testingBlockCreationEnabled
+        );
+    QCOMPARE(model.summary.testingBlocks, 1);
+
+    request.testingAffectsM1 = true;
+    model =
+        buildScheduleViewModel(result, request);
+
+    QCOMPARE(
+        model.rows.first().cells.at(2).slotState,
+        scheduleTestingSlotState()
+        );
+    QCOMPARE(
+        model.rows.first().cells.at(2).testingRoom,
+        QStringLiteral("Library")
         );
 }
 

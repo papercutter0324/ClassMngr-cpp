@@ -531,6 +531,7 @@ class SubPrepPrintPdfTests : public QObject
 private slots:
     void generatedPdfUsesA4PortraitWithNarrowMargins();
     void rendersEssayScheduleSlots();
+    void rendersTestingScheduleSlots();
     void omitsUnavailableZoomInformation();
     void bookReportNotesUseCompactTextAndUnderlinedLabels();
     void rendersTeacherReferenceTableAndClassList();
@@ -650,6 +651,39 @@ void SubPrepPrintPdfTests::rendersEssayScheduleSlots()
     QVERIFY(!essayPage.isNull());
     QVERIFY(!emptyPage.isNull());
     QVERIFY(changedPixelCount(essayPage, emptyPage) > 100);
+}
+
+void SubPrepPrintPdfTests::rendersTestingScheduleSlots()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request =
+        sampleRequest();
+    ScheduleCellView& cell =
+        request.schedule.rows.first().cells.first();
+    cell.slotState =
+        scheduleTestingSlotState();
+    cell.testingRoom =
+        QStringLiteral("402");
+
+    const QString path =
+        temporaryDirectory.filePath(
+            QStringLiteral("Testing Sub Prep.pdf")
+            );
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(
+            request,
+            path
+            );
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    const QString text =
+        documentText(document);
+    QVERIFY(text.contains(QStringLiteral("Testing")));
+    QVERIFY(text.contains(QStringLiteral("Rm: 402")));
 }
 
 void SubPrepPrintPdfTests::denseWeekdayScheduleFitsSectionWidth()

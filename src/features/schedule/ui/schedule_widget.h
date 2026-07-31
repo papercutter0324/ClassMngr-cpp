@@ -7,7 +7,7 @@
 #include <QWidget>
 
 class ApplicationServices;
-class QCheckBox;
+class QButtonGroup;
 class QLabel;
 class QPushButton;
 class QTableWidget;
@@ -22,9 +22,11 @@ struct ScheduleDisplayState
 {
     bool use24HourTime = false;
     bool showKoreanTeacherEnglishNames = false;
-    bool showIntensive = false;
     bool showAllHours = false;
     bool showWeekends = false;
+    bool testingAffectsM1 = false;
+    ScheduleDisplayMode displayMode =
+        ScheduleDisplayMode::Regular;
 };
 
 class ScheduleWidget : public QWidget
@@ -62,11 +64,8 @@ signals:
     void scheduleImportRequested();
 
 private slots:
-    void setUse24HourTime(bool use24h);
-    void setShowKoreanTeacherEnglishNames(bool showEnglishNames);
-    void setShowIntensiveSchedule(bool showIntensive);
-    void setShowAllHours(bool showAllHours);
-    void setShowWeekends(bool showWeekends);
+    void setDisplayMode(int modeId);
+    void openSettings();
     void exportSchedule();
     void onCellClicked(
         int row,
@@ -84,6 +83,13 @@ private:
     void clearTableWidgets();
     void updateTableMinimumHeight();
     void reloadSlotStates();
+    void reloadTestingBlocks();
+    void editTestingBlock(
+        const QString& day,
+        const QString& timeLabel,
+        const QString& room,
+        bool existingBlock
+        );
     ScheduleViewRequest buildScheduleViewRequest() const;
     ScheduleViewModel buildScheduleModel();
     QWidget* createScheduleLabel(
@@ -102,12 +108,15 @@ private:
 
     bool m_use24h = false;
     bool m_showKoreanTeacherEnglishNames = false;
-    bool m_showIntensive = false;
     bool m_showAllHours = false;
     bool m_showWeekends = false;
+    bool m_testingAffectsM1 = false;
+    ScheduleDisplayMode m_displayMode =
+        ScheduleDisplayMode::Regular;
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
     QMap<QString, QString> m_intensiveSlotStates;
+    QMap<QString, QString> m_testingBlockRooms;
     ScheduleViewModel m_scheduleModel;
     ScheduleViewModel m_previewModel;
     bool m_hasPreviewModel = false;
@@ -116,11 +125,12 @@ private:
 
     QTableWidget* m_table = nullptr;
     QWidget* m_controlsWidget = nullptr;
-    QCheckBox* m_use24HourTimeCheckBox = nullptr;
-    QCheckBox* m_showKoreanTeacherEnglishNamesCheckBox = nullptr;
-    QCheckBox* m_showWeekendsCheckBox = nullptr;
-    QCheckBox* m_showAllHoursCheckBox = nullptr;
-    QCheckBox* m_showIntensiveScheduleCheckBox = nullptr;
+    QButtonGroup* m_modeButtonGroup = nullptr;
+    QPushButton* m_regularModeButton = nullptr;
+    QPushButton* m_intensiveModeButton = nullptr;
+    QPushButton* m_testingModeButton = nullptr;
+    QPushButton* m_settingsButton = nullptr;
     QPushButton* m_exportButton = nullptr;
     QPushButton* m_importButton = nullptr;
+    QLabel* m_testingBanner = nullptr;
 };

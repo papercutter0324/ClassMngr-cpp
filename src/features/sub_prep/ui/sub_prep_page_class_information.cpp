@@ -525,7 +525,8 @@ SubPrepPage::buildClassInformation(
         visibleClassIds(schedule);
     options.visibleDays = schedule.days;
     options.useIntensive =
-        state.showIntensive;
+        state.displayMode
+            == ScheduleDisplayMode::Intensive;
 
     return SubPrepClassInformation::build(
         sources,

@@ -13,12 +13,22 @@ enum class ScheduleRowFilter
     TrimEmptyOuterRows
 };
 
+enum class ScheduleDisplayMode
+{
+    Regular,
+    Intensive,
+    Testing
+};
+
 struct ScheduleViewRequest
 {
     QStringList days;
     QMap<QString, QString> slotStateOverrides;
+    QMap<QString, QString> testingBlockRooms;
     bool use24h = false;
-    bool useIntensive = false;
+    ScheduleDisplayMode displayMode =
+        ScheduleDisplayMode::Regular;
+    bool testingAffectsM1 = false;
     bool regularWeekdaySlotTogglingEnabled = false;
     ScheduleRowFilter rowFilter = ScheduleRowFilter::None;
 };
@@ -30,7 +40,9 @@ struct ScheduleCellView
     QList<ScheduleEntry> entries;
     QString defaultSlotState;
     QString slotState;
+    QString testingRoom;
     bool slotTogglingEnabled = false;
+    bool testingBlockCreationEnabled = false;
 };
 
 struct ScheduleRowView
@@ -44,6 +56,7 @@ struct ScheduleRowView
 struct ScheduleSummary
 {
     int essayBlocks = 0;
+    int testingBlocks = 0;
     int scheduledBlocks = 0;
 };
 
@@ -58,6 +71,11 @@ struct ScheduleViewModel
 QString scheduleEmptySlotState();
 QString scheduleEssaySlotState();
 QString scheduleLunchSlotState();
+QString scheduleTestingSlotState();
+
+bool scheduleModeUsesIntensiveTimes(
+    ScheduleDisplayMode mode
+    );
 
 QString nextScheduleSlotState(
     const QString& currentState

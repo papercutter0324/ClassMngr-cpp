@@ -441,6 +441,18 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
     )");
 
     query.exec(R"(
+        CREATE TABLE IF NOT EXISTS schedule_testing_blocks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            day TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            room TEXT NOT NULL DEFAULT '',
+
+            UNIQUE(day, start_time)
+        )
+    )");
+
+    query.exec(R"(
         CREATE TABLE IF NOT EXISTS calendar_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
 

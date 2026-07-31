@@ -46,13 +46,17 @@ bool rowHasVisibleContent(
             scheduleDefaultSlotState(
                 day,
                 scheduleRow.label,
-                request.useIntensive
+                scheduleModeUsesIntensiveTimes(
+                    request.displayMode
+                    )
                 );
 
         const QString state =
             scheduleSlotTogglingEnabled(
                 day,
-                request.useIntensive,
+                scheduleModeUsesIntensiveTimes(
+                    request.displayMode
+                    ),
                 request.regularWeekdaySlotTogglingEnabled
                 )
                 ? scheduleSlotState(
@@ -78,7 +82,9 @@ QList<ScheduleRow> filteredRows(
     )
 {
     if (
-        !request.useIntensive
+        !scheduleModeUsesIntensiveTimes(
+            request.displayMode
+            )
         || request.rowFilter == ScheduleRowFilter::None
         )
     {
@@ -114,6 +120,22 @@ QList<ScheduleRow> filteredRows(
             )
         : QList<ScheduleRow>();
 }
+
+bool testingSuppressesEntry(
+    const ScheduleEntry& entry,
+    bool testingAffectsM1
+    )
+{
+    const QString grade =
+        entry.classGrade.trimmed().toUpper();
+
+    return grade == QStringLiteral("M2")
+        || grade == QStringLiteral("M3")
+        || (
+            testingAffectsM1
+            && grade == QStringLiteral("M1")
+            );
+}
 }
 
 QString scheduleEmptySlotState()
@@ -129,6 +151,18 @@ QString scheduleEssaySlotState()
 QString scheduleLunchSlotState()
 {
     return QStringLiteral("lunch");
+}
+
+QString scheduleTestingSlotState()
+{
+    return QStringLiteral("testing");
+}
+
+bool scheduleModeUsesIntensiveTimes(
+    ScheduleDisplayMode mode
+    )
+{
+    return mode == ScheduleDisplayMode::Intensive;
 }
 
 QString nextScheduleSlotState(
@@ -290,16 +324,47 @@ ScheduleViewModel buildScheduleViewModel(
                 result.schedule
                     .value(day)
                     .value(scheduleRow.label);
+
+            bool removedAffectedEntry = false;
+
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                )
+            {
+                for (
+                    int entryIndex = cell.entries.size() - 1;
+                    entryIndex >= 0;
+                    --entryIndex
+                    )
+                {
+                    if (
+                        testingSuppressesEntry(
+                            cell.entries.at(entryIndex),
+                            request.testingAffectsM1
+                            )
+                        )
+                    {
+                        cell.entries.removeAt(entryIndex);
+                        removedAffectedEntry = true;
+                    }
+                }
+            }
+
             cell.defaultSlotState =
                 scheduleDefaultSlotState(
                     day,
                     scheduleRow.label,
-                    request.useIntensive
+                    scheduleModeUsesIntensiveTimes(
+                        request.displayMode
+                        )
                     );
             cell.slotTogglingEnabled =
                 scheduleSlotTogglingEnabled(
                     day,
-                    request.useIntensive,
+                    scheduleModeUsesIntensiveTimes(
+                        request.displayMode
+                        ),
                     request.regularWeekdaySlotTogglingEnabled
                     );
             cell.slotState =
@@ -311,6 +376,36 @@ ScheduleViewModel buildScheduleViewModel(
                         request.slotStateOverrides
                         )
                     : cell.defaultSlotState;
+
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                && cell.entries.isEmpty()
+                )
+            {
+                const QString key =
+                    scheduleSlotKey(
+                        day,
+                        scheduleRow.label
+                        );
+
+                if (request.testingBlockRooms.contains(key))
+                {
+                    cell.slotState =
+                        scheduleTestingSlotState();
+                    cell.testingRoom =
+                        request.testingBlockRooms.value(key);
+                }
+                else if (removedAffectedEntry)
+                {
+                    cell.slotState =
+                        scheduleEssaySlotState();
+                }
+
+                cell.testingBlockCreationEnabled =
+                    cell.slotState
+                        == scheduleEssaySlotState();
+            }
 
             if (!cell.entries.isEmpty())
             {
@@ -324,6 +419,11 @@ ScheduleViewModel buildScheduleViewModel(
             else if (cell.slotState == scheduleEssaySlotState())
             {
                 ++model.summary.essayBlocks;
+                ++model.summary.scheduledBlocks;
+            }
+            else if (cell.slotState == scheduleTestingSlotState())
+            {
+                ++model.summary.testingBlocks;
                 ++model.summary.scheduledBlocks;
             }
 

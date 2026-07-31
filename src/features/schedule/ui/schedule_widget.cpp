@@ -8,13 +8,18 @@
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
+#include "features/schedule/ui/schedule_settings_dialog.h"
+#include "features/schedule/ui/testing_block_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
+#include <utility>
 
 #include <QAbstractItemView>
-#include <QCheckBox>
+#include <QButtonGroup>
+#include <QColor>
+#include <QDebug>
 #include <QDialog>
 #include <QFont>
 #include <QFrame>
@@ -22,6 +27,10 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPalette>
+#include <QPolygon>
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSignalBlocker>
@@ -44,15 +53,9 @@ constexpr int CompactPreviewRowBaseHeight = 24;
 constexpr int CompactPreviewRowHeightPerEntry = 40;
 constexpr int PreviewFontSizeReduction = 4;
 constexpr int PreviewTimeFontSizeReduction = 2;
-constexpr int OptionsColumnSpacing = 32;
 constexpr int TimeCellRole = Qt::UserRole + 1;
 const QString TimeColumnDelegateObjectName =
     QStringLiteral("scheduleTimeColumnDelegate");
-#ifdef Q_OS_MACOS
-constexpr int OptionsRowSpacing = 16;
-#else
-constexpr int OptionsRowSpacing = 8;
-#endif
 
 class TimeColumnDelegate final : public QStyledItemDelegate
 {
@@ -95,6 +98,35 @@ public:
     }
 };
 
+class TestingCellLabel final : public QLabel
+{
+public:
+    using QLabel::QLabel;
+
+protected:
+    void paintEvent(
+        QPaintEvent* event
+        ) override
+    {
+        QLabel::paintEvent(event);
+
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(
+            palette().color(QPalette::Highlight)
+            );
+
+        constexpr int MarkerSize = 18;
+        QPolygon marker;
+        marker
+            << QPoint(width() - MarkerSize, 0)
+            << QPoint(width(), 0)
+            << QPoint(width(), MarkerSize);
+        painter.drawPolygon(marker);
+    }
+};
+
 namespace SettingsKeys
 {
 const QString Use24HourTime =
@@ -107,6 +139,10 @@ const QString ShowIntensive =
     QStringLiteral("schedule_show_intensive");
 const QString ShowAllHoursV2 =
     QStringLiteral("schedule_show_all_hours_v2");
+const QString DisplayMode =
+    QStringLiteral("schedule_display_mode");
+const QString TestingAffectsM1 =
+    QStringLiteral("schedule_testing_affects_m1");
 }
 
 DataService* openDataService(
@@ -173,6 +209,53 @@ QString escaped(
     )
 {
     return text.toHtmlEscaped();
+}
+
+QString displayModeSetting(
+    ScheduleDisplayMode mode
+    )
+{
+    switch (mode)
+    {
+    case ScheduleDisplayMode::Intensive:
+        return QStringLiteral("intensive");
+
+    case ScheduleDisplayMode::Testing:
+        return QStringLiteral("testing");
+
+    case ScheduleDisplayMode::Regular:
+        return QStringLiteral("regular");
+    }
+
+    return QStringLiteral("regular");
+}
+
+ScheduleDisplayMode displayModeFromSetting(
+    const QVariant& value,
+    bool legacyIntensive
+    )
+{
+    const QString normalized =
+        value.toString().trimmed().toLower();
+
+    if (normalized == QStringLiteral("intensive"))
+    {
+        return ScheduleDisplayMode::Intensive;
+    }
+
+    if (normalized == QStringLiteral("testing"))
+    {
+        return ScheduleDisplayMode::Testing;
+    }
+
+    if (normalized == QStringLiteral("regular"))
+    {
+        return ScheduleDisplayMode::Regular;
+    }
+
+    return legacyIntensive
+        ? ScheduleDisplayMode::Intensive
+        : ScheduleDisplayMode::Regular;
 }
 
 QString classCellStyle(
@@ -259,11 +342,14 @@ void ScheduleWidget::clearDatabaseState()
 {
     m_use24h = false;
     m_showKoreanTeacherEnglishNames = false;
-    m_showIntensive = false;
     m_showAllHours = false;
     m_showWeekends = false;
+    m_testingAffectsM1 = false;
+    m_displayMode =
+        ScheduleDisplayMode::Regular;
     m_regularWeekdaySlotTogglingEnabled = false;
     m_intensiveSlotStates.clear();
+    m_testingBlockRooms.clear();
     m_scheduleModel = {};
 
     updateButtons();
@@ -282,9 +368,10 @@ ScheduleDisplayState ScheduleWidget::displayState() const
     state.use24HourTime = m_use24h;
     state.showKoreanTeacherEnglishNames =
         m_showKoreanTeacherEnglishNames;
-    state.showIntensive = m_showIntensive;
     state.showAllHours = m_showAllHours;
     state.showWeekends = m_showWeekends;
+    state.testingAffectsM1 = m_testingAffectsM1;
+    state.displayMode = m_displayMode;
 
     return state;
 }
@@ -360,81 +447,111 @@ void ScheduleWidget::clearPreviewModel()
     loadSchedule();
 }
 
-void ScheduleWidget::setUse24HourTime(
-    bool use24h
+void ScheduleWidget::setDisplayMode(
+    int modeId
     )
 {
-    m_use24h = use24h;
+    if (
+        modeId < static_cast<int>(ScheduleDisplayMode::Regular)
+        || modeId > static_cast<int>(ScheduleDisplayMode::Testing)
+        )
+    {
+        return;
+    }
 
-    saveBoolSetting(
-        openDataService(m_services),
-        SettingsKeys::Use24HourTime,
-        m_use24h
-        );
+    const auto mode =
+        static_cast<ScheduleDisplayMode>(modeId);
+
+    if (m_displayMode == mode)
+    {
+        return;
+    }
+
+    m_displayMode = mode;
+
+    if (auto* dataService = openDataService(m_services))
+    {
+        dataService->saveSetting(
+            SettingsKeys::DisplayMode,
+            displayModeSetting(m_displayMode)
+            );
+    }
 
     updateButtons();
     loadSchedule();
 }
 
-void ScheduleWidget::setShowKoreanTeacherEnglishNames(
-    bool showEnglishNames
-    )
+void ScheduleWidget::openSettings()
 {
-    m_showKoreanTeacherEnglishNames = showEnglishNames;
+    ScheduleSettingsValues initial;
+    initial.use24HourTime = m_use24h;
+    initial.showEnglishNames =
+        m_showKoreanTeacherEnglishNames;
+    initial.showWeekends = m_showWeekends;
+    initial.showAllIntensiveHours = m_showAllHours;
+    initial.testingAffectsM1 = m_testingAffectsM1;
 
-    saveBoolSetting(
+    ScheduleSettingsDialog dialog(
         openDataService(m_services),
-        SettingsKeys::ShowKoreanTeacherEnglishNames,
-        m_showKoreanTeacherEnglishNames
+        initial,
+        this
         );
 
-    updateButtons();
-    loadSchedule();
-}
-
-void ScheduleWidget::setShowIntensiveSchedule(
-    bool showIntensive
-    )
-{
-    m_showIntensive = showIntensive;
-
-    saveBoolSetting(
-        openDataService(m_services),
-        SettingsKeys::ShowIntensive,
-        m_showIntensive
+    connect(
+        &dialog,
+        &ScheduleSettingsDialog::testingBlocksCleared,
+        this,
+        [this]()
+        {
+            m_testingBlockRooms.clear();
+            loadSchedule();
+        }
         );
 
-    updateButtons();
-    loadSchedule();
-}
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
 
-void ScheduleWidget::setShowAllHours(
-    bool showAllHours
-    )
-{
-    m_showAllHours = showAllHours;
+    const ScheduleSettingsValues values =
+        dialog.values();
+    m_use24h = values.use24HourTime;
+    m_showKoreanTeacherEnglishNames =
+        values.showEnglishNames;
+    m_showWeekends = values.showWeekends;
+    m_showAllHours =
+        values.showAllIntensiveHours;
+    m_testingAffectsM1 =
+        values.testingAffectsM1;
 
-    saveBoolSetting(
-        openDataService(m_services),
-        SettingsKeys::ShowAllHoursV2,
-        m_showAllHours
-        );
-
-    updateButtons();
-    loadSchedule();
-}
-
-void ScheduleWidget::setShowWeekends(
-    bool showWeekends
-    )
-{
-    m_showWeekends = showWeekends;
-
-    saveBoolSetting(
-        openDataService(m_services),
-        SettingsKeys::ShowWeekends,
-        m_showWeekends
-        );
+    if (auto* dataService = openDataService(m_services))
+    {
+        saveBoolSetting(
+            dataService,
+            SettingsKeys::Use24HourTime,
+            m_use24h
+            );
+        saveBoolSetting(
+            dataService,
+            SettingsKeys::ShowKoreanTeacherEnglishNames,
+            m_showKoreanTeacherEnglishNames
+            );
+        saveBoolSetting(
+            dataService,
+            SettingsKeys::ShowWeekends,
+            m_showWeekends
+            );
+        saveBoolSetting(
+            dataService,
+            SettingsKeys::ShowAllHoursV2,
+            m_showAllHours
+            );
+        saveBoolSetting(
+            dataService,
+            SettingsKeys::TestingAffectsM1,
+            m_testingAffectsM1
+            );
+    }
 
     updateButtons();
     loadSchedule();
@@ -474,6 +591,35 @@ void ScheduleWidget::onCellClicked(
         const QString timeLabel =
             widget->property("time_label").toString();
 
+        const QString currentState =
+            widget->property("slot_state").toString();
+
+        if (currentState == scheduleTestingSlotState())
+        {
+            editTestingBlock(
+                day,
+                timeLabel,
+                widget->property("testing_room").toString(),
+                true
+                );
+            return;
+        }
+
+        if (
+            widget
+                ->property("testing_block_creation_enabled")
+                .toBool()
+            )
+        {
+            editTestingBlock(
+                day,
+                timeLabel,
+                QString(),
+                false
+                );
+            return;
+        }
+
         if (!widget->property("slot_toggling_enabled").toBool())
         {
             return;
@@ -481,9 +627,6 @@ void ScheduleWidget::onCellClicked(
 
         const QString defaultState =
             widget->property("default_slot_state").toString();
-
-        const QString currentState =
-            widget->property("slot_state").toString();
 
         const QString newState =
             nextScheduleSlotState(
@@ -532,6 +675,62 @@ void ScheduleWidget::onCellClicked(
         );
 
     dialog.exec();
+}
+
+void ScheduleWidget::editTestingBlock(
+    const QString& day,
+    const QString& timeLabel,
+    const QString& room,
+    bool existingBlock
+    )
+{
+    TestingBlockDialog dialog(
+        room,
+        existingBlock,
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Testing Block"),
+            tr("No database is open.")
+            );
+        return;
+    }
+
+    const Status result =
+        dialog.removeRequested()
+            ? dataService->deleteTestingBlock(
+                day,
+                timeLabel
+                )
+            : dataService->saveTestingBlock(
+                day,
+                timeLabel,
+                dialog.room()
+                );
+
+    if (!result)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Testing Block"),
+            result.error()
+            );
+        return;
+    }
+
+    loadSchedule();
 }
 
 void ScheduleWidget::exportSchedule()
@@ -607,6 +806,113 @@ void ScheduleWidget::buildUi()
         );
     layout->setSpacing(8);
 
+    m_controlsWidget =
+        new QWidget(this);
+    m_controlsWidget->setObjectName(
+        QStringLiteral("scheduleControls")
+        );
+
+    auto* controlsLayout =
+        new QHBoxLayout(m_controlsWidget);
+    controlsLayout->setContentsMargins(0, 0, 0, 0);
+    controlsLayout->setSpacing(8);
+
+    m_modeButtonGroup =
+        new QButtonGroup(this);
+    m_modeButtonGroup->setExclusive(true);
+
+    m_regularModeButton =
+        new QPushButton(this);
+    m_regularModeButton->setObjectName(
+        QStringLiteral("scheduleRegularModeButton")
+        );
+    m_intensiveModeButton =
+        new QPushButton(this);
+    m_intensiveModeButton->setObjectName(
+        QStringLiteral("scheduleIntensiveModeButton")
+        );
+    m_testingModeButton =
+        new QPushButton(this);
+    m_testingModeButton->setObjectName(
+        QStringLiteral("scheduleTestingModeButton")
+        );
+
+    const QList<QPushButton*> modeButtons{
+        m_regularModeButton,
+        m_intensiveModeButton,
+        m_testingModeButton
+    };
+
+    for (QPushButton* button : modeButtons)
+    {
+        button->setCheckable(true);
+        button->setMinimumWidth(96);
+        button->setMinimumHeight(34);
+        button->setProperty("schedule_mode_button", true);
+        controlsLayout->addWidget(button);
+    }
+
+    m_modeButtonGroup->addButton(
+        m_regularModeButton,
+        static_cast<int>(ScheduleDisplayMode::Regular)
+        );
+    m_modeButtonGroup->addButton(
+        m_intensiveModeButton,
+        static_cast<int>(ScheduleDisplayMode::Intensive)
+        );
+    m_modeButtonGroup->addButton(
+        m_testingModeButton,
+        static_cast<int>(ScheduleDisplayMode::Testing)
+        );
+
+    controlsLayout->addStretch(1);
+
+    m_settingsButton =
+        new QPushButton(this);
+    m_settingsButton->setObjectName(
+        QStringLiteral("scheduleSettingsButton")
+        );
+    m_settingsButton->setProperty(
+        "role",
+        QStringLiteral("icon_button")
+        );
+    m_settingsButton->setFixedSize(42, 36);
+    m_settingsButton->setAccessibleName(
+        tr("Schedule Settings")
+        );
+    m_settingsButton->setToolTip(
+        tr("Schedule Settings")
+        );
+    controlsLayout->addWidget(m_settingsButton);
+
+    m_importButton =
+        new TextFitPushButton(this);
+    m_importButton->setObjectName(
+        QStringLiteral("scheduleImportButton")
+        );
+    m_importButton->setMinimumWidth(110);
+    controlsLayout->addWidget(m_importButton);
+
+    m_exportButton =
+        new TextFitPushButton(this);
+    m_exportButton->setObjectName(
+        QStringLiteral("scheduleExportButton")
+        );
+    m_exportButton->setMinimumWidth(110);
+    controlsLayout->addWidget(m_exportButton);
+
+    layout->addWidget(m_controlsWidget);
+
+    m_testingBanner =
+        new QLabel(this);
+    m_testingBanner->setObjectName(
+        QStringLiteral("scheduleTestingBanner")
+        );
+    m_testingBanner->setAlignment(Qt::AlignCenter);
+    m_testingBanner->setWordWrap(true);
+    m_testingBanner->setMinimumHeight(36);
+    layout->addWidget(m_testingBanner);
+
     m_table =
         new QTableWidget(
             0,
@@ -648,108 +954,6 @@ void ScheduleWidget::buildUi()
 
     layout->addWidget(m_table);
 
-    m_controlsWidget =
-        new QWidget(this);
-    m_controlsWidget->setObjectName(
-        QStringLiteral("scheduleControls")
-        );
-
-    auto* controlsLayout =
-        new QHBoxLayout(m_controlsWidget);
-
-    controlsLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-    controlsLayout->setSpacing(8);
-
-    m_use24HourTimeCheckBox =
-        new QCheckBox(this);
-    m_use24HourTimeCheckBox->setObjectName(
-        QStringLiteral("scheduleUse24HourTimeCheckBox")
-        );
-
-    m_showKoreanTeacherEnglishNamesCheckBox =
-        new QCheckBox(this);
-    m_showKoreanTeacherEnglishNamesCheckBox->setObjectName(
-        QStringLiteral("scheduleShowKoreanTeacherEnglishNamesCheckBox")
-        );
-
-    m_showWeekendsCheckBox =
-        new QCheckBox(this);
-    m_showWeekendsCheckBox->setObjectName(
-        QStringLiteral("scheduleShowWeekendsCheckBox")
-        );
-
-    m_showAllHoursCheckBox =
-        new QCheckBox(this);
-    m_showAllHoursCheckBox->setObjectName(
-        QStringLiteral("scheduleShowAllHoursCheckBox")
-        );
-
-    m_showIntensiveScheduleCheckBox =
-        new QCheckBox(this);
-    m_showIntensiveScheduleCheckBox->setObjectName(
-        QStringLiteral("scheduleShowIntensiveCheckBox")
-        );
-
-    m_exportButton =
-        new TextFitPushButton(this);
-    m_exportButton->setObjectName(
-        QStringLiteral("scheduleExportButton")
-        );
-    m_exportButton->setMinimumWidth(120);
-
-    m_importButton =
-        new TextFitPushButton(this);
-    m_importButton->setObjectName(
-        QStringLiteral("scheduleImportButton")
-        );
-    m_importButton->setMinimumWidth(120);
-
-    auto* primaryOptionsLayout =
-        new QVBoxLayout;
-    primaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    primaryOptionsLayout->setSpacing(OptionsRowSpacing);
-    primaryOptionsLayout->setAlignment(Qt::AlignTop);
-    primaryOptionsLayout->addWidget(
-        m_showKoreanTeacherEnglishNamesCheckBox
-        );
-    primaryOptionsLayout->addWidget(m_showIntensiveScheduleCheckBox);
-
-    auto* intensiveOptionsLayout =
-        new QVBoxLayout;
-    intensiveOptionsLayout->setContentsMargins(20, 0, 0, 0);
-    intensiveOptionsLayout->setSpacing(8);
-    intensiveOptionsLayout->addWidget(m_showAllHoursCheckBox);
-    primaryOptionsLayout->addLayout(intensiveOptionsLayout);
-
-    auto* secondaryOptionsLayout =
-        new QVBoxLayout;
-    secondaryOptionsLayout->setContentsMargins(0, 0, 0, 0);
-    secondaryOptionsLayout->setSpacing(OptionsRowSpacing);
-    secondaryOptionsLayout->setAlignment(Qt::AlignTop);
-    secondaryOptionsLayout->addWidget(m_use24HourTimeCheckBox);
-    secondaryOptionsLayout->addWidget(m_showWeekendsCheckBox);
-
-    auto* optionsLayout = new QHBoxLayout;
-    optionsLayout->setContentsMargins(0, 0, 0, 0);
-    optionsLayout->setSpacing(OptionsColumnSpacing);
-    optionsLayout->addLayout(primaryOptionsLayout);
-    optionsLayout->setAlignment(primaryOptionsLayout, Qt::AlignTop);
-    optionsLayout->addLayout(secondaryOptionsLayout);
-    optionsLayout->setAlignment(secondaryOptionsLayout, Qt::AlignTop);
-
-    controlsLayout->addLayout(optionsLayout);
-    controlsLayout->setAlignment(optionsLayout, Qt::AlignTop);
-    controlsLayout->addStretch();
-    controlsLayout->addWidget(m_importButton, 0, Qt::AlignTop);
-    controlsLayout->addWidget(m_exportButton, 0, Qt::AlignTop);
-
-    layout->addWidget(m_controlsWidget);
-
     m_controlsWidget->setHidden(
         m_mode == ScheduleMode::ReadOnly
         );
@@ -759,38 +963,17 @@ void ScheduleWidget::buildUi()
     }
 
     connect(
-        m_use24HourTimeCheckBox,
-        &QCheckBox::toggled,
+        m_modeButtonGroup,
+        &QButtonGroup::idClicked,
         this,
-        &ScheduleWidget::setUse24HourTime
+        &ScheduleWidget::setDisplayMode
         );
 
     connect(
-        m_showKoreanTeacherEnglishNamesCheckBox,
-        &QCheckBox::toggled,
+        m_settingsButton,
+        &QPushButton::clicked,
         this,
-        &ScheduleWidget::setShowKoreanTeacherEnglishNames
-        );
-
-    connect(
-        m_showWeekendsCheckBox,
-        &QCheckBox::toggled,
-        this,
-        &ScheduleWidget::setShowWeekends
-        );
-
-    connect(
-        m_showAllHoursCheckBox,
-        &QCheckBox::toggled,
-        this,
-        &ScheduleWidget::setShowAllHours
-        );
-
-    connect(
-        m_showIntensiveScheduleCheckBox,
-        &QCheckBox::toggled,
-        this,
-        &ScheduleWidget::setShowIntensiveSchedule
+        &ScheduleWidget::openSettings
         );
 
     connect(
@@ -854,15 +1037,6 @@ void ScheduleWidget::loadSettings()
             false
             );
 
-    m_showIntensive =
-        settingToBool(
-            dataService->loadSetting(
-                SettingsKeys::ShowIntensive,
-                QStringLiteral("false")
-                ),
-            false
-            );
-
     m_showAllHours =
         settingToBool(
             dataService->loadSetting(
@@ -871,6 +1045,42 @@ void ScheduleWidget::loadSettings()
                 ),
             false
             );
+
+    m_testingAffectsM1 =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::TestingAffectsM1,
+                QStringLiteral("false")
+                ),
+            false
+            );
+
+    const QVariant storedMode =
+        dataService->loadSetting(
+            SettingsKeys::DisplayMode,
+            QVariant()
+            );
+    const bool legacyIntensive =
+        settingToBool(
+            dataService->loadSetting(
+                SettingsKeys::ShowIntensive,
+                QStringLiteral("false")
+                ),
+            false
+            );
+    m_displayMode =
+        displayModeFromSetting(
+            storedMode,
+            legacyIntensive
+            );
+
+    if (!storedMode.isValid())
+    {
+        dataService->saveSetting(
+            SettingsKeys::DisplayMode,
+            displayModeSetting(m_displayMode)
+            );
+    }
 }
 
 void ScheduleWidget::loadSchedule()
@@ -1042,43 +1252,50 @@ void ScheduleWidget::loadSchedule()
 void ScheduleWidget::updateButtons()
 {
     if (
-        !m_use24HourTimeCheckBox
-        || !m_showKoreanTeacherEnglishNamesCheckBox
-        || !m_showWeekendsCheckBox
-        || !m_showAllHoursCheckBox
-        || !m_showIntensiveScheduleCheckBox
+        !m_regularModeButton
+        || !m_intensiveModeButton
+        || !m_testingModeButton
+        || !m_settingsButton
         || !m_importButton
         || !m_exportButton
+        || !m_testingBanner
         )
     {
         return;
     }
 
-    const QSignalBlocker use24hBlocker(m_use24HourTimeCheckBox);
-    const QSignalBlocker englishNamesBlocker(
-        m_showKoreanTeacherEnglishNamesCheckBox
-        );
-    const QSignalBlocker weekendsBlocker(m_showWeekendsCheckBox);
-    const QSignalBlocker allHoursBlocker(m_showAllHoursCheckBox);
-    const QSignalBlocker intensiveBlocker(m_showIntensiveScheduleCheckBox);
+    const QSignalBlocker regularBlocker(m_regularModeButton);
+    const QSignalBlocker intensiveBlocker(m_intensiveModeButton);
+    const QSignalBlocker testingBlocker(m_testingModeButton);
 
-    m_use24HourTimeCheckBox->setText(tr("Use 24-Hour Time"));
-    m_use24HourTimeCheckBox->setChecked(m_use24h);
-    m_showKoreanTeacherEnglishNamesCheckBox->setText(
-        tr("Show English Names")
+    m_regularModeButton->setText(tr("Regular"));
+    m_intensiveModeButton->setText(tr("Intensive"));
+    m_testingModeButton->setText(tr("Testing"));
+    m_regularModeButton->setChecked(
+        m_displayMode == ScheduleDisplayMode::Regular
         );
-    m_showKoreanTeacherEnglishNamesCheckBox->setChecked(
-        m_showKoreanTeacherEnglishNames
+    m_intensiveModeButton->setChecked(
+        m_displayMode == ScheduleDisplayMode::Intensive
         );
-    m_showWeekendsCheckBox->setText(tr("Show Weekends"));
-    m_showWeekendsCheckBox->setChecked(m_showWeekends);
-    m_showIntensiveScheduleCheckBox->setText(
-        tr("Show Intensive Schedule")
+    m_testingModeButton->setChecked(
+        m_displayMode == ScheduleDisplayMode::Testing
         );
-    m_showIntensiveScheduleCheckBox->setChecked(m_showIntensive);
-    m_showAllHoursCheckBox->setText(tr("Show All Hours"));
-    m_showAllHoursCheckBox->setChecked(m_showAllHours);
-    m_showAllHoursCheckBox->setEnabled(m_showIntensive);
+
+    m_settingsButton->setText(
+        QStringLiteral("\u2699")
+        );
+    m_settingsButton->setFont(
+        FontManager::getUiFont(
+            18,
+            QFont::DemiBold
+            )
+        );
+    m_settingsButton->setAccessibleName(
+        tr("Schedule Settings")
+        );
+    m_settingsButton->setToolTip(
+        tr("Schedule Settings")
+        );
 
     m_exportButton->setText(
         tr("Export")
@@ -1086,6 +1303,47 @@ void ScheduleWidget::updateButtons()
     m_importButton->setText(
         tr("Import")
         );
+
+    const bool testing =
+        m_displayMode == ScheduleDisplayMode::Testing;
+    m_testingBanner->setVisible(testing);
+
+    if (testing)
+    {
+        m_testingBanner->setText(
+            m_testingAffectsM1
+                ? tr("Testing View — M1, M2, and M3 classes are hidden")
+                : tr("Testing View — M2 and M3 classes are hidden; M1 classes remain")
+            );
+
+        const bool dark =
+            palette()
+                .color(QPalette::Window)
+                .lightness() < 128;
+        m_testingBanner->setStyleSheet(
+            dark
+                ? QStringLiteral(
+                    "QLabel {"
+                    "background:#4B3D20;"
+                    "color:#FFF2C2;"
+                    "border:1px solid #8D7339;"
+                    "border-radius:6px;"
+                    "padding:7px;"
+                    "font-weight:600;"
+                    "}"
+                    )
+                : QStringLiteral(
+                    "QLabel {"
+                    "background:#FFF4CC;"
+                    "color:#503B00;"
+                    "border:1px solid #D5A52E;"
+                    "border-radius:6px;"
+                    "padding:7px;"
+                    "font-weight:600;"
+                    "}"
+                    )
+            );
+    }
 }
 
 void ScheduleWidget::configureColumns(
@@ -1260,6 +1518,50 @@ void ScheduleWidget::reloadSlotStates()
     }
 }
 
+void ScheduleWidget::reloadTestingBlocks()
+{
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        m_testingBlockRooms.clear();
+        return;
+    }
+
+    const Result<QList<TestingBlock>> blocks =
+        dataService->loadTestingBlocks();
+
+    if (!blocks)
+    {
+        qWarning()
+            << "Failed to load testing blocks:"
+            << blocks.error();
+        QMessageBox::warning(
+            this,
+            tr("Testing Layout"),
+            blocks.error()
+            );
+        return;
+    }
+
+    QMap<QString, QString> loadedRooms;
+
+    for (const TestingBlock& block : *blocks)
+    {
+        loadedRooms.insert(
+            scheduleSlotKey(
+                block.day,
+                block.startTime
+                ),
+            block.room
+            );
+    }
+
+    m_testingBlockRooms =
+        std::move(loadedRooms);
+}
+
 ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
 {
     ScheduleViewRequest request;
@@ -1269,14 +1571,19 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
             );
     request.slotStateOverrides =
         m_intensiveSlotStates;
+    request.testingBlockRooms =
+        m_testingBlockRooms;
     request.use24h =
         m_use24h;
-    request.useIntensive =
-        m_showIntensive;
+    request.displayMode =
+        m_displayMode;
+    request.testingAffectsM1 =
+        m_testingAffectsM1;
     request.regularWeekdaySlotTogglingEnabled =
         m_regularWeekdaySlotTogglingEnabled;
     request.rowFilter =
-        m_showIntensive && !m_showAllHours
+        m_displayMode == ScheduleDisplayMode::Intensive
+        && !m_showAllHours
             ? ScheduleRowFilter::TrimEmptyOuterRows
             : ScheduleRowFilter::None;
 
@@ -1291,6 +1598,7 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
     }
 
     reloadSlotStates();
+    reloadTestingBlocks();
 
     const ScheduleViewRequest request =
         buildScheduleViewRequest();
@@ -1301,7 +1609,9 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
 
     const ScheduleBuildResult result =
         builder.build(
-            request.useIntensive,
+            scheduleModeUsesIntensiveTimes(
+                request.displayMode
+                ),
             request.days
             );
 
@@ -1467,10 +1777,15 @@ QWidget* ScheduleWidget::createSlotLabel(
     const ScheduleCellView& cell
     )
 {
-    auto* label =
-        new QLabel(this);
+    QLabel* label =
+        cell.slotState == scheduleTestingSlotState()
+            ? static_cast<QLabel*>(
+                new TestingCellLabel(this)
+                )
+            : new QLabel(this);
 
     label->setAlignment(Qt::AlignCenter);
+    label->setWordWrap(true);
     label->setProperty("role", UiRoles::ScheduleEmpty);
     label->setProperty("is_slot_cell", true);
     label->setProperty("day", cell.day);
@@ -1478,6 +1793,11 @@ QWidget* ScheduleWidget::createSlotLabel(
     label->setProperty("default_slot_state", cell.defaultSlotState);
     label->setProperty("slot_state", cell.slotState);
     label->setProperty("slot_toggling_enabled", cell.slotTogglingEnabled);
+    label->setProperty(
+        "testing_block_creation_enabled",
+        cell.testingBlockCreationEnabled
+        );
+    label->setProperty("testing_room", cell.testingRoom);
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
 
     if (cell.slotState == scheduleEssaySlotState())
@@ -1504,6 +1824,67 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "padding:%2px;"
                 "}"
                 )
+                .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 4 : 6)
+            );
+    }
+    else if (cell.slotState == scheduleTestingSlotState())
+    {
+        const QString room =
+            cell.testingRoom.trimmed();
+        label->setText(
+            room.isEmpty()
+                ? tr("Testing")
+                : tr("Testing\nRm: %1").arg(room)
+            );
+        label->setAccessibleName(
+            room.isEmpty()
+                ? tr("Testing")
+                : tr("Testing, room %1").arg(room)
+            );
+        label->setFont(
+            FontManager::getUiFont(
+                14
+                    - (m_compactPreview ? PreviewFontSizeReduction : 0),
+                QFont::Bold,
+                true
+                )
+            );
+
+        const bool dark =
+            palette()
+                .color(QPalette::Window)
+                .lightness() < 128;
+        QPalette testingPalette =
+            label->palette();
+        testingPalette.setColor(
+            QPalette::Highlight,
+            dark
+                ? QColor(QStringLiteral("#FFD166"))
+                : QColor(QStringLiteral("#B66A00"))
+            );
+        label->setPalette(testingPalette);
+        label->setStyleSheet(
+            QStringLiteral(
+                "QLabel {"
+                "background:%1;"
+                "color:%2;"
+                "border:1px solid %3;"
+                "border-radius:%4px;"
+                "padding:%5px;"
+                "}"
+                )
+                .arg(
+                    dark
+                        ? QStringLiteral("#4B3D20")
+                        : QStringLiteral("#FFF0B8"),
+                    dark
+                        ? QStringLiteral("#FFF2C2")
+                        : QStringLiteral("#4A3500"),
+                    dark
+                        ? QStringLiteral("#8D7339")
+                        : QStringLiteral("#D39B25")
+                    )
                 .arg(m_compactPreview ? 5 : 6)
                 .arg(m_compactPreview ? 4 : 6)
             );
