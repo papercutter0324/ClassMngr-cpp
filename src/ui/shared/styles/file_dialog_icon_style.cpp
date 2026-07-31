@@ -124,6 +124,28 @@ QPalette iconPalette(
     return QApplication::palette();
 }
 
+ThemedIconUtils::RecolorMode toolbarIconRecolorMode(
+    QStyle::StandardPixmap standardIcon
+    )
+{
+#if defined(Q_OS_WIN)
+    if (
+        standardIcon == QStyle::SP_FileDialogDetailedView
+        || standardIcon == QStyle::SP_FileDialogListView
+        )
+    {
+        // These Windows bitmaps contain a dark glyph on an opaque
+        // light background. Convert that background into transparency.
+        return ThemedIconUtils::RecolorMode::DarkGlyphOnLightBackground;
+    }
+
+    return ThemedIconUtils::RecolorMode::LightNeutralPixels;
+#else
+    Q_UNUSED(standardIcon)
+    return ThemedIconUtils::RecolorMode::AllPixels;
+#endif
+}
+
 }
 
 QIcon FileDialogIconStyle::standardIcon(
@@ -155,7 +177,8 @@ QIcon FileDialogIconStyle::standardIcon(
 
     return ThemedIconUtils::recolor(
         icon,
-        iconPalette(option, widget)
+        iconPalette(option, widget),
+        toolbarIconRecolorMode(standardIcon)
         );
 }
 

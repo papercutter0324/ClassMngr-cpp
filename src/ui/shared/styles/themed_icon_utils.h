@@ -8,7 +8,8 @@ namespace ThemedIconUtils
 enum class RecolorMode
 {
     AllPixels,
-    LightNeutralPixels
+    LightNeutralPixels,
+    DarkGlyphOnLightBackground
 };
 
 QIcon recolor(

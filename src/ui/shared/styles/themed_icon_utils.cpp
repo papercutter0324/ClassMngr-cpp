@@ -27,7 +27,7 @@ QColor iconColor(
         );
 }
 
-bool isLightNeutralPixel(
+bool isNeutralPixel(
     QRgb pixel
     )
 {
@@ -37,8 +37,33 @@ bool isLightNeutralPixel(
     const int lowest = std::min({red, green, blue});
     const int highest = std::max({red, green, blue});
 
+    return highest - lowest <= 24;
+}
+
+bool isLightNeutralPixel(
+    QRgb pixel
+    )
+{
+    const int lowest =
+        std::min({
+            qRed(pixel),
+            qGreen(pixel),
+            qBlue(pixel)
+            });
+
     return lowest >= 160
-        && highest - lowest <= 24;
+        && isNeutralPixel(pixel);
+}
+
+int neutralPixelIntensity(
+    QRgb pixel
+    )
+{
+    return (
+        qRed(pixel)
+        + qGreen(pixel)
+        + qBlue(pixel)
+        ) / 3;
 }
 
 struct RecoloredPixmap
@@ -70,13 +95,43 @@ RecoloredPixmap recolorPixmap(
         {
             const QRgb sourcePixel = pixels[x];
 
+            if (qAlpha(sourcePixel) == 0)
+            {
+                continue;
+            }
+
             if (
-                qAlpha(sourcePixel) == 0
-                || (
-                    mode
-                        == ThemedIconUtils::RecolorMode::LightNeutralPixels
-                    && !isLightNeutralPixel(sourcePixel)
-                    )
+                mode
+                    == ThemedIconUtils::RecolorMode::DarkGlyphOnLightBackground
+                )
+            {
+                if (!isNeutralPixel(sourcePixel))
+                {
+                    continue;
+                }
+
+                const int opacity =
+                    qAlpha(sourcePixel)
+                    * (
+                        255
+                        - neutralPixelIntensity(sourcePixel)
+                        )
+                    / 255;
+
+                pixels[x] = qRgba(
+                    color.red(),
+                    color.green(),
+                    color.blue(),
+                    opacity
+                    );
+                changed = true;
+                continue;
+            }
+
+            if (
+                mode
+                    == ThemedIconUtils::RecolorMode::LightNeutralPixels
+                && !isLightNeutralPixel(sourcePixel)
                 )
             {
                 continue;
