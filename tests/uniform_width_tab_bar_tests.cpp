@@ -8,13 +8,96 @@
 #include <QToolButton>
 #include <QtTest>
 
+#include <utility>
+
+namespace
+{
+
+const QStringList& representativeClassLabels()
+{
+    static const QStringList labels{
+        QStringLiteral("Apollo • M/F 5:00"),
+        QStringLiteral("Apollo • Int T/Th 5:00"),
+        QStringLiteral("Apollo • T/Th 5:00"),
+        QStringLiteral("Zeus • M/F 4:00"),
+        QStringLiteral("Zeus • T/Th 4:00")
+    };
+
+    return labels;
+}
+
+void addRepresentativeClassTabs(
+    UniformWidthTabWidget* tabs
+    )
+{
+    if (!tabs)
+    {
+        return;
+    }
+
+    for (const QString& label : representativeClassLabels())
+    {
+        tabs->addTab(
+            new QWidget(tabs),
+            label
+            );
+    }
+}
+
+QToolButton* scrollButton(
+    const UniformWidthTabBar* tabBar,
+    const char* objectName
+    )
+{
+    return tabBar
+        ? tabBar->findChild<QToolButton*>(
+              QString::fromLatin1(objectName),
+              Qt::FindDirectChildrenOnly
+              )
+        : nullptr;
+}
+
+bool allTabsAreInsideBar(
+    const UniformWidthTabBar* tabBar
+    )
+{
+    if (!tabBar)
+    {
+        return false;
+    }
+
+    for (int index = 0; index < tabBar->count(); ++index)
+    {
+        const QRect tab =
+            tabBar->tabRect(index);
+
+        if (
+            tab.left() < 0
+            || tab.right() >= tabBar->width()
+            )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+}
+
 class UniformWidthTabBarTests : public QObject
 {
     Q_OBJECT
 
 private slots:
+    void cleanup();
     void tabSizeHintsUseWidestTabWidth();
     void tabWidgetCentersTabBarWhenTabsFit();
+    void slightlyConstrainedTabsElideWithoutScrollButtons();
+    void scrollButtonsTrackResizeTransitions();
+    void incrementalTabChangesDoNotExposeStaleScrollButtons();
+    void fontAndThemeChangesKeepScrollControlsConsistent_data();
+    void fontAndThemeChangesKeepScrollControlsConsistent();
     void scrollButtonsBracketOverflowingTabs();
     void scrollButtonsAreHiddenWhenTabsFit();
     void resizingDoesNotLeaveTrailingEmptySpace();
@@ -26,6 +109,11 @@ private slots:
     void navigationTabsUseSharedTheme_data();
     void navigationTabsUseSharedTheme();
 };
+
+void UniformWidthTabBarTests::cleanup()
+{
+    qApp->setStyleSheet({});
+}
 
 void UniformWidthTabBarTests::tabSizeHintsUseWidestTabWidth()
 {
@@ -88,7 +176,7 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
 
     QVERIFY(tabBar);
     QVERIFY(tabBar->width() < tabs.width());
-    QCOMPARE(
+    QTRY_COMPARE(
         tabBar->geometry().x(),
         (tabs.width() - tabBar->width()) / 2
         );
@@ -97,6 +185,425 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
     QCOMPARE(
         tabBar->geometry().x(),
         (tabs.width() - tabBar->width()) / 2
+        );
+}
+
+void UniformWidthTabBarTests::
+    slightlyConstrainedTabsElideWithoutScrollButtons()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("slightlyConstrainedTabBar")
+        );
+
+    addRepresentativeClassTabs(
+        &tabs
+        );
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("slightlyConstrainedTabBar")
+            );
+
+    QVERIFY(tabBar);
+
+    const int naturalWidth =
+        tabBar->naturalWidth();
+
+    QVERIFY(naturalWidth > 1);
+
+    tabs.resize(
+        naturalWidth - 1,
+        200
+        );
+    tabs.show();
+
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QTRY_COMPARE(
+        tabBar->width(),
+        naturalWidth - 1
+        );
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    bool aTabWasCompressed = false;
+
+    for (int index = 0; index < tabBar->count(); ++index)
+    {
+        if (
+            tabBar->tabRect(index).width()
+            < tabBar->tabSizeHint(index).width()
+            )
+        {
+            aTabWasCompressed = true;
+            break;
+        }
+    }
+
+    QVERIFY(aTabWasCompressed);
+}
+
+void UniformWidthTabBarTests::scrollButtonsTrackResizeTransitions()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("transitionTabBar")
+        );
+
+    addRepresentativeClassTabs(
+        &tabs
+        );
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("transitionTabBar")
+            );
+
+    QVERIFY(tabBar);
+
+    const int naturalWidth =
+        tabBar->naturalWidth();
+    const int roomyWidth =
+        naturalWidth + 80;
+    const int elidedWidth =
+        naturalWidth - 1;
+    const int overflowingWidth = 120;
+
+    tabs.resize(
+        roomyWidth,
+        200
+        );
+    tabs.show();
+
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QTRY_COMPARE(
+        tabBar->geometry().x(),
+        (roomyWidth - naturalWidth) / 2
+        );
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+
+    tabs.resize(
+        elidedWidth,
+        200
+        );
+
+    QTRY_COMPARE(
+        tabBar->width(),
+        elidedWidth
+        );
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    tabs.resize(
+        overflowingWidth,
+        200
+        );
+
+    QTRY_VERIFY(leftButton->isVisible());
+    QTRY_VERIFY(rightButton->isVisible());
+    QTRY_COMPARE(leftButton->x(), 0);
+    QTRY_COMPARE(
+        rightButton->geometry().right(),
+        tabBar->width() - 1
+        );
+    QVERIFY(rightButton->isEnabled());
+
+    const int firstTabLeftBeforeScroll =
+        tabBar->tabRect(0).left();
+
+    rightButton->click();
+
+    QTRY_VERIFY(
+        tabBar->tabRect(0).left()
+        < firstTabLeftBeforeScroll
+        );
+    QTRY_VERIFY(leftButton->isEnabled());
+
+    tabs.setCurrentIndex(
+        tabs.count() - 1
+        );
+    tabs.resize(
+        elidedWidth,
+        200
+        );
+
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    tabs.resize(
+        roomyWidth,
+        200
+        );
+
+    QTRY_COMPARE(
+        tabBar->geometry().x(),
+        (roomyWidth - naturalWidth) / 2
+        );
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    tabs.resize(
+        overflowingWidth,
+        200
+        );
+
+    QTRY_VERIFY(leftButton->isVisible());
+    QTRY_VERIFY(rightButton->isVisible());
+    QTRY_COMPARE(leftButton->x(), 0);
+    QTRY_COMPARE(
+        rightButton->geometry().right(),
+        tabBar->width() - 1
+        );
+}
+
+void UniformWidthTabBarTests::
+    incrementalTabChangesDoNotExposeStaleScrollButtons()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("incrementalTabBar")
+        );
+
+    addRepresentativeClassTabs(
+        &tabs
+        );
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("incrementalTabBar")
+            );
+
+    QVERIFY(tabBar);
+
+    const int finalNaturalWidth =
+        tabBar->naturalWidth();
+
+    while (tabs.count() > 0)
+    {
+        QWidget* page =
+            tabs.widget(0);
+
+        tabs.removeTab(0);
+        delete page;
+    }
+
+    tabs.resize(
+        finalNaturalWidth - 1,
+        200
+        );
+    tabs.show();
+
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+
+    for (const QString& label : representativeClassLabels())
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            label
+            );
+
+        QCoreApplication::processEvents();
+        QVERIFY(!leftButton->isVisible());
+        QVERIFY(!rightButton->isVisible());
+    }
+
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("Additional overflowing class %1").arg(index)
+            );
+    }
+
+    QTRY_VERIFY(leftButton->isVisible());
+    QTRY_VERIFY(rightButton->isVisible());
+    QTRY_COMPARE(leftButton->x(), 0);
+    QTRY_COMPARE(
+        rightButton->geometry().right(),
+        tabBar->width() - 1
+        );
+
+    while (tabs.count() > representativeClassLabels().size())
+    {
+        QWidget* page =
+            tabs.widget(tabs.count() - 1);
+
+        tabs.removeTab(
+            tabs.count() - 1
+            );
+        delete page;
+    }
+
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+}
+
+void UniformWidthTabBarTests::
+    fontAndThemeChangesKeepScrollControlsConsistent_data()
+{
+    QTest::addColumn<QString>("stylesheetPath");
+    QTest::addColumn<int>("pointSize");
+
+    for (const auto& theme : {
+             std::pair{
+                 "light",
+                 QStringLiteral("../resources/assets/styles/light.qss")
+             },
+             std::pair{
+                 "dark",
+                 QStringLiteral("../resources/assets/styles/dark.qss")
+             }
+         })
+    {
+        for (const int pointSize : {12, 14, 16, 18})
+        {
+            QTest::newRow(
+                QStringLiteral("%1-%2pt")
+                    .arg(
+                        QString::fromLatin1(theme.first)
+                        )
+                    .arg(pointSize)
+                    .toLatin1()
+                    .constData()
+                )
+                << theme.second
+                << pointSize;
+        }
+    }
+}
+
+void UniformWidthTabBarTests::
+    fontAndThemeChangesKeepScrollControlsConsistent()
+{
+    QFETCH(QString, stylesheetPath);
+    QFETCH(int, pointSize);
+
+    QFile stylesheet(
+        QFINDTESTDATA(stylesheetPath)
+        );
+
+    QVERIFY(stylesheet.open(QIODevice::ReadOnly | QIODevice::Text));
+
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("fontAndThemeTabBar")
+        );
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("fontAndThemeTabBar")
+            );
+
+    QVERIFY(tabBar);
+
+    addRepresentativeClassTabs(
+        &tabs
+        );
+    tabs.resize(
+        640,
+        200
+        );
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    qApp->setStyleSheet(
+        QString::fromUtf8(stylesheet.readAll())
+        );
+
+    QFont font =
+        tabs.font();
+
+    font.setPointSize(
+        pointSize
+        );
+    tabs.setFont(
+        font
+        );
+    tabBar->setFont(
+        font
+        );
+    QCoreApplication::processEvents();
+
+    const int naturalWidth =
+        tabBar->naturalWidth();
+
+    tabs.resize(
+        naturalWidth - 1,
+        200
+        );
+    tabs.show();
+
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QTRY_VERIFY(!leftButton->isVisible());
+    QTRY_VERIFY(!rightButton->isVisible());
+    QTRY_VERIFY(allTabsAreInsideBar(tabBar));
+
+    tabs.resize(
+        120,
+        200
+        );
+
+    QTRY_VERIFY(leftButton->isVisible());
+    QTRY_VERIFY(rightButton->isVisible());
+    QTRY_COMPARE(leftButton->x(), 0);
+    QTRY_COMPARE(
+        rightButton->geometry().right(),
+        tabBar->width() - 1
         );
 }
 

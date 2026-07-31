@@ -245,6 +245,25 @@ int UniformWidthTabBar::naturalWidth() const
     return width;
 }
 
+void UniformWidthTabBar::changeEvent(
+    QEvent* event
+    )
+{
+    QTabBar::changeEvent(event);
+
+    if (
+        event
+        && (
+            event->type() == QEvent::FontChange
+            || event->type() == QEvent::ApplicationFontChange
+            || event->type() == QEvent::StyleChange
+            )
+        )
+    {
+        scheduleScrollControlRefresh();
+    }
+}
+
 void UniformWidthTabBar::paintEvent(
     QPaintEvent* event
     )
@@ -270,7 +289,7 @@ void UniformWidthTabBar::resizeEvent(
     )
 {
     QTabBar::resizeEvent(event);
-    refreshScrollControls();
+    scheduleScrollControlRefresh();
 }
 
 void UniformWidthTabBar::showEvent(
@@ -278,7 +297,7 @@ void UniformWidthTabBar::showEvent(
     )
 {
     QTabBar::showEvent(event);
-    refreshScrollControls();
+    scheduleScrollControlRefresh();
 }
 
 void UniformWidthTabBar::wheelEvent(
@@ -569,12 +588,22 @@ void UniformWidthTabBar::paintNavigationPills()
 
 void UniformWidthTabBar::scheduleScrollControlRefresh()
 {
+    if (m_scrollControlRefreshScheduled)
+    {
+        return;
+    }
+
+    m_scrollControlRefreshScheduled =
+        true;
+
     QTimer::singleShot(
         0,
         this,
         [this]
         {
             refreshScrollControls();
+            m_scrollControlRefreshScheduled =
+                false;
         }
         );
 }
@@ -596,34 +625,25 @@ void UniformWidthTabBar::refreshScrollControls()
     QToolButton* rightButton =
         scrollButton("ScrollRightButton");
 
-    if (!leftButton || !rightButton)
+    if (
+        !leftButton
+        || !rightButton
+        || !leftButton->isVisible()
+        || !rightButton->isVisible()
+        )
     {
         return;
     }
 
-    const bool scrollingRequired =
-        naturalWidth() > width();
-
     removeTrailingGap(
         leftButton,
-        rightButton,
-        scrollingRequired
+        rightButton
         );
-
-    leftButton->setVisible(scrollingRequired);
-    rightButton->setVisible(scrollingRequired);
-
-    if (scrollingRequired)
-    {
-        leftButton->raise();
-        rightButton->raise();
-    }
 }
 
 void UniformWidthTabBar::removeTrailingGap(
     QToolButton* leftButton,
-    QToolButton* rightButton,
-    bool scrollingRequired
+    QToolButton* rightButton
     )
 {
     if (count() <= 0)
@@ -632,9 +652,7 @@ void UniformWidthTabBar::removeTrailingGap(
     }
 
     const int rightEdge =
-        scrollingRequired
-            ? rightButton->x()
-            : width();
+        rightButton->x();
 
     for (int step = 0; step < count(); ++step)
     {
@@ -788,7 +806,7 @@ void UniformWidthTabWidget::setTabAppearance(
 
     updateGeometry();
     update();
-    centerTabBar();
+    scheduleCenterTabBar();
 }
 
 bool UniformWidthTabWidget::eventFilter(
@@ -804,11 +822,10 @@ bool UniformWidthTabWidget::eventFilter(
             || event->type() == QEvent::Resize
             || event->type() == QEvent::Show
             || event->type() == QEvent::LayoutRequest
-            || event->type() == QEvent::Paint
             )
         )
     {
-        centerTabBar();
+        scheduleCenterTabBar();
     }
 
     return QTabWidget::eventFilter(
@@ -822,7 +839,7 @@ void UniformWidthTabWidget::resizeEvent(
     )
 {
     QTabWidget::resizeEvent(event);
-    centerTabBar();
+    scheduleCenterTabBar();
 }
 
 void UniformWidthTabWidget::showEvent(
@@ -830,7 +847,7 @@ void UniformWidthTabWidget::showEvent(
     )
 {
     QTabWidget::showEvent(event);
-    centerTabBar();
+    scheduleCenterTabBar();
 }
 
 void UniformWidthTabWidget::tabInserted(
@@ -838,7 +855,7 @@ void UniformWidthTabWidget::tabInserted(
     )
 {
     QTabWidget::tabInserted(index);
-    centerTabBar();
+    scheduleCenterTabBar();
 }
 
 void UniformWidthTabWidget::tabRemoved(
@@ -846,7 +863,29 @@ void UniformWidthTabWidget::tabRemoved(
     )
 {
     QTabWidget::tabRemoved(index);
-    centerTabBar();
+    scheduleCenterTabBar();
+}
+
+void UniformWidthTabWidget::scheduleCenterTabBar()
+{
+    if (m_centerTabBarScheduled)
+    {
+        return;
+    }
+
+    m_centerTabBarScheduled =
+        true;
+
+    QTimer::singleShot(
+        0,
+        this,
+        [this]
+        {
+            centerTabBar();
+            m_centerTabBarScheduled =
+                false;
+        }
+        );
 }
 
 void UniformWidthTabWidget::centerTabBar()

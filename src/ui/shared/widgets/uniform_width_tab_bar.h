@@ -88,6 +88,10 @@ public:
     int naturalWidth() const;
 
 protected:
+    void changeEvent(
+        QEvent* event
+        ) override;
+
     void paintEvent(
         QPaintEvent* event
         ) override;
@@ -121,8 +125,7 @@ private:
     void refreshScrollControls();
     void removeTrailingGap(
         QToolButton* leftButton,
-        QToolButton* rightButton,
-        bool scrollingRequired
+        QToolButton* rightButton
         );
 
 private:
@@ -133,6 +136,7 @@ private:
     QColor m_navigationTabHoverColor;
     QColor m_navigationTabSelectedColor;
     QColor m_navigationTabTextColor;
+    bool m_scrollControlRefreshScheduled = false;
 };
 
 class UniformWidthTabWidget : public QTabWidget
@@ -190,10 +194,12 @@ private:
         UniformWidthTabKind kind
         );
 
+    void scheduleCenterTabBar();
     void centerTabBar();
 
 private:
     UniformWidthTabKind m_tabKind = UniformWidthTabKind::Generic;
     UniformWidthTabAppearance m_tabAppearance =
         UniformWidthTabAppearance::Platform;
+    bool m_centerTabBarScheduled = false;
 };
