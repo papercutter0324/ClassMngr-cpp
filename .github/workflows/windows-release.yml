@@ -8,6 +8,11 @@ on:
         required: false
         default: all
         type: string
+      source_ref:
+        description: Git ref to check out
+        required: false
+        default: ""
+        type: string
   workflow_dispatch:
     inputs:
       architecture:
@@ -64,6 +69,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6

@@ -4,9 +4,15 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to build and publish
+        required: true
+        type: string
 
 concurrency:
-  group: publish-release-${{ github.event.release.tag_name }}
+  group: publish-release-${{ github.event.release.tag_name || inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -19,11 +25,13 @@ jobs:
     steps:
       - name: Check out release tag
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
       - name: Match release tag to project version
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
           project_version="$(
             awk '
@@ -57,6 +65,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/linux-release.yml
+    with:
+      source_ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
   build-macos:
     name: Build macOS universal
@@ -64,6 +74,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/macos-release.yml
+    with:
+      source_ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
   build-windows:
     name: Build Windows x64 and ARM64
@@ -73,6 +85,7 @@ jobs:
     uses: ./.github/workflows/windows-release.yml
     with:
       architecture: all
+      source_ref: ${{ github.event.release.tag_name || inputs.release_tag }}
 
   publish:
     name: Attach binaries to release
@@ -149,7 +162,7 @@ jobs:
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: >-
           gh release upload --repo "${GH_REPO}"
           "${RELEASE_TAG}" dist/*
