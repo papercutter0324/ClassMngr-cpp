@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QProxyStyle>
@@ -24,12 +25,126 @@ constexpr qreal NavigationTabRadius = 7.0;
 constexpr qreal NavigationTabBorderWidth = 1.0;
 constexpr int NavigationTabBorderExtent = 2;
 constexpr int NavigationTabIconSpacing = 4;
+constexpr int ScrollButtonWidth = 28;
+constexpr int DragScrollStep = 48;
 const QColor NavigationTabSelectedTextColor(16, 20, 24);
 
 class EdgeAlignedTabBarStyle final : public QProxyStyle
 {
 public:
     using QProxyStyle::QProxyStyle;
+
+    int pixelMetric(
+        PixelMetric metric,
+        const QStyleOption* option,
+        const QWidget* widget
+        ) const override
+    {
+        const int metricValue =
+            QProxyStyle::pixelMetric(
+                metric,
+                option,
+                widget
+                );
+
+        if (
+            metric == QStyle::PM_TabBarScrollButtonWidth
+            && qobject_cast<const UniformWidthTabBar*>(widget)
+            )
+        {
+            return std::max(
+                metricValue,
+                ScrollButtonWidth
+                );
+        }
+
+        return metricValue;
+    }
+
+    void drawPrimitive(
+        PrimitiveElement element,
+        const QStyleOption* option,
+        QPainter* painter,
+        const QWidget* widget
+        ) const override
+    {
+        const bool isScrollArrow =
+            element == QStyle::PE_IndicatorArrowLeft
+            || element == QStyle::PE_IndicatorArrowRight;
+        const QWidget* parent =
+            widget
+                ? widget->parentWidget()
+                : nullptr;
+
+        if (
+            !isScrollArrow
+            || !option
+            || !painter
+            || !qobject_cast<const UniformWidthTabBar*>(parent)
+            )
+        {
+            QProxyStyle::drawPrimitive(
+                element,
+                option,
+                painter,
+                widget
+                );
+            return;
+        }
+
+        const QPalette::ColorGroup colorGroup =
+            option->state.testFlag(QStyle::State_Enabled)
+                ? QPalette::Active
+                : QPalette::Disabled;
+        const QColor arrowColor =
+            option->palette.color(
+                colorGroup,
+                QPalette::ButtonText
+                );
+        const QPointF center =
+            option->rect.center();
+        constexpr qreal ArrowHalfWidth = 3.0;
+        constexpr qreal ArrowHalfHeight = 5.0;
+        const qreal direction =
+            element == QStyle::PE_IndicatorArrowLeft
+                ? -1.0
+                : 1.0;
+        const QPointF arrowPoints[] = {
+            QPointF(
+                center.x() - (direction * ArrowHalfWidth),
+                center.y() - ArrowHalfHeight
+                ),
+            QPointF(
+                center.x() + (direction * ArrowHalfWidth),
+                center.y()
+                ),
+            QPointF(
+                center.x() - (direction * ArrowHalfWidth),
+                center.y() + ArrowHalfHeight
+                )
+        };
+
+        painter->save();
+        painter->setRenderHint(
+            QPainter::Antialiasing,
+            true
+            );
+        painter->setBrush(Qt::NoBrush);
+        painter->setPen(
+            QPen(
+                arrowColor,
+                2.25,
+                Qt::SolidLine,
+                Qt::RoundCap,
+                Qt::RoundJoin
+                )
+            );
+        painter->drawPolyline(
+            arrowPoints,
+            3
+            );
+        painter->restore();
+    }
 
     QRect subElementRect(
         SubElement element,
@@ -276,6 +391,147 @@ void UniformWidthTabBar::paintEvent(
 
     Q_UNUSED(event);
     paintNavigationPills();
+}
+
+void UniformWidthTabBar::mouseMoveEvent(
+    QMouseEvent* event
+    )
+{
+    if (
+        !event
+        || !m_dragScrollCandidate
+        || !event->buttons().testFlag(Qt::LeftButton)
+        )
+    {
+        QTabBar::mouseMoveEvent(event);
+        return;
+    }
+
+    const int currentX =
+        event->position().toPoint().x();
+    const int totalHorizontalDistance =
+        currentX - m_dragPressPosition.x();
+
+    if (
+        !m_dragScrolling
+        && std::abs(totalHorizontalDistance)
+            >= QApplication::startDragDistance()
+        )
+    {
+        m_dragScrolling = true;
+        setCursor(
+            Qt::ClosedHandCursor
+            );
+    }
+
+    const int horizontalDistance =
+        currentX - m_lastDragX;
+    m_lastDragX =
+        currentX;
+
+    if (m_dragScrolling)
+    {
+        scrollForDragDistance(
+            horizontalDistance
+            );
+    }
+
+    event->accept();
+}
+
+void UniformWidthTabBar::mousePressEvent(
+    QMouseEvent* event
+    )
+{
+    QToolButton* leftButton =
+        scrollButton("ScrollLeftButton");
+    QToolButton* rightButton =
+        scrollButton("ScrollRightButton");
+    const bool canDragScroll =
+        event
+        && event->button() == Qt::LeftButton
+        && isEnabled()
+        && leftButton
+        && rightButton
+        && leftButton->isVisible()
+        && rightButton->isVisible();
+
+    if (!canDragScroll)
+    {
+        QTabBar::mousePressEvent(event);
+        return;
+    }
+
+    m_dragScrollCandidate = true;
+    m_dragScrolling = false;
+    m_dragPressPosition =
+        event->position().toPoint();
+    m_lastDragX =
+        m_dragPressPosition.x();
+    m_dragScrollRemainder = 0;
+    event->accept();
+}
+
+void UniformWidthTabBar::mouseReleaseEvent(
+    QMouseEvent* event
+    )
+{
+    if (
+        !event
+        || event->button() != Qt::LeftButton
+        || !m_dragScrollCandidate
+        )
+    {
+        QTabBar::mouseReleaseEvent(event);
+        return;
+    }
+
+    const bool wasDragScrolling =
+        m_dragScrolling;
+
+    m_dragScrollCandidate = false;
+    m_dragScrolling = false;
+    m_dragScrollRemainder = 0;
+    unsetCursor();
+
+    if (wasDragScrolling)
+    {
+        event->accept();
+        return;
+    }
+
+    const QPoint globalPressPosition =
+        mapToGlobal(
+            m_dragPressPosition
+            );
+    QMouseEvent replayedPress(
+        QEvent::MouseButtonPress,
+        QPointF(m_dragPressPosition),
+        QPointF(globalPressPosition),
+        Qt::LeftButton,
+        Qt::LeftButton,
+        event->modifiers(),
+        event->pointingDevice()
+        );
+    QTabBar::mousePressEvent(
+        &replayedPress
+        );
+
+    QMouseEvent replayedRelease(
+        QEvent::MouseButtonRelease,
+        event->position(),
+        event->globalPosition(),
+        Qt::LeftButton,
+        Qt::NoButton,
+        event->modifiers(),
+        event->pointingDevice()
+        );
+    QTabBar::mouseReleaseEvent(
+        &replayedRelease
+        );
+    event->setAccepted(
+        replayedRelease.isAccepted()
+        );
 }
 
 void UniformWidthTabBar::tabLayoutChange()
@@ -639,6 +895,45 @@ void UniformWidthTabBar::refreshScrollControls()
         leftButton,
         rightButton
         );
+}
+
+void UniformWidthTabBar::scrollForDragDistance(
+    int horizontalDistance
+    )
+{
+    m_dragScrollRemainder +=
+        horizontalDistance;
+
+    QToolButton* leftButton =
+        scrollButton("ScrollLeftButton");
+    QToolButton* rightButton =
+        scrollButton("ScrollRightButton");
+
+    while (std::abs(m_dragScrollRemainder) >= DragScrollStep)
+    {
+        const bool draggingRight =
+            m_dragScrollRemainder > 0;
+        QToolButton* button =
+            draggingRight
+                ? leftButton
+                : rightButton;
+
+        if (
+            !button
+            || !button->isVisible()
+            || !button->isEnabled()
+            )
+        {
+            m_dragScrollRemainder = 0;
+            break;
+        }
+
+        button->click();
+        m_dragScrollRemainder +=
+            draggingRight
+                ? -DragScrollStep
+                : DragScrollStep;
+    }
 }
 
 void UniformWidthTabBar::removeTrailingGap(

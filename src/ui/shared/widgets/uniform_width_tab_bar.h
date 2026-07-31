@@ -1,12 +1,14 @@
 #pragma once
 
 #include <QColor>
+#include <QPoint>
 #include <QTabBar>
 #include <QTabWidget>
 
 class QResizeEvent;
 class QShowEvent;
 class QEvent;
+class QMouseEvent;
 class QObject;
 class QPaintEvent;
 class QToolButton;
@@ -96,6 +98,18 @@ protected:
         QPaintEvent* event
         ) override;
 
+    void mouseMoveEvent(
+        QMouseEvent* event
+        ) override;
+
+    void mousePressEvent(
+        QMouseEvent* event
+        ) override;
+
+    void mouseReleaseEvent(
+        QMouseEvent* event
+        ) override;
+
     void tabLayoutChange() override;
 
     void resizeEvent(
@@ -123,6 +137,9 @@ private:
 
     void scheduleScrollControlRefresh();
     void refreshScrollControls();
+    void scrollForDragDistance(
+        int horizontalDistance
+        );
     void removeTrailingGap(
         QToolButton* leftButton,
         QToolButton* rightButton
@@ -137,6 +154,11 @@ private:
     QColor m_navigationTabSelectedColor;
     QColor m_navigationTabTextColor;
     bool m_scrollControlRefreshScheduled = false;
+    bool m_dragScrollCandidate = false;
+    bool m_dragScrolling = false;
+    QPoint m_dragPressPosition;
+    int m_lastDragX = 0;
+    int m_dragScrollRemainder = 0;
 };
 
 class UniformWidthTabWidget : public QTabWidget

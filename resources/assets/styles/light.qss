@@ -510,6 +510,33 @@ QTabBar[uniformTabKind="section"] {
     qproperty-navigationTabTextColor: #27313a;
 }
 
+UniformWidthTabBar QToolButton#ScrollLeftButton,
+UniformWidthTabBar QToolButton#ScrollRightButton {
+    background-color: #f5f3ee;
+    color: #27313a;
+    border: 1px solid #8c969c;
+    border-radius: 6px;
+}
+
+UniformWidthTabBar QToolButton#ScrollLeftButton:hover,
+UniformWidthTabBar QToolButton#ScrollRightButton:hover {
+    background-color: #e5eef5;
+    border-color: #2d7ca3;
+}
+
+UniformWidthTabBar QToolButton#ScrollLeftButton:pressed,
+UniformWidthTabBar QToolButton#ScrollRightButton:pressed {
+    background-color: #cbdbe7;
+    border-color: #246687;
+}
+
+UniformWidthTabBar QToolButton#ScrollLeftButton:disabled,
+UniformWidthTabBar QToolButton#ScrollRightButton:disabled {
+    background-color: #e1dfda;
+    color: #92999d;
+    border-color: #bdc2c4;
+}
+
 QTabBar#subPrepGradeTabBar::tab,
 QTabBar#subPrepClassTabBar::tab,
 QTabBar#myInfoGradeTabBar::tab,

@@ -5,6 +5,7 @@
 #include <QFile>
 #include <QHoverEvent>
 #include <QImage>
+#include <QMouseEvent>
 #include <QToolButton>
 #include <QtTest>
 
@@ -100,6 +101,9 @@ private slots:
     void fontAndThemeChangesKeepScrollControlsConsistent();
     void scrollButtonsBracketOverflowingTabs();
     void scrollButtonsAreHiddenWhenTabsFit();
+    void overflowingTabsCanBeScrolledByDragging();
+    void clicksStillSelectTabsWhenDragScrollingIsAvailable();
+    void scrollButtonsUseHighContrastDarkTheme();
     void resizingDoesNotLeaveTrailingEmptySpace();
     void tabWidgetAppliesReusableKindProperties();
     void tabWidgetAppliesSectionKindProperties();
@@ -700,6 +704,273 @@ void UniformWidthTabBarTests::scrollButtonsAreHiddenWhenTabsFit()
     QVERIFY(rightButton);
     QVERIFY(!leftButton->isVisible());
     QVERIFY(!rightButton->isVisible());
+}
+
+void UniformWidthTabBarTests::overflowingTabsCanBeScrolledByDragging()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("dragScrollingTabBar")
+        );
+    tabs.resize(420, 200);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("A wide class level %1").arg(index)
+            );
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("dragScrollingTabBar")
+            );
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(tabBar);
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QVERIFY(leftButton->isVisible());
+    QVERIFY(rightButton->isVisible());
+    QVERIFY(rightButton->isEnabled());
+    QVERIFY(rightButton->width() >= 28);
+
+    const int currentIndexBeforeDrag =
+        tabBar->currentIndex();
+    const int firstTabLeftBeforeDrag =
+        tabBar->tabRect(0).left();
+    const QPoint pressPosition(
+        rightButton->x() - 20,
+        tabBar->height() / 2
+        );
+    const QPoint dragPosition =
+        pressPosition - QPoint(100, 0);
+
+    QTest::mousePress(
+        tabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        pressPosition
+        );
+
+    QMouseEvent dragEvent(
+        QEvent::MouseMove,
+        QPointF(dragPosition),
+        QPointF(tabBar->mapToGlobal(dragPosition)),
+        Qt::NoButton,
+        Qt::LeftButton,
+        Qt::NoModifier
+        );
+    QApplication::sendEvent(
+        tabBar,
+        &dragEvent
+        );
+
+    QTest::mouseRelease(
+        tabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        dragPosition
+        );
+
+    QTRY_VERIFY(
+        tabBar->tabRect(0).left()
+        < firstTabLeftBeforeDrag
+        );
+    QCOMPARE(
+        tabBar->currentIndex(),
+        currentIndexBeforeDrag
+        );
+
+    const int firstTabLeftBeforeRightDrag =
+        tabBar->tabRect(0).left();
+    const QPoint rightDragPressPosition(
+        leftButton->geometry().right() + 20,
+        tabBar->height() / 2
+        );
+    const QPoint rightDragPosition =
+        rightDragPressPosition + QPoint(100, 0);
+
+    QTest::mousePress(
+        tabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        rightDragPressPosition
+        );
+
+    QMouseEvent rightDragEvent(
+        QEvent::MouseMove,
+        QPointF(rightDragPosition),
+        QPointF(tabBar->mapToGlobal(rightDragPosition)),
+        Qt::NoButton,
+        Qt::LeftButton,
+        Qt::NoModifier
+        );
+    QApplication::sendEvent(
+        tabBar,
+        &rightDragEvent
+        );
+
+    QTest::mouseRelease(
+        tabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        rightDragPosition
+        );
+
+    QTRY_VERIFY(
+        tabBar->tabRect(0).left()
+        > firstTabLeftBeforeRightDrag
+        );
+    QCOMPARE(
+        tabBar->currentIndex(),
+        currentIndexBeforeDrag
+        );
+}
+
+void UniformWidthTabBarTests::
+    clicksStillSelectTabsWhenDragScrollingIsAvailable()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("clickableOverflowingTabBar")
+        );
+    tabs.resize(420, 200);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("A wide class level %1").arg(index)
+            );
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("clickableOverflowingTabBar")
+            );
+    QToolButton* leftButton =
+        scrollButton(
+            tabBar,
+            "ScrollLeftButton"
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(tabBar);
+    QVERIFY(leftButton);
+    QVERIFY(rightButton);
+    QVERIFY(leftButton->isVisible());
+    QVERIFY(rightButton->isVisible());
+
+    const int targetIndex = 1;
+    const QRect targetTab =
+        tabBar->tabRect(targetIndex);
+
+    QVERIFY(
+        targetTab.center().x()
+        > leftButton->geometry().right()
+        );
+    QVERIFY(
+        targetTab.center().x()
+        < rightButton->x()
+        );
+
+    QTest::mouseClick(
+        tabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        targetTab.center()
+        );
+
+    QCOMPARE(
+        tabBar->currentIndex(),
+        targetIndex
+        );
+}
+
+void UniformWidthTabBarTests::scrollButtonsUseHighContrastDarkTheme()
+{
+    QFile stylesheet(
+        QFINDTESTDATA(
+            "../resources/assets/styles/dark.qss"
+            )
+        );
+
+    QVERIFY(
+        stylesheet.open(
+            QIODevice::ReadOnly | QIODevice::Text
+            )
+        );
+    qApp->setStyleSheet(
+        QString::fromUtf8(
+            stylesheet.readAll()
+            )
+        );
+
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Class,
+        QStringLiteral("darkThemeScrollButtonTabBar")
+        );
+    tabs.resize(420, 200);
+
+    for (int index = 0; index < 8; ++index)
+    {
+        tabs.addTab(
+            new QWidget(&tabs),
+            QStringLiteral("A wide class level %1").arg(index)
+            );
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("darkThemeScrollButtonTabBar")
+            );
+    QToolButton* rightButton =
+        scrollButton(
+            tabBar,
+            "ScrollRightButton"
+            );
+
+    QVERIFY(tabBar);
+    QVERIFY(rightButton);
+    QVERIFY(rightButton->isVisible());
+    QVERIFY(rightButton->isEnabled());
+    QVERIFY(rightButton->width() >= 28);
+    QCOMPARE(
+        rightButton->palette().color(
+            QPalette::Button
+            ),
+        QColor(QStringLiteral("#3b3f43"))
+        );
+    QCOMPARE(
+        rightButton->palette().color(
+            QPalette::ButtonText
+            ),
+        QColor(QStringLiteral("#ffffff"))
+        );
 }
 
 void UniformWidthTabBarTests::resizingDoesNotLeaveTrailingEmptySpace()
