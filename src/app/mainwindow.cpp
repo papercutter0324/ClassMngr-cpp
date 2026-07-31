@@ -11,6 +11,7 @@
 #include "app/controllers/update_controller.h"
 #include "core/application_services.h"
 #include "core/appsettings.h"
+#include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -163,7 +164,19 @@ void MainWindow::initializePages()
 
 void MainWindow::initializeSidebar()
 {
-    // TODO
+    if (!ui || !ui->sidebarWidget)
+    {
+        return;
+    }
+
+    ui->sidebarWidget->setDocumentCatalog(
+        m_services
+            ? m_services->documentCatalog()
+            : nullptr,
+        m_languageService
+            ? m_languageService->loadedLocaleName()
+            : QString()
+        );
 }
 
 void MainWindow::createActions()
@@ -277,7 +290,14 @@ void MainWindow::retranslateUi()
 
     if (ui && ui->sidebarWidget)
     {
-        ui->sidebarWidget->rebuildTree();
+        ui->sidebarWidget->setDocumentCatalog(
+            m_services
+                ? m_services->documentCatalog()
+                : nullptr,
+            m_languageService
+                ? m_languageService->loadedLocaleName()
+                : QString()
+            );
     }
 
     if (m_sidebarController)

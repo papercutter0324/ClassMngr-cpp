@@ -3,6 +3,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTemporaryDir>
@@ -16,15 +17,7 @@ QStringList expectedPackIds()
         QStringLiteral("campuses"),
         QStringLiteral("templates"),
         QStringLiteral("roster-designs"),
-        QStringLiteral("book-reports"),
-        QStringLiteral("essay"),
-        QStringLiteral("essay-topics"),
-        QStringLiteral("evaluations"),
-        QStringLiteral("guides"),
-        QStringLiteral("lessons"),
-        QStringLiteral("sub-prep"),
-        QStringLiteral("training"),
-        QStringLiteral("vacation")
+        QStringLiteral("documents")
     };
 }
 
@@ -96,6 +89,7 @@ private slots:
     void requiresConfiguredPacks();
     void rejectsUnsafeArtifacts();
     void stagesAndMountsValidRccPack();
+    void removesRetiredPackArtifacts();
 };
 
 void ResourcePackTests::knowsConfiguredPacks()
@@ -109,20 +103,8 @@ void ResourcePackTests::knowsConfiguredPacks()
         expectedPackIds()
         );
     QCOMPARE(
-        manager.embeddedRoot(QStringLiteral("book-reports")),
-        QStringLiteral(":/assets/files/book reports")
-        );
-    QCOMPARE(
-        manager.embeddedRoot(QStringLiteral("essay-topics")),
-        QStringLiteral(":/assets/files/essay_topics")
-        );
-    QCOMPARE(
-        manager.embeddedRoot(QStringLiteral("sub-prep")),
-        QStringLiteral(":/assets/files/sub prep")
-        );
-    QCOMPARE(
-        manager.embeddedRoot(QStringLiteral("vacation")),
-        QStringLiteral(":/assets/files/vacation")
+        manager.embeddedRoot(QStringLiteral("documents")),
+        QStringLiteral(":/assets/documents")
         );
 }
 
@@ -304,6 +286,42 @@ void ResourcePackTests::stagesAndMountsValidRccPack()
         marker.readAll().trimmed(),
         QByteArrayLiteral("external campus pack")
         );
+}
+
+void ResourcePackTests::removesRetiredPackArtifacts()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString metadataPath =
+        temporaryDirectory.filePath(QStringLiteral("guides.json"));
+    const QString packPath =
+        temporaryDirectory.filePath(QStringLiteral("guides-1.0.0.rcc"));
+
+    QFile metadataFile(metadataPath);
+    QVERIFY(metadataFile.open(QIODevice::WriteOnly));
+    QVERIFY(metadataFile.write(QByteArrayLiteral("{}")) > 0);
+    metadataFile.close();
+
+    QFile packFile(packPath);
+    QVERIFY(packFile.open(QIODevice::WriteOnly));
+    QVERIFY(packFile.write(QByteArrayLiteral("retired")) > 0);
+    packFile.close();
+
+    ResourcePackManager manager(
+        temporaryDirectory.path()
+        );
+
+    const Status status =
+        manager.initialize();
+
+    if (!status)
+    {
+        QFAIL(qPrintable(status.error()));
+    }
+
+    QVERIFY(!QFileInfo::exists(metadataPath));
+    QVERIFY(!QFileInfo::exists(packPath));
 }
 
 QTEST_MAIN(ResourcePackTests)

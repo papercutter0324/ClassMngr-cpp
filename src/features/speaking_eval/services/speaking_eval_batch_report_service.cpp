@@ -1,5 +1,6 @@
 #include "speaking_eval_batch_report_service.h"
 
+#include "core/resource_paths.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
@@ -764,9 +765,15 @@ bool renderPowerPointPdf(
 #endif
             );
     const QString resourcePath =
-        data.useAdvancedTemplate
-            ? QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx")
-            : QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate-Full.pptx");
+        ResourcePaths::Documents::filePath(
+            data.useAdvancedTemplate
+                ? QStringLiteral(
+                        "Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
+                    )
+                : QStringLiteral(
+                        "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
+                    )
+            );
 
     if (!copyResourceToFile(resourcePath, pptxPath, errorMessage))
     {
@@ -966,9 +973,15 @@ bool renderMacPowerPointTemplateBatch(
         QFile::remove(scriptPath);
     };
     const QString resourcePath =
-        useAdvancedTemplate
-            ? QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx")
-            : QStringLiteral(":/assets/files/evaluations/SpeakingEvaluationTemplate-Full.pptx");
+        ResourcePaths::Documents::filePath(
+            useAdvancedTemplate
+                ? QStringLiteral(
+                        "Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
+                    )
+                : QStringLiteral(
+                        "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
+                    )
+            );
 
     if (!copyResourceToFile(resourcePath, pptxPath, errorMessage)
         || !writeUtf8File(

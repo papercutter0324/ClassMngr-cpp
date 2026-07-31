@@ -3,6 +3,8 @@
 #include "data/data_service.h"
 #include "core/theme_service.h"
 
+#include <QDebug>
+
 ApplicationServices::ApplicationServices()
 {
     m_dataService =
@@ -10,6 +12,18 @@ ApplicationServices::ApplicationServices()
 
     m_themeService =
         std::make_unique<ThemeService>();
+
+    m_documentCatalog =
+        std::make_unique<DocumentCatalog>();
+
+    [[maybe_unused]] const Status catalogStatus =
+        m_documentCatalog->initialize();
+
+    for (const QString& warning : m_documentCatalog->warnings())
+    {
+        qWarning().noquote()
+            << warning;
+    }
 }
 
 ApplicationServices::~ApplicationServices() = default;
@@ -57,4 +71,9 @@ DataService* ApplicationServices::dataService() const
 ThemeService* ApplicationServices::themeService() const
 {
     return m_themeService.get();
+}
+
+const DocumentCatalog* ApplicationServices::documentCatalog() const
+{
+    return m_documentCatalog.get();
 }

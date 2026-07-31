@@ -2,6 +2,7 @@
 #define APPLICATIONSERVICES_H
 
 #include "core/result.h"
+#include "features/documents/document_catalog.h"
 
 #include <QString>
 #include <memory>
@@ -28,10 +29,12 @@ public:
 
     [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] ThemeService* themeService() const;
+    [[nodiscard]] const DocumentCatalog* documentCatalog() const;
 
 private:
     std::unique_ptr<DataService> m_dataService;
     std::unique_ptr<ThemeService> m_themeService;
+    std::unique_ptr<DocumentCatalog> m_documentCatalog;
 };
 
 #endif // APPLICATIONSERVICES_H

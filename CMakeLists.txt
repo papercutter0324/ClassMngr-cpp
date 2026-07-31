@@ -351,6 +351,7 @@ file(GLOB_RECURSE CLASSMNGR_CAMPUS_MAP_IMAGES CONFIGURE_DEPENDS
 
 file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*"
+    "${PROJECT_SOURCE_DIR}/resources/assets/documents/*"
     "${PROJECT_SOURCE_DIR}/resources/assets/files/*"
     "${PROJECT_SOURCE_DIR}/resources/assets/templates/*"
     "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
@@ -769,6 +770,34 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrResourcePackTests
         COMMAND ClassMngrResourcePackTests
+    )
+
+    qt_add_executable(ClassMngrDocumentCatalogTests
+        tests/document_catalog_tests.cpp
+        src/features/documents/document_catalog.cpp
+        src/core/resource_packs/resource_pack_manager.cpp
+        src/core/updater/version.cpp
+    )
+
+    target_compile_features(ClassMngrDocumentCatalogTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrDocumentCatalogTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrDocumentCatalogTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrDocumentCatalogTests
+        COMMAND ClassMngrDocumentCatalogTests
     )
 
     qt_add_executable(ClassMngrFontManagerTests
@@ -1588,6 +1617,9 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSidebarStructureTests
         tests/sidebar_structure_tests.cpp
         src/core/fontmanager.cpp
+        src/core/resource_packs/resource_pack_manager.cpp
+        src/core/updater/version.cpp
+        src/features/documents/document_catalog.cpp
         src/ui/shared/widgets/sidebar/sidebar.cpp
         src/ui/shared/widgets/sidebar/sidebar_classes.cpp
         src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp
@@ -1607,6 +1639,11 @@ if(BUILD_TESTING)
     target_include_directories(ClassMngrSidebarStructureTests
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_compile_definitions(ClassMngrSidebarStructureTests
+        PRIVATE
+            CLASSMNGR_TEST_DOCUMENTS_PATH="${PROJECT_SOURCE_DIR}/resources/assets/documents"
     )
 
     target_link_libraries(ClassMngrSidebarStructureTests
@@ -2097,6 +2134,8 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSpeakingEvalBatchReportServiceTests
         tests/speaking_eval_batch_report_service_tests.cpp
         src/core/fontmanager.cpp
+        src/core/resource_packs/resource_pack_manager.cpp
+        src/core/updater/version.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
@@ -2136,8 +2175,8 @@ if(BUILD_TESTING)
         BASE "${PROJECT_SOURCE_DIR}/resources"
         FILES
             resources/assets/images/dyb.png
-            resources/assets/files/evaluations/SpeakingEvaluationTemplate-Full.pptx
-            resources/assets/files/evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx
+            "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
+            "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
     )
 
     add_test(

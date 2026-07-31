@@ -10,6 +10,7 @@
 
 class QTreeWidget;
 class QResizeEvent;
+class DocumentCatalog;
 class SidebarMarqueeDelegate;
 struct TreeNodeSpec;
 
@@ -79,6 +80,11 @@ public:
         );
 
     void rebuildTree();
+
+    void setDocumentCatalog(
+        const DocumentCatalog* catalog,
+        const QString& localeName
+        );
 
     QStringList expandedRootKeys() const;
 
@@ -247,6 +253,9 @@ private:
     // =====================================================
 
     QTreeWidget *m_tree = nullptr;
+
+    const DocumentCatalog* m_documentCatalog = nullptr;
+    QString m_documentLocaleName;
 
     SidebarMarqueeDelegate* m_marqueeDelegate = nullptr;
 

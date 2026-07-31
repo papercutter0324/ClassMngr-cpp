@@ -80,49 +80,9 @@ ResourcePackManager::ResourcePackManager(
             Version(1, 0, 0)
         },
         {
-            QStringLiteral("book-reports"),
-            QStringLiteral(":/assets/files/book reports"),
-            Version(1, 0, 1)
-        },
-        {
-            QStringLiteral("essay"),
-            QStringLiteral(":/assets/files/essay"),
-            Version(1, 0, 2)
-        },
-        {
-            QStringLiteral("essay-topics"),
-            QStringLiteral(":/assets/files/essay_topics"),
+            QStringLiteral("documents"),
+            QStringLiteral(":/assets/documents"),
             Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("evaluations"),
-            QStringLiteral(":/assets/files/evaluations"),
-            Version(1, 0, 2)
-        },
-        {
-            QStringLiteral("guides"),
-            QStringLiteral(":/assets/files/guides"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("lessons"),
-            QStringLiteral(":/assets/files/lessons"),
-            Version(1, 0, 1)
-        },
-        {
-            QStringLiteral("sub-prep"),
-            QStringLiteral(":/assets/files/sub prep"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("training"),
-            QStringLiteral(":/assets/files/training"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("vacation"),
-            QStringLiteral(":/assets/files/vacation"),
-            Version(1, 0, 1)
         }
     })
 {
@@ -556,5 +516,26 @@ void ResourcePackManager::removeStalePackFiles() const
         {
             QFile::remove(absolutePath);
         }
+    }
+
+    const QStringList retiredPackIds = {
+        QStringLiteral("book-reports"),
+        QStringLiteral("essay"),
+        QStringLiteral("essay-topics"),
+        QStringLiteral("evaluations"),
+        QStringLiteral("guides"),
+        QStringLiteral("lessons"),
+        QStringLiteral("sub-prep"),
+        QStringLiteral("training"),
+        QStringLiteral("vacation")
+    };
+
+    for (const QString& packId : retiredPackIds)
+    {
+        QFile::remove(
+            directory.filePath(
+                packId + QStringLiteral(".json")
+                )
+            );
     }
 }

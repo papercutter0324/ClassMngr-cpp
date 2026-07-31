@@ -12,9 +12,12 @@ class QPdfDocument;
 class QPdfView;
 class QPushButton;
 
-struct PdfViewerDocumentActions
+struct PdfViewerDocumentDescriptor
 {
+    QString pdfFilePath;
     bool exportEnabled = false;
+    QString exportFilePath;
+    QString exportFileName;
     bool printEnabled = false;
 };
 
@@ -32,8 +35,7 @@ public:
     void retranslateUi() override;
 
     [[nodiscard]] bool loadPdf(
-        const QString& filePath,
-        PdfViewerDocumentActions actions = {}
+        const PdfViewerDocumentDescriptor& descriptor
         );
 
     [[nodiscard]] QString currentFilePath() const;
@@ -110,7 +112,7 @@ private:
 
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;
-    PdfViewerDocumentActions m_documentActions;
+    PdfViewerDocumentDescriptor m_documentDescriptor;
     DocumentPageSpacing m_documentPageSpacing = DocumentPageSpacing::Small;
     DocumentViewerBackground m_documentViewerBackground =
         DocumentViewerBackground::Default;

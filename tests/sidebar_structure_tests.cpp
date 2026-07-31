@@ -1,4 +1,5 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
+#include "features/documents/document_catalog.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -66,6 +67,7 @@ private slots:
     void classListOwnsDynamicClassesAndDeepLinks();
     void classContextMenuOffersExportForClickedClass();
     void topLevelOrderAndSubPrepStructure();
+    void documentCatalogBuildsLocalizedTree();
 };
 
 void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
@@ -309,6 +311,110 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
              QStringLiteral("native_english_teachers"));
     QCOMPARE(campusStaff->child(2)->data(0, KeyRole).toString(),
              QStringLiteral("gs_team"));
+}
+
+void SidebarStructureTests::documentCatalogBuildsLocalizedTree()
+{
+    const auto catalog =
+        DocumentCatalog::loadFromRoot(
+            QStringLiteral(CLASSMNGR_TEST_DOCUMENTS_PATH)
+            );
+
+    if (!catalog)
+    {
+        QFAIL(qPrintable(catalog.error()));
+    }
+    QCOMPARE(catalog->documents().size(), 30);
+    QVERIFY(catalog->warnings().isEmpty());
+
+    const DocumentDefinition* lessonTemplate =
+        catalog->document(
+            QStringLiteral("document_lesson_templates_sp_wr")
+            );
+    QVERIFY(lessonTemplate);
+    QVERIFY(!lessonTemplate->printingEnabled);
+    QVERIFY(lessonTemplate->exportingEnabled);
+    QVERIFY(lessonTemplate->exportFile.has_value());
+    QCOMPARE(
+        lessonTemplate->exportFile->fileName,
+        QStringLiteral("SP+WR Template.pptx")
+        );
+
+    const DocumentDefinition* vacationRequest =
+        catalog->document(
+            QStringLiteral("document_vacation_sub_prep_request_form")
+            );
+    QVERIFY(vacationRequest);
+    QVERIFY(vacationRequest->printingEnabled);
+    QVERIFY(vacationRequest->exportingEnabled);
+    QVERIFY(vacationRequest->exportFile.has_value());
+    QCOMPARE(
+        vacationRequest->exportFile->absoluteFilePath,
+        vacationRequest->pdf.absoluteFilePath
+        );
+
+    Sidebar sidebar;
+    sidebar.setDocumentCatalog(
+        &*catalog,
+        QStringLiteral("ko_KR")
+        );
+
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    QTreeWidgetItem* documents =
+        topLevelWithKey(tree, QStringLiteral("document"));
+    QVERIFY(documents);
+    QCOMPARE(documents->childCount(), 7);
+
+    QTreeWidgetItem* guides =
+        childWithKey(
+            documents,
+            QStringLiteral("document_guides")
+            );
+    QVERIFY(guides);
+    QCOMPARE(guides->text(0), QStringLiteral("안내서"));
+    QCOMPARE(
+        guides->child(0)->data(0, KeyRole).toString(),
+        QStringLiteral("document_guides_lesson_planning")
+        );
+    QCOMPARE(guides->child(0)->text(0), QStringLiteral("수업 계획"));
+
+    QTreeWidgetItem* vacation =
+        childWithKey(
+            documents,
+            QStringLiteral("document_vacation_sub_prep")
+            );
+    QVERIFY(vacation);
+    QTreeWidgetItem* requestForm =
+        childWithKey(
+            vacation,
+            QStringLiteral("document_vacation_sub_prep_request_form")
+            );
+    QVERIFY(requestForm);
+
+    sidebar.setDocumentCatalog(
+        &*catalog,
+        QStringLiteral("en_US")
+        );
+
+    documents =
+        topLevelWithKey(tree, QStringLiteral("document"));
+    QVERIFY(documents);
+    vacation =
+        childWithKey(
+            documents,
+            QStringLiteral("document_vacation_sub_prep")
+            );
+    requestForm =
+        childWithKey(
+            vacation,
+            QStringLiteral("document_vacation_sub_prep_request_form")
+            );
+    QVERIFY(requestForm);
+    QCOMPARE(requestForm->text(0), QStringLiteral("Vacation Request Form"));
 }
 
 QTEST_MAIN(SidebarStructureTests)

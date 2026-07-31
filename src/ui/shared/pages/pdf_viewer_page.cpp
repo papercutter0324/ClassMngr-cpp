@@ -135,14 +135,16 @@ void PdfViewerPage::changeEvent(
 }
 
 bool PdfViewerPage::loadPdf(
-    const QString& filePath,
-    PdfViewerDocumentActions actions
+    const PdfViewerDocumentDescriptor& descriptor
     )
 {
+    const QString filePath =
+        descriptor.pdfFilePath;
+
     m_currentFilePath =
         filePath;
-    m_documentActions =
-        actions;
+    m_documentDescriptor =
+        descriptor;
 
     if (filePath.trimmed().isEmpty())
     {

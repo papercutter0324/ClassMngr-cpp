@@ -326,13 +326,14 @@ void PdfViewerPage::updateDocumentActionButtons()
         !m_currentFilePath.trimmed().isEmpty();
     const bool canExport =
         hasFile
-        && m_documentActions.exportEnabled;
+        && m_documentDescriptor.exportEnabled
+        && !m_documentDescriptor.exportFilePath.trimmed().isEmpty();
     const bool canPrint =
         hasFile
         && m_document
         && m_document->status() == QPdfDocument::Status::Ready
         && m_document->pageCount() > 0
-        && m_documentActions.printEnabled;
+        && m_documentDescriptor.printEnabled;
 
     m_exportButton->setVisible(
         true

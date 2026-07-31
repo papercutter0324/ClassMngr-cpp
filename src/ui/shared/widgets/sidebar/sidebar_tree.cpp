@@ -1,5 +1,103 @@
 #include "sidebar_p.h"
 
+#include "features/documents/document_catalog.h"
+
+#include <algorithm>
+
+namespace
+{
+struct OrderedDocumentNode
+{
+    int order = 0;
+    QString id;
+    TreeNodeSpec spec;
+};
+
+QList<TreeNodeSpec> documentChildren(
+    const DocumentCatalog* catalog,
+    const QString& localeName,
+    const QString& parentPath = QString()
+    )
+{
+    if (!catalog)
+    {
+        return {};
+    }
+
+    QList<OrderedDocumentNode> nodes;
+
+    for (const DocumentFolderDefinition& folder : catalog->folders())
+    {
+        if (folder.parentPath != parentPath)
+        {
+            continue;
+        }
+
+        QList<TreeNodeSpec> children =
+            documentChildren(
+                catalog,
+                localeName,
+                folder.path
+                );
+
+        if (children.isEmpty())
+        {
+            continue;
+        }
+
+        nodes.append({
+            folder.order,
+            folder.id,
+            {
+                folder.id,
+                folder.sidebarNames.forLocale(localeName),
+                NodeType::Root,
+                children
+            }
+        });
+    }
+
+    for (const DocumentDefinition& document : catalog->documents())
+    {
+        if (document.folderPath != parentPath)
+        {
+            continue;
+        }
+
+        nodes.append({
+            document.order,
+            document.id,
+            {
+                document.id,
+                document.sidebarNames.forLocale(localeName),
+                NodeType::Page
+            }
+        });
+    }
+
+    std::sort(
+        nodes.begin(),
+        nodes.end(),
+        [](const OrderedDocumentNode& left, const OrderedDocumentNode& right)
+        {
+            return left.order != right.order
+                ? left.order < right.order
+                : left.id < right.id;
+        }
+        );
+
+    QList<TreeNodeSpec> result;
+    result.reserve(nodes.size());
+
+    for (const OrderedDocumentNode& node : nodes)
+    {
+        result.append(node.spec);
+    }
+
+    return result;
+}
+}
+
 void Sidebar::buildTree()
 {
     m_previousCurrentItem =
@@ -17,7 +115,54 @@ void Sidebar::buildTree()
     // Build Top Level Nodes
     // =====================================================
 
-    for (const auto &spec : treeStructure())
+    QList<TreeNodeSpec> structure =
+        treeStructure();
+
+    const QList<TreeNodeSpec> documents =
+        documentChildren(
+            m_documentCatalog,
+            m_documentLocaleName
+            );
+
+    auto documentsIt =
+        std::find_if(
+            structure.begin(),
+            structure.end(),
+            [](const TreeNodeSpec& spec)
+            {
+                return spec.key == QStringLiteral("document");
+            }
+            );
+
+    if (documentsIt != structure.end())
+    {
+        structure.erase(documentsIt);
+    }
+
+    if (!documents.isEmpty())
+    {
+        const auto insertionPoint =
+            std::find_if(
+                structure.begin(),
+                structure.end(),
+                [](const TreeNodeSpec& spec)
+                {
+                    return spec.key == QStringLiteral("useful_links");
+                }
+                );
+
+        structure.insert(
+            insertionPoint,
+            {
+                QStringLiteral("document"),
+                QObject::tr("Documents"),
+                NodeType::Root,
+                documents
+            }
+            );
+    }
+
+    for (const auto &spec : structure)
     {
         auto *item =
             createItem(
@@ -43,6 +188,19 @@ void Sidebar::buildTree()
 
 void Sidebar::rebuildTree()
 {
+    buildTree();
+}
+
+void Sidebar::setDocumentCatalog(
+    const DocumentCatalog* catalog,
+    const QString& localeName
+    )
+{
+    m_documentCatalog =
+        catalog;
+    m_documentLocaleName =
+        localeName;
+
     buildTree();
 }
 

@@ -16,12 +16,16 @@ void PdfViewerPage::exportFile()
     }
 
     const QFileInfo sourceInfo(sourcePath);
+    const QString exportFileName =
+        m_documentDescriptor.exportFileName.trimmed().isEmpty()
+            ? sourceInfo.fileName()
+            : m_documentDescriptor.exportFileName;
 
     const QString suggestedPath =
         QDir(
             defaultExportDirectory()
             ).filePath(
-                sourceInfo.fileName()
+                exportFileName
                 );
 
     QFileDialog dialog(

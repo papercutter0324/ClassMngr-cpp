@@ -1,0 +1,610 @@
+{
+  "schemaVersion": 1,
+  "folders": [
+    {
+      "path": "Guides",
+      "id": "document_guides",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Guides",
+        "ko_KR": "안내서"
+      }
+    },
+    {
+      "path": "Lesson Templates",
+      "id": "document_lesson_templates",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Lesson Templates",
+        "ko_KR": "수업 템플릿"
+      }
+    },
+    {
+      "path": "Online Essay",
+      "id": "document_online_essay",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Online Essay",
+        "ko_KR": "온라인 에세이"
+      }
+    },
+    {
+      "path": "Speaking Evaluations",
+      "id": "document_speaking_evals",
+      "order": 40,
+      "sidebarNames": {
+        "default": "Speaking Evals",
+        "ko_KR": "말하기 평가"
+      }
+    },
+    {
+      "path": "Book Reports",
+      "id": "document_book_reports",
+      "order": 50,
+      "sidebarNames": {
+        "default": "Book Reports",
+        "ko_KR": "독후감"
+      }
+    },
+    {
+      "path": "Training",
+      "id": "document_training",
+      "order": 60,
+      "sidebarNames": {
+        "default": "Training",
+        "ko_KR": "연수"
+      }
+    },
+    {
+      "path": "Vacation & Sub Prep",
+      "id": "document_vacation_sub_prep",
+      "order": 70,
+      "sidebarNames": {
+        "default": "Vacation / Sub Prep",
+        "ko_KR": "휴가 / 대체 수업 준비"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "id": "document_guides_lesson_planning",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Lesson Planning",
+        "ko_KR": "수업 계획"
+      },
+      "pdf": {
+        "path": "Guides",
+        "fileName": "DYB Lesson Planning Guide.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Guides",
+        "fileName": "DYB Lesson Planning Guide.pdf"
+      }
+    },
+    {
+      "id": "document_guides_powerpoint_shortcuts",
+      "order": 20,
+      "sidebarNames": {
+        "default": "PowerPoint Shortcuts",
+        "ko_KR": "PowerPoint 단축키"
+      },
+      "pdf": {
+        "path": "Guides",
+        "fileName": "PowerPoint Keyboard Shortcuts.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Guides",
+        "fileName": "PowerPoint Keyboard Shortcuts.pdf"
+      }
+    },
+    {
+      "id": "document_lesson_templates_sp_wr",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Speaking / Writing",
+        "ko_KR": "말하기 / 쓰기"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "SP+WR Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "SP+WR Template.pptx"
+      }
+    },
+    {
+      "id": "document_lesson_templates_skill",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Skill / TBL",
+        "ko_KR": "기능 / TBL"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "Skill Lesson Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "Skill Lesson Template.pptx"
+      }
+    },
+    {
+      "id": "document_lesson_templates_student_led",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Student-Led Activities",
+        "ko_KR": "학생 주도 활동"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "Student-Led Activity Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "Student-Led Activity Template.pptx"
+      }
+    },
+    {
+      "id": "document_lesson_templates_ms_essay",
+      "order": 40,
+      "sidebarNames": {
+        "default": "Middle School OE",
+        "ko_KR": "중학교 OE"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "Middle School OE Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "Middle School OE Template.pptx"
+      }
+    },
+    {
+      "id": "document_lesson_templates_theseus_paragraph",
+      "order": 50,
+      "sidebarNames": {
+        "default": "Theseus Paragraph Writing",
+        "ko_KR": "Theseus 단락 쓰기"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "Theseus Paragraph Writing Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "Theseus Paragraph Writing Template.pptx"
+      }
+    },
+    {
+      "id": "document_lesson_templates_creo_writing",
+      "order": 60,
+      "sidebarNames": {
+        "default": "CREO",
+        "ko_KR": "CREO"
+      },
+      "pdf": {
+        "path": "Lesson Templates",
+        "fileName": "CREO Creative Writing Lesson Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Lesson Templates",
+        "fileName": "CREO Creative Writing Lesson Template.pptx"
+      }
+    },
+    {
+      "id": "document_online_essay_topic_template",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Essay Topic Template",
+        "ko_KR": "에세이 주제 템플릿"
+      },
+      "pdf": {
+        "path": "Online Essay",
+        "fileName": "Essay Topic Template for Students.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Online Essay",
+        "fileName": "Essay Topic Template for Students.docx"
+      }
+    },
+    {
+      "id": "document_online_essay_brainstorm",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Essay Brainstorm",
+        "ko_KR": "에세이 브레인스토밍"
+      },
+      "pdf": {
+        "path": "Online Essay",
+        "fileName": "Essay Writing Brainstorm Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Online Essay",
+        "fileName": "Essay Writing Brainstorm Template.pptx"
+      }
+    },
+    {
+      "id": "document_online_essay_theseus_explained",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Theseus Paragraphs Explained",
+        "ko_KR": "Theseus 단락 설명"
+      },
+      "pdf": {
+        "path": "Online Essay",
+        "fileName": "Theseus Paragraph Writing Explained.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Online Essay",
+        "fileName": "Theseus Paragraph Writing Explained.pdf"
+      }
+    },
+    {
+      "id": "document_speaking_evals_tips_one_on_one",
+      "order": 10,
+      "sidebarNames": {
+        "default": "One-to-One Evaluations",
+        "ko_KR": "1:1 평가"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - 1-on-1.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - 1-on-1.pdf"
+      }
+    },
+    {
+      "id": "document_speaking_evals_tips_presentations",
+      "order": 20,
+      "sidebarNames": {
+        "default": "In-Class Presentations",
+        "ko_KR": "수업 내 발표"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - In-class Presentations.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - In-class Presentations.pdf"
+      }
+    },
+    {
+      "id": "document_speaking_evals_tips_single_class",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Finishing in One Class",
+        "ko_KR": "한 수업에 마치기"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - One Class Tips.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluations Explained - One Class Tips.pdf"
+      }
+    },
+    {
+      "id": "document_speaking_evals_topic_options",
+      "order": 40,
+      "sidebarNames": {
+        "default": "Topic Options",
+        "ko_KR": "주제 선택지"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluation Topic Options.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "Speaking Evaluation Topic Options.docx"
+      }
+    },
+    {
+      "id": "document_speaking_evals_regular_template",
+      "order": 50,
+      "sidebarNames": {
+        "default": "Regular Template",
+        "ko_KR": "기본 템플릿"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "SpeakingEvaluationTemplate-Full.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "SpeakingEvaluationTemplate-Full.pptx"
+      }
+    },
+    {
+      "id": "document_speaking_evals_athena_songs_template",
+      "order": 60,
+      "sidebarNames": {
+        "default": "Athena/Song's Template",
+        "ko_KR": "Athena/Song 템플릿"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "SpeakingEvaluationTemplate_Advanced-Full.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "SpeakingEvaluationTemplate_Advanced-Full.pptx"
+      }
+    },
+    {
+      "id": "document_speaking_evals_winner_certificates",
+      "order": 70,
+      "sidebarNames": {
+        "default": "Winner Certificates",
+        "ko_KR": "수상자 증서"
+      },
+      "pdf": {
+        "path": "Speaking Evaluations",
+        "fileName": "CertificateTemplate-Full.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Speaking Evaluations",
+        "fileName": "CertificateTemplate-Full.pptx"
+      }
+    },
+    {
+      "id": "document_book_reports_grading_rubric",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Grading Rubric",
+        "ko_KR": "평가 기준표"
+      },
+      "pdf": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading Rubric.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading Rubric.pdf"
+      }
+    },
+    {
+      "id": "document_book_reports_grading_rubric_40",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Grading Rubric (40%)",
+        "ko_KR": "평가 기준표 (40%)"
+      },
+      "pdf": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading Rubric (Sentence Requirements Not Met).pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading Rubric (Sentence Requirements Not Met).pdf"
+      }
+    },
+    {
+      "id": "document_book_reports_student_info_handout",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Student Info Handout",
+        "ko_KR": "학생 정보 유인물"
+      },
+      "pdf": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Book Reports",
+        "fileName": "Book Report Grading.pdf"
+      }
+    },
+    {
+      "id": "document_training_observation",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Observation",
+        "ko_KR": "관찰"
+      },
+      "pdf": {
+        "path": "Training",
+        "fileName": "Name Surname Observation 0 - By Name .pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Training",
+        "fileName": "Name Surname Observation 0 - By Name .docx"
+      }
+    },
+    {
+      "id": "document_training_reflection",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Reflection",
+        "ko_KR": "성찰"
+      },
+      "pdf": {
+        "path": "Training",
+        "fileName": "Name Surname Reflection 0.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Training",
+        "fileName": "Name Surname Reflection 0.docx"
+      }
+    },
+    {
+      "id": "document_training_final_reflection",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Final Reflection",
+        "ko_KR": "최종 성찰"
+      },
+      "pdf": {
+        "path": "Training",
+        "fileName": "Name Surname Reflection 8 (Final Reflection).pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Training",
+        "fileName": "Name Surname Reflection 8 (Final Reflection).docx"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_applying",
+      "order": 10,
+      "sidebarNames": {
+        "default": "Applying for Vacation",
+        "ko_KR": "휴가 신청"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "1 - How to Apply for Vacation.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "1 - How to Apply for Vacation.pdf"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_guidelines",
+      "order": 20,
+      "sidebarNames": {
+        "default": "Vacation Guidelines",
+        "ko_KR": "휴가 지침"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "2 - Vacation Guidelines.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "2 - Vacation Guidelines.pdf"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_request_form",
+      "order": 30,
+      "sidebarNames": {
+        "default": "Vacation Request Form",
+        "ko_KR": "휴가 신청서"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "3 - Vacation Request Form.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "3 - Vacation Request Form.pdf"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_procedures",
+      "order": 40,
+      "sidebarNames": {
+        "default": "Sub Prep Procedures",
+        "ko_KR": "대체 수업 준비 절차"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Procedures.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Procedures.pdf"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_checklist",
+      "order": 50,
+      "sidebarNames": {
+        "default": "Sub Prep Checklist",
+        "ko_KR": "대체 수업 준비 체크리스트"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Prep Checklist.pdf"
+      },
+      "printingEnabled": true,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Prep Checklist.pdf"
+      }
+    },
+    {
+      "id": "document_vacation_sub_prep_template",
+      "order": 60,
+      "sidebarNames": {
+        "default": "Sub Prep Template",
+        "ko_KR": "대체 수업 준비 템플릿"
+      },
+      "pdf": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Prep Template.pdf"
+      },
+      "printingEnabled": false,
+      "exportingEnabled": true,
+      "export": {
+        "path": "Vacation & Sub Prep",
+        "fileName": "DYB Sub Prep Template.docx"
+      }
+    }
+  ]
+}

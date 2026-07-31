@@ -2,85 +2,15 @@
 
 QString PdfViewerPage::exportSourcePath() const
 {
-    if (m_currentFilePath.trimmed().isEmpty())
+    if (
+        !m_documentDescriptor.exportEnabled
+        || m_documentDescriptor.exportFilePath.trimmed().isEmpty()
+        )
     {
         return QString();
     }
 
-    const QFileInfo pdfInfo(m_currentFilePath);
-    const QDir directory(
-        pdfInfo.absolutePath()
-        );
-
-    if (!directory.exists())
-    {
-        return m_currentFilePath;
-    }
-
-    QList<QFileInfo> alternatives;
-
-    const QFileInfoList files =
-        directory.entryInfoList(
-            QDir::Files | QDir::NoDotAndDotDot,
-            QDir::Name
-            );
-
-    for (const QFileInfo& fileInfo : files)
-    {
-        if (
-            fileInfo.completeBaseName().compare(
-                pdfInfo.completeBaseName(),
-                Qt::CaseInsensitive
-                ) != 0
-            )
-        {
-            continue;
-        }
-
-        if (
-            fileInfo.suffix().compare(
-                QStringLiteral("pdf"),
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        {
-            continue;
-        }
-
-        alternatives.append(fileInfo);
-    }
-
-    if (alternatives.isEmpty())
-    {
-        return m_currentFilePath;
-    }
-
-    std::sort(
-        alternatives.begin(),
-        alternatives.end(),
-        [](const QFileInfo& left, const QFileInfo& right)
-        {
-            const int leftRank =
-                exportSuffixRank(
-                    left.suffix()
-                    );
-            const int rightRank =
-                exportSuffixRank(
-                    right.suffix()
-                    );
-
-            if (leftRank != rightRank)
-            {
-                return leftRank < rightRank;
-            }
-
-            return left.fileName().localeAwareCompare(
-                right.fileName()
-                ) < 0;
-        }
-        );
-
-    return alternatives.first().absoluteFilePath();
+    return m_documentDescriptor.exportFilePath;
 }
 
 bool PdfViewerPage::copyFileTo(

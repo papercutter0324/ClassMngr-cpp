@@ -319,88 +319,43 @@ inline QString directory()
 }
 }
 
-namespace ResourcePaths::Files
+namespace ResourcePaths::Documents
 {
-inline QString directory(
-    const QString& packId
-    )
+inline QString directory()
 {
     const QString packPath =
-        Detail::activePackPath(packId);
+        Detail::activePackPath(
+            QStringLiteral("documents")
+            );
 
     if (!packPath.isEmpty())
     {
         return packPath;
     }
 
-    const QString embeddedRoot =
-        ResourcePackManager::instance().embeddedRoot(packId);
-
-    return embeddedRoot.isEmpty()
-        ? QString()
-        : Detail::resolveResourcePath(embeddedRoot);
-}
-
-inline QString bookReportsDirectory()
-{
-    return directory(
-        QStringLiteral("book-reports")
+    return Detail::resolveResourcePath(
+        QStringLiteral(":/assets/documents")
         );
 }
 
-inline QString essayDirectory()
+inline QString filePath(
+    const QString& relativePath
+    )
 {
-    return directory(
-        QStringLiteral("essay")
-        );
-}
+    const QString activePath =
+        Detail::activePackPath(
+            QStringLiteral("documents"),
+            relativePath
+            );
 
-inline QString essayTopicsDirectory()
-{
-    return directory(
-        QStringLiteral("essay-topics")
-        );
-}
+    if (!activePath.isEmpty() && QFile::exists(activePath))
+    {
+        return activePath;
+    }
 
-inline QString evaluationsDirectory()
-{
-    return directory(
-        QStringLiteral("evaluations")
-        );
-}
-
-inline QString guidesDirectory()
-{
-    return directory(
-        QStringLiteral("guides")
-        );
-}
-
-inline QString lessonsDirectory()
-{
-    return directory(
-        QStringLiteral("lessons")
-        );
-}
-
-inline QString subPrepDirectory()
-{
-    return directory(
-        QStringLiteral("sub-prep")
-        );
-}
-
-inline QString trainingDirectory()
-{
-    return directory(
-        QStringLiteral("training")
-        );
-}
-
-inline QString vacationDirectory()
-{
-    return directory(
-        QStringLiteral("vacation")
+    return Detail::resolveResourcePath(
+        QDir(QStringLiteral(":/assets/documents"))
+            .filePath(relativePath)
         );
 }
 }

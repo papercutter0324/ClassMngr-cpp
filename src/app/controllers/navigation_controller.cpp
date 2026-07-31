@@ -1,6 +1,5 @@
 #include "navigation_controller.h"
 
-#include "core/resource_paths.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
 
@@ -19,8 +18,6 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
-
-#include <QDir>
 
 namespace
 {
@@ -51,303 +48,6 @@ QString evaluationNameForKey(
     return QString();
 }
 
-namespace DocumentActions
-{
-constexpr PdfViewerDocumentActions NoActions{
-    false,
-    false
-};
-
-constexpr PdfViewerDocumentActions ExportOnly{
-    true,
-    false
-};
-
-constexpr PdfViewerDocumentActions PrintOnly{
-    false,
-    true
-};
-
-constexpr PdfViewerDocumentActions ExportAndPrint{
-    true,
-    true
-};
-}
-
-struct DocumentRoute
-{
-    QString directory;
-    QString fileName;
-    PdfViewerDocumentActions actions = DocumentActions::ExportAndPrint;
-};
-
-DocumentRoute documentRouteForKey(
-    const QString& key
-    )
-{
-    if (key == QStringLiteral("document_guides_lesson_planning"))
-    {
-        return {
-            ResourcePaths::Files::guidesDirectory(),
-            QStringLiteral("DYB Lesson Planning Guide.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_guides_powerpoint_shortcuts"))
-    {
-        return {
-            ResourcePaths::Files::guidesDirectory(),
-            QStringLiteral("PowerPoint Keyboard Shortcuts.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_sp_wr"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("SP+WR Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_skill"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Skill Lesson Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_student_led"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Student-Led Activity Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_creo_writing"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("CREO Creative Writing Lesson Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_ms_essay"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Middle School OE Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_lesson_templates_theseus_paragraph"))
-    {
-        return {
-            ResourcePaths::Files::lessonsDirectory(),
-            QStringLiteral("Theseus Paragraph Writing Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_online_essay_topic_template"))
-    {
-        return {
-            ResourcePaths::Files::essayDirectory(),
-            QStringLiteral("Essay Topic Template for Students.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_online_essay_brainstorm"))
-    {
-        return {
-            ResourcePaths::Files::essayDirectory(),
-            QStringLiteral("Essay Writing Brainstorm Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_online_essay_theseus_explained"))
-    {
-        return {
-            ResourcePaths::Files::essayDirectory(),
-            QStringLiteral("Theseus Paragraph Writing Explained.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_tips_one_on_one"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("Speaking Evaluations Explained - 1-on-1.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_tips_presentations"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("Speaking Evaluations Explained - In-class Presentations.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_tips_single_class"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("Speaking Evaluations Explained - One Class Tips.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_topic_options"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("Speaking Evaluation Topic Options.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_regular_template"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("SpeakingEvaluationTemplate-Full.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_athena_songs_template"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("SpeakingEvaluationTemplate_Advanced-Full.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_speaking_evals_winner_certificates"))
-    {
-        return {
-            ResourcePaths::Files::evaluationsDirectory(),
-            QStringLiteral("CertificateTemplate-Full.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_book_reports_grading_rubric"))
-    {
-        return {
-            ResourcePaths::Files::bookReportsDirectory(),
-            QStringLiteral("Book Report Grading Rubric.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_book_reports_grading_rubric_40"))
-    {
-        return {
-            ResourcePaths::Files::bookReportsDirectory(),
-            QStringLiteral("Book Report Grading Rubric (Sentence Requirements Not Met).pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_book_reports_student_info_handout"))
-    {
-        return {
-            ResourcePaths::Files::bookReportsDirectory(),
-            QStringLiteral("Book Report Grading.pdf")
-        };
-    }
-
-    if (key == QStringLiteral("document_training_observation"))
-    {
-        return {
-            ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Observation 0 - By Name .pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_training_reflection"))
-    {
-        return {
-            ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Reflection 0.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_training_final_reflection"))
-    {
-        return {
-            ResourcePaths::Files::trainingDirectory(),
-            QStringLiteral("Name Surname Reflection 8 (Final Reflection).pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_applying"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("1 - How to Apply for Vacation.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_guidelines"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("2 - Vacation Guidelines.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_request_form"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("3 - Vacation Request Form.pdf"),
-            DocumentActions::ExportAndPrint
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_procedures"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("DYB Sub Procedures.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_checklist"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("DYB Sub Prep Checklist.pdf"),
-            DocumentActions::ExportAndPrint
-        };
-    }
-
-    if (key == QStringLiteral("document_vacation_sub_prep_template"))
-    {
-        return {
-            ResourcePaths::Files::vacationDirectory(),
-            QStringLiteral("DYB Sub Prep Template.pdf"),
-            DocumentActions::ExportOnly
-        };
-    }
-
-    return {};
-}
 }
 
 NavigationController::NavigationController(
@@ -651,15 +351,20 @@ void NavigationController::handleDocument(
     const NavigationData& data
     )
 {
-    const DocumentRoute route =
-        documentRouteForKey(
-            data.routeKey
-            );
+    if (!m_services || !m_pages)
+    {
+        return;
+    }
 
-    if (
-        route.directory.trimmed().isEmpty()
-        || route.fileName.trimmed().isEmpty()
-        )
+    const DocumentCatalog* catalog =
+        m_services->documentCatalog();
+
+    const DocumentDefinition* document =
+        catalog
+            ? catalog->document(data.routeKey)
+            : nullptr;
+
+    if (!document)
     {
         return;
     }
@@ -669,19 +374,25 @@ void NavigationController::handleDocument(
         return;
     }
 
-    const QString filePath =
-        QDir(
-            route.directory
-            ).filePath(
-                route.fileName
-                );
+    PdfViewerDocumentDescriptor descriptor;
+    descriptor.pdfFilePath =
+        document->pdf.absoluteFilePath;
+    descriptor.printEnabled =
+        document->printingEnabled;
+    descriptor.exportEnabled =
+        document->exportingEnabled
+        && document->exportFile.has_value();
+
+    if (document->exportFile)
+    {
+        descriptor.exportFilePath =
+            document->exportFile->absoluteFilePath;
+        descriptor.exportFileName =
+            document->exportFile->fileName;
+    }
 
     [[maybe_unused]] const bool loaded =
-        m_pages->pdfViewerPage()
-            ->loadPdf(
-                filePath,
-                route.actions
-                );
+        m_pages->pdfViewerPage()->loadPdf(descriptor);
 
     m_pages->showPage(
         PageType::PdfViewer

@@ -111,30 +111,6 @@ QString defaultExportDirectory()
     return directory;
 }
 
-int exportSuffixRank(
-    const QString& suffix
-    )
-{
-    const QString normalizedSuffix =
-        suffix.toLower();
-
-    const QStringList preferredSuffixes = {
-        QStringLiteral("pptx"),
-        QStringLiteral("docx"),
-        QStringLiteral("xlsx"),
-        QStringLiteral("ppt"),
-        QStringLiteral("doc"),
-        QStringLiteral("xls")
-    };
-
-    const int index =
-        preferredSuffixes.indexOf(normalizedSuffix);
-
-    return index >= 0
-        ? index
-        : preferredSuffixes.size();
-}
-
 QString documentViewerBackgroundProperty(
     DocumentViewerBackground background
     )
