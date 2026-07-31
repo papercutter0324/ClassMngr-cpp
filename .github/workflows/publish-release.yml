@@ -147,8 +147,9 @@ jobs:
       - name: Upload assets to GitHub release
         shell: bash
         env:
+          GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: >-
-          gh release upload "${RELEASE_TAG}" dist/*
-          --repo "${GITHUB_REPOSITORY}"
+          gh release upload --repo "${GH_REPO}"
+          "${RELEASE_TAG}" dist/*
