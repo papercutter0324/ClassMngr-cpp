@@ -33,6 +33,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Keep release builds on the Visual Studio 2022 toolchain even when a
+  # future hosted image includes a newer Visual Studio release.
+  CMAKE_GENERATOR: "Visual Studio 17 2022"
   QT_VERSION: "6.11.1"
   QT_ROOT: "C:\\Qt"
   QT_MSVC_X64_PREFIX: "C:\\Qt\\6.11.1\\msvc2022_64"
