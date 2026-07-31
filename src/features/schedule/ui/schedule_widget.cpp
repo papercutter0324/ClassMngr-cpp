@@ -9,7 +9,7 @@
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/schedule_settings_dialog.h"
-#include "features/schedule/ui/testing_block_dialog.h"
+#include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "ui/shared/styles/roles.h"
 
@@ -98,7 +98,7 @@ public:
     }
 };
 
-class TestingCellLabel final : public QLabel
+class CornerMarkerLabel final : public QLabel
 {
 public:
     using QLabel::QLabel;
@@ -349,7 +349,7 @@ void ScheduleWidget::clearDatabaseState()
         ScheduleDisplayMode::Regular;
     m_regularWeekdaySlotTogglingEnabled = false;
     m_intensiveSlotStates.clear();
-    m_testingBlockRooms.clear();
+    m_testingAssignments.clear();
     m_scheduleModel = {};
 
     updateButtons();
@@ -503,7 +503,7 @@ void ScheduleWidget::openSettings()
         this,
         [this]()
         {
-            m_testingBlockRooms.clear();
+            m_testingAssignments.clear();
             loadSchedule();
         }
         );
@@ -596,12 +596,18 @@ void ScheduleWidget::onCellClicked(
 
         if (currentState == scheduleTestingSlotState())
         {
-            editTestingBlock(
-                day,
-                timeLabel,
-                widget->property("testing_room").toString(),
-                true
-                );
+            const auto assignment =
+                m_testingAssignments.constFind(
+                    scheduleSlotKey(day, timeLabel)
+                    );
+            if (assignment != m_testingAssignments.cend())
+            {
+                editTestingAssignment(
+                    day,
+                    timeLabel,
+                    &assignment->assignment
+                    );
+            }
             return;
         }
 
@@ -611,11 +617,10 @@ void ScheduleWidget::onCellClicked(
                 .toBool()
             )
         {
-            editTestingBlock(
+            editTestingAssignment(
                 day,
                 timeLabel,
-                QString(),
-                false
+                nullptr
                 );
             return;
         }
@@ -657,6 +662,31 @@ void ScheduleWidget::onCellClicked(
         return;
     }
 
+    if (
+        widget
+            ->property("testing_class_assignment")
+            .toBool()
+        )
+    {
+        const QString day =
+            widget->property("day").toString();
+        const QString timeLabel =
+            widget->property("time_label").toString();
+        const auto assignment =
+            m_testingAssignments.constFind(
+                scheduleSlotKey(day, timeLabel)
+                );
+        if (assignment != m_testingAssignments.cend())
+        {
+            editTestingAssignment(
+                day,
+                timeLabel,
+                &assignment->assignment
+                );
+        }
+        return;
+    }
+
     ScheduleEditorDialog dialog(
         m_services,
         classId,
@@ -677,16 +707,28 @@ void ScheduleWidget::onCellClicked(
     dialog.exec();
 }
 
-void ScheduleWidget::editTestingBlock(
+void ScheduleWidget::editTestingAssignment(
     const QString& day,
     const QString& timeLabel,
-    const QString& room,
-    bool existingBlock
+    const TestingAssignment* existingAssignment
     )
 {
-    TestingBlockDialog dialog(
-        room,
-        existingBlock,
+    auto* dataService =
+        openDataService(m_services);
+
+    if (!dataService)
+    {
+        QMessageBox::warning(
+            this,
+            tr("Testing Assignment"),
+            tr("No database is open.")
+            );
+        return;
+    }
+
+    TestingAssignmentDialog dialog(
+        dataService,
+        existingAssignment,
         this
         );
 
@@ -695,36 +737,62 @@ void ScheduleWidget::editTestingBlock(
         return;
     }
 
-    auto* dataService =
-        openDataService(m_services);
-
-    if (!dataService)
+    if (
+        dialog.selectedAction()
+            == TestingAssignmentDialog::Action::ManageTestingClasses
+        )
     {
-        QMessageBox::warning(
-            this,
-            tr("Testing Block"),
-            tr("No database is open.")
+        emit testingClassesRequested(
+            dialog.selectedClassId(),
+            day,
+            timeLabel
             );
         return;
     }
 
-    const Status result =
-        dialog.removeRequested()
-            ? dataService->deleteTestingBlock(
+    const bool replaceExisting =
+        existingAssignment != nullptr;
+    Status result;
+
+    switch (dialog.selectedAction())
+    {
+    case TestingAssignmentDialog::Action::RemoveAssignment:
+        result =
+            dataService->deleteTestingAssignment(
                 day,
                 timeLabel
-                )
-            : dataService->saveTestingBlock(
+                );
+        break;
+
+    case TestingAssignmentDialog::Action::AssignTestingClass:
+        result =
+            dataService->assignTestingClass(
                 day,
                 timeLabel,
-                dialog.room()
+                dialog.selectedClassId(),
+                replaceExisting
                 );
+        break;
+
+    case TestingAssignmentDialog::Action::SavePlainTesting:
+        result =
+            dataService->saveTestingBlock(
+                day,
+                timeLabel,
+                dialog.room(),
+                replaceExisting
+                );
+        break;
+
+    case TestingAssignmentDialog::Action::ManageTestingClasses:
+        return;
+    }
 
     if (!result)
     {
         QMessageBox::warning(
             this,
-            tr("Testing Block"),
+            tr("Testing Assignment"),
             result.error()
             );
         return;
@@ -867,6 +935,30 @@ void ScheduleWidget::buildUi()
 
     controlsLayout->addStretch(1);
 
+    m_testingClassesButton =
+        new TextFitPushButton(this);
+    m_testingClassesButton->setObjectName(
+        QStringLiteral("scheduleTestingClassesButton")
+        );
+    m_testingClassesButton->setMinimumWidth(132);
+    controlsLayout->addWidget(m_testingClassesButton);
+
+    m_importButton =
+        new TextFitPushButton(this);
+    m_importButton->setObjectName(
+        QStringLiteral("scheduleImportButton")
+        );
+    m_importButton->setMinimumWidth(110);
+    controlsLayout->addWidget(m_importButton);
+
+    m_exportButton =
+        new TextFitPushButton(this);
+    m_exportButton->setObjectName(
+        QStringLiteral("scheduleExportButton")
+        );
+    m_exportButton->setMinimumWidth(110);
+    controlsLayout->addWidget(m_exportButton);
+
     m_settingsButton =
         new QPushButton(this);
     m_settingsButton->setObjectName(
@@ -884,22 +976,6 @@ void ScheduleWidget::buildUi()
         tr("Schedule Settings")
         );
     controlsLayout->addWidget(m_settingsButton);
-
-    m_importButton =
-        new TextFitPushButton(this);
-    m_importButton->setObjectName(
-        QStringLiteral("scheduleImportButton")
-        );
-    m_importButton->setMinimumWidth(110);
-    controlsLayout->addWidget(m_importButton);
-
-    m_exportButton =
-        new TextFitPushButton(this);
-    m_exportButton->setObjectName(
-        QStringLiteral("scheduleExportButton")
-        );
-    m_exportButton->setMinimumWidth(110);
-    controlsLayout->addWidget(m_exportButton);
 
     layout->addWidget(m_controlsWidget);
 
@@ -961,6 +1037,20 @@ void ScheduleWidget::buildUi()
     {
         layout->addStretch();
     }
+
+    connect(
+        m_testingClassesButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            emit testingClassesRequested(
+                -1,
+                QString(),
+                QString()
+                );
+        }
+        );
 
     connect(
         m_modeButtonGroup,
@@ -1185,12 +1275,22 @@ void ScheduleWidget::loadSchedule()
 
             if (cell.entries.size() == 1)
             {
+                QWidget* scheduleLabel =
+                    createScheduleLabel(
+                        cell.entries.first()
+                        );
+                scheduleLabel->setProperty(
+                    "day",
+                    cell.day
+                    );
+                scheduleLabel->setProperty(
+                    "time_label",
+                    cell.timeLabel
+                    );
                 m_table->setCellWidget(
                     rowIndex,
                     column,
-                    createScheduleLabel(
-                        cell.entries.first()
-                        )
+                    scheduleLabel
                     );
             }
             else
@@ -1256,6 +1356,7 @@ void ScheduleWidget::updateButtons()
         || !m_intensiveModeButton
         || !m_testingModeButton
         || !m_settingsButton
+        || !m_testingClassesButton
         || !m_importButton
         || !m_exportButton
         || !m_testingBanner
@@ -1296,6 +1397,9 @@ void ScheduleWidget::updateButtons()
     m_settingsButton->setToolTip(
         tr("Schedule Settings")
         );
+    m_testingClassesButton->setText(
+        tr("Testing Classes")
+        );
 
     m_exportButton->setText(
         tr("Export")
@@ -1307,6 +1411,10 @@ void ScheduleWidget::updateButtons()
     const bool testing =
         m_displayMode == ScheduleDisplayMode::Testing;
     m_testingBanner->setVisible(testing);
+    m_testingClassesButton->setVisible(
+        testing
+        && m_mode == ScheduleMode::Interactive
+        );
 
     if (testing)
     {
@@ -1525,41 +1633,82 @@ void ScheduleWidget::reloadTestingBlocks()
 
     if (!dataService)
     {
-        m_testingBlockRooms.clear();
+        m_testingAssignments.clear();
         return;
     }
 
-    const Result<QList<TestingBlock>> blocks =
-        dataService->loadTestingBlocks();
+    const Result<QList<TestingAssignment>> assignments =
+        dataService->loadTestingAssignments();
 
-    if (!blocks)
+    if (!assignments)
     {
         qWarning()
             << "Failed to load testing blocks:"
-            << blocks.error();
+            << assignments.error();
         QMessageBox::warning(
             this,
             tr("Testing Layout"),
-            blocks.error()
+            assignments.error()
             );
         return;
     }
 
-    QMap<QString, QString> loadedRooms;
+    QMap<QString, TestingAssignmentView> loadedAssignments;
 
-    for (const TestingBlock& block : *blocks)
+    for (const TestingAssignment& assignment : *assignments)
     {
-        loadedRooms.insert(
+        TestingAssignmentView view;
+        view.assignment = assignment;
+
+        if (
+            assignment.kind
+                == TestingAssignmentKind::SpecialClass
+            )
+        {
+            const Result<TestingClass> testingClass =
+                dataService->loadTestingClass(
+                    assignment.classId
+                    );
+
+            if (!testingClass)
+            {
+                qWarning()
+                    << "Failed to load assigned testing class:"
+                    << testingClass.error();
+                continue;
+            }
+
+            const ClassInfo info =
+                dataService->loadClassInfo(
+                    assignment.classId
+                    );
+            ScheduleEntry entry;
+            entry.classId = assignment.classId;
+            entry.kind = ScheduleEntryKind::TestingClass;
+            entry.className = testingClass->name;
+            entry.teacherKr = info.teacherKr;
+            entry.teacherEn = info.teacherEn;
+            entry.teacherPreferredName =
+                info.teacherPreferredName;
+            entry.roomNumber = testingClass->room;
+            entry.classGrade = testingClass->grade;
+            entry.classLevel = testingClass->level;
+            entry.classColor = testingClass->classColor;
+            entry.fontColor = testingClass->fontColor;
+            view.testingClassEntry = entry;
+        }
+
+        loadedAssignments.insert(
             scheduleSlotKey(
-                block.day,
-                block.startTime
+                assignment.day,
+                assignment.startTime
                 ),
-            block.room
+            view
             );
     }
 
-    m_testingBlockRooms =
-        std::move(loadedRooms);
+    m_testingAssignments =
+        std::move(loadedAssignments);
 }
 
 ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
@@ -1571,8 +1720,8 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
             );
     request.slotStateOverrides =
         m_intensiveSlotStates;
-    request.testingBlockRooms =
-        m_testingBlockRooms;
+    request.testingAssignments =
+        m_testingAssignments;
     request.use24h =
         m_use24h;
     request.displayMode =
@@ -1625,13 +1774,21 @@ QWidget* ScheduleWidget::createScheduleLabel(
     const ScheduleEntry& entry
     )
 {
-    auto* label =
-        new QLabel(this);
+    QLabel* label =
+        entry.kind == ScheduleEntryKind::TestingClass
+            ? static_cast<QLabel*>(
+                new CornerMarkerLabel(this)
+                )
+            : new QLabel(this);
 
     label->setAlignment(Qt::AlignCenter);
     label->setWordWrap(true);
     label->setProperty("role", UiRoles::ScheduleCell);
     label->setProperty("class_id", entry.classId);
+    label->setProperty(
+        "testing_class_assignment",
+        entry.kind == ScheduleEntryKind::TestingClass
+        );
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setStyleSheet(
         classCellStyle(
@@ -1650,6 +1807,82 @@ QWidget* ScheduleWidget::createScheduleLabel(
 
     const QString englishLine =
         joinedEnglishLine(entry);
+
+    if (entry.kind == ScheduleEntryKind::TestingClass)
+    {
+        const QString className =
+            entry.className.trimmed();
+        const QString roomLine =
+            entry.roomNumber.trimmed();
+        const QString markerColor =
+            entry.fontColor.isEmpty()
+                ? QStringLiteral("#000000")
+                : entry.fontColor;
+        QPalette markerPalette =
+            label->palette();
+        markerPalette.setColor(
+            QPalette::Highlight,
+            QColor(markerColor)
+            );
+        label->setPalette(markerPalette);
+        QStringList accessibleParts;
+        for (
+            const QString& part :
+            {className, englishLine, roomLine}
+            )
+        {
+            if (!part.trimmed().isEmpty())
+            {
+                accessibleParts.append(part.trimmed());
+            }
+        }
+        label->setAccessibleName(
+            accessibleParts.join(QStringLiteral(", "))
+            );
+
+        FontManager::setManagedRichText(
+            label,
+            QStringLiteral(
+                "<div style=\"text-align:center; line-height:1.15;\">"
+                "<div style=\"color:%1; font-size:%2pt; font-weight:700;\">%3</div>"
+                "<div style=\"color:%1; font-size:%4pt; font-weight:500;\">%5</div>"
+                "<div style=\"color:%1; font-family:'%6'; font-size:%7pt; font-weight:400;\">%8</div>"
+                "</div>"
+                )
+                .arg(
+                    entry.fontColor.isEmpty()
+                        ? QStringLiteral("#000000")
+                        : entry.fontColor
+                    )
+                .arg(
+                    FontManager::adjustedPointSize(
+                        13
+                        - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                        )
+                    )
+                .arg(escaped(className))
+                .arg(
+                    FontManager::adjustedPointSize(
+                        11
+                        - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                        )
+                    )
+                .arg(escaped(englishLine))
+                .arg(
+                    FontManager::getKoreanFont()
+                        .family()
+                        .toHtmlEscaped()
+                    )
+                .arg(
+                    FontManager::adjustedPointSize(
+                        10
+                        - (m_compactPreview ? PreviewFontSizeReduction : 0)
+                        )
+                    )
+                .arg(escaped(roomLine))
+            );
+        return label;
+    }
 
     FontManager::setManagedRichText(
         label,
@@ -1780,7 +2013,7 @@ QWidget* ScheduleWidget::createSlotLabel(
     QLabel* label =
         cell.slotState == scheduleTestingSlotState()
             ? static_cast<QLabel*>(
-                new TestingCellLabel(this)
+                new CornerMarkerLabel(this)
                 )
             : new QLabel(this);
 
@@ -1834,13 +2067,13 @@ QWidget* ScheduleWidget::createSlotLabel(
             cell.testingRoom.trimmed();
         label->setText(
             room.isEmpty()
-                ? tr("Testing")
-                : tr("Testing\nRm: %1").arg(room)
+                ? tr("Oral Testing")
+                : tr("Oral Testing\nRm: %1").arg(room)
             );
         label->setAccessibleName(
             room.isEmpty()
-                ? tr("Testing")
-                : tr("Testing, room %1").arg(room)
+                ? tr("Oral Testing")
+                : tr("Oral Testing, room %1").arg(room)
             );
         label->setFont(
             FontManager::getUiFont(

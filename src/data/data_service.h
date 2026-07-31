@@ -9,6 +9,7 @@
 #include "domain/models/classroom.h"
 #include "domain/models/intensive_slot_state.h"
 #include "domain/models/testing_block.h"
+#include "domain/models/testing_class.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "domain/models/roster.h"
@@ -41,6 +42,7 @@ class SpeakingEvalRepository;
 class TeacherRepository;
 class TeacherImportRepository;
 class TestingBlockRepository;
+class TestingClassRepository;
 
 // =========================================================
 // Data Service
@@ -226,12 +228,28 @@ public:
     // Testing Blocks
     // =====================================================
 
+    [[nodiscard]] Result<QList<TestingAssignment>>
+    loadTestingAssignments();
+
     [[nodiscard]] Result<QList<TestingBlock>> loadTestingBlocks();
 
     [[nodiscard]] Status saveTestingBlock(
         const QString& day,
         const QString& startTime,
-        const QString& room
+        const QString& room,
+        bool replaceExisting = false
+        );
+
+    [[nodiscard]] Status assignTestingClass(
+        const QString& day,
+        const QString& startTime,
+        int classId,
+        bool replaceExisting = false
+        );
+
+    [[nodiscard]] Status deleteTestingAssignment(
+        const QString& day,
+        const QString& startTime
         );
 
     [[nodiscard]] Status deleteTestingBlock(
@@ -239,7 +257,37 @@ public:
         const QString& startTime
         );
 
+    [[nodiscard]] Status clearTestingAssignments();
+
     [[nodiscard]] Status clearTestingBlocks();
+
+    // =====================================================
+    // Testing Classes
+    // =====================================================
+
+    [[nodiscard]] Result<int> createTestingClass(
+        const TestingClass& testingClass,
+        const QString& assignmentDay = {},
+        const QString& assignmentStartTime = {}
+        );
+
+    [[nodiscard]] Status updateTestingClass(
+        const TestingClass& testingClass
+        );
+
+    [[nodiscard]] Result<TestingClass> loadTestingClass(
+        int classId
+        );
+
+    [[nodiscard]] Result<QList<TestingClass>> loadTestingClasses();
+
+    [[nodiscard]] Status deleteTestingClass(
+        int classId
+        );
+
+    [[nodiscard]] Result<bool> isTestingClass(
+        int classId
+        );
 
 
 
@@ -405,6 +453,7 @@ private:
     std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
     std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
     std::unique_ptr<TestingBlockRepository> m_testingBlockRepository;
+    std::unique_ptr<TestingClassRepository> m_testingClassRepository;
     std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;
     std::unique_ptr<RosterRepository> m_rosterRepository;
     std::unique_ptr<SpeakingEvalRepository> m_speakingEvalRepository;

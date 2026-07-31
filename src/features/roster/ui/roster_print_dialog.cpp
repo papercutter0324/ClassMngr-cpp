@@ -81,12 +81,14 @@ RosterPrintDialog::RosterPrintDialog(
     ApplicationServices* services,
     int currentClassId,
     RosterTemplatePrintService::Scope defaultScope,
-    QWidget* parent
+    QWidget* parent,
+    bool currentClassOnly
     )
     : QDialog(parent)
     , m_services(services)
     , m_currentClassId(currentClassId)
     , m_defaultScope(defaultScope)
+    , m_currentClassOnly(currentClassOnly)
 {
     buildUi();
     loadClasses();
@@ -742,8 +744,16 @@ void RosterPrintDialog::buildUi()
         new NoWheelComboBox(templateGroupBox);
     m_templateCombo->setObjectName(QStringLiteral("templateCombo"));
 
-    for (RosterTemplatePrintService::TemplateId templateId
-         : RosterTemplatePrintService::availableTemplateIds())
+    const QList<RosterTemplatePrintService::TemplateId> templateIds =
+        m_currentClassOnly
+            ? QList<RosterTemplatePrintService::TemplateId>{
+                RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            }
+            : RosterTemplatePrintService::availableTemplateIds();
+    for (
+        RosterTemplatePrintService::TemplateId templateId
+        : templateIds
+        )
     {
         m_templateCombo->addItem(
             RosterTemplatePrintService::templateDisplayName(templateId),
@@ -926,7 +936,13 @@ void RosterPrintDialog::buildUi()
     m_scopeGroup->addButton(currentClassRadio, CurrentClassId);
     m_scopeGroup->addButton(selectedClassesRadio, SelectedClassesId);
 
-    if (auto* button = m_scopeGroup->button(scopeId(m_defaultScope)))
+    if (m_currentClassOnly)
+    {
+        allClassesRadio->hide();
+        selectedClassesRadio->hide();
+        currentClassRadio->setChecked(true);
+    }
+    else if (auto* button = m_scopeGroup->button(scopeId(m_defaultScope)))
     {
         button->setChecked(true);
     }
@@ -1146,9 +1162,41 @@ void RosterPrintDialog::loadClasses()
         return;
     }
 
+    if (m_currentClassOnly)
+    {
+        const Result<TestingClass> testingClass =
+            m_services->dataService()->loadTestingClass(
+                m_currentClassId
+                );
+        if (testingClass)
+        {
+            m_currentClassDisplayName =
+                QStringLiteral("%1 — %2 %3")
+                    .arg(
+                        testingClass->name,
+                        testingClass->grade,
+                        testingClass->level
+                        );
+            auto* item =
+                new QListWidgetItem(
+                    m_currentClassDisplayName,
+                    m_classList
+                    );
+            item->setFlags(
+                item->flags()
+                | Qt::ItemIsUserCheckable
+                );
+            item->setCheckState(Qt::Checked);
+            item->setData(
+                Qt::UserRole,
+                testingClass->classId
+                );
+        }
+        return;
+    }
+
     const QList<Classroom> classes =
         m_services->dataService()->getClasses();
-
     for (const Classroom& classroom : classes)
     {
         const ClassInfo classInfo =

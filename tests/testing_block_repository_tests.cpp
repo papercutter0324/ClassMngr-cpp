@@ -10,6 +10,7 @@ class TestingBlockRepositoryTests : public QObject
 
 private slots:
     void savesUpdatesDeletesAndClearsBlocks();
+    void assignsTestingClassesAndRequiresExplicitReplacement();
     void reportsInvalidKeysAndDatabaseFailures();
 };
 
@@ -26,10 +27,191 @@ bool createTable(
             day TEXT NOT NULL,
             start_time TEXT NOT NULL,
             room TEXT NOT NULL DEFAULT '',
+            class_id INTEGER,
             UNIQUE(day, start_time)
         )
     )");
 }
+}
+
+void TestingBlockRepositoryTests
+    ::assignsTestingClassesAndRequiresExplicitReplacement()
+{
+    const QString connectionName =
+        QStringLiteral("testing_assignment_repository_crud");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createTable(database));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(R"(
+            CREATE TABLE testing_classes (
+                class_id INTEGER PRIMARY KEY,
+                room TEXT NOT NULL
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE classes (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE class_info (
+                class_id INTEGER PRIMARY KEY,
+                class_grade TEXT,
+                class_level TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO classes (id, name)
+            VALUES (42, 'Writing Lab'), (43, 'Reading Lab')
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO class_info (
+                class_id,
+                class_grade,
+                class_level
+            )
+            VALUES
+                (42, 'M2', 'Mixed (Low)'),
+                (43, 'M2', 'Mixed (High)')
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO testing_classes (class_id, room)
+            VALUES (42, '402'), (43, 'Library')
+        )"));
+
+        TestingBlockRepository repository(database);
+        QVERIFY(
+            repository.assignTestingClass(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                42
+                )
+            );
+
+        auto assignments =
+            repository.loadTestingAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(assignments->size(), 1);
+        QCOMPARE(
+            assignments->first().kind,
+            TestingAssignmentKind::SpecialClass
+            );
+        QCOMPARE(assignments->first().classId, 42);
+        QVERIFY(assignments->first().room.isEmpty());
+
+        QVERIFY(
+            !repository.saveTestingBlock(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                QStringLiteral("405")
+                )
+            );
+        QVERIFY(
+            repository.saveTestingBlock(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                QStringLiteral("405"),
+                true
+                )
+            );
+
+        assignments = repository.loadTestingAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(
+            assignments->first().kind,
+            TestingAssignmentKind::PlainTesting
+            );
+        QCOMPARE(assignments->first().room, QStringLiteral("405"));
+
+        QVERIFY(
+            !repository.assignTestingClass(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                43
+                )
+            );
+        QVERIFY(
+            repository.assignTestingClass(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                43,
+                true
+                )
+            );
+        QVERIFY(
+            repository.assignTestingClass(
+                QStringLiteral("Tuesday"),
+                QStringLiteral("16:00"),
+                43
+                )
+            );
+        QVERIFY(
+            !repository.assignTestingClass(
+                QStringLiteral("Wednesday"),
+                QStringLiteral("16:00"),
+                99
+                )
+            );
+        QVERIFY(query.exec(R"(
+            INSERT INTO classes (id, name)
+            VALUES (44, 'Incomplete')
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO class_info (
+                class_id,
+                class_grade,
+                class_level
+            )
+            VALUES (44, 'M2', '')
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO testing_classes (class_id, room)
+            VALUES (44, '403')
+        )"));
+        QVERIFY(
+            !repository.assignTestingClass(
+                QStringLiteral("Wednesday"),
+                QStringLiteral("16:00"),
+                44
+                )
+            );
+
+        QVERIFY(
+            repository.deleteTestingAssignment(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00")
+                )
+            );
+        assignments = repository.loadTestingAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(assignments->size(), 1);
+        QCOMPARE(assignments->first().classId, 43);
+
+        QVERIFY(repository.clearTestingAssignments());
+        assignments = repository.loadTestingAssignments();
+        QVERIFY(assignments);
+        QVERIFY(assignments->isEmpty());
+
+        QVERIFY(query.exec(
+            QStringLiteral(
+                "SELECT COUNT(*) FROM testing_classes"
+                )
+            ));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 3);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 void TestingBlockRepositoryTests::savesUpdatesDeletesAndClearsBlocks()
@@ -130,6 +312,13 @@ void TestingBlockRepositoryTests
         QVERIFY(
             !repository.deleteTestingBlock(
                 QStringLiteral("Monday"),
+                QString()
+                )
+            );
+        QVERIFY(
+            !repository.saveTestingBlock(
+                QStringLiteral("Monday"),
+                QStringLiteral("4:00 PM"),
                 QString()
                 )
             );

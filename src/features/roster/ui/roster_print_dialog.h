@@ -34,7 +34,8 @@ public:
         ApplicationServices* services,
         int currentClassId,
         RosterTemplatePrintService::Scope defaultScope,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        bool currentClassOnly = false
         );
 
     Action selectedAction() const;
@@ -73,6 +74,7 @@ private:
     Action m_selectedAction = Action::Print;
     QString m_selectedSavePath;
     bool m_hasFinalSelection = false;
+    bool m_currentClassOnly = false;
     RosterTemplatePrintService::TemplateId m_finalTemplateId =
         RosterTemplatePrintService::TemplateId::ByDay;
     QStringList m_finalExtraColumns;

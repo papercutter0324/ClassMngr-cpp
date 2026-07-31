@@ -75,8 +75,14 @@ void RosterEditorWidget::showRosterContextMenu(
         removeAction->setToolTip(reason);
     }
 
-    QMenu* transferMenu = menu.addMenu(tr("Transfer Class"));
-    transferMenu->setEnabled(canRemove);
+    QMenu* transferMenu =
+        m_testingClassMode
+            ? nullptr
+            : menu.addMenu(tr("Transfer Class"));
+    if (transferMenu)
+    {
+        transferMenu->setEnabled(canRemove);
+    }
     QHash<QAction*, int> transferActions;
     auto* dataService = m_services ? m_services->dataService() : nullptr;
 
@@ -129,12 +135,12 @@ void RosterEditorWidget::showRosterContextMenu(
             );
     }
 
-    if (targets.isEmpty())
+    if (transferMenu && targets.isEmpty())
     {
         QAction* emptyAction = transferMenu->addAction(tr("No same-grade classes"));
         emptyAction->setEnabled(false);
     }
-    else
+    else if (transferMenu)
     {
         for (const TransferClassTarget& target : std::as_const(targets))
         {

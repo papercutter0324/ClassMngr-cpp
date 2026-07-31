@@ -1068,6 +1068,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrTestingBlockRepositoryTests
         tests/testing_block_repository_tests.cpp
+        src/data/database/database_transaction.cpp
         src/data/repositories/testing_block_repository.cpp
     )
 
@@ -1091,6 +1092,36 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrTestingBlockRepositoryTests
         COMMAND ClassMngrTestingBlockRepositoryTests
+    )
+
+    qt_add_executable(ClassMngrTestingClassRepositoryTests
+        tests/testing_class_repository_tests.cpp
+        src/data/database/database_transaction.cpp
+        src/data/repositories/class_repository.cpp
+        src/data/repositories/testing_class_repository.cpp
+        src/domain/models/classroom.cpp
+    )
+
+    target_compile_features(ClassMngrTestingClassRepositoryTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTestingClassRepositoryTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrTestingClassRepositoryTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrTestingClassRepositoryTests
+        COMMAND ClassMngrTestingClassRepositoryTests
     )
 
     qt_add_executable(ClassMngrCalendarEventRepositoryTests
@@ -1132,6 +1163,7 @@ if(BUILD_TESTING)
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
         src/data/repositories/testing_block_repository.cpp
+        src/data/repositories/testing_class_repository.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
@@ -1181,6 +1213,7 @@ if(BUILD_TESTING)
         src/data/repositories/class_transfer_repository.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
         src/data/repositories/testing_block_repository.cpp
+        src/data/repositories/testing_class_repository.cpp
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/native_english_teacher_repository.cpp
         src/data/repositories/roster_repository.cpp
@@ -1463,8 +1496,8 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
-        src/features/schedule/ui/testing_block_dialog.cpp
-        src/features/schedule/ui/testing_block_dialog.h
+        src/features/schedule/ui/testing_assignment_dialog.cpp
+        src/features/schedule/ui/testing_assignment_dialog.h
         src/ui/shared/pages/basepage.cpp
         src/ui/shared/pages/basepage.h
     )
@@ -1494,6 +1527,68 @@ if(BUILD_TESTING)
         COMMAND ClassMngrScheduleWidgetTests
     )
 
+    qt_add_executable(ClassMngrTestingClassesPageTests
+        tests/testing_classes_page_tests.cpp
+        tests/schedule_widget_test_stubs.cpp
+        src/core/utils/colorutils.cpp
+        src/core/utils/sidebar_node_naming.cpp
+        src/domain/models/classroom.cpp
+        src/domain/models/roster.cpp
+        src/features/classes/ui/testing_classes_page.cpp
+        src/features/classes/ui/testing_classes_page.h
+        src/features/roster/ui/roster_column_layout_controller.cpp
+        src/features/roster/ui/roster_editor_widget.cpp
+        src/features/roster/ui/roster_editor_widget.h
+        src/features/roster/ui/roster_editor_widget_columns.cpp
+        src/features/roster/ui/roster_editor_widget_students.cpp
+        src/features/roster/ui/roster_editor_widget_transfer.cpp
+        src/features/roster/ui/roster_header_view.cpp
+        src/features/roster/ui/roster_item_delegate.cpp
+        src/features/roster/ui/roster_model.cpp
+        src/features/roster/ui/roster_model_columns.cpp
+        src/features/roster/ui/roster_model_names.cpp
+        src/features/roster/ui/roster_model_rows.cpp
+        src/features/roster/ui/roster_model_validation.cpp
+        src/features/roster/ui/roster_table_view.cpp
+        src/features/roster/ui/roster_editor_widget_ui.cpp
+        src/features/schedule/ui/schedule_editor_dialog.h
+        src/features/schedule/ui/schedule_print_dialog.h
+        src/ui/shared/pages/basepage.cpp
+        src/ui/shared/widgets/clickable_color_preview.cpp
+        src/ui/shared/widgets/no_wheel_combobox.cpp
+    )
+
+    target_compile_features(ClassMngrTestingClassesPageTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrTestingClassesPageTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrTestingClassesPageTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::PrintSupport
+            Qt6::Sql
+            Qt6::Widgets
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrTestingClassesPageTests
+        COMMAND ClassMngrTestingClassesPageTests
+    )
+
+    set_tests_properties(
+        ClassMngrTestingClassesPageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrScheduleImportDialogTests
         tests/schedule_import_dialog_tests.cpp
         tests/schedule_widget_test_stubs.cpp
@@ -1516,8 +1611,8 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_time_formatter.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
-        src/features/schedule/ui/testing_block_dialog.cpp
-        src/features/schedule/ui/testing_block_dialog.h
+        src/features/schedule/ui/testing_assignment_dialog.cpp
+        src/features/schedule/ui/testing_assignment_dialog.h
         src/ui/shared/widgets/no_wheel_combobox.cpp
     )
 
@@ -1588,8 +1683,8 @@ if(BUILD_TESTING)
         src/ui/shared/widgets/uniform_width_tab_bar.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
-        src/features/schedule/ui/testing_block_dialog.cpp
-        src/features/schedule/ui/testing_block_dialog.h
+        src/features/schedule/ui/testing_assignment_dialog.cpp
+        src/features/schedule/ui/testing_assignment_dialog.h
     )
 
     target_compile_features(ClassMngrSubPrepPageTests
@@ -2278,6 +2373,7 @@ if(BUILD_TESTING)
             ClassMngrTeacherInfoSectionTests
             ClassMngrIntensiveSlotStateRepositoryTests
             ClassMngrTestingBlockRepositoryTests
+            ClassMngrTestingClassRepositoryTests
             ClassMngrCalendarEventRepositoryTests
             ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests
@@ -2288,6 +2384,7 @@ if(BUILD_TESTING)
             ClassMngrClassTabNavigationModelTests
             ClassMngrSubPrepClassInformationModelTests
             ClassMngrScheduleWidgetTests
+            ClassMngrTestingClassesPageTests
             ClassMngrScheduleImportDialogTests
             ClassMngrSubPrepPageTests
             ClassMngrUniformWidthTabBarTests

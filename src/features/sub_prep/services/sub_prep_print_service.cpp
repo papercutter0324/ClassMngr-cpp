@@ -209,7 +209,7 @@ QString scheduleCellHtml(
                 "</div>"
                 )
                 .arg(
-                    htmlText(translate("Testing")),
+                    htmlText(translate("Oral Testing")),
                     roomLine
                     );
         }
@@ -221,10 +221,20 @@ QString scheduleCellHtml(
 
     for (const ScheduleEntry& entry : cell.entries)
     {
+        const bool testingClass =
+            entry.kind == ScheduleEntryKind::TestingClass;
+        const QString firstLine =
+            testingClass
+                ? entry.className.trimmed()
+                : teacherLine(entry);
+        const QString thirdLine =
+            testingClass
+                ? entry.roomNumber.trimmed()
+                : QString();
         entries +=
             QStringLiteral(
                 "<div class=\"schedule-entry\" style=\"background:%1;color:%2;\">"
-                "<strong>%3</strong><br/><span>%4</span></div>"
+                "%3<strong>%4</strong><br/><span>%5</span>%6</div>"
                 )
                 .arg(
                     validColor(
@@ -235,8 +245,17 @@ QString scheduleCellHtml(
                         entry.fontColor,
                         QStringLiteral("#000000")
                         ),
-                    htmlText(teacherLine(entry)),
-                    htmlText(classLine(entry))
+                    testingClass
+                        ? QStringLiteral(
+                            "<span class=\"testing-class-marker\">&#9701;</span>"
+                            )
+                        : QString(),
+                    htmlText(firstLine),
+                    htmlText(classLine(entry)),
+                    thirdLine.isEmpty()
+                        ? QString()
+                        : QStringLiteral("<br/><span>%1</span>")
+                            .arg(htmlText(thirdLine))
                     );
     }
 

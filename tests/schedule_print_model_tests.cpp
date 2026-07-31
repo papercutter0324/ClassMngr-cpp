@@ -92,6 +92,7 @@ private slots:
     void footerTotalsMatchExcelScreenshotConvention();
     void teacherRoomLineRespectsSelectedNameLanguage();
     void testingModeFiltersAffectedGradesAndPreservesPriority();
+    void testingClassAssignmentsOverrideUnderlyingCells();
 };
 
 void SchedulePrintModelTests::visibleDaysCanIncludeWeekends()
@@ -449,26 +450,44 @@ void SchedulePrintModelTests
     request.days = days;
     request.displayMode =
         ScheduleDisplayMode::Testing;
-    request.testingBlockRooms.insert(
+    const auto plainAssignment =
+        [](const QString& day, const QString& room)
+        {
+            TestingAssignmentView view;
+            view.assignment.day = day;
+            view.assignment.startTime = QStringLiteral("16:00");
+            view.assignment.room = room;
+            return view;
+        };
+    request.testingAssignments.insert(
         scheduleSlotKey(
             QStringLiteral("Monday"),
             QStringLiteral("16:00")
             ),
-        QStringLiteral("Hidden Room")
+        plainAssignment(
+            QStringLiteral("Monday"),
+            QStringLiteral("Hidden Room")
+            )
         );
-    request.testingBlockRooms.insert(
+    request.testingAssignments.insert(
         scheduleSlotKey(
             QStringLiteral("Tuesday"),
             QStringLiteral("16:00")
             ),
-        QStringLiteral("402")
+        plainAssignment(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("402")
+            )
         );
-    request.testingBlockRooms.insert(
+    request.testingAssignments.insert(
         scheduleSlotKey(
             QStringLiteral("Wednesday"),
             QStringLiteral("16:00")
             ),
-        QStringLiteral("Library")
+        plainAssignment(
+            QStringLiteral("Wednesday"),
+            QStringLiteral("Library")
+            )
         );
 
     ScheduleViewModel model =
@@ -476,12 +495,15 @@ void SchedulePrintModelTests
 
     const ScheduleRowView& row =
         model.rows.first();
-    QCOMPARE(row.cells.at(0).entries.size(), 1);
+    QVERIFY(row.cells.at(0).entries.isEmpty());
     QCOMPARE(
-        row.cells.at(0).entries.first().classGrade,
-        QStringLiteral("E5")
+        row.cells.at(0).slotState,
+        scheduleTestingSlotState()
         );
-    QVERIFY(row.cells.at(0).testingRoom.isEmpty());
+    QCOMPARE(
+        row.cells.at(0).testingRoom,
+        QStringLiteral("Hidden Room")
+        );
     QCOMPARE(
         row.cells.at(1).slotState,
         scheduleTestingSlotState()
@@ -490,7 +512,11 @@ void SchedulePrintModelTests
         row.cells.at(1).testingRoom,
         QStringLiteral("402")
         );
-    QCOMPARE(row.cells.at(2).entries.size(), 1);
+    QVERIFY(row.cells.at(2).entries.isEmpty());
+    QCOMPARE(
+        row.cells.at(2).slotState,
+        scheduleTestingSlotState()
+        );
     QCOMPARE(
         row.cells.at(3).slotState,
         scheduleEssaySlotState()
@@ -498,7 +524,7 @@ void SchedulePrintModelTests
     QVERIFY(
         row.cells.at(3).testingBlockCreationEnabled
         );
-    QCOMPARE(model.summary.testingBlocks, 1);
+    QCOMPARE(model.summary.testingBlocks, 3);
 
     request.testingAffectsM1 = true;
     model =
@@ -511,6 +537,87 @@ void SchedulePrintModelTests
     QCOMPARE(
         model.rows.first().cells.at(2).testingRoom,
         QStringLiteral("Library")
+        );
+}
+
+void SchedulePrintModelTests
+    ::testingClassAssignmentsOverrideUnderlyingCells()
+{
+    ScheduleBuildResult result =
+        blankResult(
+            {QStringLiteral("Monday")},
+            {QStringLiteral("16:00")}
+            );
+    result.schedule[QStringLiteral("Monday")]
+        [QStringLiteral("16:00")] = {entry(7)};
+
+    ScheduleEntry special;
+    special.kind = ScheduleEntryKind::TestingClass;
+    special.classId = 91;
+    special.className = QStringLiteral("Writing Lab");
+    special.classGrade = QStringLiteral("M2");
+    special.classLevel = QStringLiteral("Mixed (All)");
+    special.teacherEn = QStringLiteral("Ms Han");
+    special.roomNumber = QStringLiteral("Library");
+    special.classColor = QStringLiteral("#123456");
+    special.fontColor = QStringLiteral("#FFFFFF");
+
+    TestingAssignmentView assignment;
+    assignment.assignment.day = QStringLiteral("Monday");
+    assignment.assignment.startTime = QStringLiteral("16:00");
+    assignment.assignment.kind =
+        TestingAssignmentKind::SpecialClass;
+    assignment.assignment.classId = special.classId;
+    assignment.testingClassEntry = special;
+
+    ScheduleViewRequest request;
+    request.days = {QStringLiteral("Monday")};
+    request.displayMode = ScheduleDisplayMode::Testing;
+    request.testingAssignments.insert(
+        scheduleSlotKey(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            ),
+        assignment
+        );
+
+    const ScheduleViewModel testingModel =
+        buildScheduleViewModel(result, request);
+    const ScheduleCellView& testingCell =
+        testingModel.rows.first().cells.first();
+    QVERIFY(testingCell.testingClassAssignment);
+    QCOMPARE(testingCell.testingClassId, 91);
+    QCOMPARE(testingCell.entries.size(), 1);
+    QCOMPARE(
+        testingCell.entries.first().className,
+        QStringLiteral("Writing Lab")
+        );
+    QCOMPARE(testingModel.summary.testingClassBlocks, 1);
+    QCOMPARE(testingModel.summary.testingBlocks, 0);
+    QCOMPARE(testingModel.summary.scheduledBlocks, 1);
+
+    request.testingAssignments.clear();
+    const ScheduleViewModel restoredModel =
+        buildScheduleViewModel(result, request);
+    const ScheduleCellView& restoredCell =
+        restoredModel.rows.first().cells.first();
+    QVERIFY(!restoredCell.testingClassAssignment);
+    QCOMPARE(restoredCell.entries.size(), 1);
+    QCOMPARE(restoredCell.entries.first().classId, 7);
+
+    request.testingAssignments.insert(
+        scheduleSlotKey(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00")
+            ),
+        assignment
+        );
+    request.displayMode = ScheduleDisplayMode::Regular;
+    const ScheduleViewModel regularModel =
+        buildScheduleViewModel(result, request);
+    QCOMPARE(
+        regularModel.rows.first().cells.first().entries.first().classId,
+        7
         );
 }
 

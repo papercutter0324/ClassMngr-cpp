@@ -395,6 +395,13 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
         )
     )");
 
+    query.exec(R"(
+        CREATE TABLE IF NOT EXISTS testing_classes (
+            class_id INTEGER PRIMARY KEY,
+            room TEXT NOT NULL
+        )
+    )");
+
     ensureTableColumn(
         database,
         QStringLiteral("class_info"),
@@ -447,9 +454,22 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             day TEXT NOT NULL,
             start_time TEXT NOT NULL,
             room TEXT NOT NULL DEFAULT '',
+            class_id INTEGER,
 
             UNIQUE(day, start_time)
         )
+    )");
+
+    ensureTableColumn(
+        database,
+        QStringLiteral("schedule_testing_blocks"),
+        QStringLiteral("class_id"),
+        QStringLiteral("INTEGER")
+        );
+
+    query.exec(R"(
+        CREATE INDEX IF NOT EXISTS idx_schedule_testing_blocks_class_id
+        ON schedule_testing_blocks (class_id)
     )");
 
     query.exec(R"(

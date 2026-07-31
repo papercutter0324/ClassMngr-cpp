@@ -20,6 +20,7 @@ class PersonalDetailsPage;
 class MyClassesPage;
 class RostersPage;
 class ClassesPage;
+class TestingClassesPage;
 class TeacherInfoPage;
 class StaffDirectoryPage;
 class CampusDashboardPage;
@@ -41,6 +42,7 @@ enum class PageType
     MyClasses,
     Schedule,
     Classes,
+    TestingClasses,
     TeacherInfo,
     NativeEnglishTeachers,
     GsTeam,
@@ -140,6 +142,7 @@ public:
     SubPrepPage* subPrepPage() const;
 
     ClassesPage* classesPage() const;
+    TestingClassesPage* testingClassesPage() const;
 
     TeacherInfoPage* teacherPage() const;
 
@@ -208,6 +211,7 @@ private:
     SubPrepPage* m_subPrepPage = nullptr;
 
     ClassesPage* m_classesPage = nullptr;
+    TestingClassesPage* m_testingClassesPage = nullptr;
 
     TeacherInfoPage* m_teacherPage = nullptr;
 

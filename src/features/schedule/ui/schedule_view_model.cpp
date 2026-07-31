@@ -325,11 +325,24 @@ ScheduleViewModel buildScheduleViewModel(
                     .value(day)
                     .value(scheduleRow.label);
 
+            const QString assignmentKey =
+                scheduleSlotKey(
+                    day,
+                    scheduleRow.label
+                    );
+            const auto assignment =
+                request.testingAssignments.constFind(
+                    assignmentKey
+                    );
+            const bool hasExplicitAssignment =
+                request.displayMode == ScheduleDisplayMode::Testing
+                && assignment != request.testingAssignments.cend();
             bool removedAffectedEntry = false;
 
             if (
                 request.displayMode
                     == ScheduleDisplayMode::Testing
+                && !hasExplicitAssignment
                 )
             {
                 for (
@@ -377,26 +390,39 @@ ScheduleViewModel buildScheduleViewModel(
                         )
                     : cell.defaultSlotState;
 
-            if (
-                request.displayMode
-                    == ScheduleDisplayMode::Testing
-                && cell.entries.isEmpty()
-                )
+            if (hasExplicitAssignment)
             {
-                const QString key =
-                    scheduleSlotKey(
-                        day,
-                        scheduleRow.label
-                        );
+                cell.entries.clear();
 
-                if (request.testingBlockRooms.contains(key))
+                if (
+                    assignment->assignment.kind
+                        == TestingAssignmentKind::SpecialClass
+                    )
+                {
+                    cell.entries.append(
+                        assignment->testingClassEntry
+                        );
+                    cell.testingClassAssignment = true;
+                    cell.testingClassId =
+                        assignment->assignment.classId;
+                }
+                else
                 {
                     cell.slotState =
                         scheduleTestingSlotState();
                     cell.testingRoom =
-                        request.testingBlockRooms.value(key);
+                        assignment->assignment.room;
                 }
-                else if (removedAffectedEntry)
+            }
+
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                && cell.entries.isEmpty()
+                && !hasExplicitAssignment
+                )
+            {
+                if (removedAffectedEntry)
                 {
                     cell.slotState =
                         scheduleEssaySlotState();
@@ -415,6 +441,11 @@ ScheduleViewModel buildScheduleViewModel(
                         static_cast<int>(cell.entries.size())
                         );
                 ++model.summary.scheduledBlocks;
+
+                if (cell.testingClassAssignment)
+                {
+                    ++model.summary.testingClassBlocks;
+                }
             }
             else if (cell.slotState == scheduleEssaySlotState())
             {

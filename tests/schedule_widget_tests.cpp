@@ -3,16 +3,20 @@
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
-#include "features/schedule/ui/testing_block_dialog.h"
+#include "features/schedule/ui/testing_assignment_dialog.h"
+#include "domain/models/testing_class.h"
 
 #include <QtTest>
 
 #include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QImage>
 #include <QLabel>
+#include <QLayout>
 #include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
@@ -37,6 +41,11 @@ void setTestingBlock(
     const QString& startTime,
     const QString& room
     );
+void setTestingClassAssignment(
+    const QString& day,
+    const QString& startTime,
+    const TestingClass& testingClass
+    );
 QString settingValue(const QString& key);
 }
 
@@ -51,7 +60,8 @@ private slots:
     void importButtonRequestsScheduleImport();
     void legacyHourSettingsDoNotCarryForward();
     void testingModeFiltersClassesAndDisplaysSavedBlock();
-    void testingBlockDialogTrimsRoomAndSupportsRemoval();
+    void testingModeDisplaysAssignedTestingClassCard();
+    void testingAssignmentDialogSupportsEveryAction();
     void readOnlyPresentationHidesControlsAndIgnoresClicks();
     void timeColumnAndHeaderAreNonInteractive();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
@@ -289,7 +299,7 @@ void ScheduleWidgetTests
             table->cellWidget(0, 1)
             );
     QVERIFY(monday);
-    QVERIFY(monday->text().contains(QStringLiteral("Testing")));
+    QVERIFY(monday->text().contains(QStringLiteral("Oral Testing")));
     QVERIFY(monday->text().contains(QStringLiteral("Library")));
     QCOMPARE(
         monday->property("slot_state").toString(),
@@ -318,38 +328,248 @@ void ScheduleWidgetTests
 }
 
 void ScheduleWidgetTests
-    ::testingBlockDialogTrimsRoomAndSupportsRemoval()
+    ::testingModeDisplaysAssignedTestingClassCard()
 {
-    TestingBlockDialog addDialog(
-        QString(),
-        false
-        );
-    auto* room =
-        addDialog.findChild<QLineEdit*>(
-            QStringLiteral("testingBlockRoomEdit")
-            );
-    QVERIFY(room);
-    room->setText(QStringLiteral("  Library  "));
-    QCOMPARE(addDialog.room(), QStringLiteral("Library"));
-    QVERIFY(!addDialog.removeRequested());
-    QVERIFY(
-        !addDialog.findChild<QPushButton*>(
-            QStringLiteral("testingBlockRemoveButton")
-            )
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (High)");
+    testingClass.room = QStringLiteral("Library");
+    testingClass.teacherId = 7;
+    testingClass.classColor = QStringLiteral("#123456");
+    testingClass.fontColor = QStringLiteral("#FFFFFF");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        testingClass
         );
 
-    TestingBlockDialog editDialog(
-        QStringLiteral("402"),
-        true
+    ApplicationServices services;
+    services.dataService()->saveSetting(
+        QStringLiteral("schedule_show_korean_teacher_english_names"),
+        QStringLiteral("true")
         );
-    auto* remove =
-        editDialog.findChild<QPushButton*>(
-            QStringLiteral("testingBlockRemoveButton")
+    ScheduleWidget widget(&services);
+    auto* testingButton =
+        widget.findChild<QPushButton*>(
+            QStringLiteral("scheduleTestingModeButton")
             );
-    QVERIFY(remove);
-    remove->click();
-    QCOMPARE(editDialog.result(), QDialog::Accepted);
-    QVERIFY(editDialog.removeRequested());
+    auto* classesButton =
+        widget.findChild<QPushButton*>(
+            QStringLiteral("scheduleTestingClassesButton")
+            );
+    auto* table =
+        widget.findChild<QTableWidget*>(
+            QStringLiteral("scheduleTable")
+            );
+    QVERIFY(testingButton);
+    QVERIFY(classesButton);
+    QVERIFY(table);
+
+    testingButton->click();
+    QVERIFY(classesButton->isVisibleTo(&widget));
+
+    auto* label =
+        qobject_cast<QLabel*>(
+            table->cellWidget(0, 1)
+            );
+    QVERIFY(label);
+    QCOMPARE(label->property("class_id").toInt(), 100);
+    QVERIFY(
+        label->property("testing_class_assignment").toBool()
+        );
+    const QString accessible =
+        label->accessibleName();
+    QVERIFY(accessible.contains(QStringLiteral("Writing Lab")));
+    QVERIFY(accessible.contains(QStringLiteral("M2")));
+    QVERIFY(accessible.contains(QStringLiteral("Mixed (High)")));
+    QVERIFY(accessible.contains(QStringLiteral("Library")));
+    QVERIFY(
+        !label->text().contains(
+            QStringLiteral("Writing Lab Library")
+            )
+        );
+    QCOMPARE(
+        label->palette().color(QPalette::Highlight),
+        QColor(QStringLiteral("#FFFFFF"))
+        );
+}
+
+void ScheduleWidgetTests
+    ::testingAssignmentDialogSupportsEveryAction()
+{
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (All)");
+    testingClass.room = QStringLiteral("Library");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        testingClass
+        );
+
+    ApplicationServices services;
+    TestingAssignmentDialog assignDialog(
+        services.dataService(),
+        nullptr
+        );
+    auto* mode =
+        assignDialog.findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentModeCombo")
+            );
+    auto* classes =
+        assignDialog.findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentClassCombo")
+            );
+    auto* classLabel =
+        classes
+            ? qobject_cast<QLabel*>(
+                classes->parentWidget()->layout()->itemAt(0)->widget()
+                )
+            : nullptr;
+    auto* buttons =
+        assignDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(mode);
+    QVERIFY(classes);
+    QVERIFY(classLabel);
+    QVERIFY(buttons);
+    QCOMPARE(
+        mode->itemText(0),
+        QStringLiteral("Oral Testing Block")
+        );
+    QCOMPARE(
+        mode->itemText(1),
+        QStringLiteral("Testing Class")
+        );
+    QCOMPARE(
+        mode->itemText(2),
+        QStringLiteral("Essay Block")
+        );
+    QCOMPARE(
+        assignDialog.height(),
+        assignDialog.sizeHint().height()
+        );
+    QCOMPARE(assignDialog.minimumSize(), assignDialog.maximumSize());
+    QCOMPARE(assignDialog.size(), assignDialog.minimumSize());
+    QVERIFY(
+        assignDialog.layout()->alignment().testFlag(
+            Qt::AlignTop
+            )
+        );
+    assignDialog.show();
+    QApplication::processEvents();
+    const int modeTop =
+        mode->geometry().top();
+    const int footerTop =
+        buttons->geometry().top();
+    assignDialog.resize(
+        assignDialog.width(),
+        assignDialog.height() + 200
+        );
+    QApplication::processEvents();
+    QCOMPARE(assignDialog.height(), assignDialog.minimumHeight());
+    QCOMPARE(mode->geometry().top(), modeTop);
+    QCOMPARE(buttons->geometry().top(), footerTop);
+    mode->setCurrentIndex(1);
+    QApplication::processEvents();
+    QCOMPARE(classes->currentData().toInt(), 100);
+    QCOMPARE(
+        classLabel->geometry().top(),
+        8
+        );
+    QCOMPARE(
+        classes->parentWidget()->height()
+            - classes->geometry().bottom()
+            - 1,
+        8
+        );
+    auto* manage =
+        assignDialog.findChild<QPushButton*>(
+            QStringLiteral("testingAssignmentManageClassesButton")
+            );
+    QVERIFY(manage);
+    QVERIFY(manage->isVisibleTo(&assignDialog));
+    QCOMPARE(manage->geometry().top(), buttons->geometry().top());
+    QVERIFY(manage->geometry().right() < buttons->geometry().left());
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(assignDialog.result(), QDialog::Accepted);
+    QCOMPARE(
+        assignDialog.selectedAction(),
+        TestingAssignmentDialog::Action::AssignTestingClass
+        );
+    QCOMPARE(assignDialog.selectedClassId(), 100);
+
+    TestingAssignmentDialog manageDialog(
+        services.dataService(),
+        nullptr
+        );
+    mode =
+        manageDialog.findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentModeCombo")
+            );
+    QVERIFY(mode);
+    mode->setCurrentIndex(1);
+    manage =
+        manageDialog.findChild<QPushButton*>(
+            QStringLiteral("testingAssignmentManageClassesButton")
+            );
+    QVERIFY(manage);
+    QCOMPARE(manage->text(), QStringLiteral("Manage Classes"));
+    manage->click();
+    QCOMPARE(
+        manageDialog.selectedAction(),
+        TestingAssignmentDialog::Action::ManageTestingClasses
+        );
+
+    TestingAssignment existing;
+    existing.kind = TestingAssignmentKind::SpecialClass;
+    existing.classId = 100;
+    TestingAssignmentDialog editDialog(
+        services.dataService(),
+        &existing
+        );
+    auto* removedEssayButton =
+        editDialog.findChild<QPushButton*>(
+            QStringLiteral("testingAssignmentRemoveButton")
+            );
+    QVERIFY(!removedEssayButton);
+    mode =
+        editDialog.findChild<QComboBox*>(
+            QStringLiteral("testingAssignmentModeCombo")
+            );
+    buttons =
+        editDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(mode);
+    QVERIFY(buttons);
+    mode->setCurrentIndex(2);
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(
+        editDialog.selectedAction(),
+        TestingAssignmentDialog::Action::RemoveAssignment
+        );
+
+    TestingAssignmentDialog plainDialog(
+        services.dataService(),
+        nullptr
+        );
+    auto* room =
+        plainDialog.findChild<QLineEdit*>(
+            QStringLiteral("testingAssignmentRoomEdit")
+            );
+    buttons =
+        plainDialog.findChild<QDialogButtonBox*>();
+    QVERIFY(room);
+    QVERIFY(buttons);
+    room->setText(QStringLiteral("  402  "));
+    buttons->button(QDialogButtonBox::Save)->click();
+    QCOMPARE(
+        plainDialog.selectedAction(),
+        TestingAssignmentDialog::Action::SavePlainTesting
+        );
+    QCOMPARE(plainDialog.room(), QStringLiteral("402"));
 }
 
 void ScheduleWidgetTests
@@ -394,7 +614,7 @@ void ScheduleWidgetTests
     const auto buttons =
         controls->findChildren<QPushButton*>();
     QVERIFY(controls->findChildren<QCheckBox*>().isEmpty());
-    QCOMPARE(buttons.size(), 6);
+    QCOMPARE(buttons.size(), 7);
     QVERIFY(
         std::any_of(
             buttons.cbegin(),

@@ -18,6 +18,7 @@
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/testing_block_repository.h"
+#include "data/repositories/testing_class_repository.h"
 #include "features/schedule/ui/schedule_builder.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -38,6 +39,9 @@ namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
 QHash<QString, QString> testingBlocks;
+QHash<int, TestingClass> testingClasses;
+QHash<QString, int> testingClassAssignments;
+QHash<int, Roster> rosters;
 int savedSlotStates = 0;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
@@ -54,6 +58,9 @@ void reset()
 {
     settings.clear();
     testingBlocks.clear();
+    testingClasses.clear();
+    testingClassAssignments.clear();
+    rosters.clear();
     savedSlotStates = 0;
     savedTestingBlocks = 0;
     printRequestCount = 0;
@@ -132,6 +139,22 @@ void setTestingBlock(
     testingBlocks.insert(
         day + QLatin1Char('\x1f') + startTime,
         room
+        );
+}
+
+void setTestingClassAssignment(
+    const QString& day,
+    const QString& startTime,
+    const TestingClass& testingClass
+    )
+{
+    testingClasses.insert(
+        testingClass.classId,
+        testingClass
+        );
+    testingClassAssignments.insert(
+        day + QLatin1Char('\x1f') + startTime,
+        testingClass.classId
         );
 }
 }
@@ -326,10 +349,64 @@ Result<QList<TestingBlock>> DataService::loadTestingBlocks()
     return blocks;
 }
 
+Result<QList<TestingAssignment>>
+DataService::loadTestingAssignments()
+{
+    QList<TestingAssignment> assignments;
+
+    for (
+        auto iterator =
+            ScheduleWidgetTestStubs::testingBlocks.cbegin();
+        iterator !=
+            ScheduleWidgetTestStubs::testingBlocks.cend();
+        ++iterator
+        )
+    {
+        const QStringList keyParts =
+            iterator.key().split(QLatin1Char('\x1f'));
+        if (keyParts.size() != 2)
+        {
+            continue;
+        }
+
+        TestingAssignment assignment;
+        assignment.day = keyParts.at(0);
+        assignment.startTime = keyParts.at(1);
+        assignment.room = iterator.value();
+        assignments.append(assignment);
+    }
+
+    for (
+        auto iterator =
+            ScheduleWidgetTestStubs::testingClassAssignments.cbegin();
+        iterator !=
+            ScheduleWidgetTestStubs::testingClassAssignments.cend();
+        ++iterator
+        )
+    {
+        const QStringList keyParts =
+            iterator.key().split(QLatin1Char('\x1f'));
+        if (keyParts.size() != 2)
+        {
+            continue;
+        }
+
+        TestingAssignment assignment;
+        assignment.day = keyParts.at(0);
+        assignment.startTime = keyParts.at(1);
+        assignment.kind = TestingAssignmentKind::SpecialClass;
+        assignment.classId = iterator.value();
+        assignments.append(assignment);
+    }
+
+    return assignments;
+}
+
 Status DataService::saveTestingBlock(
     const QString& day,
     const QString& startTime,
-    const QString& room
+    const QString& room,
+    bool
     )
 {
     ScheduleWidgetTestStubs::setTestingBlock(
@@ -341,21 +418,125 @@ Status DataService::saveTestingBlock(
     return {};
 }
 
+Status DataService::assignTestingClass(
+    const QString& day,
+    const QString& startTime,
+    int classId,
+    bool
+    )
+{
+    const QString key =
+        day + QLatin1Char('\x1f') + startTime;
+    ScheduleWidgetTestStubs::testingBlocks.remove(key);
+    ScheduleWidgetTestStubs::testingClassAssignments.insert(
+        key,
+        classId
+        );
+    return {};
+}
+
+Status DataService::deleteTestingAssignment(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    return deleteTestingBlock(day, startTime);
+}
+
 Status DataService::deleteTestingBlock(
     const QString& day,
     const QString& startTime
     )
 {
-    ScheduleWidgetTestStubs::testingBlocks.remove(
-        day + QLatin1Char('\x1f') + startTime
-        );
+    const QString key =
+        day + QLatin1Char('\x1f') + startTime;
+    ScheduleWidgetTestStubs::testingBlocks.remove(key);
+    ScheduleWidgetTestStubs::testingClassAssignments.remove(key);
     return {};
 }
 
 Status DataService::clearTestingBlocks()
 {
     ScheduleWidgetTestStubs::testingBlocks.clear();
+    ScheduleWidgetTestStubs::testingClassAssignments.clear();
     return {};
+}
+
+Status DataService::clearTestingAssignments()
+{
+    return clearTestingBlocks();
+}
+
+Result<int> DataService::createTestingClass(
+    const TestingClass& testingClass,
+    const QString& assignmentDay,
+    const QString& assignmentStartTime
+    )
+{
+    const int classId =
+        ScheduleWidgetTestStubs::testingClasses.isEmpty()
+            ? 100
+            : ScheduleWidgetTestStubs::testingClasses.keys().last() + 1;
+    TestingClass stored = testingClass;
+    stored.classId = classId;
+    ScheduleWidgetTestStubs::testingClasses.insert(classId, stored);
+    if (
+        !assignmentDay.isEmpty()
+        && !assignmentStartTime.isEmpty()
+        )
+    {
+        const QString key =
+            assignmentDay
+            + QLatin1Char('\x1f')
+            + assignmentStartTime;
+        ScheduleWidgetTestStubs::testingClassAssignments.insert(
+            key,
+            classId
+            );
+    }
+    return classId;
+}
+
+Status DataService::updateTestingClass(
+    const TestingClass& testingClass
+    )
+{
+    ScheduleWidgetTestStubs::testingClasses.insert(
+        testingClass.classId,
+        testingClass
+        );
+    return {};
+}
+
+Result<TestingClass> DataService::loadTestingClass(
+    int classId
+    )
+{
+    if (!ScheduleWidgetTestStubs::testingClasses.contains(classId))
+    {
+        return std::unexpected(QStringLiteral("Missing testing class"));
+    }
+    return ScheduleWidgetTestStubs::testingClasses.value(classId);
+}
+
+Result<QList<TestingClass>> DataService::loadTestingClasses()
+{
+    return ScheduleWidgetTestStubs::testingClasses.values();
+}
+
+Status DataService::deleteTestingClass(
+    int classId
+    )
+{
+    ScheduleWidgetTestStubs::testingClasses.remove(classId);
+    return {};
+}
+
+Result<bool> DataService::isTestingClass(
+    int classId
+    )
+{
+    return ScheduleWidgetTestStubs::testingClasses.contains(classId);
 }
 
 QList<Classroom> DataService::getClasses()
@@ -406,6 +587,25 @@ ClassInfo DataService::loadClassInfo(
 {
     ClassInfo info;
     info.classId = classId;
+    if (ScheduleWidgetTestStubs::testingClasses.contains(classId))
+    {
+        const TestingClass testingClass =
+            ScheduleWidgetTestStubs::testingClasses.value(classId);
+        info.teacherId = testingClass.teacherId;
+        info.classGrade = testingClass.grade;
+        info.classLevel = testingClass.level;
+        if (testingClass.teacherId > 0)
+        {
+            const Teacher teacher =
+                getTeacher(testingClass.teacherId);
+            info.teacherKr = teacher.teacherKr;
+            info.teacherEn = teacher.teacherEn;
+            info.teacherPreferredName =
+                teacher.preferredDisplayName();
+        }
+        return info;
+    }
+
     info.teacherId = classId == 43 ? 8 : 7;
     info.classGrade =
         classId == 43
@@ -451,15 +651,47 @@ ClassInfo DataService::loadClassInfo(
 }
 
 Roster DataService::loadRoster(
-    int
+    int classId
     )
 {
+    if (ScheduleWidgetTestStubs::rosters.contains(classId))
+    {
+        return ScheduleWidgetTestStubs::rosters.value(classId);
+    }
+
     Roster roster;
     roster.columns = {
         QStringLiteral("English"),
-        QStringLiteral("Korean")
+        QStringLiteral("Korean"),
+        QStringLiteral("Winter"),
+        QStringLiteral("Speech Contest"),
+        QStringLiteral("Summer"),
+        QStringLiteral("Fall")
     };
     return roster;
+}
+
+void DataService::saveRoster(
+    int classId,
+    const Roster& roster
+    )
+{
+    ScheduleWidgetTestStubs::rosters.insert(
+        classId,
+        roster
+        );
+}
+
+bool DataService::saveRosters(
+    const QList<QPair<int, Roster>>& rosters
+    )
+{
+    for (const auto& [classId, roster] : rosters)
+    {
+        saveRoster(classId, roster);
+    }
+
+    return true;
 }
 
 int DataService::getRosterStudentCount(
@@ -511,6 +743,14 @@ Teacher DataService::getTeacher(
             ? QStringLiteral("Use the classroom projector.")
             : QStringLiteral("Call before class.");
     return teacher;
+}
+
+QList<Teacher> DataService::getAllTeachers()
+{
+    return {
+        getTeacher(7),
+        getTeacher(8)
+    };
 }
 
 ResourcePackManager& ResourcePackManager::instance()
@@ -809,10 +1049,21 @@ ScheduleViewModel buildScheduleViewModel(
                     .value(day)
                     .value(sourceRow.label);
 
+            const QString key =
+                scheduleSlotKey(
+                    day,
+                    sourceRow.label
+                    );
+            const auto assignment =
+                request.testingAssignments.constFind(key);
+            const bool hasExplicitAssignment =
+                request.displayMode == ScheduleDisplayMode::Testing
+                && assignment != request.testingAssignments.cend();
             bool removedAffectedEntry = false;
             if (
                 request.displayMode
                     == ScheduleDisplayMode::Testing
+                && !hasExplicitAssignment
                 )
             {
                 for (
@@ -860,25 +1111,38 @@ ScheduleViewModel buildScheduleViewModel(
                     request.regularWeekdaySlotTogglingEnabled
                     );
 
-            if (
-                request.displayMode
-                    == ScheduleDisplayMode::Testing
-                && cell.entries.isEmpty()
-                )
+            if (hasExplicitAssignment)
             {
-                const QString key =
-                    scheduleSlotKey(
-                        day,
-                        sourceRow.label
+                cell.entries.clear();
+                if (
+                    assignment->assignment.kind
+                        == TestingAssignmentKind::SpecialClass
+                    )
+                {
+                    cell.entries.append(
+                        assignment->testingClassEntry
                         );
-                if (request.testingBlockRooms.contains(key))
+                    cell.testingClassAssignment = true;
+                    cell.testingClassId =
+                        assignment->assignment.classId;
+                }
+                else
                 {
                     cell.slotState =
                         scheduleTestingSlotState();
                     cell.testingRoom =
-                        request.testingBlockRooms.value(key);
+                        assignment->assignment.room;
                 }
-                else if (removedAffectedEntry)
+            }
+
+            if (
+                request.displayMode
+                    == ScheduleDisplayMode::Testing
+                && cell.entries.isEmpty()
+                && !hasExplicitAssignment
+                )
+            {
+                if (removedAffectedEntry)
                 {
                     cell.slotState =
                         scheduleEssaySlotState();

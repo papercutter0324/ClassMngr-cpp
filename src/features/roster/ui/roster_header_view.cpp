@@ -128,18 +128,32 @@ void RosterHeaderView::paintGroupRow(
         const int end =
             m_controller->groupEnd(column);
 
-        int x =
-            sectionViewportPosition(start);
-
+        int firstVisible = -1;
         int width = 0;
 
         for (int current = start; current <= end; ++current)
         {
+            if (isSectionHidden(current))
+            {
+                continue;
+            }
+
+            if (firstVisible < 0)
+            {
+                firstVisible = current;
+            }
+
             width += sectionSize(current);
         }
 
+        if (firstVisible < 0 || width <= 0)
+        {
+            column = end + 1;
+            continue;
+        }
+
         QRect groupRect(
-            x,
+            sectionViewportPosition(firstVisible),
             0,
             width,
             RosterUi::HeaderGroupsHeight
@@ -207,6 +221,11 @@ void RosterHeaderView::paintColumnRow(
 
     for (int column = 0; column < count(); ++column)
     {
+        if (isSectionHidden(column))
+        {
+            continue;
+        }
+
         const QString name =
             model()->headerData(
                 column,
@@ -293,12 +312,19 @@ int RosterHeaderView::contentRightEdge() const
         return -1;
     }
 
-    const int finalColumn =
-        count() - 1;
+    for (int column = count() - 1; column >= 0; --column)
+    {
+        if (isSectionHidden(column))
+        {
+            continue;
+        }
 
-    return sectionViewportPosition(finalColumn)
-        + sectionSize(finalColumn)
-        - 1;
+        return sectionViewportPosition(column)
+            + sectionSize(column)
+            - 1;
+    }
+
+    return -1;
 }
 
 QBrush RosterHeaderView::trailingBackgroundBrush() const

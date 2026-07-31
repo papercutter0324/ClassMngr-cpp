@@ -50,14 +50,16 @@ public:
     void setSaveMode(
         SaveMode mode
         ) override;
+
+    void setTestingClassMode(
+        bool testingClassMode
+        );
     void retranslateUi() override;
 
 private slots:
     void addColumn();
 
     void removeColumn();
-
-    void removeStudent();
 
     void moveStudentRow(
         int sourceRow,
@@ -80,6 +82,8 @@ private:
     void buildUi();
 
     void updateHeaderText();
+
+    void applyTestingClassColumnVisibility();
 
     bool saveRosterInternal(
         bool showValidationMessages
@@ -140,6 +144,7 @@ private:
     bool m_movingRosterRow = false;
     SaveMode m_saveMode = SaveMode::Automatic;
     bool m_embedded = false;
+    bool m_testingClassMode = false;
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
@@ -152,7 +157,6 @@ private:
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_printButton = nullptr;
-    QPushButton* m_removeStudentButton = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;

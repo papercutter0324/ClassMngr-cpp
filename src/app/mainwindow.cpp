@@ -17,6 +17,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
@@ -505,6 +506,86 @@ void MainWindow::connectSignals()
 
     connectScheduleImport(m_pages->schedulePage());
     connectScheduleImport(m_pages->mySchedulePage());
+
+    const auto connectTestingClasses =
+        [this](
+            SchedulePage* page,
+            bool personalSchedule
+            )
+        {
+            connect(
+                page,
+                &SchedulePage::testingClassesRequested,
+                this,
+                [this, personalSchedule](
+                    int classId,
+                    const QString& day,
+                    const QString& startTime
+                    )
+                {
+                    if (!m_pages->confirmCurrentPageCanLeave())
+                    {
+                        return;
+                    }
+
+                    m_testingClassesReturnToPersonalSchedule =
+                        personalSchedule;
+                    m_pages->testingClassesPage()->openTestingClass(
+                        classId,
+                        day,
+                        startTime
+                        );
+                    m_pages->showPage(
+                        PageType::TestingClasses
+                        );
+                }
+                );
+        };
+
+    connectTestingClasses(
+        m_pages->schedulePage(),
+        false
+        );
+    connectTestingClasses(
+        m_pages->mySchedulePage(),
+        true
+        );
+
+    connect(
+        m_pages->testingClassesPage(),
+        &TestingClassesPage::returnToScheduleRequested,
+        this,
+        [this]()
+        {
+            if (!m_pages->confirmCurrentPageCanLeave())
+            {
+                return;
+            }
+
+            m_pages->showPage(
+                m_testingClassesReturnToPersonalSchedule
+                    ? PageType::MySchedule
+                    : PageType::Schedule
+                );
+            (
+                m_testingClassesReturnToPersonalSchedule
+                    ? m_pages->mySchedulePage()
+                    : m_pages->schedulePage()
+                )
+                ->refresh();
+        }
+        );
+
+    connect(
+        m_pages->testingClassesPage(),
+        &TestingClassesPage::testingDataChanged,
+        this,
+        [this]()
+        {
+            m_pages->schedulePage()->refresh();
+            m_pages->mySchedulePage()->refresh();
+        }
+        );
 
     connect(
         m_pages->teacherPage(),

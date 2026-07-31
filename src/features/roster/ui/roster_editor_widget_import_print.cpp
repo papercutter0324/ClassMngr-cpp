@@ -153,7 +153,8 @@ void RosterEditorWidget::printRosters()
         m_services,
         m_classroom.id,
         RosterTemplatePrintService::Scope::CurrentClass,
-        this
+        this,
+        m_testingClassMode
         );
     if (dialog.exec() != QDialog::Accepted)
     {

@@ -16,6 +16,7 @@
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/testing_block_repository.h"
+#include "data/repositories/testing_class_repository.h"
 
 #include <QDir>
 #include <QFile>
@@ -169,6 +170,11 @@ Status DataService::openDatabase(
             m_db
             );
 
+    m_testingClassRepository =
+        std::make_unique<TestingClassRepository>(
+            m_db
+            );
+
     m_calendarEventRepository =
         std::make_unique<CalendarEventRepository>(
             m_db
@@ -203,6 +209,7 @@ void DataService::closeDatabase()
     m_classInfoRepository.reset();
     m_intensiveSlotStateRepository.reset();
     m_testingBlockRepository.reset();
+    m_testingClassRepository.reset();
     m_calendarEventRepository.reset();
     m_rosterRepository.reset();
     m_speakingEvalRepository.reset();
@@ -638,10 +645,24 @@ Result<QList<TestingBlock>> DataService::loadTestingBlocks()
     return m_testingBlockRepository->loadTestingBlocks();
 }
 
+Result<QList<TestingAssignment>>
+DataService::loadTestingAssignments()
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->loadTestingAssignments();
+}
+
 Status DataService::saveTestingBlock(
     const QString& day,
     const QString& startTime,
-    const QString& room
+    const QString& room,
+    bool replaceExisting
     )
 {
     if (!m_testingBlockRepository)
@@ -654,7 +675,48 @@ Status DataService::saveTestingBlock(
     return m_testingBlockRepository->saveTestingBlock(
         day,
         startTime,
-        room
+        room,
+        replaceExisting
+        );
+}
+
+Status DataService::assignTestingClass(
+    const QString& day,
+    const QString& startTime,
+    int classId,
+    bool replaceExisting
+    )
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->assignTestingClass(
+        day,
+        startTime,
+        classId,
+        replaceExisting
+        );
+}
+
+Status DataService::deleteTestingAssignment(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->deleteTestingAssignment(
+        day,
+        startTime
         );
 }
 
@@ -686,6 +748,106 @@ Status DataService::clearTestingBlocks()
     }
 
     return m_testingBlockRepository->clearTestingBlocks();
+}
+
+Status DataService::clearTestingAssignments()
+{
+    if (!m_testingBlockRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingBlockRepository->clearTestingAssignments();
+}
+
+Result<int> DataService::createTestingClass(
+    const TestingClass& testingClass,
+    const QString& assignmentDay,
+    const QString& assignmentStartTime
+    )
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->createTestingClass(
+        testingClass,
+        assignmentDay,
+        assignmentStartTime
+        );
+}
+
+Status DataService::updateTestingClass(
+    const TestingClass& testingClass
+    )
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->updateTestingClass(testingClass);
+}
+
+Result<TestingClass> DataService::loadTestingClass(
+    int classId
+    )
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->loadTestingClass(classId);
+}
+
+Result<QList<TestingClass>> DataService::loadTestingClasses()
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->loadTestingClasses();
+}
+
+Status DataService::deleteTestingClass(
+    int classId
+    )
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->deleteTestingClass(classId);
+}
+
+Result<bool> DataService::isTestingClass(
+    int classId
+    )
+{
+    if (!m_testingClassRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No database is open.")
+            );
+    }
+
+    return m_testingClassRepository->isTestingClass(classId);
 }
 
 QList<CalendarEvent> DataService::loadCalendarEventsForDate(

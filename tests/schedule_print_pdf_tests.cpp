@@ -289,6 +289,52 @@ QPoint scaledSchedulePoint(
         qRound(targetRect.top() + (sourceY * scale))
         );
 }
+
+QRect scaledScheduleRect(
+    const QRectF& targetRect,
+    const QRectF& sourceRect,
+    const ScheduleViewModel& model
+    )
+{
+    const qreal sourceWidth =
+        TimeColumnWidth + (DayColumnWidth * model.days.size());
+    const qreal scale =
+        targetRect.width() / sourceWidth;
+    return QRectF(
+        targetRect.left() + (sourceRect.left() * scale),
+        targetRect.top() + (sourceRect.top() * scale),
+        sourceRect.width() * scale,
+        sourceRect.height() * scale
+        )
+        .toAlignedRect();
+}
+
+int darkPixelCount(
+    const QImage& image,
+    const QRect& area
+    )
+{
+    int count = 0;
+    const QRect bounded =
+        area.intersected(image.rect());
+    for (int y = bounded.top(); y <= bounded.bottom(); ++y)
+    {
+        for (int x = bounded.left(); x <= bounded.right(); ++x)
+        {
+            const QColor color =
+                image.pixelColor(x, y);
+            if (
+                color.red() < 120
+                && color.green() < 120
+                && color.blue() < 120
+                )
+            {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
 }
 
 class SchedulePrintPdfTests : public QObject
@@ -300,6 +346,7 @@ private slots:
     void contentStaysInsideHalfInchMargins();
     void themedEmptyCellsAndOffTableAreaStayWhite();
     void rendersTestingCellAndRoom();
+    void rendersTestingClassCardInformation();
 };
 
 void SchedulePrintPdfTests::generatedPdfUsesA4Orientation()
@@ -452,6 +499,104 @@ void SchedulePrintPdfTests::rendersTestingCellAndRoom()
         image.pixelColor(markerPoint);
     QVERIFY(!isWhitePixel(centerColor));
     QVERIFY(markerColor != centerColor);
+}
+
+void SchedulePrintPdfTests::rendersTestingClassCardInformation()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SchedulePrintService::Request request =
+        requestFor(
+            SchedulePrintStyle::LightTheme,
+            QPageLayout::Landscape
+            );
+    ScheduleCellView& cell =
+        request.model.rows.first().cells.first();
+    cell.testingClassAssignment = true;
+
+    ScheduleEntry entry;
+    entry.kind = ScheduleEntryKind::TestingClass;
+    entry.classId = 42;
+    entry.className = QStringLiteral("Writing Lab");
+    entry.classGrade = QStringLiteral("M2");
+    entry.classLevel = QStringLiteral("Mixed (All)");
+    entry.teacherEn = QStringLiteral("Ms Han");
+    entry.roomNumber = QStringLiteral("Library");
+    entry.classColor = QStringLiteral("#C9D8A6");
+    entry.fontColor = QStringLiteral("#000000");
+    cell.entries = {entry};
+
+    const QString path =
+        savePdf(
+            temporaryDirectory,
+            request,
+            QStringLiteral("testing-class.pdf")
+            );
+    QVERIFY(!path.isEmpty());
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    const QImage image =
+        renderFirstPage(document);
+    QVERIFY(!image.isNull());
+
+    const QRectF targetRect =
+        scheduleTargetRect(
+            image,
+            request.model,
+            false
+            );
+    const QPoint markerPoint =
+        scaledSchedulePoint(
+            targetRect,
+            TimeColumnWidth + DayColumnWidth - 5.0,
+            HeaderHeight + 5.0,
+            request.model
+            );
+    const QColor markerColor =
+        image.pixelColor(markerPoint);
+    QVERIFY(markerColor.red() < 80);
+    QVERIFY(markerColor.green() < 80);
+    QVERIFY(markerColor.blue() < 80);
+
+    QRect cardRect =
+        scaledScheduleRect(
+            targetRect,
+            QRectF(
+                TimeColumnWidth,
+                HeaderHeight,
+                DayColumnWidth,
+                RowHeight
+                ),
+            request.model
+            );
+    cardRect.adjust(
+        cardRect.width() / 12,
+        2,
+        -(cardRect.width() / 12),
+        -2
+        );
+
+    const int thirdHeight =
+        cardRect.height() / 3;
+    for (int line = 0; line < 3; ++line)
+    {
+        const QRect lineRect(
+            cardRect.left(),
+            cardRect.top() + (line * thirdHeight),
+            cardRect.width(),
+            line == 2
+                ? cardRect.bottom()
+                    - (cardRect.top() + (line * thirdHeight))
+                    + 1
+                : thirdHeight
+            );
+        QVERIFY2(
+            darkPixelCount(image, lineRect) > 5,
+            "Each testing-class card line should be rendered in the PDF."
+            );
+    }
 }
 
 void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()

@@ -4,11 +4,14 @@
 #include "data/data_service.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
+#include "features/roster/ui/roster_header_view.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/styles/roles.h"
 
 #include <QMessageBox>
+#include <QPushButton>
+#include <QSignalBlocker>
 #include <QTimer>
 
 namespace
@@ -66,6 +69,7 @@ void RosterEditorWidget::loadClass(
     m_layoutController->applyWidths(
         normalizedColumnWidths(roster, m_model->columnNames())
         );
+    applyTestingClassColumnVisibility();
 
     for (int row = 0; row < m_model->rowCount(); ++row)
     {
@@ -149,6 +153,47 @@ void RosterEditorWidget::setSaveMode(
     else
     {
         m_autosaveTimer->stop();
+    }
+}
+
+void RosterEditorWidget::setTestingClassMode(
+    bool testingClassMode
+    )
+{
+    m_testingClassMode = testingClassMode;
+    if (m_importButton)
+    {
+        m_importButton->setVisible(!m_testingClassMode);
+    }
+
+    applyTestingClassColumnVisibility();
+}
+
+void RosterEditorWidget::applyTestingClassColumnVisibility()
+{
+    if (!m_table || !m_model)
+    {
+        return;
+    }
+
+    const QSignalBlocker blocker(
+        m_table->horizontalHeader()
+        );
+
+    for (int column = 0; column < m_model->columnCount(); ++column)
+    {
+        m_table->setColumnHidden(
+            column,
+            m_testingClassMode
+            && RosterUi::isEvaluationColumn(
+                m_model->columnName(column)
+                )
+            );
+    }
+
+    if (m_header && m_header->viewport())
+    {
+        m_header->viewport()->update();
     }
 }
 

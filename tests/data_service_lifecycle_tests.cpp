@@ -204,6 +204,7 @@ class DataServiceLifecycleTests : public QObject
 private slots:
     void closeAndSwitchReleaseEveryRepository();
     void existingTeacherSchemaGainsPersonalDetailColumns();
+    void existingTestingSchemaGainsClassAssignmentColumn();
 };
 
 void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
@@ -355,6 +356,108 @@ void DataServiceLifecycleTests
     QCOMPARE(testingBlocks->size(), 1);
     QCOMPARE(
         testingBlocks->first().room,
+        QStringLiteral("Legacy Room")
+        );
+}
+
+void DataServiceLifecycleTests
+    ::existingTestingSchemaGainsClassAssignmentColumn()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString path =
+        directory.filePath(QStringLiteral("legacy-testing.db"));
+    const QString connectionName =
+        QStringLiteral("legacy-testing-schema");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(R"(
+            CREATE TABLE schedule_testing_blocks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                day TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                room TEXT NOT NULL DEFAULT '',
+                UNIQUE(day, start_time)
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO schedule_testing_blocks (
+                day,
+                start_time,
+                room
+            )
+            VALUES ('Tuesday', '15:00', 'Legacy Room')
+        )"));
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    DataService service;
+    QVERIFY(service.openDatabase(path).has_value());
+
+    Result<QList<TestingAssignment>> assignments =
+        service.loadTestingAssignments();
+    QVERIFY(assignments);
+    QCOMPARE(assignments->size(), 1);
+    QCOMPARE(
+        assignments->first().kind,
+        TestingAssignmentKind::PlainTesting
+        );
+    QCOMPARE(
+        assignments->first().room,
+        QStringLiteral("Legacy Room")
+        );
+    QCOMPARE(assignments->first().classId, -1);
+
+    {
+        const QString verificationConnection =
+            connectionName + QStringLiteral("-verification");
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                verificationConnection
+                );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery columnQuery(database);
+        QVERIFY(columnQuery.exec(
+            QStringLiteral(
+                "PRAGMA table_info(schedule_testing_blocks)"
+                )
+            ));
+        bool foundClassId = false;
+        while (columnQuery.next())
+        {
+            foundClassId =
+                foundClassId
+                || columnQuery.value(1).toString()
+                    == QStringLiteral("class_id");
+        }
+        QVERIFY(foundClassId);
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(
+        connectionName + QStringLiteral("-verification")
+        );
+
+    QVERIFY(service.openDatabase(path).has_value());
+    assignments = service.loadTestingAssignments();
+    QVERIFY(assignments);
+    QCOMPARE(assignments->size(), 1);
+    QCOMPARE(
+        assignments->first().room,
         QStringLiteral("Legacy Room")
         );
 }

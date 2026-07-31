@@ -178,7 +178,7 @@ QWidget* ScheduleSettingsDialog::buildTestingTab()
 
     auto* explanation =
         new QLabel(
-            tr("M2 and M3 classes are always hidden in Testing mode. Testing blocks are saved as a reusable weekly layout."),
+            tr("M2 and M3 classes are always hidden in Testing mode. Oral Testing blocks and testing-class assignments are saved as one reusable weekly layout."),
             page
             );
     explanation->setWordWrap(true);
@@ -238,7 +238,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
         QMessageBox::warning(
             this,
             tr("Clear Testing Layout?"),
-            tr("This will change every saved Testing block back to its underlying Essay block. This cannot be undone."),
+            tr("This removes every Oral Testing block and testing-class assignment. Saved testing classes and their rosters are preserved."),
             QMessageBox::Reset | QMessageBox::Cancel,
             QMessageBox::Cancel
             );
@@ -249,7 +249,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
     }
 
     const Status result =
-        m_dataService->clearTestingBlocks();
+        m_dataService->clearTestingAssignments();
 
     if (!result)
     {

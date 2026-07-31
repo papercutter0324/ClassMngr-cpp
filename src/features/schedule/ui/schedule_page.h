@@ -2,6 +2,8 @@
 
 #include "ui/shared/pages/basepage.h"
 
+#include <QString>
+
 class ApplicationServices;
 class QLabel;
 class QScrollArea;
@@ -28,6 +30,11 @@ signals:
         int classId
         );
     void scheduleImportRequested();
+    void testingClassesRequested(
+        int classId,
+        const QString& day,
+        const QString& startTime
+        );
 
 protected:
     void showEvent(

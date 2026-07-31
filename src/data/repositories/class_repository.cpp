@@ -38,9 +38,12 @@ QList<Classroom> ClassRepository::getClasses()
     QSqlQuery query(m_database);
 
     if (!query.exec(R"(
-        SELECT *
-        FROM classes
-        ORDER BY name
+        SELECT c.*
+        FROM classes c
+        LEFT JOIN testing_classes tc
+        ON tc.class_id = c.id
+        WHERE tc.class_id IS NULL
+        ORDER BY c.name
     )"))
     {
         qWarning()

@@ -455,6 +455,69 @@ void drawEntry(
             -CellPadding
             );
 
+    if (entry.kind == ScheduleEntryKind::TestingClass)
+    {
+        const QString details =
+            englishLine(
+                entry,
+                excel
+                );
+        const QString room =
+            entry.roomNumber.trimmed();
+        QFont nameFont =
+            printUiFont(
+                excel ? 14 : 13,
+                QFont::Bold
+                );
+        painter.setFont(nameFont);
+        painter.drawText(
+            QRectF(
+                textRect.left(),
+                textRect.top(),
+                textRect.width(),
+                textRect.height() / 3.0
+                ),
+            Qt::AlignCenter | Qt::TextWordWrap,
+            entry.className.trimmed()
+            );
+
+        painter.setFont(
+            printUiFont(
+                excel ? 12 : 11,
+                QFont::DemiBold
+                )
+            );
+        painter.drawText(
+            QRectF(
+                textRect.left(),
+                textRect.top() + (textRect.height() / 3.0),
+                textRect.width(),
+                textRect.height() / 3.0
+                ),
+            Qt::AlignCenter | Qt::TextWordWrap,
+            details
+            );
+
+        painter.setFont(
+            printKoreanFont(
+                excel ? 11 : 10,
+                QFont::Normal
+                )
+            );
+        painter.drawText(
+            QRectF(
+                textRect.left(),
+                textRect.top() + (2.0 * textRect.height() / 3.0),
+                textRect.width(),
+                textRect.height() / 3.0
+                ),
+            Qt::AlignCenter | Qt::TextWordWrap,
+            room
+            );
+        painter.restore();
+        return;
+    }
+
     const qreal middle =
         textRect.center().y();
 
@@ -541,6 +604,24 @@ void drawScheduleCell(
                 palette.excel,
                 showEnglishNames
                 );
+
+            if (
+                cell.entries.first().kind
+                    == ScheduleEntryKind::TestingClass
+                )
+            {
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(
+                    fontColor(cell.entries.first())
+                    );
+                constexpr qreal MarkerSize = 16.0;
+                QPolygonF marker;
+                marker
+                    << rect.topRight() - QPointF(MarkerSize, 0.0)
+                    << rect.topRight()
+                    << rect.topRight() + QPointF(0.0, MarkerSize);
+                painter.drawPolygon(marker);
+            }
         }
         else
         {
@@ -606,7 +687,7 @@ void drawScheduleCell(
             );
 
         QString text =
-            QObject::tr("Testing");
+            QObject::tr("Oral Testing");
         const QString room =
             cell.testingRoom.trimmed();
         if (!room.isEmpty())

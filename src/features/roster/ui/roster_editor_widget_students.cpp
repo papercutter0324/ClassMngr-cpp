@@ -7,16 +7,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-void RosterEditorWidget::removeStudent()
-{
-    if (!m_table)
-    {
-        return;
-    }
-
-    removeRosterRow(m_table->currentIndex().row());
-}
-
 void RosterEditorWidget::moveStudentRow(
     int sourceRow,
     int destinationRow

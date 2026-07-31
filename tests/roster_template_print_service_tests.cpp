@@ -24,6 +24,7 @@ namespace
 bool g_hasOpenDatabase = false;
 bool g_hasDataService = false;
 QList<Classroom> g_classes;
+QHash<int, Classroom> g_classesById;
 QHash<int, ClassInfo> g_classInfo;
 QHash<int, Roster> g_rosters;
 
@@ -51,6 +52,7 @@ void resetServiceStubs()
     g_hasOpenDatabase = false;
     g_hasDataService = false;
     g_classes.clear();
+    g_classesById.clear();
     g_classInfo.clear();
     g_rosters.clear();
 }
@@ -83,6 +85,11 @@ Classroom DataService::getClassById(
         {
             return classroom;
         }
+    }
+
+    if (g_classesById.contains(classId))
+    {
+        return g_classesById.value(classId);
     }
 
     Classroom classroom;
@@ -683,6 +690,7 @@ private slots:
     void buildPerClassExtraInfoCellValuesMapsSelectedColumnsAndMissingCells();
     void buildPerClassExtraInfoCellValuesCapsColumnsByOrientation();
     void requestSaveRostersPdfUsesSelectedTemplate();
+    void currentClassPrintSupportsClassExcludedFromRegularList();
     void dailyPdfUsesA4PortraitAndContinuesOverflowPages();
     void perClassWithExtraInfoPdfHonorsPortraitAndLandscape();
 };
@@ -1488,6 +1496,80 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
 
     QVERIFY(std::abs(pageSize.width() - a4Points.width()) < 1.0);
     QVERIFY(std::abs(pageSize.height() - a4Points.height()) < 1.0);
+}
+
+void RosterTemplatePrintServiceTests
+    ::currentClassPrintSupportsClassExcludedFromRegularList()
+{
+    resetServiceStubs();
+    g_hasOpenDatabase = true;
+    g_hasDataService = true;
+
+    Classroom testingClass;
+    testingClass.id = 50;
+    testingClass.name = QStringLiteral("Writing Lab");
+    g_classesById.insert(testingClass.id, testingClass);
+
+    ClassInfo info;
+    info.classId = testingClass.id;
+    info.classGrade = QStringLiteral("M2");
+    info.classLevel = QStringLiteral("Mixed (All)");
+    g_classInfo.insert(testingClass.id, info);
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows = {
+        {
+            QStringLiteral("Unique Student"),
+            QStringLiteral("고유 학생")
+        }
+    };
+    g_rosters.insert(testingClass.id, roster);
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    RosterTemplatePrintService::Request request;
+    request.services = fakeApplicationServices();
+    request.currentClassId = testingClass.id;
+    request.scope =
+        RosterTemplatePrintService::Scope::CurrentClass;
+    request.templateId =
+        RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+
+    const QString currentPath =
+        temporaryDirectory.filePath(
+            QStringLiteral("testing-class-roster.pdf")
+            );
+    const RosterTemplatePrintService::Result currentResult =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            currentPath
+            );
+    QCOMPARE(
+        currentResult.status,
+        RosterTemplatePrintService::Status::Sent
+        );
+
+    QPdfDocument document;
+    loadDocument(document, currentPath, 1);
+
+    request.scope =
+        RosterTemplatePrintService::Scope::AllClasses;
+    const RosterTemplatePrintService::Result bulkResult =
+        RosterTemplatePrintService::saveRostersPdf(
+            request,
+            temporaryDirectory.filePath(
+                QStringLiteral("bulk-rosters.pdf")
+                )
+            );
+    QCOMPARE(
+        bulkResult.status,
+        RosterTemplatePrintService::Status::Failed
+        );
 }
 
 void RosterTemplatePrintServiceTests::

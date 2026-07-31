@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/testing_block.h"
 #include "features/schedule/ui/schedule_builder.h"
 
 #include <QList>
@@ -20,11 +21,17 @@ enum class ScheduleDisplayMode
     Testing
 };
 
+struct TestingAssignmentView
+{
+    TestingAssignment assignment;
+    ScheduleEntry testingClassEntry;
+};
+
 struct ScheduleViewRequest
 {
     QStringList days;
     QMap<QString, QString> slotStateOverrides;
-    QMap<QString, QString> testingBlockRooms;
+    QMap<QString, TestingAssignmentView> testingAssignments;
     bool use24h = false;
     ScheduleDisplayMode displayMode =
         ScheduleDisplayMode::Regular;
@@ -41,6 +48,8 @@ struct ScheduleCellView
     QString defaultSlotState;
     QString slotState;
     QString testingRoom;
+    bool testingClassAssignment = false;
+    int testingClassId{-1};
     bool slotTogglingEnabled = false;
     bool testingBlockCreationEnabled = false;
 };
@@ -57,6 +66,7 @@ struct ScheduleSummary
 {
     int essayBlocks = 0;
     int testingBlocks = 0;
+    int testingClassBlocks = 0;
     int scheduledBlocks = 0;
 };
 
@@ -106,7 +116,7 @@ bool scheduleSlotTogglingEnabled(
     bool regularWeekdaySlotTogglingEnabled
     );
 
-inline QString scheduleTeacherRoomLine(
+inline QString scheduleTeacherName(
     const ScheduleEntry& entry,
     bool showEnglishName
     )
@@ -122,13 +132,24 @@ inline QString scheduleTeacherRoomLine(
             : entry.teacherEn)
             .trimmed();
 
+    return preferredName.isEmpty()
+        ? (fallbackName.isEmpty()
+            ? entry.teacherKr.trimmed()
+            : fallbackName)
+        : preferredName;
+}
+
+inline QString scheduleTeacherRoomLine(
+    const ScheduleEntry& entry,
+    bool showEnglishName
+    )
+{
     return QStringLiteral("%1 %2")
         .arg(
-            preferredName.isEmpty()
-                ? (fallbackName.isEmpty()
-                    ? entry.teacherKr.trimmed()
-                    : fallbackName)
-                : preferredName,
+            scheduleTeacherName(
+                entry,
+                showEnglishName
+                ),
             entry.roomNumber.trimmed()
             )
         .simplified();

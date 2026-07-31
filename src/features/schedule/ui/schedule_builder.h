@@ -10,9 +10,18 @@
 
 class DataService;
 
+enum class ScheduleEntryKind
+{
+    RegularClass,
+    TestingClass
+};
+
 struct ScheduleEntry
 {
     int classId{-1};
+    ScheduleEntryKind kind =
+        ScheduleEntryKind::RegularClass;
+    QString className;
     QString teacherKr;
     QString teacherEn;
     QString teacherPreferredName;

@@ -62,6 +62,11 @@ signals:
         int classId
         );
     void scheduleImportRequested();
+    void testingClassesRequested(
+        int classId,
+        const QString& day,
+        const QString& startTime
+        );
 
 private slots:
     void setDisplayMode(int modeId);
@@ -84,11 +89,10 @@ private:
     void updateTableMinimumHeight();
     void reloadSlotStates();
     void reloadTestingBlocks();
-    void editTestingBlock(
+    void editTestingAssignment(
         const QString& day,
         const QString& timeLabel,
-        const QString& room,
-        bool existingBlock
+        const TestingAssignment* existingAssignment
         );
     ScheduleViewRequest buildScheduleViewRequest() const;
     ScheduleViewModel buildScheduleModel();
@@ -116,7 +120,7 @@ private:
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
     QMap<QString, QString> m_intensiveSlotStates;
-    QMap<QString, QString> m_testingBlockRooms;
+    QMap<QString, TestingAssignmentView> m_testingAssignments;
     ScheduleViewModel m_scheduleModel;
     ScheduleViewModel m_previewModel;
     bool m_hasPreviewModel = false;
@@ -130,6 +134,7 @@ private:
     QPushButton* m_intensiveModeButton = nullptr;
     QPushButton* m_testingModeButton = nullptr;
     QPushButton* m_settingsButton = nullptr;
+    QPushButton* m_testingClassesButton = nullptr;
     QPushButton* m_exportButton = nullptr;
     QPushButton* m_importButton = nullptr;
     QLabel* m_testingBanner = nullptr;

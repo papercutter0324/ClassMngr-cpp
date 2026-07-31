@@ -682,7 +682,7 @@ void SubPrepPrintPdfTests::rendersTestingScheduleSlots()
     loadDocument(document, path);
     const QString text =
         documentText(document);
-    QVERIFY(text.contains(QStringLiteral("Testing")));
+    QVERIFY(text.contains(QStringLiteral("Oral Testing")));
     QVERIFY(text.contains(QStringLiteral("Rm: 402")));
 }
 

@@ -80,11 +80,6 @@ void RosterEditorWidget::retranslateUi()
         m_addColumnButton->setText(tr("Add Column"));
     }
 
-    if (m_removeStudentButton)
-    {
-        m_removeStudentButton->setText(tr("Remove Student"));
-    }
-
     if (m_removeColumnButton)
     {
         m_removeColumnButton->setText(tr("Remove Column"));
@@ -100,7 +95,7 @@ void RosterEditorWidget::retranslateUi()
 
 void RosterEditorWidget::updateActions()
 {
-    if (!m_saveButton || !m_removeStudentButton || !m_removeColumnButton)
+    if (!m_saveButton || !m_removeColumnButton)
     {
         return;
     }
@@ -121,14 +116,6 @@ void RosterEditorWidget::updateActions()
         m_model
         && m_model->canRemoveColumn(
             m_table->currentIndex().column(),
-            &reason
-            )
-        );
-
-    m_removeStudentButton->setEnabled(
-        m_model
-        && m_model->canRemoveRow(
-            m_table->currentIndex().row(),
             &reason
             )
         );
@@ -198,6 +185,9 @@ void RosterEditorWidget::buildUi()
     m_model = new RosterModel(this);
     m_layoutController = new RosterColumnLayoutController(this);
     m_table = new RosterTableView(this);
+    m_table->setObjectName(
+        QStringLiteral("rosterTable")
+        );
     m_header = new RosterHeaderView(Qt::Horizontal, m_table);
     m_header->setLayoutController(m_layoutController);
     m_table->setHorizontalHeader(m_header);
@@ -220,19 +210,16 @@ void RosterEditorWidget::buildUi()
     m_printButton = new TextFitPushButton(tr("Print Rosters"), this);
     m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
     m_addColumnButton = new TextFitPushButton(tr("Add Column"), this);
-    m_removeStudentButton = new TextFitPushButton(tr("Remove Student"), this);
     m_removeColumnButton = new TextFitPushButton(tr("Remove Column"), this);
     m_saveButton = new TextFitPushButton(tr("Save Changes"), this);
     bottomLayout()->addWidget(m_importButton);
     bottomLayout()->addWidget(m_printButton);
     bottomLayout()->addStretch();
-    bottomLayout()->addWidget(m_removeStudentButton);
     bottomLayout()->addWidget(m_addColumnButton);
     bottomLayout()->addWidget(m_removeColumnButton);
     bottomLayout()->addWidget(m_saveButton);
 
     connect(m_addColumnButton, &QPushButton::clicked, this, &RosterEditorWidget::addColumn);
-    connect(m_removeStudentButton, &QPushButton::clicked, this, &RosterEditorWidget::removeStudent);
     connect(m_removeColumnButton, &QPushButton::clicked, this, &RosterEditorWidget::removeColumn);
     connect(m_saveButton, &QPushButton::clicked, this, &RosterEditorWidget::saveData);
     connect(m_importButton, &QPushButton::clicked, this, &RosterEditorWidget::importScores);

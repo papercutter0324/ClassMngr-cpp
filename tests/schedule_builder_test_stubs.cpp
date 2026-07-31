@@ -13,6 +13,8 @@
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "data/repositories/testing_block_repository.h"
+#include "data/repositories/testing_class_repository.h"
 
 DataService::DataService(
     const QString&

@@ -4,6 +4,7 @@
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/classes/ui/testing_classes_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
@@ -97,6 +98,12 @@ void PageManager::initialize(
             this
             );
 
+    m_testingClassesPage =
+        new TestingClassesPage(
+            m_services,
+            this
+            );
+
     m_teacherPage =
         new TeacherInfoPage(
             m_services,
@@ -169,6 +176,9 @@ void PageManager::registerPages()
 
     m_pages[PageType::Classes] =
         m_classesPage;
+
+    m_pages[PageType::TestingClasses] =
+        m_testingClassesPage;
 
     m_pages[PageType::TeacherInfo] =
         m_teacherPage;
@@ -408,6 +418,11 @@ SubPrepPage* PageManager::subPrepPage() const
 ClassesPage* PageManager::classesPage() const
 {
     return m_classesPage;
+}
+
+TestingClassesPage* PageManager::testingClassesPage() const
+{
+    return m_testingClassesPage;
 }
 
 TeacherInfoPage* PageManager::teacherPage() const

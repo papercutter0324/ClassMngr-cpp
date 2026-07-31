@@ -165,6 +165,7 @@ private:
 
     bool m_isAdmin = false;
     bool m_startupUpdateCheckQueued = false;
+    bool m_testingClassesReturnToPersonalSchedule = true;
     bool m_startupFontSizeRefreshQueued = false;
     MainWindowStartupOptions m_startupOptions;
     LanguageService* m_languageService = nullptr;
