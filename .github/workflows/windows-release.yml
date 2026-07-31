@@ -1,6 +1,13 @@
 name: Windows Release Build
 
 on:
+  workflow_call:
+    inputs:
+      architecture:
+        description: Architecture to build
+        required: false
+        default: all
+        type: string
   workflow_dispatch:
     inputs:
       architecture:
@@ -29,7 +36,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-windows-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -50,10 +57,9 @@ jobs:
       fail-fast: false
       matrix:
         architecture: >-
-          ${{ fromJSON(github.event_name == 'workflow_dispatch' &&
-          (inputs.architecture == 'x64' && '["x64"]' ||
+          ${{ fromJSON(inputs.architecture == 'x64' && '["x64"]' ||
           inputs.architecture == 'arm64' && '["arm64"]' ||
-          '["x64", "arm64"]') || '["x64", "arm64"]') }}
+          '["x64", "arm64"]') }}
 
     steps:
       - name: Check out repository

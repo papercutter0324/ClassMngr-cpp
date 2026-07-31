@@ -1,6 +1,7 @@
 name: Linux x64 Release Build
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches:
@@ -27,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-linux-${{ github.ref }}
   cancel-in-progress: true
 
 env:

@@ -1,6 +1,7 @@
 name: macOS Release Build
 
 on:
+  workflow_call:
   workflow_dispatch:
   push:
     branches:
@@ -31,7 +32,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-macos-${{ github.ref }}
   cancel-in-progress: true
 
 env:

@@ -1,0 +1,152 @@
+name: Publish Release Binaries
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: publish-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate-version:
+    name: Validate release version
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+
+      - name: Match release tag to project version
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          project_version="$(
+            awk '
+              /project[[:space:]]*[(][[:space:]]*ClassMngr/ {
+                in_project = 1
+              }
+              in_project && /VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+/ {
+                for (field = 1; field <= NF; ++field) {
+                  if ($field == "VERSION") {
+                    print $(field + 1)
+                    exit
+                  }
+                }
+              }
+            ' CMakeLists.txt
+          )"
+
+          if [[ -z "${project_version}" ]]; then
+            echo "Unable to read the ClassMngr version from CMakeLists.txt." >&2
+            exit 1
+          fi
+
+          if [[ "${RELEASE_TAG}" != "v${project_version}" ]]; then
+            echo "Release tag ${RELEASE_TAG} does not match project version v${project_version}." >&2
+            exit 1
+          fi
+
+  build-linux:
+    name: Build Linux x86_64
+    needs: validate-version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/linux-release.yml
+
+  build-macos:
+    name: Build macOS universal
+    needs: validate-version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/macos-release.yml
+
+  build-windows:
+    name: Build Windows x64 and ARM64
+    needs: validate-version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/windows-release.yml
+    with:
+      architecture: all
+
+  publish:
+    name: Attach binaries to release
+    needs:
+      - build-linux
+      - build-macos
+      - build-windows
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ClassMngr-*
+          path: dist
+          merge-multiple: true
+
+      - name: Verify release assets
+        shell: bash
+        run: |
+          shopt -s nullglob
+
+          linux_archives=(dist/ClassMngr-linux-x86_64.tar.gz)
+          macos_images=(dist/ClassMngr-*-macos-universal.dmg)
+          windows_x64_installers=(dist/ClassMngr-*-win-x64.exe)
+          windows_arm64_installers=(dist/ClassMngr-*-win-arm64.exe)
+
+          if (( ${#linux_archives[@]} != 1 )); then
+            echo "Expected one Linux archive, found ${#linux_archives[@]}." >&2
+            exit 1
+          fi
+          if (( ${#macos_images[@]} != 1 )); then
+            echo "Expected one macOS disk image, found ${#macos_images[@]}." >&2
+            exit 1
+          fi
+          if (( ${#windows_x64_installers[@]} != 1 )); then
+            echo "Expected one Windows x64 installer, found ${#windows_x64_installers[@]}." >&2
+            exit 1
+          fi
+          if (( ${#windows_arm64_installers[@]} != 1 )); then
+            echo "Expected one Windows ARM64 installer, found ${#windows_arm64_installers[@]}." >&2
+            exit 1
+          fi
+
+          for checksum in \
+            checksums-linux.txt \
+            checksums-macos.txt \
+            checksums-windows-x64.txt \
+            checksums-windows-arm64.txt; do
+            if [[ ! -s "dist/${checksum}" ]]; then
+              echo "Missing or empty checksum file: dist/${checksum}" >&2
+              exit 1
+            fi
+          done
+
+          assets=(dist/*)
+          if (( ${#assets[@]} != 8 )); then
+            echo "Expected eight release assets, found ${#assets[@]}." >&2
+            exit 1
+          fi
+
+          (
+            cd dist
+            sha256sum --check checksums-*.txt
+          )
+
+          echo "Release assets:"
+          find dist -maxdepth 1 -type f -printf "  %f\n" | sort
+
+      - name: Upload assets to GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "${RELEASE_TAG}" dist/*
