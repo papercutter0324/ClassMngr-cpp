@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QList>
 #include <QString>
+#include <QStringList>
 
 class ApplicationServices;
 class QCheckBox;
@@ -58,6 +59,9 @@ private:
     void chooseClassColor(int candidateIndex);
     void updateClassColorButton(ClassControl* control);
     void updateReviewState();
+    void updateScheduleConflictWarning(
+        const QStringList& conflicts
+        );
     void resizeForReviewStage();
     void updatePreviewVisibleRows();
     void applyImport();
@@ -96,6 +100,11 @@ protected:
     QLabel* m_reviewSummary = nullptr;
     QList<TeacherControl> m_teacherControls;
     QList<ClassControl> m_classControls;
+    QString m_activeScheduleConflictSignature;
+    QString m_lastWarnedScheduleConflictSignature;
+    QString m_pendingScheduleConflictSignature;
+    QString m_pendingScheduleConflictMessage;
+    bool m_scheduleConflictWarningQueued = false;
 
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_backButton = nullptr;

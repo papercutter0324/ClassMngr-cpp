@@ -16,6 +16,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPalette>
 #include <QProgressBar>
 #include <QPushButton>
@@ -43,6 +44,7 @@ void setIncludeAdditionalClass(bool include);
 void setMatchImportedClasses(bool match);
 void setPossibleImportedClasses(bool match);
 void setExistingIntensiveHours(bool exists);
+void setIncludeAlternativeMatchingClass(bool include);
 }
 
 class ScheduleImportDialogTests : public QObject
@@ -62,6 +64,9 @@ private slots:
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
     void possibleMatchIsPreselectedForUpdate();
+    void reviewWarnsForDuplicateClassTargets();
+    void reviewWarnsForOverlappingProjectedTimes();
+    void reviewWarnsWhenRetainedIntensiveClassOverlaps();
     void reviewPreviewUsesSavedScheduleDisplaySettings();
     void intensivePreviewPreservesEssayAndLunchBlocks();
     void suppliedWorkbookBuildsStagedReview();
@@ -70,6 +75,38 @@ private slots:
 namespace
 {
 constexpr int ExpectedSourceDialogWidth = 436;
+
+int actionIndex(
+    const QComboBox* combo,
+    ScheduleImportClassAction action,
+    int target = -2
+    )
+{
+    if (!combo)
+    {
+        return -1;
+    }
+
+    for (int index = 0; index < combo->count(); ++index)
+    {
+        if (
+            combo->itemData(index, Qt::UserRole).toInt()
+            != static_cast<int>(action)
+            )
+        {
+            continue;
+        }
+        if (
+            target == -2
+            || combo->itemData(index, Qt::UserRole + 1).toInt()
+                == target
+            )
+        {
+            return index;
+        }
+    }
+    return -1;
+}
 
 void appendLe16(
     QByteArray& data,
@@ -1479,6 +1516,248 @@ void ScheduleImportDialogTests::possibleMatchIsPreselectedForUpdate()
         static_cast<int>(ScheduleImportClassAction::UpdateExisting)
         );
     QCOMPARE(action->currentData(Qt::UserRole + 1).toInt(), 43);
+}
+
+void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+    ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
+    ScheduleWidgetTestStubs::setPossibleImportedClasses(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    const auto candidate =
+        [](const QString& start, const QString& end)
+        {
+            ScheduleImportClassCandidate result;
+            result.teacherKey = QStringLiteral("김선생");
+            result.teacherKr = QStringLiteral("김선생");
+            result.rooms = {QStringLiteral("413")};
+            result.classGrade = QStringLiteral("E4");
+            result.classLevel = QStringLiteral("Hercules");
+            result.times = {
+                {QStringLiteral("Monday"), start, end}
+            };
+            return result;
+        };
+    request.user.classes = {
+        candidate(
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+            ),
+        candidate(
+            QStringLiteral("5:00 PM"),
+            QStringLiteral("5:55 PM")
+            )
+    };
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+
+    auto* import =
+        review.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportAcceptButton")
+            );
+    QVERIFY(import);
+
+    QTRY_VERIFY(
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    auto* warning =
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            );
+    QVERIFY(warning);
+    QVERIFY(warning->isModal());
+    QVERIFY(
+        warning->text().contains(
+            QStringLiteral("Multiple imported classes are assigned")
+            )
+        );
+    QVERIFY(warning->text().contains(QStringLiteral("E5 Athena")));
+    QVERIFY(!import->isEnabled());
+    warning->accept();
+    QTRY_VERIFY(
+        !review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    QTest::qWait(50);
+    QVERIFY(
+        !review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+
+    auto* secondAction =
+        review.findChild<QComboBox*>(
+            QStringLiteral("scheduleImportClassAction_1")
+            );
+    QVERIFY(secondAction);
+    const int alternateTargetIndex =
+        actionIndex(
+            secondAction,
+            ScheduleImportClassAction::UpdateExisting,
+            44
+            );
+    QVERIFY(alternateTargetIndex >= 0);
+    secondAction->setCurrentIndex(alternateTargetIndex);
+    QTRY_VERIFY(import->isEnabled());
+
+    const int duplicateTargetIndex =
+        actionIndex(
+            secondAction,
+            ScheduleImportClassAction::UpdateExisting,
+            43
+            );
+    QVERIFY(duplicateTargetIndex >= 0);
+    secondAction->setCurrentIndex(duplicateTargetIndex);
+    QTRY_VERIFY(
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    warning =
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            );
+    QVERIFY(warning);
+    warning->accept();
+}
+
+void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    const auto candidate =
+        [](const QString& teacher,
+           const QString& level,
+           const QString& start,
+           const QString& end)
+        {
+            ScheduleImportClassCandidate result;
+            result.teacherKey = teacher;
+            result.teacherKr = teacher;
+            result.rooms = {QStringLiteral("413")};
+            result.classGrade = QStringLiteral("E4");
+            result.classLevel = level;
+            result.times = {
+                {QStringLiteral("Monday"), start, end}
+            };
+            return result;
+        };
+    request.user.classes = {
+        candidate(
+            QStringLiteral("김선생"),
+            QStringLiteral("Hercules"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+            ),
+        candidate(
+            QStringLiteral("이선생"),
+            QStringLiteral("Athena"),
+            QStringLiteral("4:30 PM"),
+            QStringLiteral("5:25 PM")
+            )
+    };
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+
+    QTRY_VERIFY(
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    auto* warning =
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            );
+    QVERIFY(warning);
+    QVERIFY(warning->text().contains(QStringLiteral("overlaps")));
+    QVERIFY(warning->text().contains(QStringLiteral("Monday")));
+    QVERIFY(warning->text().contains(QStringLiteral("4:00pm")));
+    QVERIFY(
+        !warning->text().contains(
+            QStringLiteral("Multiple imported classes are assigned")
+            )
+        );
+    auto* import =
+        review.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportAcceptButton")
+            );
+    QVERIFY(import);
+    QVERIFY(!import->isEnabled());
+    warning->accept();
+}
+
+void ScheduleImportDialogTests
+    ::reviewWarnsWhenRetainedIntensiveClassOverlaps()
+{
+    ScheduleWidgetTestStubs::setExistingIntensiveHours(true);
+
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Intensive;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("김선생");
+    candidate.teacherKr = QStringLiteral("김선생");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("9:00 AM"),
+            QStringLiteral("9:55 AM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+
+    QTRY_VERIFY(
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            )
+        );
+    auto* warning =
+        review.findChild<QMessageBox*>(
+            QStringLiteral("scheduleImportConflictWarning")
+            );
+    QVERIFY(warning);
+    QVERIFY(warning->text().contains(QStringLiteral("overlaps")));
+    QVERIFY(warning->text().contains(QStringLiteral("Tuesday")));
+    auto* import =
+        review.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportAcceptButton")
+            );
+    QVERIFY(import);
+    QVERIFY(!import->isEnabled());
+    warning->accept();
 }
 
 void ScheduleImportDialogTests

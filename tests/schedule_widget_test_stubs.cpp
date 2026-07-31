@@ -44,6 +44,7 @@ bool includeAdditionalClass = false;
 bool matchImportedClasses = false;
 bool possibleImportedClasses = false;
 bool existingIntensiveHours = false;
+bool includeAlternativeMatchingClass = false;
 
 void reset()
 {
@@ -56,6 +57,7 @@ void reset()
     matchImportedClasses = false;
     possibleImportedClasses = false;
     existingIntensiveHours = false;
+    includeAlternativeMatchingClass = false;
 }
 
 void setDatabaseOpen(
@@ -91,6 +93,13 @@ void setExistingIntensiveHours(
     )
 {
     existingIntensiveHours = exists;
+}
+
+void setIncludeAlternativeMatchingClass(
+    bool include
+    )
+{
+    includeAlternativeMatchingClass = include;
 }
 
 QString settingValue(
@@ -276,6 +285,14 @@ QList<Classroom> DataService::getClasses()
         classrooms.append(additionalClass);
     }
 
+    if (ScheduleWidgetTestStubs::includeAlternativeMatchingClass)
+    {
+        Classroom alternativeClass;
+        alternativeClass.id = 44;
+        alternativeClass.name = QStringLiteral("Hercules Evening");
+        classrooms.append(alternativeClass);
+    }
+
     return classrooms;
 }
 
@@ -316,15 +333,21 @@ ClassInfo DataService::loadClassInfo(
 
     ClassTime meeting;
     meeting.day =
-        classId == 43
+        classId == 44
+            ? QStringLiteral("Monday")
+            : classId == 43
             ? QStringLiteral("Thursday")
             : QStringLiteral("Tuesday");
     meeting.startTime =
-        classId == 43
+        classId == 44
+            ? QStringLiteral("5:00 PM")
+            : classId == 43
             ? QStringLiteral("5:00 PM")
             : QStringLiteral("4:00 PM");
     meeting.endTime =
-        classId == 43
+        classId == 44
+            ? QStringLiteral("5:50 PM")
+            : classId == 43
             ? QStringLiteral("5:50 PM")
             : QStringLiteral("4:50 PM");
     info.classTimes.append(meeting);

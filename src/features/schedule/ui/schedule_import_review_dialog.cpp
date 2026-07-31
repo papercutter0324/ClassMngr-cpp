@@ -25,6 +25,7 @@
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMap>
 #include <QMessageBox>
 #include <QPalette>
 #include <QPushButton>
@@ -402,7 +403,30 @@ bool timesOverlap(
         && rightStart < leftEnd;
 }
 
-QString projectedScheduleConflict(
+QString importedClassConflictLabel(
+    const ScheduleImportClassCandidate& candidate
+    )
+{
+    const QString course =
+        QStringLiteral("%1 %2")
+            .arg(
+                candidate.classGrade,
+                candidate.classLevel
+                )
+            .simplified();
+    const QString meetings =
+        compactMeetingText(candidate.times);
+    return QStringLiteral("%1 — %2 (%3)")
+        .arg(
+            course,
+            candidate.teacherKr.trimmed(),
+            meetings.isEmpty()
+                ? QObject::tr("time unavailable")
+                : meetings
+            );
+}
+
+QStringList projectedScheduleConflicts(
     const ScheduleImportUserBlock& user
     )
 {
@@ -412,6 +436,7 @@ QString projectedScheduleConflict(
         ClassTime time;
     };
     QList<Occurrence> occurrences;
+    QStringList conflicts;
 
     for (const ScheduleImportClassCandidate& candidate : user.classes)
     {
@@ -427,21 +452,36 @@ QString projectedScheduleConflict(
             {
                 if (timesOverlap(time, existing.time))
                 {
-                    return QObject::tr(
-                        "%1 overlaps %2 on %3."
-                        )
-                        .arg(
-                            label,
-                            existing.label,
-                            scheduleImportWeekdayDisplayName(time.day)
-                            );
+                    conflicts.append(
+                        QObject::tr(
+                            "%1 overlaps %2 on %3 (%4 - %5 and %6 - %7)."
+                            )
+                            .arg(
+                                label,
+                                existing.label,
+                                scheduleImportWeekdayDisplayName(time.day),
+                                reconciliationTimeDisplay(
+                                    existing.time.startTime
+                                    ),
+                                reconciliationTimeDisplay(
+                                    existing.time.endTime
+                                    ),
+                                reconciliationTimeDisplay(
+                                    time.startTime
+                                    ),
+                                reconciliationTimeDisplay(
+                                    time.endTime
+                                    )
+                                )
+                        );
                 }
             }
             occurrences.append({label, time});
         }
     }
 
-    return {};
+    conflicts.removeDuplicates();
+    return conflicts;
 }
 
 QString classLabel(
@@ -2058,6 +2098,78 @@ void ScheduleImportReviewDialog::updateClassColorButton(
         );
 }
 
+void ScheduleImportReviewDialog::updateScheduleConflictWarning(
+    const QStringList& conflicts
+    )
+{
+    QStringList uniqueConflicts = conflicts;
+    uniqueConflicts.removeDuplicates();
+    const QString signature =
+        uniqueConflicts.join(QLatin1Char('\x1f'));
+    m_activeScheduleConflictSignature = signature;
+
+    if (signature.isEmpty())
+    {
+        m_lastWarnedScheduleConflictSignature.clear();
+        m_pendingScheduleConflictSignature.clear();
+        m_pendingScheduleConflictMessage.clear();
+        return;
+    }
+
+    if (signature == m_lastWarnedScheduleConflictSignature)
+    {
+        return;
+    }
+
+    m_pendingScheduleConflictSignature = signature;
+    m_pendingScheduleConflictMessage =
+        tr("Review these schedule conflicts before importing:\n\n%1\n\n"
+           "Choose a different existing class, create a new class, or skip an imported class.")
+            .arg(uniqueConflicts.join(QLatin1Char('\n')));
+
+    if (m_scheduleConflictWarningQueued)
+    {
+        return;
+    }
+
+    m_scheduleConflictWarningQueued = true;
+    QTimer::singleShot(
+        0,
+        this,
+        [this]()
+        {
+            m_scheduleConflictWarningQueued = false;
+            if (
+                m_pendingScheduleConflictSignature.isEmpty()
+                || m_pendingScheduleConflictSignature
+                    != m_activeScheduleConflictSignature
+                || m_pendingScheduleConflictSignature
+                    == m_lastWarnedScheduleConflictSignature
+                )
+            {
+                return;
+            }
+
+            m_lastWarnedScheduleConflictSignature =
+                m_pendingScheduleConflictSignature;
+            auto* warning =
+                new QMessageBox(
+                    QMessageBox::Warning,
+                    tr("Schedule Import Conflict"),
+                    m_pendingScheduleConflictMessage,
+                    QMessageBox::Ok,
+                    this
+                    );
+            warning->setObjectName(
+                QStringLiteral("scheduleImportConflictWarning")
+                );
+            warning->setAttribute(Qt::WA_DeleteOnClose);
+            warning->setModal(true);
+            warning->open();
+        }
+        );
+}
+
 void ScheduleImportReviewDialog::updateReviewState()
 {
     bool valid = true;
@@ -2154,9 +2266,13 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
 
+    DataService* dataService =
+        openScheduleImportDataService(m_services);
     QSet<int> targets;
+    QMap<int, QList<int>> candidateIndexesByTarget;
     QHash<int, int> classActions;
     QHash<int, int> classTargets;
+    QStringList scheduleConflicts;
     int creates = 0;
     int updates = 0;
     int skips = 0;
@@ -2204,13 +2320,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                     );
             }
             continue;
-        }
-
-        if (target > 0 && targets.contains(target))
-        {
-            valid = false;
-            message =
-                tr("Two imported classes cannot use the same existing class.");
         }
 
         if (
@@ -2358,11 +2467,63 @@ void ScheduleImportReviewDialog::updateReviewState()
         if (target > 0)
         {
             targets.insert(target);
+            candidateIndexesByTarget[target].append(
+                control.candidateIndex
+                );
         }
     }
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
+    for (
+        auto iterator = candidateIndexesByTarget.cbegin();
+        iterator != candidateIndexesByTarget.cend();
+        ++iterator
+        )
+    {
+        if (iterator.value().size() < 2)
+        {
+            continue;
+        }
+
+        valid = false;
+        if (message.isEmpty())
+        {
+            message =
+                tr("Multiple imported classes cannot use the same existing class.");
+        }
+
+        QStringList importedClasses;
+        for (int candidateIndex : iterator.value())
+        {
+            if (
+                candidateIndex < 0
+                || candidateIndex >= m_preview.user.classes.size()
+                )
+            {
+                continue;
+            }
+            importedClasses.append(
+                importedClassConflictLabel(
+                    m_preview.user.classes[candidateIndex]
+                    )
+                );
+        }
+        const QString targetLabel =
+            dataService
+                ? classLabel(
+                    dataService,
+                    iterator.key(),
+                    m_request.kind
+                    )
+                : tr("Class %1").arg(iterator.key());
+        scheduleConflicts.append(
+            tr("Multiple imported classes are assigned to %1: %2.")
+                .arg(
+                    targetLabel,
+                    importedClasses.join(QStringLiteral(", "))
+                    )
+            );
+    }
+
     ScheduleImportUserBlock projected;
     projected.name = m_preview.user.name;
     projected.intensiveSlotStates =
@@ -2508,18 +2669,27 @@ void ScheduleImportReviewDialog::updateReviewState()
             )
         );
     updatePreviewVisibleRows();
-    const QString conflict =
-        projectedScheduleConflict(projected);
-    if (!conflict.isEmpty())
+    const QStringList projectedConflicts =
+        projectedScheduleConflicts(projected);
+    if (!projectedConflicts.isEmpty())
     {
         valid = false;
         if (message.isEmpty())
         {
             message =
                 tr("The proposed schedule has a conflict: %1")
-                    .arg(conflict);
+                    .arg(projectedConflicts.first());
+        }
+        for (const QString& conflict : projectedConflicts)
+        {
+            scheduleConflicts.append(
+                tr("The proposed schedule has a conflict: %1")
+                    .arg(conflict)
+                );
         }
     }
+
+    updateScheduleConflictWarning(scheduleConflicts);
 
     if (
         m_warningAcknowledgement

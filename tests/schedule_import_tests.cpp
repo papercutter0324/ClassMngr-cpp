@@ -33,6 +33,7 @@ private slots:
     void intensiveModesPreserveOrReplaceAbsentHours();
     void fullSnapshotPreservesUnrelatedData();
     void skippedExactMatchPreservesItsSchedule();
+    void rejectsDuplicateExistingTargetsBeforeWrites();
     void conflictsRollBackBeforeWrites();
     void writeFailureRollsBackEveryChange();
     void validatesExternalWorkbookWhenProvided();
@@ -1939,6 +1940,52 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
         QCOMPARE(
             query.value(0).toString(),
             QStringLiteral("Existing User")
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-duplicate-target-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        DatabaseSchemaManager::ensureSchema(database);
+
+        ScheduleImportPlan plan;
+        plan.candidates = {
+            ScheduleImportClassCandidate{},
+            ScheduleImportClassCandidate{}
+        };
+        plan.classes = {
+            {
+                0,
+                ScheduleImportClassAction::UpdateExisting,
+                42
+            },
+            {
+                1,
+                ScheduleImportClassAction::UpdateExisting,
+                42
+            }
+        };
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        QVERIFY(!imported.has_value());
+        QVERIFY(
+            imported.error().contains(
+                QStringLiteral("unique existing target")
+                )
             );
         database.close();
     }
