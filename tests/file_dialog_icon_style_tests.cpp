@@ -1,12 +1,16 @@
 #include "ui/shared/styles/file_dialog_icon_style.h"
 
 #include <QColor>
+#include <QDir>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QImage>
 #include <QPalette>
+#include <QStandardPaths>
+#include <QStringList>
 #include <QStyleOption>
 #include <QTest>
+#include <QUrl>
 
 namespace
 {
@@ -59,6 +63,7 @@ private slots:
     void standardIconsUseStaticSvgVariants_data();
     void standardIconsUseStaticSvgVariants();
     void fileDialogUsesStaticSvgIconProvider();
+    void fileDialogIncludesCommonSidebarFolders();
     void fileProviderCoversEveryIconType_data();
     void fileProviderCoversEveryIconType();
     void unrelatedStandardIconsComeFromBaseStyle();
@@ -165,6 +170,56 @@ void FileDialogIconStyleTests::fileDialogUsesStaticSvgIconProvider()
 
     QVERIFY(dialog.iconProvider());
     QVERIFY(dialog.iconProvider() != originalProvider);
+}
+
+void FileDialogIconStyleTests::fileDialogIncludesCommonSidebarFolders()
+{
+    FileDialogIconStyle style;
+    QFileDialog dialog;
+    dialog.setOption(
+        QFileDialog::DontUseNativeDialog,
+        true
+        );
+
+    style.polish(&dialog);
+    style.polish(&dialog);
+
+    const QString documentsPath =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DocumentsLocation
+            );
+    const QStringList expectedPaths{
+        QStandardPaths::writableLocation(
+            QStandardPaths::HomeLocation
+            ),
+        QStandardPaths::writableLocation(
+            QStandardPaths::DesktopLocation
+            ),
+        documentsPath,
+        QDir(documentsPath).filePath(
+            QStringLiteral("DYB/ClassMngr")
+            )
+    };
+    const QList<QUrl> sidebarUrls =
+        dialog.sidebarUrls();
+
+    for (const QString& path : expectedPaths)
+    {
+        const QUrl url =
+            QUrl::fromLocalFile(
+                QDir::cleanPath(path)
+                );
+
+        QVERIFY2(
+            sidebarUrls.contains(url),
+            qPrintable(
+                QStringLiteral(
+                    "The file-dialog sidebar does not contain %1"
+                    ).arg(path)
+                )
+            );
+        QCOMPARE(sidebarUrls.count(url), 1);
+    }
 }
 
 void FileDialogIconStyleTests::fileProviderCoversEveryIconType_data()

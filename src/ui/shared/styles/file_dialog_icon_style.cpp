@@ -2,13 +2,17 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QDir>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QIcon>
 #include <QPalette>
+#include <QStandardPaths>
 #include <QString>
+#include <QStringList>
 #include <QStyleOption>
+#include <QUrl>
 
 namespace
 {
@@ -176,6 +180,63 @@ void installStaticFileIconProvider(
         );
 }
 
+void installCommonSidebarUrls(
+    QFileDialog* fileDialog
+    )
+{
+    if (!fileDialog)
+    {
+        return;
+    }
+
+    QList<QUrl> sidebarUrls =
+        fileDialog->sidebarUrls();
+    bool sidebarUrlsChanged = false;
+
+    const QString documentsPath =
+        QStandardPaths::writableLocation(
+            QStandardPaths::DocumentsLocation
+            );
+    const QStringList commonPaths{
+        QStandardPaths::writableLocation(
+            QStandardPaths::HomeLocation
+            ),
+        QStandardPaths::writableLocation(
+            QStandardPaths::DesktopLocation
+            ),
+        documentsPath,
+        documentsPath.isEmpty()
+            ? QString()
+            : QDir(documentsPath).filePath(
+                QStringLiteral("DYB/ClassMngr")
+                )
+    };
+
+    for (const QString& path : commonPaths)
+    {
+        if (path.isEmpty())
+        {
+            continue;
+        }
+
+        const QUrl url =
+            QUrl::fromLocalFile(
+                QDir::cleanPath(path)
+                );
+
+        if (!sidebarUrls.contains(url))
+        {
+            sidebarUrls.append(url);
+            sidebarUrlsChanged = true;
+        }
+    }
+
+    if (sidebarUrlsChanged)
+    {
+        fileDialog->setSidebarUrls(sidebarUrls);
+    }
+}
+
 QString standardIconName(
     QStyle::StandardPixmap standardIcon
     )
@@ -268,4 +329,5 @@ void FileDialogIconStyle::polish(
         qobject_cast<QFileDialog*>(widget);
 
     installStaticFileIconProvider(fileDialog);
+    installCommonSidebarUrls(fileDialog);
 }
