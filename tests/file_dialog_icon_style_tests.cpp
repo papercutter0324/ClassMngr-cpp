@@ -1,39 +1,15 @@
 #include "ui/shared/styles/file_dialog_icon_style.h"
-#include "ui/shared/styles/themed_icon_utils.h"
 
 #include <QColor>
 #include <QFileDialog>
+#include <QFileIconProvider>
 #include <QImage>
-#include <QPainter>
-#include <QProxyStyle>
+#include <QPalette>
 #include <QStyleOption>
 #include <QTest>
 
 namespace
 {
-class TwoToneFileDialogIconStyle final : public QProxyStyle
-{
-public:
-    QIcon standardIcon(
-        StandardPixmap standardIcon,
-        const QStyleOption* option = nullptr,
-        const QWidget* widget = nullptr
-        ) const override
-    {
-        Q_UNUSED(option)
-        Q_UNUSED(widget)
-
-        QPixmap pixmap(16, 16);
-        pixmap.fill(Qt::transparent);
-
-        QPainter painter(&pixmap);
-        painter.fillRect(4, 4, 8, 8, Qt::white);
-        painter.fillRect(6, 6, 4, 4, Qt::black);
-
-        return QIcon(pixmap);
-    }
-};
-
 QColor firstOpaquePixel(
     const QPixmap& pixmap
     )
@@ -52,7 +28,7 @@ QColor firstOpaquePixel(
                     image.pixel(x, y)
                     );
 
-            if (pixel.alpha() > 0)
+            if (pixel.alpha() > 220)
             {
                 return pixel;
             }
@@ -62,28 +38,12 @@ QColor firstOpaquePixel(
     return {};
 }
 
-QColor pixelAt(
-    const QPixmap& pixmap,
-    int x,
-    int y
-    )
-{
-    const QImage image =
-        pixmap.toImage().convertToFormat(
-            QImage::Format_ARGB32
-            );
-
-    return QColor::fromRgba(
-        image.pixel(x, y)
-        );
-}
-
 bool colorsAreNear(
     const QColor& actual,
     const QColor& expected
     )
 {
-    constexpr int ChannelTolerance = 1;
+    constexpr int ChannelTolerance = 2;
 
     return qAbs(actual.red() - expected.red()) <= ChannelTolerance
         && qAbs(actual.green() - expected.green()) <= ChannelTolerance
@@ -96,37 +56,101 @@ class FileDialogIconStyleTests : public QObject
     Q_OBJECT
 
 private slots:
-    void toolbarIconsFollowTheApplicationPalette_data();
-    void toolbarIconsFollowTheApplicationPalette();
-    void fileDialogUsesThemedIconProvider();
-    void lightNeutralFileIconsAreRecolored();
-    void coloredFileIconsArePreserved();
-    void darkGlyphOnLightBackgroundBecomesTintedMask();
+    void standardIconsUseStaticSvgVariants_data();
+    void standardIconsUseStaticSvgVariants();
+    void fileDialogUsesStaticSvgIconProvider();
+    void fileProviderCoversEveryIconType_data();
+    void fileProviderCoversEveryIconType();
+    void unrelatedStandardIconsComeFromBaseStyle();
 };
 
-void FileDialogIconStyleTests::toolbarIconsFollowTheApplicationPalette_data()
+void FileDialogIconStyleTests::standardIconsUseStaticSvgVariants_data()
 {
     QTest::addColumn<QStyle::StandardPixmap>("standardIcon");
 
-    QTest::newRow("back")
-        << QStyle::SP_ArrowBack;
-    QTest::newRow("forward")
-        << QStyle::SP_ArrowForward;
-    QTest::newRow("parent")
-        << QStyle::SP_FileDialogToParent;
-    QTest::newRow("new-folder")
-        << QStyle::SP_FileDialogNewFolder;
-    QTest::newRow("details")
-        << QStyle::SP_FileDialogDetailedView;
-    QTest::newRow("list")
-        << QStyle::SP_FileDialogListView;
+    QTest::newRow("back") << QStyle::SP_ArrowBack;
+    QTest::newRow("forward") << QStyle::SP_ArrowForward;
+    QTest::newRow("parent") << QStyle::SP_FileDialogToParent;
+    QTest::newRow("new-folder") << QStyle::SP_FileDialogNewFolder;
+    QTest::newRow("details") << QStyle::SP_FileDialogDetailedView;
+    QTest::newRow("list") << QStyle::SP_FileDialogListView;
+    QTest::newRow("file") << QStyle::SP_FileIcon;
+    QTest::newRow("open") << QStyle::SP_DialogOpenButton;
+    QTest::newRow("save") << QStyle::SP_DialogSaveButton;
+    QTest::newRow("close") << QStyle::SP_DialogCloseButton;
 }
 
-void FileDialogIconStyleTests::fileDialogUsesThemedIconProvider()
+void FileDialogIconStyleTests::standardIconsUseStaticSvgVariants()
 {
-    FileDialogIconStyle style(
-        new TwoToneFileDialogIconStyle()
-        );
+    QFETCH(QStyle::StandardPixmap, standardIcon);
+
+    FileDialogIconStyle style;
+
+    struct ThemeColors
+    {
+        QColor normal;
+        QColor disabled;
+    };
+    const ThemeColors themes[]{
+        {
+            QColor("#232629"),
+            QColor("#707d8a")
+        },
+        {
+            QColor("#fcfcfc"),
+            QColor("#777777")
+        }
+    };
+
+    for (const ThemeColors& colors : themes)
+    {
+        QStyleOption option;
+        option.palette.setColor(
+            QPalette::Active,
+            QPalette::ButtonText,
+            colors.normal
+            );
+        option.palette.setColor(
+            QPalette::Disabled,
+            QPalette::ButtonText,
+            colors.disabled
+            );
+
+        const QIcon icon =
+            style.standardIcon(
+                standardIcon,
+                &option
+                );
+
+        QVERIFY(!icon.isNull());
+        QVERIFY(
+            colorsAreNear(
+                firstOpaquePixel(
+                    icon.pixmap(
+                        QSize(32, 32),
+                        QIcon::Normal
+                        )
+                    ),
+                colors.normal
+                )
+            );
+        QVERIFY(
+            colorsAreNear(
+                firstOpaquePixel(
+                    icon.pixmap(
+                        QSize(32, 32),
+                        QIcon::Disabled
+                        )
+                    ),
+                colors.disabled
+                )
+            );
+    }
+}
+
+void FileDialogIconStyleTests::fileDialogUsesStaticSvgIconProvider()
+{
+    FileDialogIconStyle style;
     QFileDialog dialog;
     dialog.setOption(
         QFileDialog::DontUseNativeDialog,
@@ -143,230 +167,101 @@ void FileDialogIconStyleTests::fileDialogUsesThemedIconProvider()
     QVERIFY(dialog.iconProvider() != originalProvider);
 }
 
-void FileDialogIconStyleTests::lightNeutralFileIconsAreRecolored()
+void FileDialogIconStyleTests::fileProviderCoversEveryIconType_data()
 {
-    QPixmap sourcePixmap(16, 16);
-    sourcePixmap.fill(Qt::white);
+    QTest::addColumn<QFileIconProvider::IconType>("iconType");
 
-    QIcon source(sourcePixmap);
-    QPalette palette;
-    const QColor iconColor("#27313a");
-    palette.setColor(
-        QPalette::ButtonText,
-        iconColor
-        );
-
-    const QIcon recolored =
-        ThemedIconUtils::recolor(
-            source,
-            palette,
-            ThemedIconUtils::RecolorMode::LightNeutralPixels
-            );
-
-    QCOMPARE(
-        firstOpaquePixel(
-            recolored.pixmap(QSize(16, 16))
-            ).rgb(),
-        iconColor.rgb()
-        );
+    QTest::newRow("computer") << QFileIconProvider::Computer;
+    QTest::newRow("desktop") << QFileIconProvider::Desktop;
+    QTest::newRow("trash") << QFileIconProvider::Trashcan;
+    QTest::newRow("network") << QFileIconProvider::Network;
+    QTest::newRow("drive") << QFileIconProvider::Drive;
+    QTest::newRow("folder") << QFileIconProvider::Folder;
+    QTest::newRow("file") << QFileIconProvider::File;
 }
 
-void FileDialogIconStyleTests::coloredFileIconsArePreserved()
+void FileDialogIconStyleTests::fileProviderCoversEveryIconType()
 {
-    QPixmap sourcePixmap(16, 16);
-    const QColor sourceColor("#1d99f3");
-    sourcePixmap.fill(sourceColor);
+    QFETCH(QFileIconProvider::IconType, iconType);
 
-    QIcon source(sourcePixmap);
-    QPalette palette;
-    palette.setColor(
-        QPalette::ButtonText,
-        QColor("#27313a")
-        );
+    struct ThemeColors
+    {
+        QColor normal;
+        QColor disabled;
+    };
+    const ThemeColors themes[]{
+        {
+            QColor("#232629"),
+            QColor("#707d8a")
+        },
+        {
+            QColor("#fcfcfc"),
+            QColor("#777777")
+        }
+    };
 
-    const QIcon recolored =
-        ThemedIconUtils::recolor(
-            source,
-            palette,
-            ThemedIconUtils::RecolorMode::LightNeutralPixels
+    for (const ThemeColors& colors : themes)
+    {
+        FileDialogIconStyle style;
+        QFileDialog dialog;
+        dialog.setOption(
+            QFileDialog::DontUseNativeDialog,
+            true
             );
+        QPalette palette = dialog.palette();
+        palette.setColor(
+            QPalette::Active,
+            QPalette::ButtonText,
+            colors.normal
+            );
+        palette.setColor(
+            QPalette::Disabled,
+            QPalette::ButtonText,
+            colors.disabled
+            );
+        dialog.setPalette(palette);
 
-    QCOMPARE(
-        firstOpaquePixel(
-            recolored.pixmap(QSize(16, 16))
-            ).rgb(),
-        sourceColor.rgb()
-        );
+        style.polish(&dialog);
+
+        const QIcon icon =
+            dialog.iconProvider()->icon(iconType);
+
+        QVERIFY(!icon.isNull());
+        QVERIFY(
+            colorsAreNear(
+                firstOpaquePixel(
+                    icon.pixmap(
+                        QSize(32, 32),
+                        QIcon::Normal
+                        )
+                    ),
+                colors.normal
+                )
+            );
+        QVERIFY(
+            colorsAreNear(
+                firstOpaquePixel(
+                    icon.pixmap(
+                        QSize(32, 32),
+                        QIcon::Disabled
+                        )
+                    ),
+                colors.disabled
+                )
+            );
+    }
 }
 
-void FileDialogIconStyleTests::darkGlyphOnLightBackgroundBecomesTintedMask()
+void FileDialogIconStyleTests::unrelatedStandardIconsComeFromBaseStyle()
 {
-    QPixmap sourcePixmap(16, 16);
-    sourcePixmap.fill(Qt::white);
-
-    QPainter painter(&sourcePixmap);
-    painter.fillRect(6, 6, 4, 4, Qt::black);
-    painter.end();
-
-    QIcon source(sourcePixmap);
-    QPalette palette;
-    const QColor iconColor("#27313a");
-    palette.setColor(
-        QPalette::ButtonText,
-        iconColor
-        );
-
-    const QIcon recolored =
-        ThemedIconUtils::recolor(
-            source,
-            palette,
-            ThemedIconUtils::RecolorMode::DarkGlyphOnLightBackground
-            );
-    const QPixmap recoloredPixmap =
-        recolored.pixmap(QSize(16, 16));
-
-    QCOMPARE(
-        pixelAt(recoloredPixmap, 0, 0).alpha(),
-        0
-        );
-    QCOMPARE(
-        pixelAt(recoloredPixmap, 8, 8).rgb(),
-        iconColor.rgb()
-        );
-    QCOMPARE(
-        pixelAt(recoloredPixmap, 8, 8).alpha(),
-        255
-        );
-}
-
-void FileDialogIconStyleTests::toolbarIconsFollowTheApplicationPalette()
-{
-    QFETCH(QStyle::StandardPixmap, standardIcon);
-
-#if defined(Q_OS_WIN)
-    const bool usesLightBitmapBackground =
-        standardIcon == QStyle::SP_FileDialogDetailedView
-        || standardIcon == QStyle::SP_FileDialogListView;
-#endif
-
-    auto* baseStyle =
-        new TwoToneFileDialogIconStyle();
-    FileDialogIconStyle style(baseStyle);
-
-    QStyleOption option;
-    const QColor activeColor("#27313a");
-    const QColor disabledColor("#66727a");
-
-    option.palette.setColor(
-        QPalette::Active,
-        QPalette::ButtonText,
-        activeColor
-        );
-    option.palette.setColor(
-        QPalette::Disabled,
-        QPalette::ButtonText,
-        disabledColor
-        );
+    FileDialogIconStyle style;
 
     const QIcon icon =
         style.standardIcon(
-            standardIcon,
-            &option
+            QStyle::SP_MessageBoxInformation
             );
 
-    QCOMPARE(
-        firstOpaquePixel(
-            icon.pixmap(
-                QSize(16, 16),
-                QIcon::Normal
-                )
-            ).rgb(),
-        activeColor.rgb()
-        );
-#if defined(Q_OS_WIN)
-    if (usesLightBitmapBackground)
-    {
-        QVERIFY(
-            colorsAreNear(
-                pixelAt(
-                    icon.pixmap(
-                        QSize(16, 16),
-                        QIcon::Disabled
-                        ),
-                    8,
-                    8
-                    ),
-                disabledColor
-                )
-            );
-        QCOMPARE(
-            pixelAt(
-                icon.pixmap(
-                    QSize(16, 16),
-                    QIcon::Normal
-                    ),
-                4,
-                4
-                ).alpha(),
-            0
-            );
-        QCOMPARE(
-            pixelAt(
-                icon.pixmap(
-                    QSize(16, 16),
-                    QIcon::Normal
-                    ),
-                8,
-                8
-                ).rgb(),
-            activeColor.rgb()
-            );
-    }
-    else
-    {
-        QCOMPARE(
-            firstOpaquePixel(
-                icon.pixmap(
-                    QSize(16, 16),
-                    QIcon::Disabled
-                    )
-                ).rgb(),
-            disabledColor.rgb()
-            );
-        QCOMPARE(
-            pixelAt(
-                icon.pixmap(
-                    QSize(16, 16),
-                    QIcon::Normal
-                    ),
-                8,
-                8
-                ).rgb(),
-            QColor(Qt::black).rgb()
-            );
-    }
-#else
-    QCOMPARE(
-        firstOpaquePixel(
-            icon.pixmap(
-                QSize(16, 16),
-                QIcon::Disabled
-                )
-            ).rgb(),
-        disabledColor.rgb()
-        );
-    QCOMPARE(
-        pixelAt(
-            icon.pixmap(
-                QSize(16, 16),
-                QIcon::Normal
-                ),
-            8,
-            8
-            ).rgb(),
-        activeColor.rgb()
-        );
-#endif
+    QVERIFY(!icon.isNull());
 }
 
 QTEST_MAIN(FileDialogIconStyleTests)

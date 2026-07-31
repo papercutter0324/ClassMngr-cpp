@@ -1,23 +1,113 @@
 #include "file_dialog_icon_style.h"
 
-#include "ui/shared/styles/themed_icon_utils.h"
-
 #include <QApplication>
+#include <QColor>
 #include <QFileDialog>
 #include <QFileIconProvider>
 #include <QFileInfo>
+#include <QIcon>
 #include <QPalette>
+#include <QString>
 #include <QStyleOption>
 
 namespace
 {
-constexpr auto FileIconPaletteProperty =
-    "classMngrFileIconPalette";
+constexpr auto FileIconThemeProperty =
+    "classMngrFileIconTheme";
 
-class ThemedFileIconProvider final : public QFileIconProvider
+QString themeName(
+    const QPalette& palette
+    )
+{
+    return palette.color(
+        QPalette::Active,
+        QPalette::ButtonText
+        ).lightness() > 127
+        ? QStringLiteral("dark")
+        : QStringLiteral("light");
+}
+
+QIcon fileDialogIcon(
+    const QString& name,
+    const QPalette& palette
+    )
+{
+    const QString theme = themeName(palette);
+    const QString pathPrefix =
+        QStringLiteral(":/assets/icons/file_dialog/%1_%2")
+            .arg(name, theme);
+
+    QIcon icon;
+    const QString normalPath =
+        pathPrefix + QStringLiteral(".svg");
+    const QString disabledPath =
+        pathPrefix + QStringLiteral("_disabled.svg");
+
+    constexpr QIcon::Mode normalModes[]{
+        QIcon::Normal,
+        QIcon::Active,
+        QIcon::Selected
+    };
+    constexpr QIcon::State states[]{
+        QIcon::Off,
+        QIcon::On
+    };
+
+    for (const QIcon::Mode mode : normalModes)
+    {
+        for (const QIcon::State state : states)
+        {
+            icon.addFile(
+                normalPath,
+                {},
+                mode,
+                state
+                );
+        }
+    }
+
+    for (const QIcon::State state : states)
+    {
+        icon.addFile(
+            disabledPath,
+            {},
+            QIcon::Disabled,
+            state
+            );
+    }
+
+    return icon;
+}
+
+QString fileProviderIconName(
+    QFileIconProvider::IconType type
+    )
+{
+    switch (type)
+    {
+    case QFileIconProvider::Computer:
+        return QStringLiteral("computer");
+    case QFileIconProvider::Desktop:
+        return QStringLiteral("desktop");
+    case QFileIconProvider::Trashcan:
+        return QStringLiteral("trash");
+    case QFileIconProvider::Network:
+        return QStringLiteral("network");
+    case QFileIconProvider::Drive:
+        return QStringLiteral("drive");
+    case QFileIconProvider::Folder:
+        return QStringLiteral("folder");
+    case QFileIconProvider::File:
+        return QStringLiteral("file");
+    }
+
+    return QStringLiteral("file");
+}
+
+class StaticFileIconProvider final : public QFileIconProvider
 {
 public:
-    explicit ThemedFileIconProvider(
+    explicit StaticFileIconProvider(
         const QPalette& palette
         )
         : m_palette(palette)
@@ -28,10 +118,9 @@ public:
         IconType type
         ) const override
     {
-        return ThemedIconUtils::recolor(
-            QFileIconProvider::icon(type),
-            m_palette,
-            ThemedIconUtils::RecolorMode::LightNeutralPixels
+        return fileDialogIcon(
+            fileProviderIconName(type),
+            m_palette
             );
     }
 
@@ -39,10 +128,16 @@ public:
         const QFileInfo& info
         ) const override
     {
-        return ThemedIconUtils::recolor(
-            QFileIconProvider::icon(info),
-            m_palette,
-            ThemedIconUtils::RecolorMode::LightNeutralPixels
+        const QString name =
+            info.isRoot()
+                ? QStringLiteral("drive")
+                : info.isDir()
+                    ? QStringLiteral("folder")
+                    : QStringLiteral("file");
+
+        return fileDialogIcon(
+            name,
+            m_palette
             );
     }
 
@@ -50,7 +145,7 @@ private:
     QPalette m_palette;
 };
 
-void installThemedFileIconProvider(
+void installStaticFileIconProvider(
     QFileDialog* fileDialog
     )
 {
@@ -59,50 +154,57 @@ void installThemedFileIconProvider(
         return;
     }
 
-    const QColor buttonText =
-        fileDialog->palette().color(
-            QPalette::ButtonText
-            );
+    const QString theme =
+        themeName(fileDialog->palette());
 
     if (
-        fileDialog->property(FileIconPaletteProperty)
-            == buttonText
+        fileDialog->property(FileIconThemeProperty)
+            == theme
         )
     {
         return;
     }
 
     fileDialog->setIconProvider(
-        new ThemedFileIconProvider(
+        new StaticFileIconProvider(
             fileDialog->palette()
             )
         );
     fileDialog->setProperty(
-        FileIconPaletteProperty,
-        buttonText
+        FileIconThemeProperty,
+        theme
         );
 }
 
-bool isFileDialogToolbarIcon(
+QString standardIconName(
     QStyle::StandardPixmap standardIcon
     )
 {
     switch (standardIcon)
     {
     case QStyle::SP_ArrowBack:
+        return QStringLiteral("back");
     case QStyle::SP_ArrowForward:
+        return QStringLiteral("forward");
     case QStyle::SP_FileDialogToParent:
+        return QStringLiteral("parent");
     case QStyle::SP_FileDialogNewFolder:
+        return QStringLiteral("new_folder");
     case QStyle::SP_FileDialogDetailedView:
+        return QStringLiteral("details");
     case QStyle::SP_FileDialogListView:
+        return QStringLiteral("list");
     case QStyle::SP_FileIcon:
+        return QStringLiteral("file");
     case QStyle::SP_DialogOpenButton:
+        return QStringLiteral("open");
     case QStyle::SP_DialogSaveButton:
+        return QStringLiteral("save");
     case QStyle::SP_DialogCloseButton:
-        return true;
+        return QStringLiteral("close");
 
     default:
-        return false;
+        return {};
     }
 }
 
@@ -124,28 +226,6 @@ QPalette iconPalette(
     return QApplication::palette();
 }
 
-ThemedIconUtils::RecolorMode toolbarIconRecolorMode(
-    QStyle::StandardPixmap standardIcon
-    )
-{
-#if defined(Q_OS_WIN)
-    if (
-        standardIcon == QStyle::SP_FileDialogDetailedView
-        || standardIcon == QStyle::SP_FileDialogListView
-        )
-    {
-        // These Windows bitmaps contain a dark glyph on an opaque
-        // light background. Convert that background into transparency.
-        return ThemedIconUtils::RecolorMode::DarkGlyphOnLightBackground;
-    }
-
-    return ThemedIconUtils::RecolorMode::LightNeutralPixels;
-#else
-    Q_UNUSED(standardIcon)
-    return ThemedIconUtils::RecolorMode::AllPixels;
-#endif
-}
-
 }
 
 QIcon FileDialogIconStyle::standardIcon(
@@ -157,28 +237,24 @@ QIcon FileDialogIconStyle::standardIcon(
     if (auto* fileDialog = qobject_cast<QFileDialog*>(
             const_cast<QWidget*>(widget)); fileDialog)
     {
-        installThemedFileIconProvider(fileDialog);
+        installStaticFileIconProvider(fileDialog);
     }
 
-    const QIcon icon =
-        QProxyStyle::standardIcon(
+    const QString iconName =
+        standardIconName(standardIcon);
+
+    if (iconName.isEmpty())
+    {
+        return QProxyStyle::standardIcon(
             standardIcon,
             option,
             widget
             );
-
-    if (
-        icon.isNull()
-        || !isFileDialogToolbarIcon(standardIcon)
-        )
-    {
-        return icon;
     }
 
-    return ThemedIconUtils::recolor(
-        icon,
-        iconPalette(option, widget),
-        toolbarIconRecolorMode(standardIcon)
+    return fileDialogIcon(
+        iconName,
+        iconPalette(option, widget)
         );
 }
 
@@ -191,5 +267,5 @@ void FileDialogIconStyle::polish(
     auto* fileDialog =
         qobject_cast<QFileDialog*>(widget);
 
-    installThemedFileIconProvider(fileDialog);
+    installStaticFileIconProvider(fileDialog);
 }

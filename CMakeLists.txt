@@ -357,6 +357,10 @@ file(GLOB_RECURSE CLASSMNGR_EMBEDDED_PACK_FILES CONFIGURE_DEPENDS
     "${PROJECT_SOURCE_DIR}/resources/assets/roster-designs/*"
 )
 
+file(GLOB CLASSMNGR_FILE_DIALOG_ICONS CONFIGURE_DEPENDS
+    "${PROJECT_SOURCE_DIR}/resources/assets/icons/file_dialog/*.svg"
+)
+
 list(FILTER CLASSMNGR_EMBEDDED_PACK_FILES EXCLUDE REGEX "/~\\$[^/]+$")
 
 qt_add_resources(ClassMngr app_resources
@@ -374,6 +378,7 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/icons/spin_up_light.svg
         resources/assets/icons/radio_checked.png
         resources/assets/icons/icon_256x256.png
+        ${CLASSMNGR_FILE_DIALOG_ICONS}
         resources/assets/images/dyb.png
         resources/assets/splash/splash.png
         resources/assets/styles/dark.qss
@@ -878,7 +883,13 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrFileDialogIconStyleTests
         tests/file_dialog_icon_style_tests.cpp
         src/ui/shared/styles/file_dialog_icon_style.cpp
-        src/ui/shared/styles/themed_icon_utils.cpp
+    )
+
+    qt_add_resources(ClassMngrFileDialogIconStyleTests file_dialog_icon_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            ${CLASSMNGR_FILE_DIALOG_ICONS}
     )
 
     target_compile_features(ClassMngrFileDialogIconStyleTests
