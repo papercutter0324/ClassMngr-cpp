@@ -1120,6 +1120,20 @@ bool UniformWidthTabWidget::eventFilter(
             )
         )
     {
+        const auto* uniformTabBar =
+            qobject_cast<const UniformWidthTabBar*>(
+                tabBar()
+                );
+
+        if (
+            isVisible()
+            && uniformTabBar
+            && uniformTabBar->naturalWidth() <= width()
+            )
+        {
+            centerTabBar();
+        }
+
         scheduleCenterTabBar();
     }
 

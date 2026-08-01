@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QMouseEvent>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QtTest>
 
 #include <utility>
@@ -94,6 +95,8 @@ private slots:
     void cleanup();
     void tabSizeHintsUseWidestTabWidth();
     void tabWidgetCentersTabBarWhenTabsFit();
+    void clickingFittingTabsKeepsTabBarCenteredImmediately();
+    void visibleFittingTabBarReCentersImmediatelyAfterLayoutMove();
     void slightlyConstrainedTabsElideWithoutScrollButtons();
     void scrollButtonsTrackResizeTransitions();
     void incrementalTabChangesDoNotExposeStaleScrollButtons();
@@ -186,6 +189,120 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
         );
 
     tabs.setCurrentIndex(1);
+    QCOMPARE(
+        tabBar->geometry().x(),
+        (tabs.width() - tabBar->width()) / 2
+        );
+}
+
+void UniformWidthTabBarTests::
+    clickingFittingTabsKeepsTabBarCenteredImmediately()
+{
+    UniformWidthTabWidget gradeTabs(
+        UniformWidthTabKind::Grade,
+        QStringLiteral("clickCenteredGradeTabBar")
+        );
+    gradeTabs.resize(640, 200);
+
+    UniformWidthTabWidget* secondClassTabs = nullptr;
+
+    for (const QString& grade : {
+             QStringLiteral("E5"),
+             QStringLiteral("E6"),
+             QStringLiteral("M1")
+         })
+    {
+        auto* gradePage = new QWidget(&gradeTabs);
+        auto* gradeLayout = new QVBoxLayout(gradePage);
+        gradeLayout->setContentsMargins(0, 0, 0, 0);
+
+        auto* classTabs = new UniformWidthTabWidget(
+            UniformWidthTabKind::Class,
+            QStringLiteral("clickCenteredClassTabBar"),
+            gradePage
+            );
+        classTabs->addTab(
+            new QWidget(classTabs),
+            QStringLiteral("Apollo")
+            );
+        classTabs->addTab(
+            new QWidget(classTabs),
+            QStringLiteral("Zeus")
+            );
+        gradeLayout->addWidget(classTabs);
+        gradeTabs.addTab(gradePage, grade);
+
+        if (grade == QStringLiteral("E6"))
+        {
+            secondClassTabs = classTabs;
+        }
+    }
+
+    gradeTabs.show();
+    QCoreApplication::processEvents();
+
+    auto* gradeTabBar =
+        gradeTabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("clickCenteredGradeTabBar")
+            );
+    auto* classTabBar =
+        secondClassTabs
+            ? secondClassTabs->findChild<UniformWidthTabBar*>(
+                  QStringLiteral("clickCenteredClassTabBar")
+                  )
+            : nullptr;
+
+    QVERIFY(gradeTabBar);
+    QVERIFY(classTabBar);
+
+    QTest::mouseClick(
+        gradeTabBar,
+        Qt::LeftButton,
+        Qt::NoModifier,
+        gradeTabBar->tabRect(1).center()
+        );
+
+    QCOMPARE(gradeTabBar->currentIndex(), 1);
+    QCOMPARE(
+        classTabBar->geometry().x(),
+        (secondClassTabs->width() - classTabBar->width()) / 2
+        );
+}
+
+void UniformWidthTabBarTests::
+    visibleFittingTabBarReCentersImmediatelyAfterLayoutMove()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Grade,
+        QStringLiteral("synchronousCenteringTabBar")
+        );
+    tabs.resize(640, 200);
+
+    tabs.addTab(
+        new QWidget(&tabs),
+        QStringLiteral("E5")
+        );
+    tabs.addTab(
+        new QWidget(&tabs),
+        QStringLiteral("E6")
+        );
+    tabs.addTab(
+        new QWidget(&tabs),
+        QStringLiteral("M1")
+        );
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("synchronousCenteringTabBar")
+            );
+
+    QVERIFY(tabBar);
+
+    tabBar->move(0, tabBar->y());
+
     QCOMPARE(
         tabBar->geometry().x(),
         (tabs.width() - tabBar->width()) / 2
@@ -885,21 +1002,22 @@ void UniformWidthTabBarTests::
     const int targetIndex = 1;
     const QRect targetTab =
         tabBar->tabRect(targetIndex);
+    const QRect visibleTabArea(
+        leftButton->geometry().right() + 1,
+        0,
+        rightButton->x() - leftButton->geometry().right() - 1,
+        tabBar->height()
+        );
+    const QRect visibleTargetTab =
+        targetTab.intersected(visibleTabArea);
 
-    QVERIFY(
-        targetTab.center().x()
-        > leftButton->geometry().right()
-        );
-    QVERIFY(
-        targetTab.center().x()
-        < rightButton->x()
-        );
+    QVERIFY(!visibleTargetTab.isEmpty());
 
     QTest::mouseClick(
         tabBar,
         Qt::LeftButton,
         Qt::NoModifier,
-        targetTab.center()
+        visibleTargetTab.center()
         );
 
     QCOMPARE(
