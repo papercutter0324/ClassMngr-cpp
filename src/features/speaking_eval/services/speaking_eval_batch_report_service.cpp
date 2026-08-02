@@ -933,30 +933,6 @@ $canceled = $false
 
 try {
     $ppt = New-Object -ComObject PowerPoint.Application
-    $presentation = $ppt.Presentations.Open($pptxPath, $false, $false, $false)
-    $slide = $presentation.Slides.Item(1)
-    $shapes = $slide.Shapes
-
-    $englishNameShape = Require-Shape $shapes 'English_Name'
-    $koreanNameShape = Require-Shape $shapes 'Korean_Name'
-    $gradeLevelShape = Require-Shape $shapes 'Grade_Level'
-    $nativeTeacherShape = Require-Shape $shapes 'Native_Teacher'
-    $koreanTeacherShape = Require-Shape $shapes 'Korean_Teacher'
-    $evaluationDateShape = Require-Shape $shapes 'Eval_Date'
-    $commentsShape = Require-Shape $shapes 'Comments'
-    $overallGradeShape = Require-Shape $shapes 'Overall_Grade'
-
-    if ([bool]$data.scoreTableOnMaster) {
-        $tableShapes = $slide.Master.Shapes
-    }
-    else {
-        $tableShapes = $shapes
-    }
-    $table = Require-Table `
-        $tableShapes `
-        ([string]$data.scoreTableName) `
-        ([int]$data.minimumTableRows) `
-        ([int]$data.minimumTableColumns)
     $firstGradeColumn = [int]$data.firstGradeColumn
     $grey = [int]$data.neutralFill
     $yellow = 65535
@@ -968,19 +944,54 @@ try {
         'C' = 4
     }
 
-    Add-Signature `
-        $shapes `
-        ([string]$data.signaturePath) `
-        ([double]$data.signatureLeft) `
-        ([double]$data.signatureTop) `
-        ([double]$data.signatureWidth) `
-        ([double]$data.signatureHeight)
-
     foreach ($student in $data.students) {
         if (Test-Path -LiteralPath ([string]$data.cancelPath)) {
             $canceled = $true
             break
         }
+
+        # SaveAs with ppSaveAsPDF is reliable through Windows PowerShell's
+        # PowerPoint COM adapter, while ExportAsFixedFormat is exposed as a
+        # parameterized property by some Office versions and cannot be called
+        # with its enum argument. Reopen the template for each student so
+        # SaveAs never changes the presentation used by the next report.
+        $presentation = $ppt.Presentations.Open(
+            $pptxPath,
+            $false,
+            $false,
+            $false
+        )
+        $slide = $presentation.Slides.Item(1)
+        $shapes = $slide.Shapes
+
+        $englishNameShape = Require-Shape $shapes 'English_Name'
+        $koreanNameShape = Require-Shape $shapes 'Korean_Name'
+        $gradeLevelShape = Require-Shape $shapes 'Grade_Level'
+        $nativeTeacherShape = Require-Shape $shapes 'Native_Teacher'
+        $koreanTeacherShape = Require-Shape $shapes 'Korean_Teacher'
+        $evaluationDateShape = Require-Shape $shapes 'Eval_Date'
+        $commentsShape = Require-Shape $shapes 'Comments'
+        $overallGradeShape = Require-Shape $shapes 'Overall_Grade'
+
+        if ([bool]$data.scoreTableOnMaster) {
+            $tableShapes = $slide.Master.Shapes
+        }
+        else {
+            $tableShapes = $shapes
+        }
+        $table = Require-Table `
+            $tableShapes `
+            ([string]$data.scoreTableName) `
+            ([int]$data.minimumTableRows) `
+            ([int]$data.minimumTableColumns)
+
+        Add-Signature `
+            $shapes `
+            ([string]$data.signaturePath) `
+            ([double]$data.signatureLeft) `
+            ([double]$data.signatureTop) `
+            ([double]$data.signatureWidth) `
+            ([double]$data.signatureHeight)
 
         Set-UnderlinedText $englishNameShape ([string]$student.englishName)
         Set-UnderlinedText $koreanNameShape ([string]$student.koreanName)
@@ -1012,7 +1023,10 @@ try {
             "ClassMngr PowerPoint report: {0} -> {1}" `
                 -f ([string]$student.displayName), $pdfPath
         )
-        $presentation.ExportAsFixedFormat($pdfPath, [int]2)
+        $presentation.SaveAs($pdfPath, [int]32)
+        $presentation.Saved = $true
+        $presentation.Close()
+        $presentation = $null
         [System.IO.File]::WriteAllText(
             ([string]$student.completionPath),
             [string]::Empty
