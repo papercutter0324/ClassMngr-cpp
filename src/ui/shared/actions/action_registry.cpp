@@ -321,6 +321,13 @@ void ActionRegistry::retranslate()
         tr("Animate Overflowing Sidebar Text"),
         tr("Animate overflowing sidebar names on hover")
         );
+#ifdef Q_OS_MACOS
+    updateActionText(
+        showPowerPointDataAccessNotice,
+        tr("Show Data Access Notice Before Export"),
+        tr("Show a notice before PowerPoint accesses its protected workspace")
+        );
+#endif
     updateActionText(
         checkForUpdates,
         tr("Check for Updates..."),
@@ -869,6 +876,28 @@ void ActionRegistry::createOptionActions()
                 );
         }
         );
+
+#ifdef Q_OS_MACOS
+    showPowerPointDataAccessNotice =
+        createCheckableAction(
+            tr("Show Data Access Notice Before Export"),
+            tr("Show a notice before PowerPoint accesses its protected workspace")
+            );
+    showPowerPointDataAccessNotice->setChecked(
+        SettingsManager::instance()
+            .showPowerPointDataAccessNotice()
+        );
+    connect(
+        showPowerPointDataAccessNotice,
+        &QAction::toggled,
+        this,
+        [](bool enabled)
+        {
+            SettingsManager::instance()
+                .setShowPowerPointDataAccessNotice(enabled);
+        }
+        );
+#endif
 
 }
 

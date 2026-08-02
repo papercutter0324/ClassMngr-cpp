@@ -274,6 +274,24 @@ void SettingsManager::setShowAllKoreanTeachers(
         );
 }
 
+bool SettingsManager::showPowerPointDataAccessNotice() const
+{
+    return get(
+        Keys::SHOW_POWERPOINT_DATA_ACCESS_NOTICE,
+        true
+        ).toBool();
+}
+
+void SettingsManager::setShowPowerPointDataAccessNotice(
+    bool enabled
+    )
+{
+    set(
+        Keys::SHOW_POWERPOINT_DATA_ACCESS_NOTICE,
+        enabled
+        );
+}
+
 // =========================================================
 // Recent Files
 // =========================================================

@@ -31,6 +31,8 @@ private:
 
     void exportReports();
 
+    [[nodiscard]] bool confirmPowerPointDataAccess();
+
     [[nodiscard]] QList<SpeakingEvalBatchReportService::StudentReport>
     selectedReports() const;
 

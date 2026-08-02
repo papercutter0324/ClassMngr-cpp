@@ -5,6 +5,7 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
@@ -18,7 +19,6 @@
 #include <QPainter>
 #include <QPdfWriter>
 #include <QProcess>
-#include <QMap>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
@@ -26,10 +26,9 @@
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTime>
-#include <QUuid>
 
 #include <algorithm>
-#include <limits>
+#include <memory>
 
 namespace SpeakingEvalBatchReportService
 {
@@ -39,25 +38,170 @@ namespace
 constexpr QSizeF ReportPageSizeInches(7.5, 10.833333);
 constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
 
-#ifdef Q_OS_MACOS
-QString powerPointWorkingDirectory()
+bool removeDirectory(
+    const QString& path
+    )
 {
-    const QString homePath = QStandardPaths::writableLocation(
-        QStandardPaths::HomeLocation
-        );
-    QDir powerPointDocuments(
-        homePath + QStringLiteral(
-                       "/Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr"
-                       )
-        );
-    if (!powerPointDocuments.exists() && !powerPointDocuments.mkpath(QStringLiteral(".")))
+    if (path.trimmed().isEmpty())
     {
-        return {};
+        return false;
     }
 
-    return powerPointDocuments.absolutePath();
+    QDir directory(path);
+    return !directory.exists() || directory.removeRecursively();
 }
+
+bool resetDirectory(
+    const QString& path
+    )
+{
+    return removeDirectory(path) && QDir().mkpath(path);
+}
+
+class PowerPointBatchWorkspace
+{
+public:
+    ~PowerPointBatchWorkspace()
+    {
+        cleanup();
+    }
+
+    bool prepare(
+        const QString& stagingDirectory,
+        QString* errorMessage
+        )
+    {
+#ifdef Q_OS_MACOS
+        Q_UNUSED(stagingDirectory);
+
+        m_automationDirectory =
+            QDir(
+                QStandardPaths::writableLocation(
+                    QStandardPaths::AppDataLocation
+                    )
+                ).filePath(QStringLiteral("PowerPointBatch"));
+        m_presentationDirectory =
+            QDir(
+                QStandardPaths::writableLocation(
+                    QStandardPaths::HomeLocation
+                    )
+                ).filePath(
+                    QStringLiteral(
+                        "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch"
+                        )
+                    );
+
+        m_cleanupAutomationDirectory = true;
+        if (!resetDirectory(m_automationDirectory))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "ClassMngr's PowerPoint workspace could not be prepared."
+                    );
+            }
+            cleanup();
+            return false;
+        }
+
+        m_cleanupPresentationDirectory = true;
+        if (!resetDirectory(m_presentationDirectory))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "PowerPoint's private workspace could not be prepared."
+                    );
+            }
+            cleanup();
+            return false;
+        }
+#else
+        m_temporaryDirectory =
+            std::make_unique<QTemporaryDir>(
+                QDir(stagingDirectory).filePath(
+                    QStringLiteral("powerpoint-batch-XXXXXX")
+                    )
+                );
+        if (!m_temporaryDirectory->isValid())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "A temporary PowerPoint batch folder could not be created."
+                    );
+            }
+            return false;
+        }
+
+        m_automationDirectory = m_temporaryDirectory->path();
+        m_presentationDirectory = m_automationDirectory;
 #endif
+
+        return true;
+    }
+
+    [[nodiscard]] QString automationDirectory() const
+    {
+        return m_automationDirectory;
+    }
+
+    [[nodiscard]] QString presentationDirectory() const
+    {
+        return m_presentationDirectory;
+    }
+
+    [[nodiscard]] bool usesSeparatePresentationDirectory() const
+    {
+        return m_automationDirectory != m_presentationDirectory;
+    }
+
+    bool removePresentationDirectory(
+        QString* errorMessage
+        )
+    {
+#ifdef Q_OS_MACOS
+        if (m_cleanupPresentationDirectory
+            && !removeDirectory(m_presentationDirectory))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr(
+                    "PowerPoint's temporary report files could not be removed."
+                    );
+            }
+            return false;
+        }
+        m_cleanupPresentationDirectory = false;
+#else
+        Q_UNUSED(errorMessage);
+#endif
+        return true;
+    }
+
+private:
+    void cleanup()
+    {
+#ifdef Q_OS_MACOS
+        if (m_cleanupPresentationDirectory)
+        {
+            removeDirectory(m_presentationDirectory);
+            m_cleanupPresentationDirectory = false;
+        }
+        if (m_cleanupAutomationDirectory)
+        {
+            removeDirectory(m_automationDirectory);
+            m_cleanupAutomationDirectory = false;
+        }
+#endif
+    }
+
+    QString m_automationDirectory;
+    QString m_presentationDirectory;
+    std::unique_ptr<QTemporaryDir> m_temporaryDirectory;
+    bool m_cleanupAutomationDirectory = false;
+    bool m_cleanupPresentationDirectory = false;
+};
 
 QString safeFolderName(const QString& value, const QString& fallback)
 {
@@ -108,6 +252,23 @@ QString shortTime(const QString& value)
     }
     return value.trimmed().remove(QLatin1Char(' ')).toLower();
 }
+
+QString powerPointText(const QString& value)
+{
+    // macOS input methods can supply Hangul as decomposed Jamo. PowerPoint
+    // preserves that representation when text arrives through AppleScript,
+    // causing names such as 박지혜 to be displayed as separate characters.
+    return value.normalized(QString::NormalizationForm_C);
+}
+
+#ifdef Q_OS_MACOS
+QString macPowerPointTextArgument(const QString& value)
+{
+    return QString::fromLatin1(
+        powerPointText(value).toUtf8().toBase64()
+        );
+}
+#endif
 
 Result completed(
     const QStringList& savedPdfPaths = {}
@@ -336,30 +497,240 @@ bool copyResourceToFile(
     return true;
 }
 
-QJsonObject powerPointJob(
-    const SpeakingEvalReportData& data,
-    const QString& pptxPath,
-    const QString& pdfPath,
-    const QString& signaturePath
+bool copyFileReplacing(
+    const QString& sourcePath,
+    const QString& targetPath,
+    const QString& failureMessage,
+    QString* errorMessage
     )
 {
-    QJsonArray scores;
-    for (const QString& score : data.scores)
+    if ((QFileInfo::exists(targetPath) && !QFile::remove(targetPath))
+        || !QFile::copy(sourcePath, targetPath))
     {
-        scores.append(score);
+        if (errorMessage)
+        {
+            *errorMessage = failureMessage;
+        }
+        return false;
     }
 
-    const SpeakingEvalReportTemplateLayout& templateLayout =
-        speakingEvalReportTemplateLayout(
-            data.reportTemplate
-            );
+    return true;
+}
 
-    return {
-        { QStringLiteral("pptxPath"), QDir::toNativeSeparators(pptxPath) },
-        { QStringLiteral("pdfPath"), QDir::toNativeSeparators(pdfPath) },
+struct PowerPointTemplateProfile
+{
+    SpeakingEvalReportTemplate reportTemplate =
+        SpeakingEvalReportTemplate::Standard;
+    QString resourcePath;
+    QRectF signatureBounds;
+    bool scoreTableOnMaster = true;
+    QString scoreTableName;
+    int minimumTableRows = 12;
+    int minimumTableColumns = 6;
+    int firstGradeColumn = 2;
+    int neutralFillRed = 217;
+    int neutralFillGreen = 217;
+    int neutralFillBlue = 217;
+};
+
+struct PowerPointStudentJob
+{
+    QString displayName;
+    QString pdfPath;
+    QString completionPath;
+    QString englishName;
+    QString koreanName;
+    QString classLabel;
+    QString nativeTeacher;
+    QString koreanTeacher;
+    QString date;
+    QString comments;
+    QString overallGrade;
+    std::array<QString, 6> scores;
+};
+
+struct PowerPointBatchJob
+{
+    PowerPointTemplateProfile templateProfile;
+    QByteArray signatureImage;
+    QList<PowerPointStudentJob> students;
+};
+
+enum class PowerPointBatchStatus
+{
+    Completed,
+    Canceled,
+    Failed
+};
+
+PowerPointTemplateProfile powerPointTemplateProfile(
+    SpeakingEvalReportTemplate reportTemplate
+    )
+{
+    const SpeakingEvalReportTemplateLayout& layout =
+        speakingEvalReportTemplateLayout(reportTemplate);
+
+    PowerPointTemplateProfile profile;
+    profile.reportTemplate = reportTemplate;
+    profile.resourcePath =
+        ResourcePaths::Documents::filePath(
+            layout.powerPointResourcePath
+            );
+    profile.signatureBounds = layout.signatureBounds;
+
+    if (layout.usesAdvancedScoreTable)
+    {
+        profile.scoreTableOnMaster = false;
+        profile.scoreTableName = QStringLiteral("Report_Table");
+        profile.minimumTableColumns = 7;
+        profile.firstGradeColumn = 3;
+        profile.neutralFillRed = 229;
+        profile.neutralFillGreen = 229;
+        profile.neutralFillBlue = 231;
+    }
+    else
+    {
+        profile.scoreTableName = QStringLiteral("Grades & Scores");
+    }
+
+    return profile;
+}
+
+PowerPointBatchJob powerPointBatchJob(
+    const QList<StudentReport>& reports,
+    const QStringList& pdfPaths,
+    const QString& workingDirectory
+    )
+{
+    PowerPointBatchJob batch;
+    if (reports.isEmpty() || reports.size() != pdfPaths.size())
+    {
+        return batch;
+    }
+
+    batch.templateProfile =
+        powerPointTemplateProfile(
+            reports.constFirst().report.reportTemplate
+            );
+    batch.signatureImage =
+        reports.constFirst().report.signatureImage;
+    batch.students.reserve(reports.size());
+
+    for (int index = 0; index < reports.size(); ++index)
+    {
+        const StudentReport& student = reports.at(index);
+        const SpeakingEvalReportData& data = student.report;
+
+        PowerPointStudentJob job;
+        job.displayName = powerPointText(student.displayName);
+        job.pdfPath = pdfPaths.at(index);
+        job.completionPath =
+            QDir(workingDirectory).filePath(
+                QStringLiteral("completed-%1")
+                    .arg(index, 6, 10, QLatin1Char('0'))
+                );
+        job.englishName = powerPointText(data.englishName);
+        job.koreanName = powerPointText(data.koreanName);
+        job.classLabel = powerPointText(data.classLabel);
+        job.nativeTeacher = powerPointText(data.nativeTeacher);
+        job.koreanTeacher = powerPointText(data.koreanTeacher);
+        job.date = powerPointText(data.date);
+        job.comments = powerPointText(data.comments);
+        job.overallGrade = powerPointText(overallGrade(data.scores));
+        for (
+            std::size_t scoreIndex = 0;
+            scoreIndex < job.scores.size();
+            ++scoreIndex
+            )
         {
-            QStringLiteral("advanced"),
-            templateLayout.usesAdvancedScoreTable
+            job.scores[scoreIndex] =
+                powerPointText(data.scores[scoreIndex]);
+        }
+        batch.students.append(job);
+    }
+
+    return batch;
+}
+
+QJsonObject powerPointBatchJson(
+    const PowerPointBatchJob& batch,
+    const QString& pptxPath,
+    const QString& signaturePath,
+    const QString& cancelPath
+    )
+{
+    QJsonArray students;
+    for (const PowerPointStudentJob& job : batch.students)
+    {
+        QJsonArray scores;
+        for (const QString& score : job.scores)
+        {
+            scores.append(score);
+        }
+
+        students.append(
+            QJsonObject{
+                {
+                    QStringLiteral("displayName"),
+                    job.displayName
+                },
+                {
+                    QStringLiteral("pdfPath"),
+                    QDir::toNativeSeparators(job.pdfPath)
+                },
+                {
+                    QStringLiteral("completionPath"),
+                    QDir::toNativeSeparators(job.completionPath)
+                },
+                { QStringLiteral("englishName"), job.englishName },
+                { QStringLiteral("koreanName"), job.koreanName },
+                { QStringLiteral("classLabel"), job.classLabel },
+                { QStringLiteral("nativeTeacher"), job.nativeTeacher },
+                { QStringLiteral("koreanTeacher"), job.koreanTeacher },
+                { QStringLiteral("date"), job.date },
+                { QStringLiteral("comments"), job.comments },
+                { QStringLiteral("overallGrade"), job.overallGrade },
+                { QStringLiteral("scores"), scores }
+            }
+            );
+    }
+
+    const PowerPointTemplateProfile& profile =
+        batch.templateProfile;
+    return {
+        {
+            QStringLiteral("pptxPath"),
+            QDir::toNativeSeparators(pptxPath)
+        },
+        {
+            QStringLiteral("cancelPath"),
+            QDir::toNativeSeparators(cancelPath)
+        },
+        {
+            QStringLiteral("scoreTableOnMaster"),
+            profile.scoreTableOnMaster
+        },
+        {
+            QStringLiteral("scoreTableName"),
+            profile.scoreTableName
+        },
+        {
+            QStringLiteral("minimumTableRows"),
+            profile.minimumTableRows
+        },
+        {
+            QStringLiteral("minimumTableColumns"),
+            profile.minimumTableColumns
+        },
+        {
+            QStringLiteral("firstGradeColumn"),
+            profile.firstGradeColumn
+        },
+        {
+            QStringLiteral("neutralFill"),
+            profile.neutralFillRed
+                + (profile.neutralFillGreen << 8)
+                + (profile.neutralFillBlue << 16)
         },
         {
             QStringLiteral("signaturePath"),
@@ -367,34 +738,26 @@ QJsonObject powerPointJob(
         },
         {
             QStringLiteral("signatureLeft"),
-            templateLayout.signatureBounds.left()
+            profile.signatureBounds.left()
         },
         {
             QStringLiteral("signatureTop"),
-            templateLayout.signatureBounds.top()
+            profile.signatureBounds.top()
         },
         {
             QStringLiteral("signatureWidth"),
-            templateLayout.signatureBounds.width()
+            profile.signatureBounds.width()
         },
         {
             QStringLiteral("signatureHeight"),
-            templateLayout.signatureBounds.height()
+            profile.signatureBounds.height()
         },
-        { QStringLiteral("englishName"), data.englishName },
-        { QStringLiteral("koreanName"), data.koreanName },
-        { QStringLiteral("classLabel"), data.classLabel },
-        { QStringLiteral("nativeTeacher"), data.nativeTeacher },
-        { QStringLiteral("koreanTeacher"), data.koreanTeacher },
-        { QStringLiteral("date"), data.date },
-        { QStringLiteral("comments"), data.comments },
-        { QStringLiteral("overallGrade"), overallGrade(data.scores) },
-        { QStringLiteral("scores"), scores }
+        { QStringLiteral("students"), students }
     };
 }
 
 bool prepareSignatureImage(
-    const SpeakingEvalReportData& data,
+    const QByteArray& signatureImage,
     const QString& directory,
     QString* signaturePath,
     QString* errorMessage
@@ -406,25 +769,20 @@ bool prepareSignatureImage(
     }
 
     signaturePath->clear();
-    if (data.signatureImage.isEmpty())
+    if (signatureImage.isEmpty())
     {
         return true;
     }
 
     QImage signature;
-    if (!signature.loadFromData(data.signatureImage) || signature.isNull())
+    if (!signature.loadFromData(signatureImage) || signature.isNull())
     {
         return true;
     }
 
     const QString path =
         QDir(directory).filePath(
-            QStringLiteral("signature-%1.png")
-                .arg(
-                    QUuid::createUuid().toString(
-                        QUuid::WithoutBraces
-                        )
-                    )
+            QStringLiteral("signature.png")
             );
     if (!signature.save(path, "PNG"))
     {
@@ -513,13 +871,11 @@ function Require-Shape($shapes, [string]$name) {
     return $shape
 }
 
-function Set-Text($shapes, [string]$name, [string]$value) {
-    $shape = Require-Shape $shapes $name
+function Set-Text($shape, [string]$value) {
     $shape.TextFrame.TextRange.Text = $value
 }
 
-function Set-UnderlinedText($shapes, [string]$name, [string]$value) {
-    $shape = Require-Shape $shapes $name
+function Set-UnderlinedText($shape, [string]$value) {
     $shape.TextFrame.TextRange.Text = $value
     # Keep the text on the underline supplied by the template.  The text-box
     # bounds intentionally extend slightly below that line to leave room for
@@ -570,10 +926,10 @@ function Add-Signature(
 
 $data = Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json
 $pptxPath = [string]$data.pptxPath
-$pdfPath = [string]$data.pdfPath
-Write-Output ("ClassMngr PowerPoint export: $pptxPath -> $pdfPath")
+Write-Output ("ClassMngr PowerPoint batch export: $pptxPath")
 $ppt = $null
 $presentation = $null
+$canceled = $false
 
 try {
     $ppt = New-Object -ComObject PowerPoint.Application
@@ -581,51 +937,35 @@ try {
     $slide = $presentation.Slides.Item(1)
     $shapes = $slide.Shapes
 
-    Set-UnderlinedText $shapes 'English_Name' ([string]$data.englishName)
-    Set-UnderlinedText $shapes 'Korean_Name' ([string]$data.koreanName)
-    Set-UnderlinedText $shapes 'Grade_Level' ([string]$data.classLabel)
-    Set-UnderlinedText $shapes 'Native_Teacher' ([string]$data.nativeTeacher)
-    Set-UnderlinedText $shapes 'Korean_Teacher' ([string]$data.koreanTeacher)
-    Set-UnderlinedText $shapes 'Eval_Date' ([string]$data.date)
-    Set-Text $shapes 'Comments' ([string]$data.comments)
-    Set-Text $shapes 'Overall_Grade' ([string]$data.overallGrade)
+    $englishNameShape = Require-Shape $shapes 'English_Name'
+    $koreanNameShape = Require-Shape $shapes 'Korean_Name'
+    $gradeLevelShape = Require-Shape $shapes 'Grade_Level'
+    $nativeTeacherShape = Require-Shape $shapes 'Native_Teacher'
+    $koreanTeacherShape = Require-Shape $shapes 'Korean_Teacher'
+    $evaluationDateShape = Require-Shape $shapes 'Eval_Date'
+    $commentsShape = Require-Shape $shapes 'Comments'
+    $overallGradeShape = Require-Shape $shapes 'Overall_Grade'
 
-    $grey = 14277081
-    $yellow = 65535
-
-    if ([bool]$data.advanced) {
-        $table = Require-Table $shapes 'Report_Table' 12 7
-        $headerRows = @(1, 3, 5, 7, 9, 11)
-        $gradeColumns = @{ 'A+' = 3; 'A' = 4; 'B+' = 5; 'B' = 6; 'C' = 7 }
-
-        for ($index = 0; $index -lt $headerRows.Count; ++$index) {
-            foreach ($column in 3..7) {
-                Set-Fill $table.Cell($headerRows[$index], $column).Shape $grey
-            }
-            $score = [string]$data.scores[$index]
-            if ($gradeColumns.ContainsKey($score)) {
-                Set-Fill $table.Cell($headerRows[$index], $gradeColumns[$score]).Shape $yellow
-            }
-        }
+    if ([bool]$data.scoreTableOnMaster) {
+        $tableShapes = $slide.Master.Shapes
     }
     else {
-        # In the standard template the visible table and its borders live on
-        # the slide master.  The named score shapes on the slide are only
-        # transparent text overlays.  Filling those overlays hides the table
-        # borders, so apply the shading directly to the master-table cells.
-        $table = Require-Table $slide.Master.Shapes 'Grades & Scores' 12 6
-        $headerRows = @(1, 3, 5, 7, 9, 11)
-        $gradeColumns = @{ 'A+' = 2; 'A' = 3; 'B+' = 4; 'B' = 5; 'C' = 6 }
-
-        for ($index = 0; $index -lt $headerRows.Count; ++$index) {
-            foreach ($column in 2..6) {
-                Set-Fill $table.Cell($headerRows[$index], $column).Shape $grey
-            }
-            $score = [string]$data.scores[$index]
-            if ($gradeColumns.ContainsKey($score)) {
-                Set-Fill $table.Cell($headerRows[$index], $gradeColumns[$score]).Shape $yellow
-            }
-        }
+        $tableShapes = $shapes
+    }
+    $table = Require-Table `
+        $tableShapes `
+        ([string]$data.scoreTableName) `
+        ([int]$data.minimumTableRows) `
+        ([int]$data.minimumTableColumns)
+    $firstGradeColumn = [int]$data.firstGradeColumn
+    $grey = [int]$data.neutralFill
+    $yellow = 65535
+    $gradeOffsets = @{
+        'A+' = 0
+        'A' = 1
+        'B+' = 2
+        'B' = 3
+        'C' = 4
     }
 
     Add-Signature `
@@ -636,7 +976,48 @@ try {
         ([double]$data.signatureWidth) `
         ([double]$data.signatureHeight)
 
-    $presentation.SaveAs($pdfPath, [int]32)
+    foreach ($student in $data.students) {
+        if (Test-Path -LiteralPath ([string]$data.cancelPath)) {
+            $canceled = $true
+            break
+        }
+
+        Set-UnderlinedText $englishNameShape ([string]$student.englishName)
+        Set-UnderlinedText $koreanNameShape ([string]$student.koreanName)
+        Set-UnderlinedText $gradeLevelShape ([string]$student.classLabel)
+        Set-UnderlinedText $nativeTeacherShape ([string]$student.nativeTeacher)
+        Set-UnderlinedText $koreanTeacherShape ([string]$student.koreanTeacher)
+        Set-UnderlinedText $evaluationDateShape ([string]$student.date)
+        Set-Text $commentsShape ([string]$student.comments)
+        Set-Text $overallGradeShape ([string]$student.overallGrade)
+
+        for ($scoreIndex = 0; $scoreIndex -lt 6; ++$scoreIndex) {
+            $rowIndex = $scoreIndex * 2 + 1
+            foreach ($column in $firstGradeColumn..($firstGradeColumn + 4)) {
+                Set-Fill $table.Cell($rowIndex, $column).Shape $grey
+            }
+
+            $score = [string]$student.scores[$scoreIndex]
+            if ($gradeOffsets.ContainsKey($score)) {
+                $selectedCell = $table.Cell(
+                    $rowIndex,
+                    $firstGradeColumn + [int]$gradeOffsets[$score]
+                )
+                Set-Fill $selectedCell.Shape $yellow
+            }
+        }
+
+        $pdfPath = [string]$student.pdfPath
+        Write-Output (
+            "ClassMngr PowerPoint report: {0} -> {1}" `
+                -f ([string]$student.displayName), $pdfPath
+        )
+        $presentation.ExportAsFixedFormat($pdfPath, [int]2)
+        [System.IO.File]::WriteAllText(
+            ([string]$student.completionPath),
+            [string]::Empty
+        )
+    }
 }
 finally {
     if ($null -ne $presentation) {
@@ -646,6 +1027,10 @@ finally {
     if ($null -ne $ppt) {
         $ppt.Quit()
     }
+}
+
+if ($canceled) {
+    exit 2
 }
 )PS");
 }
@@ -729,7 +1114,7 @@ on addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, maximum
     if signaturePath is "" then return
 
     tell application "Microsoft PowerPoint"
-        set signaturePicture to make new picture at end of shapes of reportSlide with properties {file name:signaturePath}
+        set signaturePicture to make new picture at end of reportSlide with properties {file name:signaturePath, link to file:false, save with document:true}
         set pictureWidth to width of signaturePicture
         set pictureHeight to height of signaturePicture
         set scaleFactor to maximumWidth / pictureWidth
@@ -765,19 +1150,42 @@ on waitForOpenedPresentation(previousPresentationCount)
     return missing value
 end waitForOpenedPresentation
 
+on fileExists(filePath)
+    try
+        do shell script "/usr/bin/test -e " & quoted form of filePath
+        return true
+    on error
+        return false
+    end try
+end fileExists
+
+on touchFile(filePath)
+    do shell script "/usr/bin/touch " & quoted form of filePath
+end touchFile
+
+on decodedText(encodedText)
+    return do shell script "/bin/echo " & quoted form of encodedText & " | /usr/bin/base64 -D"
+end decodedText
+
 on run argv
     set pptxPath to item 1 of argv
-    set isAdvanced to (item 2 of argv is "true")
-    set signaturePath to item 3 of argv
-    set signatureLeft to item 4 of argv as real
-    set signatureTop to item 5 of argv as real
-    set signatureWidth to item 6 of argv as real
-    set signatureHeight to item 7 of argv as real
-    set jobCount to item 8 of argv as integer
-    set argumentIndex to 9
-    set greyFill to {217, 217, 217}
+    set scoreTableOnMaster to (item 2 of argv is "true")
+    set scoreTableName to item 3 of argv
+    set minimumTableRows to item 4 of argv as integer
+    set minimumTableColumns to item 5 of argv as integer
+    set firstGradeColumn to item 6 of argv as integer
+    set greyFill to {(item 7 of argv as integer), (item 8 of argv as integer), (item 9 of argv as integer)}
+    set signaturePath to item 10 of argv
+    set signatureLeft to item 11 of argv as real
+    set signatureTop to item 12 of argv as real
+    set signatureWidth to item 13 of argv as real
+    set signatureHeight to item 14 of argv as real
+    set cancelPath to item 15 of argv
+    set jobCount to item 16 of argv as integer
+    set argumentIndex to 17
     set yellowFill to {255, 255, 0}
     set reportPresentation to missing value
+    set wasCanceled to false
     set exportStep to "opening the presentation"
 
     try
@@ -806,32 +1214,34 @@ on run argv
             set overallGradeShape to my requireShape(reportSlide, "Overall_Grade")
 
             set exportStep to "resolving the score table"
-            if isAdvanced then
-                set greyFill to {229, 229, 231}
-                set reportTableShape to my requireTable(reportSlide, "Report_Table", 12, 7)
-                set firstGradeColumn to 3
+            if scoreTableOnMaster then
+                -- The standard template's visible bordered table lives on
+                -- the slide master; the slide shapes are transparent labels.
+                set scoreTableContainer to «property SlMr» of reportSlide
             else
-                -- The score-label shapes on the standard slide are
-                -- transparent overlays. Fill the cells in the bordered table
-                -- on the slide master directly.
-                set reportMaster to «property SlMr» of reportSlide
-                set reportTableShape to my requireTable(reportMaster, "Grades & Scores", 12, 6)
-                set firstGradeColumn to 2
+                set scoreTableContainer to reportSlide
             end if
+            set reportTableShape to my requireTable(scoreTableContainer, scoreTableName, minimumTableRows, minimumTableColumns)
 
             repeat with jobIndex from 1 to jobCount
-                set studentName to item argumentIndex of argv
+                if my fileExists(cancelPath) then
+                    set wasCanceled to true
+                    exit repeat
+                end if
+
+                set studentName to my decodedText(item argumentIndex of argv)
                 set pdfPath to item (argumentIndex + 1) of argv
-                set englishName to item (argumentIndex + 2) of argv
-                set koreanName to item (argumentIndex + 3) of argv
-                set classLabel to item (argumentIndex + 4) of argv
-                set nativeTeacher to item (argumentIndex + 5) of argv
-                set koreanTeacher to item (argumentIndex + 6) of argv
-                set evaluationDate to item (argumentIndex + 7) of argv
-                set commentsText to item (argumentIndex + 8) of argv
-                set overallGrade to item (argumentIndex + 9) of argv
-                set scoreValues to items (argumentIndex + 10) thru (argumentIndex + 15) of argv
-                set argumentIndex to argumentIndex + 16
+                set completionPath to item (argumentIndex + 2) of argv
+                set englishName to my decodedText(item (argumentIndex + 3) of argv)
+                set koreanName to my decodedText(item (argumentIndex + 4) of argv)
+                set classLabel to my decodedText(item (argumentIndex + 5) of argv)
+                set nativeTeacher to my decodedText(item (argumentIndex + 6) of argv)
+                set koreanTeacher to my decodedText(item (argumentIndex + 7) of argv)
+                set evaluationDate to my decodedText(item (argumentIndex + 8) of argv)
+                set commentsText to my decodedText(item (argumentIndex + 9) of argv)
+                set overallGrade to my decodedText(item (argumentIndex + 10) of argv)
+                set scoreValues to items (argumentIndex + 11) thru (argumentIndex + 16) of argv
+                set argumentIndex to argumentIndex + 17
 
                 set exportStep to "updating report text for " & studentName
                 my setShapeText(englishNameShape, englishName, true)
@@ -857,10 +1267,14 @@ on run argv
 
                 set exportStep to "saving the PDF for " & studentName
                 save reportPresentation in (POSIX file pdfPath) as save as PDF
+                my touchFile(completionPath)
             end repeat
 
             close reportPresentation saving no
             set reportPresentation to missing value
+            if wasCanceled then
+                error "ClassMngr PowerPoint export canceled." number 2
+            end if
         end tell
     on error errorMessage number errorNumber
         -- Keep cleanup outside PowerPoint's tell scope so AppleScript resolves
@@ -880,91 +1294,113 @@ end run
 }
 #endif
 
-bool renderPowerPointPdf(
-    const SpeakingEvalReportData& data,
-    const QString& documentPath,
-    QTemporaryDir* stagingDirectory,
+PowerPointBatchStatus renderPowerPointBatch(
+    const PowerPointBatchJob& batch,
+    const QString& automationDirectory,
+    const QString& presentationDirectory,
+    const std::function<
+        bool(int completed, int total, const QString& studentName)
+        >& progressCallback,
     QString* errorMessage
     )
 {
-    if (!stagingDirectory || !stagingDirectory->isValid())
+    if (batch.students.isEmpty()
+        || automationDirectory.trimmed().isEmpty()
+        || presentationDirectory.trimmed().isEmpty())
     {
         if (errorMessage)
         {
-            *errorMessage = QObject::tr("The temporary report directory is unavailable.");
+            *errorMessage = QObject::tr(
+                "The temporary PowerPoint batch is unavailable."
+                );
         }
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    const QString workingDirectory =
-        QDir(stagingDirectory->path()).filePath(
-            QStringLiteral("powerpoint-%1")
-                .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
-            );
-    if (!QDir().mkpath(workingDirectory))
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("A temporary PowerPoint directory could not be created.");
-        }
-        return false;
-    }
-
+    const QDir automation(automationDirectory);
+    const QDir presentation(presentationDirectory);
+    const QString preparedPptxPath =
+        automation.filePath(QStringLiteral("report-template.pptx"));
     const QString pptxPath =
-        QDir(workingDirectory).filePath(QStringLiteral("report.pptx"));
+        presentation.filePath(QStringLiteral("report-template.pptx"));
     const QString jobPath =
-        QDir(workingDirectory).filePath(QStringLiteral("report.json"));
+        automation.filePath(QStringLiteral("batch.json"));
+    const QString cancelPath =
+        automation.filePath(QStringLiteral("cancel-requested"));
     const QString scriptPath =
-        QDir(workingDirectory).filePath(
+        automation.filePath(
 #ifdef Q_OS_WIN
-            QStringLiteral("export.ps1")
+            QStringLiteral("export-batch.ps1")
 #else
-            QStringLiteral("export.applescript")
+            QStringLiteral("export-batch.applescript")
 #endif
             );
-    const SpeakingEvalReportTemplateLayout& templateLayout =
-        speakingEvalReportTemplateLayout(
-            data.reportTemplate
-            );
-    const QString resourcePath =
-        ResourcePaths::Documents::filePath(
-            templateLayout.powerPointResourcePath
-            );
 
-    if (!copyResourceToFile(resourcePath, pptxPath, errorMessage))
-    {
-        return false;
-    }
-
-    QString signaturePath;
-    if (!prepareSignatureImage(
-            data,
-            workingDirectory,
-            &signaturePath,
+    QString preparedSignaturePath;
+    if (!copyResourceToFile(
+            batch.templateProfile.resourcePath,
+            preparedPptxPath,
+            errorMessage
+            )
+        || !prepareSignatureImage(
+            batch.signatureImage,
+            automationDirectory,
+            &preparedSignaturePath,
             errorMessage
             ))
     {
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    const QByteArray jobJson =
-        QByteArrayLiteral("\xEF\xBB\xBF")
-        + QJsonDocument(
-            powerPointJob(
-                data,
-                pptxPath,
-                documentPath,
-                signaturePath
-                )
-            ).toJson(QJsonDocument::Compact);
-
-    if (!writeUtf8File(jobPath, jobJson, errorMessage))
+    QString signaturePath = preparedSignaturePath;
+    if (automationDirectory != presentationDirectory)
     {
-        return false;
+        if (!copyFileReplacing(
+                preparedPptxPath,
+                pptxPath,
+                QObject::tr(
+                    "The PowerPoint template could not be copied into PowerPoint's private workspace."
+                    ),
+                errorMessage
+                ))
+        {
+            return PowerPointBatchStatus::Failed;
+        }
+
+        signaturePath.clear();
+        if (!preparedSignaturePath.isEmpty())
+        {
+            signaturePath =
+                presentation.filePath(
+                    QStringLiteral("signature.png")
+                    );
+            if (!copyFileReplacing(
+                    preparedSignaturePath,
+                    signaturePath,
+                    QObject::tr(
+                        "The signature could not be copied into PowerPoint's private workspace."
+                        ),
+                    errorMessage
+                    ))
+            {
+                return PowerPointBatchStatus::Failed;
+            }
+        }
+    }
+
+    const int total = batch.students.size();
+    if (progressCallback
+        && !progressCallback(
+            0,
+            total,
+            batch.students.constFirst().displayName
+            ))
+    {
+        return PowerPointBatchStatus::Canceled;
     }
 
     QProcess process;
-    process.setWorkingDirectory(workingDirectory);
+    process.setWorkingDirectory(automationDirectory);
 
 #ifdef Q_OS_WIN
     const QString executable = powerShellExecutable();
@@ -974,16 +1410,27 @@ bool renderPowerPointPdf(
         {
             *errorMessage = powerPointRendererAvailabilityMessage();
         }
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    if (!writeUtf8File(
+    const QByteArray jobJson =
+        QByteArrayLiteral("\xEF\xBB\xBF")
+        + QJsonDocument(
+            powerPointBatchJson(
+                batch,
+                pptxPath,
+                signaturePath,
+                cancelPath
+                )
+            ).toJson(QJsonDocument::Compact);
+    if (!writeUtf8File(jobPath, jobJson, errorMessage)
+        || !writeUtf8File(
             scriptPath,
             windowsPowerPointScript().toUtf8(),
             errorMessage
             ))
     {
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
     process.start(
@@ -1007,7 +1454,7 @@ bool renderPowerPointPdf(
         {
             *errorMessage = powerPointRendererAvailabilityMessage();
         }
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
     if (!writeUtf8File(
@@ -1016,49 +1463,66 @@ bool renderPowerPointPdf(
             errorMessage
             ))
     {
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    process.start(
-        executable,
-        {
-            scriptPath,
-            pptxPath,
-            templateLayout.usesAdvancedScoreTable
-                ? QStringLiteral("true")
-                : QStringLiteral("false"),
-            signaturePath,
-            QString::number(templateLayout.signatureBounds.left()),
-            QString::number(templateLayout.signatureBounds.top()),
-            QString::number(templateLayout.signatureBounds.width()),
-            QString::number(templateLayout.signatureBounds.height()),
-            QStringLiteral("1"),
-            data.englishName,
-            documentPath,
-            data.englishName,
-            data.koreanName,
-            data.classLabel,
-            data.nativeTeacher,
-            data.koreanTeacher,
-            data.date,
-            data.comments,
-            overallGrade(data.scores),
-            data.scores[0],
-            data.scores[1],
-            data.scores[2],
-            data.scores[3],
-            data.scores[4],
-            data.scores[5]
-        }
-        );
+    const PowerPointTemplateProfile& profile =
+        batch.templateProfile;
+    QStringList arguments{
+        scriptPath,
+        pptxPath,
+        profile.scoreTableOnMaster
+            ? QStringLiteral("true")
+            : QStringLiteral("false"),
+        profile.scoreTableName,
+        QString::number(profile.minimumTableRows),
+        QString::number(profile.minimumTableColumns),
+        QString::number(profile.firstGradeColumn),
+        QString::number(profile.neutralFillRed),
+        QString::number(profile.neutralFillGreen),
+        QString::number(profile.neutralFillBlue),
+        signaturePath,
+        QString::number(profile.signatureBounds.left()),
+        QString::number(profile.signatureBounds.top()),
+        QString::number(profile.signatureBounds.width()),
+        QString::number(profile.signatureBounds.height()),
+        cancelPath,
+        QString::number(batch.students.size())
+    };
+    for (const PowerPointStudentJob& job : batch.students)
+    {
+        arguments.append(
+            QStringList{
+                macPowerPointTextArgument(job.displayName),
+                job.pdfPath,
+                job.completionPath,
+                macPowerPointTextArgument(job.englishName),
+                macPowerPointTextArgument(job.koreanName),
+                macPowerPointTextArgument(job.classLabel),
+                macPowerPointTextArgument(job.nativeTeacher),
+                macPowerPointTextArgument(job.koreanTeacher),
+                macPowerPointTextArgument(job.date),
+                macPowerPointTextArgument(job.comments),
+                macPowerPointTextArgument(job.overallGrade),
+                job.scores[0],
+                job.scores[1],
+                job.scores[2],
+                job.scores[3],
+                job.scores[4],
+                job.scores[5]
+            }
+            );
+    }
+    process.start(executable, arguments);
 #else
-    Q_UNUSED(scriptPath);
     Q_UNUSED(jobPath);
+    Q_UNUSED(scriptPath);
+    Q_UNUSED(cancelPath);
     if (errorMessage)
     {
         *errorMessage = powerPointRendererAvailabilityMessage();
     }
-    return false;
+    return PowerPointBatchStatus::Failed;
 #endif
 
     if (!process.waitForStarted())
@@ -1067,199 +1531,84 @@ bool renderPowerPointPdf(
         {
             *errorMessage = QObject::tr("PowerPoint could not be started.");
         }
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    if (!process.waitForFinished(PowerPointTimeoutMs))
+    bool cancellationRequested = false;
+    int completedCount = 0;
+    const auto requestCancellation =
+        [&cancelPath, &cancellationRequested]()
     {
-        process.kill();
-        process.waitForFinished();
-        if (errorMessage)
+        if (cancellationRequested)
         {
-            *errorMessage = QObject::tr("PowerPoint did not finish exporting the report.");
+            return;
         }
-        return false;
-    }
-
-    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
+        cancellationRequested = true;
+        writeUtf8File(cancelPath, {}, nullptr);
+    };
+    const auto updateProgress =
+        [&batch,
+         &progressCallback,
+         &requestCancellation,
+         &completedCount,
+         total]()
     {
-        if (errorMessage)
+        while (completedCount < total
+               && QFileInfo::exists(
+                   batch.students.at(completedCount).completionPath
+                   ))
         {
-            const QString details =
-                (QString::fromUtf8(process.readAllStandardError())
-                 + QLatin1Char('\n')
-                 + QString::fromUtf8(process.readAllStandardOutput()))
-                    .trimmed();
-            *errorMessage = details.isEmpty()
-                ? QObject::tr("PowerPoint could not export the report.")
-                : details;
-        }
-        return false;
-    }
-
-    if (!QFileInfo::exists(documentPath)
-        || QFileInfo(documentPath).size() <= 0)
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("PowerPoint did not create a PDF report.");
-        }
-        return false;
-    }
-
-    return true;
-}
-
-#ifdef Q_OS_MACOS
-bool renderMacPowerPointTemplateBatch(
-    const QList<StudentReport>& reports,
-    const QStringList& documentPaths,
-    const QList<int>& reportIndexes,
-    SpeakingEvalReportTemplate reportTemplate,
-    QTemporaryDir* stagingDirectory,
-    QString* errorMessage
-    )
-{
-    if (reportIndexes.isEmpty())
-    {
-        return true;
-    }
-
-    const QString workingDirectory = powerPointWorkingDirectory();
-    if (workingDirectory.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("PowerPoint's ClassMngr Documents folder could not be created.");
-        }
-        return false;
-    }
-
-    const QString exportId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    const QString pptxPath =
-        QDir(workingDirectory).filePath(
-            QStringLiteral("report-%1.pptx").arg(exportId)
-            );
-    const QString scriptPath =
-        QDir(workingDirectory).filePath(
-            QStringLiteral("export-%1.applescript").arg(exportId)
-            );
-    QString signaturePath;
-    const auto removeWorkingFiles =
-        [&pptxPath, &scriptPath, &signaturePath]()
-    {
-        QFile::remove(pptxPath);
-        QFile::remove(scriptPath);
-        if (!signaturePath.isEmpty())
-        {
-            QFile::remove(signaturePath);
+            ++completedCount;
+            const QString nextStudent =
+                completedCount < total
+                    ? batch.students.at(completedCount).displayName
+                    : QString();
+            if (progressCallback
+                && !progressCallback(
+                    completedCount,
+                    total,
+                    nextStudent
+                    ))
+            {
+                requestCancellation();
+            }
         }
     };
-    const SpeakingEvalReportTemplateLayout& templateLayout =
-        speakingEvalReportTemplateLayout(
-            reportTemplate
-            );
-    const QString resourcePath =
-        ResourcePaths::Documents::filePath(
-            templateLayout.powerPointResourcePath
-            );
 
-    if (!copyResourceToFile(resourcePath, pptxPath, errorMessage)
-        || !prepareSignatureImage(
-            reports.at(reportIndexes.constFirst()).report,
-            workingDirectory,
-            &signaturePath,
-            errorMessage
-            )
-        || !writeUtf8File(
-            scriptPath,
-            macPowerPointScript().toUtf8(),
-            errorMessage
-            ))
-    {
-        removeWorkingFiles();
-        return false;
-    }
-
-    const QString executable =
-        QStandardPaths::findExecutable(QStringLiteral("osascript"));
-    if (executable.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = powerPointRendererAvailabilityMessage();
-        }
-        removeWorkingFiles();
-        return false;
-    }
-
-    QStringList arguments{
-        scriptPath,
-        pptxPath,
-        templateLayout.usesAdvancedScoreTable
-            ? QStringLiteral("true")
-            : QStringLiteral("false"),
-        signaturePath,
-        QString::number(templateLayout.signatureBounds.left()),
-        QString::number(templateLayout.signatureBounds.top()),
-        QString::number(templateLayout.signatureBounds.width()),
-        QString::number(templateLayout.signatureBounds.height()),
-        QString::number(reportIndexes.size())
-    };
-    for (const int reportIndex : reportIndexes)
-    {
-        const StudentReport& student = reports.at(reportIndex);
-        const SpeakingEvalReportData& data = student.report;
-        arguments.append(QStringList{
-            student.displayName,
-            documentPaths.at(reportIndex),
-            data.englishName,
-            data.koreanName,
-            data.classLabel,
-            data.nativeTeacher,
-            data.koreanTeacher,
-            data.date,
-            data.comments,
-            overallGrade(data.scores),
-            data.scores[0],
-            data.scores[1],
-            data.scores[2],
-            data.scores[3],
-            data.scores[4],
-            data.scores[5]
-        });
-    }
-
-    QProcess process;
-    process.setWorkingDirectory(workingDirectory);
-    process.start(executable, arguments);
-    if (!process.waitForStarted())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("PowerPoint could not be started.");
-        }
-        removeWorkingFiles();
-        return false;
-    }
-
+    QElapsedTimer timer;
+    timer.start();
     const qint64 timeout =
         static_cast<qint64>(PowerPointTimeoutMs)
-        * std::max<qsizetype>(1, reportIndexes.size());
-    if (!process.waitForFinished(
-            static_cast<int>(
-                std::min<qint64>(timeout, std::numeric_limits<int>::max())
-                )
-            ))
+        * std::max(1, total);
+    while (process.state() != QProcess::NotRunning)
     {
-        process.kill();
-        process.waitForFinished();
+        process.waitForFinished(100);
+        updateProgress();
+        if (timer.elapsed() <= timeout)
+        {
+            continue;
+        }
+
+        writeUtf8File(cancelPath, {}, nullptr);
+        process.terminate();
+        if (!process.waitForFinished(5000))
+        {
+            process.kill();
+            process.waitForFinished();
+        }
         if (errorMessage)
         {
-            *errorMessage = QObject::tr("PowerPoint did not finish exporting the reports.");
+            *errorMessage = QObject::tr(
+                "PowerPoint did not finish exporting the reports."
+                );
         }
-        removeWorkingFiles();
-        return false;
+        return PowerPointBatchStatus::Failed;
+    }
+    updateProgress();
+
+    if (cancellationRequested)
+    {
+        return PowerPointBatchStatus::Canceled;
     }
 
     if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
@@ -1275,76 +1624,94 @@ bool renderMacPowerPointTemplateBatch(
                 ? QObject::tr("PowerPoint could not export the reports.")
                 : details;
         }
-        removeWorkingFiles();
-        return false;
+        return PowerPointBatchStatus::Failed;
     }
 
-    for (const int reportIndex : reportIndexes)
+    for (const PowerPointStudentJob& job : batch.students)
     {
-        const QString& documentPath = documentPaths.at(reportIndex);
-        if (!QFileInfo::exists(documentPath)
-            || QFileInfo(documentPath).size() <= 0)
+        if (!QFileInfo::exists(job.pdfPath)
+            || QFileInfo(job.pdfPath).size() <= 0)
         {
             if (errorMessage)
             {
-                *errorMessage = QObject::tr("PowerPoint did not create a PDF report for %1.")
-                                    .arg(reports.at(reportIndex).displayName);
+                *errorMessage = QObject::tr(
+                    "PowerPoint did not create a PDF report for %1."
+                    ).arg(job.displayName);
             }
-            removeWorkingFiles();
-            return false;
+            return PowerPointBatchStatus::Failed;
         }
     }
 
-    removeWorkingFiles();
-    return true;
+    return PowerPointBatchStatus::Completed;
 }
 
-bool renderMacPowerPointPdfs(
-    const QList<StudentReport>& reports,
-    const QStringList& documentPaths,
-    QTemporaryDir* stagingDirectory,
+bool copyPowerPointOutputFiles(
+    const PowerPointBatchJob& batch,
+    const QStringList& stagedPdfPaths,
     QString* errorMessage
     )
 {
-    if (!stagingDirectory || !stagingDirectory->isValid())
+    if (batch.students.size() != stagedPdfPaths.size())
     {
         if (errorMessage)
         {
-            *errorMessage = QObject::tr("The temporary report directory is unavailable.");
+            *errorMessage = QObject::tr(
+                "The PowerPoint batch output is incomplete."
+                );
         }
         return false;
     }
 
-    QMap<SpeakingEvalReportTemplate, QList<int>> reportIndexesByTemplate;
-    for (int index = 0; index < reports.size(); ++index)
+    for (int index = 0; index < batch.students.size(); ++index)
     {
-        reportIndexesByTemplate[
-            reports.at(index).report.reportTemplate
-            ].append(index);
-    }
-
-    for (
-        auto iterator = reportIndexesByTemplate.cbegin();
-        iterator != reportIndexesByTemplate.cend();
-        ++iterator
-        )
-    {
-        if (!renderMacPowerPointTemplateBatch(
-                reports,
-                documentPaths,
-                iterator.value(),
-                iterator.key(),
-                stagingDirectory,
+        const PowerPointStudentJob& job =
+            batch.students.at(index);
+        const QString stagedPath =
+            stagedPdfPaths.at(index);
+        if (!copyFileReplacing(
+                job.pdfPath,
+                stagedPath,
+                QObject::tr(
+                    "The PowerPoint PDF for %1 could not be copied into ClassMngr's workspace."
+                    ).arg(job.displayName),
                 errorMessage
-                ))
+                )
+            || !QFileInfo::exists(stagedPath)
+            || QFileInfo(stagedPath).size() <= 0)
         {
+            if (errorMessage && errorMessage->isEmpty())
+            {
+                *errorMessage = QObject::tr(
+                    "The staged PowerPoint PDF for %1 is incomplete."
+                    ).arg(job.displayName);
+            }
             return false;
         }
     }
 
     return true;
 }
-#endif
+
+bool powerPointReportsUseSingleTemplate(
+    const QList<StudentReport>& reports
+    )
+{
+    if (reports.isEmpty())
+    {
+        return true;
+    }
+
+    const SpeakingEvalReportTemplate reportTemplate =
+        reports.constFirst().report.reportTemplate;
+    return std::all_of(
+        reports.cbegin(),
+        reports.cend(),
+        [reportTemplate](const StudentReport& report)
+        {
+            return report.report.reportTemplate == reportTemplate;
+        }
+        );
+}
 
 bool targetFilePaths(
     const Request& request,
@@ -1721,6 +2088,16 @@ Result exportReports(
     }
 
     if (request.renderer == Renderer::PowerPoint
+        && !powerPointReportsUseSingleTemplate(request.reports))
+    {
+        return failed(
+            QObject::tr(
+                "All reports in a PowerPoint batch must use the same template."
+                )
+            );
+    }
+
+    if (request.renderer == Renderer::PowerPoint
         && !isPowerPointRendererAvailable())
     {
         return failed(powerPointRendererAvailabilityMessage());
@@ -1746,41 +2123,79 @@ Result exportReports(
 
     QStringList stagedPdfPaths;
     stagedPdfPaths.reserve(request.reports.size());
-    bool pdfsSavedDirectlyToTarget = false;
-#ifdef Q_OS_MACOS
-    if (request.renderer == Renderer::PowerPoint && request.savePdf)
+    std::unique_ptr<PowerPointBatchWorkspace> powerPointWorkspace;
+    if (request.renderer == Renderer::PowerPoint)
     {
-        for (int index = 0; index < request.reports.size(); ++index)
-        {
-            const StudentReport& student = request.reports.at(index);
-            if (request.progressCallback
-                && !request.progressCallback(
-                    index,
-                    request.reports.size(),
-                    student.displayName
-                    ))
-            {
-                return canceled();
-            }
-
-            stagedPdfPaths.append(
-                targetPaths.at(index)
-                );
-        }
-
-        if (!renderMacPowerPointPdfs(
-                request.reports,
-                stagedPdfPaths,
-                &stagingDirectory,
+        powerPointWorkspace =
+            std::make_unique<PowerPointBatchWorkspace>();
+        if (!powerPointWorkspace->prepare(
+                stagingDirectory.path(),
                 &errorMessage
                 ))
         {
             return failed(errorMessage);
         }
-        pdfsSavedDirectlyToTarget = true;
+
+        QStringList powerPointPdfPaths;
+        powerPointPdfPaths.reserve(request.reports.size());
+        for (int index = 0; index < request.reports.size(); ++index)
+        {
+            const QString fileName =
+                QStringLiteral("report-%1.pdf")
+                    .arg(index, 6, 10, QLatin1Char('0'));
+            stagedPdfPaths.append(
+                QDir(
+                    powerPointWorkspace->automationDirectory()
+                    ).filePath(fileName)
+                );
+            powerPointPdfPaths.append(
+                QDir(
+                    powerPointWorkspace->presentationDirectory()
+                    ).filePath(fileName)
+                );
+        }
+
+        const PowerPointBatchJob batch =
+            powerPointBatchJob(
+                request.reports,
+                powerPointPdfPaths,
+                powerPointWorkspace->automationDirectory()
+                );
+        const PowerPointBatchStatus powerPointStatus =
+            renderPowerPointBatch(
+                batch,
+                powerPointWorkspace->automationDirectory(),
+                powerPointWorkspace->presentationDirectory(),
+                request.progressCallback,
+                &errorMessage
+                );
+        if (powerPointStatus == PowerPointBatchStatus::Canceled)
+        {
+            return canceled();
+        }
+        if (powerPointStatus == PowerPointBatchStatus::Failed)
+        {
+            return failed(errorMessage);
+        }
+
+        if (powerPointWorkspace->usesSeparatePresentationDirectory()
+            && !copyPowerPointOutputFiles(
+                batch,
+                stagedPdfPaths,
+                &errorMessage
+                ))
+        {
+            return failed(errorMessage);
+        }
+
+        if (!powerPointWorkspace->removePresentationDirectory(
+                &errorMessage
+                ))
+        {
+            return failed(errorMessage);
+        }
     }
     else
-#endif
     {
         for (int index = 0; index < request.reports.size(); ++index)
         {
@@ -1804,39 +2219,36 @@ Result exportReports(
                     );
 
             const bool rendered =
-                request.renderer == Renderer::Internal
-                    ? renderInternalPdf(student.report, stagedPath, &errorMessage)
-                    : renderPowerPointPdf(
-                        student.report,
-                        stagedPath,
-                        &stagingDirectory,
-                        &errorMessage
-                        );
+                renderInternalPdf(
+                    student.report,
+                    stagedPath,
+                    &errorMessage
+                    );
 
             if (!rendered)
             {
                 return failed(
                     QObject::tr("%1: %2")
                         .arg(student.displayName, errorMessage),
-                    request.renderer == Renderer::Internal
+                    true
                     );
             }
 
             stagedPdfPaths.append(stagedPath);
         }
+
+        if (request.progressCallback
+            && !request.progressCallback(
+                request.reports.size(),
+                request.reports.size(),
+                QString()
+                ))
+        {
+            return canceled();
+        }
     }
 
-    if (request.progressCallback
-        && !request.progressCallback(
-            request.reports.size(),
-            request.reports.size(),
-            QString()
-            ))
-    {
-        return canceled();
-    }
-
-    if (request.savePdf && !pdfsSavedDirectlyToTarget
+    if (request.savePdf
         && !commitPdfFiles(
             stagedPdfPaths,
             targetPaths,

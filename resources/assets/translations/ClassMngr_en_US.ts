@@ -4,7 +4,7 @@
 <context>
     <name>AboutDialog</name>
     <message>
-        <location filename="../../../src/ui/shared/dialogs/about_dialog.cpp" line="+152"/>
+        <location filename="../../../src/ui/shared/dialogs/about_dialog.cpp" line="+156"/>
         <source>Inter Font License</source>
         <translation>Inter Font License</translation>
     </message>
@@ -14,7 +14,7 @@
         <translation>Pretendard Font License</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+19"/>
         <source>About %1</source>
         <translation>About %1</translation>
     </message>
@@ -34,12 +34,11 @@
         <translation>Acknowledgements</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>This non-commercial application is built with %1 under Qt&apos;s open-source licensing terms and includes the %2 and %3 font families.</source>
-        <translation>This non-commercial application is built with %1 under Qt&apos;s open-source licensing terms and includes the %2 and %3 font families.</translation>
+        <translation type="vanished">This non-commercial application is built with %1 under Qt&apos;s open-source licensing terms and includes the %2 and %3 font families.</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+37"/>
         <source>Qt source and license information: %1</source>
         <translation>Qt source and license information: %1</translation>
     </message>
@@ -49,17 +48,27 @@
         <translation>Open-source licenses used in Qt</translation>
     </message>
     <message>
-        <location line="-20"/>
+        <location line="-24"/>
         <source>Qt 6</source>
         <translation>Qt 6</translation>
     </message>
     <message>
-        <location line="-36"/>
+        <location line="-125"/>
+        <source>Just Another Hand Font License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+89"/>
         <source>%1 is a desktop classroom management tool for organizing schedules, rosters, campus information, teacher details, and substitute-prep notes.</source>
         <translation>%1 is a desktop classroom management tool for organizing schedules, rosters, campus information, teacher details, and substitute-prep notes.</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+33"/>
+        <source>This non-commercial application is built with %1 under Qt&apos;s open-source licensing terms and includes the %2, %3, and %4 font families.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Inter</source>
         <translation>Inter</translation>
     </message>
@@ -67,6 +76,11 @@
         <location line="+4"/>
         <source>Pretendard</source>
         <translation>Pretendard</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Just Another Hand</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+25"/>
@@ -84,7 +98,12 @@
         <translation>View Pretendard License</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+6"/>
+        <source>View Just Another Hand License</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
         <location line="+95"/>
         <source>Close</source>
         <translation>Close</translation>
@@ -164,497 +183,509 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+104"/>
-        <location line="+339"/>
+        <location line="+346"/>
         <source>New Database...</source>
         <translation>New Database...</translation>
     </message>
     <message>
-        <location line="-338"/>
-        <location line="+339"/>
+        <location line="-345"/>
+        <location line="+346"/>
         <source>Create a new database</source>
         <translation>Create a new database</translation>
     </message>
     <message>
-        <location line="-335"/>
-        <location line="+342"/>
+        <location line="-342"/>
+        <location line="+349"/>
         <source>Open...</source>
         <translation>Open...</translation>
     </message>
     <message>
-        <location line="-341"/>
-        <location line="+342"/>
+        <location line="-348"/>
+        <location line="+349"/>
         <source>Open an existing file</source>
         <translation>Open an existing file</translation>
     </message>
     <message>
-        <location line="-338"/>
-        <location line="+345"/>
+        <location line="-345"/>
+        <location line="+352"/>
         <source>Save</source>
         <translation>Save</translation>
     </message>
     <message>
-        <location line="-344"/>
-        <location line="+345"/>
+        <location line="-351"/>
+        <location line="+352"/>
         <source>Save the current file</source>
         <translation>Save the current file</translation>
     </message>
     <message>
-        <location line="-341"/>
-        <location line="+348"/>
+        <location line="-348"/>
+        <location line="+355"/>
         <source>Save As...</source>
         <translation>Save As...</translation>
     </message>
     <message>
-        <location line="-347"/>
-        <location line="+348"/>
+        <location line="-354"/>
+        <location line="+355"/>
         <source>Save the file with a new name</source>
         <translation>Save the file with a new name</translation>
     </message>
     <message>
-        <location line="-344"/>
-        <location line="+349"/>
+        <location line="-351"/>
+        <location line="+356"/>
         <source>Export As...</source>
         <translation>Export As...</translation>
     </message>
     <message>
-        <location line="-348"/>
-        <location line="+349"/>
+        <location line="-355"/>
+        <location line="+356"/>
         <source>Export the current file</source>
         <translation>Export the current file</translation>
     </message>
     <message>
-        <location line="-345"/>
-        <location line="+352"/>
+        <location line="-352"/>
+        <location line="+359"/>
         <source>Close</source>
         <translation>Close</translation>
     </message>
     <message>
-        <location line="-351"/>
-        <location line="+352"/>
+        <location line="-358"/>
+        <location line="+359"/>
         <source>Close the current file</source>
         <translation>Close the current file</translation>
     </message>
     <message>
-        <location line="-348"/>
-        <location line="+355"/>
+        <location line="-355"/>
+        <location line="+362"/>
         <source>Exit</source>
         <translation>Exit</translation>
     </message>
     <message>
-        <location line="-354"/>
-        <location line="+355"/>
+        <location line="-361"/>
+        <location line="+362"/>
         <source>Exit the application</source>
         <translation>Exit the application</translation>
     </message>
     <message>
-        <location line="-350"/>
-        <location line="+368"/>
+        <location line="-357"/>
+        <location line="+375"/>
         <source>Undo</source>
         <translation>Undo</translation>
     </message>
     <message>
-        <location line="-367"/>
-        <location line="+368"/>
+        <location line="-374"/>
+        <location line="+375"/>
         <source>Undo the last action</source>
         <translation>Undo the last action</translation>
     </message>
     <message>
-        <location line="-364"/>
-        <location line="+370"/>
+        <location line="-371"/>
+        <location line="+377"/>
         <source>Redo</source>
         <translation>Redo</translation>
     </message>
     <message>
-        <location line="-369"/>
-        <location line="+370"/>
+        <location line="-376"/>
+        <location line="+377"/>
         <source>Redo the last undone action</source>
         <translation>Redo the last undone action</translation>
     </message>
     <message>
-        <location line="-366"/>
-        <location line="+372"/>
+        <location line="-373"/>
+        <location line="+379"/>
         <source>Cut</source>
         <translation>Cut</translation>
     </message>
     <message>
-        <location line="-371"/>
-        <location line="+372"/>
+        <location line="-378"/>
+        <location line="+379"/>
         <source>Cut the selected content</source>
         <translation>Cut the selected content</translation>
     </message>
     <message>
-        <location line="-368"/>
-        <location line="+374"/>
+        <location line="-375"/>
+        <location line="+381"/>
         <source>Copy</source>
         <translation>Copy</translation>
     </message>
     <message>
-        <location line="-373"/>
-        <location line="+374"/>
+        <location line="-380"/>
+        <location line="+381"/>
         <source>Copy the selected content</source>
         <translation>Copy the selected content</translation>
     </message>
     <message>
-        <location line="-370"/>
-        <location line="+376"/>
+        <location line="-377"/>
+        <location line="+383"/>
         <source>Paste</source>
         <translation>Paste</translation>
     </message>
     <message>
-        <location line="-375"/>
-        <location line="+376"/>
+        <location line="-382"/>
+        <location line="+383"/>
         <source>Paste content from the clipboard</source>
         <translation>Paste content from the clipboard</translation>
     </message>
     <message>
-        <location line="-371"/>
-        <location line="+390"/>
+        <location line="-378"/>
+        <location line="+397"/>
         <source>New Class</source>
         <translation>New Class</translation>
     </message>
     <message>
-        <location line="-389"/>
-        <location line="+390"/>
+        <location line="-396"/>
+        <location line="+397"/>
         <source>Create a new class</source>
         <translation>Create a new class</translation>
     </message>
     <message>
-        <location line="-386"/>
-        <location line="+391"/>
+        <location line="-393"/>
+        <location line="+398"/>
         <source>Delete Class</source>
         <translation>Delete Class</translation>
     </message>
     <message>
-        <location line="-390"/>
-        <location line="+391"/>
+        <location line="-397"/>
+        <location line="+398"/>
         <source>Delete the selected class</source>
         <translation>Delete the selected class</translation>
     </message>
     <message>
-        <location line="-387"/>
-        <location line="+392"/>
+        <location line="-394"/>
+        <location line="+399"/>
         <source>Import Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+392"/>
+        <location line="-398"/>
+        <location line="+399"/>
         <source>Import classes from a class package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-388"/>
-        <location line="+393"/>
+        <location line="-395"/>
+        <location line="+400"/>
         <source>Export Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-392"/>
-        <location line="+393"/>
+        <location line="-399"/>
+        <location line="+400"/>
         <source>Export selected classes to a class package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-389"/>
-        <location line="+394"/>
+        <location line="-396"/>
+        <location line="+401"/>
         <source>New Teacher</source>
         <translation>New Teacher</translation>
     </message>
     <message>
-        <location line="-393"/>
-        <location line="+394"/>
+        <location line="-400"/>
+        <location line="+401"/>
         <source>Create a new teacher</source>
         <translation>Create a new teacher</translation>
     </message>
     <message>
-        <location line="-390"/>
-        <location line="+395"/>
+        <location line="-397"/>
+        <location line="+402"/>
         <source>Delete Teacher</source>
         <translation>Delete Teacher</translation>
     </message>
     <message>
-        <location line="-394"/>
-        <location line="+395"/>
+        <location line="-401"/>
+        <location line="+402"/>
         <source>Delete the selected teacher</source>
         <translation>Delete the selected teacher</translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+396"/>
+        <location line="-398"/>
+        <location line="+403"/>
         <source>Import Teachers...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-395"/>
-        <location line="+396"/>
+        <location line="-402"/>
+        <location line="+403"/>
         <source>Import teachers and campus staff from an Excel workbook</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-389"/>
-        <location line="+404"/>
+        <location line="-396"/>
+        <location line="+411"/>
         <source>Automatic</source>
         <translation>Automatic</translation>
     </message>
     <message>
-        <location line="-403"/>
-        <location line="+404"/>
+        <location line="-410"/>
+        <location line="+411"/>
         <source>Automatically save changes</source>
         <translation>Automatically save changes</translation>
     </message>
     <message>
-        <location line="-400"/>
-        <location line="+405"/>
+        <location line="-407"/>
+        <location line="+412"/>
         <source>Manual</source>
         <translation>Manual</translation>
     </message>
     <message>
-        <location line="-404"/>
-        <location line="+405"/>
+        <location line="-411"/>
+        <location line="+412"/>
         <source>Save changes manually</source>
         <translation>Save changes manually</translation>
     </message>
     <message>
-        <location line="-397"/>
-        <location line="+414"/>
+        <location line="-404"/>
+        <location line="+421"/>
         <source>Dark Theme</source>
         <translation>Dark Theme</translation>
     </message>
     <message>
-        <location line="-413"/>
-        <location line="+414"/>
+        <location line="-420"/>
+        <location line="+421"/>
         <source>Use dark theme</source>
         <translation>Use dark theme</translation>
     </message>
     <message>
-        <location line="-410"/>
-        <location line="+415"/>
+        <location line="-417"/>
+        <location line="+422"/>
         <source>Light Theme</source>
         <translation>Light Theme</translation>
     </message>
     <message>
-        <location line="-414"/>
-        <location line="+415"/>
+        <location line="-421"/>
+        <location line="+422"/>
         <source>Use light theme</source>
         <translation>Use light theme</translation>
     </message>
     <message>
-        <location line="-407"/>
-        <location line="+423"/>
+        <location line="-414"/>
+        <location line="+430"/>
         <source>System Default</source>
         <translation>System Default</translation>
     </message>
     <message>
-        <location line="-422"/>
-        <location line="+423"/>
+        <location line="-429"/>
+        <location line="+430"/>
         <source>Use the system language</source>
         <translation>Use the system language</translation>
     </message>
     <message>
-        <location line="-419"/>
-        <location line="+424"/>
+        <location line="-426"/>
+        <location line="+431"/>
         <source>English</source>
         <translation>English</translation>
     </message>
     <message>
-        <location line="-423"/>
-        <location line="+424"/>
+        <location line="-430"/>
+        <location line="+431"/>
         <source>Use English</source>
         <translation>Use English</translation>
     </message>
     <message>
-        <location line="-420"/>
-        <location line="+425"/>
+        <location line="-427"/>
+        <location line="+432"/>
         <source>Korean</source>
         <translation>Korean</translation>
     </message>
     <message>
-        <location line="-424"/>
-        <location line="+425"/>
+        <location line="-431"/>
+        <location line="+432"/>
         <source>Use Korean</source>
         <translation>Use Korean</translation>
     </message>
     <message>
-        <location line="-417"/>
+        <location line="-424"/>
         <location line="+29"/>
-        <location line="+413"/>
+        <location line="+420"/>
         <location line="+57"/>
         <source>Small</source>
         <translation>Small</translation>
     </message>
     <message>
-        <location line="-498"/>
-        <location line="+442"/>
+        <location line="-505"/>
+        <location line="+449"/>
         <source>Use small font size</source>
         <translation>Use small font size</translation>
     </message>
     <message>
-        <location line="-438"/>
-        <location line="+443"/>
+        <location line="-445"/>
+        <location line="+450"/>
         <source>Normal</source>
         <translation>Normal</translation>
     </message>
     <message>
-        <location line="-442"/>
-        <location line="+443"/>
+        <location line="-449"/>
+        <location line="+450"/>
         <source>Use normal font size</source>
         <translation>Use normal font size</translation>
     </message>
     <message>
-        <location line="-439"/>
+        <location line="-446"/>
         <location line="+29"/>
-        <location line="+415"/>
+        <location line="+422"/>
         <location line="+57"/>
         <source>Large</source>
         <translation>Large</translation>
     </message>
     <message>
-        <location line="-500"/>
-        <location line="+444"/>
+        <location line="-507"/>
+        <location line="+451"/>
         <source>Use large font size</source>
         <translation>Use large font size</translation>
     </message>
     <message>
-        <location line="-440"/>
-        <location line="+445"/>
+        <location line="-447"/>
+        <location line="+452"/>
         <source>Extra Large</source>
         <translation>Extra Large</translation>
     </message>
     <message>
-        <location line="-444"/>
-        <location line="+445"/>
+        <location line="-451"/>
+        <location line="+452"/>
         <source>Use extra large font size</source>
         <translation>Use extra large font size</translation>
     </message>
     <message>
-        <location line="-437"/>
-        <location line="+469"/>
+        <location line="-444"/>
+        <location line="+476"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-468"/>
-        <location line="+469"/>
+        <location line="-475"/>
+        <location line="+476"/>
         <source>Show PDF pages with no added spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-464"/>
-        <location line="+470"/>
+        <location line="-471"/>
+        <location line="+477"/>
         <source>Show PDF pages with small spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-466"/>
-        <location line="+471"/>
+        <location line="-473"/>
+        <location line="+478"/>
         <source>Medium</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-470"/>
-        <location line="+471"/>
+        <location line="-477"/>
+        <location line="+478"/>
         <source>Show PDF pages with medium spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-466"/>
-        <location line="+472"/>
+        <location line="-473"/>
+        <location line="+479"/>
         <source>Show PDF pages with large spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-464"/>
-        <location line="+496"/>
+        <location line="-471"/>
+        <location line="+503"/>
         <source>Default</source>
         <translation type="unfinished">Default</translation>
     </message>
     <message>
-        <location line="-495"/>
-        <location line="+496"/>
+        <location line="-502"/>
+        <location line="+503"/>
         <source>Use the current theme&apos;s PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-492"/>
-        <location line="+497"/>
+        <location line="-499"/>
+        <location line="+504"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-496"/>
-        <location line="+497"/>
+        <location line="-503"/>
+        <location line="+504"/>
         <source>Use a white PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-493"/>
-        <location line="+498"/>
+        <location line="-500"/>
+        <location line="+505"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-497"/>
-        <location line="+498"/>
+        <location line="-504"/>
+        <location line="+505"/>
         <source>Use a black PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-492"/>
-        <location line="+515"/>
+        <location line="-499"/>
+        <location line="+522"/>
         <source>Show Sidebar Tooltips</source>
         <translation>Show Sidebar Tooltips</translation>
     </message>
     <message>
-        <location line="-514"/>
-        <location line="+515"/>
+        <location line="-521"/>
+        <location line="+522"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>Show full sidebar names in tooltips when they do not fit</translation>
     </message>
     <message>
-        <location line="-511"/>
-        <location line="+516"/>
+        <location line="-518"/>
+        <location line="+523"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>Animate Overflowing Sidebar Text</translation>
     </message>
     <message>
-        <location line="-515"/>
-        <location line="+516"/>
+        <location line="-522"/>
+        <location line="+523"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>Animate overflowing sidebar names on hover</translation>
     </message>
     <message>
-        <location line="-512"/>
-        <location line="+557"/>
+        <location line="-518"/>
+        <location line="+556"/>
+        <source>Show Data Access Notice Before Export</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-555"/>
+        <location line="+556"/>
+        <source>Show a notice before PowerPoint accesses its protected workspace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-551"/>
+        <location line="+579"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-556"/>
-        <location line="+557"/>
+        <location line="-578"/>
+        <location line="+579"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-553"/>
-        <location line="+558"/>
+        <location line="-575"/>
+        <location line="+580"/>
         <source>About</source>
         <translation>About</translation>
     </message>
     <message>
-        <location line="-557"/>
-        <location line="+558"/>
+        <location line="-579"/>
+        <location line="+580"/>
         <source>Show application information</source>
         <translation>Show application information</translation>
     </message>
     <message>
-        <location line="-554"/>
-        <location line="+566"/>
+        <location line="-576"/>
+        <location line="+588"/>
         <source>Manage Campuses</source>
         <translation>Manage Campuses</translation>
     </message>
     <message>
-        <location line="-565"/>
-        <location line="+566"/>
+        <location line="-587"/>
+        <location line="+588"/>
         <source>Manage campus settings</source>
         <translation>Manage campus settings</translation>
     </message>
@@ -2172,7 +2203,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
+        <source>PowerPoint</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Sidebar</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3482,7 +3518,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/services/roster_template_print_shared_data.inc" line="+132"/>
+        <location filename="../../../src/features/roster/services/roster_template_print_shared_data.inc" line="+131"/>
         <source>Roster printing failed.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3580,14 +3616,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="+74"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+65"/>
+        <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="+73"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+64"/>
         <location filename="../../../src/ui/shared/printing/pdf_print_service.cpp" line="+51"/>
         <source>Print job sent.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+616"/>
+        <location line="+618"/>
         <source>Oral Testing</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3629,7 +3665,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+13"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1641"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1643"/>
         <source>Unable to create a temporary print file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3644,7 +3680,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+118"/>
+        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+279"/>
         <source>Reports created successfully.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3654,14 +3690,14 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+63"/>
-        <location line="+1379"/>
+        <location line="+80"/>
+        <location line="+1587"/>
         <location line="+40"/>
         <source>Speaking Evaluation</source>
         <translation type="unfinished">Speaking Evaluation</translation>
     </message>
     <message>
-        <location line="-1411"/>
+        <location line="-1617"/>
         <source>Unable to configure the report PDF page.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3691,7 +3727,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+300"/>
         <source>The signature image could not be prepared for the report.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3701,59 +3737,82 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+436"/>
-        <location line="+419"/>
-        <source>The temporary report directory is unavailable.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-405"/>
-        <source>A temporary PowerPoint directory could not be created.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+160"/>
-        <location line="+172"/>
+        <location line="+716"/>
         <source>PowerPoint could not be started.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-161"/>
-        <source>PowerPoint did not finish exporting the report.</source>
+        <location line="-1433"/>
+        <source>ClassMngr&apos;s PowerPoint workspace could not be prepared.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
-        <source>PowerPoint could not export the report.</source>
+        <location line="+13"/>
+        <source>PowerPoint&apos;s private workspace could not be prepared.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>PowerPoint did not create a PDF report.</source>
+        <location line="+18"/>
+        <source>A temporary PowerPoint batch folder could not be created.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
-        <source>PowerPoint&apos;s ClassMngr Documents folder could not be created.</source>
+        <location line="+39"/>
+        <source>PowerPoint&apos;s temporary report files could not be removed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+126"/>
+        <location line="+189"/>
+        <source>The internal speaking-evaluation renderer is unavailable: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+955"/>
+        <source>The temporary PowerPoint batch is unavailable.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+48"/>
+        <source>The PowerPoint template could not be copied into PowerPoint&apos;s private workspace.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>The signature could not be copied into PowerPoint&apos;s private workspace.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+221"/>
         <source>PowerPoint did not finish exporting the reports.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+23"/>
         <source>PowerPoint could not export the reports.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+13"/>
         <source>PowerPoint did not create a PDF report for %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+21"/>
+        <source>The PowerPoint batch output is incomplete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>The PowerPoint PDF for %1 could not be copied into ClassMngr&apos;s workspace.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The staged PowerPoint PDF for %1 is incomplete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+49"/>
         <source>An exact PDF file can be selected only for one report.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3840,12 +3899,17 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+7"/>
+        <source>All reports in a PowerPoint batch must use the same template.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+27"/>
         <source>A temporary report folder could not be created.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+75"/>
+        <location line="+110"/>
         <source>%1: %2</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3860,7 +3924,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+385"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+393"/>
         <source>Creating report for %1…</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3870,7 +3934,7 @@ Rm: %1</source>
         <translation type="unfinished">%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-366"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-368"/>
         <source>Page %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3880,7 +3944,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+14"/>
         <source>Unable to configure the sub prep print file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5322,7 +5386,7 @@ Rm: %1</source>
 <context>
     <name>RosterEditorWidget</name>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="+122"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="+125"/>
         <source>Unsaved Roster Changes</source>
         <translation>Unsaved Roster Changes</translation>
     </message>
@@ -5332,7 +5396,7 @@ Rm: %1</source>
         <translation>This roster has unsaved changes.</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+103"/>
         <source>Duplicate Student Names</source>
         <translation>Duplicate Student Names</translation>
     </message>
@@ -5344,7 +5408,7 @@ Rm: %1</source>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_columns.cpp" line="+16"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+80"/>
-        <location line="+142"/>
+        <location line="+132"/>
         <source>Add Column</source>
         <translation>Add Column</translation>
     </message>
@@ -5365,8 +5429,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-132"/>
-        <location line="+134"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-127"/>
+        <location line="+128"/>
         <source>Remove Column</source>
         <translation>Remove Column</translation>
     </message>
@@ -5379,8 +5443,8 @@ Rm: %1</source>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_import_print.cpp" line="+41"/>
         <location line="+89"/>
         <location line="+10"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-158"/>
-        <location line="+149"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-147"/>
+        <location line="+139"/>
         <source>Import Scores</source>
         <translation>Import Scores</translation>
     </message>
@@ -5401,13 +5465,13 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+51"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-141"/>
-        <location line="+146"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-131"/>
+        <location line="+136"/>
         <source>Print Rosters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-64"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-67"/>
         <location line="+140"/>
         <source>Class Roster</source>
         <translation>Class Roster</translation>
@@ -5419,20 +5483,20 @@ Rm: %1</source>
         <translation>No class selected</translation>
     </message>
     <message>
-        <location line="-232"/>
-        <location line="+150"/>
+        <location line="-219"/>
+        <location line="+140"/>
         <source>Import final grades from speaking evaluations.</source>
         <translation>Import final grades from speaking evaluations.</translation>
     </message>
     <message>
-        <location line="-143"/>
-        <location line="+146"/>
+        <location line="-133"/>
+        <location line="+136"/>
         <source>Print rosters as an A4 PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-126"/>
-        <location line="+130"/>
+        <location line="-121"/>
+        <location line="+124"/>
         <source>Save Changes</source>
         <translation>Save Changes</translation>
     </message>
@@ -5443,7 +5507,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+37"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+92"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+90"/>
         <source>Class %1</source>
         <translation>Class %1</translation>
     </message>
@@ -5480,7 +5544,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_students.cpp" line="+119"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_students.cpp" line="+109"/>
         <source>Duplicate Student Name</source>
         <translation>Duplicate Student Name</translation>
     </message>
@@ -5537,8 +5601,6 @@ Rm: %1</source>
     <message>
         <location line="+2"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_transfer.cpp" line="-168"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-232"/>
-        <location line="+138"/>
         <source>Remove Student</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5546,7 +5608,7 @@ Rm: %1</source>
 <context>
     <name>RosterHeaderView</name>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_header_view.cpp" line="+164"/>
+        <location filename="../../../src/features/roster/ui/roster_header_view.cpp" line="+178"/>
         <source>Student Names</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6643,9 +6705,9 @@ My Information name was updated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+225"/>
+        <location line="+249"/>
         <location line="+3"/>
-        <location line="+443"/>
+        <location line="+419"/>
         <location line="+3"/>
         <source>Schedule Settings</source>
         <translation type="unfinished"></translation>
@@ -6903,7 +6965,7 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
 <context>
     <name>SpeakingEvalBatchExportDialog</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-341"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-348"/>
         <source>Export / Print Speaking Reports</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6977,12 +7039,12 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="-118"/>
-        <location line="+240"/>
+        <location line="+247"/>
         <source>Cancel</source>
         <translation type="unfinished">Cancel</translation>
     </message>
     <message>
-        <location line="-156"/>
+        <location line="-163"/>
         <location line="+45"/>
         <source>Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)</source>
         <translation type="unfinished"></translation>
@@ -7039,7 +7101,7 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+21"/>
         <source>Creating speaking-evaluation reports…</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7063,7 +7125,7 @@ Retry the entire batch using the PowerPoint template?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+24"/>
         <source>Reports Ready</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7085,6 +7147,23 @@ Retry the entire batch using the PowerPoint template?</source>
     <message>
         <location line="+19"/>
         <source>Report Export Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>PowerPoint Data Access</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>To generate these reports, ClassMngr temporarily copies the PowerPoint template and signature into Microsoft PowerPoint&apos;s protected data folder. macOS may ask ClassMngr to access data from other apps.
+
+Choose Allow in the macOS prompt. Temporary files are deleted when the batch finishes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Continue</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7507,58 +7586,18 @@ Retry the entire batch using the PowerPoint template?</source>
 <context>
     <name>SpeakingEvalReportWidget</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget.cpp" line="+24"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget.cpp" line="+30"/>
         <source>Type the student&apos;s report comment…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp" line="+69"/>
         <source>Speaking Evaluation</source>
-        <translation type="unfinished">Speaking Evaluation</translation>
+        <translation type="obsolete">Speaking Evaluation</translation>
     </message>
     <message>
-        <location line="+21"/>
-        <source>English Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Korean Name:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Grade:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Native Teacher:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Korean Teacher:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>Date:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+155"/>
-        <source>Comments:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+35"/>
-        <source>Overall Grade:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+26"/>
-        <source>Native Teacher Signature:</source>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp" line="+479"/>
+        <source>Speaking-evaluation template unavailable.
+%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8579,118 +8618,112 @@ Version: %2</source>
     <name>TestingClassesPage</name>
     <message>
         <location filename="../../../src/features/classes/ui/testing_classes_page.cpp" line="+180"/>
-        <location line="+192"/>
-        <location line="+547"/>
+        <location line="+190"/>
+        <location line="+533"/>
         <location line="+90"/>
         <source>Testing Classes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-827"/>
-        <location line="+200"/>
+        <location line="-811"/>
+        <location line="+198"/>
         <source>Create reusable classes for the weekly Testing layout.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-198"/>
-        <location line="+210"/>
+        <location line="-196"/>
+        <location line="+208"/>
         <source>Back to Testing Schedule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-209"/>
-        <location line="+237"/>
+        <location line="-207"/>
+        <location line="+261"/>
         <source>Add Class</source>
         <translation type="unfinished">Add Class</translation>
     </message>
     <message>
-        <location line="-236"/>
-        <location line="+241"/>
+        <location line="-260"/>
+        <location line="+265"/>
         <source>Delete Class</source>
         <translation type="unfinished">Delete Class</translation>
     </message>
     <message>
-        <location line="-240"/>
-        <location line="+434"/>
-        <source>Unassign Selected Slot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-433"/>
-        <location line="+480"/>
+        <location line="-264"/>
+        <location line="+478"/>
         <source>Save Changes</source>
         <translation type="unfinished">Save Changes</translation>
     </message>
     <message>
-        <location line="-479"/>
-        <location line="+466"/>
+        <location line="-477"/>
+        <location line="+462"/>
         <source>Details</source>
         <translation type="unfinished">Details</translation>
     </message>
     <message>
-        <location line="-465"/>
-        <location line="+466"/>
+        <location line="-461"/>
+        <location line="+462"/>
         <source>Roster</source>
         <translation type="unfinished">Roster</translation>
     </message>
     <message>
-        <location line="-465"/>
-        <location line="+466"/>
+        <location line="-461"/>
+        <location line="+462"/>
         <source>Notes</source>
         <translation type="unfinished">Notes</translation>
     </message>
     <message>
-        <location line="-465"/>
-        <location line="+392"/>
+        <location line="-461"/>
+        <location line="+417"/>
         <source>Class Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+393"/>
+        <location line="-416"/>
+        <location line="+418"/>
         <source>Grade / Level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+395"/>
+        <location line="-416"/>
+        <location line="+420"/>
         <source>Korean Teacher</source>
         <translation type="unfinished">Korean Teacher</translation>
     </message>
     <message>
-        <location line="-394"/>
-        <location line="+396"/>
+        <location line="-419"/>
+        <location line="+421"/>
         <source>Class Color</source>
         <translation type="unfinished">Class Color</translation>
     </message>
     <message>
-        <location line="-394"/>
+        <location line="-419"/>
         <location line="+1"/>
-        <location line="+335"/>
+        <location line="+360"/>
         <location line="+24"/>
         <source>Choose Color</source>
         <translation type="unfinished">Choose Color</translation>
     </message>
     <message>
-        <location line="-357"/>
-        <location line="+263"/>
+        <location line="-382"/>
+        <location line="+288"/>
         <source>Shown on schedules and roster printouts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-260"/>
-        <location line="+263"/>
+        <location line="-285"/>
+        <location line="+288"/>
         <source>This name identifies the class on the Testing schedule and its roster printout.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-213"/>
+        <location line="-238"/>
         <location line="+20"/>
         <source>Save Testing Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+51"/>
         <source>Unsaved Testing Class Changes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8708,34 +8741,29 @@ Version: %2</source>
         <translation type="obsolete">Level</translation>
     </message>
     <message>
-        <location line="-137"/>
-        <location line="+394"/>
+        <location line="-136"/>
+        <location line="+419"/>
         <source>Room</source>
         <translation type="unfinished">Room</translation>
     </message>
     <message>
-        <location line="-391"/>
-        <location line="+397"/>
+        <location line="-416"/>
+        <location line="+422"/>
         <source>Font Color</source>
         <translation type="unfinished">Font Color</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Assigned Testing Slots</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+46"/>
+        <location line="+28"/>
         <source>Instructions, accommodations, and other notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+185"/>
+        <location line="+174"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+375"/>
+        <location line="+369"/>
         <source>Choose Testing Class Color</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8745,22 +8773,7 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+26"/>
-        <source>%1 at %2 (pending)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+41"/>
-        <source>%1 at %2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+46"/>
-        <source>Unassign Testing Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+24"/>
         <source>Delete Testing Class?</source>
         <translation type="unfinished"></translation>
     </message>

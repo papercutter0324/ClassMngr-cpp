@@ -1,8 +1,10 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 
 #include <QtTest>
 
+#include <QBuffer>
 #include <QComboBox>
 #include <QDir>
 #include <QFile>
@@ -101,6 +103,88 @@ QPair<qreal, qreal> imageError(
         absoluteError / (pixels * 3.0)
     };
 }
+
+QByteArray powerPointTestSignature()
+{
+    QImage signature(
+        QSize(80, 20),
+        QImage::Format_ARGB32_Premultiplied
+        );
+    signature.fill(QColor(255, 0, 255));
+
+    QByteArray data;
+    QBuffer buffer(&data);
+    if (!buffer.open(QIODevice::WriteOnly)
+        || !signature.save(&buffer, "PNG"))
+    {
+        return {};
+    }
+    return data;
+}
+
+int matchingPixelCount(
+    const QImage& image,
+    const QRect& bounds,
+    const std::function<bool(QRgb)>& matches
+    )
+{
+    int count = 0;
+    const QRect clipped =
+        bounds.intersected(image.rect());
+    for (int y = clipped.top(); y <= clipped.bottom(); ++y)
+    {
+        const QRgb* line =
+            reinterpret_cast<const QRgb*>(image.constScanLine(y));
+        for (int x = clipped.left(); x <= clipped.right(); ++x)
+        {
+            if (matches(line[x]))
+            {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+#ifdef Q_OS_MACOS
+QString classMngrPowerPointWorkspace()
+{
+    return QDir(
+        QStandardPaths::writableLocation(
+            QStandardPaths::AppDataLocation
+            )
+        ).filePath(QStringLiteral("PowerPointBatch"));
+}
+
+QString powerPointPrivateWorkspace()
+{
+    return QDir(
+        QStandardPaths::writableLocation(
+            QStandardPaths::HomeLocation
+            )
+        ).filePath(
+            QStringLiteral(
+                "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch"
+                )
+            );
+}
+
+bool createStaleWorkspaceFile(
+    const QString& directoryPath,
+    const QString& fileName
+    )
+{
+    QDir directory(directoryPath);
+    if ((!directory.exists() && !QDir().mkpath(directoryPath)))
+    {
+        return false;
+    }
+
+    QFile staleFile(directory.filePath(fileName));
+    return staleFile.open(QIODevice::WriteOnly)
+        && staleFile.write("stale") == 5;
+}
+#endif
 }
 
 class SpeakingEvalBatchReportServiceTests : public QObject
@@ -117,8 +201,11 @@ private slots:
     void overwriteExistingReportWhenAllowed();
     void previewDialogOffersActionsForTheSelectedReport();
     void powerPointAvailabilityMessageIsAvailable();
+    void mixedPowerPointTemplatesAreRejected();
     void generatedAssetsMatchSvgSourcesWhenEnabled();
+    void powerPointRendererCreatesReadablePdfWhenAvailable_data();
     void powerPointRendererCreatesReadablePdfWhenAvailable();
+    void powerPointBatchCancellationLeavesNoFilesWhenAvailable();
 };
 
 void SpeakingEvalBatchReportServiceTests::safeFileNameUsesStudentNamesAndRemovesReservedCharacters()
@@ -449,6 +536,48 @@ void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailab
         );
 }
 
+void SpeakingEvalBatchReportServiceTests::mixedPowerPointTemplatesAreRejected()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData standard =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    SpeakingEvalReportData advanced =
+        goldenReportData(SpeakingEvalReportTemplate::Advanced);
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { standard.englishName, standard },
+        { advanced.englishName, advanced }
+    };
+    request.renderer =
+        SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+
+    QCOMPARE(
+        result.status,
+        SpeakingEvalBatchReportService::Status::Failed
+        );
+    QVERIFY(
+        result.message.contains(
+            QStringLiteral("same template"),
+            Qt::CaseInsensitive
+            )
+        );
+    QCOMPARE(
+        QDir(outputDirectory.path()).entryList(
+            { QStringLiteral("*.pdf") },
+            QDir::Files
+            ).size(),
+        0
+        );
+}
+
 void SpeakingEvalBatchReportServiceTests::
     generatedAssetsMatchSvgSourcesWhenEnabled()
 {
@@ -520,7 +649,244 @@ void SpeakingEvalBatchReportServiceTests::
         );
 }
 
-void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWhenAvailable()
+void SpeakingEvalBatchReportServiceTests::
+    powerPointRendererCreatesReadablePdfWhenAvailable_data()
+{
+    QTest::addColumn<int>("reportTemplateValue");
+    QTest::addColumn<bool>("includeSignature");
+
+    QTest::newRow("standard")
+        << static_cast<int>(SpeakingEvalReportTemplate::Standard)
+        << true;
+    QTest::newRow("advanced")
+        << static_cast<int>(SpeakingEvalReportTemplate::Advanced)
+        << false;
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    powerPointRendererCreatesReadablePdfWhenAvailable()
+{
+    QFETCH(int, reportTemplateValue);
+    QFETCH(bool, includeSignature);
+
+    if (!qEnvironmentVariableIsSet(
+            "CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS"
+            ))
+    {
+        QSKIP("Set CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS to run Office automation tests.");
+    }
+
+    if (!SpeakingEvalBatchReportService::isPowerPointRendererAvailable())
+    {
+        QSKIP("PowerPoint automation is not available on this machine.");
+    }
+
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+#ifdef Q_OS_MACOS
+    QVERIFY(
+        createStaleWorkspaceFile(
+            classMngrPowerPointWorkspace(),
+            QStringLiteral("cancel-requested")
+            )
+        );
+    QVERIFY(
+        createStaleWorkspaceFile(
+            powerPointPrivateWorkspace(),
+            QStringLiteral("stale-file")
+            )
+        );
+#endif
+
+    const SpeakingEvalReportTemplate reportTemplate =
+        static_cast<SpeakingEvalReportTemplate>(
+            reportTemplateValue
+            );
+    const QString firstComposedKoreanName =
+        QStringLiteral("박지혜");
+    const QString secondComposedKoreanName =
+        QStringLiteral("김철수");
+    const QString composedKoreanTeacher =
+        QStringLiteral("선생님");
+
+    SpeakingEvalReportData first;
+    first.englishName = QStringLiteral("First Student");
+    first.koreanName =
+        firstComposedKoreanName.normalized(
+            QString::NormalizationForm_D
+            );
+    first.classLabel =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced
+            ? QStringLiteral("E5 Athena")
+            : QStringLiteral("E6 Gaia");
+    first.nativeTeacher = QStringLiteral("Teacher");
+    first.koreanTeacher =
+        composedKoreanTeacher.normalized(
+            QString::NormalizationForm_D
+            );
+    first.date =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced
+            ? QStringLiteral("Jul. 2026")
+            : QStringLiteral("July 2026");
+    first.comments = QStringLiteral("First batch report comments.");
+    first.scores.fill(QStringLiteral("A+"));
+    first.reportTemplate = reportTemplate;
+    if (includeSignature)
+    {
+        first.signatureImage = powerPointTestSignature();
+        QVERIFY(!first.signatureImage.isEmpty());
+    }
+
+    SpeakingEvalReportData second = first;
+    second.englishName = QStringLiteral("Second Student");
+    second.koreanName =
+        secondComposedKoreanName.normalized(
+            QString::NormalizationForm_D
+            );
+    second.comments = QStringLiteral("Second batch report comments.");
+    second.scores.fill(QStringLiteral("C"));
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { first.englishName, first },
+        { second.englishName, second }
+    };
+    request.renderer =
+        SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+
+    QVERIFY2(
+        result.status == SpeakingEvalBatchReportService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QCOMPARE(result.savedPdfPaths.size(), 2);
+
+    QList<QImage> renderedPages;
+    for (int index = 0; index < result.savedPdfPaths.size(); ++index)
+    {
+        const SpeakingEvalReportData& expected =
+            request.reports.at(index).report;
+        const SpeakingEvalReportData& other =
+            request.reports.at(1 - index).report;
+        const QString expectedComposedKoreanName =
+            expected.koreanName.normalized(
+                QString::NormalizationForm_C
+                );
+
+        QPdfDocument document;
+        QCOMPARE(
+            document.load(result.savedPdfPaths.at(index)),
+            QPdfDocument::Error::None
+            );
+        QCOMPARE(document.status(), QPdfDocument::Status::Ready);
+        QVERIFY(document.pageCount() >= 1);
+
+        const QString pdfText =
+            document.getAllText(0).text();
+        QVERIFY2(
+            pdfText.contains(expected.englishName),
+            qPrintable(pdfText)
+            );
+        QVERIFY2(
+            pdfText.contains(expectedComposedKoreanName),
+            qPrintable(pdfText)
+            );
+        QVERIFY2(
+            pdfText.contains(expected.comments),
+            qPrintable(pdfText)
+            );
+        QVERIFY(!pdfText.contains(other.englishName));
+        QVERIFY(!pdfText.contains(other.comments));
+        QVERIFY(
+            !pdfText.contains(
+                expected.koreanName.normalized(
+                    QString::NormalizationForm_D
+                    )
+                )
+            );
+
+        const QImage page =
+            document.render(0, QSize(540, 780))
+                .convertToFormat(QImage::Format_ARGB32);
+        QVERIFY(!page.isNull());
+        renderedPages.append(page);
+
+        if (includeSignature)
+        {
+            const QRect signatureBounds =
+                speakingEvalReportTemplateLayout(
+                    reportTemplate
+                    ).signatureBounds.toAlignedRect();
+            const int magentaPixels =
+                matchingPixelCount(
+                    page,
+                    signatureBounds,
+                    [](QRgb pixel)
+                    {
+                        return qRed(pixel) > 180
+                            && qGreen(pixel) < 120
+                            && qBlue(pixel) > 180;
+                    }
+                    );
+            QVERIFY2(
+                magentaPixels > 20,
+                qPrintable(
+                    QStringLiteral(
+                        "The shared signature was not visible in report %1."
+                        ).arg(index + 1)
+                    )
+                );
+        }
+    }
+
+    const auto yellowPixels =
+        [](const QImage& image, const QRectF& bounds)
+    {
+        return matchingPixelCount(
+            image,
+            bounds.toAlignedRect(),
+            [](QRgb pixel)
+            {
+                return qRed(pixel) > 180
+                    && qGreen(pixel) > 180
+                    && qBlue(pixel) < 120;
+            }
+            );
+    };
+    const QRectF firstGradeBounds =
+        speakingEvalScoreCell(
+            reportTemplate,
+            0,
+            QStringLiteral("A+")
+            );
+    const QRectF lastGradeBounds =
+        speakingEvalScoreCell(
+            reportTemplate,
+            0,
+            QStringLiteral("C")
+            );
+    QVERIFY(
+        yellowPixels(renderedPages.at(0), firstGradeBounds)
+        > yellowPixels(renderedPages.at(0), lastGradeBounds)
+        );
+    QVERIFY(
+        yellowPixels(renderedPages.at(1), lastGradeBounds)
+        > yellowPixels(renderedPages.at(1), firstGradeBounds)
+        );
+
+#ifdef Q_OS_MACOS
+    QVERIFY(!QFileInfo::exists(classMngrPowerPointWorkspace()));
+    QVERIFY(!QFileInfo::exists(powerPointPrivateWorkspace()));
+#endif
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    powerPointBatchCancellationLeavesNoFilesWhenAvailable()
 {
     if (!qEnvironmentVariableIsSet(
             "CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS"
@@ -537,70 +903,46 @@ void SpeakingEvalBatchReportServiceTests::powerPointRendererCreatesReadablePdfWh
     QTemporaryDir outputDirectory;
     QVERIFY(outputDirectory.isValid());
 
-    SpeakingEvalReportData data;
-    data.englishName = QStringLiteral("PowerPoint Student");
-    data.koreanName = QStringLiteral("\uD64D\uAE38\uB3D9");
-    data.classLabel = QStringLiteral("E6 Gaia");
-    data.nativeTeacher = QStringLiteral("Teacher");
-    data.koreanTeacher = QStringLiteral("\uC120\uC0DD\uB2D8");
-    data.date = QStringLiteral("July 2026");
-    data.comments = QStringLiteral("PowerPoint integration test.");
-    data.scores = {
-        QStringLiteral("A+"),
-        QStringLiteral("A"),
-        QStringLiteral("B+"),
-        QStringLiteral("B"),
-        QStringLiteral("C"),
-        QStringLiteral("A+")
-    };
+    SpeakingEvalReportData first =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    first.englishName = QStringLiteral("Cancellation Student One");
+    SpeakingEvalReportData second = first;
+    second.englishName = QStringLiteral("Cancellation Student Two");
 
     SpeakingEvalBatchReportService::Request request;
-    SpeakingEvalReportData secondStandardData = data;
-    secondStandardData.englishName = QStringLiteral("Second PowerPoint Student");
-    secondStandardData.koreanName = QStringLiteral("Second Student");
-    secondStandardData.comments = QStringLiteral("Second report from the same open template.");
-    secondStandardData.scores.fill(QStringLiteral("C"));
-    SpeakingEvalReportData advancedData = data;
-    advancedData.englishName = QStringLiteral("Advanced Student");
-    advancedData.classLabel = QStringLiteral("E5 Athena");
-    advancedData.date = QStringLiteral("Jul. 2026");
-    advancedData.reportTemplate =
-        SpeakingEvalReportTemplate::Advanced;
     request.reports = {
-        { QStringLiteral("PowerPoint Student"), data },
-        { QStringLiteral("Second PowerPoint Student"), secondStandardData },
-        { QStringLiteral("Advanced Student"), advancedData }
+        { first.englishName, first },
+        { second.englishName, second }
     };
-    request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.renderer =
+        SpeakingEvalBatchReportService::Renderer::PowerPoint;
     request.savePdf = true;
     request.outputDirectory = outputDirectory.path();
+    request.progressCallback =
+        [](int completed, int, const QString&)
+    {
+        return completed < 1;
+    };
 
     const SpeakingEvalBatchReportService::Result result =
         SpeakingEvalBatchReportService::exportReports(request);
 
-    QVERIFY2(
-        result.status == SpeakingEvalBatchReportService::Status::Completed,
-        qPrintable(result.message)
+    QCOMPARE(
+        result.status,
+        SpeakingEvalBatchReportService::Status::Canceled
         );
-    QCOMPARE(result.savedPdfPaths.size(), 3);
+    QCOMPARE(
+        QDir(outputDirectory.path()).entryList(
+            { QStringLiteral("*.pdf") },
+            QDir::Files
+            ).size(),
+        0
+        );
 
-    for (int index = 0; index < result.savedPdfPaths.size(); ++index)
-    {
-        const QString& pdfPath = result.savedPdfPaths.at(index);
-        QPdfDocument document;
-        QCOMPARE(document.load(pdfPath), QPdfDocument::Error::None);
-        QCOMPARE(document.status(), QPdfDocument::Status::Ready);
-        QVERIFY(document.pageCount() >= 1);
-        QVERIFY2(
-            document.getAllText(0).text().contains(
-                request.reports.at(index).report.englishName
-                ),
-            qPrintable(
-                QStringLiteral("The PDF did not contain the current student's name: %1")
-                    .arg(request.reports.at(index).report.englishName)
-                )
-            );
-    }
+#ifdef Q_OS_MACOS
+    QVERIFY(!QFileInfo::exists(classMngrPowerPointWorkspace()));
+    QVERIFY(!QFileInfo::exists(powerPointPrivateWorkspace()));
+#endif
 }
 
 QTEST_MAIN(SpeakingEvalBatchReportServiceTests)

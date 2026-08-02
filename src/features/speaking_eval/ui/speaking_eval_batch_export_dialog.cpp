@@ -1,5 +1,6 @@
 #include "speaking_eval_batch_export_dialog.h"
 
+#include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -361,6 +362,13 @@ void SpeakingEvalBatchExportDialog::exportReports()
         }
     }
 
+    if (request.renderer
+            == SpeakingEvalBatchReportService::Renderer::PowerPoint
+        && !confirmPowerPointDataAccess())
+    {
+        return;
+    }
+
     QProgressDialog progress(
         tr("Creating speaking-evaluation reports…"),
         tr("Cancel"),
@@ -408,6 +416,10 @@ void SpeakingEvalBatchExportDialog::exportReports()
                 );
         if (retry == QMessageBox::Yes)
         {
+            if (!confirmPowerPointDataAccess())
+            {
+                return;
+            }
             request.renderer =
                 SpeakingEvalBatchReportService::Renderer::PowerPoint;
             progress.reset();
@@ -454,6 +466,42 @@ void SpeakingEvalBatchExportDialog::exportReports()
             );
         return;
     }
+}
+
+bool SpeakingEvalBatchExportDialog::confirmPowerPointDataAccess()
+{
+#ifdef Q_OS_MACOS
+    if (!SettingsManager::instance()
+            .showPowerPointDataAccessNotice())
+    {
+        return true;
+    }
+
+    QMessageBox notice(
+        QMessageBox::Information,
+        tr("PowerPoint Data Access"),
+        tr(
+            "To generate these reports, ClassMngr temporarily copies the PowerPoint template and signature into Microsoft PowerPoint's protected data folder. macOS may ask ClassMngr to access data from other apps.\n\nChoose Allow in the macOS prompt. Temporary files are deleted when the batch finishes."
+            ),
+        QMessageBox::NoButton,
+        this
+        );
+    QPushButton* continueButton =
+        notice.addButton(
+            tr("Continue"),
+            QMessageBox::AcceptRole
+            );
+    QPushButton* cancelButton =
+        notice.addButton(
+            QMessageBox::Cancel
+            );
+    notice.setDefaultButton(continueButton);
+    notice.setEscapeButton(cancelButton);
+    notice.exec();
+    return notice.clickedButton() == continueButton;
+#else
+    return true;
+#endif
 }
 
 QList<SpeakingEvalBatchReportService::StudentReport>

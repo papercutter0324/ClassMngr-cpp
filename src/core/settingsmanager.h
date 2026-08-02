@@ -78,6 +78,9 @@ public:
         static constexpr auto SHOW_ALL_KOREAN_TEACHERS =
             "options/showAllKoreanTeachers";
 
+        static constexpr auto SHOW_POWERPOINT_DATA_ACCESS_NOTICE =
+            "options/showPowerPointDataAccessNotice";
+
         static constexpr auto RECENT_FILES =
             "files/recent";
 
@@ -168,6 +171,11 @@ public:
 
     bool showAllKoreanTeachers() const;
     void setShowAllKoreanTeachers(
+        bool enabled
+        );
+
+    bool showPowerPointDataAccessNotice() const;
+    void setShowPowerPointDataAccessNotice(
         bool enabled
         );
 

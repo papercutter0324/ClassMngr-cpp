@@ -2125,6 +2125,43 @@ if(BUILD_TESTING)
         COMMAND ClassMngrLanguageServiceTests
     )
 
+    if(APPLE)
+        qt_add_executable(ClassMngrPowerPointDataAccessNoticeTests
+            tests/powerpoint_data_access_notice_tests.cpp
+            src/core/settingsmanager.cpp
+            src/ui/shared/actions/action_registry.cpp
+            src/ui/shared/styles/themed_icon_utils.cpp
+        )
+
+        target_compile_features(ClassMngrPowerPointDataAccessNoticeTests
+            PRIVATE
+                cxx_std_23
+        )
+
+        target_include_directories(ClassMngrPowerPointDataAccessNoticeTests
+            PRIVATE
+                ${PROJECT_SOURCE_DIR}/src
+        )
+
+        target_link_libraries(ClassMngrPowerPointDataAccessNoticeTests
+            PRIVATE
+                Qt6::Core
+                Qt6::Gui
+                Qt6::Test
+                Qt6::Widgets
+        )
+
+        add_test(
+            NAME ClassMngrPowerPointDataAccessNoticeTests
+            COMMAND ClassMngrPowerPointDataAccessNoticeTests
+        )
+
+        set_tests_properties(ClassMngrPowerPointDataAccessNoticeTests
+            PROPERTIES
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        )
+    endif()
+
     qt_add_executable(ClassMngrAcademicCalendarTests
         tests/academic_calendar_tests.cpp
         src/features/calendar/academic_calendar_schedule.cpp

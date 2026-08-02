@@ -234,6 +234,18 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
         }
         );
 
+#ifdef Q_OS_MACOS
+    options->addSeparator();
+
+    QMenu* powerPointMenu =
+        options->addMenu(
+            QCoreApplication::translate("MenuBuilder", "PowerPoint")
+            );
+    powerPointMenu->addAction(
+        actions.showPowerPointDataAccessNotice
+        );
+#endif
+
     options->addSeparator();
 
     QMenu* sidebarMenu =
