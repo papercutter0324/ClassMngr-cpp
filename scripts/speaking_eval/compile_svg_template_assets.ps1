@@ -1051,9 +1051,12 @@ function Compile-Template {
 
             New-Item -ItemType Directory -Path $OutputDirectory -Force |
                 Out-Null
-            Save-Png `
-                -Bitmap $background `
-                -Path (Join-Path $OutputDirectory "$Kind-background.png")
+            Copy-Item `
+                -LiteralPath $backgroundPath `
+                -Destination (
+                    Join-Path $OutputDirectory "$Kind-background.png"
+                ) `
+                -Force
             Save-Png `
                 -Bitmap $spriteSheet `
                 -Path (Join-Path $OutputDirectory "$Kind-sprites.png")

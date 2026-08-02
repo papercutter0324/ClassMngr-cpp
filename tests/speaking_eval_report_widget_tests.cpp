@@ -14,7 +14,8 @@ namespace
 {
 constexpr int RasterScale = 2;
 const QSize RasterSize(1080, 1560);
-const QSize AuthoredBackgroundSize(1620, 2338);
+const QSize StandardAuthoredBackgroundSize(3603, 5202);
+const QSize AdvancedAuthoredBackgroundSize(1620, 2338);
 
 SpeakingEvalReportData representativeData(
     SpeakingEvalReportTemplate reportTemplate
@@ -284,8 +285,14 @@ void SpeakingEvalReportWidgetTests::
     QVERIFY2(advanced.valid, qPrintable(advanced.error));
     QCOMPARE(standard.logicalSize, QSizeF(540.0, 780.0));
     QCOMPARE(advanced.logicalSize, QSizeF(540.0, 780.0));
-    QCOMPARE(standard.background.size(), AuthoredBackgroundSize);
-    QCOMPARE(advanced.background.size(), AuthoredBackgroundSize);
+    QCOMPARE(
+        standard.background.size(),
+        StandardAuthoredBackgroundSize
+        );
+    QCOMPARE(
+        advanced.background.size(),
+        AdvancedAuthoredBackgroundSize
+        );
     QCOMPARE(standard.scoreCells.size(), 6);
     QCOMPARE(advanced.scoreCells.size(), 6);
     QCOMPARE(standard.scoreLabels.size(), 5);
