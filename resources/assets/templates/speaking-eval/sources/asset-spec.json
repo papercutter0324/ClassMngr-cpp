@@ -1,0 +1,284 @@
+{
+  "version": 1,
+  "placeholderArtwork": true,
+  "units": "pt",
+  "pageSizePoints": [
+    540.0,
+    780.0
+  ],
+  "physicalSizeInches": [
+    7.5,
+    10.833333
+  ],
+  "outputDpi": 300,
+  "highlightColor": "#FFFF00",
+  "highlightInsetPoints": 1.0,
+  "templates": {
+    "standard": {
+      "map": "standard/map.svg",
+      "background": "standard/background-clean.png",
+      "minimumRecommendedBackgroundPixels": [
+        2250,
+        3250
+      ],
+      "scoreLabels": {
+        "A+": {
+          "file": "standard/score-label-aplus.png",
+          "pointSize": [
+            23.0,
+            12.677502
+          ],
+          "minimumRecommendedPixels": [
+            96,
+            53
+          ]
+        },
+        "A": {
+          "file": "standard/score-label-a.png",
+          "pointSize": [
+            13.0,
+            12.677502
+          ],
+          "minimumRecommendedPixels": [
+            55,
+            53
+          ]
+        },
+        "B+": {
+          "file": "standard/score-label-bplus.png",
+          "pointSize": [
+            22.0,
+            12.343884
+          ],
+          "minimumRecommendedPixels": [
+            92,
+            52
+          ]
+        },
+        "B": {
+          "file": "standard/score-label-b.png",
+          "pointSize": [
+            11.333333,
+            12.343884
+          ],
+          "minimumRecommendedPixels": [
+            48,
+            52
+          ]
+        },
+        "C": {
+          "file": "standard/score-label-c.png",
+          "pointSize": [
+            11.666667,
+            13.011121
+          ],
+          "minimumRecommendedPixels": [
+            49,
+            55
+          ]
+        }
+      },
+      "overallGrades": {
+        "A+": {
+          "file": "standard/overall-grade-aplus.png",
+          "pointSize": [
+            23.0,
+            12.677502
+          ],
+          "minimumRecommendedPixels": [
+            96,
+            53
+          ]
+        },
+        "A": {
+          "file": "standard/overall-grade-a.png",
+          "pointSize": [
+            13.0,
+            12.677502
+          ],
+          "minimumRecommendedPixels": [
+            55,
+            53
+          ]
+        },
+        "B+": {
+          "file": "standard/overall-grade-bplus.png",
+          "pointSize": [
+            22.0,
+            12.343884
+          ],
+          "minimumRecommendedPixels": [
+            92,
+            52
+          ]
+        },
+        "B": {
+          "file": "standard/overall-grade-b.png",
+          "pointSize": [
+            11.0,
+            12.343884
+          ],
+          "minimumRecommendedPixels": [
+            46,
+            52
+          ]
+        },
+        "C": {
+          "file": "standard/overall-grade-c.png",
+          "pointSize": [
+            11.666667,
+            13.011121
+          ],
+          "minimumRecommendedPixels": [
+            49,
+            55
+          ]
+        },
+        "N/A": {
+          "file": "standard/overall-grade-na.png",
+          "pointSize": [
+            16.333333,
+            21.685201
+          ],
+          "minimumRecommendedPixels": [
+            69,
+            91
+          ]
+        }
+      }
+    },
+    "advanced": {
+      "map": "advanced/map.svg",
+      "background": "advanced/background-clean.png",
+      "minimumRecommendedBackgroundPixels": [
+        2250,
+        3250
+      ],
+      "scoreLabels": {
+        "A+": {
+          "file": "advanced/score-label-aplus.png",
+          "pointSize": [
+            12.666667,
+            9.007699
+          ],
+          "minimumRecommendedPixels": [
+            53,
+            38
+          ]
+        },
+        "A": {
+          "file": "advanced/score-label-a.png",
+          "pointSize": [
+            7.333333,
+            9.007699
+          ],
+          "minimumRecommendedPixels": [
+            31,
+            38
+          ]
+        },
+        "B+": {
+          "file": "advanced/score-label-bplus.png",
+          "pointSize": [
+            12.0,
+            9.007699
+          ],
+          "minimumRecommendedPixels": [
+            50,
+            38
+          ]
+        },
+        "B": {
+          "file": "advanced/score-label-b.png",
+          "pointSize": [
+            6.333333,
+            9.007699
+          ],
+          "minimumRecommendedPixels": [
+            27,
+            38
+          ]
+        },
+        "C": {
+          "file": "advanced/score-label-c.png",
+          "pointSize": [
+            6.333333,
+            9.674936
+          ],
+          "minimumRecommendedPixels": [
+            27,
+            41
+          ]
+        }
+      },
+      "overallGrades": {
+        "A+": {
+          "file": "advanced/overall-grade-aplus.png",
+          "pointSize": [
+            33.333333,
+            17.681779
+          ],
+          "minimumRecommendedPixels": [
+            139,
+            74
+          ]
+        },
+        "A": {
+          "file": "advanced/overall-grade-a.png",
+          "pointSize": [
+            19.0,
+            17.681779
+          ],
+          "minimumRecommendedPixels": [
+            80,
+            74
+          ]
+        },
+        "B+": {
+          "file": "advanced/overall-grade-bplus.png",
+          "pointSize": [
+            31.333333,
+            17.681779
+          ],
+          "minimumRecommendedPixels": [
+            131,
+            74
+          ]
+        },
+        "B": {
+          "file": "advanced/overall-grade-b.png",
+          "pointSize": [
+            16.333333,
+            17.681779
+          ],
+          "minimumRecommendedPixels": [
+            69,
+            74
+          ]
+        },
+        "C": {
+          "file": "advanced/overall-grade-c.png",
+          "pointSize": [
+            17.0,
+            18.349016
+          ],
+          "minimumRecommendedPixels": [
+            71,
+            77
+          ]
+        },
+        "N/A": {
+          "file": "advanced/overall-grade-na.png",
+          "pointSize": [
+            44.0,
+            18.349016
+          ],
+          "minimumRecommendedPixels": [
+            184,
+            77
+          ]
+        }
+      }
+    }
+  }
+}

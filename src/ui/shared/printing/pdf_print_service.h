@@ -12,6 +12,8 @@ class QWidget;
 
 namespace PdfPrintService
 {
+inline constexpr int GeneratedPdfResolutionDpi = 300;
+
 enum class Status
 {
     Sent,

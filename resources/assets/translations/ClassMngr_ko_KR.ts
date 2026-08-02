@@ -3919,8 +3919,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+28"/>
-        <source>Internal Template</source>
-        <translation>내부 템플릿</translation>
+        <source>Internal Template (Beta)</source>
+        <translation>내부 템플릿 (Beta)</translation>
     </message>
     <message>
         <location line="+2"/>

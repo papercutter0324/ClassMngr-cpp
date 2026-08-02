@@ -32,7 +32,6 @@ namespace
 {
 constexpr QPageSize::PageSizeId SubPrepPdfPageSize = QPageSize::A4;
 constexpr qreal SubPrepPdfMarginInches = 0.5;
-constexpr int SubPrepPdfResolutionDpi = 300;
 constexpr qreal FooterHeightInches = 0.24;
 constexpr qreal SubNotesLineSpacingPoints = 16.0;
 constexpr qreal MajorSectionSpacingPoints = 21.0;
@@ -1358,7 +1357,9 @@ Result saveSubPrepPdf(
     QPdfWriter writer(documentPath);
     writer.setCreator(QStringLiteral("ClassMngr"));
     writer.setTitle(translate("Sub Prep"));
-    writer.setResolution(SubPrepPdfResolutionDpi);
+    writer.setResolution(
+        PdfPrintService::GeneratedPdfResolutionDpi
+        );
 
     if (!writer.setPageLayout(pageLayout()))
     {

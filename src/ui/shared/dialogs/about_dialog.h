@@ -14,6 +14,7 @@ public:
 
 private slots:
     void showInterLicense();
+    void showJustAnotherHandLicense();
     void showPretendardLicense();
 
 private:

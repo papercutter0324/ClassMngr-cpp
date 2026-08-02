@@ -1,4 +1,427 @@
-#include "speaking_eval_report_renderer_p.h"
+#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+
+#include <QFontMetricsF>
+#include <QImage>
+#include <QPainter>
+#include <QTextLayout>
+#include <QTextOption>
+
+#include <algorithm>
+
+namespace
+{
+QRectF contentRect(
+    const SpeakingEvalFieldAsset& field
+    )
+{
+    return field.rect.marginsRemoved(field.margins);
+}
+
+QFont fieldFont(
+    const SpeakingEvalFieldAsset& field,
+    qreal pointSize
+    )
+{
+    QFont font =
+        speakingEvalTemplateFont(
+            field.fontRole,
+            pointSize
+            );
+    font.setLetterSpacing(
+        QFont::AbsoluteSpacing,
+        field.letterSpacing
+        );
+    font.setWordSpacing(field.wordSpacing);
+    return font;
+}
+
+qreal singleLineWidth(
+    const QFont& font,
+    const QString& text
+    )
+{
+    QTextLayout layout(text, font);
+    QTextOption option;
+    option.setWrapMode(QTextOption::NoWrap);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    const QTextLine line = layout.createLine();
+    layout.endLayout();
+    return line.isValid()
+        ? line.naturalTextWidth()
+        : 0.0;
+}
+
+qreal wrappedTextHeight(
+    const SpeakingEvalFieldAsset& field,
+    const QFont& font,
+    const QString& text,
+    qreal width
+    )
+{
+    QTextLayout layout(text, font);
+    QTextOption option;
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    qreal nextTop = 0.0;
+    qreal height = 0.0;
+    while (true)
+    {
+        QTextLine line = layout.createLine();
+        if (!line.isValid())
+        {
+            break;
+        }
+        line.setLineWidth(width);
+        line.setPosition(QPointF(0.0, nextTop));
+        height = nextTop + line.height();
+        nextTop += line.height() * field.lineHeight;
+    }
+    layout.endLayout();
+    return height;
+}
+
+QFont fittedFieldFont(
+    const SpeakingEvalFieldAsset& field,
+    const QString& text
+    )
+{
+    const QRectF available = contentRect(field);
+    const int maximumPointSize =
+        qMax(1, qRound(field.fontSizePoints));
+    const int minimumPointSize =
+        qMax(
+            1,
+            qCeil(field.fontSizePoints * field.minimumScale)
+            );
+
+    for (
+        int pointSize = maximumPointSize;
+        pointSize >= minimumPointSize;
+        --pointSize
+        )
+    {
+        const QFont font = fieldFont(field, pointSize);
+        const QFontMetricsF metrics(font);
+        const bool fits =
+            field.comments
+                ? wrappedTextHeight(
+                    field,
+                    font,
+                    text,
+                    available.width()
+                    ) <= available.height()
+                : singleLineWidth(font, text) <= available.width()
+                    && metrics.height() <= available.height();
+        if (fits)
+        {
+            return font;
+        }
+    }
+
+    return fieldFont(field, minimumPointSize);
+}
+
+void drawSingleLineField(
+    QPainter* painter,
+    const SpeakingEvalFieldAsset& field,
+    const QRectF& available,
+    const QFont& font,
+    const QString& text
+    )
+{
+    QTextLayout layout(text, font);
+    QTextOption option;
+    option.setWrapMode(QTextOption::NoWrap);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    QTextLine line = layout.createLine();
+    if (!line.isValid())
+    {
+        layout.endLayout();
+        return;
+    }
+    line.setLineWidth(available.width());
+
+    qreal x = 0.0;
+    if (field.horizontalAlignment.testFlag(Qt::AlignHCenter))
+    {
+        x = (available.width() - line.naturalTextWidth()) / 2.0;
+    }
+    else if (field.horizontalAlignment.testFlag(Qt::AlignRight))
+    {
+        x = available.width() - line.naturalTextWidth();
+    }
+
+    qreal y = 0.0;
+    if (field.verticalAlignment.testFlag(Qt::AlignVCenter))
+    {
+        y = (available.height() - line.height()) / 2.0;
+    }
+    else if (field.verticalAlignment.testFlag(Qt::AlignBottom))
+    {
+        y = available.height() - line.height();
+    }
+    line.setPosition(QPointF(qMax(0.0, x), qMax(0.0, y)));
+    layout.endLayout();
+    layout.draw(
+        painter,
+        available.topLeft() + QPointF(0.0, field.baselineOffset)
+        );
+}
+
+void drawWrappedField(
+    QPainter* painter,
+    const SpeakingEvalFieldAsset& field,
+    const QRectF& available,
+    const QFont& font,
+    const QString& text
+    )
+{
+    QTextLayout layout(text, font);
+    QTextOption option;
+    option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+    layout.setTextOption(option);
+    layout.beginLayout();
+    QVector<QTextLine> lines;
+    qreal nextTop = 0.0;
+    qreal height = 0.0;
+    while (true)
+    {
+        QTextLine line = layout.createLine();
+        if (!line.isValid())
+        {
+            break;
+        }
+        line.setLineWidth(available.width());
+        lines.append(line);
+        height = nextTop + line.height();
+        nextTop += line.height() * field.lineHeight;
+    }
+
+    qreal verticalOffset = 0.0;
+    if (field.verticalAlignment.testFlag(Qt::AlignVCenter))
+    {
+        verticalOffset = (available.height() - height) / 2.0;
+    }
+    else if (field.verticalAlignment.testFlag(Qt::AlignBottom))
+    {
+        verticalOffset = available.height() - height;
+    }
+    verticalOffset = qMax(0.0, verticalOffset);
+
+    nextTop = 0.0;
+    for (QTextLine& line : lines)
+    {
+        qreal x = 0.0;
+        if (field.horizontalAlignment.testFlag(Qt::AlignHCenter))
+        {
+            x = (available.width() - line.naturalTextWidth()) / 2.0;
+        }
+        else if (field.horizontalAlignment.testFlag(Qt::AlignRight))
+        {
+            x = available.width() - line.naturalTextWidth();
+        }
+        line.setPosition(
+            QPointF(qMax(0.0, x), verticalOffset + nextTop)
+            );
+        nextTop += line.height() * field.lineHeight;
+    }
+    layout.endLayout();
+    layout.draw(
+        painter,
+        available.topLeft() + QPointF(0.0, field.baselineOffset)
+        );
+}
+
+void drawField(
+    QPainter* painter,
+    const SpeakingEvalTemplateAssets& assets,
+    const QString& fieldName,
+    const QString& text
+    )
+{
+    if (!painter || text.isEmpty())
+    {
+        return;
+    }
+
+    const auto iterator =
+        assets.fields.constFind(fieldName);
+    if (iterator == assets.fields.cend())
+    {
+        return;
+    }
+
+    const SpeakingEvalFieldAsset& field =
+        iterator.value();
+    const QRectF available =
+        contentRect(field);
+    const QFont font = fittedFieldFont(field, text);
+
+    painter->save();
+    painter->setClipRect(available);
+    painter->setPen(Qt::black);
+    painter->setFont(font);
+    if (field.comments)
+    {
+        drawWrappedField(
+            painter,
+            field,
+            available,
+            font,
+            text
+            );
+    }
+    else
+    {
+        drawSingleLineField(
+            painter,
+            field,
+            available,
+            font,
+            text
+            );
+    }
+    painter->restore();
+}
+
+void drawSprite(
+    QPainter* painter,
+    const QImage& spriteSheet,
+    const SpeakingEvalSpriteAsset& sprite,
+    const QRectF& destination = {}
+    )
+{
+    if (!painter
+        || spriteSheet.isNull()
+        || !sprite.source.isValid())
+    {
+        return;
+    }
+
+    painter->drawImage(
+        destination.isValid()
+            ? destination
+            : sprite.destination,
+        spriteSheet,
+        sprite.source
+        );
+}
+
+QRectF centeredSpriteDestination(
+    const QRectF& bounds,
+    const QSizeF& requestedSize
+    )
+{
+    QSizeF size = requestedSize;
+    if (size.width() > bounds.width() || size.height() > bounds.height())
+    {
+        size.scale(bounds.size(), Qt::KeepAspectRatio);
+    }
+    return QRectF(
+        bounds.center() - QPointF(size.width() / 2.0, size.height() / 2.0),
+        size
+        );
+}
+
+void drawScores(
+    QPainter* painter,
+    const SpeakingEvalTemplateAssets& assets,
+    const std::array<QString, 6>& scores
+    )
+{
+    static const QStringList grades{
+        QStringLiteral("A+"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("C")
+    };
+    const int metricCount =
+        std::min(
+            static_cast<int>(scores.size()),
+            static_cast<int>(assets.scoreCells.size())
+            );
+    for (int metric = 0; metric < metricCount; ++metric)
+    {
+        for (const QString& grade : grades)
+        {
+            const QRectF cell =
+                assets.scoreCells.at(metric).value(grade);
+            if (!cell.isValid())
+            {
+                continue;
+            }
+
+            if (scores.at(metric) == grade)
+            {
+                const qreal inset = assets.scoreHighlightInset;
+                const QRectF highlight =
+                    cell.adjusted(inset, inset, -inset, -inset);
+                if (highlight.isValid())
+                {
+                    painter->fillRect(
+                        highlight,
+                        assets.scoreHighlightColor
+                        );
+                }
+            }
+
+            const auto label =
+                assets.scoreLabels.constFind(grade);
+            if (label != assets.scoreLabels.cend())
+            {
+                drawSprite(
+                    painter,
+                    assets.sprites,
+                    label.value(),
+                    centeredSpriteDestination(
+                        cell,
+                        label.value().pointSize
+                        )
+                    );
+            }
+        }
+    }
+}
+
+void drawSignature(
+    QPainter* painter,
+    const QByteArray& imageData,
+    const QRectF& bounds
+    )
+{
+    if (!painter
+        || imageData.isEmpty()
+        || !bounds.isValid())
+    {
+        return;
+    }
+
+    const QImage image =
+        QImage::fromData(imageData);
+    if (image.isNull())
+    {
+        return;
+    }
+
+    QSizeF size = image.size();
+    size.scale(bounds.size(), Qt::KeepAspectRatio);
+    const QRectF destination(
+        bounds.center()
+            - QPointF(
+                size.width() / 2.0,
+                size.height() / 2.0
+                ),
+        size
+        );
+    painter->drawImage(destination, image);
+}
+}
 
 void SpeakingEvalReportWidget::paintReport(
     QPainter* painter,
@@ -10,347 +433,128 @@ void SpeakingEvalReportWidget::paintReport(
         return;
     }
 
-    const SpeakingEvalReportTemplateLayout& templateLayout =
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(reportTemplate());
+    const QSizeF reportSize =
         speakingEvalReportTemplateLayout(
             reportTemplate()
-            );
-    const QSizeF reportSize =
-        templateLayout.pageSize;
-
+            ).pageSize;
     const qreal scale =
         std::min(
             targetRect.width() / reportSize.width(),
             targetRect.height() / reportSize.height()
             );
-
     const QPointF origin(
-        targetRect.left() + ((targetRect.width() - (reportSize.width() * scale)) / 2.0),
-        targetRect.top() + ((targetRect.height() - (reportSize.height() * scale)) / 2.0)
+        targetRect.left()
+            + ((targetRect.width() - (reportSize.width() * scale)) / 2.0),
+        targetRect.top()
+            + ((targetRect.height() - (reportSize.height() * scale)) / 2.0)
         );
 
     painter->save();
     painter->translate(origin);
     painter->scale(scale, scale);
-    painter->fillRect(QRectF(QPointF(), reportSize), Qt::white);
+    painter->fillRect(
+        QRectF(QPointF(), reportSize),
+        Qt::white
+        );
 
-    if (usesAdvancedTemplate())
+    if (!assets.valid)
     {
-        drawAdvancedReport(
-            painter,
-            m_data,
-            overallGrade()
+        painter->setPen(QColor(QStringLiteral("#9b1c1c")));
+        painter->setFont(
+            speakingEvalTemplateFont(
+                QStringLiteral("latinSemibold"),
+                14.0
+                )
+            );
+        painter->drawText(
+            QRectF(QPointF(), reportSize).adjusted(
+                30.0,
+                30.0,
+                -30.0,
+                -30.0
+                ),
+            Qt::AlignCenter | Qt::TextWordWrap,
+            tr("Speaking-evaluation template unavailable.\n%1")
+                .arg(assets.error)
             );
         painter->restore();
         return;
     }
 
-    QPen borderPen(Qt::black);
-    borderPen.setWidthF(1.0);
-    painter->setPen(borderPen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(
-        RegularBorderRect.adjusted(-1.5, -1.5, 1.5, 1.5)
-        );
-    painter->drawRect(
-        RegularBorderRect.adjusted(1.5, 1.5, -1.5, -1.5)
+    painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setRenderHint(QPainter::TextAntialiasing, true);
+    painter->drawImage(
+        QRectF(QPointF(), assets.logicalSize),
+        assets.background
         );
 
-    painter->setPen(QColor(QStringLiteral("#c00000")));
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Calibri"),
-            28.0,
-            QFont::Bold
-            )
-        );
-    painter->drawText(
-        QRectF(99.29984, 20.43748, 402.8709, 45.37504),
-        Qt::AlignCenter | Qt::AlignVCenter,
-        tr("Speaking Evaluation")
-        );
-
-    drawLogo(
+    drawScores(
         painter,
-        QRectF(29.71654, 27.20937, 61.24598, 51.74795)
+        assets,
+        m_data.scores
         );
 
-    QPen titleLinePen(QColor(QStringLiteral("#7f7f7f")));
-    titleLinePen.setWidthF(1.5);
-    painter->setPen(titleLinePen);
-    painter->drawLine(
-        QPointF(99.29984, 66.0),
-        QPointF(503.97084, 66.0)
-        );
-
-    drawLabelAndValue(
-        painter,
-        QRectF(32.48087, 78.53858, 84.18748, 24.0),
-        QRectF(116.66835, 78.53858, 98.1911, 24.0),
-        QRectF(116.9999, 76.73653, 95.80008, 26.65299),
-        tr("English Name:"),
-        m_data.englishName
-        );
-    drawLabelAndValue(
-        painter,
-        QRectF(214.85945, 78.53858, 89.49732, 24.0),
-        QRectF(304.35677, 78.53858, 77.56433, 24.0),
-        QRectF(304.05, 77.34701, 76.95, 23.02268),
-        tr("Korean Name:"),
-        m_data.koreanName,
-        true
-        );
-    drawLabelAndValue(
-        painter,
-        QRectF(381.9211, 78.53858, 41.30976, 24.0),
-        QRectF(423.23086, 78.53858, 81.58197, 24.0),
-        QRectF(423.0001, 76.73653, 81.6, 26.64),
-        tr("Grade:"),
-        m_data.classLabel
-        );
-    drawLabelAndValue(
-        painter,
-        QRectF(32.48087, 102.53858, 84.18748, 21.6),
-        QRectF(116.66835, 102.53858, 98.1911, 21.6),
-        QRectF(117.7499, 102.1399, 95.80008, 23.74969),
-        tr("Native Teacher:"),
-        m_data.nativeTeacher
-        );
-    drawLabelAndValue(
-        painter,
-        QRectF(214.85945, 102.53858, 89.49732, 21.6),
-        QRectF(304.35677, 102.53858, 77.56433, 21.6),
-        QRectF(304.05, 100.1782, 76.95, 23.02268),
-        tr("Korean Teacher:"),
-        m_data.koreanTeacher,
-        true
-        );
-    drawLabelAndValue(
-        painter,
-        QRectF(381.9211, 102.53858, 41.30976, 21.6),
-        QRectF(423.23086, 102.53858, 81.58197, 21.6),
-        QRectF(414.1999, 100.08, 99.20032, 25.92),
-        tr("Date:"),
-        m_data.date
-        );
-
-    const QStringList grades{
-        QStringLiteral("A+"),
-        QStringLiteral("A"),
-        QStringLiteral("B+"),
-        QStringLiteral("B"),
-        QStringLiteral("C")
-    };
-
-    qreal sectionTop =
-        TableTop;
-
-    const QList<RubricSection> sections =
-        rubricSections();
-
-    for (int sectionIndex = 0; sectionIndex < sections.size(); ++sectionIndex)
+    const auto overallIterator =
+        assets.overallGrades.constFind(overallGrade());
+    if (overallIterator != assets.overallGrades.cend())
     {
-        const RubricSection& section =
-            sections[sectionIndex];
-
-        const QRectF criteriaRect(
-            TableLeft,
-            sectionTop,
-            CriteriaWidth,
-            section.height
-            );
-
-        drawCriteriaCell(
+        drawSprite(
             painter,
-            criteriaRect,
-            section
+            assets.sprites,
+            overallIterator.value()
             );
-
-        for (int gradeIndex = 0; gradeIndex < grades.size(); ++gradeIndex)
-        {
-            const QRectF gradeRect(
-                TableLeft + CriteriaWidth + (GradeWidth * gradeIndex),
-                sectionTop,
-                GradeWidth,
-                GradeHeaderHeight
-                );
-
-            drawGradeCell(
-                painter,
-                gradeRect,
-                grades[gradeIndex],
-                m_data.scores[sectionIndex] == grades[gradeIndex]
-                );
-        }
-
-        const qreal descriptionTop =
-            sectionTop + GradeHeaderHeight;
-        const qreal descriptionHeight =
-            section.height - GradeHeaderHeight;
-
-        if (section.hasMergedDescriptions)
-        {
-            const QRectF firstRect(
-                TableLeft + CriteriaWidth,
-                descriptionTop,
-                GradeWidth * 2.0,
-                descriptionHeight
-                );
-            const QRectF secondRect(
-                firstRect.right(),
-                descriptionTop,
-                GradeWidth * 2.0,
-                descriptionHeight
-                );
-            const QRectF thirdRect(
-                secondRect.right(),
-                descriptionTop,
-                GradeWidth,
-                descriptionHeight
-                );
-
-            for (const QRectF& rect : { firstRect, secondRect, thirdRect })
-            {
-                painter->fillRect(rect, Qt::white);
-                drawBorder(painter, rect);
-            }
-
-            drawCenteredText(
-                painter,
-                firstRect.adjusted(3.0, 2.0, -3.0, -2.0),
-                section.descriptions[0],
-                standardFont(
-                    QStringLiteral("Calibri"),
-                    8.0
-                    ),
-                Qt::AlignLeft
-                );
-            drawCenteredText(
-                painter,
-                secondRect.adjusted(3.0, 2.0, -3.0, -2.0),
-                section.descriptions[2],
-                standardFont(
-                    QStringLiteral("Calibri"),
-                    8.0
-                    ),
-                Qt::AlignLeft
-                );
-            drawCenteredText(
-                painter,
-                thirdRect.adjusted(2.0, 2.0, -2.0, -2.0),
-                section.descriptions[4],
-                standardFont(
-                    QStringLiteral("Calibri"),
-                    8.0
-                    )
-                );
-        }
-        else
-        {
-            for (int gradeIndex = 0; gradeIndex < grades.size(); ++gradeIndex)
-            {
-                const QRectF descriptionRect(
-                    TableLeft + CriteriaWidth + (GradeWidth * gradeIndex),
-                    descriptionTop,
-                    GradeWidth,
-                    descriptionHeight
-                    );
-
-                painter->fillRect(descriptionRect, Qt::white);
-                drawBorder(painter, descriptionRect);
-                drawCenteredText(
-                    painter,
-                    descriptionRect.adjusted(3.0, 2.0, -3.0, -2.0),
-                    section.descriptions[gradeIndex],
-                    standardFont(
-                        QStringLiteral("Calibri"),
-                        8.0
-                        )
-                    );
-            }
-        }
-
-        sectionTop +=
-            section.height;
     }
 
-    painter->setPen(Qt::black);
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Calibri"),
-            14.0,
-            QFont::Bold
-            )
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("englishName"),
+        m_data.englishName
         );
-    painter->drawText(
-        QRectF(38.1374, 575.7059, 87.8626, 20.63441),
-        Qt::AlignLeft | Qt::AlignVCenter,
-        tr("Comments:")
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("koreanName"),
+        m_data.koreanName
         );
-
-    const QRectF commentsRect(
-        34.87504,
-        594.75,
-        470.0625,
-        131.25
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("classLabel"),
+        m_data.classLabel
         );
-    painter->fillRect(commentsRect, Qt::white);
-    drawBorder(painter, commentsRect);
-
-    painter->setPen(Qt::black);
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Segoe UI Semibold"),
-            18.0
-            )
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("nativeTeacher"),
+        m_data.nativeTeacher
         );
-    painter->drawText(
-        commentsRect.adjusted(5.0, 5.0, -5.0, -5.0),
-        Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("koreanTeacher"),
+        m_data.koreanTeacher
+        );
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("date"),
+        m_data.date
+        );
+    drawField(
+        painter,
+        assets,
+        QStringLiteral("comments"),
         m_data.comments
         );
 
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Calibri"),
-            14.0,
-            QFont::Bold
-            )
-        );
-    painter->drawText(
-        QRectF(38.1374, 734.0623, 93.8626, 24.23441),
-        Qt::AlignLeft | Qt::AlignVCenter,
-        tr("Overall Grade:")
-        );
-
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Times New Roman"),
-            18.0,
-            QFont::Bold
-            )
-        );
-    painter->drawText(
-        QRectF(120.9843, 735.0, 43.2, 21.56252),
-        Qt::AlignCenter | Qt::AlignVCenter,
-        overallGrade()
-        );
-
-    painter->setFont(
-        standardFont(
-            QStringLiteral("Calibri"),
-            14.0,
-            QFont::Bold
-            )
-        );
-    painter->drawText(
-        QRectF(223.2, 734.0623, 160.8, 24.23441),
-        Qt::AlignLeft | Qt::AlignVCenter,
-        tr("Native Teacher Signature:")
-        );
-    drawSignatureImage(
+    drawSignature(
         painter,
         m_data.signatureImage,
-        templateLayout.signatureBounds
+        assets.signatureBounds
         );
 
     painter->restore();

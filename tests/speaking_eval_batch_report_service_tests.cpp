@@ -8,9 +8,100 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QPdfDocument>
+#include <QPainter>
 #include <QPdfSelection>
+#include <QProcess>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QTemporaryDir>
+
+namespace
+{
+SpeakingEvalReportData goldenReportData(
+    SpeakingEvalReportTemplate reportTemplate
+    )
+{
+    SpeakingEvalReportData data;
+    data.reportTemplate = reportTemplate;
+    data.koreanName = QStringLiteral("홍길동");
+    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
+    {
+        data.englishName = QStringLiteral("Athena Student");
+        data.classLabel = QStringLiteral("E5 Athena");
+        data.nativeTeacher = QStringLiteral("Teacher");
+        data.koreanTeacher = QStringLiteral("선생님");
+        data.date = QStringLiteral("Jul. 2026");
+        data.comments = QStringLiteral("Advanced speaking evaluation.");
+        data.scores = {
+            QStringLiteral("A+"),
+            QStringLiteral("A"),
+            QStringLiteral("B+"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("A+")
+        };
+        return data;
+    }
+
+    data.englishName = QStringLiteral("Gildong");
+    data.classLabel = QStringLiteral("E6 Gaia");
+    data.nativeTeacher = QStringLiteral("Aristotle");
+    data.koreanTeacher = QStringLiteral("송오현");
+    data.date = QStringLiteral("June 2025");
+    data.comments = QStringLiteral("Comment text");
+    data.scores = {
+        QStringLiteral("A+"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("C"),
+        QStringLiteral("A+")
+    };
+    return data;
+}
+
+QPair<qreal, qreal> imageError(
+    const QImage& actualImage,
+    const QImage& expectedImage
+    )
+{
+    const QImage actual =
+        actualImage.convertToFormat(QImage::Format_ARGB32);
+    const QImage expected =
+        expectedImage.convertToFormat(QImage::Format_ARGB32);
+    qsizetype changedPixels = 0;
+    quint64 absoluteError = 0;
+
+    for (int y = 0; y < actual.height(); ++y)
+    {
+        const QRgb* actualLine =
+            reinterpret_cast<const QRgb*>(actual.constScanLine(y));
+        const QRgb* expectedLine =
+            reinterpret_cast<const QRgb*>(expected.constScanLine(y));
+        for (int x = 0; x < actual.width(); ++x)
+        {
+            const int red =
+                qAbs(qRed(actualLine[x]) - qRed(expectedLine[x]));
+            const int green =
+                qAbs(qGreen(actualLine[x]) - qGreen(expectedLine[x]));
+            const int blue =
+                qAbs(qBlue(actualLine[x]) - qBlue(expectedLine[x]));
+            absoluteError += red + green + blue;
+            if (red > 16 || green > 16 || blue > 16)
+            {
+                ++changedPixels;
+            }
+        }
+    }
+
+    const qreal pixels =
+        actual.width() * actual.height();
+    return {
+        changedPixels / pixels,
+        absoluteError / (pixels * 3.0)
+    };
+}
+}
 
 class SpeakingEvalBatchReportServiceTests : public QObject
 {
@@ -20,10 +111,13 @@ private slots:
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
     void internalRendererCreatesReadablePdf();
+    void internalPdfMatchesWidgetRendering_data();
+    void internalPdfMatchesWidgetRendering();
     void singleReportCanBeSavedToAnExactFilePath();
     void overwriteExistingReportWhenAllowed();
     void previewDialogOffersActionsForTheSelectedReport();
     void powerPointAvailabilityMessageIsAvailable();
+    void generatedAssetsMatchSvgSourcesWhenEnabled();
     void powerPointRendererCreatesReadablePdfWhenAvailable();
 };
 
@@ -113,6 +207,121 @@ void SpeakingEvalBatchReportServiceTests::internalRendererCreatesReadablePdf()
         QCOMPARE(document.status(), QPdfDocument::Status::Ready);
         QCOMPARE(document.pageCount(), 1);
     }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    internalPdfMatchesWidgetRendering_data()
+{
+    QTest::addColumn<SpeakingEvalReportTemplate>("reportTemplate");
+    QTest::newRow("standard")
+        << SpeakingEvalReportTemplate::Standard;
+    QTest::newRow("advanced")
+        << SpeakingEvalReportTemplate::Advanced;
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    internalPdfMatchesWidgetRendering()
+{
+    QFETCH(SpeakingEvalReportTemplate, reportTemplate);
+
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+    const SpeakingEvalReportData data =
+        goldenReportData(reportTemplate);
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { data.englishName, data }
+    };
+    request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QVERIFY2(
+        result.status == SpeakingEvalBatchReportService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QCOMPARE(result.savedPdfPaths.size(), 1);
+
+    QPdfDocument document;
+    QCOMPARE(
+        document.load(result.savedPdfPaths.constFirst()),
+        QPdfDocument::Error::None
+        );
+    QCOMPARE(document.pageCount(), 1);
+
+    const QSize pathComparisonSize(1620, 2340);
+    const QImage pathPdfImage =
+        document.render(0, pathComparisonSize);
+    QVERIFY(!pathPdfImage.isNull());
+    SpeakingEvalReportWidget widget;
+    widget.setReportData(data);
+    QImage widgetImage(
+        pathComparisonSize,
+        QImage::Format_ARGB32_Premultiplied
+        );
+    widgetImage.fill(Qt::white);
+    QPainter painter(&widgetImage);
+    widget.paintReport(
+        &painter,
+        QRectF(QPointF(), pathComparisonSize)
+        );
+    painter.end();
+    const bool isAdvanced =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced;
+    const QString previewPrefix =
+        isAdvanced
+            ? QStringLiteral("CLASSMNGR_ADVANCED")
+            : QStringLiteral("CLASSMNGR_STANDARD");
+    const QString pdfPreviewPath =
+        qEnvironmentVariable(
+            (previewPrefix + QStringLiteral("_PDF_RASTER_PATH"))
+                .toUtf8()
+                .constData()
+            );
+    const QString widgetPreviewPath =
+        qEnvironmentVariable(
+            (previewPrefix + QStringLiteral("_WIDGET_RASTER_PATH"))
+                .toUtf8()
+                .constData()
+            );
+    if (!pdfPreviewPath.isEmpty())
+    {
+        QVERIFY(pathPdfImage.save(pdfPreviewPath));
+    }
+    if (!widgetPreviewPath.isEmpty())
+    {
+        QVERIFY(widgetImage.save(widgetPreviewPath));
+    }
+    const auto [pathRatio, pathMeanError] =
+        imageError(pathPdfImage, widgetImage);
+    const qreal maximumPathChangedRatio =
+        isAdvanced
+            ? 0.07
+            : 0.05;
+    QVERIFY2(
+        pathRatio <= maximumPathChangedRatio,
+        qPrintable(
+            QStringLiteral(
+                "PDF/widget changed-pixel ratio was %1%."
+                )
+                .arg(pathRatio * 100.0, 0, 'f', 3)
+            )
+        );
+    const qreal maximumPathMeanError =
+        isAdvanced
+            ? 3.5
+            : 3.0;
+    QVERIFY2(
+        pathMeanError <= maximumPathMeanError,
+        qPrintable(
+            QStringLiteral(
+                "PDF/widget mean absolute RGB error was %1."
+                )
+                .arg(pathMeanError, 0, 'f', 3)
+            )
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::overwriteExistingReportWhenAllowed()
@@ -227,10 +436,87 @@ void SpeakingEvalBatchReportServiceTests::
 
 void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailable()
 {
+    QCOMPARE(
+        SpeakingEvalBatchReportService::rendererDisplayName(
+            SpeakingEvalBatchReportService::Renderer::Internal
+            ),
+        QStringLiteral("Internal Template (Beta)")
+        );
     QVERIFY(
         !SpeakingEvalBatchReportService::powerPointRendererAvailabilityMessage()
              .trimmed()
              .isEmpty()
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    generatedAssetsMatchSvgSourcesWhenEnabled()
+{
+    if (!qEnvironmentVariableIsSet(
+            "CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS"
+            ))
+    {
+        QSKIP(
+            "Set CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS to run template asset checks."
+            );
+    }
+
+    QString powerShell =
+        QStandardPaths::findExecutable(
+            QStringLiteral("pwsh")
+            );
+    if (powerShell.isEmpty())
+    {
+        powerShell =
+            QStandardPaths::findExecutable(
+                QStringLiteral("powershell")
+                );
+    }
+    QVERIFY2(
+        !powerShell.isEmpty(),
+        "PowerShell is required for the speaking-evaluation asset check."
+        );
+
+    const QString sourceDirectory =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    const QString scriptPath =
+        QDir(sourceDirectory).filePath(
+            QStringLiteral(
+                "scripts/speaking_eval/generate_internal_template_assets.ps1"
+                )
+            );
+    QVERIFY(QFileInfo::exists(scriptPath));
+
+    QProcess process;
+    process.setWorkingDirectory(sourceDirectory);
+    process.start(
+        powerShell,
+        {
+            QStringLiteral("-NoProfile"),
+            QStringLiteral("-File"),
+            scriptPath,
+            QStringLiteral("--check")
+        }
+        );
+    QVERIFY(process.waitForStarted());
+    QVERIFY2(
+        process.waitForFinished(120000),
+        "The SVG template asset check timed out."
+        );
+    const QString output =
+        QString::fromUtf8(process.readAllStandardOutput())
+        + QString::fromUtf8(process.readAllStandardError());
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QVERIFY2(
+        process.exitCode() == 0,
+        qPrintable(output)
+        );
+    QVERIFY(
+        output.contains(
+            QStringLiteral(
+                "Speaking-evaluation SVG template assets are current."
+                )
+            )
         );
 }
 

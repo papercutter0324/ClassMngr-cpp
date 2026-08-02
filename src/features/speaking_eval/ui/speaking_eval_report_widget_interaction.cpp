@@ -1,4 +1,15 @@
-#include "speaking_eval_report_renderer_p.h"
+#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPlainTextEdit>
+#include <QResizeEvent>
+#include <QSignalBlocker>
+#include <QTextDocument>
+
+#include <algorithm>
 
 void SpeakingEvalReportWidget::paintEvent(
     QPaintEvent* event
@@ -135,56 +146,29 @@ std::pair<int, QString> SpeakingEvalReportWidget::scoreAt(
         QStringLiteral("C")
     };
 
-    if (usesAdvancedTemplate())
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(reportTemplate());
+    if (!assets.valid)
     {
-        constexpr qreal tableLeft = 17.28;
-        constexpr qreal criteriaWidth = 134.97;
-        constexpr qreal titleHeight = 21.60;
-        constexpr std::array<qreal, 5> gradeWidths{
-            73.80,
-            73.80,
-            73.80,
-            73.80,
-            75.17
-        };
-        qreal top = 167.27;
-        const QList<RubricSection> sections = advancedRubricSections();
-
-        for (int metric = 0; metric < sections.size(); ++metric)
-        {
-            qreal left = tableLeft + criteriaWidth;
-            for (int grade = 0; grade < gradeWidths.size(); ++grade)
-            {
-                if (QRectF(left, top, gradeWidths[grade], titleHeight).contains(point))
-                {
-                    return { metric, grades[grade] };
-                }
-                left += gradeWidths[grade];
-            }
-            top += sections[metric].height;
-        }
-
         return { -1, {} };
     }
 
-    qreal top = TableTop;
-    const QList<RubricSection> sections = rubricSections();
-    for (int metric = 0; metric < sections.size(); ++metric)
+    for (int metric = 0; metric < assets.scoreCells.size(); ++metric)
     {
         for (int grade = 0; grade < grades.size(); ++grade)
         {
             const QRectF rect(
-                TableLeft + CriteriaWidth + (GradeWidth * grade),
-                top,
-                GradeWidth,
-                GradeHeaderHeight
+                speakingEvalScoreCell(
+                    reportTemplate(),
+                    metric,
+                    grades.at(grade)
+                    )
                 );
             if (rect.contains(point))
             {
                 return { metric, grades[grade] };
             }
         }
-        top += sections[metric].height;
     }
 
     return { -1, {} };
@@ -199,40 +183,55 @@ void SpeakingEvalReportWidget::updateCommentEditor()
 
     const QSignalBlocker blocker(m_commentEditor);
     m_commentEditor->setPlainText(m_data.comments);
-    m_commentEditor->setVisible(m_interactive);
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(reportTemplate());
+    const SpeakingEvalFieldAsset* comments =
+        speakingEvalFieldAsset(
+            reportTemplate(),
+            QStringLiteral("comments")
+            );
+    m_commentEditor->setVisible(
+        m_interactive
+        && assets.valid
+        && comments
+        );
 
-    if (!m_interactive)
+    if (!m_interactive || !assets.valid || !comments)
     {
         return;
     }
 
     const QRectF sourceRect =
-        usesAdvancedTemplate()
-            ? QRectF(17.28, 650.15, 505.34, 93.90)
-            : QRectF(34.87504, 594.75, 470.0625, 131.25);
-    const QRect editorRect = reportRect(sourceRect).adjusted(2, 2, -2, -2);
+        comments->rect.marginsRemoved(comments->margins);
+    const QRect editorRect =
+        reportRect(sourceRect);
     m_commentEditor->setGeometry(editorRect);
 
-    QFont font(
-        usesAdvancedTemplate()
-            ? QStringLiteral("Just Another Hand")
-            : QStringLiteral("Segoe UI Semibold")
-        );
-    const qreal scale =
-        width()
-        / speakingEvalReportTemplateLayout(
+    const QSizeF reportSize =
+        speakingEvalReportTemplateLayout(
             reportTemplate()
-            ).pageSize.width();
-    font.setPixelSize(
-        qRound(
-            (usesAdvancedTemplate() ? 15.0 : 18.0) * scale
-            )
+            ).pageSize;
+    const qreal scale =
+        std::min(
+            width() / reportSize.width(),
+            height() / reportSize.height()
         );
+    QFont font =
+        speakingEvalTemplateFont(
+            comments->fontRole,
+            comments->fontSizePoints * scale
+            );
+    font.setLetterSpacing(
+        QFont::AbsoluteSpacing,
+        comments->letterSpacing * scale
+        );
+    font.setWordSpacing(comments->wordSpacing * scale);
     m_commentEditor->setFont(font);
+    m_commentEditor->document()->setDocumentMargin(0.0);
     m_commentEditor->setStyleSheet(
         QStringLiteral(
-            "QPlainTextEdit { background: white; color: black; border: none; padding: %1px; }"
-            ).arg(qMax(2, qRound(4.0 * scale)))
+            "QPlainTextEdit { background: white; color: black; border: none; padding: 0px; }"
+            )
         );
 }
 

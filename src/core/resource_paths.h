@@ -156,6 +156,9 @@ inline constexpr auto Inter =
 inline constexpr auto Pretendard =
     ":/assets/fonts/PretendardVariable.ttf";
 
+inline constexpr auto JustAnotherHand =
+    ":/assets/fonts/JustAnotherHand-Regular.ttf";
+
 inline QString inter()
 {
     return Detail::resolveResourcePath(
@@ -167,6 +170,13 @@ inline QString pretendard()
 {
     return Detail::resolveResourcePath(
         QString::fromUtf8(Pretendard)
+        );
+}
+
+inline QString justAnotherHand()
+{
+    return Detail::resolveResourcePath(
+        QString::fromUtf8(JustAnotherHand)
         );
 }
 }

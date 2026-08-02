@@ -1,6 +1,7 @@
 #include "speaking_eval_batch_report_service.h"
 
 #include "core/resource_paths.h"
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
@@ -36,7 +37,6 @@ namespace
 {
 
 constexpr QSizeF ReportPageSizeInches(7.5, 10.833333);
-constexpr int ReportPdfResolution = 144;
 constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
 
 #ifdef Q_OS_MACOS
@@ -185,10 +185,29 @@ bool renderInternalPdf(
     QString* errorMessage
     )
 {
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(
+            data.reportTemplate
+            );
+    if (!assets.valid)
+    {
+        if (errorMessage)
+        {
+            *errorMessage =
+                QObject::tr(
+                    "The internal speaking-evaluation renderer is unavailable: %1"
+                    )
+                    .arg(assets.error);
+        }
+        return false;
+    }
+
     QPdfWriter writer(documentPath);
     writer.setCreator(QStringLiteral("ClassMngr"));
     writer.setTitle(QObject::tr("Speaking Evaluation"));
-    writer.setResolution(ReportPdfResolution);
+    writer.setResolution(
+        PdfPrintService::GeneratedPdfResolutionDpi
+        );
 
     if (!writer.setPageLayout(reportPageLayout()))
     {
@@ -1546,7 +1565,7 @@ QString rendererDisplayName(
     switch (renderer)
     {
     case Renderer::Internal:
-        return QObject::tr("Internal Template");
+        return QObject::tr("Internal Template (Beta)");
     case Renderer::PowerPoint:
         return QObject::tr("PowerPoint Template (Recommended)");
     }

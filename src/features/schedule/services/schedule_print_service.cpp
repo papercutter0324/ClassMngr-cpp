@@ -29,7 +29,6 @@ constexpr qreal FooterHeight = 52.0;
 constexpr qreal CellPadding = 5.0;
 constexpr QPageSize::PageSizeId SchedulePdfPageSize = QPageSize::A4;
 constexpr qreal SchedulePdfMarginInches = 0.5;
-constexpr int SchedulePdfResolutionDpi = 300;
 
 struct PrintPalette
 {
@@ -315,7 +314,9 @@ bool configureSchedulePdfWriter(
     writer.setTitle(
         QStringLiteral("Schedule")
         );
-    writer.setResolution(SchedulePdfResolutionDpi);
+    writer.setResolution(
+        PdfPrintService::GeneratedPdfResolutionDpi
+        );
 
     return writer.setPageLayout(
         schedulePdfPageLayout(orientation)

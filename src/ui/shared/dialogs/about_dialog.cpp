@@ -33,11 +33,15 @@ constexpr auto InterSourceUrl =
     "https://github.com/rsms/inter";
 constexpr auto PretendardSourceUrl =
     "https://github.com/orioncactus/pretendard";
+constexpr auto JustAnotherHandSourceUrl =
+    "https://github.com/google/fonts/tree/main/apache/justanotherhand";
 
 constexpr auto InterLicensePath =
     "licenses/fonts/inter/LICENSE.txt";
 constexpr auto PretendardLicensePath =
     "licenses/fonts/pretendard/LICENSE.txt";
+constexpr auto JustAnotherHandLicensePath =
+    "licenses/fonts/just-another-hand/LICENSE.txt";
 
 constexpr int DialogWidthSafetyBuffer = 12;
 
@@ -162,6 +166,14 @@ void AboutDialog::showPretendardLicense()
         );
 }
 
+void AboutDialog::showJustAnotherHandLicense()
+{
+    showLicense(
+        tr("Just Another Hand Font License"),
+        QString::fromUtf8(JustAnotherHandLicensePath)
+        );
+}
+
 void AboutDialog::buildUi()
 {
     const QString applicationName =
@@ -279,7 +291,7 @@ void AboutDialog::buildUi()
 
     auto* acknowledgements =
         createLinkLabel(
-            tr("This non-commercial application is built with %1 under Qt's open-source licensing terms and includes the %2 and %3 font families.")
+            tr("This non-commercial application is built with %1 under Qt's open-source licensing terms and includes the %2, %3, and %4 font families.")
                 .arg(
                     link(
                         tr("Qt 6"),
@@ -292,6 +304,10 @@ void AboutDialog::buildUi()
                     link(
                         tr("Pretendard"),
                         QString::fromUtf8(PretendardSourceUrl)
+                        ),
+                    link(
+                        tr("Just Another Hand"),
+                        QString::fromUtf8(JustAnotherHandSourceUrl)
                         )
                     ),
             this
@@ -331,6 +347,12 @@ void AboutDialog::buildUi()
             this
             );
 
+    auto* justAnotherHandLicenseButton =
+        new TextFitPushButton(
+            tr("View Just Another Hand License"),
+            this
+            );
+
     connect(
         interLicenseButton,
         &QPushButton::clicked,
@@ -346,6 +368,13 @@ void AboutDialog::buildUi()
         );
 
     connect(
+        justAnotherHandLicenseButton,
+        &QPushButton::clicked,
+        this,
+        &AboutDialog::showJustAnotherHandLicense
+        );
+
+    connect(
         aboutQtButton,
         &QPushButton::clicked,
         this,
@@ -358,6 +387,7 @@ void AboutDialog::buildUi()
     licenseButtonLayout->addWidget(aboutQtButton);
     licenseButtonLayout->addWidget(interLicenseButton);
     licenseButtonLayout->addWidget(pretendardLicenseButton);
+    licenseButtonLayout->addWidget(justAnotherHandLicenseButton);
     licenseButtonLayout->addStretch();
 
     auto* closeButton =

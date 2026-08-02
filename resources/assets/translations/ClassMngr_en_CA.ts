@@ -3559,7 +3559,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+28"/>
-        <source>Internal Template</source>
+        <source>Internal Template (Beta)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

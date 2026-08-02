@@ -19,7 +19,6 @@ constexpr qreal TitleRowHeightInches = 0.3000;
 constexpr qreal NormalRowHeightInches = 0.2000;
 constexpr qreal SectionEndRowHeightInches = 0.2083;
 constexpr qreal RosterPdfMarginInches = 0.5;
-constexpr int RosterPdfResolutionDpi = 300;
 constexpr QPageSize::PageSizeId RosterPdfPageSize = QPageSize::A4;
 
 constexpr qreal A4WidthInches = 8.268;

@@ -1,0 +1,613 @@
+{
+  "version": 3,
+  "template": "advanced",
+  "units": "pt",
+  "placeholderArtwork": true,
+  "logicalSize": [
+    540.0,
+    780.0
+  ],
+  "physicalSizeInches": [
+    7.5,
+    10.833333
+  ],
+  "outputDpi": 300,
+  "backgroundPixelSize": [
+    1620,
+    2338
+  ],
+  "background": "advanced-background.png",
+  "sprites": "advanced-sprites.png",
+  "fields": {
+    "englishName": {
+      "rect": [
+        102.0,
+        103.1402,
+        133.125,
+        24.2344
+      ],
+      "margins": [
+        0.0,
+        1.44,
+        1.44,
+        1.44
+      ],
+      "fontRole": "latin",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "left",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "koreanName": {
+      "rect": [
+        332.2501,
+        103.1402,
+        75.0,
+        24.2344
+      ],
+      "margins": [
+        0.0,
+        1.44,
+        1.44,
+        1.44
+      ],
+      "fontRole": "korean",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "left",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "classLabel": {
+      "rect": [
+        414.3294,
+        52.862,
+        96.4325,
+        24.2344
+      ],
+      "margins": [
+        7.2,
+        3.6,
+        7.2,
+        3.6
+      ],
+      "fontRole": "latinCondensedBold",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "center",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "nativeTeacher": {
+      "rect": [
+        102.0,
+        132.8836,
+        133.1249,
+        24.2345
+      ],
+      "margins": [
+        0.0,
+        1.44,
+        1.44,
+        1.44
+      ],
+      "fontRole": "latin",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "left",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "koreanTeacher": {
+      "rect": [
+        332.2501,
+        132.8836,
+        75.0,
+        24.2344
+      ],
+      "margins": [
+        0.0,
+        1.44,
+        1.44,
+        1.44
+      ],
+      "fontRole": "korean",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "left",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "date": {
+      "rect": [
+        385.6039,
+        14.4663,
+        125.1002,
+        24.2344
+      ],
+      "margins": [
+        7.2,
+        3.6,
+        7.2,
+        3.6
+      ],
+      "fontRole": "latinCondensedBold",
+      "fontSizePt": 14.0,
+      "horizontalAlignment": "center",
+      "verticalAlignment": "center",
+      "fit": "singleLine",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    },
+    "comments": {
+      "rect": [
+        17.6222,
+        651.164,
+        504.7556,
+        92.886
+      ],
+      "margins": [
+        7.2,
+        3.6,
+        7.2,
+        3.6
+      ],
+      "fontRole": "handwritten",
+      "fontSizePt": 15.0,
+      "horizontalAlignment": "left",
+      "verticalAlignment": "top",
+      "fit": "comments",
+      "minimumScale": 0.7,
+      "letterSpacing": 0.0,
+      "wordSpacing": 0.0,
+      "lineHeight": 1.0,
+      "baselineOffset": 0.0
+    }
+  },
+  "scoreTable": {
+    "fillColor": "#FFFF00",
+    "fillInset": 1.0,
+    "metrics": [
+      {
+        "name": "grammar",
+        "cells": {
+          "A+": [
+            153.0,
+            167.142857,
+            73.666667,
+            21.685201
+          ],
+          "A": [
+            226.666667,
+            167.142857,
+            74.0,
+            21.685201
+          ],
+          "B+": [
+            300.666667,
+            167.142857,
+            73.666667,
+            21.685201
+          ],
+          "B": [
+            374.333333,
+            167.142857,
+            74.0,
+            21.685201
+          ],
+          "C": [
+            448.333333,
+            167.142857,
+            73.666667,
+            21.685201
+          ]
+        }
+      },
+      {
+        "name": "pronunciation",
+        "cells": {
+          "A+": [
+            153.0,
+            253.550043,
+            73.666667,
+            21.685201
+          ],
+          "A": [
+            226.666667,
+            253.550043,
+            74.0,
+            21.685201
+          ],
+          "B+": [
+            300.666667,
+            253.550043,
+            73.666667,
+            21.685201
+          ],
+          "B": [
+            374.333333,
+            253.550043,
+            74.0,
+            21.685201
+          ],
+          "C": [
+            448.333333,
+            253.550043,
+            73.666667,
+            21.685201
+          ]
+        }
+      },
+      {
+        "name": "fluency",
+        "cells": {
+          "A+": [
+            153.0,
+            330.615911,
+            73.666667,
+            21.351583
+          ],
+          "A": [
+            226.666667,
+            330.615911,
+            74.0,
+            21.351583
+          ],
+          "B+": [
+            300.666667,
+            330.615911,
+            73.666667,
+            21.351583
+          ],
+          "B": [
+            374.333333,
+            330.615911,
+            74.0,
+            21.351583
+          ],
+          "C": [
+            448.333333,
+            330.615911,
+            73.666667,
+            21.351583
+          ]
+        }
+      },
+      {
+        "name": "manner",
+        "cells": {
+          "A+": [
+            153.0,
+            407.348161,
+            73.666667,
+            21.685201
+          ],
+          "A": [
+            226.666667,
+            407.348161,
+            74.0,
+            21.685201
+          ],
+          "B+": [
+            300.666667,
+            407.348161,
+            73.666667,
+            21.685201
+          ],
+          "B": [
+            374.333333,
+            407.348161,
+            74.0,
+            21.685201
+          ],
+          "C": [
+            448.333333,
+            407.348161,
+            73.666667,
+            21.685201
+          ]
+        }
+      },
+      {
+        "name": "content",
+        "cells": {
+          "A+": [
+            153.0,
+            486.41574,
+            73.666667,
+            21.685201
+          ],
+          "A": [
+            226.666667,
+            486.41574,
+            74.0,
+            21.685201
+          ],
+          "B+": [
+            300.666667,
+            486.41574,
+            73.666667,
+            21.685201
+          ],
+          "B": [
+            374.333333,
+            486.41574,
+            74.0,
+            21.685201
+          ],
+          "C": [
+            448.333333,
+            486.41574,
+            73.666667,
+            21.685201
+          ]
+        }
+      },
+      {
+        "name": "overall-effort",
+        "cells": {
+          "A+": [
+            153.0,
+            553.806672,
+            73.666667,
+            21.351583
+          ],
+          "A": [
+            226.666667,
+            553.806672,
+            74.0,
+            21.351583
+          ],
+          "B+": [
+            300.666667,
+            553.806672,
+            73.666667,
+            21.351583
+          ],
+          "B": [
+            374.333333,
+            553.806672,
+            74.0,
+            21.351583
+          ],
+          "C": [
+            448.333333,
+            553.806672,
+            73.666667,
+            21.351583
+          ]
+        }
+      }
+    ],
+    "labels": {
+      "A+": {
+        "source": [
+          0,
+          0,
+          38,
+          27
+        ],
+        "width": 38,
+        "height": 27,
+        "pointSize": [
+          12.666667,
+          9.007699
+        ]
+      },
+      "A": {
+        "source": [
+          0,
+          27,
+          22,
+          27
+        ],
+        "width": 22,
+        "height": 27,
+        "pointSize": [
+          7.333333,
+          9.007699
+        ]
+      },
+      "B+": {
+        "source": [
+          0,
+          54,
+          36,
+          27
+        ],
+        "width": 36,
+        "height": 27,
+        "pointSize": [
+          12.0,
+          9.007699
+        ]
+      },
+      "B": {
+        "source": [
+          0,
+          81,
+          19,
+          27
+        ],
+        "width": 19,
+        "height": 27,
+        "pointSize": [
+          6.333333,
+          9.007699
+        ]
+      },
+      "C": {
+        "source": [
+          0,
+          108,
+          19,
+          29
+        ],
+        "width": 19,
+        "height": 29,
+        "pointSize": [
+          6.333333,
+          9.674936
+        ]
+      }
+    }
+  },
+  "overallGradeBounds": [
+    413.0,
+    106.090676,
+    109.0,
+    36.030796
+  ],
+  "overallGrades": {
+    "A+": {
+      "source": [
+        0,
+        137,
+        100,
+        53
+      ],
+      "width": 100,
+      "height": 53,
+      "pointSize": [
+        33.333333,
+        17.681779
+      ],
+      "destination": [
+        450.833334,
+        115.265184,
+        33.333333,
+        17.681779
+      ]
+    },
+    "A": {
+      "source": [
+        0,
+        190,
+        57,
+        53
+      ],
+      "width": 57,
+      "height": 53,
+      "pointSize": [
+        19.0,
+        17.681779
+      ],
+      "destination": [
+        458.0,
+        115.265184,
+        19.0,
+        17.681779
+      ]
+    },
+    "B+": {
+      "source": [
+        0,
+        243,
+        94,
+        53
+      ],
+      "width": 94,
+      "height": 53,
+      "pointSize": [
+        31.333333,
+        17.681779
+      ],
+      "destination": [
+        451.833334,
+        115.265184,
+        31.333333,
+        17.681779
+      ]
+    },
+    "B": {
+      "source": [
+        0,
+        296,
+        49,
+        53
+      ],
+      "width": 49,
+      "height": 53,
+      "pointSize": [
+        16.333333,
+        17.681779
+      ],
+      "destination": [
+        459.333334,
+        115.265184,
+        16.333333,
+        17.681779
+      ]
+    },
+    "C": {
+      "source": [
+        0,
+        349,
+        51,
+        55
+      ],
+      "width": 51,
+      "height": 55,
+      "pointSize": [
+        17.0,
+        18.349016
+      ],
+      "destination": [
+        459.0,
+        114.931566,
+        17.0,
+        18.349016
+      ]
+    },
+    "N/A": {
+      "source": [
+        0,
+        404,
+        132,
+        55
+      ],
+      "width": 132,
+      "height": 55,
+      "pointSize": [
+        44.0,
+        18.349016
+      ],
+      "destination": [
+        445.5,
+        114.931566,
+        44.0,
+        18.349016
+      ]
+    }
+  },
+  "signatureBounds": [
+    413.0,
+    742.0,
+    109.0,
+    36.0
+  ]
+}

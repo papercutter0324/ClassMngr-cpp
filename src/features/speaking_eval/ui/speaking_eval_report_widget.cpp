@@ -1,4 +1,10 @@
-#include "speaking_eval_report_renderer_p.h"
+#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+
+#include <QFrame>
+#include <QPlainTextEdit>
+#include <QSignalBlocker>
+#include <QSizePolicy>
+#include <QTextCursor>
 
 SpeakingEvalReportWidget::SpeakingEvalReportWidget(
     QWidget* parent

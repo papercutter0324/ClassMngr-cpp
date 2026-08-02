@@ -362,6 +362,10 @@ file(GLOB CLASSMNGR_FILE_DIALOG_ICONS CONFIGURE_DEPENDS
 )
 
 list(FILTER CLASSMNGR_EMBEDDED_PACK_FILES EXCLUDE REGEX "/~\\$[^/]+$")
+list(
+    FILTER CLASSMNGR_EMBEDDED_PACK_FILES
+    EXCLUDE REGEX "/templates/speaking-eval/sources/"
+)
 
 qt_add_resources(ClassMngr app_resources
     BIG_RESOURCES
@@ -369,6 +373,7 @@ qt_add_resources(ClassMngr app_resources
     BASE "${PROJECT_SOURCE_DIR}/resources"
     FILES
         resources/assets/fonts/Inter.ttc
+        resources/assets/fonts/JustAnotherHand-Regular.ttf
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
         resources/assets/icons/check.png
@@ -516,6 +521,11 @@ install(FILES
 install(FILES
     licenses/fonts/pretendard/LICENSE.txt
     DESTINATION licenses/fonts/pretendard
+)
+
+install(FILES
+    licenses/fonts/just-another-hand/LICENSE.txt
+    DESTINATION licenses/fonts/just-another-hand
 )
 
 qt6_generate_deploy_script(
@@ -2243,6 +2253,7 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp
@@ -2270,7 +2281,15 @@ if(BUILD_TESTING)
         PREFIX "/"
         BASE "${PROJECT_SOURCE_DIR}/resources"
         FILES
-            resources/assets/images/dyb.png
+            resources/assets/fonts/Inter.ttc
+            resources/assets/fonts/JustAnotherHand-Regular.ttf
+            resources/assets/fonts/PretendardVariable.ttf
+            resources/assets/templates/speaking-eval/advanced-background.png
+            resources/assets/templates/speaking-eval/advanced-manifest.json
+            resources/assets/templates/speaking-eval/advanced-sprites.png
+            resources/assets/templates/speaking-eval/standard-background.png
+            resources/assets/templates/speaking-eval/standard-manifest.json
+            resources/assets/templates/speaking-eval/standard-sprites.png
     )
 
     add_test(
@@ -2284,6 +2303,7 @@ if(BUILD_TESTING)
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/updater/version.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
@@ -2307,6 +2327,11 @@ if(BUILD_TESTING)
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    target_compile_definitions(ClassMngrSpeakingEvalBatchReportServiceTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
             Qt6::Core
@@ -2322,7 +2347,15 @@ if(BUILD_TESTING)
         PREFIX "/"
         BASE "${PROJECT_SOURCE_DIR}/resources"
         FILES
-            resources/assets/images/dyb.png
+            resources/assets/fonts/Inter.ttc
+            resources/assets/fonts/JustAnotherHand-Regular.ttf
+            resources/assets/fonts/PretendardVariable.ttf
+            resources/assets/templates/speaking-eval/advanced-background.png
+            resources/assets/templates/speaking-eval/advanced-manifest.json
+            resources/assets/templates/speaking-eval/advanced-sprites.png
+            resources/assets/templates/speaking-eval/standard-background.png
+            resources/assets/templates/speaking-eval/standard-manifest.json
+            resources/assets/templates/speaking-eval/standard-sprites.png
             "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
             "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
     )
