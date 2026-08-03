@@ -1,6 +1,7 @@
 #include "personal_details_repository.h"
 
 #include "data/data_service.h"
+#include "signature_image_processor.h"
 
 #include <QVariant>
 
@@ -80,12 +81,15 @@ PersonalDetails PersonalDetailsRepository::load() const
         LegacyZoomNotAvailableKey,
         true
         ).toBool();
-    details.signatureImage = QByteArray::fromBase64(
-        m_dataService
-            ->loadSetting(SignatureImageKey, QString())
-            .toString()
-            .toLatin1()
-        );
+    details.signatureImage =
+        SignatureImage::prepareForEmbedding(
+            QByteArray::fromBase64(
+                m_dataService
+                    ->loadSetting(SignatureImageKey, QString())
+                    .toString()
+                    .toLatin1()
+                )
+            );
     return details;
 }
 
@@ -106,7 +110,11 @@ bool PersonalDetailsRepository::save(const PersonalDetails& details) const
         );
     m_dataService->saveSetting(
         SignatureImageKey,
-        QString::fromLatin1(details.signatureImage.toBase64())
+        QString::fromLatin1(
+            SignatureImage::prepareForEmbedding(
+                details.signatureImage
+                ).toBase64()
+            )
         );
     return true;
 }

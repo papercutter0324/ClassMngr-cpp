@@ -5,13 +5,13 @@
 #include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/my_info/data/personal_details_repository.h"
+#include "features/my_info/data/signature_image_processor.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QCheckBox>
-#include <QBuffer>
 #include <QComboBox>
 #include <QEvent>
 #include <QFileDialog>
@@ -330,27 +330,9 @@ void PersonalDetailsPage::chooseSignatureImage()
         return;
     }
 
-    const QByteArray sourceFormat =
-        reader.format().toLower();
-    const bool sourceIsJpeg =
-        sourceFormat == QByteArrayLiteral("jpeg")
-        || sourceFormat == QByteArrayLiteral("jpg");
-    const QByteArray outputFormat =
-        sourceIsJpeg
-            ? QByteArrayLiteral("JPG")
-            : QByteArrayLiteral("PNG");
-
-    QByteArray encodedImage;
-    QBuffer buffer(&encodedImage);
-    buffer.open(QIODevice::WriteOnly);
-
-    if (
-        !image.save(
-            &buffer,
-            outputFormat.constData(),
-            sourceIsJpeg ? 92 : -1
-            )
-        )
+    const QByteArray encodedImage =
+        SignatureImage::prepareForEmbedding(image);
+    if (encodedImage.isEmpty())
     {
         QMessageBox::warning(
             this,
