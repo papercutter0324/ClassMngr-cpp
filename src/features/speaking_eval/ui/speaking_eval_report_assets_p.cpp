@@ -429,8 +429,15 @@ QRectF nativeCenteredDestination(
 
     int grayLeft = -1;
     int grayWidth = 0;
-    for (int y = cellPixels.top(); y <= cellPixels.bottom(); ++y)
+    const auto scanHorizontal =
+        [&background, &cellPixels, &grayLeft, &grayWidth](
+            const int y
+            )
     {
+        if (y < cellPixels.top() || y > cellPixels.bottom())
+        {
+            return;
+        }
         int runLeft = -1;
         for (int x = cellPixels.left(); x <= cellPixels.right() + 1; ++x)
         {
@@ -454,12 +461,24 @@ QRectF nativeCenteredDestination(
                 runLeft = -1;
             }
         }
+    };
+    for (int offset = 10; offset <= 18; ++offset)
+    {
+        scanHorizontal(cellPixels.top() + offset);
+        scanHorizontal(cellPixels.bottom() - offset);
     }
 
     int grayTop = -1;
     int grayHeight = 0;
-    for (int x = cellPixels.left(); x <= cellPixels.right(); ++x)
+    const auto scanVertical =
+        [&background, &cellPixels, &grayTop, &grayHeight](
+            const int x
+            )
     {
+        if (x < cellPixels.left() || x > cellPixels.right())
+        {
+            return;
+        }
         int runTop = -1;
         for (int y = cellPixels.top(); y <= cellPixels.bottom() + 1; ++y)
         {
@@ -483,27 +502,31 @@ QRectF nativeCenteredDestination(
                 runTop = -1;
             }
         }
+    };
+    for (int offset = 10; offset <= 18; ++offset)
+    {
+        scanVertical(cellPixels.left() + offset);
+        scanVertical(cellPixels.right() - offset);
     }
 
-    if (grayWidth >= authoredSize.width()
-        && grayHeight >= authoredSize.height())
+    pixelRect.moveCenter(
+        QPoint(
+            qRound(bounds.center().x() * horizontalScale),
+            qRound(bounds.center().y() * verticalScale)
+            )
+        );
+    if (grayWidth >= authoredSize.width())
     {
-        pixelRect.moveTopLeft(
-            QPoint(
-                grayLeft
-                    + (grayWidth - authoredSize.width()) / 2,
-                grayTop
-                    + (grayHeight - authoredSize.height()) / 2
-                )
+        pixelRect.moveLeft(
+            grayLeft
+                + (grayWidth - authoredSize.width()) / 2
             );
     }
-    else
+    if (grayHeight >= authoredSize.height())
     {
-        pixelRect.moveCenter(
-            QPoint(
-                qRound(bounds.center().x() * horizontalScale),
-                qRound(bounds.center().y() * verticalScale)
-                )
+        pixelRect.moveTop(
+            grayTop
+                + (grayHeight - authoredSize.height()) / 2
             );
     }
     if (!cellPixels.contains(pixelRect))

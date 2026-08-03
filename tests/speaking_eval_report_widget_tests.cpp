@@ -354,7 +354,7 @@ void SpeakingEvalReportWidgetTests::
     QCOMPARE(standard.scoreHighlightInset, 1.0);
     QCOMPARE(advanced.scoreHighlightInset, 1.0);
     const QHash<QString, int> advancedHighlightLeftPixels{
-        { QStringLiteral("A+"), 818 },
+        { QStringLiteral("A+"), 819 },
         { QStringLiteral("A"), 1212 },
         { QStringLiteral("B+"), 1606 },
         { QStringLiteral("B"), 1999 },
