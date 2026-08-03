@@ -18,6 +18,23 @@
 
 #include <array>
 
+QString speakingEvalReportDate(
+    const QDate& date,
+    SpeakingEvalReportTemplate reportTemplate
+    )
+{
+    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
+    {
+        return date.toString(QStringLiteral("MMM. yyyy"));
+    }
+
+    return date.toString(
+        date.month() >= 5 && date.month() <= 7
+            ? QStringLiteral("MMMM yyyy")
+            : QStringLiteral("MMM. yyyy")
+        );
+}
+
 namespace
 {
 
@@ -135,10 +152,9 @@ SpeakingEvalReportData reportDataForRow(
         SpeakingEval::toInt(SpeakingEvalColumn::Notes)
         );
     data.reportTemplate = reportTemplateForClass(classInfo);
-    data.date = QDate::currentDate().toString(
-        data.reportTemplate == SpeakingEvalReportTemplate::Advanced
-            ? QStringLiteral("MMM. yyyy")
-            : QStringLiteral("MMMM yyyy")
+    data.date = speakingEvalReportDate(
+        QDate::currentDate(),
+        data.reportTemplate
         );
 
     const std::array<SpeakingEvalColumn, 6> scoreColumns{

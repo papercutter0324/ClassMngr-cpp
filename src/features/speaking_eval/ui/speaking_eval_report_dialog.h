@@ -7,8 +7,14 @@
 #include <QDialog>
 
 class QComboBox;
+class QDate;
 class QLabel;
 class QPlainTextEdit;
+
+[[nodiscard]] QString speakingEvalReportDate(
+    const QDate& date,
+    SpeakingEvalReportTemplate reportTemplate
+    );
 
 [[nodiscard]] QList<SpeakingEvalBatchReportService::StudentReport>
 buildSpeakingEvalStudentReports(

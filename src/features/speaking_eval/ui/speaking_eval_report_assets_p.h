@@ -90,3 +90,9 @@ speakingEvalFieldAsset(
     const QString& role,
     qreal pointSize
     );
+
+[[nodiscard]] qreal speakingEvalFittedFieldFontSize(
+    const SpeakingEvalFieldAsset& field,
+    const QString& text,
+    qreal stepPoints = 1.0
+    );

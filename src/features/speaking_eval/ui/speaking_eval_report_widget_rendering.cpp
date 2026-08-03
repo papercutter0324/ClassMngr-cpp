@@ -12,6 +12,8 @@
 
 namespace
 {
+constexpr qreal HalfPointLayoutScale = 0.5;
+
 QRectF contentRect(
     const SpeakingEvalFieldAsset& field
     )
@@ -19,30 +21,40 @@ QRectF contentRect(
     return field.rect.marginsRemoved(field.margins);
 }
 
-QFont fieldFont(
+struct FieldFont
+{
+    QFont font;
+    qreal layoutScale = 1.0;
+};
+
+FieldFont fieldFont(
     const SpeakingEvalFieldAsset& field,
     qreal pointSize
     )
 {
+    const qreal layoutScale =
+        qFuzzyCompare(pointSize, qRound(pointSize))
+            ? 1.0
+            : HalfPointLayoutScale;
     QFont font =
         speakingEvalTemplateFont(
             field.fontRole,
-            pointSize
+            pointSize / layoutScale
             );
     font.setLetterSpacing(
         QFont::AbsoluteSpacing,
-        field.letterSpacing
+        field.letterSpacing / layoutScale
         );
-    font.setWordSpacing(field.wordSpacing);
-    return font;
+    font.setWordSpacing(field.wordSpacing / layoutScale);
+    return { font, layoutScale };
 }
 
 qreal singleLineWidth(
-    const QFont& font,
+    const FieldFont& fieldFont,
     const QString& text
     )
 {
-    QTextLayout layout(text, font);
+    QTextLayout layout(text, fieldFont.font);
     QTextOption option;
     option.setWrapMode(QTextOption::NoWrap);
     layout.setTextOption(option);
@@ -50,18 +62,18 @@ qreal singleLineWidth(
     const QTextLine line = layout.createLine();
     layout.endLayout();
     return line.isValid()
-        ? line.naturalTextWidth()
+        ? line.naturalTextWidth() * fieldFont.layoutScale
         : 0.0;
 }
 
 qreal wrappedTextHeight(
     const SpeakingEvalFieldAsset& field,
-    const QFont& font,
+    const FieldFont& fieldFont,
     const QString& text,
     qreal width
     )
 {
-    QTextLayout layout(text, font);
+    QTextLayout layout(text, fieldFont.font);
     QTextOption option;
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     layout.setTextOption(option);
@@ -75,65 +87,45 @@ qreal wrappedTextHeight(
         {
             break;
         }
-        line.setLineWidth(width);
+        line.setLineWidth(width / fieldFont.layoutScale);
         line.setPosition(QPointF(0.0, nextTop));
         height = nextTop + line.height();
         nextTop += line.height() * field.lineHeight;
     }
     layout.endLayout();
-    return height;
+    return height * fieldFont.layoutScale;
 }
 
-QFont fittedFieldFont(
+bool fieldTextFits(
     const SpeakingEvalFieldAsset& field,
-    const QString& text
+    const QString& text,
+    qreal pointSize
     )
 {
     const QRectF available = contentRect(field);
-    const int maximumPointSize =
-        qMax(1, qRound(field.fontSizePoints));
-    const int minimumPointSize =
-        qMax(
-            1,
-            qCeil(field.fontSizePoints * field.minimumScale)
-            );
-
-    for (
-        int pointSize = maximumPointSize;
-        pointSize >= minimumPointSize;
-        --pointSize
-        )
-    {
-        const QFont font = fieldFont(field, pointSize);
-        const QFontMetricsF metrics(font);
-        const bool fits =
-            field.comments
-                ? wrappedTextHeight(
-                    field,
-                    font,
-                    text,
-                    available.width()
-                    ) <= available.height()
-                : singleLineWidth(font, text) <= available.width()
-                    && metrics.height() <= available.height();
-        if (fits)
-        {
-            return font;
-        }
-    }
-
-    return fieldFont(field, minimumPointSize);
+    const FieldFont font = fieldFont(field, pointSize);
+    const QFontMetricsF metrics(font.font);
+    return field.comments
+        ? wrappedTextHeight(
+            field,
+            font,
+            text,
+            available.width()
+            ) <= available.height()
+        : singleLineWidth(font, text) <= available.width()
+            && metrics.height() * font.layoutScale
+                <= available.height();
 }
 
 void drawSingleLineField(
     QPainter* painter,
     const SpeakingEvalFieldAsset& field,
     const QRectF& available,
-    const QFont& font,
+    const FieldFont& fieldFont,
     const QString& text
     )
 {
-    QTextLayout layout(text, font);
+    QTextLayout layout(text, fieldFont.font);
     QTextOption option;
     option.setWrapMode(QTextOption::NoWrap);
     layout.setTextOption(option);
@@ -144,44 +136,49 @@ void drawSingleLineField(
         layout.endLayout();
         return;
     }
-    line.setLineWidth(available.width());
+    const QSizeF layoutSize =
+        available.size() / fieldFont.layoutScale;
+    line.setLineWidth(layoutSize.width());
 
     qreal x = 0.0;
     if (field.horizontalAlignment.testFlag(Qt::AlignHCenter))
     {
-        x = (available.width() - line.naturalTextWidth()) / 2.0;
+        x = (layoutSize.width() - line.naturalTextWidth()) / 2.0;
     }
     else if (field.horizontalAlignment.testFlag(Qt::AlignRight))
     {
-        x = available.width() - line.naturalTextWidth();
+        x = layoutSize.width() - line.naturalTextWidth();
     }
 
     qreal y = 0.0;
     if (field.verticalAlignment.testFlag(Qt::AlignVCenter))
     {
-        y = (available.height() - line.height()) / 2.0;
+        y = (layoutSize.height() - line.height()) / 2.0;
     }
     else if (field.verticalAlignment.testFlag(Qt::AlignBottom))
     {
-        y = available.height() - line.height();
+        y = layoutSize.height() - line.height();
     }
     line.setPosition(QPointF(qMax(0.0, x), qMax(0.0, y)));
     layout.endLayout();
-    layout.draw(
-        painter,
+    painter->save();
+    painter->translate(
         available.topLeft() + QPointF(0.0, field.baselineOffset)
         );
+    painter->scale(fieldFont.layoutScale, fieldFont.layoutScale);
+    layout.draw(painter, QPointF());
+    painter->restore();
 }
 
 void drawWrappedField(
     QPainter* painter,
     const SpeakingEvalFieldAsset& field,
     const QRectF& available,
-    const QFont& font,
+    const FieldFont& fieldFont,
     const QString& text
     )
 {
-    QTextLayout layout(text, font);
+    QTextLayout layout(text, fieldFont.font);
     QTextOption option;
     option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     layout.setTextOption(option);
@@ -196,7 +193,9 @@ void drawWrappedField(
         {
             break;
         }
-        line.setLineWidth(available.width());
+        line.setLineWidth(
+            available.width() / fieldFont.layoutScale
+            );
         lines.append(line);
         height = nextTop + line.height();
         nextTop += line.height() * field.lineHeight;
@@ -205,11 +204,16 @@ void drawWrappedField(
     qreal verticalOffset = 0.0;
     if (field.verticalAlignment.testFlag(Qt::AlignVCenter))
     {
-        verticalOffset = (available.height() - height) / 2.0;
+        verticalOffset = (
+            available.height() / fieldFont.layoutScale
+            - height
+            ) / 2.0;
     }
     else if (field.verticalAlignment.testFlag(Qt::AlignBottom))
     {
-        verticalOffset = available.height() - height;
+        verticalOffset =
+            available.height() / fieldFont.layoutScale
+            - height;
     }
     verticalOffset = qMax(0.0, verticalOffset);
 
@@ -219,11 +223,16 @@ void drawWrappedField(
         qreal x = 0.0;
         if (field.horizontalAlignment.testFlag(Qt::AlignHCenter))
         {
-            x = (available.width() - line.naturalTextWidth()) / 2.0;
+            x = (
+                available.width() / fieldFont.layoutScale
+                - line.naturalTextWidth()
+                ) / 2.0;
         }
         else if (field.horizontalAlignment.testFlag(Qt::AlignRight))
         {
-            x = available.width() - line.naturalTextWidth();
+            x =
+                available.width() / fieldFont.layoutScale
+                - line.naturalTextWidth();
         }
         line.setPosition(
             QPointF(qMax(0.0, x), verticalOffset + nextTop)
@@ -231,17 +240,21 @@ void drawWrappedField(
         nextTop += line.height() * field.lineHeight;
     }
     layout.endLayout();
-    layout.draw(
-        painter,
+    painter->save();
+    painter->translate(
         available.topLeft() + QPointF(0.0, field.baselineOffset)
         );
+    painter->scale(fieldFont.layoutScale, fieldFont.layoutScale);
+    layout.draw(painter, QPointF());
+    painter->restore();
 }
 
 void drawField(
     QPainter* painter,
     const SpeakingEvalTemplateAssets& assets,
     const QString& fieldName,
-    const QString& text
+    const QString& text,
+    qreal fontSizeStepPoints = 1.0
     )
 {
     if (!painter || text.isEmpty())
@@ -260,12 +273,20 @@ void drawField(
         iterator.value();
     const QRectF available =
         contentRect(field);
-    const QFont font = fittedFieldFont(field, text);
+    const FieldFont font =
+        fieldFont(
+            field,
+            speakingEvalFittedFieldFontSize(
+                field,
+                text,
+                fontSizeStepPoints
+                )
+            );
 
     painter->save();
     painter->setClipRect(available);
     painter->setPen(Qt::black);
-    painter->setFont(font);
+    painter->setFont(font.font);
     if (field.comments)
     {
         drawWrappedField(
@@ -527,6 +548,44 @@ void drawSignature(
 }
 }
 
+qreal speakingEvalFittedFieldFontSize(
+    const SpeakingEvalFieldAsset& field,
+    const QString& text,
+    qreal stepPoints
+    )
+{
+    const int stepHalfPoints =
+        qMax(1, qRound(stepPoints * 2.0));
+    const int maximumHalfPoints =
+        qMax(2, qRound(field.fontSizePoints * 2.0));
+    const int minimumHalfPoints =
+        qMax(
+            stepHalfPoints,
+            qCeil(
+                (
+                    field.fontSizePoints
+                    * field.minimumScale
+                    * 2.0
+                    ) / stepHalfPoints
+                ) * stepHalfPoints
+            );
+
+    for (
+        int halfPoints = maximumHalfPoints;
+        halfPoints >= minimumHalfPoints;
+        halfPoints -= stepHalfPoints
+        )
+    {
+        const qreal pointSize = halfPoints / 2.0;
+        if (fieldTextFits(field, text, pointSize))
+        {
+            return pointSize;
+        }
+    }
+
+    return minimumHalfPoints / 2.0;
+}
+
 void SpeakingEvalReportWidget::paintReport(
     QPainter* painter,
     const QRectF& targetRect
@@ -652,7 +711,10 @@ void SpeakingEvalReportWidget::paintReport(
         painter,
         assets,
         QStringLiteral("classLabel"),
-        m_data.classLabel
+        m_data.classLabel,
+        m_data.reportTemplate == SpeakingEvalReportTemplate::Standard
+            ? 0.5
+            : 1.0
         );
     drawField(
         painter,

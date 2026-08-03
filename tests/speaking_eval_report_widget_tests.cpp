@@ -44,11 +44,12 @@ SpeakingEvalReportData representativeData(
         return data;
     }
 
-    data.englishName = QStringLiteral("Gildong");
-    data.classLabel = QStringLiteral("E6 Gaia");
-    data.nativeTeacher = QStringLiteral("Aristotle");
-    data.koreanTeacher = QStringLiteral("송오현");
-    data.date = QStringLiteral("June 2025");
+    data.englishName = QStringLiteral("Test");
+    data.koreanName = QStringLiteral("각각각");
+    data.classLabel = QStringLiteral("E4 Odysseus");
+    data.nativeTeacher = QStringLiteral("Emma");
+    data.koreanTeacher = QStringLiteral("홍승현");
+    data.date = QStringLiteral("Aug. 2026");
     data.comments = QStringLiteral("Comment text");
     data.scores = {
         QStringLiteral("A+"),
@@ -277,6 +278,7 @@ class SpeakingEvalReportWidgetTests : public QObject
 
 private slots:
     void templateAssetsAreValidAndUseAuthoritativeGeometry();
+    void standardMetadataUsesSharedFontAndHalfPointGradeFitting();
     void templateUsesPortraitSize_data();
     void templateUsesPortraitSize();
     void representativeReportPreservesAuthoredBackground_data();
@@ -354,6 +356,22 @@ void SpeakingEvalReportWidgetTests::
     QCOMPARE(
         standard.fields.value(QStringLiteral("date")).rect,
         QRectF(400.1999, 100.08, 113.2003, 25.92)
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("nativeTeacher")).baselineOffset,
+        -2.0
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("koreanName")).baselineOffset,
+        1.0
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("koreanTeacher")).baselineOffset,
+        1.0
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("date")).baselineOffset,
+        0.0
         );
     QCOMPARE(
         advanced.scoreCells.at(5).value(QStringLiteral("A+")).top(),
@@ -561,6 +579,16 @@ void SpeakingEvalReportWidgetTests::
         QRectF(408.5, 746.25, 114.0, 24.75)
         );
     QCOMPARE(
+        standard.signatureBounds,
+        QRectF(377.1, 722.0, 120.0, 36.0)
+        );
+    QCOMPARE(
+        speakingEvalReportTemplateLayout(
+            SpeakingEvalReportTemplate::Standard
+            ).signatureBounds,
+        standard.signatureBounds
+        );
+    QCOMPARE(
         speakingEvalReportTemplateLayout(
             SpeakingEvalReportTemplate::Advanced
             ).signatureBounds,
@@ -597,6 +625,94 @@ void SpeakingEvalReportWidgetTests::
             }
         }
     }
+}
+
+void SpeakingEvalReportWidgetTests::
+    standardMetadataUsesSharedFontAndHalfPointGradeFitting()
+{
+    const SpeakingEvalTemplateAssets& standard =
+        speakingEvalTemplateAssets(
+            SpeakingEvalReportTemplate::Standard
+            );
+    const SpeakingEvalFieldAsset englishName =
+        standard.fields.value(QStringLiteral("englishName"));
+    const SpeakingEvalFieldAsset nativeTeacher =
+        standard.fields.value(QStringLiteral("nativeTeacher"));
+    const SpeakingEvalFieldAsset koreanName =
+        standard.fields.value(QStringLiteral("koreanName"));
+    const SpeakingEvalFieldAsset koreanTeacher =
+        standard.fields.value(QStringLiteral("koreanTeacher"));
+    const SpeakingEvalFieldAsset classLabel =
+        standard.fields.value(QStringLiteral("classLabel"));
+    const SpeakingEvalFieldAsset date =
+        standard.fields.value(QStringLiteral("date"));
+
+    QCOMPARE(nativeTeacher.fontSizePoints, englishName.fontSizePoints);
+    QCOMPARE(classLabel.fontSizePoints, englishName.fontSizePoints);
+    QCOMPARE(date.fontSizePoints, englishName.fontSizePoints);
+    QCOMPARE(koreanName.fontSizePoints, englishName.fontSizePoints);
+    QCOMPARE(
+        koreanTeacher.fontSizePoints,
+        englishName.fontSizePoints
+        );
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            koreanName,
+            QStringLiteral("각각각")
+            ),
+        16.0
+        );
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            koreanTeacher,
+            QStringLiteral("홍승현")
+            ),
+        16.0
+        );
+
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            englishName,
+            QStringLiteral("Gildong")
+            ),
+        englishName.fontSizePoints
+        );
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            nativeTeacher,
+            QStringLiteral("Aristotle")
+            ),
+        englishName.fontSizePoints
+        );
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            date,
+            QStringLiteral("Aug. 2026")
+            ),
+        englishName.fontSizePoints
+        );
+
+    const qreal widestGradeSize =
+        speakingEvalFittedFieldFontSize(
+            classLabel,
+            QStringLiteral("E4 Odysseus"),
+            0.5
+            );
+    const qreal wholePointGradeSize =
+        speakingEvalFittedFieldFontSize(
+            classLabel,
+            QStringLiteral("E4 Odysseus")
+            );
+    QVERIFY(widestGradeSize <= englishName.fontSizePoints);
+    QVERIFY(
+        widestGradeSize
+            >= classLabel.fontSizePoints * classLabel.minimumScale
+        );
+    QCOMPARE(
+        widestGradeSize * 2.0,
+        qreal(qRound(widestGradeSize * 2.0))
+        );
+    QCOMPARE(widestGradeSize, wholePointGradeSize + 0.5);
 }
 
 void SpeakingEvalReportWidgetTests::templateUsesPortraitSize_data()
@@ -1359,6 +1475,19 @@ void SpeakingEvalReportWidgetTests::
     {
         QVERIFY(qAbs(left - bounds.left()) <= 1);
         QVERIFY(qAbs(bottom - bounds.bottom()) <= 1);
+    }
+    else
+    {
+        const QPointF actualCenter(
+            (left + right) / 2.0,
+            (top + bottom) / 2.0
+            );
+        QVERIFY(
+            qAbs(actualCenter.x() - bounds.center().x()) <= 1.0
+            );
+        QVERIFY(
+            qAbs(actualCenter.y() - bounds.center().y()) <= 1.0
+            );
     }
 }
 

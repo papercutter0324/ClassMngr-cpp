@@ -6,6 +6,7 @@
 
 #include <QBuffer>
 #include <QComboBox>
+#include <QDate>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -194,6 +195,7 @@ class SpeakingEvalBatchReportServiceTests : public QObject
 private slots:
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
+    void reportDateUsesShortMonthsForStandardTemplate();
     void internalRendererCreatesReadablePdf();
     void internalPdfMatchesWidgetRendering_data();
     void internalPdfMatchesWidgetRendering();
@@ -238,6 +240,44 @@ void SpeakingEvalBatchReportServiceTests::defaultOutputDirectoryIncludesClassSch
         QDir::cleanPath(
             QStringLiteral("C:/Documents/DYB/SpeakingEvals/E5 Zeus (MW - 4pm)/Winter")
             )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    reportDateUsesShortMonthsForStandardTemplate()
+{
+    const QStringList expected{
+        QStringLiteral("Jan. 2026"),
+        QStringLiteral("Feb. 2026"),
+        QStringLiteral("Mar. 2026"),
+        QStringLiteral("Apr. 2026"),
+        QStringLiteral("May 2026"),
+        QStringLiteral("June 2026"),
+        QStringLiteral("July 2026"),
+        QStringLiteral("Aug. 2026"),
+        QStringLiteral("Sep. 2026"),
+        QStringLiteral("Oct. 2026"),
+        QStringLiteral("Nov. 2026"),
+        QStringLiteral("Dec. 2026")
+    };
+
+    for (int month = 1; month <= 12; ++month)
+    {
+        QCOMPARE(
+            speakingEvalReportDate(
+                QDate(2026, month, 1),
+                SpeakingEvalReportTemplate::Standard
+                ),
+            expected.at(month - 1)
+            );
+    }
+
+    QCOMPARE(
+        speakingEvalReportDate(
+            QDate(2026, 7, 1),
+            SpeakingEvalReportTemplate::Advanced
+            ),
+        QStringLiteral("Jul. 2026")
         );
 }
 
