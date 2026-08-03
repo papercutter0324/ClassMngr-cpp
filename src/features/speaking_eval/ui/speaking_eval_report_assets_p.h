@@ -51,7 +51,17 @@ struct SpeakingEvalTemplateAssets
     QImage sprites;
     QHash<QString, SpeakingEvalFieldAsset> fields;
     QVector<QHash<QString, QRectF>> scoreCells;
+    // Advanced reports repeat each selected score in the grading column.
+    // These body cells have individually authored heights.
+    QVector<QRectF> studentGradeCells;
+    QHash<QString, QImage> studentGrades;
+    QVector<QHash<QString, QRectF>> studentGradeRects;
     QHash<QString, SpeakingEvalSpriteAsset> scoreLabels;
+    // Highlighted grades are authored at each background's native resolution.
+    // Their destinations are snapped to that same pixel grid so the yellow
+    // artwork replaces only the gray cell interior.
+    QHash<QString, QImage> scoreHighlights;
+    QVector<QHash<QString, QRectF>> scoreHighlightRects;
     QColor scoreHighlightColor = QColor(QStringLiteral("#FFFF00"));
     qreal scoreHighlightInset = 1.0;
     QRectF overallGradeBounds;

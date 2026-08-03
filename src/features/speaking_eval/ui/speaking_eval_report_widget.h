@@ -3,6 +3,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_template.h"
 
 #include <QByteArray>
+#include <QImage>
 #include <QWidget>
 
 #include <array>
@@ -107,4 +108,9 @@ private:
     SpeakingEvalReportData m_data;
     QPlainTextEdit* m_commentEditor = nullptr;
     bool m_interactive = false;
+    mutable QImage m_compositedScoreBackground;
+    mutable std::array<QString, 6> m_compositedScoreBackgroundScores;
+    mutable SpeakingEvalReportTemplate
+        m_compositedScoreBackgroundTemplate =
+            SpeakingEvalReportTemplate::Standard;
 };

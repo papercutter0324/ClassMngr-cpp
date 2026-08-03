@@ -744,6 +744,7 @@ function Read-Authoring-Map {
     foreach ($metric in $metricKeys) {
         $metrics[$metric] = [ordered]@{}
     }
+    $studentGradeCells = [ordered]@{}
     $overallBounds = $null
     $signatureBounds = $null
     $seenIds = [Collections.Generic.HashSet[string]]::new(
@@ -808,6 +809,20 @@ function Read-Authoring-Map {
             $metrics[$metric][$grade] = $rect
             break
         }
+        'student-grade-cell' {
+            $metric = Xml-Attribute `
+                $node `
+                'data-metric' `
+                "$Kind student-grade cell '$id'"
+            if (-not $metrics.Contains($metric)) {
+                throw "The $Kind SVG map contains unsupported student-grade cell '$id'."
+            }
+            if ($studentGradeCells.Contains($metric)) {
+                throw "The $Kind SVG map repeats the $metric student-grade cell."
+            }
+            $studentGradeCells[$metric] = $rect
+            break
+        }
         'overall-grade' {
             if ($null -ne $overallBounds) {
                 throw "The $Kind SVG map repeats the overall-grade rectangle."
@@ -840,6 +855,12 @@ function Read-Authoring-Map {
             }
         }
     }
+    if (
+        $studentGradeCells.Count -ne 0 -and
+        $studentGradeCells.Count -ne $metricKeys.Count
+    ) {
+        throw "The $Kind SVG map must contain either zero or six student-grade cells."
+    }
     if ($null -eq $overallBounds -or $null -eq $signatureBounds) {
         throw "The $Kind SVG map is missing the overall-grade or signature rectangle."
     }
@@ -847,6 +868,7 @@ function Read-Authoring-Map {
     return [ordered]@{
         fields = $fields
         metrics = $metrics
+        studentGradeCells = $studentGradeCells
         overallGradeBounds = $overallBounds
         signatureBounds = $signatureBounds
     }
@@ -1026,6 +1048,24 @@ function Compile-Template {
                     }
                 }
             )
+            $scoreTable = [ordered]@{
+                fillColor = [string]$Spec.highlightColor
+                fillInset = [double]$Spec.highlightInsetPoints
+                metrics = $metrics
+                labels = $scoreLabels
+            }
+            if ($map.studentGradeCells.Count -gt 0) {
+                $studentGradeCellList =
+                    [Collections.Generic.List[object]]::new()
+                foreach ($metric in $metricKeys) {
+                    $studentGradeCellList.Add(
+                        [object[]]$map.studentGradeCells[$metric]
+                    )
+                }
+                $scoreTable['studentGradeCells'] =
+                    $studentGradeCellList.ToArray()
+            }
+
             $manifest = [ordered]@{
                 version = 3
                 template = $Kind
@@ -1038,12 +1078,7 @@ function Compile-Template {
                 background = "$Kind-background.png"
                 sprites = "$Kind-sprites.png"
                 fields = $map.fields
-                scoreTable = [ordered]@{
-                    fillColor = [string]$Spec.highlightColor
-                    fillInset = [double]$Spec.highlightInsetPoints
-                    metrics = $metrics
-                    labels = $scoreLabels
-                }
+                scoreTable = $scoreTable
                 overallGradeBounds = $map.overallGradeBounds
                 overallGrades = $overallLabels
                 signatureBounds = $map.signatureBounds

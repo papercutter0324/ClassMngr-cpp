@@ -39,6 +39,12 @@
     <rect id="score-overall-effort-bplus" data-role="score-cell" data-metric="overall-effort" data-grade="B+" x="300.66666667" y="553.80667237" width="73.66666667" height="21.35158255"/>
     <rect id="score-overall-effort-b" data-role="score-cell" data-metric="overall-effort" data-grade="B" x="374.33333333" y="553.80667237" width="74" height="21.35158255"/>
     <rect id="score-overall-effort-c" data-role="score-cell" data-metric="overall-effort" data-grade="C" x="448.33333333" y="553.80667237" width="73.66666667" height="21.35158255"/>
+    <rect id="student-grade-grammar" data-role="student-grade-cell" data-metric="grammar" x="102" y="188.82805817" width="51" height="64.7219846"/>
+    <rect id="student-grade-pronunciation" data-role="student-grade-cell" data-metric="pronunciation" x="102" y="275.2352438" width="51" height="55.38066724"/>
+    <rect id="student-grade-fluency" data-role="student-grade-cell" data-metric="fluency" x="102" y="351.96749359" width="51" height="55.38066723"/>
+    <rect id="student-grade-manner" data-role="student-grade-cell" data-metric="manner" x="102" y="429.03336185" width="51" height="57.3823781"/>
+    <rect id="student-grade-content" data-role="student-grade-cell" data-metric="content" x="102" y="508.10094098" width="51" height="45.70573139"/>
+    <rect id="student-grade-overall-effort" data-role="student-grade-cell" data-metric="overall-effort" x="102" y="575.15825492" width="51" height="45.53774508"/>
     <rect id="field-overall-grade" data-role="overall-grade" x="413" y="106.09067579" width="109" height="36.03079555"/>
     <rect id="field-signature" data-role="signature" x="413" y="742" width="109" height="36"/>
   </g>

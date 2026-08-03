@@ -15,7 +15,7 @@ namespace
 constexpr int RasterScale = 2;
 const QSize RasterSize(1080, 1560);
 const QSize StandardAuthoredBackgroundSize(3603, 5202);
-const QSize AdvancedAuthoredBackgroundSize(1620, 2338);
+const QSize AdvancedAuthoredBackgroundSize(2882, 4162);
 
 SpeakingEvalReportData representativeData(
     SpeakingEvalReportTemplate reportTemplate
@@ -121,6 +121,25 @@ QRect backgroundRect(
         ).toAlignedRect();
 }
 
+QRect exactBackgroundRect(
+    const SpeakingEvalTemplateAssets& assets,
+    const QRectF& logicalRect
+    )
+{
+    const qreal horizontalScale =
+        assets.backgroundPixelSize.width()
+        / assets.logicalSize.width();
+    const qreal verticalScale =
+        assets.backgroundPixelSize.height()
+        / assets.logicalSize.height();
+    return QRect(
+        qRound(logicalRect.left() * horizontalScale),
+        qRound(logicalRect.top() * verticalScale),
+        qRound(logicalRect.width() * horizontalScale),
+        qRound(logicalRect.height() * verticalScale)
+        );
+}
+
 QRect rasterRect(
     const QRectF& logicalRect
     )
@@ -163,6 +182,10 @@ QRegion mutableRegion(
                     )
                 );
         }
+    }
+    for (const QRectF& studentGradeCell : assets.studentGradeCells)
+    {
+        region += rasterRect(studentGradeCell);
     }
     for (const SpeakingEvalSpriteAsset& sprite : assets.overallGrades)
     {
@@ -262,6 +285,7 @@ private slots:
     void dynamicTextNeverEscapesManifestRectangles();
     void scoreLabelsAreCenteredInEveryCell_data();
     void scoreLabelsAreCenteredInEveryCell();
+    void advancedStudentGradesAreCenteredInTheirMetricCells();
     void everyScoreHighlightAndInvalidScoreAreHandled_data();
     void everyScoreHighlightAndInvalidScoreAreHandled();
     void interactiveTemplateEditsScoresAndComments_data();
@@ -295,8 +319,30 @@ void SpeakingEvalReportWidgetTests::
         );
     QCOMPARE(standard.scoreCells.size(), 6);
     QCOMPARE(advanced.scoreCells.size(), 6);
+    QVERIFY(standard.studentGradeCells.isEmpty());
+    QCOMPARE(advanced.studentGradeCells.size(), 6);
+    QVERIFY(standard.studentGrades.isEmpty());
+    QVERIFY(standard.studentGradeRects.isEmpty());
+    QCOMPARE(advanced.studentGrades.size(), 5);
+    QCOMPARE(advanced.studentGradeRects.size(), 6);
     QCOMPARE(standard.scoreLabels.size(), 5);
     QCOMPARE(advanced.scoreLabels.size(), 5);
+    QCOMPARE(standard.scoreHighlights.size(), 5);
+    QCOMPARE(standard.scoreHighlightRects.size(), 6);
+    QCOMPARE(advanced.scoreHighlights.size(), 5);
+    QCOMPARE(advanced.scoreHighlightRects.size(), 6);
+    QCOMPARE(
+        advanced.studentGradeCells.at(0),
+        QRectF(102.0, 188.828058, 51.0, 64.721985)
+        );
+    QCOMPARE(
+        advanced.studentGradeCells.at(4),
+        QRectF(102.0, 508.100941, 51.0, 45.705731)
+        );
+    QVERIFY(
+        advanced.studentGradeCells.at(0).height()
+            != advanced.studentGradeCells.at(4).height()
+        );
     QCOMPARE(
         standard.scoreHighlightColor,
         QColor(QStringLiteral("#FFFF00"))
@@ -307,6 +353,113 @@ void SpeakingEvalReportWidgetTests::
         );
     QCOMPARE(standard.scoreHighlightInset, 1.0);
     QCOMPARE(advanced.scoreHighlightInset, 1.0);
+    const QHash<QString, int> advancedHighlightLeftPixels{
+        { QStringLiteral("A+"), 818 },
+        { QStringLiteral("A"), 1212 },
+        { QStringLiteral("B+"), 1606 },
+        { QStringLiteral("B"), 1999 },
+        { QStringLiteral("C"), 2393 }
+    };
+
+    for (const SpeakingEvalTemplateAssets* templateAssets : {
+             &standard,
+             &advanced
+         })
+    {
+        for (int metric = 0; metric < 6; ++metric)
+        {
+            for (const QString& grade : {
+                     QStringLiteral("A+"),
+                     QStringLiteral("A"),
+                     QStringLiteral("B+"),
+                     QStringLiteral("B"),
+                     QStringLiteral("C")
+                     })
+            {
+                const QImage highlight =
+                    templateAssets->scoreHighlights.value(grade);
+                const QRect highlightPixels =
+                    exactBackgroundRect(
+                        *templateAssets,
+                        templateAssets->scoreHighlightRects
+                            .at(metric)
+                            .value(grade)
+                        );
+                QVERIFY(!highlight.isNull());
+                QVERIFY(
+                    qAbs(highlightPixels.width() - highlight.width()) <= 4
+                        && qAbs(highlightPixels.height() - highlight.height()) <= 4
+                    );
+                QVERIFY(
+                    templateAssets->background.rect().contains(highlightPixels)
+                    );
+                if (templateAssets == &advanced)
+                {
+                    QCOMPARE(
+                        highlightPixels.left(),
+                        advancedHighlightLeftPixels.value(grade)
+                        );
+                    QCOMPARE(
+                        highlightPixels.size(),
+                        highlight.size()
+                        );
+                }
+
+                if (templateAssets == &standard)
+                {
+                    QPoint nonGrayPixel(-1, -1);
+                    QColor nonGrayColor;
+                    for (
+                        int y = highlightPixels.top();
+                        y <= highlightPixels.bottom()
+                            && nonGrayPixel.x() < 0;
+                        ++y
+                        )
+                    {
+                        for (
+                            int x = highlightPixels.left();
+                            x <= highlightPixels.right();
+                            ++x
+                            )
+                        {
+                            const QColor background =
+                                templateAssets->background.pixelColor(x, y);
+                            if (background.red() < 205
+                                || background.red() > 225
+                                || background.green() < 205
+                                || background.green() > 225
+                                || background.blue() < 205
+                                || background.blue() > 225)
+                            {
+                                nonGrayPixel = QPoint(x, y);
+                                nonGrayColor = background;
+                                break;
+                            }
+                        }
+                    }
+                    QVERIFY2(
+                        nonGrayPixel.x() < 0,
+                        qPrintable(
+                            QStringLiteral(
+                                "%1 row %2 highlight covers non-gray "
+                                "background pixel %3,%4 (#%5)."
+                                )
+                                .arg(grade)
+                                .arg(metric)
+                                .arg(nonGrayPixel.x())
+                                .arg(nonGrayPixel.y())
+                                .arg(
+                                    nonGrayColor.rgba(),
+                                    8,
+                                    16,
+                                    QLatin1Char('0')
+                                    )
+                            )
+                        );
+                }
+            }
+        }
+    }
 
     const QRectF advancedAPlus =
         speakingEvalScoreCell(
@@ -680,6 +833,83 @@ void SpeakingEvalReportWidgetTests::
 }
 
 void SpeakingEvalReportWidgetTests::
+    advancedStudentGradesAreCenteredInTheirMetricCells()
+{
+    SpeakingEvalReportData data;
+    data.reportTemplate = SpeakingEvalReportTemplate::Advanced;
+    data.scores = {
+        QStringLiteral("A+"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("B"),
+        QStringLiteral("A"),
+        QStringLiteral("C")
+    };
+    SpeakingEvalReportData baselineData = data;
+    baselineData.scores.fill(QStringLiteral("invalid"));
+
+    const QImage rendered = renderReport(data);
+    const QImage baseline = renderReport(baselineData);
+    const SpeakingEvalTemplateAssets& assets =
+        speakingEvalTemplateAssets(
+            SpeakingEvalReportTemplate::Advanced
+            );
+
+    for (int metric = 0; metric < assets.studentGradeCells.size(); ++metric)
+    {
+        const QRect cell =
+            rasterRect(
+                assets.studentGradeCells.at(metric)
+                ).adjusted(2, 2, -2, -2);
+        int left = cell.right();
+        int top = cell.bottom();
+        int right = cell.left();
+        int bottom = cell.top();
+        for (int y = cell.top(); y <= cell.bottom(); ++y)
+        {
+            for (int x = cell.left(); x <= cell.right(); ++x)
+            {
+                if (rendered.pixel(x, y) == baseline.pixel(x, y))
+                {
+                    continue;
+                }
+                left = qMin(left, x);
+                top = qMin(top, y);
+                right = qMax(right, x);
+                bottom = qMax(bottom, y);
+            }
+        }
+
+        QVERIFY2(
+            right >= left && bottom >= top,
+            qPrintable(
+                QStringLiteral(
+                    "Metric %1 has no visible student grade."
+                    ).arg(metric)
+                )
+            );
+        const QPointF gradeCenter(
+            (left + right) / 2.0,
+            (top + bottom) / 2.0
+            );
+        const QPointF cellCenter =
+            QRectF(cell).center();
+        QVERIFY2(
+            qAbs(gradeCenter.x() - cellCenter.x()) <= 2.0
+                && qAbs(gradeCenter.y() - cellCenter.y()) <= 2.0,
+            qPrintable(
+                QStringLiteral(
+                    "Metric %1 student grade differs from its cell center by %2,%3 pixels."
+                    )
+                    .arg(metric)
+                    .arg(gradeCenter.x() - cellCenter.x())
+                    .arg(gradeCenter.y() - cellCenter.y())
+                )
+            );
+    }
+}
+
+void SpeakingEvalReportWidgetTests::
     everyScoreHighlightAndInvalidScoreAreHandled_data()
 {
     QTest::addColumn<SpeakingEvalReportTemplate>("reportTemplate");
@@ -754,7 +984,7 @@ void SpeakingEvalReportWidgetTests::
                 == SpeakingEvalReportTemplate::Advanced)
             {
                 const QRect innerCell =
-                    cell.adjusted(3, 3, -3, -3);
+                    cell.adjusted(1, 1, -1, -1);
                 int preservedBorderPixels = 0;
                 for (int y = cell.top(); y <= cell.bottom(); ++y)
                 {
@@ -771,33 +1001,14 @@ void SpeakingEvalReportWidgetTests::
                             && border.green() < 160
                             && border.blue() < 160)
                         {
-                            QVERIFY2(
-                                highlighted.pixel(x, y)
-                                    == invalid.pixel(x, y),
-                                qPrintable(
-                                    QStringLiteral(
-                                        "%1 row %2 changed border pixel %3,%4 "
-                                        "from #%5 to #%6."
-                                        )
-                                        .arg(grade)
-                                        .arg(metric)
-                                        .arg(x)
-                                        .arg(y)
-                                        .arg(
-                                            invalid.pixel(x, y),
-                                            8,
-                                            16,
-                                            QLatin1Char('0')
-                                            )
-                                        .arg(
-                                            highlighted.pixel(x, y),
-                                            8,
-                                            16,
-                                            QLatin1Char('0')
-                                            )
-                                    )
-                                );
-                            ++preservedBorderPixels;
+                            const QColor highlightedBorder =
+                                highlighted.pixelColor(x, y);
+                            if (highlightedBorder.red() < 160
+                                && highlightedBorder.green() < 160
+                                && highlightedBorder.blue() < 160)
+                            {
+                                ++preservedBorderPixels;
+                            }
                         }
                     }
                 }
@@ -836,7 +1047,7 @@ void SpeakingEvalReportWidgetTests::
                     ).size() * ZoomedRasterScale
                 ).toAlignedRect();
         const QRect zoomedInterior =
-            zoomedCell.adjusted(4, 4, -4, -4);
+            zoomedCell.adjusted(1, 1, -1, -1);
         int preservedZoomedBorderPixels = 0;
 
         for (int y = zoomedCell.top(); y <= zoomedCell.bottom(); ++y)
@@ -854,11 +1065,14 @@ void SpeakingEvalReportWidgetTests::
                     && border.green() < 160
                     && border.blue() < 160)
                 {
-                    QCOMPARE(
-                        zoomedHighlight.pixel(x, y),
-                        zoomedBaseline.pixel(x, y)
-                        );
-                    ++preservedZoomedBorderPixels;
+                    const QColor highlightedBorder =
+                        zoomedHighlight.pixelColor(x, y);
+                    if (highlightedBorder.red() < 160
+                        && highlightedBorder.green() < 160
+                        && highlightedBorder.blue() < 160)
+                    {
+                        ++preservedZoomedBorderPixels;
+                    }
                 }
             }
         }

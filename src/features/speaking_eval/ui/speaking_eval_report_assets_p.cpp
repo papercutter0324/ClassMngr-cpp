@@ -230,6 +230,295 @@ bool safeAssetFileName(
         && fileName != QStringLiteral("..");
 }
 
+QString scoreHighlightFileName(
+    const SpeakingEvalReportTemplate reportTemplate,
+    const QString& grade
+    )
+{
+    const QString prefix =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced
+            ? QStringLiteral("advanced")
+            : QStringLiteral("standard");
+    if (grade == QStringLiteral("A+"))
+    {
+        return prefix + QStringLiteral("-yellow-aplus.png");
+    }
+    if (grade == QStringLiteral("A"))
+    {
+        return prefix + QStringLiteral("-yellow-a.png");
+    }
+    if (grade == QStringLiteral("B+"))
+    {
+        return prefix + QStringLiteral("-yellow-bplus.png");
+    }
+    if (grade == QStringLiteral("B"))
+    {
+        return prefix + QStringLiteral("-yellow-b.png");
+    }
+    if (grade == QStringLiteral("C"))
+    {
+        return prefix + QStringLiteral("-yellow-c.png");
+    }
+    return {};
+}
+
+QString studentGradeFileName(
+    const QString& grade
+    )
+{
+    if (grade == QStringLiteral("A+"))
+    {
+        return QStringLiteral("advanced-grey-aplus.png");
+    }
+    if (grade == QStringLiteral("A"))
+    {
+        return QStringLiteral("advanced-grey-a.png");
+    }
+    if (grade == QStringLiteral("B+"))
+    {
+        return QStringLiteral("advanced-grey-bplus.png");
+    }
+    if (grade == QStringLiteral("B"))
+    {
+        return QStringLiteral("advanced-grey-b.png");
+    }
+    if (grade == QStringLiteral("C"))
+    {
+        return QStringLiteral("advanced-grey-c.png");
+    }
+    return {};
+}
+
+bool isScoreCellGray(
+    const QColor& color
+    )
+{
+    return color.red() >= 205
+        && color.red() <= 225
+        && color.green() >= 205
+        && color.green() <= 225
+        && color.blue() >= 205
+        && color.blue() <= 225;
+}
+
+bool isNeutralCellGray(
+    const QColor& color
+    )
+{
+    return color.red() >= 190
+        && color.red() <= 240
+        && color.green() >= 190
+        && color.green() <= 240
+        && color.blue() >= 190
+        && color.blue() <= 240
+        && qAbs(color.red() - color.green()) <= 4
+        && qAbs(color.red() - color.blue()) <= 4
+        && qAbs(color.green() - color.blue()) <= 4;
+}
+
+QRectF nativeGrayDestination(
+    const QRectF& bounds,
+    const QSizeF& logicalSize,
+    const QImage& background
+    )
+{
+    if (!bounds.isValid()
+        || logicalSize.isEmpty()
+        || background.isNull())
+    {
+        return {};
+    }
+
+    const qreal horizontalScale =
+        background.width() / logicalSize.width();
+    const qreal verticalScale =
+        background.height() / logicalSize.height();
+    const QRect searchRect =
+        QRectF(
+            bounds.left() * horizontalScale,
+            bounds.top() * verticalScale,
+            bounds.width() * horizontalScale,
+            bounds.height() * verticalScale
+            )
+            .toAlignedRect()
+            .intersected(background.rect());
+    const QPoint center(
+        qRound(bounds.center().x() * horizontalScale),
+        qRound(bounds.center().y() * verticalScale)
+        );
+    if (!searchRect.contains(center)
+        || !isScoreCellGray(background.pixelColor(center)))
+    {
+        return {};
+    }
+
+    int left = center.x();
+    int right = center.x();
+    int top = center.y();
+    int bottom = center.y();
+    while (left > searchRect.left()
+        && isScoreCellGray(
+            background.pixelColor(left - 1, center.y())
+            ))
+    {
+        --left;
+    }
+    while (right < searchRect.right()
+        && isScoreCellGray(
+            background.pixelColor(right + 1, center.y())
+            ))
+    {
+        ++right;
+    }
+    while (top > searchRect.top()
+        && isScoreCellGray(
+            background.pixelColor(center.x(), top - 1)
+            ))
+    {
+        --top;
+    }
+    while (bottom < searchRect.bottom()
+        && isScoreCellGray(
+            background.pixelColor(center.x(), bottom + 1)
+            ))
+    {
+        ++bottom;
+    }
+    const QRect pixelRect(
+        QPoint(left, top),
+        QPoint(right, bottom)
+        );
+
+    return QRectF(
+        pixelRect.x() / horizontalScale,
+        pixelRect.y() / verticalScale,
+        pixelRect.width() / horizontalScale,
+        pixelRect.height() / verticalScale
+        );
+}
+
+QRectF nativeCenteredDestination(
+    const QRectF& bounds,
+    const QSizeF& logicalSize,
+    const QImage& background,
+    const QSize& authoredSize
+    )
+{
+    if (!bounds.isValid()
+        || logicalSize.isEmpty()
+        || background.isNull()
+        || authoredSize.isEmpty())
+    {
+        return {};
+    }
+
+    const qreal horizontalScale =
+        background.width() / logicalSize.width();
+    const qreal verticalScale =
+        background.height() / logicalSize.height();
+    const QRect cellPixels =
+        QRectF(
+            bounds.left() * horizontalScale,
+            bounds.top() * verticalScale,
+            bounds.width() * horizontalScale,
+            bounds.height() * verticalScale
+            )
+            .toAlignedRect()
+            .intersected(background.rect());
+    QRect pixelRect(QPoint(), authoredSize);
+
+    int grayLeft = -1;
+    int grayWidth = 0;
+    for (int y = cellPixels.top(); y <= cellPixels.bottom(); ++y)
+    {
+        int runLeft = -1;
+        for (int x = cellPixels.left(); x <= cellPixels.right() + 1; ++x)
+        {
+            const bool gray =
+                x <= cellPixels.right()
+                && isNeutralCellGray(
+                    background.pixelColor(x, y)
+                    );
+            if (gray && runLeft < 0)
+            {
+                runLeft = x;
+            }
+            else if (!gray && runLeft >= 0)
+            {
+                const int runWidth = x - runLeft;
+                if (runWidth > grayWidth)
+                {
+                    grayLeft = runLeft;
+                    grayWidth = runWidth;
+                }
+                runLeft = -1;
+            }
+        }
+    }
+
+    int grayTop = -1;
+    int grayHeight = 0;
+    for (int x = cellPixels.left(); x <= cellPixels.right(); ++x)
+    {
+        int runTop = -1;
+        for (int y = cellPixels.top(); y <= cellPixels.bottom() + 1; ++y)
+        {
+            const bool gray =
+                y <= cellPixels.bottom()
+                && isNeutralCellGray(
+                    background.pixelColor(x, y)
+                    );
+            if (gray && runTop < 0)
+            {
+                runTop = y;
+            }
+            else if (!gray && runTop >= 0)
+            {
+                const int runHeight = y - runTop;
+                if (runHeight > grayHeight)
+                {
+                    grayTop = runTop;
+                    grayHeight = runHeight;
+                }
+                runTop = -1;
+            }
+        }
+    }
+
+    if (grayWidth >= authoredSize.width()
+        && grayHeight >= authoredSize.height())
+    {
+        pixelRect.moveTopLeft(
+            QPoint(
+                grayLeft
+                    + (grayWidth - authoredSize.width()) / 2,
+                grayTop
+                    + (grayHeight - authoredSize.height()) / 2
+                )
+            );
+    }
+    else
+    {
+        pixelRect.moveCenter(
+            QPoint(
+                qRound(bounds.center().x() * horizontalScale),
+                qRound(bounds.center().y() * verticalScale)
+                )
+            );
+    }
+    if (!cellPixels.contains(pixelRect))
+    {
+        return {};
+    }
+
+    return QRectF(
+        pixelRect.x() / horizontalScale,
+        pixelRect.y() / verticalScale,
+        pixelRect.width() / horizontalScale,
+        pixelRect.height() / verticalScale
+        );
+}
+
 bool readSprite(
     const QJsonValue& value,
     const QImage& spriteSheet,
@@ -635,6 +924,138 @@ SpeakingEvalTemplateAssets loadTemplateAssets(
             parsedCells.insert(grade, cell);
         }
         assets.scoreCells.append(parsedCells);
+    }
+
+    const QJsonArray studentGradeCells =
+        scoreTable.value(
+            QStringLiteral("studentGradeCells")
+            ).toArray();
+    if (!studentGradeCells.isEmpty())
+    {
+        if (studentGradeCells.size() != assets.scoreCells.size())
+        {
+            assets.error =
+                QStringLiteral("The embedded %1 speaking-evaluation student-grade cells are invalid.")
+                    .arg(kind);
+            return assets;
+        }
+        assets.studentGradeCells.reserve(studentGradeCells.size());
+        for (
+            int metricIndex = 0;
+            metricIndex < studentGradeCells.size();
+            ++metricIndex
+            )
+        {
+            QRectF cell;
+            if (!readRect(studentGradeCells.at(metricIndex), &cell)
+                || !logicalPage.contains(cell))
+            {
+                assets.error =
+                    QStringLiteral("The embedded %1 speaking-evaluation student-grade cell %2 is invalid.")
+                        .arg(kind)
+                        .arg(metricIndex);
+                return assets;
+            }
+            assets.studentGradeCells.append(cell);
+        }
+
+        for (const QString& grade : gradeNames())
+        {
+            const QString fileName =
+                studentGradeFileName(grade);
+            QImage studentGrade;
+            if (fileName.isEmpty()
+                || !studentGrade.load(assetDirectory + fileName)
+                || studentGrade.isNull())
+            {
+                assets.error =
+                    QStringLiteral("The embedded %1 speaking-evaluation student grade '%2' is missing or corrupt.")
+                        .arg(kind, grade);
+                return assets;
+            }
+            assets.studentGrades.insert(grade, studentGrade);
+        }
+
+        assets.studentGradeRects.reserve(
+            assets.studentGradeCells.size()
+            );
+        for (const QRectF& cell : assets.studentGradeCells)
+        {
+            QHash<QString, QRectF> destinations;
+            for (const QString& grade : gradeNames())
+            {
+                const QRectF destination =
+                    nativeCenteredDestination(
+                        cell,
+                        assets.logicalSize,
+                        assets.background,
+                        assets.studentGrades.value(grade).size()
+                        );
+                if (!destination.isValid()
+                    || !logicalPage.contains(destination))
+                {
+                    assets.error =
+                        QStringLiteral("The embedded %1 speaking-evaluation student-grade destination '%2' is invalid.")
+                            .arg(kind, grade);
+                    return assets;
+                }
+                destinations.insert(grade, destination);
+            }
+            assets.studentGradeRects.append(destinations);
+        }
+    }
+
+    QSize highlightSize;
+    for (const QString& grade : gradeNames())
+    {
+        const QString fileName =
+            scoreHighlightFileName(reportTemplate, grade);
+        QImage highlight;
+        if (fileName.isEmpty()
+            || !highlight.load(assetDirectory + fileName)
+            || highlight.isNull()
+            || (highlightSize.isValid()
+                && highlight.size() != highlightSize))
+        {
+            assets.error =
+                QStringLiteral("The embedded %1 speaking-evaluation highlight '%2' is missing or corrupt.")
+                    .arg(kind, grade);
+            return assets;
+        }
+        highlightSize = highlight.size();
+        assets.scoreHighlights.insert(grade, highlight);
+    }
+
+    assets.scoreHighlightRects.reserve(assets.scoreCells.size());
+    for (const QHash<QString, QRectF>& cells : assets.scoreCells)
+    {
+        QHash<QString, QRectF> destinations;
+        for (const QString& grade : gradeNames())
+        {
+            const QRectF destination =
+                reportTemplate == SpeakingEvalReportTemplate::Advanced
+                    ? nativeCenteredDestination(
+                        cells.value(grade),
+                        assets.logicalSize,
+                        assets.background,
+                        highlightSize
+                        )
+                    : nativeGrayDestination(
+                        cells.value(grade),
+                        assets.logicalSize,
+                        assets.background
+                        );
+            if (!destination.isValid()
+                || !logicalPage.contains(destination))
+            {
+                assets.error =
+                    QStringLiteral("The embedded %1 speaking-evaluation highlight destination '%2' is invalid.")
+                        .arg(kind, grade);
+                return assets;
+            }
+            destinations.insert(grade, destination);
+        }
+        assets.scoreHighlightRects.append(destinations);
     }
 
     const QJsonObject labels =

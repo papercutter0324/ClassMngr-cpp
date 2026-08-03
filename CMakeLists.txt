@@ -2287,6 +2287,33 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    qt_add_executable(ClassMngrSignatureImageProcessorTests
+        tests/signature_image_processor_tests.cpp
+        src/features/my_info/data/signature_image_processor.cpp
+    )
+
+    target_compile_features(ClassMngrSignatureImageProcessorTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSignatureImageProcessorTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSignatureImageProcessorTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSignatureImageProcessorTests
+        COMMAND ClassMngrSignatureImageProcessorTests
+    )
+
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
@@ -2322,11 +2349,26 @@ if(BUILD_TESTING)
             resources/assets/fonts/JustAnotherHand-Regular.ttf
             resources/assets/fonts/PretendardVariable.ttf
             resources/assets/templates/speaking-eval/advanced-background.png
+            resources/assets/templates/speaking-eval/advanced-grey-a.png
+            resources/assets/templates/speaking-eval/advanced-grey-aplus.png
+            resources/assets/templates/speaking-eval/advanced-grey-b.png
+            resources/assets/templates/speaking-eval/advanced-grey-bplus.png
+            resources/assets/templates/speaking-eval/advanced-grey-c.png
             resources/assets/templates/speaking-eval/advanced-manifest.json
             resources/assets/templates/speaking-eval/advanced-sprites.png
+            resources/assets/templates/speaking-eval/advanced-yellow-a.png
+            resources/assets/templates/speaking-eval/advanced-yellow-aplus.png
+            resources/assets/templates/speaking-eval/advanced-yellow-b.png
+            resources/assets/templates/speaking-eval/advanced-yellow-bplus.png
+            resources/assets/templates/speaking-eval/advanced-yellow-c.png
             resources/assets/templates/speaking-eval/standard-background.png
             resources/assets/templates/speaking-eval/standard-manifest.json
             resources/assets/templates/speaking-eval/standard-sprites.png
+            resources/assets/templates/speaking-eval/standard-yellow-a.png
+            resources/assets/templates/speaking-eval/standard-yellow-aplus.png
+            resources/assets/templates/speaking-eval/standard-yellow-b.png
+            resources/assets/templates/speaking-eval/standard-yellow-bplus.png
+            resources/assets/templates/speaking-eval/standard-yellow-c.png
     )
 
     add_test(
@@ -2388,11 +2430,26 @@ if(BUILD_TESTING)
             resources/assets/fonts/JustAnotherHand-Regular.ttf
             resources/assets/fonts/PretendardVariable.ttf
             resources/assets/templates/speaking-eval/advanced-background.png
+            resources/assets/templates/speaking-eval/advanced-grey-a.png
+            resources/assets/templates/speaking-eval/advanced-grey-aplus.png
+            resources/assets/templates/speaking-eval/advanced-grey-b.png
+            resources/assets/templates/speaking-eval/advanced-grey-bplus.png
+            resources/assets/templates/speaking-eval/advanced-grey-c.png
             resources/assets/templates/speaking-eval/advanced-manifest.json
             resources/assets/templates/speaking-eval/advanced-sprites.png
+            resources/assets/templates/speaking-eval/advanced-yellow-a.png
+            resources/assets/templates/speaking-eval/advanced-yellow-aplus.png
+            resources/assets/templates/speaking-eval/advanced-yellow-b.png
+            resources/assets/templates/speaking-eval/advanced-yellow-bplus.png
+            resources/assets/templates/speaking-eval/advanced-yellow-c.png
             resources/assets/templates/speaking-eval/standard-background.png
             resources/assets/templates/speaking-eval/standard-manifest.json
             resources/assets/templates/speaking-eval/standard-sprites.png
+            resources/assets/templates/speaking-eval/standard-yellow-a.png
+            resources/assets/templates/speaking-eval/standard-yellow-aplus.png
+            resources/assets/templates/speaking-eval/standard-yellow-b.png
+            resources/assets/templates/speaking-eval/standard-yellow-bplus.png
+            resources/assets/templates/speaking-eval/standard-yellow-c.png
             "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
             "resources/assets/documents/Speaking Evaluations/SpeakingEvaluationTemplate_Advanced-Full.pptx"
     )

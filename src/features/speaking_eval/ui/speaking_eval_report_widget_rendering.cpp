@@ -328,6 +328,92 @@ QRectF centeredSpriteDestination(
         );
 }
 
+QRect nativeBackgroundRect(
+    const SpeakingEvalTemplateAssets& assets,
+    const QRectF& logicalRect
+    )
+{
+    const qreal horizontalScale =
+        assets.backgroundPixelSize.width()
+        / assets.logicalSize.width();
+    const qreal verticalScale =
+        assets.backgroundPixelSize.height()
+        / assets.logicalSize.height();
+    return QRect(
+        qRound(logicalRect.left() * horizontalScale),
+        qRound(logicalRect.top() * verticalScale),
+        qRound(logicalRect.width() * horizontalScale),
+        qRound(logicalRect.height() * verticalScale)
+        );
+}
+
+void compositeAuthoredScores(
+    QImage* background,
+    const SpeakingEvalTemplateAssets& assets,
+    const std::array<QString, 6>& scores
+    )
+{
+    if (!background
+        || background->isNull()
+        || assets.scoreHighlights.isEmpty())
+    {
+        return;
+    }
+
+    QPainter painter(background);
+    painter.setRenderHint(
+        QPainter::SmoothPixmapTransform,
+        true
+        );
+    const int metricCount =
+        std::min(
+            static_cast<int>(scores.size()),
+            static_cast<int>(assets.scoreHighlightRects.size())
+            );
+    for (int metric = 0; metric < metricCount; ++metric)
+    {
+        const QString& grade = scores.at(metric);
+        const auto highlight =
+            assets.scoreHighlights.constFind(grade);
+        const QRectF destination =
+            assets.scoreHighlightRects.at(metric).value(grade);
+        if (highlight == assets.scoreHighlights.cend()
+            || !destination.isValid())
+        {
+            continue;
+        }
+
+        painter.drawImage(
+            nativeBackgroundRect(assets, destination),
+            highlight.value()
+            );
+    }
+
+    const int studentGradeCount =
+        std::min(
+            static_cast<int>(scores.size()),
+            static_cast<int>(assets.studentGradeRects.size())
+            );
+    for (int metric = 0; metric < studentGradeCount; ++metric)
+    {
+        const QString& grade = scores.at(metric);
+        const auto studentGrade =
+            assets.studentGrades.constFind(grade);
+        const QRectF destination =
+            assets.studentGradeRects.at(metric).value(grade);
+        if (studentGrade == assets.studentGrades.cend()
+            || !destination.isValid())
+        {
+            continue;
+        }
+        painter.drawImage(
+            nativeBackgroundRect(assets, destination),
+            studentGrade.value()
+            );
+    }
+    painter.end();
+}
+
 void drawScores(
     QPainter* painter,
     const SpeakingEvalTemplateAssets& assets,
@@ -359,6 +445,18 @@ void drawScores(
 
             if (scores.at(metric) == grade)
             {
+                const auto authoredHighlight =
+                    assets.scoreHighlights.constFind(grade);
+                const QRectF authoredDestination =
+                    metric < assets.scoreHighlightRects.size()
+                        ? assets.scoreHighlightRects.at(metric).value(grade)
+                        : QRectF();
+                if (authoredHighlight != assets.scoreHighlights.cend()
+                    && authoredDestination.isValid())
+                {
+                    continue;
+                }
+
                 const qreal inset = assets.scoreHighlightInset;
                 const QRectF highlight =
                     cell.adjusted(inset, inset, -inset, -inset);
@@ -387,6 +485,7 @@ void drawScores(
             }
         }
     }
+
 }
 
 void drawSignature(
@@ -486,9 +585,33 @@ void SpeakingEvalReportWidget::paintReport(
     painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setRenderHint(QPainter::TextAntialiasing, true);
+    const QImage* reportBackground =
+        &assets.background;
+    if (!assets.scoreHighlights.isEmpty())
+    {
+        if (m_compositedScoreBackground.isNull()
+            || m_compositedScoreBackgroundScores != m_data.scores
+            || m_compositedScoreBackgroundTemplate
+                != m_data.reportTemplate)
+        {
+            m_compositedScoreBackground =
+                assets.background.copy();
+            compositeAuthoredScores(
+                &m_compositedScoreBackground,
+                assets,
+                m_data.scores
+                );
+            m_compositedScoreBackgroundScores =
+                m_data.scores;
+            m_compositedScoreBackgroundTemplate =
+                m_data.reportTemplate;
+        }
+        reportBackground =
+            &m_compositedScoreBackground;
+    }
     painter->drawImage(
         QRectF(QPointF(), assets.logicalSize),
-        assets.background
+        *reportBackground
         );
 
     drawScores(
