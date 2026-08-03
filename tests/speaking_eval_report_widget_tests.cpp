@@ -340,6 +340,22 @@ void SpeakingEvalReportWidgetTests::
         QStringLiteral("latinSemibold")
         );
     QCOMPARE(
+        standard.fields.value(QStringLiteral("koreanName")).rect,
+        QRectF(302.05, 77.347, 65.95, 23.0227)
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("classLabel")).rect,
+        QRectF(409.0001, 76.7365, 95.6, 26.64)
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("koreanTeacher")).rect,
+        QRectF(302.05, 100.1782, 65.95, 23.0227)
+        );
+    QCOMPARE(
+        standard.fields.value(QStringLiteral("date")).rect,
+        QRectF(400.1999, 100.08, 113.2003, 25.92)
+        );
+    QCOMPARE(
         advanced.scoreCells.at(5).value(QStringLiteral("A+")).top(),
         553.619262
         );
