@@ -26,11 +26,12 @@ speakingEvalReportTemplateLayout(
 {
     static const SpeakingEvalReportTemplateLayout standard{
         QSizeF(540.0, 780.0),
-        QRectF(377.1, 722.0, 120.0, 36.0),
+        QRectF(374.0, 731.0, 131.0, 26.0),
         QStringLiteral(
             "Speaking Evaluations/SpeakingEvaluationTemplate-Full.pptx"
             ),
-        false
+        false,
+        true
     };
     static const SpeakingEvalReportTemplateLayout advanced{
         QSizeF(540.0, 780.0),

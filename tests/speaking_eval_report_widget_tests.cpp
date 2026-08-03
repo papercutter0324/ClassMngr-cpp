@@ -580,7 +580,7 @@ void SpeakingEvalReportWidgetTests::
         );
     QCOMPARE(
         standard.signatureBounds,
-        QRectF(377.1, 722.0, 120.0, 36.0)
+        QRectF(374.0, 731.0, 131.0, 26.0)
         );
     QCOMPARE(
         speakingEvalReportTemplateLayout(
@@ -1471,7 +1471,11 @@ void SpeakingEvalReportWidgetTests::
     QVERIFY(top >= bounds.top());
     QVERIFY(right <= bounds.right());
     QVERIFY(bottom <= bounds.bottom());
-    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
+    if (
+        speakingEvalReportTemplateLayout(
+            reportTemplate
+            ).signatureAlignsBottomLeft
+        )
     {
         QVERIFY(qAbs(left - bounds.left()) <= 1);
         QVERIFY(qAbs(bottom - bounds.bottom()) <= 1);

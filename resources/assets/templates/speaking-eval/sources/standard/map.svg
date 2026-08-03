@@ -40,6 +40,6 @@
     <rect id="score-overall-effort-b" data-role="score-cell" data-metric="overall-effort" data-grade="B" x="345" y="499.42686056" width="78.66666667" height="22.68605646"/>
     <rect id="score-overall-effort-c" data-role="score-cell" data-metric="overall-effort" data-grade="C" x="423.66666667" y="499.42686056" width="78.66666667" height="22.68605646"/>
     <rect id="field-overall-grade" data-role="overall-grade" x="121" y="734.96150556" width="43.33333333" height="21.68520103"/>
-    <rect id="field-signature" data-role="signature" x="377.1" y="727" width="120" height="36"/>
+    <rect id="field-signature" data-role="signature" x="374" y="731" width="131" height="30"/>
   </g>
 </svg>
