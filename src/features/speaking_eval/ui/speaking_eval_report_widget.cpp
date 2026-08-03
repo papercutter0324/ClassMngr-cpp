@@ -1,5 +1,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
+#include "domain/models/speaking_evaluation.h"
+
 #include <QFrame>
 #include <QPlainTextEdit>
 #include <QSignalBlocker>
@@ -42,10 +44,9 @@ SpeakingEvalReportWidget::SpeakingEvalReportWidget(
             }
 
             QString comments = m_commentEditor->toPlainText();
-            constexpr int maximumCommentLength = 900;
-            if (comments.size() > maximumCommentLength)
+            if (comments.size() > SpeakingEval::CommentMaxLength)
             {
-                comments.truncate(maximumCommentLength);
+                comments.truncate(SpeakingEval::CommentMaxLength);
                 const QSignalBlocker blocker(m_commentEditor);
                 m_commentEditor->setPlainText(comments);
                 m_commentEditor->moveCursor(QTextCursor::End);

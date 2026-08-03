@@ -45,8 +45,8 @@ namespace SpeakingEval
 inline constexpr int RowCount = 25;
 inline constexpr int ColumnCount = 11;
 inline constexpr int RowHeight = 50;
-inline constexpr int CommentMinLength = 80;
-inline constexpr int CommentMaxLength = 900;
+inline constexpr int CommentMinLength = 100;
+inline constexpr int CommentMaxLength = 450;
 
 inline int toInt(
     SpeakingEvalColumn column

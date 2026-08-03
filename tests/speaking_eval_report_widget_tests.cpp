@@ -1,5 +1,6 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
+#include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QtTest>
@@ -1393,6 +1394,20 @@ void SpeakingEvalReportWidgetTests::
     QCOMPARE(
         commentsSpy.at(0).at(0).toString(),
         QStringLiteral("A freshly typed comment.")
+        );
+
+    const QString overlongComment(
+        SpeakingEval::CommentMaxLength + 1,
+        QLatin1Char('x')
+        );
+    const QString expectedComment =
+        overlongComment.left(SpeakingEval::CommentMaxLength);
+    comments->setPlainText(overlongComment);
+    QCOMPARE(comments->toPlainText(), expectedComment);
+    QCOMPARE(commentsSpy.size(), 2);
+    QCOMPARE(
+        commentsSpy.at(1).at(0).toString(),
+        expectedComment
         );
 }
 
