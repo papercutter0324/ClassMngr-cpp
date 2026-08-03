@@ -215,56 +215,56 @@
         "A+": {
           "file": "advanced/overall-grade-aplus.png",
           "pointSize": [
-            33.333333,
-            17.681779
+            54.899375,
+            28.673715
           ],
           "minimumRecommendedPixels": [
-            139,
-            74
+            229,
+            120
           ]
         },
         "A": {
           "file": "advanced/overall-grade-a.png",
           "pointSize": [
-            19.0,
-            17.681779
+            31.29077,
+            28.673715
           ],
           "minimumRecommendedPixels": [
-            80,
-            74
+            131,
+            120
           ]
         },
         "B+": {
           "file": "advanced/overall-grade-bplus.png",
           "pointSize": [
-            31.333333,
-            17.681779
+            52.088827,
+            28.673715
           ],
           "minimumRecommendedPixels": [
-            131,
-            74
+            218,
+            120
           ]
         },
         "B": {
           "file": "advanced/overall-grade-b.png",
           "pointSize": [
-            16.333333,
-            17.681779
+            26.419153,
+            28.673715
           ],
           "minimumRecommendedPixels": [
-            69,
-            74
+            111,
+            120
           ]
         },
         "C": {
           "file": "advanced/overall-grade-c.png",
           "pointSize": [
-            17.0,
-            18.349016
+            27.918112,
+            29.610764
           ],
           "minimumRecommendedPixels": [
-            71,
-            77
+            117,
+            124
           ]
         },
         "N/A": {

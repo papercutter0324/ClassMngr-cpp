@@ -661,6 +661,9 @@ void SpeakingEvalBatchReportServiceTests::
     QTest::newRow("advanced")
         << static_cast<int>(SpeakingEvalReportTemplate::Advanced)
         << false;
+    QTest::newRow("advanced-signature")
+        << static_cast<int>(SpeakingEvalReportTemplate::Advanced)
+        << true;
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -822,6 +825,8 @@ void SpeakingEvalBatchReportServiceTests::
                 speakingEvalReportTemplateLayout(
                     reportTemplate
                     ).signatureBounds.toAlignedRect();
+            int signatureLeft = signatureBounds.right() + 1;
+            int signatureBottom = -1;
             const int magentaPixels =
                 matchingPixelCount(
                     page,
@@ -833,6 +838,28 @@ void SpeakingEvalBatchReportServiceTests::
                             && qBlue(pixel) > 180;
                     }
                     );
+            for (
+                int y = signatureBounds.top();
+                y <= signatureBounds.bottom();
+                ++y
+                )
+            {
+                for (
+                    int x = signatureBounds.left();
+                    x <= signatureBounds.right();
+                    ++x
+                    )
+                {
+                    const QRgb pixel = page.pixel(x, y);
+                    if (qRed(pixel) > 180
+                        && qGreen(pixel) < 120
+                        && qBlue(pixel) > 180)
+                    {
+                        signatureLeft = qMin(signatureLeft, x);
+                        signatureBottom = qMax(signatureBottom, y);
+                    }
+                }
+            }
             QVERIFY2(
                 magentaPixels > 20,
                 qPrintable(
@@ -841,6 +868,30 @@ void SpeakingEvalBatchReportServiceTests::
                         ).arg(index + 1)
                     )
                 );
+            if (reportTemplate
+                == SpeakingEvalReportTemplate::Advanced)
+            {
+                QVERIFY(
+                    qAbs(
+                        signatureLeft
+                            - qRound(
+                                speakingEvalReportTemplateLayout(
+                                    reportTemplate
+                                    ).signatureBounds.left()
+                                )
+                        ) <= 2
+                    );
+                QVERIFY(
+                    qAbs(
+                        signatureBottom
+                            - qRound(
+                                speakingEvalReportTemplateLayout(
+                                    reportTemplate
+                                    ).signatureBounds.bottom()
+                                )
+                        ) <= 2
+                    );
+            }
         }
     }
 

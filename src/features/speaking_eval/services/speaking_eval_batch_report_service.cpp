@@ -523,6 +523,7 @@ struct PowerPointTemplateProfile
         SpeakingEvalReportTemplate::Standard;
     QString resourcePath;
     QRectF signatureBounds;
+    bool signatureAlignsBottomLeft = false;
     bool scoreTableOnMaster = true;
     QString scoreTableName;
     int minimumTableRows = 12;
@@ -577,6 +578,8 @@ PowerPointTemplateProfile powerPointTemplateProfile(
             layout.powerPointResourcePath
             );
     profile.signatureBounds = layout.signatureBounds;
+    profile.signatureAlignsBottomLeft =
+        layout.signatureAlignsBottomLeft;
 
     if (layout.usesAdvancedScoreTable)
     {
@@ -752,6 +755,10 @@ QJsonObject powerPointBatchJson(
             QStringLiteral("signatureHeight"),
             profile.signatureBounds.height()
         },
+        {
+            QStringLiteral("signatureAlignsBottomLeft"),
+            profile.signatureAlignsBottomLeft
+        },
         { QStringLiteral("students"), students }
     };
 }
@@ -905,7 +912,8 @@ function Add-Signature(
     [double]$left,
     [double]$top,
     [double]$maximumWidth,
-    [double]$maximumHeight
+    [double]$maximumHeight,
+    [bool]$alignsBottomLeft
 ) {
     if ([string]::IsNullOrWhiteSpace($path)) {
         return
@@ -920,7 +928,12 @@ function Add-Signature(
     )
     $picture.Width = $picture.Width * $scale
     $picture.Height = $picture.Height * $scale
-    $picture.Left = $left + $maximumWidth - $picture.Width
+    if ($alignsBottomLeft) {
+        $picture.Left = $left
+    }
+    else {
+        $picture.Left = $left + $maximumWidth - $picture.Width
+    }
     $picture.Top = $top + $maximumHeight - $picture.Height
 }
 
@@ -991,7 +1004,8 @@ try {
             ([double]$data.signatureLeft) `
             ([double]$data.signatureTop) `
             ([double]$data.signatureWidth) `
-            ([double]$data.signatureHeight)
+            ([double]$data.signatureHeight) `
+            ([bool]$data.signatureAlignsBottomLeft)
 
         Set-UnderlinedText $englishNameShape ([string]$student.englishName)
         Set-UnderlinedText $koreanNameShape ([string]$student.koreanName)
@@ -1124,7 +1138,7 @@ on setCellFill(tableShape, rowIndex, columnIndex, rgbValue)
     end tell
 end setCellFill
 
-on addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, maximumWidth, maximumHeight)
+on addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, maximumWidth, maximumHeight, alignsBottomLeft)
     if signaturePath is "" then return
 
     tell application "Microsoft PowerPoint"
@@ -1137,7 +1151,11 @@ on addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, maximum
         end if
         set width of signaturePicture to pictureWidth * scaleFactor
         set height of signaturePicture to pictureHeight * scaleFactor
-        set left position of signaturePicture to signatureLeft + maximumWidth - (width of signaturePicture)
+        if alignsBottomLeft then
+            set left position of signaturePicture to signatureLeft
+        else
+            set left position of signaturePicture to signatureLeft + maximumWidth - (width of signaturePicture)
+        end if
         set top of signaturePicture to signatureTop + maximumHeight - (height of signaturePicture)
         set name of signaturePicture to "Signature_Image"
     end tell
@@ -1194,9 +1212,10 @@ on run argv
     set signatureTop to item 12 of argv as real
     set signatureWidth to item 13 of argv as real
     set signatureHeight to item 14 of argv as real
-    set cancelPath to item 15 of argv
-    set jobCount to item 16 of argv as integer
-    set argumentIndex to 17
+    set signatureAlignsBottomLeft to (item 15 of argv is "true")
+    set cancelPath to item 16 of argv
+    set jobCount to item 17 of argv as integer
+    set argumentIndex to 18
     set yellowFill to {255, 255, 0}
     set reportPresentation to missing value
     set wasCanceled to false
@@ -1216,7 +1235,7 @@ on run argv
             set exportStep to "accessing slide 1"
             set reportSlide to slide (1) of reportPresentation
             set exportStep to "adding the signature image"
-            my addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, signatureWidth, signatureHeight)
+            my addSignature(reportSlide, signaturePath, signatureLeft, signatureTop, signatureWidth, signatureHeight, signatureAlignsBottomLeft)
             set exportStep to "resolving report text shapes"
             set englishNameShape to my requireShape(reportSlide, "English_Name")
             set koreanNameShape to my requireShape(reportSlide, "Korean_Name")
@@ -1500,6 +1519,9 @@ PowerPointBatchStatus renderPowerPointBatch(
         QString::number(profile.signatureBounds.top()),
         QString::number(profile.signatureBounds.width()),
         QString::number(profile.signatureBounds.height()),
+        profile.signatureAlignsBottomLeft
+            ? QStringLiteral("true")
+            : QStringLiteral("false"),
         cancelPath,
         QString::number(batch.students.size())
     };

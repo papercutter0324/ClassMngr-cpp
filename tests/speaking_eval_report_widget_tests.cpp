@@ -332,6 +332,22 @@ void SpeakingEvalReportWidgetTests::
     QCOMPARE(advanced.scoreHighlights.size(), 5);
     QCOMPARE(advanced.scoreHighlightRects.size(), 6);
     QCOMPARE(
+        advanced.fields.value(QStringLiteral("classLabel")).fontRole,
+        QStringLiteral("latinSemibold")
+        );
+    QCOMPARE(
+        advanced.fields.value(QStringLiteral("date")).fontRole,
+        QStringLiteral("latinSemibold")
+        );
+    QCOMPARE(
+        advanced.scoreCells.at(5).value(QStringLiteral("A+")).top(),
+        553.619262
+        );
+    QCOMPARE(
+        advanced.overallGradeBounds,
+        QRectF(413.0, 102.325805, 109.0, 39.730899)
+        );
+    QCOMPARE(
         advanced.studentGradeCells.at(0),
         QRectF(102.0, 188.828058, 51.0, 64.721985)
         );
@@ -360,6 +376,35 @@ void SpeakingEvalReportWidgetTests::
         { QStringLiteral("B"), 1999 },
         { QStringLiteral("C"), 2393 }
     };
+    const QHash<QString, QSize> advancedOverallSourceSizes{
+        { QStringLiteral("A+"), QSize(293, 153) },
+        { QStringLiteral("A"), QSize(167, 153) },
+        { QStringLiteral("B+"), QSize(278, 153) },
+        { QStringLiteral("B"), QSize(141, 153) },
+        { QStringLiteral("C"), QSize(149, 158) }
+    };
+    for (
+        auto iterator = advancedOverallSourceSizes.cbegin();
+        iterator != advancedOverallSourceSizes.cend();
+        ++iterator
+        )
+    {
+        const SpeakingEvalSpriteAsset sprite =
+            advanced.overallGrades.value(iterator.key());
+        QCOMPARE(sprite.source.size(), iterator.value());
+        QVERIFY(
+            qAbs(
+                sprite.destination.center().x()
+                    - advanced.overallGradeBounds.center().x()
+                ) < 0.001
+            );
+        QVERIFY(
+            qAbs(
+                sprite.destination.center().y()
+                    - advanced.overallGradeBounds.center().y()
+                ) < 0.001
+            );
+    }
 
     for (const SpeakingEvalTemplateAssets* templateAssets : {
              &standard,
@@ -399,6 +444,10 @@ void SpeakingEvalReportWidgetTests::
                         highlightPixels.left(),
                         advancedHighlightLeftPixels.value(grade)
                         );
+                    if (metric == 5)
+                    {
+                        QCOMPARE(highlightPixels.top(), 2956);
+                    }
                     QCOMPARE(
                         highlightPixels.size(),
                         highlight.size()
@@ -493,7 +542,13 @@ void SpeakingEvalReportWidgetTests::
         );
     QCOMPARE(
         advanced.signatureBounds,
-        QRectF(413.0, 742.0, 109.0, 36.0)
+        QRectF(408.5, 746.25, 114.0, 24.75)
+        );
+    QCOMPARE(
+        speakingEvalReportTemplateLayout(
+            SpeakingEvalReportTemplate::Advanced
+            ).signatureBounds,
+        advanced.signatureBounds
         );
 
     for (const QString& fieldName : {
@@ -1284,6 +1339,11 @@ void SpeakingEvalReportWidgetTests::
     QVERIFY(top >= bounds.top());
     QVERIFY(right <= bounds.right());
     QVERIFY(bottom <= bounds.bottom());
+    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
+    {
+        QVERIFY(qAbs(left - bounds.left()) <= 1);
+        QVERIFY(qAbs(bottom - bounds.bottom()) <= 1);
+    }
 }
 
 QTEST_MAIN(SpeakingEvalReportWidgetTests)

@@ -491,7 +491,8 @@ void drawScores(
 void drawSignature(
     QPainter* painter,
     const QByteArray& imageData,
-    const QRectF& bounds
+    const QRectF& bounds,
+    bool alignsBottomLeft
     )
 {
     if (!painter
@@ -510,14 +511,18 @@ void drawSignature(
 
     QSizeF size = image.size();
     size.scale(bounds.size(), Qt::KeepAspectRatio);
-    const QRectF destination(
-        bounds.center()
-            - QPointF(
-                size.width() / 2.0,
-                size.height() / 2.0
-                ),
-        size
-        );
+    const QPointF topLeft =
+        alignsBottomLeft
+            ? QPointF(
+                bounds.left(),
+                bounds.bottom() - size.height()
+                )
+            : bounds.center()
+                - QPointF(
+                    size.width() / 2.0,
+                    size.height() / 2.0
+                    );
+    const QRectF destination(topLeft, size);
     painter->drawImage(destination, image);
 }
 }
@@ -677,7 +682,10 @@ void SpeakingEvalReportWidget::paintReport(
     drawSignature(
         painter,
         m_data.signatureImage,
-        assets.signatureBounds
+        assets.signatureBounds,
+        speakingEvalReportTemplateLayout(
+            reportTemplate()
+            ).signatureAlignsBottomLeft
         );
 
     painter->restore();

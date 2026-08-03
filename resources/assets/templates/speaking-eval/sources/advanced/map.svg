@@ -4,10 +4,10 @@
   <g id="dynamic-map" fill="none" pointer-events="none">
     <rect id="field-english-name" data-role="field" data-field="englishName" x="102" y="103.1402" width="133.125" height="24.2344" data-margins="0 1.44 1.44 1.44" data-font-role="latin" data-font-size-pt="14" data-align-h="left" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
     <rect id="field-korean-name" data-role="field" data-field="koreanName" x="332.2501" y="103.1402" width="75" height="24.2344" data-margins="0 1.44 1.44 1.44" data-font-role="korean" data-font-size-pt="14" data-align-h="left" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
-    <rect id="field-class-label" data-role="field" data-field="classLabel" x="414.3294" y="52.862" width="96.4325" height="24.2344" data-margins="7.2 3.6 7.2 3.6" data-font-role="latinCondensedBold" data-font-size-pt="14" data-align-h="center" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
+    <rect id="field-class-label" data-role="field" data-field="classLabel" x="414.3294" y="52.862" width="96.4325" height="24.2344" data-margins="7.2 3.6 7.2 3.6" data-font-role="latinSemibold" data-font-size-pt="14" data-align-h="center" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
     <rect id="field-native-teacher" data-role="field" data-field="nativeTeacher" x="102" y="132.8836" width="133.1249" height="24.2345" data-margins="0 1.44 1.44 1.44" data-font-role="latin" data-font-size-pt="14" data-align-h="left" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
     <rect id="field-korean-teacher" data-role="field" data-field="koreanTeacher" x="332.2501" y="132.8836" width="75" height="24.2344" data-margins="0 1.44 1.44 1.44" data-font-role="korean" data-font-size-pt="14" data-align-h="left" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
-    <rect id="field-date" data-role="field" data-field="date" x="385.6039" y="14.4663" width="125.1002" height="24.2344" data-margins="7.2 3.6 7.2 3.6" data-font-role="latinCondensedBold" data-font-size-pt="14" data-align-h="center" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
+    <rect id="field-date" data-role="field" data-field="date" x="385.6039" y="14.4663" width="125.1002" height="24.2344" data-margins="7.2 3.6 7.2 3.6" data-font-role="latinSemibold" data-font-size-pt="14" data-align-h="center" data-align-v="center" data-fit="singleLine" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
     <rect id="field-comments" data-role="field" data-field="comments" x="17.6222" y="651.164" width="504.7556" height="92.886" data-margins="7.2 3.6 7.2 3.6" data-font-role="handwritten" data-font-size-pt="15" data-align-h="left" data-align-v="top" data-fit="comments" data-minimum-scale="0.7" data-letter-spacing="0" data-word-spacing="0" data-line-height="1" data-baseline-offset="0"/>
     <rect id="score-grammar-aplus" data-role="score-cell" data-metric="grammar" data-grade="A+" x="153" y="167.14285714" width="73.66666667" height="21.68520103"/>
     <rect id="score-grammar-a" data-role="score-cell" data-metric="grammar" data-grade="A" x="226.66666667" y="167.14285714" width="74" height="21.68520103"/>
@@ -34,18 +34,18 @@
     <rect id="score-content-bplus" data-role="score-cell" data-metric="content" data-grade="B+" x="300.66666667" y="486.41573995" width="73.66666667" height="21.68520103"/>
     <rect id="score-content-b" data-role="score-cell" data-metric="content" data-grade="B" x="374.33333333" y="486.41573995" width="74" height="21.68520103"/>
     <rect id="score-content-c" data-role="score-cell" data-metric="content" data-grade="C" x="448.33333333" y="486.41573995" width="73.66666667" height="21.68520103"/>
-    <rect id="score-overall-effort-aplus" data-role="score-cell" data-metric="overall-effort" data-grade="A+" x="153" y="553.80667237" width="73.66666667" height="21.35158255"/>
-    <rect id="score-overall-effort-a" data-role="score-cell" data-metric="overall-effort" data-grade="A" x="226.66666667" y="553.80667237" width="74" height="21.35158255"/>
-    <rect id="score-overall-effort-bplus" data-role="score-cell" data-metric="overall-effort" data-grade="B+" x="300.66666667" y="553.80667237" width="73.66666667" height="21.35158255"/>
-    <rect id="score-overall-effort-b" data-role="score-cell" data-metric="overall-effort" data-grade="B" x="374.33333333" y="553.80667237" width="74" height="21.35158255"/>
-    <rect id="score-overall-effort-c" data-role="score-cell" data-metric="overall-effort" data-grade="C" x="448.33333333" y="553.80667237" width="73.66666667" height="21.35158255"/>
+    <rect id="score-overall-effort-aplus" data-role="score-cell" data-metric="overall-effort" data-grade="A+" x="153" y="553.61926247" width="73.66666667" height="21.35158255"/>
+    <rect id="score-overall-effort-a" data-role="score-cell" data-metric="overall-effort" data-grade="A" x="226.66666667" y="553.61926247" width="74" height="21.35158255"/>
+    <rect id="score-overall-effort-bplus" data-role="score-cell" data-metric="overall-effort" data-grade="B+" x="300.66666667" y="553.61926247" width="73.66666667" height="21.35158255"/>
+    <rect id="score-overall-effort-b" data-role="score-cell" data-metric="overall-effort" data-grade="B" x="374.33333333" y="553.61926247" width="74" height="21.35158255"/>
+    <rect id="score-overall-effort-c" data-role="score-cell" data-metric="overall-effort" data-grade="C" x="448.33333333" y="553.61926247" width="73.66666667" height="21.35158255"/>
     <rect id="student-grade-grammar" data-role="student-grade-cell" data-metric="grammar" x="102" y="188.82805817" width="51" height="64.7219846"/>
     <rect id="student-grade-pronunciation" data-role="student-grade-cell" data-metric="pronunciation" x="102" y="275.2352438" width="51" height="55.38066724"/>
     <rect id="student-grade-fluency" data-role="student-grade-cell" data-metric="fluency" x="102" y="351.96749359" width="51" height="55.38066723"/>
     <rect id="student-grade-manner" data-role="student-grade-cell" data-metric="manner" x="102" y="429.03336185" width="51" height="57.3823781"/>
     <rect id="student-grade-content" data-role="student-grade-cell" data-metric="content" x="102" y="508.10094098" width="51" height="45.70573139"/>
     <rect id="student-grade-overall-effort" data-role="student-grade-cell" data-metric="overall-effort" x="102" y="575.15825492" width="51" height="45.53774508"/>
-    <rect id="field-overall-grade" data-role="overall-grade" x="413" y="106.09067579" width="109" height="36.03079555"/>
-    <rect id="field-signature" data-role="signature" x="413" y="742" width="109" height="36"/>
+    <rect id="field-overall-grade" data-role="overall-grade" x="413" y="102.3258049" width="109" height="39.73089861"/>
+    <rect id="field-signature" data-role="signature" x="408.5" y="746.25" width="114" height="24.75"/>
   </g>
 </svg>
