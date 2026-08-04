@@ -5718,8 +5718,20 @@ Rm: %1</source>
         <translation>명단을 A4 PDF로 인쇄합니다.</translation>
     </message>
     <message>
-        <location line="-121"/>
-        <location line="+124"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="82"/>
+        <location line="+147"/>
+        <source>Korean Keyboard</source>
+        <translation>한국어 키보드</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="84"/>
+        <location line="+149"/>
+        <source>Open Korean typing website</source>
+        <translation>한국어 입력 웹사이트 열기</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="100"/>
+        <location line="+137"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
@@ -7856,6 +7868,18 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
 <context>
     <name>SpeakingEvalPage</name>
     <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="96"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="219"/>
+        <source>Korean Keyboard</source>
+        <translation>한국어 키보드</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="99"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
+        <source>Open Korean typing website</source>
+        <translation>한국어 입력 웹사이트 열기</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+46"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+152"/>
         <source>No classes available</source>
@@ -7925,8 +7949,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="-112"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+14"/>
-        <source>Export / Print Reports</source>
-        <translation>보고서 내보내기 / 인쇄</translation>
+        <source>Print Reports</source>
+        <translation>보고서 인쇄</translation>
     </message>
     <message>
         <location line="+58"/>
@@ -7963,20 +7987,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-114"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-221"/>
-        <source>Create Reports</source>
-        <translation>보고서 만들기</translation>
-    </message>
-    <message>
-        <location line="+19"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+32"/>
-        <source>Korean Keyboard</source>
-        <translation>한국어 키보드</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
-        <source>Open Korean typing website</source>
-        <translation>한국어 입력 웹사이트 열기</translation>
+        <source>New Report</source>
+        <translation>새 보고서</translation>
     </message>
     <message>
         <location line="+7"/>

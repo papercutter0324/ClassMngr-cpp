@@ -74,8 +74,8 @@ void SpeakingEvalPage::retranslateUi()
     }
 
     const QList<QString> reportLabels{
-        tr("Create Reports"),
-        tr("Export / Print Reports")
+        tr("New Report"),
+        tr("Print Reports")
     };
 
     for (

@@ -15,10 +15,12 @@
 #include "ui/shared/constants/gui_constants.h"
 
 #include <QAbstractItemModel>
+#include <QDesktopServices>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QPushButton>
+#include <QUrl>
 #include <QVBoxLayout>
 
 namespace
@@ -75,6 +77,14 @@ void RosterEditorWidget::retranslateUi()
         m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
     }
 
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setText(tr("Korean Keyboard"));
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean typing website")
+            );
+    }
+
     if (m_addColumnButton)
     {
         m_addColumnButton->setText(tr("Add Column"));
@@ -123,6 +133,11 @@ void RosterEditorWidget::updateActions()
     if (m_printButton)
     {
         m_printButton->setEnabled(m_classroom.id > 0);
+    }
+
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setEnabled(m_classroom.id > 0);
     }
 }
 
@@ -209,11 +224,20 @@ void RosterEditorWidget::buildUi()
         );
     m_printButton = new TextFitPushButton(tr("Print Rosters"), this);
     m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
+    m_koreanKeyboardButton =
+        new TextFitPushButton(
+            tr("Korean Keyboard"),
+            this
+            );
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean typing website")
+        );
     m_addColumnButton = new TextFitPushButton(tr("Add Column"), this);
     m_removeColumnButton = new TextFitPushButton(tr("Remove Column"), this);
     m_saveButton = new TextFitPushButton(tr("Save Changes"), this);
     bottomLayout()->addWidget(m_importButton);
     bottomLayout()->addWidget(m_printButton);
+    bottomLayout()->addWidget(m_koreanKeyboardButton);
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_addColumnButton);
     bottomLayout()->addWidget(m_removeColumnButton);
@@ -224,6 +248,12 @@ void RosterEditorWidget::buildUi()
     connect(m_saveButton, &QPushButton::clicked, this, &RosterEditorWidget::saveData);
     connect(m_importButton, &QPushButton::clicked, this, &RosterEditorWidget::importScores);
     connect(m_printButton, &QPushButton::clicked, this, &RosterEditorWidget::printRosters);
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        &RosterEditorWidget::openKoreanKeyboard
+        );
     connect(
         m_table,
         &QWidget::customContextMenuRequested,
@@ -276,6 +306,13 @@ void RosterEditorWidget::buildUi()
         );
 
     updateActions();
+}
+
+void RosterEditorWidget::openKoreanKeyboard()
+{
+    QDesktopServices::openUrl(
+        QUrl(QStringLiteral("https://www.branah.com/korean"))
+        );
 }
 
 void RosterEditorWidget::updateHeaderText()

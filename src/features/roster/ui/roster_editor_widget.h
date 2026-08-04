@@ -70,6 +70,8 @@ private slots:
 
     void printRosters();
 
+    void openKoreanKeyboard();
+
     void autosave();
 
     void updateActions();
@@ -157,6 +159,7 @@ private:
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_printButton = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;

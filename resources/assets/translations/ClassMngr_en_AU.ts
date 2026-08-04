@@ -5538,8 +5538,20 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-121"/>
-        <location line="+124"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="82"/>
+        <location line="+147"/>
+        <source>Korean Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="84"/>
+        <location line="+149"/>
+        <source>Open Korean typing website</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="100"/>
+        <location line="+137"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7273,6 +7285,18 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
 <context>
     <name>SpeakingEvalPage</name>
     <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="96"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="219"/>
+        <source>Korean Keyboard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="99"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
+        <source>Open Korean typing website</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+46"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+152"/>
         <source>No classes available</source>
@@ -7292,25 +7316,13 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="-113"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+13"/>
-        <source>Create Reports</source>
+        <source>New Report</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
-        <source>Export / Print Reports</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+31"/>
-        <source>Korean Keyboard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
-        <source>Open Korean typing website</source>
+        <source>Print Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

@@ -165,6 +165,10 @@ void RosterEditorWidget::setTestingClassMode(
     {
         m_importButton->setVisible(!m_testingClassMode);
     }
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setVisible(!m_testingClassMode);
+    }
 
     applyTestingClassColumnVisibility();
 }

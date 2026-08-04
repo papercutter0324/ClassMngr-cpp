@@ -184,8 +184,8 @@ void SpeakingEvalPage::buildUi()
     bottomLayout()->addSpacing(20);
 
     const QList<QString> reportLabels{
-        tr("Create Reports"),
-        tr("Export / Print Reports")
+        tr("New Report"),
+        tr("Print Reports")
     };
 
     m_reportButtons.clear();
