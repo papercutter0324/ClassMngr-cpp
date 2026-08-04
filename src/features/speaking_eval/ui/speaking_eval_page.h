@@ -74,6 +74,8 @@ private slots:
 
     void showReports();
 
+    void generateClassAiComments();
+
     void exportReports();
 
 private:

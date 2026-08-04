@@ -1,5 +1,6 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
@@ -33,6 +34,7 @@
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QTableWidget>
 #include <QUndoStack>
 
 #include <functional>
@@ -227,6 +229,9 @@ private slots:
     void privateNotesAreSplitAndSaved();
     void privateNotesAutomaticallyContinueBullets();
     void aiPromptBuilderUsesObservationsAndSelectedVoice();
+    void aiBatchPromptAnonymizesUpToFullClass();
+    void aiBatchResponseParserHandlesPartialAndMalformedBlocks();
+    void aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments();
     void aiPromptButtonsRequireCompleteInput();
     void aiPromptPreviewCopiesAnAnonymousPrompt();
     void pastedAiCommentsReplaceStudentPlaceholder();
@@ -983,6 +988,364 @@ void SpeakingEvalBatchReportServiceTests::
             QStringLiteral("M1")
             ),
         0
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchPromptAnonymizesUpToFullClass()
+{
+    for (const int studentCount : { 1, 20, 25 })
+    {
+        SpeakingEvalAiBatchPromptInput input;
+        input.voice = AiCommentVoice::ThirdPerson;
+        for (int index = 0; index < studentCount; ++index)
+        {
+            const QString id =
+                QStringLiteral("STUDENT_%1")
+                    .arg(
+                        index + 1,
+                        2,
+                        10,
+                        QLatin1Char('0')
+                        );
+            const QString englishName =
+                QStringLiteral("PrivateName%1")
+                    .arg(index + 1);
+            const QString koreanName =
+                QStringLiteral("학생이름%1")
+                    .arg(index + 1);
+            input.students.append(
+                {
+                    id,
+                    4 + (index % 3),
+                    englishName,
+                    koreanName,
+                    QStringLiteral(
+                        "%1 used strong vocabulary\n"
+                        "%2 maintained eye contact"
+                        )
+                        .arg(
+                            englishName,
+                            koreanName
+                            ),
+                    QStringLiteral(
+                        "%1 should add supporting details"
+                        )
+                        .arg(englishName)
+                }
+                );
+        }
+        if (studentCount > 1)
+        {
+            input.students[0].didWell +=
+                QStringLiteral(
+                    "\nPrivateName2 collaborated helpfully"
+                    );
+        }
+
+        const QString prompt =
+            buildSpeakingEvalAiBatchCommentPrompt(input);
+        QVERIFY(!prompt.isEmpty());
+        QVERIFY(
+            prompt.contains(
+                QStringLiteral("Write for a parent or guardian")
+                )
+            );
+        QCOMPARE(
+            prompt.count(
+                QStringLiteral("exactly 3 short sentences")
+                ),
+            1
+            );
+        QCOMPARE(
+            prompt.count(
+                QRegularExpression(
+                    QStringLiteral(
+                        R"(Student ID: STUDENT_[0-9]{2})"
+                        )
+                    )
+                ),
+            studentCount
+            );
+        for (int index = 0; index < studentCount; ++index)
+        {
+            const QString id =
+                QStringLiteral("STUDENT_%1")
+                    .arg(
+                        index + 1,
+                        2,
+                        10,
+                        QLatin1Char('0')
+                        );
+            QVERIFY(
+                prompt.contains(
+                    QStringLiteral("<<<%1>>>").arg(id)
+                    )
+                );
+            QVERIFY(
+                prompt.contains(
+                    QStringLiteral("<<<END_%1>>>").arg(id)
+                    )
+                );
+            QVERIFY(
+                !prompt.contains(
+                    QStringLiteral("PrivateName%1")
+                        .arg(index + 1)
+                    )
+                );
+            QVERIFY(
+                !prompt.contains(
+                    QStringLiteral("학생이름%1")
+                        .arg(index + 1)
+                    )
+                );
+        }
+    }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchResponseParserHandlesPartialAndMalformedBlocks()
+{
+    const QString response =
+        QStringLiteral(
+            "The requested comments follow.\n"
+            "```text\n"
+            "<<<STUDENT_02>>>\n"
+            "Great work, STD_NAME.\n"
+            "<<<END_STUDENT_02>>>\n"
+            "<<<STUDENT_01>>>\n"
+            "First duplicate.\n"
+            "<<<END_STUDENT_01>>>\n"
+            "<<<STUDENT_99>>>\n"
+            "Unknown student.\n"
+            "<<<END_STUDENT_99>>>\n"
+            "<<<STUDENT_01>>>\n"
+            "Second duplicate.\n"
+            "<<<END_STUDENT_01>>>\n"
+            "<<<STUDENT_03>>>\n"
+            "This block is truncated.\n"
+            "```"
+            );
+
+    const SpeakingEvalAiBatchParseResult result =
+        parseSpeakingEvalAiBatchResponse(
+            response,
+            {
+                QStringLiteral("STUDENT_01"),
+                QStringLiteral("STUDENT_02"),
+                QStringLiteral("STUDENT_03"),
+                QStringLiteral("STUDENT_04")
+            }
+            );
+
+    QCOMPARE(result.comments.size(), 1);
+    QCOMPARE(
+        result.comments.first().id,
+        QStringLiteral("STUDENT_02")
+        );
+    QCOMPARE(
+        result.comments.first().comment,
+        QStringLiteral("Great work, STD_NAME.")
+        );
+    QVERIFY(result.comments.first().hadNamePlaceholder);
+    QCOMPARE(
+        result.duplicateIds,
+        QStringList{ QStringLiteral("STUDENT_01") }
+        );
+    QCOMPARE(
+        result.malformedIds,
+        QStringList{ QStringLiteral("STUDENT_03") }
+        );
+    QCOMPARE(
+        result.unknownIds,
+        QStringList{ QStringLiteral("STUDENT_99") }
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchDialogSelectsEligibleStudentsAndReviewsValidComments()
+{
+    SpeakingEvalReportData ready;
+    ready.englishName = QStringLiteral("Alice");
+    ready.grade = 5;
+    ready.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nAdd supporting details"
+            );
+
+    SpeakingEvalReportData existing = ready;
+    existing.englishName = QStringLiteral("Bob");
+    existing.comments = QStringLiteral("Existing comment");
+
+    SpeakingEvalReportData missingNotes = ready;
+    missingNotes.englishName = QStringLiteral("Carol");
+    missingNotes.notes =
+        QStringLiteral("[Did Well]\n\n[Needs Improvement]\nPractice fluency");
+
+    SpeakingEvalReportData unsupportedGrade = ready;
+    unsupportedGrade.englishName = QStringLiteral("David");
+    unsupportedGrade.grade = 0;
+
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            { QStringLiteral("Alice"), ready, 0 },
+            { QStringLiteral("Bob"), existing, 1 },
+            { QStringLiteral("Carol"), missingNotes, 2 },
+            { QStringLiteral("David"), unsupportedGrade, 3 }
+        }
+        );
+
+    auto* selection =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable")
+            );
+    auto* createPromptButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt")
+            );
+    auto* promptEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt")
+            );
+    auto* responseEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse")
+            );
+    auto* parseButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse")
+            );
+    auto* review =
+        dialog.findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable")
+            );
+    auto* applyButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply")
+            );
+
+    QVERIFY(selection);
+    QVERIFY(createPromptButton);
+    QVERIFY(promptEdit);
+    QVERIFY(responseEdit);
+    QVERIFY(parseButton);
+    QVERIFY(review);
+    QVERIFY(applyButton);
+    QCOMPARE(selection->rowCount(), 4);
+    QCOMPARE(selection->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(selection->item(1, 0)->checkState(), Qt::Unchecked);
+    QVERIFY(selection->item(1, 0)->flags() & Qt::ItemIsEnabled);
+    QVERIFY(!(selection->item(2, 0)->flags() & Qt::ItemIsEnabled));
+    QVERIFY(!(selection->item(3, 0)->flags() & Qt::ItemIsEnabled));
+
+    createPromptButton->click();
+    QVERIFY(
+        promptEdit->toPlainText().contains(
+            QStringLiteral("Student ID: STUDENT_01")
+            )
+        );
+    QVERIFY(
+        !promptEdit->toPlainText().contains(
+            QStringLiteral("Alice")
+            )
+        );
+
+    responseEdit->setPlainText(
+        QStringLiteral(
+            "<<<STUDENT_01>>>\n"
+            "STD_NAME spoke clearly and used strong vocabulary. "
+            "Keep adding supporting details and practice difficult sounds. "
+            "Your eye contact and confident voice made the presentation "
+            "engaging.\n"
+            "<<<END_STUDENT_01>>>"
+            )
+        );
+    QVERIFY(parseButton->isEnabled());
+    parseButton->click();
+
+    QCOMPARE(review->rowCount(), 1);
+    QCOMPARE(review->item(0, 0)->checkState(), Qt::Checked);
+    QCOMPARE(
+        review->item(0, 2)->text(),
+        QStringLiteral("Ready")
+        );
+    QVERIFY(
+        review->item(0, 4)->text().startsWith(
+            QStringLiteral("Alice spoke clearly")
+            )
+        );
+    QVERIFY(applyButton->isEnabled());
+
+    applyButton->click();
+    QCOMPARE(dialog.result(), static_cast<int>(QDialog::Accepted));
+    QCOMPARE(dialog.acceptedComments().size(), 1);
+    QCOMPARE(dialog.acceptedComments().first().sourceRow, 0);
+    QVERIFY(
+        dialog.acceptedComments().first().newComment.contains(
+            QStringLiteral("Alice")
+            )
+        );
+    QVERIFY(
+        !dialog.acceptedComments().first().newComment.contains(
+            QStringLiteral("STD_NAME")
+            )
+        );
+
+    SpeakingEvalRows rows =
+        SpeakingEval::emptyRows();
+    rows[0][SpeakingEval::toInt(
+        SpeakingEvalColumn::EnglishName
+        )] = QStringLiteral("Alice");
+    SpeakingEvalModel model;
+    model.loadData(rows);
+    SpeakingEvalTableView table;
+    QUndoStack undoStack;
+    table.setModel(&model);
+    table.setUndoStack(&undoStack);
+    QSignalSpy modifiedSpy(
+        &model,
+        &SpeakingEvalModel::dataModified
+        );
+
+    const SpeakingEvalAiBatchAcceptedComment accepted =
+        dialog.acceptedComments().first();
+    table.applyChanges(
+        {
+            {
+                accepted.sourceRow,
+                SpeakingEval::toInt(
+                    SpeakingEvalColumn::Comments
+                    ),
+                accepted.oldComment,
+                accepted.newComment
+            }
+        },
+        QStringLiteral("Apply AI Comments")
+        );
+    QCOMPARE(undoStack.count(), 1);
+    QCOMPARE(
+        model.rows()
+            .at(0)
+            .at(
+                SpeakingEval::toInt(
+                    SpeakingEvalColumn::Comments
+                    )
+                ),
+        accepted.newComment
+        );
+    QVERIFY(!modifiedSpy.isEmpty());
+
+    undoStack.undo();
+    QCOMPARE(
+        model.rows()
+            .at(0)
+            .at(
+                SpeakingEval::toInt(
+                    SpeakingEvalColumn::Comments
+                    )
+                ),
+        QString()
         );
 }
 

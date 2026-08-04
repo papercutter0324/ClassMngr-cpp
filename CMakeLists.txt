@@ -2421,6 +2421,7 @@ if(BUILD_TESTING)
         src/core/updater/version.cpp
         src/features/speaking_eval/services/speaking_eval_ai_prompt.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_delegate.cpp
         src/features/speaking_eval/ui/speaking_eval_model.cpp

@@ -5347,7 +5347,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+107"/>
         <source>Duplicate Student Names</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5358,8 +5358,8 @@ Rm: %1</source>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_columns.cpp" line="+16"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+80"/>
-        <location line="+132"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+90"/>
+        <location line="+145"/>
         <source>Add Column</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5380,8 +5380,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-127"/>
-        <location line="+128"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-140"/>
+        <location line="+141"/>
         <source>Remove Column</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5394,8 +5394,8 @@ Rm: %1</source>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_import_print.cpp" line="+41"/>
         <location line="+89"/>
         <location line="+10"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-147"/>
-        <location line="+139"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-168"/>
+        <location line="+152"/>
         <source>Import Scores</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5416,8 +5416,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+51"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-131"/>
-        <location line="+136"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-144"/>
+        <location line="+149"/>
         <source>Print Rosters</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5489,7 +5489,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+37"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+94"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+116"/>
         <source>Class %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5526,44 +5526,44 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-236"/>
-        <location line="+140"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-271"/>
+        <location line="+153"/>
         <source>Import final grades from speaking evaluations.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-133"/>
-        <location line="+136"/>
+        <location line="-146"/>
+        <location line="+149"/>
         <source>Print rosters as an A4 PDF.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="82"/>
+        <location line="-144"/>
         <location line="+147"/>
         <source>Korean Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="84"/>
+        <location line="-145"/>
         <location line="+149"/>
         <source>Open Korean typing website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="100"/>
+        <location line="-133"/>
         <location line="+137"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-71"/>
-        <location line="+140"/>
+        <location line="-79"/>
+        <location line="+162"/>
         <source>Class Roster</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-131"/>
-        <location line="+135"/>
+        <location line="-153"/>
+        <location line="+157"/>
         <source>No class selected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6934,6 +6934,212 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
 </context>
 <context>
+    <name>SpeakingEvalAiBatchDialog</name>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp" line="+190"/>
+        <source>Student name is missing.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>AI comments are available for grades E4 through E6.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Add at least one Did Well note.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Add at least one Needs Improvement note.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>AI Comments for Class</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Create one anonymized prompt for multiple students, then paste the AI response back to review before applying.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Select students. Eligible students without comments are selected automatically.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Include</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+212"/>
+        <source>Student</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-211"/>
+        <location line="+212"/>
+        <source>Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-135"/>
+        <source>Existing comment — select to regenerate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+666"/>
+        <source>Ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-659"/>
+        <source>Create Class Prompt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Real student names are removed from the prompt and are restored locally after the response is pasted.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Select students and create the class prompt.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Copy Prompt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Copy Prompt and Open %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>1. Create Prompt</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Paste the complete AI response below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Paste the response containing the STUDENT blocks here…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Parse Response</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Apply</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>2. Paste and Review</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Apply Selected Comments</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+244"/>
+        <source>Unable to Open AI Website</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The AI website could not be opened. The prompt is still available on the clipboard.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+86"/>
+        <source>Duplicate response blocks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Malformed response block</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Missing response block</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>%1 of %2 selected students were parsed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unknown IDs were ignored: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>No comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Too long — maximum %1 characters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>outside preferred length</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>name placeholder was omitted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Ready — %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+117"/>
+        <source>Replace Existing Comments?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 existing comment(s) will be replaced. Do you want to continue?</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SpeakingEvalBatchExportDialog</name>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-348"/>
@@ -7285,26 +7491,26 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
 <context>
     <name>SpeakingEvalPage</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="96"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="219"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+98"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+220"/>
         <source>Korean Keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="99"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
+        <location line="+3"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
         <source>Open Korean typing website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+46"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+152"/>
+        <location line="-54"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-73"/>
         <source>No classes available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+26"/>
-        <location line="+63"/>
+        <location line="+64"/>
         <location line="+19"/>
         <location line="+16"/>
         <location line="+10"/>
@@ -7314,7 +7520,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-113"/>
+        <location line="-114"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+13"/>
         <source>New Report</source>
         <translation type="unfinished"></translation>
@@ -7326,8 +7532,14 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+12"/>
+        <location line="+1"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
+        <source>AI Comments for Class…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+48"/>
         <source>Save Changes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7359,6 +7571,11 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="+1"/>
         <source>Select a class to create reports.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+139"/>
+        <source>Apply AI Comments</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7477,14 +7694,14 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-204"/>
-        <location line="+369"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-205"/>
+        <location line="+379"/>
         <source>Speaking Evaluation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-355"/>
-        <location line="+362"/>
+        <location line="-365"/>
+        <location line="+372"/>
         <source>No class selected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7607,7 +7824,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+248"/>
+        <location line="+252"/>
         <source>Select a student to create an AI prompt.</source>
         <translation type="unfinished"></translation>
     </message>

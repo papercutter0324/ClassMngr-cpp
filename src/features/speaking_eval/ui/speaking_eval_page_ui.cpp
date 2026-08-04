@@ -185,7 +185,8 @@ void SpeakingEvalPage::buildUi()
 
     const QList<QString> reportLabels{
         tr("New Report"),
-        tr("Print Reports")
+        tr("Print Reports"),
+        tr("AI Comments for Class…")
     };
 
     m_reportButtons.clear();
@@ -206,7 +207,7 @@ void SpeakingEvalPage::buildUi()
         bottomLayout()->addWidget(button);
         m_reportButtons.append(button);
 
-        if (index == 1)
+        if (index == 2)
         {
             bottomLayout()->addSpacing(20);
         }
@@ -268,6 +269,15 @@ void SpeakingEvalPage::buildUi()
             &QPushButton::clicked,
             this,
             &SpeakingEvalPage::exportReports
+            );
+    }
+    if (m_reportButtons.size() > 2)
+    {
+        connect(
+            m_reportButtons.at(2),
+            &QPushButton::clicked,
+            this,
+            &SpeakingEvalPage::generateClassAiComments
             );
     }
 

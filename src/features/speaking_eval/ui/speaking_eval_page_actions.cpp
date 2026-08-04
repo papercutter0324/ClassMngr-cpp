@@ -1,6 +1,7 @@
 #include "speaking_eval_page_p.h"
 
 #include "features/my_info/data/personal_details_repository.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 
 void SpeakingEvalPage::refresh()
 {
@@ -75,7 +76,8 @@ void SpeakingEvalPage::retranslateUi()
 
     const QList<QString> reportLabels{
         tr("New Report"),
-        tr("Print Reports")
+        tr("Print Reports"),
+        tr("AI Comments for Class…")
     };
 
     for (
@@ -349,6 +351,74 @@ void SpeakingEvalPage::showReports()
         );
 
     dialog.exec();
+}
+
+void SpeakingEvalPage::generateClassAiComments()
+{
+    if (!m_model || !m_table || m_classroom.id <= 0)
+    {
+        return;
+    }
+
+    ClassInfo classInfo;
+    if (m_services && m_services->dataService())
+    {
+        classInfo =
+            m_services
+                ->dataService()
+                ->loadClassInfo(
+                    m_classroom.id
+                    );
+    }
+
+    const QList<SpeakingEvalBatchReportService::StudentReport> reports =
+        buildSpeakingEvalStudentReports(
+            m_model->rows(),
+            classInfo
+            );
+    if (reports.isEmpty())
+    {
+        return;
+    }
+
+    SpeakingEvalAiBatchDialog dialog(
+        reports,
+        this
+        );
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    QList<SpeakingEvalCellEdit> changes;
+    for (
+        const SpeakingEvalAiBatchAcceptedComment& comment :
+        dialog.acceptedComments()
+        )
+    {
+        if (
+            comment.sourceRow < 0
+            || comment.sourceRow >= m_model->rowCount()
+            )
+        {
+            continue;
+        }
+        changes.append(
+            {
+                comment.sourceRow,
+                SpeakingEval::toInt(
+                    SpeakingEvalColumn::Comments
+                    ),
+                comment.oldComment,
+                comment.newComment
+            }
+            );
+    }
+
+    m_table->applyChanges(
+        changes,
+        tr("Apply AI Comments")
+        );
 }
 
 void SpeakingEvalPage::exportReports()

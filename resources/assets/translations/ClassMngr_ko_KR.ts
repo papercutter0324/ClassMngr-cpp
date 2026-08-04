@@ -5619,7 +5619,7 @@ Rm: %1</source>
         <translation>이 명단에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+107"/>
         <source>Duplicate Student Names</source>
         <translation>중복 학생 이름</translation>
     </message>
@@ -5630,8 +5630,8 @@ Rm: %1</source>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_columns.cpp" line="+16"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+80"/>
-        <location line="+132"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+90"/>
+        <location line="+145"/>
         <source>Add Column</source>
         <translation>열 추가</translation>
     </message>
@@ -5652,8 +5652,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-127"/>
-        <location line="+128"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-140"/>
+        <location line="+141"/>
         <source>Remove Column</source>
         <translation>열 제거</translation>
     </message>
@@ -5666,8 +5666,8 @@ Rm: %1</source>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_import_print.cpp" line="+41"/>
         <location line="+89"/>
         <location line="+10"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-147"/>
-        <location line="+139"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-168"/>
+        <location line="+152"/>
         <source>Import Scores</source>
         <translation>점수 가져오기</translation>
     </message>
@@ -5688,49 +5688,49 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+51"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-131"/>
-        <location line="+136"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-144"/>
+        <location line="+149"/>
         <source>Print Rosters</source>
         <translation>명단 인쇄</translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-67"/>
-        <location line="+140"/>
+        <location line="+162"/>
         <source>Class Roster</source>
         <translation>수업 명단</translation>
     </message>
     <message>
-        <location line="-131"/>
-        <location line="+135"/>
+        <location line="-153"/>
+        <location line="+157"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location line="-219"/>
-        <location line="+140"/>
+        <location line="-254"/>
+        <location line="+153"/>
         <source>Import final grades from speaking evaluations.</source>
         <translation>말하기 평가에서 최종 성적을 가져옵니다.</translation>
     </message>
     <message>
-        <location line="-133"/>
-        <location line="+136"/>
+        <location line="-146"/>
+        <location line="+149"/>
         <source>Print rosters as an A4 PDF.</source>
         <translation>명단을 A4 PDF로 인쇄합니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="82"/>
+        <location line="-144"/>
         <location line="+147"/>
         <source>Korean Keyboard</source>
         <translation>한국어 키보드</translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="84"/>
+        <location line="-145"/>
         <location line="+149"/>
         <source>Open Korean typing website</source>
         <translation>한국어 입력 웹사이트 열기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="100"/>
+        <location line="-133"/>
         <location line="+137"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
@@ -5742,7 +5742,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+37"/>
-        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+90"/>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="+104"/>
         <source>Class %1</source>
         <translation>수업 %1</translation>
     </message>
@@ -7484,6 +7484,212 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
 </context>
 <context>
+    <name>SpeakingEvalAiBatchDialog</name>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp" line="+190"/>
+        <source>Student name is missing.</source>
+        <translation>학생 이름이 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>AI comments are available for grades E4 through E6.</source>
+        <translation>AI 코멘트는 E4~E6 학년에서 사용할 수 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Add at least one Did Well note.</source>
+        <translation>잘한 점 메모를 하나 이상 추가하세요.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Add at least one Needs Improvement note.</source>
+        <translation>개선할 점 메모를 하나 이상 추가하세요.</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>AI Comments for Class</source>
+        <translation>반 전체 AI 코멘트</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Create one anonymized prompt for multiple students, then paste the AI response back to review before applying.</source>
+        <translation>여러 학생을 위한 익명 프롬프트를 하나 만든 다음, AI 응답을 붙여 넣고 검토한 후 적용합니다.</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Select students. Eligible students without comments are selected automatically.</source>
+        <translation>학생을 선택하세요. 코멘트가 없는 대상 학생은 자동으로 선택됩니다.</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Include</source>
+        <translation>포함</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+212"/>
+        <source>Student</source>
+        <translation>학생</translation>
+    </message>
+    <message>
+        <location line="-211"/>
+        <location line="+212"/>
+        <source>Status</source>
+        <translation>상태</translation>
+    </message>
+    <message>
+        <location line="-135"/>
+        <source>Existing comment — select to regenerate</source>
+        <translation>기존 코멘트 있음 — 다시 생성하려면 선택</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+666"/>
+        <source>Ready</source>
+        <translation>준비됨</translation>
+    </message>
+    <message>
+        <location line="-659"/>
+        <source>Create Class Prompt</source>
+        <translation>반 전체 프롬프트 만들기</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Real student names are removed from the prompt and are restored locally after the response is pasted.</source>
+        <translation>실제 학생 이름은 프롬프트에서 제거되며 응답을 붙여 넣으면 기기에서 다시 복원됩니다.</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Select students and create the class prompt.</source>
+        <translation>학생을 선택하고 반 전체 프롬프트를 만드세요.</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Copy Prompt</source>
+        <translation>프롬프트 복사</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Copy Prompt and Open %1</source>
+        <translation>프롬프트 복사 후 %1 열기</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>1. Create Prompt</source>
+        <translation>1. 프롬프트 만들기</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>Paste the complete AI response below.</source>
+        <translation>아래에 전체 AI 응답을 붙여 넣으세요.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Paste the response containing the STUDENT blocks here…</source>
+        <translation>STUDENT 블록이 포함된 응답을 여기에 붙여 넣으세요…</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Parse Response</source>
+        <translation>응답 분석</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Apply</source>
+        <translation>적용</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Characters</source>
+        <translation>글자 수</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Comment</source>
+        <translation>코멘트</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>2. Paste and Review</source>
+        <translation>2. 붙여 넣기 및 검토</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Apply Selected Comments</source>
+        <translation>선택한 코멘트 적용</translation>
+    </message>
+    <message>
+        <location line="+244"/>
+        <source>Unable to Open AI Website</source>
+        <translation>AI 웹사이트를 열 수 없음</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The AI website could not be opened. The prompt is still available on the clipboard.</source>
+        <translation>AI 웹사이트를 열 수 없습니다. 프롬프트는 클립보드에 복사되어 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+86"/>
+        <source>Duplicate response blocks</source>
+        <translation>응답 블록이 중복됨</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Malformed response block</source>
+        <translation>응답 블록 형식이 잘못됨</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Missing response block</source>
+        <translation>응답 블록이 없음</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>%1 of %2 selected students were parsed.</source>
+        <translation>선택한 학생 %2명 중 %1명의 응답을 분석했습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unknown IDs were ignored: %1</source>
+        <translation>알 수 없는 ID는 무시되었습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>No comment</source>
+        <translation>코멘트 없음</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Too long — maximum %1 characters</source>
+        <translation>너무 깁니다 — 최대 %1자</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>outside preferred length</source>
+        <translation>권장 길이 범위 밖</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>name placeholder was omitted</source>
+        <translation>이름 자리표시자가 누락됨</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Ready — %1</source>
+        <translation>준비됨 — %1</translation>
+    </message>
+    <message>
+        <location line="+117"/>
+        <source>Replace Existing Comments?</source>
+        <translation>기존 코멘트를 바꾸시겠습니까?</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 existing comment(s) will be replaced. Do you want to continue?</source>
+        <translation>기존 코멘트 %1개가 바뀝니다. 계속하시겠습니까?</translation>
+    </message>
+</context>
+<context>
     <name>SpeakingEvalAiPromptPreviewDialog</name>
     <message>
         <source>Close</source>
@@ -7868,25 +8074,25 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
 <context>
     <name>SpeakingEvalPage</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="96"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="219"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+98"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+220"/>
         <source>Korean Keyboard</source>
         <translation>한국어 키보드</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="99"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
+        <location line="+3"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
         <source>Open Korean typing website</source>
         <translation>한국어 입력 웹사이트 열기</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+46"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+152"/>
+        <location line="-54"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-73"/>
         <source>No classes available</source>
         <translation>사용 가능한 수업이 없습니다</translation>
     </message>
     <message>
-        <location line="+232"/>
+        <location line="+233"/>
         <source>Import or enter a student name to create reports.</source>
         <translation>보고서를 만들려면 학생 이름을 가져오거나 입력하세요.</translation>
     </message>
@@ -7936,8 +8142,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>말하기 평가가 저장되었습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-207"/>
-        <location line="+63"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-208"/>
+        <location line="+64"/>
         <location line="+19"/>
         <location line="+16"/>
         <location line="+10"/>
@@ -7947,10 +8153,16 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>이름 가져오기</translation>
     </message>
     <message>
-        <location line="-112"/>
+        <location line="-113"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+14"/>
         <source>Print Reports</source>
         <translation>보고서 인쇄</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
+        <source>AI Comments for Class…</source>
+        <translation>반 전체 AI 코멘트…</translation>
     </message>
     <message>
         <location line="+58"/>
@@ -7973,31 +8185,36 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>명단 이름을 성공적으로 가져왔습니다.</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-156"/>
-        <location line="+369"/>
+        <location line="+227"/>
+        <source>Apply AI Comments</source>
+        <translation>AI 코멘트 적용</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-157"/>
+        <location line="+379"/>
         <source>Speaking Evaluation</source>
         <translation>말하기 평가</translation>
     </message>
     <message>
-        <location line="-355"/>
-        <location line="+362"/>
+        <location line="-365"/>
+        <location line="+372"/>
         <source>No class selected</source>
         <translation>선택한 수업 없음</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-114"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-221"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-342"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-231"/>
         <source>New Report</source>
         <translation>새 보고서</translation>
     </message>
     <message>
-        <location line="+7"/>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+12"/>
+        <location line="+30"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+50"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+166"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+175"/>
         <source>%1 Speaking Evaluation</source>
         <translation>%1 말하기 평가</translation>
     </message>
@@ -8194,7 +8411,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>사용 가능한 학생 없음</translation>
     </message>
     <message>
-        <location line="+248"/>
+        <location line="+252"/>
         <source>Select a student to create an AI prompt.</source>
         <translation type="unfinished"></translation>
     </message>
