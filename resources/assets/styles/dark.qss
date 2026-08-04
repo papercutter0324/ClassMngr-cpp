@@ -66,8 +66,8 @@ QLabel[role="section_header_center"] {
 }
 
 QLabel#signatureImagePreview {
-    background-color: #292929;
-    color: #a8b0bd;
+    background-color: #ffffff;
+    color: #66727a;
     border: 1px dashed #606770;
     border-radius: 6px;
 }
