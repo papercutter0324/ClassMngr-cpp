@@ -712,7 +712,7 @@ void SpeakingEvalBatchReportServiceTests::
         editedValue,
         QStringLiteral(
             "[Did Well]\n• Clear pronunciation\n"
-            "[Needs Improvement]\nUse complete sentences"
+            "[Needs Improvement]\n• Use complete sentences"
             )
         );
 }
@@ -733,7 +733,11 @@ void SpeakingEvalBatchReportServiceTests::
     auto* didWellEdit = dialog.findChild<QPlainTextEdit*>(
         QStringLiteral("speakingEvalDidWellNotes")
         );
+    auto* needsImprovementEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNeedsImprovementNotes")
+        );
     QVERIFY(didWellEdit);
+    QVERIFY(needsImprovementEdit);
 
     didWellEdit->setFocus();
     QTest::keyClicks(
@@ -751,6 +755,25 @@ void SpeakingEvalBatchReportServiceTests::
         QStringLiteral(
             "• Strong voice\n"
             "• Clear pronunciation"
+            )
+        );
+
+    needsImprovementEdit->setFocus();
+    QTest::keyClicks(
+        needsImprovementEdit,
+        QStringLiteral("Use longer answers")
+        );
+    QTest::keyClick(needsImprovementEdit, Qt::Key_Return);
+    QTest::keyClicks(
+        needsImprovementEdit,
+        QStringLiteral("Add more detail")
+        );
+
+    QCOMPARE(
+        needsImprovementEdit->toPlainText(),
+        QStringLiteral(
+            "• Use longer answers\n"
+            "• Add more detail"
             )
         );
 }

@@ -345,10 +345,14 @@ QString SpeakingEvalPrivateNotesEditor::notes() const
 {
     return joinPrivateNotes(
         m_didWellEdit
-            ? m_didWellEdit->toPlainText()
+            ? bulletListText(
+                m_didWellEdit->toPlainText()
+                )
             : QString(),
         m_needsImprovementEdit
-            ? m_needsImprovementEdit->toPlainText()
+            ? bulletListText(
+                m_needsImprovementEdit->toPlainText()
+                )
             : QString()
         );
 }
