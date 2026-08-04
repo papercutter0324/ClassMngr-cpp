@@ -1,4 +1,5 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 
@@ -10,11 +11,15 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QPdfDocument>
 #include <QPainter>
 #include <QPdfSelection>
 #include <QProcess>
+#include <QPlainTextEdit>
 #include <QPushButton>
+#include <QRegularExpression>
+#include <QScrollArea>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 
@@ -202,6 +207,11 @@ private slots:
     void singleReportCanBeSavedToAnExactFilePath();
     void overwriteExistingReportWhenAllowed();
     void previewDialogOffersActionsForTheSelectedReport();
+    void selectedSourceRowMapsToItsFilteredReport();
+    void previewDialogOnlyScrollsTheReport();
+    void privateNotesAreSplitAndSaved();
+    void privateNotesAutomaticallyContinueBullets();
+    void notesDialogShowsNotesBesideEachOtherAndCommentBelow();
     void powerPointAvailabilityMessageIsAvailable();
     void mixedPowerPointTemplatesAreRejected();
     void generatedAssetsMatchSvgSourcesWhenEnabled();
@@ -559,6 +569,233 @@ void SpeakingEvalBatchReportServiceTests::
     QVERIFY(saveAsPdfButton);
     QCOMPARE(saveAsPdfButton->text(), QStringLiteral("Save As PDF"));
     QVERIFY(saveAsPdfButton->isEnabled());
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    selectedSourceRowMapsToItsFilteredReport()
+{
+    SpeakingEvalRows rows(4);
+    rows[0].resize(SpeakingEval::ColumnCount);
+    rows[1].resize(SpeakingEval::ColumnCount);
+    rows[2].resize(SpeakingEval::ColumnCount);
+    rows[3].resize(SpeakingEval::ColumnCount);
+    rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("First Student");
+    rows[2][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Selected Student");
+    rows[3][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("마지막 학생");
+
+    const auto reports =
+        buildSpeakingEvalStudentReports(rows, {});
+
+    QCOMPARE(reports.size(), 3);
+    QCOMPARE(speakingEvalReportIndexForSourceRow(reports, 2), 1);
+    QCOMPARE(speakingEvalReportIndexForSourceRow(reports, 1), -1);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    previewDialogOnlyScrollsTheReport()
+{
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Student");
+
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Student"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* scrollArea = dialog.findChild<QScrollArea*>();
+    auto* report = dialog.findChild<SpeakingEvalReportWidget*>();
+    auto* studentSelector = dialog.findChild<QComboBox*>(
+        QStringLiteral("speakingEvalReportStudentSelector")
+        );
+
+    QVERIFY(scrollArea);
+    QVERIFY(report);
+    QCOMPARE(scrollArea->widget(), report);
+    QVERIFY(studentSelector);
+    QVERIFY(!scrollArea->isAncestorOf(studentSelector));
+    const auto notesEdits = dialog.findChildren<QPlainTextEdit*>(
+        QRegularExpression(
+            QStringLiteral("speakingEval(DidWell|NeedsImprovement)Notes")
+            )
+        );
+    QCOMPARE(notesEdits.size(), 2);
+    for (QPlainTextEdit* notesEdit : notesEdits)
+    {
+        QVERIFY(!scrollArea->isAncestorOf(notesEdit));
+        QCOMPARE(notesEdit->height(), 144);
+    }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    privateNotesAreSplitAndSaved()
+{
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Student");
+    reportData.notes =
+        QStringLiteral(
+            "[Did Well]\nClear pronunciation\n"
+            "[Needs Improvement]\nUse longer answers"
+            );
+
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Student"), reportData, 4 } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* notesFields = dialog.findChild<QWidget*>(
+        QStringLiteral("speakingEvalPrivateNotesFields")
+        );
+    auto* didWellEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalDidWellNotes")
+        );
+    auto* needsImprovementEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNeedsImprovementNotes")
+        );
+
+    QVERIFY(notesFields);
+    QVERIFY(qobject_cast<QHBoxLayout*>(notesFields->layout()));
+    QVERIFY(didWellEdit);
+    QCOMPARE(
+        didWellEdit->toPlainText(),
+        QStringLiteral("• Clear pronunciation")
+        );
+    QVERIFY(needsImprovementEdit);
+    QCOMPARE(
+        needsImprovementEdit->toPlainText(),
+        QStringLiteral("• Use longer answers")
+        );
+
+    int editedRow = -1;
+    SpeakingEvalColumn editedColumn = SpeakingEvalColumn::Index;
+    QString editedValue;
+    connect(
+        &dialog,
+        &SpeakingEvalReportDialog::reportValueEdited,
+        &dialog,
+        [&](int row, SpeakingEvalColumn column, const QString& value)
+        {
+            editedRow = row;
+            editedColumn = column;
+            editedValue = value;
+        }
+        );
+
+    needsImprovementEdit->setPlainText(
+        QStringLiteral("Use complete sentences")
+        );
+
+    QCOMPARE(editedRow, 4);
+    QCOMPARE(editedColumn, SpeakingEvalColumn::Notes);
+    QCOMPARE(
+        editedValue,
+        QStringLiteral(
+            "[Did Well]\n• Clear pronunciation\n"
+            "[Needs Improvement]\nUse complete sentences"
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    privateNotesAutomaticallyContinueBullets()
+{
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Student");
+
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Student"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* didWellEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalDidWellNotes")
+        );
+    QVERIFY(didWellEdit);
+
+    didWellEdit->setFocus();
+    QTest::keyClicks(
+        didWellEdit,
+        QStringLiteral("Strong voice")
+        );
+    QTest::keyClick(didWellEdit, Qt::Key_Return);
+    QTest::keyClicks(
+        didWellEdit,
+        QStringLiteral("Clear pronunciation")
+        );
+
+    QCOMPARE(
+        didWellEdit->toPlainText(),
+        QStringLiteral(
+            "• Strong voice\n"
+            "• Clear pronunciation"
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    notesDialogShowsNotesBesideEachOtherAndCommentBelow()
+{
+    SpeakingEvalNotesDialog dialog(
+        QStringLiteral(
+            "[Did Well]\nStrong voice\n"
+            "[Needs Improvement]\nUse complete sentences"
+            ),
+        QStringLiteral("The report comment.")
+        );
+
+    auto* notesFields = dialog.findChild<QWidget*>(
+        QStringLiteral("speakingEvalPrivateNotesFields")
+        );
+    auto* didWellEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalDidWellNotes")
+        );
+    auto* needsImprovementEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNeedsImprovementNotes")
+        );
+    auto* commentEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNotesDialogComment")
+        );
+
+    QVERIFY(notesFields);
+    QVERIFY(qobject_cast<QHBoxLayout*>(notesFields->layout()));
+    QVERIFY(didWellEdit);
+    QVERIFY(needsImprovementEdit);
+    QCOMPARE(didWellEdit->height(), 144);
+    QCOMPARE(needsImprovementEdit->height(), 144);
+    QCOMPARE(
+        didWellEdit->toPlainText(),
+        QStringLiteral("• Strong voice")
+        );
+    QCOMPARE(
+        needsImprovementEdit->toPlainText(),
+        QStringLiteral("• Use complete sentences")
+        );
+    QVERIFY(commentEdit);
+    QCOMPARE(
+        commentEdit->toPlainText(),
+        QStringLiteral("The report comment.")
+        );
+
+    dialog.show();
+    QApplication::processEvents();
+    QVERIFY(commentEdit->width() > didWellEdit->width());
+    QVERIFY(commentEdit->y() > notesFields->y());
+
+    commentEdit->setPlainText(
+        QStringLiteral("Updated report comment.")
+        );
+    QCOMPARE(
+        dialog.comment(),
+        QStringLiteral("Updated report comment.")
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailable()

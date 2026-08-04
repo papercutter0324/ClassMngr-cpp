@@ -9,7 +9,7 @@
 class QComboBox;
 class QDate;
 class QLabel;
-class QPlainTextEdit;
+class SpeakingEvalPrivateNotesEditor;
 
 [[nodiscard]] QString speakingEvalReportDate(
     const QDate& date,
@@ -21,6 +21,11 @@ buildSpeakingEvalStudentReports(
     const SpeakingEvalRows& rows,
     const ClassInfo& classInfo,
     const QByteArray& signatureImage = {}
+    );
+
+[[nodiscard]] int speakingEvalReportIndexForSourceRow(
+    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
+    int sourceRow
     );
 
 class SpeakingEvalReportDialog : public QDialog
@@ -65,6 +70,8 @@ private:
 
     void moveToNextStudent();
 
+    void updatePrivateNotes();
+
     void printCurrentReport();
 
     void saveCurrentReportAsPdf();
@@ -73,7 +80,7 @@ private:
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     QComboBox* m_studentSelector = nullptr;
     QLabel* m_notesLabel = nullptr;
-    QPlainTextEdit* m_notesEdit = nullptr;
+    SpeakingEvalPrivateNotesEditor* m_notesFields = nullptr;
     SpeakingEvalReportWidget* m_report = nullptr;
     bool m_interactive = false;
 };

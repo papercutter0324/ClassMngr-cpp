@@ -51,4 +51,9 @@ private:
         QAbstractItemModel* model,
         const QModelIndex& index
         ) const;
+
+    bool showNotesDialog(
+        QAbstractItemModel* model,
+        const QModelIndex& index
+        ) const;
 };

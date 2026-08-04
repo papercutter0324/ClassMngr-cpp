@@ -5,6 +5,7 @@
 #include "core/fontmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 
 #include <QComboBox>
@@ -219,7 +220,10 @@ QWidget* SpeakingEvalDelegate::createEditor(
             index.column()
             );
 
-    if (column == SpeakingEvalColumn::Comments)
+    if (
+        column == SpeakingEvalColumn::Comments
+        || column == SpeakingEvalColumn::Notes
+        )
     {
         return nullptr;
     }
@@ -363,7 +367,10 @@ bool SpeakingEvalDelegate::editorEvent(
             index.column()
             );
 
-    if (column != SpeakingEvalColumn::Comments)
+    if (
+        column != SpeakingEvalColumn::Comments
+        && column != SpeakingEvalColumn::Notes
+        )
     {
         return QStyledItemDelegate::editorEvent(
             event,
@@ -386,10 +393,9 @@ bool SpeakingEvalDelegate::editorEvent(
         return false;
     }
 
-    return showCommentDialog(
-        model,
-        index
-        );
+    return column == SpeakingEvalColumn::Notes
+        ? showNotesDialog(model, index)
+        : showCommentDialog(model, index);
 }
 
 void SpeakingEvalDelegate::paint(
@@ -716,6 +722,100 @@ bool SpeakingEvalDelegate::showCommentDialog(
             newValue,
             Qt::EditRole
             );
+    }
+
+    return true;
+}
+
+bool SpeakingEvalDelegate::showNotesDialog(
+    QAbstractItemModel* model,
+    const QModelIndex& index
+    ) const
+{
+    if (!model || !index.isValid())
+    {
+        return false;
+    }
+
+    const QModelIndex notesIndex =
+        model->index(
+            index.row(),
+            SpeakingEval::toInt(SpeakingEvalColumn::Notes)
+            );
+    const QModelIndex commentsIndex =
+        model->index(
+            index.row(),
+            SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+            );
+    if (!notesIndex.isValid() || !commentsIndex.isValid())
+    {
+        return false;
+    }
+
+    SpeakingEvalNotesDialog dialog(
+        notesIndex.data(Qt::EditRole).toString(),
+        commentsIndex.data(Qt::EditRole).toString(),
+        qobject_cast<QWidget*>(parent())
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return true;
+    }
+
+    QList<SpeakingEvalCellEdit> changes;
+
+    const auto addChange =
+        [&changes](
+            const QModelIndex& changedIndex,
+            const QString& newValue
+            )
+        {
+            const QString oldValue =
+                changedIndex.data(Qt::EditRole).toString();
+            if (oldValue == newValue)
+            {
+                return;
+            }
+
+            changes.append(
+                {
+                    changedIndex.row(),
+                    changedIndex.column(),
+                    oldValue,
+                    newValue
+                }
+                );
+        };
+
+    addChange(notesIndex, dialog.notes());
+    addChange(commentsIndex, dialog.comment());
+
+    if (changes.isEmpty())
+    {
+        return true;
+    }
+
+    if (
+        auto* table =
+            qobject_cast<SpeakingEvalTableView*>(parent())
+        )
+    {
+        table->applyChanges(
+            changes,
+            tr("Edit Notes and Comment")
+            );
+    }
+    else
+    {
+        for (const SpeakingEvalCellEdit& change : changes)
+        {
+            model->setData(
+                model->index(change.row, change.column),
+                change.newValue,
+                Qt::EditRole
+                );
+        }
     }
 
     return true;

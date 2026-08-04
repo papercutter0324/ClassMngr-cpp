@@ -2383,6 +2383,8 @@ if(BUILD_TESTING)
         src/core/updater/version.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
+        src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp
+        src/features/speaking_eval/ui/speaking_eval_notes_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp

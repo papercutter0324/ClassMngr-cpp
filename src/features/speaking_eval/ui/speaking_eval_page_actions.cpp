@@ -304,11 +304,28 @@ void SpeakingEvalPage::showReports()
                 .signatureImage;
     }
 
+    const QList<SpeakingEvalBatchReportService::StudentReport> reports =
+        buildSpeakingEvalStudentReports(
+            m_model->rows(),
+            classInfo,
+            signatureImage
+            );
+    const int selectedRow =
+        m_table ? m_table->currentIndex().row() : -1;
+    const int currentReportIndex =
+        qMax(
+            0,
+            speakingEvalReportIndexForSourceRow(
+                reports,
+                selectedRow
+                )
+            );
+
     SpeakingEvalReportDialog dialog(
-        m_model->rows(),
-        classInfo,
-        signatureImage,
-        this
+        reports,
+        currentReportIndex,
+        this,
+        true
         );
 
     connect(
@@ -362,31 +379,15 @@ void SpeakingEvalPage::exportReports()
             signatureImage
             );
 
-    int currentReportIndex = 0;
     const int selectedRow = m_table ? m_table->currentIndex().row() : -1;
-    if (selectedRow >= 0)
-    {
-        int reportIndex = 0;
-        for (int row = 0; row < m_model->rows().size(); ++row)
-        {
-            const QString englishName = m_model->rows().at(row).value(
-                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-                ).trimmed();
-            const QString koreanName = m_model->rows().at(row).value(
-                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-                ).trimmed();
-            if (englishName.isEmpty() && koreanName.isEmpty())
-            {
-                continue;
-            }
-            if (row == selectedRow)
-            {
-                currentReportIndex = reportIndex;
-                break;
-            }
-            ++reportIndex;
-        }
-    }
+    const int currentReportIndex =
+        qMax(
+            0,
+            speakingEvalReportIndexForSourceRow(
+                reports,
+                selectedRow
+                )
+            );
 
     SpeakingEvalBatchExportDialog dialog(
         reports,

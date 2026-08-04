@@ -1,5 +1,6 @@
 #include "speaking_eval_report_dialog.h"
 
+#include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QComboBox>
@@ -9,10 +10,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QSignalBlocker>
 #include <QStandardPaths>
 #include <QVBoxLayout>
 
@@ -201,6 +200,22 @@ buildSpeakingEvalStudentReports(
     return reports;
 }
 
+int speakingEvalReportIndexForSourceRow(
+    const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
+    int sourceRow
+    )
+{
+    for (int index = 0; index < reports.size(); ++index)
+    {
+        if (reports.at(index).sourceRow == sourceRow)
+        {
+            return index;
+        }
+    }
+
+    return -1;
+}
+
 SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const SpeakingEvalRows& rows,
     const ClassInfo& classInfo,
@@ -253,13 +268,6 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     layout->setContentsMargins(18, 18, 18, 18);
     layout->setSpacing(12);
 
-    auto* previewColumn =
-        new QWidget(this);
-    auto* previewLayout =
-        new QVBoxLayout(previewColumn);
-    previewLayout->setContentsMargins(0, 0, 0, 0);
-    previewLayout->setSpacing(12);
-
     auto* selectorLayout =
         new QHBoxLayout;
     selectorLayout->setContentsMargins(0, 0, 0, 0);
@@ -295,24 +303,22 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     selectorLayout->addWidget(m_studentSelector, 1);
     selectorLayout->addWidget(previousButton);
     selectorLayout->addWidget(nextButton);
-    previewLayout->addLayout(selectorLayout);
+    layout->addLayout(selectorLayout);
 
     m_notesLabel =
         new QLabel(
             tr("Private Notes (not included in the report)"),
-            previewColumn
+            this
             );
-    m_notesEdit =
-        new QPlainTextEdit(previewColumn);
-    m_notesEdit->setPlaceholderText(
-        tr("Add internal notes about this student…")
-        );
-    m_notesEdit->setFixedHeight(72);
-    m_notesEdit->setTabChangesFocus(true);
+
+    m_notesFields =
+        new SpeakingEvalPrivateNotesEditor(this);
+    m_notesFields->setEditorHeight(144);
+
     m_notesLabel->setVisible(m_interactive);
-    m_notesEdit->setVisible(m_interactive);
-    previewLayout->addWidget(m_notesLabel);
-    previewLayout->addWidget(m_notesEdit);
+    m_notesFields->setVisible(m_interactive);
+    layout->addWidget(m_notesLabel);
+    layout->addWidget(m_notesFields);
 
     auto* scrollArea =
         new QScrollArea(this);
@@ -322,15 +328,10 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     scrollArea->setFrameShape(QFrame::StyledPanel);
 
     m_report =
-        new SpeakingEvalReportWidget(previewColumn);
+        new SpeakingEvalReportWidget(scrollArea);
     m_report->setInteractive(m_interactive);
 
-    previewLayout->addWidget(m_report);
-    previewColumn->setFixedSize(
-        m_report->width(),
-        previewLayout->sizeHint().height()
-        );
-    scrollArea->setWidget(previewColumn);
+    scrollArea->setWidget(m_report);
     layout->addWidget(scrollArea, 1);
 
     auto* buttonLayout =
@@ -389,7 +390,7 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     nextButton->setEnabled(hasStudents);
     printButton->setEnabled(hasStudents);
     saveAsPdfButton->setEnabled(hasStudents);
-    m_notesEdit->setEnabled(hasStudents);
+    m_notesFields->setEnabled(hasStudents);
     m_report->setInteractive(m_interactive && hasStudents);
     if (hasStudents)
     {
@@ -484,32 +485,10 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         }
         );
     connect(
-        m_notesEdit,
-        &QPlainTextEdit::textChanged,
+        m_notesFields,
+        &SpeakingEvalPrivateNotesEditor::notesChanged,
         this,
-        [this]()
-        {
-            const int reportIndex =
-                m_studentSelector
-                    ? m_studentSelector->currentData().toInt()
-                    : -1;
-            if (
-                !m_interactive
-                || reportIndex < 0
-                || reportIndex >= m_reports.size()
-                )
-            {
-                return;
-            }
-
-            const QString notes = m_notesEdit->toPlainText();
-            m_reports[reportIndex].report.notes = notes;
-            emit reportValueEdited(
-                m_reports.at(reportIndex).sourceRow,
-                SpeakingEvalColumn::Notes,
-                notes
-                );
-        }
+        &SpeakingEvalReportDialog::updatePrivateNotes
         );
     connect(
         printButton,
@@ -564,10 +543,9 @@ void SpeakingEvalReportDialog::updateReport()
     if (row < 0 || row >= m_reports.size())
     {
         m_report->setReportData({});
-        if (m_notesEdit)
+        if (m_notesFields)
         {
-            const QSignalBlocker blocker(m_notesEdit);
-            m_notesEdit->clear();
+            m_notesFields->setNotes({});
         }
         return;
     }
@@ -576,13 +554,38 @@ void SpeakingEvalReportDialog::updateReport()
         m_reports.at(row).report
         );
 
-    if (m_notesEdit)
+    if (m_notesFields)
     {
-        const QSignalBlocker blocker(m_notesEdit);
-        m_notesEdit->setPlainText(
+        m_notesFields->setNotes(
             m_reports.at(row).report.notes
             );
     }
+}
+
+void SpeakingEvalReportDialog::updatePrivateNotes()
+{
+    const int reportIndex =
+        m_studentSelector
+            ? m_studentSelector->currentData().toInt()
+            : -1;
+    if (
+        !m_interactive
+        || !m_notesFields
+        || reportIndex < 0
+        || reportIndex >= m_reports.size()
+        )
+    {
+        return;
+    }
+
+    const QString notes =
+        m_notesFields->notes();
+    m_reports[reportIndex].report.notes = notes;
+    emit reportValueEdited(
+        m_reports.at(reportIndex).sourceRow,
+        SpeakingEvalColumn::Notes,
+        notes
+        );
 }
 
 void SpeakingEvalReportDialog::moveToPreviousStudent()
