@@ -1,43 +1,39 @@
-# ClassMngr 0.11.0 Release Notes
+# ClassMngr 0.12.0 Release Notes
 
-ClassMngr 0.11.0 adds a dedicated Testing schedule and substantially improves
-speaking-evaluation reports. It also makes crowded tab bars and common folders
-easier to navigate.
+ClassMngr 0.12.0 adds AI-assisted comment writing for speaking evaluations and
+makes it easier to organize observations before creating reports. It also
+streamlines common report and roster actions.
 
-## Testing Schedule
+## AI-Assisted Speaking-Evaluation Comments
 
-- Added a Testing schedule mode alongside the Regular and Intensive views.
-- Added reusable testing classes with their own details, colors, rosters, and
-  notes.
-- Added schedule assignments for testing classes, Oral Testing blocks, and
-  Essay blocks; Oral Testing blocks can include optional room information.
-- Added an option to hide M1 classes during testing; M2 and M3 classes are
-  hidden automatically.
-- Saved testing assignments as a reusable weekly layout and added an option to
-  clear the layout without deleting saved testing classes or rosters.
-- Included testing assignments in printed schedules and substitute-preparation
-  documents.
+- Added tools to create AI comment prompts for individual E4–E6 students from
+  private “Did Well” and “Needs Improvement” observations.
+- Added a whole-class workflow that creates one prompt for selected students,
+  parses the pasted AI response, and lets you review and selectively apply each
+  comment.
+- Replaces student names with placeholders in prompts and restores each
+  student's name when comments are pasted back into ClassMngr.
+- Added options to write comments directly to the student or in the third
+  person.
+- Added ChatGPT, Gemini, Claude, Microsoft Copilot, and a custom HTTPS website
+  as preferred AI website choices.
+- Added safeguards for missing observations, invalid responses, comment-length
+  limits, and replacement of existing comments.
 
-## Speaking Evaluations
+## Speaking-Evaluation Workflow
 
-- Reworked the built-in renderer for more accurate Standard and Advanced
-  reports across Windows, macOS, and Linux.
-- Improved the layout, resolution, fonts, highlighted scores, and overall-grade
-  graphics used by both report templates.
-- Added Print and Save As PDF actions directly to the report preview.
-- Embedded the signature saved under My Information in report previews,
-  exported PDFs, and printed reports.
-- Automatically removes white backgrounds from newly added signature images
-  for cleaner placement on reports.
-- Improved Korean text rendering on macOS, fixed report generation on Windows,
-  and reduced repeated PowerPoint data-access requests.
-- Adjusted longer report comments to fit the template automatically and changed
-  the maximum comment length to 450 characters.
+- Combined private observations and the report comment in a single student
+  dialog.
+- Split private observations into “Did Well” and “Needs Improvement” fields
+  with automatic bullet-list formatting.
+- Added comment character counters and consistent 450-character enforcement
+  when typing or pasting text.
+- Added AI prompt actions and editable comments to the report-creation dialog.
+- Renamed report actions to “New Report” and “Print Reports” and added a
+  separate “AI Comments for Class” action.
 
-## Navigation and File Dialogs
+## Interface Improvements
 
-- Made overflowing tab bars easier to navigate with clearer scroll arrows and
-  drag-to-scroll support.
-- Fixed tab-bar arrow positioning and rendering glitches.
-- Added Home, Desktop, Documents, and the ClassMngr documents folder to file
-  dialog sidebars for quicker access.
+- Added a Korean Keyboard shortcut to class rosters.
+- Changed the signature preview in My Information to use a white background so
+  transparent signatures are easier to see in both themes.
