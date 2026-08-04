@@ -1,8 +1,8 @@
 # ClassMngr
 
-ClassMngr is a desktop classroom management tool for organizing schedules,
-rosters, campus information, teacher details, monthly calendar events, and
-substitute-prep notes.
+ClassMngr is a cross-platform desktop classroom-management tool for organizing
+classes, schedules, rosters, speaking evaluations, substitute preparation,
+teacher details, campus information, and academic-calendar events.
 
 The application is built with CMake, C++23, and Qt 6. Release installs run Qt's
 deployment step, so the finished app folder or bundle includes the Qt runtime
@@ -10,11 +10,35 @@ files it needs. The computer that builds ClassMngr must have the build tools and
 Qt installed, but the computer that runs the finished app does not need a
 separate Qt installation.
 
+## Features
+
+- Manage classes, teachers, schedules, rosters, notes, and testing assignments.
+- Import schedule and teacher data, transfer students between classes, and
+  print schedules and roster templates.
+- Record speaking-evaluation scores and observations, then create individual or
+  whole-class reports.
+- Prepare name-redacted prompts for AI-assisted evaluation comments, review the
+  pasted results, and choose which comments to apply. ClassMngr opens the
+  configured AI website; it does not send observations to an AI API itself.
+- Create printable substitute-preparation notes and packages.
+- Browse, export, and print the bundled teaching-document catalog.
+- View staff and campus directories, housing details, directions, and maps.
+- Use light or dark themes and switch the interface between English and Korean.
+- Receive signed application updates and independently updated resource packs
+  when release builds are configured with their endpoints.
+
+For more detail, see:
+
+- [Current release notes](release-notes.md)
+- [Auto-update documentation](docs/auto_updates.md)
+- [Resource-pack documentation](docs/resource_packs.md)
+
 ## Requirements
 
 - CMake 3.25 or newer
-- Qt 6.11.1 or newer Qt 6, built for the compiler you are using
+- Qt 6.11.1 or newer, built for the compiler you are using
 - A C++23 compiler
+- zlib development files (Windows builds can use Qt's bundled fallback)
 - Ninja for Linux and macOS preset builds
 - Linux only: `patchelf`, used by Qt's deployment tooling
 - Linux only: a configured CUPS or system printer stack for printing
@@ -67,9 +91,10 @@ Open VS Code and install these extensions:
 
 Install the Qt Windows desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 MSVC desktop kit matching
-your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Core, Gui,
-Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
-QuickControls2, QuickWidgets, and LinguistTools.
+your compiler, such as `msvc2022_64`. Make sure the kit includes Qt Concurrent,
+Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
+QuickControls2, QuickWidgets, and LinguistTools. Development builds also require
+Qt Test.
 
 Set `QT_MSVC_X64_PREFIX` to the Qt kit directory on each Windows machine. The
 same presets work regardless of where that kit is installed:
@@ -112,7 +137,8 @@ standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole
 installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs,
 plugins, QML files, and license files.
 
-ClassMngr supports 64-bit Windows only. Build an x64 installer with:
+ClassMngr supports x64 and ARM64 Windows; it does not produce a Win32 build.
+Build an x64 installer with:
 
 ```powershell
 cmake --build --preset windows-x64-release-installer
@@ -166,8 +192,9 @@ brew install cmake ninja git
 Install the Qt macOS desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 `macos` desktop kit. If you
 use another Qt installation, make sure it is Qt 6.11.1 or newer and includes Qt
-Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick,
-QuickControls2, QuickWidgets, and LinguistTools.
+Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql,
+Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds
+also require Qt Test.
 
 Set `QT_MACOS_PREFIX` to that Qt kit. The same presets then work regardless of
 where Qt is installed. The macOS release preset builds a universal
@@ -215,6 +242,7 @@ sudo apt install \
   git \
   ninja-build \
   patchelf \
+  zlib1g-dev \
   libgl1-mesa-dev \
   libxkbcommon-dev \
   libxkbcommon-x11-dev \
@@ -241,6 +269,7 @@ sudo dnf install \
   git \
   ninja-build \
   patchelf \
+  zlib-devel \
   mesa-libGL-devel \
   libxkbcommon-devel \
   libxkbcommon-x11-devel \
@@ -262,6 +291,7 @@ sudo pacman -S --needed \
   ninja \
   patchelf \
   mesa \
+  zlib \
   libxkbcommon \
   libxkbcommon-x11 \
   libxcb \
@@ -282,6 +312,7 @@ sudo zypper install \
   git \
   ninja \
   patchelf \
+  zlib-devel \
   Mesa-libGL-devel \
   libxkbcommon-devel \
   libxkbcommon-x11-devel \
@@ -297,15 +328,16 @@ Install the Qt Linux desktop kit next. The recommended route is the Qt Online
 Installer or Qt Maintenance Tool with the Qt 6.11.1 `gcc_64` desktop kit,
 because many distro repositories ship an older Qt 6 than this project requires.
 If your distro provides Qt 6.11.1 or newer, distro Qt packages are fine too as
-long as they include Qt Core, Gui, Widgets, Network, Pdf, PdfWidgets,
-PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools.
+long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf,
+PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and
+LinguistTools. Development builds also require Qt Test.
 
-Point `QT_LINUX_PREFIX` at the Qt kit directory:
+The checked-in Linux preset contains a maintainer-specific default Qt path.
+Override it with the Qt kit installed on your machine:
 
 ```sh
-export QT_LINUX_PREFIX="$HOME/Qt/6.11.1/gcc_64"
-
-cmake --preset linux-gcc-release
+cmake --preset linux-gcc-release \
+  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.11.1/gcc_64"
 cmake --build --preset linux-gcc-release
 
 cmake --install build/linux-gcc-release \
@@ -328,11 +360,26 @@ with your preferred AppImage packaging tool. Linux packages may still rely on
 baseline system libraries such as glibc, graphics drivers, and the user's
 desktop display stack; they should not require a separate Qt installation.
 
+## Tests
+
+Debug presets build the test suite by default. Configure and build the debug
+preset for your platform, then run CTest from its build directory:
+
+```powershell
+cmake --preset windows-x64-debug
+cmake --build --preset windows-x64-debug
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure
+```
+
+On Linux or macOS, use the corresponding `linux-gcc-debug` or
+`macos-clang-debug` preset and omit `-C Debug` because those presets use a
+single-configuration Ninja generator.
+
 ## Notes
 
 - Use release presets when creating distributable builds.
 - Run the app from the installed directory or bundle, not directly from a
   partially copied build tree.
-- If CMake cannot find Qt, check that `QT_MACOS_PREFIX`, `QT_LINUX_PREFIX`, or
-  `CMAKE_PREFIX_PATH` points at the matching Qt kit for your compiler and CPU
-  architecture.
+- If CMake cannot find Qt, check that `QT_MACOS_PREFIX`,
+  `QT_MSVC_X64_PREFIX`, `QT_MSVC_ARM64_PREFIX`, or `CMAKE_PREFIX_PATH` points
+  at the matching Qt kit for your compiler and CPU architecture.
