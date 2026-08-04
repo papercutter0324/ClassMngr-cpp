@@ -50,6 +50,8 @@ public:
         int height
         );
 
+    void focusDidWell();
+
 signals:
     void notesChanged();
 

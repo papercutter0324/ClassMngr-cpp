@@ -1,7 +1,5 @@
 #include "speaking_eval_delegate.h"
 
-#include "ui/shared/widgets/text_fit_push_button.h"
-
 #include "core/fontmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -10,195 +8,10 @@
 
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
-#include <QDialog>
-#include <QHBoxLayout>
-#include <QKeyEvent>
-#include <QKeySequence>
-#include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
-#include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPlainTextEdit>
-#include <QPushButton>
 #include <QStyle>
-#include <QTextCursor>
-#include <QTextDocument>
-#include <QVBoxLayout>
-
-#include <algorithm>
-
-namespace
-{
-
-class LimitedCommentEdit : public QPlainTextEdit
-{
-public:
-    explicit LimitedCommentEdit(
-        QWidget* parent = nullptr
-        )
-        : QPlainTextEdit(parent)
-    {
-        connect(
-            document(),
-            &QTextDocument::contentsChanged,
-            this,
-            [this]()
-            {
-                trimToLimit();
-            }
-            );
-    }
-
-    int textLength() const
-    {
-        return toPlainText().size();
-    }
-
-    QString cleanText() const
-    {
-        return toPlainText()
-            .trimmed()
-            .left(SpeakingEval::CommentMaxLength);
-    }
-
-protected:
-    void keyPressEvent(
-        QKeyEvent* event
-        ) override
-    {
-        const bool controlKey =
-            event->matches(QKeySequence::Copy)
-            || event->matches(QKeySequence::Cut)
-            || event->matches(QKeySequence::Paste)
-            || event->matches(QKeySequence::Undo)
-            || event->matches(QKeySequence::Redo)
-            || event->key() == Qt::Key_Backspace
-            || event->key() == Qt::Key_Delete
-            || event->key() == Qt::Key_Left
-            || event->key() == Qt::Key_Right
-            || event->key() == Qt::Key_Up
-            || event->key() == Qt::Key_Down
-            || event->key() == Qt::Key_Home
-            || event->key() == Qt::Key_End;
-
-        if (
-            !controlKey
-            && !textCursor().hasSelection()
-            && textLength() >= SpeakingEval::CommentMaxLength
-            )
-        {
-            return;
-        }
-
-        QPlainTextEdit::keyPressEvent(event);
-    }
-
-    void insertFromMimeData(
-        const QMimeData* source
-        ) override
-    {
-        if (!source)
-        {
-            return;
-        }
-
-        QTextCursor cursor =
-            textCursor();
-
-        const int selectedLength =
-            cursor.hasSelection()
-                ? cursor.selectedText().size()
-                : 0;
-
-        const int currentLength =
-            textLength() - selectedLength;
-
-        const int remaining =
-            SpeakingEval::CommentMaxLength - currentLength;
-
-        if (remaining <= 0)
-        {
-            return;
-        }
-
-        cursor.insertText(
-            source->text().left(remaining)
-            );
-    }
-
-private:
-    void trimToLimit()
-    {
-        const QString text =
-            toPlainText();
-
-        if (text.size() <= SpeakingEval::CommentMaxLength)
-        {
-            return;
-        }
-
-        QTextCursor cursor =
-            textCursor();
-
-        const int position =
-            cursor.position();
-
-        blockSignals(true);
-        setPlainText(
-            text.left(SpeakingEval::CommentMaxLength)
-            );
-        blockSignals(false);
-
-        cursor =
-            textCursor();
-
-        cursor.setPosition(
-            std::min(
-                position,
-                SpeakingEval::CommentMaxLength
-                )
-            );
-
-        setTextCursor(cursor);
-    }
-};
-
-void updateCounter(
-    LimitedCommentEdit* editor,
-    QLabel* label
-    )
-{
-    if (!editor || !label)
-    {
-        return;
-    }
-
-    const int length =
-        editor->textLength();
-
-    label->setText(
-        QObject::tr("Characters: %1/%2")
-            .arg(length)
-            .arg(SpeakingEval::CommentMaxLength)
-        );
-
-    if (length >= SpeakingEval::CommentMaxLength)
-    {
-        label->setStyleSheet(QStringLiteral("color: red;"));
-    }
-    else if (length >= static_cast<int>(SpeakingEval::CommentMaxLength * 0.9))
-    {
-        label->setStyleSheet(QStringLiteral("color: orange;"));
-    }
-    else
-    {
-        label->setStyleSheet(QString());
-    }
-}
-
-} // namespace
 
 SpeakingEvalDelegate::SpeakingEvalDelegate(
     QObject* parent
@@ -393,9 +206,10 @@ bool SpeakingEvalDelegate::editorEvent(
         return false;
     }
 
-    return column == SpeakingEvalColumn::Notes
-        ? showNotesDialog(model, index)
-        : showCommentDialog(model, index);
+    return showNotesDialog(
+        model,
+        index
+        );
 }
 
 void SpeakingEvalDelegate::paint(
@@ -556,177 +370,6 @@ QSize SpeakingEvalDelegate::sizeHint(
     return size;
 }
 
-bool SpeakingEvalDelegate::showCommentDialog(
-    QAbstractItemModel* model,
-    const QModelIndex& index
-    ) const
-{
-    if (!model || !index.isValid())
-    {
-        return false;
-    }
-
-    QDialog dialog(
-        qobject_cast<QWidget*>(parent())
-        );
-
-    dialog.setWindowTitle(
-        tr("Enter Comment")
-        );
-
-    dialog.setMinimumSize(
-        QSize(400, 300)
-        );
-
-    auto* layout =
-        new QVBoxLayout(&dialog);
-
-    auto* editor =
-        new LimitedCommentEdit(&dialog);
-
-    editor->setPlainText(
-        index.data(Qt::EditRole).toString()
-        );
-
-    auto* counter =
-        new QLabel(&dialog);
-
-    auto* buttonLayout =
-        new QHBoxLayout;
-
-    auto* clearButton =
-        new TextFitPushButton(
-            tr("Clear"),
-            &dialog
-            );
-
-    auto* okButton =
-        new TextFitPushButton(
-            tr("OK"),
-            &dialog
-            );
-
-    auto* cancelButton =
-        new TextFitPushButton(
-            tr("Cancel"),
-            &dialog
-            );
-
-    buttonLayout->addWidget(clearButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(okButton);
-    buttonLayout->addWidget(cancelButton);
-
-    layout->addWidget(editor);
-    layout->addWidget(counter);
-    layout->addLayout(buttonLayout);
-
-    const auto syncCounter =
-        [editor, counter, clearButton]()
-        {
-            updateCounter(
-                editor,
-                counter
-                );
-
-            clearButton->setEnabled(
-                editor->textLength() > 0
-                );
-        };
-
-    connect(
-        editor->document(),
-        &QTextDocument::contentsChanged,
-        &dialog,
-        syncCounter
-        );
-
-    connect(
-        clearButton,
-        &QPushButton::clicked,
-        &dialog,
-        [editor, &dialog]()
-        {
-            if (!editor->toPlainText().isEmpty())
-            {
-                const auto response =
-                    QMessageBox::question(
-                        &dialog,
-                        QObject::tr("Clear text?"),
-                        QObject::tr("Are you sure you want to clear the comment?")
-                        );
-
-                if (response != QMessageBox::Yes)
-                {
-                    return;
-                }
-            }
-
-            editor->clear();
-        }
-        );
-
-    connect(
-        okButton,
-        &QPushButton::clicked,
-        &dialog,
-        &QDialog::accept
-        );
-
-    connect(
-        cancelButton,
-        &QPushButton::clicked,
-        &dialog,
-        &QDialog::reject
-        );
-
-    syncCounter();
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return true;
-    }
-
-    const QString oldValue =
-        index.data(Qt::EditRole).toString();
-
-    const QString newValue =
-        editor->cleanText();
-
-    if (oldValue == newValue)
-    {
-        return true;
-    }
-
-    if (
-        auto* table =
-            qobject_cast<SpeakingEvalTableView*>(parent())
-        )
-    {
-        table->applyChanges(
-            {
-                {
-                    index.row(),
-                    index.column(),
-                    oldValue,
-                    newValue
-                }
-            },
-            tr("Edit Comment")
-            );
-    }
-    else
-    {
-        model->setData(
-            index,
-            newValue,
-            Qt::EditRole
-            );
-    }
-
-    return true;
-}
-
 bool SpeakingEvalDelegate::showNotesDialog(
     QAbstractItemModel* model,
     const QModelIndex& index
@@ -755,6 +398,10 @@ bool SpeakingEvalDelegate::showNotesDialog(
     SpeakingEvalNotesDialog dialog(
         notesIndex.data(Qt::EditRole).toString(),
         commentsIndex.data(Qt::EditRole).toString(),
+        index.column()
+                == SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+            ? SpeakingEvalNotesDialog::InitialSection::Comment
+            : SpeakingEvalNotesDialog::InitialSection::Notes,
         qobject_cast<QWidget*>(parent())
         );
 
@@ -788,8 +435,14 @@ bool SpeakingEvalDelegate::showNotesDialog(
                 );
         };
 
-    addChange(notesIndex, dialog.notes());
-    addChange(commentsIndex, dialog.comment());
+    if (dialog.hasNotesChanges())
+    {
+        addChange(notesIndex, dialog.notes());
+    }
+    if (dialog.hasCommentChanges())
+    {
+        addChange(commentsIndex, dialog.comment());
+    }
 
     if (changes.isEmpty())
     {

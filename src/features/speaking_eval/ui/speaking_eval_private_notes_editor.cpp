@@ -366,3 +366,14 @@ void SpeakingEvalPrivateNotesEditor::setEditorHeight(
         m_needsImprovementEdit->setFixedHeight(height);
     }
 }
+
+void SpeakingEvalPrivateNotesEditor::focusDidWell()
+{
+    if (!m_didWellEdit)
+    {
+        return;
+    }
+
+    m_didWellEdit->setFocus(Qt::OtherFocusReason);
+    m_didWellEdit->moveCursor(QTextCursor::End);
+}

@@ -47,11 +47,6 @@ public:
         ) const override;
 
 private:
-    bool showCommentDialog(
-        QAbstractItemModel* model,
-        const QModelIndex& index
-        ) const;
-
     bool showNotesDialog(
         QAbstractItemModel* model,
         const QModelIndex& index

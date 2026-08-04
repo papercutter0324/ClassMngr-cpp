@@ -1,17 +1,24 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/ui/speaking_eval_delegate.h"
+#include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_table_view.h"
 
 #include <QtTest>
 
 #include <QBuffer>
+#include <QClipboard>
 #include <QComboBox>
 #include <QDate>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QMessageBox>
+#include <QMouseEvent>
 #include <QPdfDocument>
 #include <QPainter>
 #include <QPdfSelection>
@@ -22,6 +29,10 @@
 #include <QScrollArea>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QTimer>
+#include <QUndoStack>
+
+#include <functional>
 
 namespace
 {
@@ -212,6 +223,10 @@ private slots:
     void privateNotesAreSplitAndSaved();
     void privateNotesAutomaticallyContinueBullets();
     void notesDialogShowsNotesBesideEachOtherAndCommentBelow();
+    void notesDialogPreservesUntouchedValuesAndFocusesClickedSection();
+    void notesDialogEnforcesCommentLimitAndUpdatesCounter();
+    void notesDialogClearsOnlyCommentAfterConfirmation();
+    void commentsAndNotesCellsUseTheCombinedDialog();
     void powerPointAvailabilityMessageIsAvailable();
     void mixedPowerPointTemplatesAreRejected();
     void generatedAssetsMatchSvgSourcesWhenEnabled();
@@ -743,11 +758,13 @@ void SpeakingEvalBatchReportServiceTests::
 void SpeakingEvalBatchReportServiceTests::
     notesDialogShowsNotesBesideEachOtherAndCommentBelow()
 {
-    SpeakingEvalNotesDialog dialog(
+    const QString originalNotes =
         QStringLiteral(
             "[Did Well]\nStrong voice\n"
             "[Needs Improvement]\nUse complete sentences"
-            ),
+            );
+    SpeakingEvalNotesDialog dialog(
+        originalNotes,
         QStringLiteral("The report comment.")
         );
 
@@ -783,9 +800,13 @@ void SpeakingEvalBatchReportServiceTests::
         commentEdit->toPlainText(),
         QStringLiteral("The report comment.")
         );
+    QVERIFY(!dialog.hasNotesChanges());
+    QVERIFY(!dialog.hasCommentChanges());
+    QCOMPARE(dialog.notes(), originalNotes);
 
     dialog.show();
     QApplication::processEvents();
+    QCOMPARE(QApplication::focusWidget(), didWellEdit);
     QVERIFY(commentEdit->width() > didWellEdit->width());
     QVERIFY(commentEdit->y() > notesFields->y());
 
@@ -795,6 +816,344 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(
         dialog.comment(),
         QStringLiteral("Updated report comment.")
+        );
+    QVERIFY(dialog.hasCommentChanges());
+    QVERIFY(!dialog.hasNotesChanges());
+    QCOMPARE(dialog.notes(), originalNotes);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    notesDialogPreservesUntouchedValuesAndFocusesClickedSection()
+{
+    const QString legacyNotes =
+        QStringLiteral("Legacy unstructured notes");
+    const QString originalComment =
+        QStringLiteral("Original comment");
+    SpeakingEvalNotesDialog dialog(
+        legacyNotes,
+        originalComment,
+        SpeakingEvalNotesDialog::InitialSection::Comment
+        );
+
+    auto* commentEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNotesDialogComment")
+        );
+    auto* didWellEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalDidWellNotes")
+        );
+    QVERIFY(commentEdit);
+    QVERIFY(didWellEdit);
+    QCOMPARE(
+        didWellEdit->toPlainText(),
+        QStringLiteral("• Legacy unstructured notes")
+        );
+
+    dialog.show();
+    QApplication::processEvents();
+    QCOMPARE(QApplication::focusWidget(), commentEdit);
+
+    QCOMPARE(dialog.notes(), legacyNotes);
+    QCOMPARE(dialog.comment(), originalComment);
+    QVERIFY(!dialog.hasNotesChanges());
+    QVERIFY(!dialog.hasCommentChanges());
+
+    QTest::keyClicks(
+        commentEdit,
+        QStringLiteral(" updated")
+        );
+    QVERIFY(dialog.hasCommentChanges());
+    QVERIFY(!dialog.hasNotesChanges());
+    QCOMPARE(dialog.notes(), legacyNotes);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    notesDialogEnforcesCommentLimitAndUpdatesCounter()
+{
+    SpeakingEvalNotesDialog dialog(
+        {},
+        {},
+        SpeakingEvalNotesDialog::InitialSection::Comment
+        );
+    auto* commentEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNotesDialogComment")
+        );
+    auto* counter = dialog.findChild<QLabel*>(
+        QStringLiteral("speakingEvalNotesDialogCommentCounter")
+        );
+    QVERIFY(commentEdit);
+    QVERIFY(counter);
+
+    commentEdit->setPlainText(
+        QString(
+            SpeakingEval::CommentMaxLength * 9 / 10,
+            QLatin1Char('a')
+            )
+        );
+    QCOMPARE(
+        commentEdit->toPlainText().size(),
+        SpeakingEval::CommentMaxLength * 9 / 10
+        );
+    QCOMPARE(
+        counter->text(),
+        QStringLiteral("Characters: 405/450")
+        );
+    QVERIFY(counter->styleSheet().contains(QStringLiteral("orange")));
+
+    commentEdit->setPlainText(
+        QString(
+            SpeakingEval::CommentMaxLength + 50,
+            QLatin1Char('b')
+            )
+        );
+    QCOMPARE(
+        commentEdit->toPlainText().size(),
+        SpeakingEval::CommentMaxLength
+        );
+    QCOMPARE(
+        counter->text(),
+        QStringLiteral("Characters: 450/450")
+        );
+    QVERIFY(counter->styleSheet().contains(QStringLiteral("red")));
+
+    commentEdit->moveCursor(QTextCursor::End);
+    QTest::keyClicks(commentEdit, QStringLiteral("blocked"));
+    QCOMPARE(
+        commentEdit->toPlainText().size(),
+        SpeakingEval::CommentMaxLength
+        );
+
+    QTextCursor cursor =
+        commentEdit->textCursor();
+    cursor.setPosition(SpeakingEval::CommentMaxLength - 10);
+    cursor.setPosition(
+        SpeakingEval::CommentMaxLength,
+        QTextCursor::KeepAnchor
+        );
+    commentEdit->setTextCursor(cursor);
+    QApplication::clipboard()->setText(
+        QString(20, QLatin1Char('c'))
+        );
+    QTest::keyClick(
+        commentEdit,
+        Qt::Key_V,
+        Qt::ControlModifier
+        );
+    QCOMPARE(
+        commentEdit->toPlainText().size(),
+        SpeakingEval::CommentMaxLength
+        );
+    QVERIFY(dialog.hasCommentChanges());
+    QVERIFY(!dialog.hasNotesChanges());
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    notesDialogClearsOnlyCommentAfterConfirmation()
+{
+    const QString originalNotes =
+        QStringLiteral(
+            "[Did Well]\n• Strong voice\n"
+            "[Needs Improvement]\n• Add detail"
+            );
+    SpeakingEvalNotesDialog dialog(
+        originalNotes,
+        QStringLiteral("Clear this comment")
+        );
+    auto* commentEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalNotesDialogComment")
+        );
+    auto* clearButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalNotesDialogClearComment")
+        );
+    QVERIFY(commentEdit);
+    QVERIFY(clearButton);
+    QVERIFY(clearButton->isEnabled());
+
+    dialog.show();
+    QApplication::processEvents();
+    QTimer::singleShot(
+        50,
+        []()
+        {
+            for (QWidget* widget : QApplication::topLevelWidgets())
+            {
+                if (
+                    auto* messageBox =
+                        qobject_cast<QMessageBox*>(widget)
+                    )
+                {
+                    messageBox->done(QMessageBox::Yes);
+                    return;
+                }
+            }
+        }
+        );
+    QTest::mouseClick(
+        clearButton,
+        Qt::LeftButton
+        );
+
+    QVERIFY(commentEdit->toPlainText().isEmpty());
+    QVERIFY(!clearButton->isEnabled());
+    QVERIFY(dialog.hasCommentChanges());
+    QVERIFY(!dialog.hasNotesChanges());
+    QCOMPARE(dialog.notes(), originalNotes);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    commentsAndNotesCellsUseTheCombinedDialog()
+{
+    SpeakingEvalModel model;
+    const QModelIndex notesIndex =
+        model.index(
+            0,
+            SpeakingEval::toInt(SpeakingEvalColumn::Notes)
+            );
+    const QModelIndex commentsIndex =
+        model.index(
+            0,
+            SpeakingEval::toInt(SpeakingEvalColumn::Comments)
+            );
+    const QString originalNotes =
+        QStringLiteral("Legacy notes");
+    const QString originalComment =
+        QStringLiteral("Original comment");
+    QVERIFY(model.setData(notesIndex, originalNotes, Qt::EditRole));
+    QVERIFY(model.setData(commentsIndex, originalComment, Qt::EditRole));
+
+    SpeakingEvalTableView table;
+    QUndoStack undoStack;
+    table.setModel(&model);
+    table.setUndoStack(&undoStack);
+    SpeakingEvalDelegate delegate(&table);
+    QStyleOptionViewItem option;
+
+    const auto clickCell =
+        [&](
+            const QModelIndex& index,
+            const QString& expectedFocusObject,
+            const std::function<void(SpeakingEvalNotesDialog*)>& edit
+            )
+        {
+            bool openedCombinedDialog = false;
+            bool focusedExpectedField = false;
+            QTimer::singleShot(
+                50,
+                [&]()
+                {
+                    for (QWidget* widget : QApplication::topLevelWidgets())
+                    {
+                        auto* dialog =
+                            qobject_cast<SpeakingEvalNotesDialog*>(widget);
+                        if (!dialog)
+                        {
+                            continue;
+                        }
+
+                        openedCombinedDialog = true;
+                        QWidget* expectedFocus =
+                            dialog->findChild<QWidget*>(
+                                expectedFocusObject
+                                );
+                        focusedExpectedField =
+                            expectedFocus
+                            && (
+                                dialog->focusWidget()
+                                    == expectedFocus
+                                || expectedFocus->isAncestorOf(
+                                    dialog->focusWidget()
+                                    )
+                                );
+                        edit(dialog);
+                        dialog->accept();
+                        return;
+                    }
+                }
+                );
+
+            QMouseEvent releaseEvent(
+                QEvent::MouseButtonRelease,
+                QPointF(2, 2),
+                QPointF(2, 2),
+                QPointF(2, 2),
+                Qt::LeftButton,
+                Qt::LeftButton,
+                Qt::NoModifier
+                );
+            QVERIFY(
+                delegate.editorEvent(
+                    &releaseEvent,
+                    &model,
+                    option,
+                    index
+                    )
+                );
+            QVERIFY(openedCombinedDialog);
+            QVERIFY(focusedExpectedField);
+        };
+
+    clickCell(
+        commentsIndex,
+        QStringLiteral("speakingEvalNotesDialogComment"),
+        [](SpeakingEvalNotesDialog* dialog)
+        {
+            auto* editor = dialog->findChild<QPlainTextEdit*>(
+                QStringLiteral("speakingEvalNotesDialogComment")
+                );
+            QVERIFY(editor);
+            editor->setPlainText(
+                QStringLiteral("Updated comment")
+                );
+        }
+        );
+    QCOMPARE(
+        commentsIndex.data(Qt::EditRole).toString(),
+        QStringLiteral("Updated comment")
+        );
+    QCOMPARE(
+        notesIndex.data(Qt::EditRole).toString(),
+        originalNotes
+        );
+
+    clickCell(
+        notesIndex,
+        QStringLiteral("speakingEvalDidWellNotes"),
+        [](SpeakingEvalNotesDialog* dialog)
+        {
+            auto* editor = dialog->findChild<QPlainTextEdit*>(
+                QStringLiteral("speakingEvalDidWellNotes")
+                );
+            QVERIFY(editor);
+            editor->setPlainText(
+                QStringLiteral("• New strength")
+                );
+        }
+        );
+    QCOMPARE(
+        notesIndex.data(Qt::EditRole).toString(),
+        QStringLiteral(
+            "[Did Well]\n• New strength\n"
+            "[Needs Improvement]\n"
+            )
+        );
+    QCOMPARE(
+        commentsIndex.data(Qt::EditRole).toString(),
+        QStringLiteral("Updated comment")
+        );
+    QCOMPARE(undoStack.count(), 2);
+
+    undoStack.undo();
+    QCOMPARE(
+        notesIndex.data(Qt::EditRole).toString(),
+        originalNotes
+        );
+    QCOMPARE(
+        commentsIndex.data(Qt::EditRole).toString(),
+        QStringLiteral("Updated comment")
+        );
+    undoStack.undo();
+    QCOMPARE(
+        commentsIndex.data(Qt::EditRole).toString(),
+        originalComment
         );
 }
 
