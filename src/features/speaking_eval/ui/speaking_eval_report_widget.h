@@ -10,7 +10,7 @@
 #include <utility>
 
 class QPainter;
-class QPlainTextEdit;
+class SpeakingEvalCommentEdit;
 
 struct SpeakingEvalReportData
 {
@@ -22,6 +22,7 @@ struct SpeakingEvalReportData
     QString date;
     QString comments;
     QString notes;
+    int grade = 0;
     std::array<QString, 6> scores;
     QByteArray signatureImage;
     SpeakingEvalReportTemplate reportTemplate =
@@ -106,7 +107,7 @@ private:
 
 private:
     SpeakingEvalReportData m_data;
-    QPlainTextEdit* m_commentEditor = nullptr;
+    SpeakingEvalCommentEdit* m_commentEditor = nullptr;
     bool m_interactive = false;
     mutable QImage m_compositedScoreBackground;
     mutable std::array<QString, 6> m_compositedScoreBackgroundScores;

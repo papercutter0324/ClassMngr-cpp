@@ -72,6 +72,21 @@ enum class DocumentViewerBackground
     Black = 2
 };
 
+enum class AiCommentProvider
+{
+    ChatGPT = 0,
+    Gemini = 1,
+    Claude = 2,
+    MicrosoftCopilot = 3,
+    CustomWebsite = 4
+};
+
+enum class AiCommentVoice
+{
+    DirectToStudent = 0,
+    ThirdPerson = 1
+};
+
 inline constexpr int DocumentPageSpacingSmallPixels = 8;
 
 constexpr int documentPageSpacingPixels(

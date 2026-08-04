@@ -390,7 +390,22 @@ bool SpeakingEvalDelegate::showNotesDialog(
             index.row(),
             SpeakingEval::toInt(SpeakingEvalColumn::Comments)
             );
-    if (!notesIndex.isValid() || !commentsIndex.isValid())
+    const QModelIndex englishNameIndex =
+        model->index(
+            index.row(),
+            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+            );
+    const QModelIndex koreanNameIndex =
+        model->index(
+            index.row(),
+            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+            );
+    if (
+        !notesIndex.isValid()
+        || !commentsIndex.isValid()
+        || !englishNameIndex.isValid()
+        || !koreanNameIndex.isValid()
+        )
     {
         return false;
     }
@@ -402,7 +417,9 @@ bool SpeakingEvalDelegate::showNotesDialog(
                 == SpeakingEval::toInt(SpeakingEvalColumn::Comments)
             ? SpeakingEvalNotesDialog::InitialSection::Comment
             : SpeakingEvalNotesDialog::InitialSection::Notes,
-        qobject_cast<QWidget*>(parent())
+        qobject_cast<QWidget*>(parent()),
+        englishNameIndex.data(Qt::EditRole).toString(),
+        koreanNameIndex.data(Qt::EditRole).toString()
         );
 
     if (dialog.exec() != QDialog::Accepted)

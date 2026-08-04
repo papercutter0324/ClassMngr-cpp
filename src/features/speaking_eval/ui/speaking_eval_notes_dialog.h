@@ -2,8 +2,8 @@
 
 #include <QDialog>
 
-class QPlainTextEdit;
 class QShowEvent;
+class SpeakingEvalCommentEdit;
 class SpeakingEvalPrivateNotesEditor;
 
 class SpeakingEvalNotesDialog final : public QDialog
@@ -21,7 +21,9 @@ public:
         const QString& notes,
         const QString& comment,
         InitialSection initialSection = InitialSection::Notes,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        const QString& englishName = {},
+        const QString& koreanName = {}
         );
 
     [[nodiscard]] QString notes() const;
@@ -39,7 +41,7 @@ protected:
 
 private:
     SpeakingEvalPrivateNotesEditor* m_notesEditor = nullptr;
-    QPlainTextEdit* m_commentEdit = nullptr;
+    SpeakingEvalCommentEdit* m_commentEdit = nullptr;
     QString m_originalNotes;
     QString m_originalComment;
     InitialSection m_initialSection = InitialSection::Notes;

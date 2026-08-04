@@ -1,150 +1,25 @@
 #include "speaking_eval_notes_dialog.h"
 
 #include "domain/models/speaking_evaluation.h"
+#include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
-#include <QKeyEvent>
-#include <QKeySequence>
 #include <QLabel>
 #include <QMessageBox>
-#include <QMimeData>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QShowEvent>
 #include <QTextCursor>
-#include <QTextDocument>
 #include <QVBoxLayout>
-
-#include <algorithm>
 
 namespace
 {
 
-class LimitedCommentEdit final : public QPlainTextEdit
-{
-public:
-    explicit LimitedCommentEdit(
-        QWidget* parent = nullptr
-        )
-        : QPlainTextEdit(parent)
-    {
-        connect(
-            document(),
-            &QTextDocument::contentsChanged,
-            this,
-            [this]()
-            {
-                trimToLimit();
-            }
-            );
-    }
-
-    [[nodiscard]] int textLength() const
-    {
-        return toPlainText().size();
-    }
-
-    [[nodiscard]] QString cleanText() const
-    {
-        return toPlainText()
-            .trimmed()
-            .left(SpeakingEval::CommentMaxLength);
-    }
-
-protected:
-    void keyPressEvent(
-        QKeyEvent* event
-        ) override
-    {
-        const bool controlKey =
-            event->matches(QKeySequence::Copy)
-            || event->matches(QKeySequence::Cut)
-            || event->matches(QKeySequence::Paste)
-            || event->matches(QKeySequence::Undo)
-            || event->matches(QKeySequence::Redo)
-            || event->key() == Qt::Key_Backspace
-            || event->key() == Qt::Key_Delete
-            || event->key() == Qt::Key_Left
-            || event->key() == Qt::Key_Right
-            || event->key() == Qt::Key_Up
-            || event->key() == Qt::Key_Down
-            || event->key() == Qt::Key_Home
-            || event->key() == Qt::Key_End;
-
-        if (
-            !controlKey
-            && !textCursor().hasSelection()
-            && textLength() >= SpeakingEval::CommentMaxLength
-            )
-        {
-            return;
-        }
-
-        QPlainTextEdit::keyPressEvent(event);
-    }
-
-    void insertFromMimeData(
-        const QMimeData* source
-        ) override
-    {
-        if (!source)
-        {
-            return;
-        }
-
-        QTextCursor cursor =
-            textCursor();
-        const int selectedLength =
-            cursor.hasSelection()
-                ? cursor.selectedText().size()
-                : 0;
-        const int remaining =
-            SpeakingEval::CommentMaxLength
-            - (textLength() - selectedLength);
-        if (remaining <= 0)
-        {
-            return;
-        }
-
-        cursor.insertText(
-            source->text().left(remaining)
-            );
-    }
-
-private:
-    void trimToLimit()
-    {
-        const QString text =
-            toPlainText();
-        if (text.size() <= SpeakingEval::CommentMaxLength)
-        {
-            return;
-        }
-
-        const int position =
-            qMax(0, textCursor().position());
-        blockSignals(true);
-        setPlainText(
-            text.left(SpeakingEval::CommentMaxLength)
-            );
-        blockSignals(false);
-
-        QTextCursor cursor(document());
-        cursor.setPosition(
-            std::min(
-                position,
-                SpeakingEval::CommentMaxLength
-                )
-            );
-        setTextCursor(cursor);
-    }
-};
-
 void updateCounter(
-    LimitedCommentEdit* editor,
+    SpeakingEvalCommentEdit* editor,
     QLabel* counter
     )
 {
@@ -190,7 +65,9 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
     const QString& notes,
     const QString& comment,
     InitialSection initialSection,
-    QWidget* parent
+    QWidget* parent,
+    const QString& englishName,
+    const QString& koreanName
     )
     : QDialog(parent)
     , m_originalNotes(notes)
@@ -240,7 +117,11 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
         );
 
     m_commentEdit =
-        new LimitedCommentEdit(this);
+        new SpeakingEvalCommentEdit(this);
+    m_commentEdit->setStudentNames(
+        englishName,
+        koreanName
+        );
     m_commentEdit->setObjectName(
         QStringLiteral("speakingEvalNotesDialogComment")
         );
@@ -271,13 +152,10 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
     const auto syncCommentUi =
         [this, counter, clearCommentButton]()
         {
-            auto* editor =
-                static_cast<LimitedCommentEdit*>(
-                    m_commentEdit
-                    );
-            updateCounter(editor, counter);
+            updateCounter(m_commentEdit, counter);
             clearCommentButton->setEnabled(
-                editor && editor->textLength() > 0
+                m_commentEdit
+                && m_commentEdit->textLength() > 0
                 );
         };
 
@@ -361,12 +239,8 @@ QString SpeakingEvalNotesDialog::comment() const
         return m_originalComment;
     }
 
-    const auto* editor =
-        static_cast<const LimitedCommentEdit*>(
-            m_commentEdit
-            );
-    return editor
-        ? editor->cleanText()
+    return m_commentEdit
+        ? m_commentEdit->cleanText()
         : m_originalComment;
 }
 

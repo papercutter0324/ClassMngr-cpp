@@ -46,6 +46,10 @@ public:
 
     [[nodiscard]] QString notes() const;
 
+    [[nodiscard]] QString didWellNotes() const;
+
+    [[nodiscard]] QString needsImprovementNotes() const;
+
     void setEditorHeight(
         int height
         );

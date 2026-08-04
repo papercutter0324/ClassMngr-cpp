@@ -357,6 +357,20 @@ QString SpeakingEvalPrivateNotesEditor::notes() const
         );
 }
 
+QString SpeakingEvalPrivateNotesEditor::didWellNotes() const
+{
+    return m_didWellEdit
+        ? m_didWellEdit->toPlainText()
+        : QString();
+}
+
+QString SpeakingEvalPrivateNotesEditor::needsImprovementNotes() const
+{
+    return m_needsImprovementEdit
+        ? m_needsImprovementEdit->toPlainText()
+        : QString();
+}
+
 void SpeakingEvalPrivateNotesEditor::setEditorHeight(
     int height
     )

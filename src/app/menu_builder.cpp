@@ -234,6 +234,51 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
         }
         );
 
+    options->addSeparator();
+
+    QMenu* aiCommentsMenu =
+        options->addMenu(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "AI Comments"
+                )
+            );
+
+    QMenu* aiWebsiteMenu =
+        aiCommentsMenu->addMenu(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "Preferred AI Website"
+                )
+            );
+    addOptionMenu<AiCommentProvider>(
+        aiWebsiteMenu,
+        actions.aiCommentProviderState,
+        {
+            AiCommentProvider::ChatGPT,
+            AiCommentProvider::Gemini,
+            AiCommentProvider::Claude,
+            AiCommentProvider::MicrosoftCopilot,
+            AiCommentProvider::CustomWebsite
+        }
+        );
+
+    QMenu* aiVoiceMenu =
+        aiCommentsMenu->addMenu(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "Comment Voice"
+                )
+            );
+    addOptionMenu<AiCommentVoice>(
+        aiVoiceMenu,
+        actions.aiCommentVoiceState,
+        {
+            AiCommentVoice::DirectToStudent,
+            AiCommentVoice::ThirdPerson
+        }
+        );
+
 #ifdef Q_OS_MACOS
     options->addSeparator();
 

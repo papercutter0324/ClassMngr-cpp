@@ -1,15 +1,24 @@
 #include "speaking_eval_report_dialog.h"
 
+#include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
+#include "core/settingsmanager.h"
+#include "ui/shared/state/ai_comment_options.h"
+#include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <QApplication>
+#include <QClipboard>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QDate>
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QStandardPaths>
@@ -36,6 +45,222 @@ QString speakingEvalReportDate(
 
 namespace
 {
+
+AiCommentProvider preferredAiCommentProvider()
+{
+    const int storedValue =
+        SettingsManager::instance()
+            .get(
+                QString::fromUtf8(
+                    OptionKeys::AiCommentProvider
+                    ),
+                std::to_underlying(
+                    AiCommentProvider::ChatGPT
+                    )
+                )
+            .toInt();
+
+    switch (static_cast<AiCommentProvider>(storedValue))
+    {
+    case AiCommentProvider::ChatGPT:
+    case AiCommentProvider::Gemini:
+    case AiCommentProvider::Claude:
+    case AiCommentProvider::MicrosoftCopilot:
+    case AiCommentProvider::CustomWebsite:
+        return static_cast<AiCommentProvider>(storedValue);
+    }
+
+    return AiCommentProvider::ChatGPT;
+}
+
+AiCommentVoice preferredAiCommentVoice()
+{
+    const int storedValue =
+        SettingsManager::instance()
+            .get(
+                QString::fromUtf8(
+                    OptionKeys::AiCommentVoice
+                    ),
+                std::to_underlying(
+                    AiCommentVoice::DirectToStudent
+                    )
+                )
+            .toInt();
+
+    return static_cast<AiCommentVoice>(storedValue)
+            == AiCommentVoice::ThirdPerson
+        ? AiCommentVoice::ThirdPerson
+        : AiCommentVoice::DirectToStudent;
+}
+
+QUrl preferredAiCommentProviderUrl()
+{
+    return aiCommentProviderUrl(
+        preferredAiCommentProvider(),
+        SettingsManager::instance()
+            .get(
+                QString::fromUtf8(
+                    OptionKeys::AiCommentCustomWebsiteUrl
+                    )
+                )
+            .toString()
+        );
+}
+
+void copyAiPrompt(
+    const QString& prompt
+    )
+{
+    QApplication::clipboard()->setText(prompt);
+}
+
+void copyAiPromptAndOpenProvider(
+    QWidget* parent,
+    const QString& prompt
+    )
+{
+    copyAiPrompt(prompt);
+    const QUrl providerUrl =
+        preferredAiCommentProviderUrl();
+    if (
+        providerUrl.isEmpty()
+        || !QDesktopServices::openUrl(providerUrl)
+        )
+    {
+        QMessageBox::warning(
+            parent,
+            QCoreApplication::translate(
+                "SpeakingEvalReportDialog",
+                "Unable to Open AI Website"
+                ),
+            QCoreApplication::translate(
+                "SpeakingEvalReportDialog",
+                "The AI website could not be opened. "
+                "The prompt is still available on the clipboard."
+                )
+            );
+    }
+}
+
+class SpeakingEvalAiPromptPreviewDialog final : public QDialog
+{
+public:
+    explicit SpeakingEvalAiPromptPreviewDialog(
+        const QString& prompt,
+        QWidget* parent = nullptr
+        )
+        : QDialog(parent)
+    {
+        setObjectName(
+            QStringLiteral("speakingEvalAiPromptPreviewDialog")
+            );
+        setWindowTitle(
+            QCoreApplication::translate(
+                "SpeakingEvalReportDialog",
+                "AI Comment Prompt"
+                )
+            );
+        resize(760, 660);
+
+        auto* layout =
+            new QVBoxLayout(this);
+        layout->setContentsMargins(18, 18, 18, 18);
+        layout->setSpacing(10);
+
+        auto* privacyLabel =
+            new QLabel(
+                QCoreApplication::translate(
+                    "SpeakingEvalReportDialog",
+                    "The prompt uses STD_NAME instead of the "
+                    "student's real name. Review it before sharing."
+                    ),
+                this
+                );
+        privacyLabel->setWordWrap(true);
+        layout->addWidget(privacyLabel);
+
+        auto* promptEdit =
+            new QPlainTextEdit(this);
+        promptEdit->setObjectName(
+            QStringLiteral("speakingEvalAiPromptPreviewText")
+            );
+        promptEdit->setPlainText(prompt);
+        promptEdit->setReadOnly(true);
+        layout->addWidget(promptEdit, 1);
+
+        auto* buttonLayout =
+            new QHBoxLayout;
+        auto* copyButton =
+            new TextFitPushButton(
+                QCoreApplication::translate(
+                    "SpeakingEvalReportDialog",
+                    "Copy Prompt"
+                    ),
+                this
+                );
+        copyButton->setObjectName(
+            QStringLiteral("speakingEvalAiPromptPreviewCopy")
+            );
+        auto* copyOpenButton =
+            new TextFitPushButton(
+                QCoreApplication::translate(
+                    "SpeakingEvalReportDialog",
+                    "Copy Prompt and Open %1"
+                    )
+                    .arg(
+                        aiCommentProviderName(
+                            preferredAiCommentProvider()
+                            )
+                        ),
+                this
+                );
+        copyOpenButton->setObjectName(
+            QStringLiteral("speakingEvalAiPromptPreviewCopyOpen")
+            );
+        auto* closeButton =
+            new TextFitPushButton(
+                QCoreApplication::translate(
+                    "SpeakingEvalReportDialog",
+                    "Close"
+                    ),
+                this
+                );
+
+        buttonLayout->addWidget(copyButton);
+        buttonLayout->addWidget(copyOpenButton);
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(closeButton);
+        layout->addLayout(buttonLayout);
+
+        connect(
+            copyButton,
+            &QPushButton::clicked,
+            this,
+            [prompt]()
+            {
+                copyAiPrompt(prompt);
+            }
+            );
+        connect(
+            copyOpenButton,
+            &QPushButton::clicked,
+            this,
+            [this, prompt]()
+            {
+                copyAiPromptAndOpenProvider(
+                    this,
+                    prompt
+                    );
+            }
+            );
+        connect(
+            closeButton,
+            &QPushButton::clicked,
+            this,
+            &QDialog::accept
+            );
+    }
+};
 
 QString classLabel(
     const ClassInfo& info
@@ -150,6 +375,10 @@ SpeakingEvalReportData reportDataForRow(
     data.notes = values.value(
         SpeakingEval::toInt(SpeakingEvalColumn::Notes)
         );
+    data.grade =
+        speakingEvalElementaryGrade(
+            classInfo.classGrade
+            );
     data.reportTemplate = reportTemplateForClass(classInfo);
     data.date = speakingEvalReportDate(
         QDate::currentDate(),
@@ -319,6 +548,36 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     m_notesFields->setVisible(m_interactive);
     layout->addWidget(m_notesLabel);
     layout->addWidget(m_notesFields);
+
+    auto* aiPromptButtonLayout =
+        new QHBoxLayout;
+    m_previewAiPromptButton =
+        new TextFitPushButton(
+            tr("Preview AI Prompt"),
+            this
+            );
+    m_previewAiPromptButton->setObjectName(
+        QStringLiteral("speakingEvalPreviewAiPromptButton")
+        );
+    m_copyOpenAiPromptButton =
+        new TextFitPushButton(
+            tr("Copy Prompt and Open %1")
+                .arg(
+                    aiCommentProviderName(
+                        preferredAiCommentProvider()
+                        )
+                    ),
+            this
+            );
+    m_copyOpenAiPromptButton->setObjectName(
+        QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+        );
+    m_previewAiPromptButton->setVisible(m_interactive);
+    m_copyOpenAiPromptButton->setVisible(m_interactive);
+    aiPromptButtonLayout->addStretch();
+    aiPromptButtonLayout->addWidget(m_previewAiPromptButton);
+    aiPromptButtonLayout->addWidget(m_copyOpenAiPromptButton);
+    layout->addLayout(aiPromptButtonLayout);
 
     auto* scrollArea =
         new QScrollArea(this);
@@ -491,6 +750,18 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         &SpeakingEvalReportDialog::updatePrivateNotes
         );
     connect(
+        m_previewAiPromptButton,
+        &QPushButton::clicked,
+        this,
+        &SpeakingEvalReportDialog::previewAiPrompt
+        );
+    connect(
+        m_copyOpenAiPromptButton,
+        &QPushButton::clicked,
+        this,
+        &SpeakingEvalReportDialog::copyAiPromptAndOpen
+        );
+    connect(
         printButton,
         &QPushButton::clicked,
         this,
@@ -547,6 +818,7 @@ void SpeakingEvalReportDialog::updateReport()
         {
             m_notesFields->setNotes({});
         }
+        updateAiPromptActions();
         return;
     }
 
@@ -560,6 +832,7 @@ void SpeakingEvalReportDialog::updateReport()
             m_reports.at(row).report.notes
             );
     }
+    updateAiPromptActions();
 }
 
 void SpeakingEvalReportDialog::updatePrivateNotes()
@@ -585,6 +858,129 @@ void SpeakingEvalReportDialog::updatePrivateNotes()
         m_reports.at(reportIndex).sourceRow,
         SpeakingEvalColumn::Notes,
         notes
+        );
+    updateAiPromptActions();
+}
+
+QString SpeakingEvalReportDialog::currentAiPrompt() const
+{
+    const auto* report =
+        currentReport();
+    if (!report || !m_notesFields)
+    {
+        return {};
+    }
+
+    SpeakingEvalAiPromptInput input;
+    input.grade = report->report.grade;
+    input.englishName =
+        report->report.englishName;
+    input.koreanName =
+        report->report.koreanName;
+    input.didWell =
+        m_notesFields->didWellNotes();
+    input.needsImprovement =
+        m_notesFields->needsImprovementNotes();
+    input.voice =
+        preferredAiCommentVoice();
+    return buildSpeakingEvalAiCommentPrompt(input);
+}
+
+QString SpeakingEvalReportDialog::aiPromptUnavailableReason() const
+{
+    const auto* report =
+        currentReport();
+    if (!report)
+    {
+        return tr("Select a student to create an AI prompt.");
+    }
+    if (
+        report->report.englishName.trimmed().isEmpty()
+        && report->report.koreanName.trimmed().isEmpty()
+        )
+    {
+        return tr("Enter the student's name to create an AI prompt.");
+    }
+    if (
+        report->report.grade < 4
+        || report->report.grade > 6
+        )
+    {
+        return tr("AI prompts are available for grades E4 through E6.");
+    }
+    if (
+        !m_notesFields
+        || speakingEvalAiObservationItems(
+            m_notesFields->didWellNotes()
+            ).isEmpty()
+        )
+    {
+        return tr("Add at least one Did Well note.");
+    }
+    if (
+        speakingEvalAiObservationItems(
+            m_notesFields->needsImprovementNotes()
+            ).isEmpty()
+        )
+    {
+        return tr("Add at least one Needs Improvement note.");
+    }
+    return {};
+}
+
+void SpeakingEvalReportDialog::updateAiPromptActions()
+{
+    const QString reason =
+        aiPromptUnavailableReason();
+    const bool enabled =
+        m_interactive && reason.isEmpty();
+    for (
+        QPushButton* button :
+        {
+            m_previewAiPromptButton,
+            m_copyOpenAiPromptButton
+        }
+        )
+    {
+        if (!button)
+        {
+            continue;
+        }
+        button->setEnabled(enabled);
+        button->setToolTip(reason);
+    }
+}
+
+void SpeakingEvalReportDialog::previewAiPrompt()
+{
+    const QString prompt =
+        currentAiPrompt();
+    if (prompt.isEmpty())
+    {
+        updateAiPromptActions();
+        return;
+    }
+
+    SpeakingEvalAiPromptPreviewDialog dialog(
+        prompt,
+        this
+        );
+    dialog.exec();
+}
+
+void SpeakingEvalReportDialog::copyAiPromptAndOpen()
+{
+    const QString prompt =
+        currentAiPrompt();
+    if (prompt.isEmpty())
+    {
+        updateAiPromptActions();
+        return;
+    }
+
+    copyAiPromptAndOpenProvider(
+        this,
+        prompt
         );
 }
 

@@ -9,6 +9,7 @@
 class QComboBox;
 class QDate;
 class QLabel;
+class QPushButton;
 class SpeakingEvalPrivateNotesEditor;
 
 [[nodiscard]] QString speakingEvalReportDate(
@@ -72,6 +73,16 @@ private:
 
     void updatePrivateNotes();
 
+    [[nodiscard]] QString currentAiPrompt() const;
+
+    [[nodiscard]] QString aiPromptUnavailableReason() const;
+
+    void updateAiPromptActions();
+
+    void previewAiPrompt();
+
+    void copyAiPromptAndOpen();
+
     void printCurrentReport();
 
     void saveCurrentReportAsPdf();
@@ -81,6 +92,8 @@ private:
     QComboBox* m_studentSelector = nullptr;
     QLabel* m_notesLabel = nullptr;
     SpeakingEvalPrivateNotesEditor* m_notesFields = nullptr;
+    QPushButton* m_previewAiPromptButton = nullptr;
+    QPushButton* m_copyOpenAiPromptButton = nullptr;
     SpeakingEvalReportWidget* m_report = nullptr;
     bool m_interactive = false;
 };

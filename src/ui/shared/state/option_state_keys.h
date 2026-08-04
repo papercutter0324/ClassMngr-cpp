@@ -13,6 +13,15 @@ namespace OptionKeys
     inline constexpr const char* DocumentViewerBackground =
         "options/documentViewerBackground";
 
+    inline constexpr const char* AiCommentProvider =
+        "options/aiCommentProvider";
+
+    inline constexpr const char* AiCommentVoice =
+        "options/aiCommentVoice";
+
+    inline constexpr const char* AiCommentCustomWebsiteUrl =
+        "options/aiCommentCustomWebsiteUrl";
+
     inline constexpr const char* SidebarTooltipsEnabled =
         "options/sidebarTooltipsEnabled";
 

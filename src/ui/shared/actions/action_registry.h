@@ -29,6 +29,8 @@ public:
     OptionState<FontSize>* fontSizeState = nullptr;
     OptionState<DocumentPageSpacing>* documentPageSpacingState = nullptr;
     OptionState<DocumentViewerBackground>* documentViewerBackgroundState = nullptr;
+    OptionState<AiCommentProvider>* aiCommentProviderState = nullptr;
+    OptionState<AiCommentVoice>* aiCommentVoiceState = nullptr;
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;

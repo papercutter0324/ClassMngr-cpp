@@ -1,10 +1,13 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
+#include "core/settingsmanager.h"
+#include "ui/shared/state/option_state_keys.h"
 
 #include <QtTest>
 
@@ -209,6 +212,7 @@ class SpeakingEvalBatchReportServiceTests : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
     void reportDateUsesShortMonthsForStandardTemplate();
@@ -222,6 +226,10 @@ private slots:
     void previewDialogOnlyScrollsTheReport();
     void privateNotesAreSplitAndSaved();
     void privateNotesAutomaticallyContinueBullets();
+    void aiPromptBuilderUsesObservationsAndSelectedVoice();
+    void aiPromptButtonsRequireCompleteInput();
+    void aiPromptPreviewCopiesAnAnonymousPrompt();
+    void pastedAiCommentsReplaceStudentPlaceholder();
     void notesDialogShowsNotesBesideEachOtherAndCommentBelow();
     void notesDialogPreservesUntouchedValuesAndFocusesClickedSection();
     void notesDialogEnforcesCommentLimitAndUpdatesCounter();
@@ -233,7 +241,20 @@ private slots:
     void powerPointRendererCreatesReadablePdfWhenAvailable_data();
     void powerPointRendererCreatesReadablePdfWhenAvailable();
     void powerPointBatchCancellationLeavesNoFilesWhenAvailable();
+
+private:
+    QTemporaryDir m_settingsRoot;
 };
+
+void SpeakingEvalBatchReportServiceTests::initTestCase()
+{
+    QVERIFY(m_settingsRoot.isValid());
+    qputenv(
+        "CLASSMNGR_SETTINGS_ROOT",
+        m_settingsRoot.path().toUtf8()
+        );
+    SettingsManager::instance().clear();
+}
 
 void SpeakingEvalBatchReportServiceTests::safeFileNameUsesStudentNamesAndRemovesReservedCharacters()
 {
@@ -775,6 +796,482 @@ void SpeakingEvalBatchReportServiceTests::
             "• Use longer answers\n"
             "• Add more detail"
             )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiPromptBuilderUsesObservationsAndSelectedVoice()
+{
+    SpeakingEvalAiPromptInput input;
+    input.grade = 5;
+    input.englishName = QStringLiteral("Alice");
+    input.koreanName = QStringLiteral("김민지");
+    input.didWell =
+        QStringLiteral(
+            "• Alice showed strong memorization\n"
+            "• vocabulary\n\n"
+            "- 김민지 maintained eye contact"
+            );
+    input.needsImprovement =
+        QStringLiteral(
+            "• pronunciation of complex words\n"
+            "• supporting ideas"
+            );
+
+    const QString directPrompt =
+        buildSpeakingEvalAiCommentPrompt(input);
+    QVERIFY(!directPrompt.isEmpty());
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral("5th-grade elementary ESL student")
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "between 100 and 420 characters"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(QStringLiteral("exactly 3 short sentences"))
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "notes provide enough relevant detail, aim for 300 to 350 "
+                "characters"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "without inventing or repeating information"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(QStringLiteral("simple, common English"))
+        );
+    QVERIFY(
+        directPrompt.contains(QStringLiteral("parent with limited English"))
+        );
+    QVERIFY(
+        directPrompt.contains(QStringLiteral("Avoid long sentences"))
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "Sentence 1 must give positive feedback, sentence 2 must "
+                "give constructive advice, and sentence 3 must give positive "
+                "feedback"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "If sentence 1 emphasizes presentation skills, sentence 3 "
+                "must emphasize grammar-related skills"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "If sentence 1 emphasizes grammar-related skills, sentence "
+                "3 must emphasize presentation skills"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "Aim to praise at least two submitted skills in each "
+                "positive sentence"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "supplement it with another submitted strength"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral("Never invent a skill to reach two items")
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral("You do not need to mention every item")
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "End with a short final sentence that praises specific items "
+                "from the Did well list"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "Address the student directly as \"you\""
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "- STD_NAME showed strong memorization\n"
+                "- vocabulary\n"
+                "- STD_NAME maintained eye contact"
+                )
+            )
+        );
+    QVERIFY(
+        directPrompt.contains(
+            QStringLiteral(
+                "- pronunciation of complex words\n"
+                "- supporting ideas"
+                )
+            )
+        );
+    QVERIFY(directPrompt.contains(QStringLiteral("STD_NAME")));
+    QVERIFY(!directPrompt.contains(QStringLiteral("Alice")));
+    QVERIFY(!directPrompt.contains(QStringLiteral("김민지")));
+
+    input.voice = AiCommentVoice::ThirdPerson;
+    const QString thirdPersonPrompt =
+        buildSpeakingEvalAiCommentPrompt(input);
+    QVERIFY(
+        thirdPersonPrompt.contains(
+            QStringLiteral("Write for a parent or guardian")
+            )
+        );
+    QVERIFY(
+        thirdPersonPrompt.contains(
+            QStringLiteral("use they/their")
+            )
+        );
+
+    input.grade = 3;
+    QVERIFY(buildSpeakingEvalAiCommentPrompt(input).isEmpty());
+    input.grade = 6;
+    input.needsImprovement.clear();
+    QVERIFY(buildSpeakingEvalAiCommentPrompt(input).isEmpty());
+
+    QCOMPARE(
+        speakingEvalElementaryGrade(
+            QStringLiteral("E4")
+            ),
+        4
+        );
+    QCOMPARE(
+        speakingEvalElementaryGrade(
+            QStringLiteral("e6")
+            ),
+        6
+        );
+    QCOMPARE(
+        speakingEvalElementaryGrade(
+            QStringLiteral("M1")
+            ),
+        0
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiPromptButtonsRequireCompleteInput()
+{
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Student");
+    reportData.grade = 5;
+    reportData.notes =
+        QStringLiteral(
+            "[Did Well]\n• Clear pronunciation\n"
+            "[Needs Improvement]\n• Add supporting ideas"
+            );
+
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Student"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* previewButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalPreviewAiPromptButton")
+            );
+    auto* copyOpenButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    auto* didWellEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalDidWellNotes")
+            );
+    auto* needsImprovementEdit =
+        dialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalNeedsImprovementNotes")
+            );
+
+    QVERIFY(previewButton);
+    QVERIFY(copyOpenButton);
+    QVERIFY(didWellEdit);
+    QVERIFY(needsImprovementEdit);
+    QVERIFY(previewButton->isEnabled());
+    QVERIFY(copyOpenButton->isEnabled());
+
+    didWellEdit->clear();
+    QVERIFY(!previewButton->isEnabled());
+    QVERIFY(
+        previewButton->toolTip().contains(
+            QStringLiteral("Did Well")
+            )
+        );
+
+    didWellEdit->setPlainText(
+        QStringLiteral("• Strong effort")
+        );
+    QVERIFY(previewButton->isEnabled());
+
+    needsImprovementEdit->clear();
+    QVERIFY(!copyOpenButton->isEnabled());
+    QVERIFY(
+        copyOpenButton->toolTip().contains(
+            QStringLiteral("Needs Improvement")
+            )
+        );
+
+    reportData.grade = 0;
+    SpeakingEvalReportDialog unknownGradeDialog(
+        { { QStringLiteral("Student"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+    auto* unknownGradeButton =
+        unknownGradeDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalPreviewAiPromptButton")
+            );
+    QVERIFY(unknownGradeButton);
+    QVERIFY(!unknownGradeButton->isEnabled());
+    QVERIFY(
+        unknownGradeButton->toolTip().contains(
+            QStringLiteral("E4 through E6")
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiPromptPreviewCopiesAnAnonymousPrompt()
+{
+    SettingsManager::instance().set(
+        QString::fromUtf8(
+            OptionKeys::AiCommentProvider
+            ),
+        std::to_underlying(
+            AiCommentProvider::Gemini
+            )
+        );
+
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Alice");
+    reportData.koreanName = QStringLiteral("김민지");
+    reportData.grade = 4;
+    reportData.notes =
+        QStringLiteral(
+            "[Did Well]\n• memorization\n"
+            "[Needs Improvement]\n• posture"
+            );
+    SpeakingEvalReportDialog dialog(
+        { { QStringLiteral("Alice (김민지)"), reportData } },
+        0,
+        nullptr,
+        true
+        );
+
+    auto* previewButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalPreviewAiPromptButton")
+            );
+    auto* copyOpenButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+    QVERIFY(previewButton);
+    QVERIFY(copyOpenButton);
+    QVERIFY(
+        copyOpenButton->text().contains(
+            QStringLiteral("Gemini")
+            )
+        );
+
+    bool previewFound = false;
+    bool promptWasAnonymous = false;
+    QApplication::clipboard()->clear();
+    QTimer::singleShot(
+        50,
+        [&]()
+        {
+            auto* preview =
+                dialog.findChild<QDialog*>(
+                    QStringLiteral(
+                        "speakingEvalAiPromptPreviewDialog"
+                        )
+                    );
+            if (!preview)
+            {
+                return;
+            }
+
+            previewFound = true;
+            auto* promptEdit =
+                preview->findChild<QPlainTextEdit*>(
+                    QStringLiteral(
+                        "speakingEvalAiPromptPreviewText"
+                        )
+                    );
+            auto* copyButton =
+                preview->findChild<QPushButton*>(
+                    QStringLiteral(
+                        "speakingEvalAiPromptPreviewCopy"
+                        )
+                    );
+            QVERIFY(promptEdit);
+            QVERIFY(promptEdit->isReadOnly());
+            QVERIFY(copyButton);
+
+            const QString prompt =
+                promptEdit->toPlainText();
+            promptWasAnonymous =
+                prompt.contains(QStringLiteral("STD_NAME"))
+                && !prompt.contains(QStringLiteral("Alice"))
+                && !prompt.contains(QStringLiteral("김민지"));
+            QTest::mouseClick(
+                copyButton,
+                Qt::LeftButton
+                );
+            QCOMPARE(
+                QApplication::clipboard()->text(),
+                prompt
+                );
+            preview->accept();
+        }
+        );
+
+    QTest::mouseClick(
+        previewButton,
+        Qt::LeftButton
+        );
+    QVERIFY(previewFound);
+    QVERIFY(promptWasAnonymous);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    pastedAiCommentsReplaceStudentPlaceholder()
+{
+    SpeakingEvalReportData reportData;
+    reportData.englishName = QStringLiteral("Alex");
+
+    SpeakingEvalReportWidget report;
+    report.setReportData(reportData);
+    report.setInteractive(true);
+    auto* reportComment =
+        report.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalReportComments")
+            );
+    QVERIFY(reportComment);
+    reportComment->setFocus();
+    QApplication::clipboard()->setText(
+        QStringLiteral(
+            "Great work, STD_NAME! STD_NAME can improve. "
+            "std_name should remain."
+            )
+        );
+    QTest::keyClick(
+        reportComment,
+        Qt::Key_V,
+        Qt::ControlModifier
+        );
+    QCOMPARE(
+        reportComment->toPlainText(),
+        QStringLiteral(
+            "Great work, Alex! Alex can improve. "
+            "std_name should remain."
+            )
+        );
+
+    SpeakingEvalNotesDialog koreanNameDialog(
+        {},
+        {},
+        SpeakingEvalNotesDialog::InitialSection::Comment,
+        nullptr,
+        {},
+        QStringLiteral("김민준")
+        );
+    auto* notesDialogComment =
+        koreanNameDialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalNotesDialogComment")
+            );
+    QVERIFY(notesDialogComment);
+    notesDialogComment->setFocus();
+    QApplication::clipboard()->setText(
+        QStringLiteral("Keep going, STD_NAME!")
+        );
+    QTest::keyClick(
+        notesDialogComment,
+        Qt::Key_V,
+        Qt::ControlModifier
+        );
+    QCOMPARE(
+        notesDialogComment->toPlainText(),
+        QStringLiteral("Keep going, 김민준!")
+        );
+
+    notesDialogComment->clear();
+    QApplication::clipboard()->setText(
+        QStringLiteral("STD_NAME ").repeated(200)
+        );
+    QTest::keyClick(
+        notesDialogComment,
+        Qt::Key_V,
+        Qt::ControlModifier
+        );
+    QCOMPARE(
+        notesDialogComment->toPlainText().size(),
+        SpeakingEval::CommentMaxLength
+        );
+
+    SpeakingEvalNotesDialog missingNameDialog(
+        {},
+        {},
+        SpeakingEvalNotesDialog::InitialSection::Comment
+        );
+    auto* missingNameComment =
+        missingNameDialog.findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalNotesDialogComment")
+            );
+    QVERIFY(missingNameComment);
+    missingNameComment->setFocus();
+    QApplication::clipboard()->setText(
+        QStringLiteral("Well done, STD_NAME!")
+        );
+    QTest::keyClick(
+        missingNameComment,
+        Qt::Key_V,
+        Qt::ControlModifier
+        );
+    QCOMPARE(
+        missingNameComment->toPlainText(),
+        QStringLiteral("Well done, STD_NAME!")
         );
 }
 

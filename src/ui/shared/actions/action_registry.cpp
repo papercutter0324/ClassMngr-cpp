@@ -2,6 +2,7 @@
 #include "core/settingsmanager.h"
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/state/option_state_keys.h"
+#include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/styles/themed_icon_utils.h"
 
@@ -10,7 +11,11 @@
 #include <QKeySequence>
 #include <QApplication>
 #include <QIcon>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <QStyle>
+#include <QWidget>
 
 namespace
 {
@@ -308,6 +313,57 @@ void ActionRegistry::retranslate()
             documentViewerBackgroundState->action(DocumentViewerBackground::Black),
             tr("Black"),
             tr("Use a black PDF viewer background")
+        );
+    }
+
+    if (aiCommentProviderState)
+    {
+        updateActionText(
+            aiCommentProviderState->action(AiCommentProvider::ChatGPT),
+            tr("ChatGPT"),
+            tr("Open ChatGPT for AI comment prompts")
+            );
+        updateActionText(
+            aiCommentProviderState->action(AiCommentProvider::Gemini),
+            tr("Gemini"),
+            tr("Open Gemini for AI comment prompts")
+            );
+        updateActionText(
+            aiCommentProviderState->action(AiCommentProvider::Claude),
+            tr("Claude"),
+            tr("Open Claude for AI comment prompts")
+            );
+        updateActionText(
+            aiCommentProviderState->action(
+                AiCommentProvider::MicrosoftCopilot
+                ),
+            tr("Microsoft Copilot"),
+            tr("Open Microsoft Copilot for AI comment prompts")
+            );
+        updateActionText(
+            aiCommentProviderState->action(
+                AiCommentProvider::CustomWebsite
+                ),
+            tr("Custom Website..."),
+            tr("Choose a custom HTTPS AI website")
+            );
+    }
+
+    if (aiCommentVoiceState)
+    {
+        updateActionText(
+            aiCommentVoiceState->action(
+                AiCommentVoice::DirectToStudent
+                ),
+            tr("Direct to Student"),
+            tr("Write AI comments directly to the student")
+            );
+        updateActionText(
+            aiCommentVoiceState->action(
+                AiCommentVoice::ThirdPerson
+                ),
+            tr("Third Person"),
+            tr("Write AI comments for a parent or guardian")
             );
     }
 
@@ -830,6 +886,155 @@ void ActionRegistry::createOptionActions()
 
     documentViewerBackgroundState->loadFromSettings(
         DocumentViewerBackground::Default
+        );
+
+    aiCommentProviderState =
+        new OptionState<AiCommentProvider>(
+            OptionKeys::AiCommentProvider,
+            this
+            );
+
+    aiCommentProviderState->addOption(
+        AiCommentProvider::ChatGPT,
+        createCheckableAction(
+            tr("ChatGPT"),
+            tr("Open ChatGPT for AI comment prompts")
+            )
+        );
+    aiCommentProviderState->addOption(
+        AiCommentProvider::Gemini,
+        createCheckableAction(
+            tr("Gemini"),
+            tr("Open Gemini for AI comment prompts")
+            )
+        );
+    aiCommentProviderState->addOption(
+        AiCommentProvider::Claude,
+        createCheckableAction(
+            tr("Claude"),
+            tr("Open Claude for AI comment prompts")
+            )
+        );
+    aiCommentProviderState->addOption(
+        AiCommentProvider::MicrosoftCopilot,
+        createCheckableAction(
+            tr("Microsoft Copilot"),
+            tr("Open Microsoft Copilot for AI comment prompts")
+            )
+        );
+    QAction* customAiWebsiteAction =
+        aiCommentProviderState->addOption(
+            AiCommentProvider::CustomWebsite,
+            createCheckableAction(
+                tr("Custom Website..."),
+                tr("Choose a custom HTTPS AI website")
+                ),
+            false
+            );
+
+    aiCommentProviderState->loadFromSettings(
+        AiCommentProvider::ChatGPT
+        );
+    const QString storedCustomAiWebsite =
+        SettingsManager::instance()
+            .get(
+                QString::fromUtf8(
+                    OptionKeys::AiCommentCustomWebsiteUrl
+                    )
+                )
+            .toString();
+    if (
+        aiCommentProviderState->current()
+            == AiCommentProvider::CustomWebsite
+        && !isValidCustomAiWebsiteUrl(storedCustomAiWebsite)
+        )
+    {
+        aiCommentProviderState->set(
+            AiCommentProvider::ChatGPT
+            );
+    }
+
+    connect(
+        customAiWebsiteAction,
+        &QAction::triggered,
+        this,
+        [this]()
+        {
+            const AiCommentProvider previousProvider =
+                aiCommentProviderState->current();
+            SettingsManager& settings =
+                SettingsManager::instance();
+            const QString existingUrl =
+                settings.get(
+                    QString::fromUtf8(
+                        OptionKeys::AiCommentCustomWebsiteUrl
+                        )
+                    ).toString();
+            bool accepted = false;
+            const QString enteredUrl =
+                QInputDialog::getText(
+                    qobject_cast<QWidget*>(parent()),
+                    tr("Custom AI Website"),
+                    tr("HTTPS URL:"),
+                    QLineEdit::Normal,
+                    existingUrl,
+                    &accepted
+                    ).trimmed();
+
+            if (!accepted)
+            {
+                aiCommentProviderState
+                    ->action(previousProvider)
+                    ->setChecked(true);
+                return;
+            }
+
+            if (!isValidCustomAiWebsiteUrl(enteredUrl))
+            {
+                aiCommentProviderState
+                    ->action(previousProvider)
+                    ->setChecked(true);
+                QMessageBox::warning(
+                    qobject_cast<QWidget*>(parent()),
+                    tr("Invalid AI Website"),
+                    tr("Enter a valid HTTPS website URL.")
+                    );
+                return;
+            }
+
+            settings.set(
+                QString::fromUtf8(
+                    OptionKeys::AiCommentCustomWebsiteUrl
+                    ),
+                enteredUrl
+                );
+            aiCommentProviderState->set(
+                AiCommentProvider::CustomWebsite
+                );
+        }
+        );
+
+    aiCommentVoiceState =
+        new OptionState<AiCommentVoice>(
+            OptionKeys::AiCommentVoice,
+            this
+            );
+    aiCommentVoiceState->addOption(
+        AiCommentVoice::DirectToStudent,
+        createCheckableAction(
+            tr("Direct to Student"),
+            tr("Write AI comments directly to the student")
+            )
+        );
+    aiCommentVoiceState->addOption(
+        AiCommentVoice::ThirdPerson,
+        createCheckableAction(
+            tr("Third Person"),
+            tr("Write AI comments for a parent or guardian")
+            )
+        );
+    aiCommentVoiceState->loadFromSettings(
+        AiCommentVoice::DirectToStudent
         );
 
 

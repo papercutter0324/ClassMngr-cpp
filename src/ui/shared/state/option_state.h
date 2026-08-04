@@ -30,7 +30,8 @@ public:
 
     QAction* addOption(
         T value,
-        QAction* action
+        QAction* action,
+        bool selectOnTrigger = true
         )
     {
         action->setCheckable(true);
@@ -38,14 +39,17 @@ public:
         m_group->addAction(action);
         m_actions[value] = action;
 
-        connect(
-            action,
-            &QAction::triggered,
-            this,
-            [this, value]()
-            {
-                set(value);
-            });
+        if (selectOnTrigger)
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, value]()
+                {
+                    set(value);
+                });
+        }
 
         return action;
     }

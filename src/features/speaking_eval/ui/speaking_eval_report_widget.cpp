@@ -1,12 +1,11 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
 #include "domain/models/speaking_evaluation.h"
+#include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 
 #include <QFrame>
-#include <QPlainTextEdit>
 #include <QSignalBlocker>
 #include <QSizePolicy>
-#include <QTextCursor>
 
 SpeakingEvalReportWidget::SpeakingEvalReportWidget(
     QWidget* parent
@@ -21,7 +20,7 @@ SpeakingEvalReportWidget::SpeakingEvalReportWidget(
     setFixedSize(sizeHint());
 
     m_commentEditor =
-        new QPlainTextEdit(this);
+        new SpeakingEvalCommentEdit(this);
     m_commentEditor->setObjectName(
         QStringLiteral("speakingEvalReportComments")
         );
@@ -43,15 +42,8 @@ SpeakingEvalReportWidget::SpeakingEvalReportWidget(
                 return;
             }
 
-            QString comments = m_commentEditor->toPlainText();
-            if (comments.size() > SpeakingEval::CommentMaxLength)
-            {
-                comments.truncate(SpeakingEval::CommentMaxLength);
-                const QSignalBlocker blocker(m_commentEditor);
-                m_commentEditor->setPlainText(comments);
-                m_commentEditor->moveCursor(QTextCursor::End);
-            }
-
+            const QString comments =
+                m_commentEditor->toPlainText();
             m_data.comments = comments;
             emit commentsEdited(m_data.comments);
             update();

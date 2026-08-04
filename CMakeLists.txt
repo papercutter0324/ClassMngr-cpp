@@ -2125,6 +2125,42 @@ if(BUILD_TESTING)
         COMMAND ClassMngrLanguageServiceTests
     )
 
+    qt_add_executable(ClassMngrAiCommentOptionsTests
+        tests/ai_comment_options_tests.cpp
+        src/core/settingsmanager.cpp
+        src/ui/shared/actions/action_registry.cpp
+        src/ui/shared/state/ai_comment_options.cpp
+        src/ui/shared/styles/themed_icon_utils.cpp
+    )
+
+    target_compile_features(ClassMngrAiCommentOptionsTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrAiCommentOptionsTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrAiCommentOptionsTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrAiCommentOptionsTests
+        COMMAND ClassMngrAiCommentOptionsTests
+    )
+
+    set_tests_properties(ClassMngrAiCommentOptionsTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     if(APPLE)
         qt_add_executable(ClassMngrPowerPointDataAccessNoticeTests
             tests/powerpoint_data_access_notice_tests.cpp
@@ -2317,6 +2353,7 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
+        src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
@@ -2380,8 +2417,11 @@ if(BUILD_TESTING)
         tests/speaking_eval_batch_report_service_tests.cpp
         src/core/fontmanager.cpp
         src/core/resource_packs/resource_pack_manager.cpp
+        src/core/settingsmanager.cpp
         src/core/updater/version.cpp
+        src/features/speaking_eval/services/speaking_eval_ai_prompt.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
+        src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_delegate.cpp
         src/features/speaking_eval/ui/speaking_eval_model.cpp
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
@@ -2399,6 +2439,7 @@ if(BUILD_TESTING)
         src/ui/shared/printing/pdf_print_dialog_widgets.cpp
         src/ui/shared/printing/pdf_print_service.cpp
         src/ui/shared/styles/role_style_registry.cpp
+        src/ui/shared/state/ai_comment_options.cpp
         src/ui/shared/widgets/no_wheel_combobox.cpp
     )
 

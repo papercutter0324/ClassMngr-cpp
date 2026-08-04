@@ -1,5 +1,6 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
+#include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QMouseEvent>
@@ -182,6 +183,10 @@ void SpeakingEvalReportWidget::updateCommentEditor()
     }
 
     const QSignalBlocker blocker(m_commentEditor);
+    m_commentEditor->setStudentNames(
+        m_data.englishName,
+        m_data.koreanName
+        );
     m_commentEditor->setPlainText(m_data.comments);
     const SpeakingEvalTemplateAssets& assets =
         speakingEvalTemplateAssets(reportTemplate());
