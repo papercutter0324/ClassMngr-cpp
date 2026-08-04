@@ -280,6 +280,7 @@ class SpeakingEvalReportWidgetTests : public QObject
 private slots:
     void templateAssetsAreValidAndUseAuthoritativeGeometry();
     void standardMetadataUsesSharedFontAndHalfPointGradeFitting();
+    void commentsUseSharedFontFourteenPointMaximumAndWholePointFitting();
     void templateUsesPortraitSize_data();
     void templateUsesPortraitSize();
     void representativeReportPreservesAuthoredBackground_data();
@@ -714,6 +715,64 @@ void SpeakingEvalReportWidgetTests::
         qreal(qRound(widestGradeSize * 2.0))
         );
     QCOMPARE(widestGradeSize, wholePointGradeSize + 0.5);
+}
+
+void SpeakingEvalReportWidgetTests::
+    commentsUseSharedFontFourteenPointMaximumAndWholePointFitting()
+{
+    const SpeakingEvalTemplateAssets& standard =
+        speakingEvalTemplateAssets(
+            SpeakingEvalReportTemplate::Standard
+            );
+    const SpeakingEvalTemplateAssets& advanced =
+        speakingEvalTemplateAssets(
+            SpeakingEvalReportTemplate::Advanced
+            );
+    const SpeakingEvalFieldAsset standardComments =
+        standard.fields.value(QStringLiteral("comments"));
+    const SpeakingEvalFieldAsset advancedComments =
+        advanced.fields.value(QStringLiteral("comments"));
+
+    QCOMPARE(advancedComments.fontRole, standardComments.fontRole);
+    QCOMPARE(standardComments.fontSizePoints, 14.0);
+    QCOMPARE(advancedComments.fontSizePoints, 14.0);
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            standardComments,
+            QStringLiteral("A concise comment.")
+            ),
+        14.0
+        );
+    QVERIFY(
+        advancedComments.minimumScale
+            <= 1.0 / advancedComments.fontSizePoints
+        );
+    QCOMPARE(
+        speakingEvalFittedFieldFontSize(
+            advancedComments,
+            QStringLiteral("A concise comment.")
+            ),
+        14.0
+        );
+
+    QString longComment;
+    qreal fittedSize = advancedComments.fontSizePoints;
+    while (
+        fittedSize == advancedComments.fontSizePoints
+        && longComment.size() < 450
+        )
+    {
+        longComment += QStringLiteral("word ");
+        fittedSize =
+            speakingEvalFittedFieldFontSize(
+                advancedComments,
+                longComment,
+                1.0
+                );
+    }
+
+    QVERIFY(fittedSize < advancedComments.fontSizePoints);
+    QCOMPARE(fittedSize, qreal(qRound(fittedSize)));
 }
 
 void SpeakingEvalReportWidgetTests::templateUsesPortraitSize_data()

@@ -37,6 +37,7 @@ namespace
 
 constexpr QSizeF ReportPageSizeInches(7.5, 10.833333);
 constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
+constexpr auto PowerPointCommentFontName = "Segoe UI Semibold";
 
 bool removeDirectory(
     const QString& path
@@ -546,6 +547,7 @@ struct PowerPointStudentJob
     QString koreanTeacher;
     QString date;
     QString comments;
+    qreal commentsFontSizePoints = 0.0;
     QString overallGrade;
     std::array<QString, 6> scores;
 };
@@ -639,6 +641,20 @@ PowerPointBatchJob powerPointBatchJob(
         job.koreanTeacher = powerPointText(data.koreanTeacher);
         job.date = powerPointText(data.date);
         job.comments = powerPointText(data.comments);
+        const SpeakingEvalFieldAsset* commentsField =
+            speakingEvalFieldAsset(
+                data.reportTemplate,
+                QStringLiteral("comments")
+                );
+        if (commentsField)
+        {
+            job.commentsFontSizePoints =
+                speakingEvalFittedFieldFontSize(
+                    *commentsField,
+                    job.comments,
+                    1.0
+                    );
+        }
         job.overallGrade = powerPointText(overallGrade(data.scores));
         for (
             std::size_t scoreIndex = 0;
@@ -692,6 +708,14 @@ QJsonObject powerPointBatchJson(
                 { QStringLiteral("koreanTeacher"), job.koreanTeacher },
                 { QStringLiteral("date"), job.date },
                 { QStringLiteral("comments"), job.comments },
+                {
+                    QStringLiteral("commentsFontName"),
+                    QString::fromLatin1(PowerPointCommentFontName)
+                },
+                {
+                    QStringLiteral("commentsFontSizePoints"),
+                    job.commentsFontSizePoints
+                },
                 { QStringLiteral("overallGrade"), job.overallGrade },
                 { QStringLiteral("scores"), scores }
             }
@@ -882,6 +906,34 @@ function Set-Text($shape, [string]$value) {
     $shape.TextFrame.TextRange.Text = $value
 }
 
+function Set-Comments(
+    $shape,
+    [string]$value,
+    [string]$fontName,
+    [double]$fontSizePoints
+) {
+    if ($fontSizePoints -le 0) {
+        $shape.TextFrame.TextRange.Text = $value
+        return
+    }
+
+    $textFrame = $shape.TextFrame
+    $maximumTextHeight = $shape.Height `
+        - $textFrame.MarginTop `
+        - $textFrame.MarginBottom
+    $textFrame.AutoSize = 0 # ppAutoSizeNone
+    $textFrame.TextRange.Text = $value
+    $textFrame.TextRange.Font.Name = $fontName
+    $textFrame.TextRange.Font.Size = $fontSizePoints
+    while (
+        $textFrame.TextRange.BoundHeight -gt $maximumTextHeight `
+        -and $fontSizePoints -gt 1
+    ) {
+        $fontSizePoints -= 1
+        $textFrame.TextRange.Font.Size = $fontSizePoints
+    }
+}
+
 function Set-UnderlinedText($shape, [string]$value) {
     $shape.TextFrame.TextRange.Text = $value
     # Keep the text on the underline supplied by the template.  The text-box
@@ -1013,7 +1065,11 @@ try {
         Set-UnderlinedText $nativeTeacherShape ([string]$student.nativeTeacher)
         Set-UnderlinedText $koreanTeacherShape ([string]$student.koreanTeacher)
         Set-UnderlinedText $evaluationDateShape ([string]$student.date)
-        Set-Text $commentsShape ([string]$student.comments)
+        Set-Comments `
+            $commentsShape `
+            ([string]$student.comments) `
+            ([string]$student.commentsFontName) `
+            ([double]$student.commentsFontSizePoints)
         Set-Text $overallGradeShape ([string]$student.overallGrade)
 
         for ($scoreIndex = 0; $scoreIndex -lt 6; ++$scoreIndex) {
@@ -1115,6 +1171,17 @@ on setShapeText(targetShape, textValue, alignWithUnderline)
         end if
     end tell
 end setShapeText
+
+on setCommentsText(targetShape, textValue, fontName, fontSizePoints)
+    tell application "Microsoft PowerPoint"
+        set commentTextRange to text range of text frame of targetShape
+        set content of commentTextRange to textValue
+        if fontSizePoints is greater than 0 then
+            set font name of font of commentTextRange to fontName
+            set font size of font of commentTextRange to fontSizePoints
+        end if
+    end tell
+end setCommentsText
 
 on requireTable(shapeContainer, targetName, minimumRows, minimumColumns)
     set tableShape to my requireShape(shapeContainer, targetName)
@@ -1272,9 +1339,11 @@ on run argv
                 set koreanTeacher to my decodedText(item (argumentIndex + 7) of argv)
                 set evaluationDate to my decodedText(item (argumentIndex + 8) of argv)
                 set commentsText to my decodedText(item (argumentIndex + 9) of argv)
-                set overallGrade to my decodedText(item (argumentIndex + 10) of argv)
-                set scoreValues to items (argumentIndex + 11) thru (argumentIndex + 16) of argv
-                set argumentIndex to argumentIndex + 17
+                set commentsFontName to my decodedText(item (argumentIndex + 10) of argv)
+                set commentsFontSizePoints to item (argumentIndex + 11) of argv as real
+                set overallGrade to my decodedText(item (argumentIndex + 12) of argv)
+                set scoreValues to items (argumentIndex + 13) thru (argumentIndex + 18) of argv
+                set argumentIndex to argumentIndex + 19
 
                 set exportStep to "updating report text for " & studentName
                 my setShapeText(englishNameShape, englishName, true)
@@ -1283,7 +1352,7 @@ on run argv
                 my setShapeText(nativeTeacherShape, nativeTeacher, true)
                 my setShapeText(koreanTeacherShape, koreanTeacher, true)
                 my setShapeText(evaluationDateShape, evaluationDate, true)
-                my setShapeText(commentsShape, commentsText, false)
+                my setCommentsText(commentsShape, commentsText, commentsFontName, commentsFontSizePoints)
                 my setShapeText(overallGradeShape, overallGrade, false)
 
                 set exportStep to "updating score-table cells for " & studentName
@@ -1539,6 +1608,12 @@ PowerPointBatchStatus renderPowerPointBatch(
                 macPowerPointTextArgument(job.koreanTeacher),
                 macPowerPointTextArgument(job.date),
                 macPowerPointTextArgument(job.comments),
+                macPowerPointTextArgument(
+                    QString::fromLatin1(
+                        PowerPointCommentFontName
+                        )
+                    ),
+                QString::number(job.commentsFontSizePoints),
                 macPowerPointTextArgument(job.overallGrade),
                 job.scores[0],
                 job.scores[1],
