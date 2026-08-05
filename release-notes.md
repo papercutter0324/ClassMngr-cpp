@@ -1,39 +1,31 @@
-# ClassMngr 0.12.0 Release Notes
+# ClassMngr 0.13.0 Release Notes
 
-ClassMngr 0.12.0 adds AI-assisted comment writing for speaking evaluations and
-makes it easier to organize observations before creating reports. It also
-streamlines common report and roster actions.
+ClassMngr 0.13.0 makes first-time setup clearer, introduces the new ClassMngr
+database file format, and simplifies sharing batches of speaking-evaluation
+reports.
 
-## AI-Assisted Speaking-Evaluation Comments
+## Getting Started
 
-- Added tools to create AI comment prompts for individual E4–E6 students from
-  private “Did Well” and “Needs Improvement” observations.
-- Added a whole-class workflow that creates one prompt for selected students,
-  parses the pasted AI response, and lets you review and selectively apply each
-  comment.
-- Replaces student names with placeholders in prompts and restores each
-  student's name when comments are pasted back into ClassMngr.
-- Added options to write comments directly to the student or in the third
-  person.
-- Added ChatGPT, Gemini, Claude, Microsoft Copilot, and a custom HTTPS website
-  as preferred AI website choices.
-- Added safeguards for missing observations, invalid responses, comment-length
-  limits, and replacement of existing comments.
+- Added a Getting Started panel when no database is open.
+- The panel guides new users through creating or opening a database, adding or
+  importing Korean teachers, creating classes, and then adding schedules and
+  rosters.
 
-## Speaking-Evaluation Workflow
+## ClassMngr Database Files
 
-- Combined private observations and the report comment in a single student
-  dialog.
-- Split private observations into “Did Well” and “Needs Improvement” fields
-  with automatic bullet-list formatting.
-- Added comment character counters and consistent 450-character enforcement
-  when typing or pasting text.
-- Added AI prompt actions and editable comments to the report-creation dialog.
-- Renamed report actions to “New Report” and “Print Reports” and added a
-  separate “AI Comments for Class” action.
+- New databases, saved copies, and exports now use the `.tps` ClassMngr
+  Database format.
+- Existing legacy `.db` databases can still be opened.
+- On Windows, the installer can associate `.tps` files with ClassMngr so they
+  open directly from File Explorer.
 
-## Interface Improvements
+## Speaking-Evaluation Reports
 
-- Added a Korean Keyboard shortcut to class rosters.
-- Changed the signature preview in My Information to use a white background so
-  transparent signatures are easier to see in both themes.
+- Exporting reports for multiple students now creates a single ZIP archive by
+  default, making the reports easier to share.
+- Added an option to also keep the individual PDF files when creating a ZIP
+  archive.
+- The built-in report template is now the default and recommended report
+  generator.
+- PowerPoint remains available as a fallback when the built-in generator does
+  not work.
