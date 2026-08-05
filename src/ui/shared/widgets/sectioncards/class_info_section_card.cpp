@@ -57,6 +57,22 @@ void SectionCard::setTitle(
         );
 }
 
+void SectionCard::setTitleAlignment(
+    Qt::Alignment alignment
+    )
+{
+    if (!m_titleLabel || !m_layout)
+    {
+        return;
+    }
+
+    m_titleLabel->setAlignment(alignment);
+    m_layout->setAlignment(
+        m_titleLabel,
+        alignment
+        );
+}
+
 QVBoxLayout* SectionCard::contentLayout() const
 {
     return m_layout;

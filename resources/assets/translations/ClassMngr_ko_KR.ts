@@ -4308,11 +4308,6 @@ Rm: %1</source>
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-368"/>
-        <source>Page %1</source>
-        <translation>%1페이지</translation>
-    </message>
-    <message>
         <location line="+14"/>
         <source>No sub prep print file path was provided.</source>
         <translation>대체 수업 준비 인쇄 파일 경로가 제공되지 않았습니다.</translation>
@@ -8866,13 +8861,6 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>수업 정보</translation>
     </message>
     <message>
-        <location line="-42"/>
-        <location line="+198"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+30"/>
-        <source>Additional Notes</source>
-        <translation>추가 노트</translation>
-    </message>
-    <message>
         <location line="-229"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-353"/>
         <source>Sub Prep</source>
@@ -8954,8 +8942,18 @@ The package was created at:
     <message>
         <location line="-358"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+96"/>
-        <source>Class Materials</source>
-        <translation>수업 자료</translation>
+        <source>Class Materials &amp; Lesson Notes</source>
+        <translation>수업 자료 및 수업 노트</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="292"/>
+        <source>Materials Location</source>
+        <translation>자료 위치</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="308"/>
+        <source>Detailed Class &amp; Lesson Notes</source>
+        <translation>상세 학급 및 수업 노트</translation>
     </message>
     <message>
         <location line="+77"/>

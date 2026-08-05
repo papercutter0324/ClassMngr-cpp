@@ -126,14 +126,12 @@ private:
     QLabel* m_importantInformationHeading = nullptr;
     QLabel* m_scheduleHeading = nullptr;
     QLabel* m_classInformationHeading = nullptr;
-    QLabel* m_subNotesHeading = nullptr;
 
     SectionCard* m_campusCard = nullptr;
     SectionCard* m_zoomCard = nullptr;
     SectionCard* m_materialsCard = nullptr;
     SectionCard* m_gradingCard = nullptr;
     SectionCard* m_scheduleCard = nullptr;
-    SectionCard* m_notesCard = nullptr;
 
     QLineEdit* m_officeNumberEdit = nullptr;
     QLineEdit* m_officeWifiEdit = nullptr;
@@ -153,6 +151,8 @@ private:
     QLabel* m_photocopierCodeLabel = nullptr;
     QLabel* m_zoomLoginIdLabel = nullptr;
     QLabel* m_zoomPasswordLabel = nullptr;
+    QLabel* m_materialsLocationLabel = nullptr;
+    QLabel* m_detailedClassNotesLabel = nullptr;
     QLabel* m_gradingInstructionsLabel = nullptr;
     QLabel* m_specialInstructionsLabel = nullptr;
 

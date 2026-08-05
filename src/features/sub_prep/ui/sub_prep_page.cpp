@@ -163,13 +163,6 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_subNotesHeading)
-    {
-        m_subNotesHeading->setText(
-            tr("Additional Notes")
-            );
-    }
-
     if (m_campusCard)
     {
         m_campusCard->setTitle(
@@ -187,7 +180,7 @@ void SubPrepPage::retranslateUi()
     if (m_materialsCard)
     {
         m_materialsCard->setTitle(
-            tr("Class Materials")
+            tr("Class Materials & Lesson Notes")
             );
     }
 
@@ -212,10 +205,17 @@ void SubPrepPage::retranslateUi()
             );
     }
 
-    if (m_notesCard)
+    if (m_materialsLocationLabel)
     {
-        m_notesCard->setTitle(
-            tr("Notes")
+        m_materialsLocationLabel->setText(
+            tr("Materials Location")
+            );
+    }
+
+    if (m_detailedClassNotesLabel)
+    {
+        m_detailedClassNotesLabel->setText(
+            tr("Detailed Class & Lesson Notes")
             );
     }
 
@@ -298,7 +298,7 @@ void SubPrepPage::scrollToSection(
         break;
 
     case SubPrepSection::SubNotes:
-        target = m_subNotesHeading;
+        target = m_materialsCard;
         break;
     }
 
@@ -364,7 +364,7 @@ QString SubPrepPage::currentSectionName() const
         return tr("Important Information");
 
     case SubPrepSection::SubNotes:
-        return tr("Additional Notes");
+        return tr("Class Materials & Lesson Notes");
     }
 
     return {};

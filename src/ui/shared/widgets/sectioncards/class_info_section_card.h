@@ -18,6 +18,9 @@ public:
     void setTitle(
         const QString& title
         );
+    void setTitleAlignment(
+        Qt::Alignment alignment
+        );
 
     QVBoxLayout* contentLayout() const;
 

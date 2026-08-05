@@ -31,8 +31,7 @@ namespace SubPrepPrintService
 namespace
 {
 constexpr QPageSize::PageSizeId SubPrepPdfPageSize = QPageSize::A4;
-constexpr qreal SubPrepPdfMarginInches = 0.5;
-constexpr qreal FooterHeightInches = 0.24;
+constexpr qreal SubPrepPdfMarginInches = 0.2;
 constexpr qreal SubNotesLineSpacingPoints = 16.0;
 constexpr qreal MajorSectionSpacingPoints = 21.0;
 constexpr qreal ScheduleTimeColumnWidthPoints = 64.0;
@@ -766,14 +765,19 @@ QString documentHtml(
                      )
                : QString())
         + subsectionHtml(
-            translate("Class Materials"),
+            translate("Class Materials & Lesson Notes"),
             noteHtml(
-                QString(),
+                translate("Materials Location"),
                 request.classMaterials,
                 QString(),
                 QStringLiteral(" compact-note")
-                ),
-            QStringLiteral("class-materials-subsection")
+                )
+            + noteHtml(
+                translate("Detailed Class & Lesson Notes"),
+                request.subNotes,
+                QString(),
+                QStringLiteral(" compact-note")
+                )
             )
         + subsectionHtml(
             translate("Book Report Grading"),
@@ -1182,14 +1186,6 @@ QRectF contentRect(
         );
 }
 
-qreal pixelsForInches(
-    qreal inches,
-    int resolutionDpi
-    )
-{
-    return inches * std::max(1, resolutionDpi);
-}
-
 qreal pixelsForPoints(
     qreal points,
     int resolutionDpi
@@ -1314,32 +1310,6 @@ void drawSubNotesWritingLines(
     painter.restore();
 }
 
-void drawPageFooter(
-    QPainter& painter,
-    const QRectF& content,
-    qreal footerHeight,
-    int pageNumber
-    )
-{
-    QFont pageFont =
-        FontManager::getUiFont(-1);
-    pageFont.setPointSizeF(8.5);
-
-    painter.save();
-    painter.setPen(Qt::black);
-    painter.setFont(pageFont);
-    painter.drawText(
-        QRectF(
-            content.left(),
-            content.bottom() - footerHeight + 8.0,
-            content.width(),
-            footerHeight - 8.0
-            ),
-        Qt::AlignRight | Qt::AlignVCenter,
-        QObject::tr("Page %1").arg(pageNumber)
-        );
-    painter.restore();
-}
 }
 
 Result saveSubPrepPdf(
@@ -1378,17 +1348,7 @@ Result saveSubPrepPdf(
 
     const QRectF page = pageRect(writer);
     const QRectF content = contentRect(page, writer.resolution());
-    const qreal footerHeight =
-        pixelsForInches(
-            FooterHeightInches,
-            writer.resolution()
-            );
-    const QRectF body(
-        content.left(),
-        content.top(),
-        content.width(),
-        content.height() - footerHeight
-        );
+    const QRectF body = content;
 
     if (
         page.isEmpty()
@@ -1606,12 +1566,6 @@ Result saveSubPrepPdf(
                 : subNotesLineStart;
 
         painter.fillRect(page, Qt::white);
-        drawPageFooter(
-            painter,
-            content,
-            footerHeight,
-            pageIndex + 1
-            );
 
         painter.save();
         painter.setClipRect(body);

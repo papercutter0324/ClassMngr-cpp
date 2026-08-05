@@ -3871,11 +3871,6 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-368"/>
-        <source>Page %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+14"/>
         <source>No sub prep print file path was provided.</source>
         <translation type="unfinished"></translation>
@@ -8154,13 +8149,6 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-195"/>
-        <location line="+198"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+300"/>
-        <source>Additional Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="-191"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-288"/>
         <source>Campus Information</source>
@@ -8175,7 +8163,17 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="+7"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+66"/>
-        <source>Class Materials</source>
+        <source>Class Materials &amp; Lesson Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="292"/>
+        <source>Materials Location</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="308"/>
+        <source>Detailed Class &amp; Lesson Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

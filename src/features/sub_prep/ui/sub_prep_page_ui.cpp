@@ -120,6 +120,9 @@ void SubPrepPage::buildUi()
         "subPrepSection",
         QStringLiteral("campus")
         );
+    m_campusCard->setTitleAlignment(
+        Qt::AlignCenter
+        );
 
     auto* campusGrid =
         new QGridLayout;
@@ -212,6 +215,9 @@ void SubPrepPage::buildUi()
         "subPrepSection",
         QStringLiteral("zoom")
         );
+    m_zoomCard->setTitleAlignment(
+        Qt::AlignCenter
+        );
 
     auto* zoomGrid =
         new QGridLayout;
@@ -271,20 +277,47 @@ void SubPrepPage::buildUi()
 
     m_materialsCard =
         new SectionCard(
-            tr("Class Materials"),
+            tr("Class Materials & Lesson Notes"),
             m_scrollContent
             );
     m_materialsCard->setProperty(
         "subPrepSection",
         QStringLiteral("materials")
         );
+    m_materialsCard->setTitleAlignment(
+        Qt::AlignCenter
+        );
+    m_materialsLocationLabel =
+        createFieldLabel(
+            tr("Materials Location"),
+            m_materialsCard
+            );
+    m_materialsCard->contentLayout()->addWidget(
+        m_materialsLocationLabel
+        );
     m_classMaterialsEdit =
-        createTextEdit(6, false, m_materialsCard);
+        createTextEdit(3, false, m_materialsCard);
     m_classMaterialsEdit->setObjectName(
         QStringLiteral("subPrepClassMaterialsEdit")
         );
     m_materialsCard->contentLayout()->addWidget(
         m_classMaterialsEdit
+        );
+    m_detailedClassNotesLabel =
+        createFieldLabel(
+            tr("Detailed Class & Lesson Notes"),
+            m_materialsCard
+            );
+    m_materialsCard->contentLayout()->addWidget(
+        m_detailedClassNotesLabel
+        );
+    m_subNotesEdit =
+        createTextEdit(5, false, m_materialsCard);
+    m_subNotesEdit->setObjectName(
+        QStringLiteral("subPrepNotesEdit")
+        );
+    m_materialsCard->contentLayout()->addWidget(
+        m_subNotesEdit
         );
     m_scrollContentLayout->addWidget(m_materialsCard);
 
@@ -296,6 +329,9 @@ void SubPrepPage::buildUi()
     m_gradingCard->setProperty(
         "subPrepSection",
         QStringLiteral("grading")
+        );
+    m_gradingCard->setTitleAlignment(
+        Qt::AlignCenter
         );
 
     m_gradingInstructionsLabel =
@@ -399,34 +435,6 @@ void SubPrepPage::buildUi()
         m_classInformationContent
         );
 
-    m_subNotesHeading =
-        createTopLevelHeading(
-            tr("Additional Notes"),
-            m_scrollContent
-            );
-    m_scrollContentLayout->addWidget(
-        m_subNotesHeading
-        );
-
-    m_notesCard =
-        new SectionCard(
-            tr("Notes"),
-            m_scrollContent
-            );
-    m_notesCard->setProperty(
-        "subPrepSection",
-        QStringLiteral("sub_notes")
-        );
-    m_subNotesEdit =
-        createTextEdit(10, false, m_notesCard);
-    m_subNotesEdit->setObjectName(
-        QStringLiteral("subPrepNotesEdit")
-        );
-    m_notesCard->contentLayout()->addWidget(
-        m_subNotesEdit
-        );
-    m_scrollContentLayout->addWidget(m_notesCard);
-
     connect(
         m_classMaterialsEdit,
         &QTextEdit::textChanged,
@@ -458,4 +466,3 @@ void SubPrepPage::buildUi()
         &SubPrepPage::generateSubPrep
         );
 }
-

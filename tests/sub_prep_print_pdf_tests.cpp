@@ -32,7 +32,7 @@ namespace
 {
 constexpr int RenderDpi = 300;
 constexpr qreal PointsPerInch = 72.0;
-constexpr qreal MarginInches = 0.5;
+constexpr qreal MarginInches = 0.2;
 
 SubPrepPrintService::Request sampleRequest()
 {
@@ -537,7 +537,8 @@ private slots:
     void rendersTeacherReferenceTableAndClassList();
     void teacherSectionBordersUseScheduleColor();
     void keepsTeacherSectionsTogetherAcrossPages();
-    void subNotesUsePromptAndRuledWritingSpace();
+    void detailedClassAndLessonNotesRenderAlongsideSubNotesWritingSpace();
+    void emptyDetailedClassAndLessonNotesRenderNotAvailable();
     void subNotesArePresentForSelectedDayCombinations_data();
     void subNotesArePresentForSelectedDayCombinations();
     void denseWeekdayScheduleFitsSectionWidth();
@@ -1037,7 +1038,7 @@ void SubPrepPrintPdfTests::rendersTeacherReferenceTableAndClassList()
     QVERIFY(text.contains(QStringLiteral("Internet Type")));
     QVERIFY(text.contains(QStringLiteral("Projection Type")));
     QVERIFY(text.contains(QStringLiteral("Notes:")));
-    QVERIFY(!text.contains(QStringLiteral("Class Notes")));
+    QVERIFY(!text.contains(QStringLiteral("Class Notes:")));
     QCOMPARE(text.count(QStringLiteral("E4 Hercules")), 2);
     QCOMPARE(text.count(QStringLiteral("Tues 4pm")), 2);
     QCOMPARE(text.count(QStringLiteral("12 Students")), 2);
@@ -1069,7 +1070,11 @@ void SubPrepPrintPdfTests::teacherSectionBordersUseScheduleColor()
 
     for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
     {
-        if (pageText(document, pageIndex).contains(QStringLiteral("Susan")))
+        if (
+            pageText(document, pageIndex).contains(
+                QStringLiteral("English Name")
+                )
+            )
         {
             teacherPage = pageIndex;
             break;
@@ -1127,6 +1132,7 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
     SubPrepClassInformation::TeacherGroup firstGroup =
         request.classInformation.first();
     firstGroup.displayName = QStringLiteral("First Teacher");
+    firstGroup.teacher.teacherEn = QStringLiteral("First Teacher");
     firstGroup.classes.clear();
 
     for (int classIndex = 0; classIndex < 14; ++classIndex)
@@ -1144,6 +1150,7 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
     SubPrepClassInformation::TeacherGroup secondGroup =
         request.classInformation.first();
     secondGroup.displayName = QStringLiteral("Second Teacher");
+    secondGroup.teacher.teacherEn = QStringLiteral("Second Teacher");
     secondGroup.classes.first().classLabel = QStringLiteral("Second Teacher Class");
     request.classInformation = {firstGroup, secondGroup};
 
@@ -1156,18 +1163,46 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
 
     QPdfDocument document;
     loadDocument(document, path);
-    QCOMPARE(document.pageCount(), 3);
-    QVERIFY(pageText(document, 1).contains(QStringLiteral("First Teacher")));
-    QVERIFY(!pageText(document, 1).contains(QStringLiteral("Second Teacher")));
-    QVERIFY(pageText(document, 2).contains(QStringLiteral("Second Teacher")));
+
+    int firstTeacherPage = -1;
+    int secondTeacherPage = -1;
+    int subNotesPageIndex = -1;
+
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        const QString pageContents = pageText(document, pageIndex);
+
+        if (pageContents.contains(QStringLiteral("First Teacher")))
+        {
+            firstTeacherPage = pageIndex;
+        }
+        if (pageContents.contains(QStringLiteral("Second Teacher")))
+        {
+            secondTeacherPage = pageIndex;
+        }
+        if (pageContents.contains(QStringLiteral("Sub Notes")))
+        {
+            subNotesPageIndex = pageIndex;
+        }
+    }
+
+    QVERIFY(firstTeacherPage >= 0);
+    QVERIFY(secondTeacherPage >= 0);
+    QVERIFY(subNotesPageIndex >= 0);
+    QVERIFY(firstTeacherPage < secondTeacherPage);
     QVERIFY(
-        pageText(document, 2).contains(
+        !pageText(document, firstTeacherPage).contains(
+            QStringLiteral("Second Teacher")
+            )
+        );
+    QVERIFY(
+        pageText(document, secondTeacherPage).contains(
             QStringLiteral("Second Teacher Class")
             )
         );
     const QString text = documentText(document);
     QVERIFY(text.contains(QStringLiteral("Sub Notes")));
-    QVERIFY(!text.contains(request.subNotes));
+    QVERIFY(text.contains(request.subNotes));
     QVERIFY(
         text.contains(
             QStringLiteral(
@@ -1176,28 +1211,29 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
                 )
             )
         );
-    const int subNotesPageIndex = document.pageCount() - 1;
-    QCOMPARE(subNotesPageIndex, 2);
     QVERIFY(
         pageText(document, subNotesPageIndex).contains(
             QStringLiteral("Sub Notes")
             )
         );
-    const QRectF lastClassBounds =
-        textBounds(
-            document,
-            subNotesPageIndex,
-            QStringLiteral("Second Teacher Class")
-            );
-    const QRectF subNotesBounds =
-        textBounds(
-            document,
-            subNotesPageIndex,
-            QStringLiteral("Sub Notes")
-            );
-    QVERIFY(!lastClassBounds.isEmpty());
-    QVERIFY(!subNotesBounds.isEmpty());
-    QVERIFY(subNotesBounds.top() - lastClassBounds.bottom() >= 8.0);
+    if (secondTeacherPage == subNotesPageIndex)
+    {
+        const QRectF lastClassBounds =
+            textBounds(
+                document,
+                subNotesPageIndex,
+                QStringLiteral("Second Teacher Class")
+                );
+        const QRectF subNotesBounds =
+            textBounds(
+                document,
+                subNotesPageIndex,
+                QStringLiteral("Sub Notes")
+                );
+        QVERIFY(!lastClassBounds.isEmpty());
+        QVERIFY(!subNotesBounds.isEmpty());
+        QVERIFY(subNotesBounds.top() - lastClassBounds.bottom() >= 8.0);
+    }
 
     const QImage subNotesPage = renderPage(document, subNotesPageIndex);
     QVERIFY(!subNotesPage.isNull());
@@ -1219,14 +1255,15 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
         );
 }
 
-void SubPrepPrintPdfTests::subNotesUsePromptAndRuledWritingSpace()
+void SubPrepPrintPdfTests
+    ::detailedClassAndLessonNotesRenderAlongsideSubNotesWritingSpace()
 {
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
 
     SubPrepPrintService::Request request = sampleRequest();
     request.subNotes =
-        QStringLiteral("This saved sub-note record must not be included in the PDF.");
+        QStringLiteral("This saved sub-note record is included in the PDF.");
 
     const QString path =
         temporaryDirectory.filePath(QStringLiteral("Sub Notes Writing Space.pdf"));
@@ -1249,16 +1286,22 @@ void SubPrepPrintPdfTests::subNotesUsePromptAndRuledWritingSpace()
                 )
             )
         );
-    QVERIFY(!text.contains(request.subNotes));
+    QVERIFY(text.contains(QStringLiteral("Class Materials & Lesson Notes")));
+    QVERIFY(text.contains(QStringLiteral("Materials Location")));
+    QVERIFY(text.contains(QStringLiteral("Detailed Class & Lesson Notes")));
+    QVERIFY(text.contains(request.subNotes));
+    QVERIFY(
+        text.indexOf(QStringLiteral("Materials Location"))
+        < text.indexOf(QStringLiteral("Detailed Class & Lesson Notes"))
+        );
+    QVERIFY(
+        text.indexOf(QStringLiteral("Detailed Class & Lesson Notes"))
+        < text.indexOf(QStringLiteral("Book Report Grading"))
+        );
     QVERIFY(!text.contains(QStringLiteral("ClassMngr")));
-    QVERIFY(text.contains(QStringLiteral("Page 1")));
+    QVERIFY(!text.contains(QStringLiteral("Page ")));
 
-    const QSizeF firstPageSize =
-        document.pagePointSize(0);
-    const QRectF pageNumberBounds =
-        textBounds(document, 0, QStringLiteral("Page 1"));
-    QVERIFY(!pageNumberBounds.isEmpty());
-    QVERIFY(pageNumberBounds.center().y() > firstPageSize.height() * 0.9);
+    const QSizeF firstPageSize = document.pagePointSize(0);
 
     for (
         const QString& heading : {
@@ -1305,6 +1348,37 @@ void SubPrepPrintPdfTests::subNotesUsePromptAndRuledWritingSpace()
 }
 
 void SubPrepPrintPdfTests
+    ::emptyDetailedClassAndLessonNotesRenderNotAvailable()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = sampleRequest();
+    request.subNotes = QStringLiteral(" \n\t ");
+
+    const QString path =
+        temporaryDirectory.filePath(QStringLiteral("Empty Detailed Notes.pdf"));
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    const QString text = documentText(document);
+    const int detailedNotesIndex =
+        text.indexOf(QStringLiteral("Detailed Class & Lesson Notes"));
+    const int gradingIndex =
+        text.indexOf(QStringLiteral("Book Report Grading"));
+    const int notAvailableIndex =
+        text.indexOf(QStringLiteral("N/A"), detailedNotesIndex);
+
+    QVERIFY(detailedNotesIndex >= 0);
+    QVERIFY(notAvailableIndex > detailedNotesIndex);
+    QVERIFY(notAvailableIndex < gradingIndex);
+}
+
+void SubPrepPrintPdfTests
     ::subNotesArePresentForSelectedDayCombinations_data()
 {
     QTest::addColumn<QStringList>("selectedDays");
@@ -1347,7 +1421,7 @@ void SubPrepPrintPdfTests
 
     SubPrepPrintService::Request request = sampleRequest();
     request.subNotes =
-        QStringLiteral("This saved note must stay out of every printed PDF.");
+        QStringLiteral("This saved note must appear in every printed PDF.");
     request.schedule.days = selectedDays;
     request.schedule.rows.first().cells.clear();
 
@@ -1383,7 +1457,7 @@ void SubPrepPrintPdfTests
                 )
             )
         );
-    QVERIFY(!text.contains(request.subNotes));
+    QVERIFY(text.contains(request.subNotes));
 }
 
 QTEST_MAIN(SubPrepPrintPdfTests)

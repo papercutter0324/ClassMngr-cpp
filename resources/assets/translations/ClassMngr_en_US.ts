@@ -4152,11 +4152,6 @@ Rm: %1</source>
         <translation type="unfinished">%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-368"/>
-        <source>Page %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location line="+14"/>
         <source>No sub prep print file path was provided.</source>
         <translation type="unfinished"></translation>
@@ -8420,13 +8415,6 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation>Class Information</translation>
     </message>
     <message>
-        <location line="-42"/>
-        <location line="+198"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+30"/>
-        <source>Additional Notes</source>
-        <translation>Additional Notes</translation>
-    </message>
-    <message>
         <location line="-229"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-353"/>
         <source>Sub Prep</source>
@@ -8505,8 +8493,18 @@ The package was created at:
     <message>
         <location line="-358"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+96"/>
-        <source>Class Materials</source>
-        <translation>Class Materials</translation>
+        <source>Class Materials &amp; Lesson Notes</source>
+        <translation>Class Materials &amp; Lesson Notes</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="292"/>
+        <source>Materials Location</source>
+        <translation>Materials Location</translation>
+    </message>
+    <message>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="308"/>
+        <source>Detailed Class &amp; Lesson Notes</source>
+        <translation>Detailed Class &amp; Lesson Notes</translation>
     </message>
     <message>
         <location line="+77"/>

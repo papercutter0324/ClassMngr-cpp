@@ -116,8 +116,7 @@ void SubPrepPageTests
         QStringLiteral("materials"),
         QStringLiteral("grading"),
         QStringLiteral("schedule"),
-        QStringLiteral("class_information"),
-        QStringLiteral("sub_notes")
+        QStringLiteral("class_information")
     };
 
     int previousIndex = -1;
@@ -169,6 +168,82 @@ void SubPrepPageTests
     QVERIFY(special && !special->isReadOnly());
     QVERIFY(notes && !notes->isReadOnly());
     QVERIFY(schedule);
+
+    auto* materialsCard =
+        qobject_cast<SectionCard*>(materials->parentWidget());
+    QVERIFY(materialsCard);
+    QCOMPARE(notes->parentWidget(), materialsCard);
+    QCOMPARE(
+        notes->minimumHeight(),
+        grading->minimumHeight()
+        );
+    QVERIFY(materials->minimumHeight() < grading->minimumHeight());
+
+    const QList<QString> centeredCardTitles{
+        QStringLiteral("Campus Information"),
+        QStringLiteral("Personal Zoom Information"),
+        QStringLiteral("Class Materials & Lesson Notes"),
+        QStringLiteral("Book Report Grading")
+    };
+
+    for (const QString& title : centeredCardTitles)
+    {
+        bool found = false;
+
+        for (SectionCard* card : page.findChildren<SectionCard*>())
+        {
+            auto* cardTitle =
+                card->findChild<QLabel*>(
+                    QStringLiteral("sectionTitle"),
+                    Qt::FindDirectChildrenOnly
+                    );
+
+            if (!cardTitle || cardTitle->text() != title)
+            {
+                continue;
+            }
+
+            found = true;
+            QCOMPARE(cardTitle->alignment(), Qt::AlignCenter);
+            break;
+        }
+
+        QVERIFY2(found, qPrintable(title));
+    }
+
+    auto* materialsCardTitle =
+        materialsCard->findChild<QLabel*>(
+            QStringLiteral("sectionTitle"),
+            Qt::FindDirectChildrenOnly
+            );
+    QVERIFY(materialsCardTitle);
+    QCOMPARE(
+        materialsCardTitle->text(),
+        QStringLiteral("Class Materials & Lesson Notes")
+        );
+
+    const QList<QLabel*> materialsLabels =
+        materialsCard->findChildren<QLabel*>(
+            QString(),
+            Qt::FindDirectChildrenOnly
+            );
+    QVERIFY(std::any_of(
+        materialsLabels.cbegin(),
+        materialsLabels.cend(),
+        [](const QLabel* label)
+        {
+            return label->text() == QStringLiteral("Materials Location");
+        }
+        ));
+    QVERIFY(std::any_of(
+        materialsLabels.cbegin(),
+        materialsLabels.cend(),
+        [](const QLabel* label)
+        {
+            return label->text()
+                == QStringLiteral("Detailed Class & Lesson Notes");
+        }
+        ));
 
     auto* importantHeading =
         page.findChild<QLabel*>(
@@ -299,18 +374,21 @@ void SubPrepPageTests
         page.currentSectionKey(),
         QStringLiteral("sub_prep_notes")
         );
-    bool foundAdditionalNotes = false;
+    bool foundDetailedClassAndLessonNotes = false;
 
     for (QLabel* label : page.findChildren<QLabel*>())
     {
-        if (label->text() == QStringLiteral("Additional Notes"))
+        if (
+            label->text()
+            == QStringLiteral("Detailed Class & Lesson Notes")
+            )
         {
-            foundAdditionalNotes = true;
+            foundDetailedClassAndLessonNotes = true;
             break;
         }
     }
 
-    QVERIFY(foundAdditionalNotes);
+    QVERIFY(foundDetailedClassAndLessonNotes);
 }
 
 void SubPrepPageTests
