@@ -64,6 +64,7 @@ private:
     void loadClasses();
     void retranslateUi();
     void resizeForExtraInfoOptions();
+    void schedulePreviewUpdate();
     void updateMinimumWidthForCurrentClassName();
 
     ApplicationServices* m_services = nullptr;
@@ -102,4 +103,5 @@ private:
     int m_classListBaseHeight = 0;
     int m_baseMinimumWidth = 0;
     int m_baseMinimumHeight = 0;
+    bool m_previewUpdatePending = false;
 };

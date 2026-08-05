@@ -219,11 +219,7 @@ void RosterPrintDialog::resizeEvent(
     )
 {
     QDialog::resizeEvent(event);
-    QTimer::singleShot(
-        0,
-        this,
-        &RosterPrintDialog::updatePreview
-        );
+    schedulePreviewUpdate();
 }
 
 void RosterPrintDialog::acceptPrint()
@@ -445,7 +441,10 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
             m_contentWidget->updateGeometry();
         }
 
-        updatePreview();
+        // Hiding the custom-column controls changes the preview's available
+        // height.  Wait for that layout change before rendering so the new
+        // template fills the recalculated preview section.
+        schedulePreviewUpdate();
     }
 }
 
@@ -562,7 +561,51 @@ void RosterPrintDialog::updateExtraInfoColumns()
 
     updateExtraInfoSelectionLimits();
     resizeForExtraInfoOptions();
-    updatePreview();
+    schedulePreviewUpdate();
+}
+
+void RosterPrintDialog::schedulePreviewUpdate()
+{
+    if (m_previewUpdatePending)
+    {
+        return;
+    }
+
+    m_previewUpdatePending = true;
+    QTimer::singleShot(
+        0,
+        this,
+        [this]()
+        {
+            m_previewUpdatePending = false;
+
+            if (
+                m_extraInfoOptionsGroup
+                && m_extraInfoOptionsGroup->parentWidget()
+                )
+            {
+                if (QLayout* templateLayout =
+                        m_extraInfoOptionsGroup->parentWidget()->layout())
+                {
+                    templateLayout->invalidate();
+                    templateLayout->activate();
+                }
+            }
+
+            if (m_contentLayout)
+            {
+                m_contentLayout->invalidate();
+                m_contentLayout->activate();
+            }
+
+            if (m_contentWidget)
+            {
+                m_contentWidget->updateGeometry();
+            }
+
+            updatePreview();
+        }
+        );
 }
 
 void RosterPrintDialog::updateExtraInfoSelectionLimits()
