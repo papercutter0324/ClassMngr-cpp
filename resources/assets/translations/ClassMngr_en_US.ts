@@ -2084,8 +2084,8 @@
         <location line="-44"/>
         <location line="+77"/>
         <location line="+120"/>
-        <source>Database Files (*.db)</source>
-        <translation>Database Files (*.db)</translation>
+        <source>ClassMngr Database (*.tps)</source>
+        <translation>ClassMngr Database (*.tps)</translation>
     </message>
     <message>
         <location line="-168"/>
@@ -2127,8 +2127,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>SQLite Database (*.db)</source>
-        <translation>SQLite Database (*.db)</translation>
+        <source>Legacy SQLite Database (*.db)</source>
+        <translation>Legacy SQLite Database (*.db)</translation>
     </message>
     <message>
         <location line="+109"/>
@@ -3805,6 +3805,82 @@ Rm: %1</source>
         <location line="+9"/>
         <source>Report export was canceled.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A ZIP entry has an invalid file name.</source>
+        <translation>A ZIP entry has an invalid file name.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; could not be opened for archiving.</source>
+        <translation>The file &quot;%1&quot; could not be opened for archiving.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; is too large for a standard ZIP archive.</source>
+        <translation>The file &quot;%1&quot; is too large for a standard ZIP archive.</translation>
+    </message>
+    <message>
+        <source>A ZIP entry file name is too long.</source>
+        <translation>A ZIP entry file name is too long.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; could not be read for archiving.</source>
+        <translation>The file &quot;%1&quot; could not be read for archiving.</translation>
+    </message>
+    <message>
+        <source>There are no files to add to the ZIP archive.</source>
+        <translation>There are no files to add to the ZIP archive.</translation>
+    </message>
+    <message>
+        <source>There are too many files for a standard ZIP archive.</source>
+        <translation>There are too many files for a standard ZIP archive.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive would contain more than one file named &quot;%1&quot;.</source>
+        <translation>The ZIP archive would contain more than one file named &quot;%1&quot;.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive could not be created.</source>
+        <translation>The ZIP archive could not be created.</translation>
+    </message>
+    <message>
+        <source>The report files are too large for a standard ZIP archive.</source>
+        <translation>The report files are too large for a standard ZIP archive.</translation>
+    </message>
+    <message>
+        <source>A report could not be written to the ZIP archive.</source>
+        <translation>A report could not be written to the ZIP archive.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive directory could not be written.</source>
+        <translation>The ZIP archive directory could not be written.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive could not be finalized.</source>
+        <translation>The ZIP archive could not be finalized.</translation>
+    </message>
+    <message>
+        <source>The staged output files are incomplete.</source>
+        <translation>The staged output files are incomplete.</translation>
+    </message>
+    <message>
+        <source>An existing output file could not be prepared for replacement.</source>
+        <translation>An existing output file could not be prepared for replacement.</translation>
+    </message>
+    <message>
+        <source>An output file could not be copied to the selected folder.</source>
+        <translation>An output file could not be copied to the selected folder.</translation>
+    </message>
+    <message>
+        <source>An output file could not be finalized in the selected folder.</source>
+        <translation>An output file could not be finalized in the selected folder.</translation>
+    </message>
+    <message>
+        <source>Speaking Evaluation Reports</source>
+        <translation>Speaking Evaluation Reports</translation>
+    </message>
+    <message>
+        <source>A ZIP archive named &quot;%1&quot; already exists.</source>
+        <translation>A ZIP archive named &quot;%1&quot; already exists.</translation>
     </message>
     <message>
         <location line="+80"/>
@@ -7308,7 +7384,7 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="+7"/>
-        <source>Export PDF speaking-evaluation reports, print them, or do both.</source>
+        <source>Export speaking-evaluation reports, print them, or do both.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7338,6 +7414,10 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Keep individual PDFs after zipping</source>
+        <translation>Keep individual PDFs after zipping</translation>
+    </message>
+    <message>
         <location line="-138"/>
         <source>Output:</source>
         <translation type="unfinished"></translation>
@@ -7355,12 +7435,12 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="+3"/>
-        <source>PDF Folder:</source>
+        <source>Output Folder:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Open PDF Folder after saving</source>
+        <source>Open Output Folder after saving</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7398,6 +7478,10 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Export ZIP</source>
+        <translation>Export ZIP</translation>
+    </message>
+    <message>
         <location line="+1"/>
         <source>Print Report</source>
         <translation type="unfinished"></translation>
@@ -7414,27 +7498,27 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="+21"/>
-        <source>Choose PDF Folder</source>
+        <source>Choose Output Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+56"/>
-        <source>PDF Folder Unavailable</source>
+        <source>Output Folder Unavailable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>The selected PDF folder does not exist and could not be created. Choose another folder and try again.</source>
+        <source>The selected output folder does not exist and could not be created. Choose another folder and try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Overwrite Existing Reports?</source>
+        <source>Overwrite Existing Output?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>%1 existing report(s) will be replaced. Do you want to overwrite them?</source>
+        <source>%1 existing output file(s) will be replaced. Do you want to overwrite them?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7465,6 +7549,18 @@ Retry the entire batch using the PowerPoint template?</source>
         <location line="+24"/>
         <source>Reports Ready</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 report(s) were saved to %2.</source>
+        <translation>%1 report(s) were saved to %2.</translation>
+    </message>
+    <message>
+        <source>Individual PDF files were also saved.</source>
+        <translation>Individual PDF files were also saved.</translation>
+    </message>
+    <message>
+        <source>The reports were also sent to the printer.</source>
+        <translation>The reports were also sent to the printer.</translation>
     </message>
     <message>
         <location line="+2"/>

@@ -2078,7 +2078,7 @@
         <location line="-44"/>
         <location line="+77"/>
         <location line="+120"/>
-        <source>Database Files (*.db)</source>
+        <source>ClassMngr Database (*.tps)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2119,7 +2119,7 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>SQLite Database (*.db)</source>
+        <source>Legacy SQLite Database (*.db)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

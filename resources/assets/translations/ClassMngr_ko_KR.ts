@@ -2088,8 +2088,8 @@
         <location line="-44"/>
         <location line="+77"/>
         <location line="+120"/>
-        <source>Database Files (*.db)</source>
-        <translation>데이터베이스 파일 (*.db)</translation>
+        <source>ClassMngr Database (*.tps)</source>
+        <translation>ClassMngr 데이터베이스 (*.tps)</translation>
     </message>
     <message>
         <location line="-168"/>
@@ -2131,8 +2131,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>SQLite Database (*.db)</source>
-        <translation>SQLite 데이터베이스 (*.db)</translation>
+        <source>Legacy SQLite Database (*.db)</source>
+        <translation>레거시 SQLite 데이터베이스 (*.db)</translation>
     </message>
     <message>
         <location line="+109"/>
@@ -3933,6 +3933,82 @@ Rm: %1</source>
         <location line="+9"/>
         <source>Report export was canceled.</source>
         <translation>보고서 내보내기가 취소되었습니다.</translation>
+    </message>
+    <message>
+        <source>A ZIP entry has an invalid file name.</source>
+        <translation>ZIP 항목의 파일 이름이 올바르지 않습니다.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; could not be opened for archiving.</source>
+        <translation>압축할 파일 &quot;%1&quot;을(를) 열 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; is too large for a standard ZIP archive.</source>
+        <translation>파일 &quot;%1&quot;이(가) 표준 ZIP 압축 파일에 넣기에는 너무 큽니다.</translation>
+    </message>
+    <message>
+        <source>A ZIP entry file name is too long.</source>
+        <translation>ZIP 항목의 파일 이름이 너무 깁니다.</translation>
+    </message>
+    <message>
+        <source>The file &quot;%1&quot; could not be read for archiving.</source>
+        <translation>압축할 파일 &quot;%1&quot;을(를) 읽을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>There are no files to add to the ZIP archive.</source>
+        <translation>ZIP 압축 파일에 추가할 파일이 없습니다.</translation>
+    </message>
+    <message>
+        <source>There are too many files for a standard ZIP archive.</source>
+        <translation>표준 ZIP 압축 파일에 넣기에는 파일이 너무 많습니다.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive would contain more than one file named &quot;%1&quot;.</source>
+        <translation>ZIP 압축 파일에 &quot;%1&quot; 이름의 파일이 두 개 이상 포함됩니다.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive could not be created.</source>
+        <translation>ZIP 압축 파일을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The report files are too large for a standard ZIP archive.</source>
+        <translation>보고서 파일이 표준 ZIP 압축 파일에 넣기에는 너무 큽니다.</translation>
+    </message>
+    <message>
+        <source>A report could not be written to the ZIP archive.</source>
+        <translation>보고서를 ZIP 압축 파일에 쓸 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive directory could not be written.</source>
+        <translation>ZIP 압축 파일의 디렉터리를 쓸 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The ZIP archive could not be finalized.</source>
+        <translation>ZIP 압축 파일을 완료할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The staged output files are incomplete.</source>
+        <translation>준비된 출력 파일이 완전하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>An existing output file could not be prepared for replacement.</source>
+        <translation>기존 출력 파일을 교체할 수 있도록 준비하지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>An output file could not be copied to the selected folder.</source>
+        <translation>출력 파일을 선택한 폴더에 복사할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>An output file could not be finalized in the selected folder.</source>
+        <translation>선택한 폴더에서 출력 파일을 완료할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Speaking Evaluation Reports</source>
+        <translation>말하기 평가 보고서</translation>
+    </message>
+    <message>
+        <source>A ZIP archive named &quot;%1&quot; already exists.</source>
+        <translation>&quot;%1&quot; 이름의 ZIP 압축 파일이 이미 있습니다.</translation>
     </message>
     <message>
         <location line="+80"/>
@@ -7708,8 +7784,8 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Export PDF speaking-evaluation reports, print them, or do both.</source>
-        <translation>말하기 평가 보고서를 PDF로 내보내거나 인쇄하거나 두 작업을 모두 수행합니다.</translation>
+        <source>Export speaking-evaluation reports, print them, or do both.</source>
+        <translation>말하기 평가 보고서를 내보내거나 인쇄하거나 두 작업을 모두 수행합니다.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -7738,6 +7814,10 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>PDF 내보내기</translation>
     </message>
     <message>
+        <source>Keep individual PDFs after zipping</source>
+        <translation>압축 후 개별 PDF 파일 유지</translation>
+    </message>
+    <message>
         <location line="-138"/>
         <source>Output:</source>
         <translation>출력:</translation>
@@ -7755,13 +7835,13 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>PDF Folder:</source>
-        <translation>PDF 폴더:</translation>
+        <source>Output Folder:</source>
+        <translation>출력 폴더:</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Open PDF Folder after saving</source>
-        <translation>저장 후 PDF 폴더 열기</translation>
+        <source>Open Output Folder after saving</source>
+        <translation>저장 후 출력 폴더 열기</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -7798,6 +7878,10 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>PDF 내보내기</translation>
     </message>
     <message>
+        <source>Export ZIP</source>
+        <translation>ZIP 내보내기</translation>
+    </message>
+    <message>
         <location line="+1"/>
         <source>Print Report</source>
         <translation>보고서 인쇄</translation>
@@ -7814,28 +7898,28 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
     <message>
         <location line="+21"/>
-        <source>Choose PDF Folder</source>
-        <translation>PDF 폴더 선택</translation>
+        <source>Choose Output Folder</source>
+        <translation>출력 폴더 선택</translation>
     </message>
     <message>
         <location line="+56"/>
-        <source>PDF Folder Unavailable</source>
-        <translation>PDF 폴더를 사용할 수 없음</translation>
+        <source>Output Folder Unavailable</source>
+        <translation>출력 폴더를 사용할 수 없음</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>The selected PDF folder does not exist and could not be created. Choose another folder and try again.</source>
-        <translation>선택한 PDF 폴더가 없으며 만들 수도 없습니다. 다른 폴더를 선택하고 다시 시도하세요.</translation>
+        <source>The selected output folder does not exist and could not be created. Choose another folder and try again.</source>
+        <translation>선택한 출력 폴더가 없으며 만들 수도 없습니다. 다른 폴더를 선택하고 다시 시도하세요.</translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>Overwrite Existing Reports?</source>
-        <translation>기존 보고서를 덮어쓰시겠습니까?</translation>
+        <source>Overwrite Existing Output?</source>
+        <translation>기존 출력 파일을 덮어쓰시겠습니까?</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>%1 existing report(s) will be replaced. Do you want to overwrite them?</source>
-        <translation>기존 보고서 %1개가 바뀝니다. 덮어쓰시겠습니까?</translation>
+        <source>%1 existing output file(s) will be replaced. Do you want to overwrite them?</source>
+        <translation>기존 출력 파일 %1개가 바뀝니다. 덮어쓰시겠습니까?</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -7869,6 +7953,18 @@ PowerPoint 템플릿을 사용하여 전체 일괄 작업을 다시 시도하시
         <location line="+24"/>
         <source>Reports Ready</source>
         <translation>보고서 준비 완료</translation>
+    </message>
+    <message>
+        <source>%1 report(s) were saved to %2.</source>
+        <translation>보고서 %1개를 %2에 저장했습니다.</translation>
+    </message>
+    <message>
+        <source>Individual PDF files were also saved.</source>
+        <translation>개별 PDF 파일도 저장했습니다.</translation>
+    </message>
+    <message>
+        <source>The reports were also sent to the printer.</source>
+        <translation>보고서도 프린터로 전송했습니다.</translation>
     </message>
     <message>
         <location line="+2"/>
