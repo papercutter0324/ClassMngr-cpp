@@ -2059,9 +2059,9 @@ QString rendererDisplayName(
     switch (renderer)
     {
     case Renderer::Internal:
-        return QObject::tr("Internal Template (Beta)");
+        return QObject::tr("Internal Template (Default)");
     case Renderer::PowerPoint:
-        return QObject::tr("PowerPoint Template (Recommended)");
+        return QObject::tr("PowerPoint (Fallback)");
     }
 
     return {};

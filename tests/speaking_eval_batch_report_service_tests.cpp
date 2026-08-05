@@ -2374,7 +2374,13 @@ void SpeakingEvalBatchReportServiceTests::powerPointAvailabilityMessageIsAvailab
         SpeakingEvalBatchReportService::rendererDisplayName(
             SpeakingEvalBatchReportService::Renderer::Internal
             ),
-        QStringLiteral("Internal Template (Beta)")
+        QStringLiteral("Internal Template (Default)")
+        );
+    QCOMPARE(
+        SpeakingEvalBatchReportService::rendererDisplayName(
+            SpeakingEvalBatchReportService::Renderer::PowerPoint
+            ),
+        QStringLiteral("PowerPoint (Fallback)")
         );
     QVERIFY(
         !SpeakingEvalBatchReportService::powerPointRendererAvailabilityMessage()

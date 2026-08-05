@@ -86,7 +86,6 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
             ),
         static_cast<int>(SpeakingEvalBatchReportService::Renderer::PowerPoint)
         );
-    m_rendererSelector->setCurrentIndex(1);
 #endif
     formLayout->addRow(tr("Renderer:"), m_rendererSelector);
 
@@ -215,10 +214,14 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
         };
     const int rendererNoteHeight = qMax(
         rendererNoteHeightForText(
-            tr("Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)")
+            tr("This is the recommended method for creating reports.")
             ),
         rendererNoteHeightForText(
-            tr("Uses PowerPoint to generate student reports using a bundled template. (Supports Windows and MacOS.)")
+#ifdef Q_OS_MACOS
+            tr("Only use if the internal method doesn't work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.")
+#else
+            tr("Only use if the internal method doesn't work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.")
+#endif
             )
         );
     m_rendererNote->setFixedHeight(rendererNoteHeight);
@@ -262,13 +265,17 @@ void SpeakingEvalBatchExportDialog::updateControls()
         == SpeakingEvalBatchReportService::Renderer::Internal)
     {
         m_rendererNote->setText(
-            tr("Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)")
+            tr("This is the recommended method for creating reports.")
             );
         return;
     }
 
     m_rendererNote->setText(
-        tr("Uses PowerPoint to generate student reports using a bundled template. (Supports Windows and MacOS.)")
+#ifdef Q_OS_MACOS
+        tr("Only use if the internal method doesn't work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.")
+#else
+        tr("Only use if the internal method doesn't work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.")
+#endif
         );
 }
 
