@@ -252,7 +252,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         QStringLiteral("speakingEvalAiBatchDialog")
         );
     setWindowTitle(
-        tr("AI Comments for Class")
+        tr("Generate Class Comments")
         );
     resize(1100, 820);
 
@@ -260,17 +260,6 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         new QVBoxLayout(this);
     layout->setContentsMargins(18, 18, 18, 18);
     layout->setSpacing(10);
-
-    auto* introduction =
-        new QLabel(
-            tr(
-                "Create one anonymized prompt for multiple students, then "
-                "paste the AI response back to review before applying."
-                ),
-            this
-            );
-    introduction->setWordWrap(true);
-    layout->addWidget(introduction);
 
     auto* tabs =
         new QTabWidget(this);

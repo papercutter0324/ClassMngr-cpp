@@ -186,7 +186,7 @@ void SpeakingEvalPage::buildUi()
     const QList<QString> reportLabels{
         tr("New Report"),
         tr("Print Reports"),
-        tr("AI Comments for Class…")
+        tr("Generate Comments")
     };
 
     m_reportButtons.clear();

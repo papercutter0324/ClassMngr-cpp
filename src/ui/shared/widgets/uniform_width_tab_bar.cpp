@@ -27,7 +27,7 @@ constexpr int NavigationTabBorderExtent = 2;
 constexpr int NavigationTabIconSpacing = 4;
 constexpr int ScrollButtonWidth = 28;
 constexpr int DragScrollStep = 48;
-const QColor NavigationTabSelectedTextColor(16, 20, 24);
+const QColor NavigationTabSelectedTextColor(Qt::black);
 
 class EdgeAlignedTabBarStyle final : public QProxyStyle
 {

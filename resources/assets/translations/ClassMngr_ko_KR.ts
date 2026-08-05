@@ -7506,14 +7506,17 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>개선할 점 메모를 하나 이상 추가하세요.</translation>
     </message>
     <message>
-        <location line="+33"/>
         <source>AI Comments for Class</source>
-        <translation>반 전체 AI 코멘트</translation>
+        <translation type="vanished">반 전체 AI 코멘트</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Create one anonymized prompt for multiple students, then paste the AI response back to review before applying.</source>
-        <translation>여러 학생을 위한 익명 프롬프트를 하나 만든 다음, AI 응답을 붙여 넣고 검토한 후 적용합니다.</translation>
+        <translation type="vanished">여러 학생을 위한 익명 프롬프트를 하나 만든 다음, AI 응답을 붙여 넣고 검토한 후 적용합니다.</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Generate Class Comments</source>
+        <translation>반 전체 코멘트 생성</translation>
     </message>
     <message>
         <location line="+25"/>
@@ -8048,7 +8051,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+22"/>
         <source>Comment</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">코멘트</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -8161,8 +8164,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+1"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
-        <source>AI Comments for Class…</source>
-        <translation>반 전체 AI 코멘트…</translation>
+        <source>Generate Comments</source>
+        <translation>코멘트 생성</translation>
     </message>
     <message>
         <location line="+58"/>
@@ -8362,7 +8365,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location line="-350"/>
         <location line="+358"/>
         <source>Copy Prompt and Open %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">프롬프트 복사 후 %1 열기</translation>
     </message>
     <message>
         <location line="+37"/>
@@ -8383,12 +8386,12 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="-487"/>
         <source>Unable to Open AI Website</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">AI 웹사이트를 열 수 없음</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>The AI website could not be opened. The prompt is still available on the clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">AI 웹사이트를 열 수 없습니다. 프롬프트는 클립보드에 복사되어 있습니다.</translation>
     </message>
     <message>
         <location line="+22"/>
@@ -8403,7 +8406,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+23"/>
         <source>Copy Prompt</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">프롬프트 복사</translation>
     </message>
     <message>
         <location line="+448"/>
@@ -8428,12 +8431,12 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+9"/>
         <source>Add at least one Did Well note.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">잘한 점 메모를 하나 이상 추가하세요.</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Add at least one Needs Improvement note.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">개선할 점 메모를 하나 이상 추가하세요.</translation>
     </message>
     <message>
         <location line="+113"/>

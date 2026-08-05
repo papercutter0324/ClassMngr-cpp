@@ -6957,12 +6957,7 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="+33"/>
-        <source>AI Comments for Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+11"/>
-        <source>Create one anonymized prompt for multiple students, then paste the AI response back to review before applying.</source>
+        <source>Generate Class Comments</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7534,7 +7529,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="+1"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
-        <source>AI Comments for Class…</source>
+        <source>Generate Comments</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
