@@ -2,6 +2,7 @@
 
 #include "app/mainwindow.h"
 #include "core/application_services.h"
+#include "core/database_file_format.h"
 #include "core/result.h"
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
@@ -127,11 +128,7 @@ void FileController::loadMostRecentDatabase()
     }
 
     const QString normalizedPath =
-        normalizeFilePath(
-            recentPath,
-            QStringLiteral(".db"),
-            false
-            );
+        normalizeInputFilePath(recentPath);
 
     if (!QFileInfo::exists(normalizedPath))
     {
@@ -154,6 +151,19 @@ void FileController::loadMostRecentDatabase()
     }
 }
 
+void FileController::loadDatabaseOnStartup(
+    const QString& filePath
+    )
+{
+    if (filePath.trimmed().isEmpty())
+    {
+        enterNoDatabaseState();
+        return;
+    }
+
+    loadDatabase(filePath);
+}
+
 void FileController::newFile()
 {
     if (!confirmUnsavedChanges())
@@ -164,18 +174,14 @@ void FileController::newFile()
             nullptr,
             tr("New Database"),
             databaseDialogDirectory(),
-            tr("Database Files (*.db)")
+            tr("ClassMngr Database (*.tps)")
             );
 
     if (filePath.isEmpty())
         return;
 
     const QString normalizedPath =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            true
-            );
+        normalizeNativeOutputFilePath(filePath);
 
     if (!m_services)
     {
@@ -241,7 +247,9 @@ void FileController::openFile()
             nullptr,
             tr("Open Database"),
             databaseDialogDirectory(),
-            tr("Database Files (*.db)")
+            tr("ClassMngr Database (*.tps)")
+                + QStringLiteral(";;")
+                + tr("Legacy SQLite Database (*.db)")
             );
 
     if (filePath.isEmpty())
@@ -256,11 +264,7 @@ bool FileController::loadDatabase(
     )
 {
     const QString normalizedPath =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            false
-            );
+        normalizeInputFilePath(filePath);
 
     if (!QFileInfo::exists(normalizedPath))
     {
@@ -361,7 +365,7 @@ void FileController::saveAsFile()
             nullptr,
             tr("Save Database"),
             databaseDialogDirectory(),
-            tr("Database Files (*.db)")
+            tr("ClassMngr Database (*.tps)")
             );
 
     if (filePath.isEmpty())
@@ -385,7 +389,7 @@ void FileController::exportAsFile()
             nullptr,
             tr("Export Database As"),
             databaseDialogDirectory(),
-            tr("SQLite Database (*.db)")
+            tr("ClassMngr Database (*.tps)")
             );
 
     if (filePath.isEmpty())
@@ -412,11 +416,7 @@ void FileController::openSpecificFile(
         return;
 
     const QString normalizedPath =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            false
-            );
+        normalizeInputFilePath(filePath);
 
     if (!QFileInfo::exists(normalizedPath))
     {
@@ -441,11 +441,7 @@ void FileController::updateRecentFiles(
     )
 {
     const QString normalizedPath =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            false
-            );
+        normalizeInputFilePath(filePath);
 
     QStringList files =
         SettingsManager::instance()
@@ -589,11 +585,7 @@ bool FileController::saveDatabaseAs(
     )
 {
     const QString normalized =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            true
-            );
+        normalizeNativeOutputFilePath(filePath);
 
     if (
         !m_services
@@ -627,11 +619,7 @@ bool FileController::exportDatabaseAs(
     )
 {
     const QString normalized =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            true
-            );
+        normalizeNativeOutputFilePath(filePath);
 
     if (
         !m_services
@@ -680,21 +668,36 @@ void FileController::closeActiveDatabase()
     }
 }
 
-QString FileController::normalizeFilePath(
+QString FileController::normalizeInputFilePath(
+    const QString& filePath
+    ) const
+{
+    return absoluteFilePath(
+        DatabaseFileFormat::supportedInputPath(
+            filePath
+            ),
+        false
+        );
+}
+
+QString FileController::normalizeNativeOutputFilePath(
+    const QString& filePath
+    ) const
+{
+    return absoluteFilePath(
+        DatabaseFileFormat::nativeOutputPath(
+            filePath
+            ),
+        true
+        );
+}
+
+QString FileController::absoluteFilePath(
     const QString& filePath,
-    const QString& extension,
     bool createDirectories
     ) const
 {
-    QString result =
-        filePath;
-
-    if (!result.endsWith(extension, Qt::CaseInsensitive))
-    {
-        result += extension;
-    }
-
-    QFileInfo info(result);
+    QFileInfo info(filePath);
 
     if (
         createDirectories
@@ -743,11 +746,7 @@ void FileController::pruneRecentFile(
     )
 {
     const QString normalizedPath =
-        normalizeFilePath(
-            filePath,
-            QStringLiteral(".db"),
-            false
-            );
+        normalizeInputFilePath(filePath);
 
     QStringList files =
         SettingsManager::instance()

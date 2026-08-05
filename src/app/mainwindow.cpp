@@ -78,7 +78,19 @@ MainWindow::MainWindow(
     connectSignals();
 
     progressCallback(tr("Loading recent file..."));
-    if (m_startupOptions.loadMostRecentDatabase)
+    if (
+        !m_startupOptions
+            .initialDatabasePath
+            .trimmed()
+            .isEmpty()
+        )
+    {
+        m_fileController->loadDatabaseOnStartup(
+            m_startupOptions.initialDatabasePath
+            );
+        showStartupDatabasePage();
+    }
+    else if (m_startupOptions.loadMostRecentDatabase)
     {
         m_fileController->loadMostRecentDatabase();
         showStartupDatabasePage();

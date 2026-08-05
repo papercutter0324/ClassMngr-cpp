@@ -47,6 +47,7 @@ struct MainWindowStartupOptions
 {
     bool loadMostRecentDatabase = true;
     bool runPostShowStartupTasks = true;
+    QString initialDatabasePath;
 };
 
 // =========================================================

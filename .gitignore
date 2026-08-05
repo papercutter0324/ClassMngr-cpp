@@ -56,5 +56,6 @@ compile_commands.json
 
 *_qmlcache.qrc
 data/app.db
+data/app.tps
 .DS_Store
 .continue/

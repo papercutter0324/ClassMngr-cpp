@@ -57,6 +57,7 @@ ArchitecturesInstallIn64BitMode={#AllowedArchitecture}
 CloseApplications=yes
 CloseApplicationsFilter=ClassMngr.exe
 RestartApplications=no
+ChangesAssociations=yes
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} Setup
 VersionInfoProductName={#AppName}
@@ -71,8 +72,15 @@ SignedUninstaller=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "korean"; MessagesFile: "compiler:Languages\Korean.isl"
 
+[CustomMessages]
+english.AssociateTps=Associate .tps files with ClassMngr
+korean.AssociateTps=.tps 파일을 ClassMngr와 연결
+english.FileAssociations=File associations:
+korean.FileAssociations=파일 연결:
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "associatetps"; Description: "{cm:AssociateTps}"; GroupDescription: "{cm:FileAssociations}"
 
 [InstallDelete]
 Type: filesandordirs; Name: "{app}\plugins"
@@ -99,11 +107,53 @@ Source: "{#SourceDir}\{#VCRedistFileName}"; DestDir: "{tmp}"; Flags: deleteafter
 Name: "{group}\{#AppName}"; Filename: "{app}\ClassMngr.exe"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\ClassMngr.exe"; Tasks: desktopicon
 
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\.tps"; ValueType: string; ValueName: ""; ValueData: "ClassMngr.Database"; Tasks: associatetps
+Root: HKCU; Subkey: "Software\Classes\ClassMngr.Database"; ValueType: string; ValueName: ""; ValueData: "ClassMngr Database"; Tasks: associatetps
+Root: HKCU; Subkey: "Software\Classes\ClassMngr.Database\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\ClassMngr.exe"",0"; Tasks: associatetps
+Root: HKCU; Subkey: "Software\Classes\ClassMngr.Database\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\ClassMngr.exe"" ""%1"""; Tasks: associatetps
+
 [Run]
 Filename: "{tmp}\{#VCRedistFileName}"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing the Microsoft Visual C++ Runtime..."; Flags: waituntilterminated; Check: VCRedistNeedsInstall
 Filename: "{app}\ClassMngr.exe"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+procedure RemoveTpsAssociation;
+var
+  CurrentProgId: String;
+begin
+  if RegQueryStringValue(
+    HKCU,
+    'Software\Classes\.tps',
+    '',
+    CurrentProgId) and
+    (CompareText(CurrentProgId, 'ClassMngr.Database') = 0) then
+  begin
+    RegDeleteValue(HKCU, 'Software\Classes\.tps', '');
+  end;
+
+  RegDeleteKeyIncludingSubkeys(
+    HKCU,
+    'Software\Classes\ClassMngr.Database');
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssInstall) and
+    not WizardIsTaskSelected('associatetps') then
+  begin
+    RemoveTpsAssociation;
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    RemoveTpsAssociation;
+  end;
+end;
+
 function VCRedistNeedsInstall: Boolean;
 var
   Installed: Cardinal;

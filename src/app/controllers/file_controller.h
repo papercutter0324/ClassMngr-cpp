@@ -28,6 +28,10 @@ public:
 
     void loadMostRecentDatabase();
 
+    void loadDatabaseOnStartup(
+        const QString& filePath
+        );
+
     void setSaveMode(
         SaveMode mode
         );
@@ -93,10 +97,17 @@ private:
         const QString& filePath
         );
 
-    QString normalizeFilePath(
+    QString normalizeInputFilePath(
+        const QString& filePath
+        ) const;
+
+    QString normalizeNativeOutputFilePath(
+        const QString& filePath
+        ) const;
+
+    QString absoluteFilePath(
         const QString& filePath,
-        const QString& extension = ".db",
-        bool createDirectories = true
+        bool createDirectories
         ) const;
 
     void setLoadedFileState();

@@ -2419,6 +2419,7 @@ if(BUILD_TESTING)
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/settingsmanager.cpp
         src/core/updater/version.cpp
+        src/core/zip_archive_writer.cpp
         src/features/speaking_eval/services/speaking_eval_ai_prompt.cpp
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp
@@ -2468,6 +2469,7 @@ if(BUILD_TESTING)
             Qt6::PrintSupport
             Qt6::Test
             Qt6::Widgets
+            ZLIB::ZLIB
     )
 
     qt_add_resources(ClassMngrSpeakingEvalBatchReportServiceTests batch_report_test_resources
@@ -2530,6 +2532,33 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrStartupPerformanceTests
         COMMAND ClassMngrStartupPerformanceTests
+    )
+
+    qt_add_executable(ClassMngrDatabaseFileFormatTests
+        tests/database_file_format_tests.cpp
+        src/app/startup_database_path.cpp
+        src/core/database_file_format.cpp
+    )
+
+    target_compile_features(ClassMngrDatabaseFileFormatTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrDatabaseFileFormatTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrDatabaseFileFormatTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrDatabaseFileFormatTests
+        COMMAND ClassMngrDatabaseFileFormatTests
     )
 
     set_tests_properties(

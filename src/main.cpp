@@ -1,4 +1,5 @@
 #include "app/mainwindow.h"
+#include "app/startup_database_path.h"
 #include "core/appsettings.h"
 #include "core/build_info.h"
 #include "core/fontmanager.h"
@@ -159,6 +160,13 @@ int main(int argc, char *argv[])
             app.arguments()
             );
 
+    const QString initialDatabasePath =
+        startupPerformance.enabled
+            ? QString()
+            : startupDatabasePath(
+                app.arguments()
+                );
+
     app.setApplicationName(AppSettings::ApplicationName);
     app.setOrganizationName(AppSettings::OrganizationName);
     app.setApplicationVersion(
@@ -289,7 +297,8 @@ int main(int argc, char *argv[])
         &languageService,
         {
             .loadMostRecentDatabase = !startupPerformance.enabled,
-            .runPostShowStartupTasks = !startupPerformance.enabled
+            .runPostShowStartupTasks = !startupPerformance.enabled,
+            .initialDatabasePath = initialDatabasePath
         }
         );
 
