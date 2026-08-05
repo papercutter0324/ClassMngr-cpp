@@ -49,7 +49,7 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     layout->setSpacing(12);
 
     auto* introduction = new QLabel(
-        tr("Export PDF speaking-evaluation reports, print them, or do both."),
+        tr("Export speaking-evaluation reports, print them, or do both."),
         this
         );
     introduction->setWordWrap(true);
@@ -98,6 +98,13 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     m_savePdfCheck->setChecked(true);
     formLayout->addRow(tr("Output:"), m_savePdfCheck);
 
+    m_keepIndividualPdfsCheck = new QCheckBox(
+        tr("Keep individual PDFs after zipping"),
+        this
+        );
+    m_keepIndividualPdfsCheck->setChecked(false);
+    formLayout->addRow(QString(), m_keepIndividualPdfsCheck);
+
     m_printReportsCheck = new QCheckBox(tr("Print Reports"), this);
     formLayout->addRow(QString(), m_printReportsCheck);
 
@@ -107,10 +114,10 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     m_chooseDirectoryButton = new TextFitPushButton(tr("Choose…"), this);
     outputDirectoryLayout->addWidget(m_outputDirectoryEdit, 1);
     outputDirectoryLayout->addWidget(m_chooseDirectoryButton);
-    formLayout->addRow(tr("PDF Folder:"), outputDirectoryLayout);
+    formLayout->addRow(tr("Output Folder:"), outputDirectoryLayout);
 
     m_openOutputFolderCheck = new QCheckBox(
-        tr("Open PDF Folder after saving"),
+        tr("Open Output Folder after saving"),
         this
         );
     m_openOutputFolderCheck->setChecked(false);
@@ -234,7 +241,9 @@ void SpeakingEvalBatchExportDialog::updateControls()
     m_previewButton->setEnabled(!selectedReports().isEmpty());
 
     const bool oneReport = selectedReports().size() == 1;
-    m_savePdfCheck->setText(oneReport ? tr("Export PDF") : tr("Export PDFs"));
+    m_savePdfCheck->setText(oneReport ? tr("Export PDF") : tr("Export ZIP"));
+    m_keepIndividualPdfsCheck->setVisible(!oneReport);
+    m_keepIndividualPdfsCheck->setEnabled(saving && !oneReport);
     m_printReportsCheck->setText(oneReport ? tr("Print Report") : tr("Print Reports"));
     if (saving && m_printReportsCheck->isChecked())
     {
@@ -267,7 +276,7 @@ void SpeakingEvalBatchExportDialog::chooseOutputDirectory()
 {
     const QString directory = QFileDialog::getExistingDirectory(
         this,
-        tr("Choose PDF Folder"),
+        tr("Choose Output Folder"),
         m_outputDirectoryEdit->text()
         );
 
@@ -312,6 +321,9 @@ void SpeakingEvalBatchExportDialog::exportReports()
     request.renderer = selectedRenderer();
     request.savePdf = m_savePdfCheck->isChecked();
     request.printReports = m_printReportsCheck->isChecked();
+    request.keepIndividualPdfFiles =
+        reports.size() > 1
+        && m_keepIndividualPdfsCheck->isChecked();
     request.outputDirectory = m_outputDirectoryEdit->text().trimmed();
 
     if (request.savePdf)
@@ -323,24 +335,43 @@ void SpeakingEvalBatchExportDialog::exportReports()
         {
             QMessageBox::warning(
                 this,
-                tr("PDF Folder Unavailable"),
-                tr("The selected PDF folder does not exist and could not be created. Choose another folder and try again.")
+                tr("Output Folder Unavailable"),
+                tr("The selected output folder does not exist and could not be created. Choose another folder and try again.")
                 );
             return;
         }
 
         QStringList existingFiles;
-        for (int index = 0; index < reports.size(); ++index)
+        if (reports.size() > 1)
         {
-            const QString path = outputDirectory.filePath(
-                SpeakingEvalBatchReportService::safeFileName(
-                    reports.at(index).report.englishName,
-                    reports.at(index).report.koreanName
-                    )
-                );
-            if (QFileInfo::exists(path))
+            const QString archivePath =
+                SpeakingEvalBatchReportService::batchArchivePath(
+                    request.outputDirectory
+                    );
+            if (QFileInfo::exists(archivePath))
             {
-                existingFiles.append(QFileInfo(path).fileName());
+                existingFiles.append(
+                    QFileInfo(archivePath).fileName()
+                    );
+            }
+        }
+        if (reports.size() == 1
+            || request.keepIndividualPdfFiles)
+        {
+            for (int index = 0; index < reports.size(); ++index)
+            {
+                const QString path = outputDirectory.filePath(
+                    SpeakingEvalBatchReportService::safeFileName(
+                        reports.at(index).report.englishName,
+                        reports.at(index).report.koreanName
+                        )
+                    );
+                if (QFileInfo::exists(path))
+                {
+                    existingFiles.append(
+                        QFileInfo(path).fileName()
+                        );
+                }
             }
         }
 
@@ -348,8 +379,8 @@ void SpeakingEvalBatchExportDialog::exportReports()
         {
             const QMessageBox::StandardButton overwrite = QMessageBox::question(
                 this,
-                tr("Overwrite Existing Reports?"),
-                tr("%1 existing report(s) will be replaced. Do you want to overwrite them?")
+                tr("Overwrite Existing Output?"),
+                tr("%1 existing output file(s) will be replaced. Do you want to overwrite them?")
                     .arg(existingFiles.size()),
                 QMessageBox::Yes | QMessageBox::Cancel,
                 QMessageBox::Cancel
@@ -431,19 +462,52 @@ void SpeakingEvalBatchExportDialog::exportReports()
     switch (result.status)
     {
     case SpeakingEvalBatchReportService::Status::Completed:
+    {
+        QString successMessage;
+        if (!request.savePdf)
+        {
+            successMessage =
+                tr("%1 report(s) were sent to the printer.")
+                    .arg(reports.size());
+        }
+        else if (!result.savedArchivePath.isEmpty())
+        {
+            successMessage =
+                tr("%1 report(s) were saved to %2.")
+                    .arg(
+                        reports.size()
+                        )
+                    .arg(
+                        QFileInfo(result.savedArchivePath).fileName()
+                        );
+            if (request.keepIndividualPdfFiles)
+            {
+                successMessage +=
+                    QStringLiteral("\n\n")
+                    + tr("Individual PDF files were also saved.");
+            }
+            if (request.printReports)
+            {
+                successMessage +=
+                    QStringLiteral("\n\n")
+                    + tr("The reports were also sent to the printer.");
+            }
+        }
+        else
+        {
+            successMessage =
+                tr("%1 report(s) were saved%2.")
+                    .arg(reports.size())
+                    .arg(
+                        request.printReports
+                            ? tr(" and sent to the printer")
+                            : QString()
+                        );
+        }
         QMessageBox::information(
             this,
             tr("Reports Ready"),
-            request.savePdf
-                ? tr("%1 report(s) were saved%2.")
-                      .arg(reports.size())
-                      .arg(
-                          request.printReports
-                              ? tr(" and sent to the printer")
-                              : QString()
-                          )
-                : tr("%1 report(s) were sent to the printer.")
-                      .arg(reports.size())
+            successMessage
             );
         if (request.savePdf && m_openOutputFolderCheck->isChecked())
         {
@@ -455,6 +519,7 @@ void SpeakingEvalBatchExportDialog::exportReports()
         }
         accept();
         return;
+    }
     case SpeakingEvalBatchReportService::Status::Canceled:
         return;
     case SpeakingEvalBatchReportService::Status::Failed:

@@ -42,6 +42,7 @@ struct Request
     Renderer renderer = Renderer::Internal;
     bool savePdf = false;
     bool printReports = false;
+    bool keepIndividualPdfFiles = false;
     bool overwriteExisting = false;
     QString outputDirectory;
     // An exact destination for a single-report save-as request. When set,
@@ -56,6 +57,7 @@ struct Result
     Status status = Status::Failed;
     QString message;
     QStringList savedPdfPaths;
+    QString savedArchivePath;
 };
 
 [[nodiscard]] QString rendererDisplayName(
@@ -71,6 +73,10 @@ struct Result
     const ClassInfo& classInfo,
     const QString& evaluationName,
     const QString& documentsDirectory = {}
+    );
+
+[[nodiscard]] QString batchArchivePath(
+    const QString& outputDirectory
     );
 
 [[nodiscard]] bool isPowerPointRendererAvailable();

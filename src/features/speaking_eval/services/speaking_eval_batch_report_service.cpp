@@ -1,6 +1,7 @@
 #include "speaking_eval_batch_report_service.h"
 
 #include "core/resource_paths.h"
+#include "core/zip_archive_writer.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -272,13 +273,15 @@ QString macPowerPointTextArgument(const QString& value)
 #endif
 
 Result completed(
-    const QStringList& savedPdfPaths = {}
+    const QStringList& savedPdfPaths = {},
+    const QString& savedArchivePath = {}
     )
 {
     return {
         Status::Completed,
         QObject::tr("Reports created successfully."),
-        savedPdfPaths
+        savedPdfPaths,
+        savedArchivePath
     };
 }
 
@@ -287,6 +290,7 @@ Result canceled()
     return {
         Status::Canceled,
         QObject::tr("Report export was canceled."),
+        {},
         {}
     };
 }
@@ -301,6 +305,7 @@ Result failed(
             ? Status::InternalRendererFailed
             : Status::Failed,
         message,
+        {},
         {}
     };
 }
@@ -1826,6 +1831,7 @@ bool powerPointReportsUseSingleTemplate(
 
 bool targetFilePaths(
     const Request& request,
+    bool saveIndividualPdfFiles,
     QStringList* targetPaths,
     QString* errorMessage
     )
@@ -1899,8 +1905,18 @@ bool targetFilePaths(
                 )
             );
 
-        if ((!request.overwriteExisting && QFileInfo::exists(path))
-            || seenPaths.contains(path))
+        if (seenPaths.contains(path))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QObject::tr("A PDF named \"%1\" already exists.")
+                    .arg(QFileInfo(path).fileName());
+            }
+            return false;
+        }
+        if (saveIndividualPdfFiles
+            && !request.overwriteExisting
+            && QFileInfo::exists(path))
         {
             if (errorMessage)
             {
@@ -1917,7 +1933,7 @@ bool targetFilePaths(
     return true;
 }
 
-bool commitPdfFiles(
+bool commitOutputFiles(
     const QStringList& stagedPaths,
     const QStringList& targetPaths,
     bool overwriteExisting,
@@ -1928,7 +1944,7 @@ bool commitPdfFiles(
     {
         if (errorMessage)
         {
-            *errorMessage = QObject::tr("The staged report files are incomplete.");
+            *errorMessage = QObject::tr("The staged output files are incomplete.");
         }
         return false;
     }
@@ -1956,7 +1972,7 @@ bool commitPdfFiles(
             }
             if (errorMessage)
             {
-                *errorMessage = QObject::tr("An existing PDF could not be prepared for replacement.");
+                *errorMessage = QObject::tr("An existing output file could not be prepared for replacement.");
             }
             return false;
         }
@@ -1985,7 +2001,7 @@ bool commitPdfFiles(
             }
             if (errorMessage)
             {
-                *errorMessage = QObject::tr("A PDF could not be copied to the selected folder.");
+                *errorMessage = QObject::tr("An output file could not be copied to the selected folder.");
             }
             return false;
         }
@@ -2015,7 +2031,7 @@ bool commitPdfFiles(
             }
             if (errorMessage)
             {
-                *errorMessage = QObject::tr("A PDF could not be finalized in the selected folder.");
+                *errorMessage = QObject::tr("An output file could not be finalized in the selected folder.");
             }
             return false;
         }
@@ -2107,6 +2123,23 @@ QString defaultOutputDirectory(
                     safeFolderName(evaluationName, QObject::tr("Evaluation"))
                     )
             )
+        );
+}
+
+QString batchArchivePath(
+    const QString& outputDirectory
+    )
+{
+    const QDir directory(
+        QDir::cleanPath(outputDirectory)
+        );
+    const QString archiveBaseName =
+        safeFolderName(
+            directory.dirName(),
+            QObject::tr("Speaking Evaluation Reports")
+            );
+    return directory.filePath(
+        archiveBaseName + QStringLiteral(".zip")
         );
 }
 
@@ -2214,12 +2247,38 @@ Result exportReports(
         return failed(powerPointRendererAvailabilityMessage());
     }
 
+    const bool creatingBatchArchive =
+        request.savePdf && request.reports.size() > 1;
+    const bool savingIndividualPdfFiles =
+        request.savePdf
+        && (!creatingBatchArchive
+            || request.keepIndividualPdfFiles);
+
     QStringList targetPaths;
+    QString targetArchivePath;
     QString errorMessage;
     if (request.savePdf
-        && !targetFilePaths(request, &targetPaths, &errorMessage))
+        && !targetFilePaths(
+            request,
+            savingIndividualPdfFiles,
+            &targetPaths,
+            &errorMessage
+            ))
     {
         return failed(errorMessage);
+    }
+    if (creatingBatchArchive)
+    {
+        targetArchivePath =
+            batchArchivePath(request.outputDirectory);
+        if (!request.overwriteExisting
+            && QFileInfo::exists(targetArchivePath))
+        {
+            return failed(
+                QObject::tr("A ZIP archive named \"%1\" already exists.")
+                    .arg(QFileInfo(targetArchivePath).fileName())
+                );
+        }
     }
 
     QTemporaryDir stagingDirectory(
@@ -2359,15 +2418,57 @@ Result exportReports(
         }
     }
 
-    if (request.savePdf
-        && !commitPdfFiles(
-            stagedPdfPaths,
-            targetPaths,
-            request.overwriteExisting,
-            &errorMessage
-            ))
+    QString stagedArchivePath;
+    if (creatingBatchArchive)
     {
-        return failed(errorMessage);
+        stagedArchivePath =
+            QDir(stagingDirectory.path()).filePath(
+                QStringLiteral("reports.zip")
+                );
+        QList<ZipArchiveWriter::Entry> archiveEntries;
+        archiveEntries.reserve(stagedPdfPaths.size());
+        for (int index = 0; index < stagedPdfPaths.size(); ++index)
+        {
+            archiveEntries.append({
+                stagedPdfPaths.at(index),
+                QFileInfo(targetPaths.at(index)).fileName()
+            });
+        }
+
+        if (!ZipArchiveWriter::writeArchive(
+                stagedArchivePath,
+                archiveEntries,
+                &errorMessage
+                ))
+        {
+            return failed(errorMessage);
+        }
+    }
+
+    if (request.savePdf)
+    {
+        QStringList stagedOutputPaths;
+        QStringList targetOutputPaths;
+        if (creatingBatchArchive)
+        {
+            stagedOutputPaths.append(stagedArchivePath);
+            targetOutputPaths.append(targetArchivePath);
+        }
+        if (savingIndividualPdfFiles)
+        {
+            stagedOutputPaths.append(stagedPdfPaths);
+            targetOutputPaths.append(targetPaths);
+        }
+
+        if (!commitOutputFiles(
+                stagedOutputPaths,
+                targetOutputPaths,
+                request.overwriteExisting,
+                &errorMessage
+                ))
+        {
+            return failed(errorMessage);
+        }
     }
 
     if (request.printReports)
@@ -2399,7 +2500,12 @@ Result exportReports(
         }
     }
 
-    return completed(targetPaths);
+    return completed(
+        savingIndividualPdfFiles
+            ? targetPaths
+            : QStringList(),
+        targetArchivePath
+        );
 }
 
 } // namespace SpeakingEvalBatchReportService

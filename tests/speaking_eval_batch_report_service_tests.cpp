@@ -8,6 +8,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "core/settingsmanager.h"
+#include "core/zip_archive_writer.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QtTest>
@@ -19,6 +20,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
@@ -41,6 +43,81 @@
 
 namespace
 {
+quint16 readLe16(
+    const QByteArray& data,
+    qsizetype offset
+    )
+{
+    return static_cast<quint16>(
+        static_cast<quint8>(data.at(offset))
+        | (static_cast<quint16>(
+               static_cast<quint8>(data.at(offset + 1))
+               ) << 8)
+        );
+}
+
+quint32 readLe32(
+    const QByteArray& data,
+    qsizetype offset
+    )
+{
+    return static_cast<quint32>(readLe16(data, offset))
+        | (static_cast<quint32>(readLe16(data, offset + 2)) << 16);
+}
+
+QHash<QString, QByteArray> storedZipEntries(
+    const QString& archivePath
+    )
+{
+    QFile archive(archivePath);
+    if (!archive.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+
+    const QByteArray data = archive.readAll();
+    QHash<QString, QByteArray> entries;
+    qsizetype offset = 0;
+    while (offset + 30 <= data.size()
+           && readLe32(data, offset) == 0x04034b50)
+    {
+        const quint16 compressionMethod =
+            readLe16(data, offset + 8);
+        const quint32 compressedSize =
+            readLe32(data, offset + 18);
+        const quint16 fileNameLength =
+            readLe16(data, offset + 26);
+        const quint16 extraLength =
+            readLe16(data, offset + 28);
+        const qsizetype dataOffset =
+            offset + 30 + fileNameLength + extraLength;
+        if (compressionMethod != 0
+            || dataOffset < offset
+            || dataOffset + compressedSize > data.size())
+        {
+            return {};
+        }
+
+        const QString fileName =
+            QString::fromUtf8(
+                data.mid(offset + 30, fileNameLength)
+                );
+        entries.insert(
+            fileName,
+            data.mid(dataOffset, compressedSize)
+            );
+        offset = dataOffset + compressedSize;
+    }
+
+    if (entries.isEmpty()
+        || offset + 4 > data.size()
+        || readLe32(data, offset) != 0x02014b50)
+    {
+        return {};
+    }
+    return entries;
+}
+
 SpeakingEvalReportData goldenReportData(
     SpeakingEvalReportTemplate reportTemplate
     )
@@ -217,8 +294,13 @@ private slots:
     void initTestCase();
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
+    void batchArchivePathUsesOutputFolderName();
+    void zipWriterRejectsMissingAndDuplicateEntries();
     void reportDateUsesShortMonthsForStandardTemplate();
     void internalRendererCreatesReadablePdf();
+    void batchCanKeepIndividualPdfFiles();
+    void existingBatchArchiveRequiresOverwritePermission();
+    void duplicateBatchFileNamesAreRejected();
     void internalPdfMatchesWidgetRendering_data();
     void internalPdfMatchesWidgetRendering();
     void singleReportCanBeSavedToAnExactFilePath();
@@ -292,6 +374,72 @@ void SpeakingEvalBatchReportServiceTests::defaultOutputDirectoryIncludesClassSch
             QStringLiteral("C:/Documents/DYB/SpeakingEvals/E5 Zeus (MW - 4pm)/Winter")
             )
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::batchArchivePathUsesOutputFolderName()
+{
+    QCOMPARE(
+        SpeakingEvalBatchReportService::batchArchivePath(
+            QStringLiteral("C:/Documents/Speaking Evals/Winter")
+            ),
+        QDir::cleanPath(
+            QStringLiteral(
+                "C:/Documents/Speaking Evals/Winter/Winter.zip"
+                )
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    zipWriterRejectsMissingAndDuplicateEntries()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString archivePath =
+        QDir(directory.path()).filePath(
+            QStringLiteral("Reports.zip")
+            );
+    QString errorMessage;
+    QVERIFY(
+        !ZipArchiveWriter::writeArchive(
+            archivePath,
+            {
+                {
+                    QDir(directory.path()).filePath(
+                        QStringLiteral("missing.pdf")
+                        ),
+                    QStringLiteral("Missing.pdf")
+                }
+            },
+            &errorMessage
+            )
+        );
+    QVERIFY(!errorMessage.isEmpty());
+    QVERIFY(!QFileInfo::exists(archivePath));
+
+    const QString sourcePath =
+        QDir(directory.path()).filePath(
+            QStringLiteral("report.pdf")
+            );
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::WriteOnly));
+    QVERIFY(source.write("%PDF-test") > 0);
+    source.close();
+
+    errorMessage.clear();
+    QVERIFY(
+        !ZipArchiveWriter::writeArchive(
+            archivePath,
+            {
+                { sourcePath, QStringLiteral("Same.pdf") },
+                { sourcePath, QStringLiteral("Same.pdf") }
+            },
+            &errorMessage
+            )
+        );
+    QVERIFY(!errorMessage.isEmpty());
+    QVERIFY(!QFileInfo::exists(archivePath));
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -375,16 +523,196 @@ void SpeakingEvalBatchReportServiceTests::internalRendererCreatesReadablePdf()
         result.status == SpeakingEvalBatchReportService::Status::Completed,
         qPrintable(result.message)
         );
-    QCOMPARE(result.savedPdfPaths.size(), 2);
-    for (const QString& pdfPath : result.savedPdfPaths)
-    {
-        QVERIFY(QFileInfo::exists(pdfPath));
+    QVERIFY(result.savedPdfPaths.isEmpty());
+    QCOMPARE(
+        result.savedArchivePath,
+        SpeakingEvalBatchReportService::batchArchivePath(
+            outputDirectory.path()
+            )
+        );
+    QVERIFY(QFileInfo::exists(result.savedArchivePath));
+    QCOMPARE(
+        QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot
+            ),
+        QStringList{
+            QFileInfo(result.savedArchivePath).fileName()
+        }
+        );
 
+    const QHash<QString, QByteArray> entries =
+        storedZipEntries(result.savedArchivePath);
+    QCOMPARE(entries.size(), 2);
+    const QStringList expectedNames{
+        SpeakingEvalBatchReportService::safeFileName(
+            data.englishName,
+            data.koreanName
+            ),
+        SpeakingEvalBatchReportService::safeFileName(
+            advancedData.englishName,
+            advancedData.koreanName
+            )
+    };
+    for (const QString& fileName : expectedNames)
+    {
+        QVERIFY(entries.contains(fileName));
+        QVERIFY(entries.value(fileName).startsWith("%PDF"));
+
+        QBuffer pdfBuffer;
+        pdfBuffer.setData(entries.value(fileName));
+        QVERIFY(pdfBuffer.open(QIODevice::ReadOnly));
         QPdfDocument document;
-        QCOMPARE(document.load(pdfPath), QPdfDocument::Error::None);
+        document.load(&pdfBuffer);
+        QCOMPARE(document.error(), QPdfDocument::Error::None);
         QCOMPARE(document.status(), QPdfDocument::Status::Ready);
         QCOMPARE(document.pageCount(), 1);
     }
+}
+
+void SpeakingEvalBatchReportServiceTests::batchCanKeepIndividualPdfFiles()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData first =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    first.englishName = QStringLiteral("First Student");
+    first.koreanName = QStringLiteral("첫학생");
+    SpeakingEvalReportData second = first;
+    second.englishName = QStringLiteral("Second Student");
+    second.koreanName = QStringLiteral("둘째학생");
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { first.englishName, first },
+        { second.englishName, second }
+    };
+    request.savePdf = true;
+    request.keepIndividualPdfFiles = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QVERIFY2(
+        result.status == SpeakingEvalBatchReportService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QCOMPARE(result.savedPdfPaths.size(), 2);
+    QVERIFY(QFileInfo::exists(result.savedArchivePath));
+
+    const QHash<QString, QByteArray> entries =
+        storedZipEntries(result.savedArchivePath);
+    QCOMPARE(entries.size(), 2);
+    for (const QString& pdfPath : result.savedPdfPaths)
+    {
+        QFile pdf(pdfPath);
+        QVERIFY(pdf.open(QIODevice::ReadOnly));
+        QCOMPARE(
+            entries.value(QFileInfo(pdfPath).fileName()),
+            pdf.readAll()
+            );
+    }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    existingBatchArchiveRequiresOverwritePermission()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData first =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    first.englishName = QStringLiteral("First Student");
+    SpeakingEvalReportData second = first;
+    second.englishName = QStringLiteral("Second Student");
+
+    const QString archivePath =
+        SpeakingEvalBatchReportService::batchArchivePath(
+            outputDirectory.path()
+            );
+    QFile existingArchive(archivePath);
+    QVERIFY(existingArchive.open(QIODevice::WriteOnly));
+    QCOMPARE(existingArchive.write("old"), 3);
+    existingArchive.close();
+    const QString existingPdfPath =
+        QDir(outputDirectory.path()).filePath(
+            SpeakingEvalBatchReportService::safeFileName(
+                first.englishName,
+                first.koreanName
+                )
+            );
+    QFile existingPdf(existingPdfPath);
+    QVERIFY(existingPdf.open(QIODevice::WriteOnly));
+    QCOMPARE(existingPdf.write("old-pdf"), 7);
+    existingPdf.close();
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { first.englishName, first },
+        { second.englishName, second }
+    };
+    request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QCOMPARE(
+        result.status,
+        SpeakingEvalBatchReportService::Status::Failed
+        );
+    existingArchive.setFileName(archivePath);
+    QVERIFY(existingArchive.open(QIODevice::ReadOnly));
+    QCOMPARE(existingArchive.readAll(), QByteArray("old"));
+    existingArchive.close();
+
+    request.overwriteExisting = true;
+    result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QVERIFY2(
+        result.status == SpeakingEvalBatchReportService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QCOMPARE(result.savedArchivePath, archivePath);
+    QCOMPARE(storedZipEntries(archivePath).size(), 2);
+    existingPdf.setFileName(existingPdfPath);
+    QVERIFY(existingPdf.open(QIODevice::ReadOnly));
+    QCOMPARE(existingPdf.readAll(), QByteArray("old-pdf"));
+    QVERIFY(
+        !QFileInfo::exists(
+            archivePath + QStringLiteral(".classmngr-backup")
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    duplicateBatchFileNamesAreRejected()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData data =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    data.englishName = QStringLiteral("Same Student");
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { QStringLiteral("First"), data },
+        { QStringLiteral("Second"), data }
+    };
+    request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QCOMPARE(
+        result.status,
+        SpeakingEvalBatchReportService::Status::Failed
+        );
+    QVERIFY(
+        QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot
+            ).isEmpty()
+        );
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -2073,6 +2401,7 @@ void SpeakingEvalBatchReportServiceTests::mixedPowerPointTemplatesAreRejected()
     request.renderer =
         SpeakingEvalBatchReportService::Renderer::PowerPoint;
     request.savePdf = true;
+    request.keepIndividualPdfFiles = true;
     request.outputDirectory = outputDirectory.path();
 
     const SpeakingEvalBatchReportService::Result result =
@@ -2277,6 +2606,7 @@ void SpeakingEvalBatchReportServiceTests::
     request.renderer =
         SpeakingEvalBatchReportService::Renderer::PowerPoint;
     request.savePdf = true;
+    request.keepIndividualPdfFiles = true;
     request.outputDirectory = outputDirectory.path();
 
     const SpeakingEvalBatchReportService::Result result =
@@ -2503,10 +2833,9 @@ void SpeakingEvalBatchReportServiceTests::
         );
     QCOMPARE(
         QDir(outputDirectory.path()).entryList(
-            { QStringLiteral("*.pdf") },
-            QDir::Files
-            ).size(),
-        0
+            QDir::Files | QDir::NoDotAndDotDot
+            ),
+        QStringList()
         );
 
 #ifdef Q_OS_MACOS
