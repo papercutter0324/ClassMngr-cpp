@@ -98,21 +98,43 @@ QFrame#noDatabaseBanner {
     border-radius: 0px;
 }
 
-QLabel#noDatabaseMessage {
+QLabel#noDatabaseTitle {
     color: #24303a;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
 }
 
-QPushButton#noDatabaseOpenButton,
-QPushButton#noDatabaseNewButton {
+QLabel#noDatabaseMessage,
+QLabel#noDatabaseStepOne,
+QLabel#noDatabaseStepTwo,
+QLabel#noDatabaseStepThree {
+    color: #24303a;
+}
+
+QLabel#noDatabaseNextSteps {
+    color: #52616c;
+}
+
+QPushButton#noDatabaseOpenButton {
     background-color: #e3edf5;
     border: 1px solid #8ca9bd;
 }
 
-QPushButton#noDatabaseOpenButton:hover,
-QPushButton#noDatabaseNewButton:hover {
+QPushButton#noDatabaseOpenButton:hover {
     background-color: #d2e3ef;
     border-color: #5f849e;
+}
+
+QPushButton#noDatabaseNewButton {
+    background-color: #2f6f9f;
+    border: 1px solid #265e87;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+QPushButton#noDatabaseNewButton:hover {
+    background-color: #285f89;
+    border-color: #1f4f73;
 }
 
 QFrame[role="separator"] {

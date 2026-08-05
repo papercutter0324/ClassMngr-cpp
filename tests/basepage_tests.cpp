@@ -59,12 +59,49 @@ public:
             return {};
         }
 
+        if (qstrcmp(sourceText, "Getting Started") == 0)
+        {
+            return QStringLiteral("Translated title");
+        }
+
         if (qstrcmp(
                 sourceText,
-                "No database is open. Open an existing database or create a new one to continue."
+                "No database is open. Set up ClassMngr in this order:"
                 ) == 0)
         {
-            return QStringLiteral("Translated database warning");
+            return QStringLiteral("Translated introduction");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "1. Create a new database, or open an existing one."
+                ) == 0)
+        {
+            return QStringLiteral("Translated first step");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "2. Create or import your Korean teachers."
+                ) == 0)
+        {
+            return QStringLiteral("Translated second step");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "3. Create your classes and assign their teachers."
+                ) == 0)
+        {
+            return QStringLiteral("Translated third step");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "Next, add schedules and rosters, then fill in any other information you need."
+                ) == 0)
+        {
+            return QStringLiteral("Translated next steps");
         }
 
         if (qstrcmp(sourceText, "Open Database...") == 0)
@@ -88,6 +125,7 @@ class BasePageTests : public QObject
 private slots:
     void noDatabaseBannerVisibilityAndActions();
     void noDatabaseBannerOffsetsExistingLayout();
+    void noDatabaseBannerFitsNarrowPage();
     void noDatabaseBannerRetranslatesOnLanguageChange();
     void databaseStateClearHookIsDispatched();
 };
@@ -120,6 +158,77 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
     QVERIFY(newButton);
     QVERIFY(!banner->isVisible());
 
+    auto* title =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseTitle")
+            );
+
+    auto* message =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseMessage")
+            );
+
+    auto* stepOne =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepOne")
+            );
+
+    auto* stepTwo =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepTwo")
+            );
+
+    auto* stepThree =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepThree")
+            );
+
+    auto* nextSteps =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseNextSteps")
+            );
+
+    QVERIFY(title);
+    QVERIFY(message);
+    QVERIFY(stepOne);
+    QVERIFY(stepTwo);
+    QVERIFY(stepThree);
+    QVERIFY(nextSteps);
+
+    QCOMPARE(title->text(), QStringLiteral("Getting Started"));
+    QCOMPARE(
+        message->text(),
+        QStringLiteral(
+            "No database is open. Set up ClassMngr in this order:"
+            )
+        );
+    QCOMPARE(
+        stepOne->text(),
+        QStringLiteral(
+            "1. Create a new database, or open an existing one."
+            )
+        );
+    QCOMPARE(
+        stepTwo->text(),
+        QStringLiteral(
+            "2. Create or import your Korean teachers."
+            )
+        );
+    QCOMPARE(
+        stepThree->text(),
+        QStringLiteral(
+            "3. Create your classes and assign their teachers."
+            )
+        );
+    QCOMPARE(
+        nextSteps->text(),
+        QStringLiteral(
+            "Next, add schedules and rosters, then fill in any other information you need."
+            )
+        );
+    QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
+    QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
+
     page.hide();
 
     page.setDatabaseOpen(false);
@@ -127,6 +236,7 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
     QCoreApplication::processEvents();
 
     QVERIFY(banner->isVisible());
+    QVERIFY(newButton->geometry().left() < openButton->geometry().left());
 
     QSignalSpy openSpy(
         &page,
@@ -208,15 +318,105 @@ void BasePageTests::noDatabaseBannerOffsetsExistingLayout()
         );
 }
 
+void BasePageTests::noDatabaseBannerFitsNarrowPage()
+{
+    TestPage page;
+    QWidget* contentWidget = page.addContentWidget();
+
+    page.resize(360, 600);
+    page.show();
+
+    QCoreApplication::processEvents();
+
+    const int databaseOpenContentTop =
+        contentWidget->geometry().top();
+
+    page.hide();
+    page.setDatabaseOpen(false);
+    page.show();
+    QCoreApplication::processEvents();
+
+    auto* banner =
+        page.findChild<QFrame*>(
+            QStringLiteral("noDatabaseBanner")
+            );
+
+    QVERIFY(banner);
+    QVERIFY(banner->isVisible());
+    QCOMPARE(banner->geometry().left(), 0);
+    QCOMPARE(banner->width(), page.width());
+
+    const QStringList containedWidgetNames{
+        QStringLiteral("noDatabaseTitle"),
+        QStringLiteral("noDatabaseMessage"),
+        QStringLiteral("noDatabaseStepOne"),
+        QStringLiteral("noDatabaseStepTwo"),
+        QStringLiteral("noDatabaseStepThree"),
+        QStringLiteral("noDatabaseNextSteps"),
+        QStringLiteral("noDatabaseNewButton"),
+        QStringLiteral("noDatabaseOpenButton")
+    };
+
+    for (const QString& objectName : containedWidgetNames)
+    {
+        QWidget* widget =
+            banner->findChild<QWidget*>(objectName);
+
+        QVERIFY2(widget, qPrintable(objectName));
+        QVERIFY2(
+            banner->rect().contains(widget->geometry()),
+            qPrintable(objectName)
+            );
+    }
+
+    QCOMPARE(
+        contentWidget->geometry().top(),
+        databaseOpenContentTop
+            + banner->height()
+            + 8
+        );
+}
+
 void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
 {
     TestPage page;
-    page.resize(800, 600);
+    page.resize(360, 600);
+    page.setDatabaseOpen(false);
     page.show();
+
+    auto* banner =
+        page.findChild<QFrame*>(
+            QStringLiteral("noDatabaseBanner")
+            );
+
+    auto* title =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseTitle")
+            );
 
     auto* message =
         page.findChild<QLabel*>(
             QStringLiteral("noDatabaseMessage")
+            );
+
+    auto* stepOne =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepOne")
+            );
+
+    auto* stepTwo =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepTwo")
+            );
+
+    auto* stepThree =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseStepThree")
+            );
+
+    auto* nextSteps =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseNextSteps")
             );
 
     auto* openButton =
@@ -229,7 +429,13 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
             QStringLiteral("noDatabaseNewButton")
             );
 
+    QVERIFY(banner);
+    QVERIFY(title);
     QVERIFY(message);
+    QVERIFY(stepOne);
+    QVERIFY(stepTwo);
+    QVERIFY(stepThree);
+    QVERIFY(nextSteps);
     QVERIFY(openButton);
     QVERIFY(newButton);
 
@@ -238,19 +444,63 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
 
     QEvent languageChange(QEvent::LanguageChange);
     QCoreApplication::sendEvent(&page, &languageChange);
+    QCoreApplication::processEvents();
 
-    QCOMPARE(message->text(), QStringLiteral("Translated database warning"));
+    QCOMPARE(title->text(), QStringLiteral("Translated title"));
+    QCOMPARE(message->text(), QStringLiteral("Translated introduction"));
+    QCOMPARE(stepOne->text(), QStringLiteral("Translated first step"));
+    QCOMPARE(stepTwo->text(), QStringLiteral("Translated second step"));
+    QCOMPARE(stepThree->text(), QStringLiteral("Translated third step"));
+    QCOMPARE(nextSteps->text(), QStringLiteral("Translated next steps"));
     QCOMPARE(openButton->text(), QStringLiteral("Translated open database"));
     QCOMPARE(newButton->text(), QStringLiteral("Translated new database"));
+
+    for (QLabel* label : {
+             title,
+             message,
+             stepOne,
+             stepTwo,
+             stepThree,
+             nextSteps
+             })
+    {
+        QVERIFY(banner->rect().contains(label->geometry()));
+    }
 
     qApp->removeTranslator(&translator);
 
     QCoreApplication::sendEvent(&page, &languageChange);
+    QCoreApplication::processEvents();
 
+    QCOMPARE(title->text(), QStringLiteral("Getting Started"));
     QCOMPARE(
         message->text(),
         QStringLiteral(
-            "No database is open. Open an existing database or create a new one to continue."
+            "No database is open. Set up ClassMngr in this order:"
+            )
+        );
+    QCOMPARE(
+        stepOne->text(),
+        QStringLiteral(
+            "1. Create a new database, or open an existing one."
+            )
+        );
+    QCOMPARE(
+        stepTwo->text(),
+        QStringLiteral(
+            "2. Create or import your Korean teachers."
+            )
+        );
+    QCOMPARE(
+        stepThree->text(),
+        QStringLiteral(
+            "3. Create your classes and assign their teachers."
+            )
+        );
+    QCOMPARE(
+        nextSteps->text(),
+        QStringLiteral(
+            "Next, add schedules and rosters, then fill in any other information you need."
             )
         );
     QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));

@@ -116,7 +116,17 @@ private:
 
     QFrame* m_noDatabaseBanner = nullptr;
 
+    QLabel* m_noDatabaseTitle = nullptr;
+
     QLabel* m_noDatabaseMessage = nullptr;
+
+    QLabel* m_noDatabaseStepOne = nullptr;
+
+    QLabel* m_noDatabaseStepTwo = nullptr;
+
+    QLabel* m_noDatabaseStepThree = nullptr;
+
+    QLabel* m_noDatabaseNextSteps = nullptr;
 
     QPushButton* m_openDatabaseButton = nullptr;
 

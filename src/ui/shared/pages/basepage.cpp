@@ -102,16 +102,27 @@ BasePage::BasePage(
         );
 
     auto* bannerLayout =
-        new QHBoxLayout(m_noDatabaseBanner);
+        new QVBoxLayout(m_noDatabaseBanner);
 
     bannerLayout->setContentsMargins(
+        20,
         16,
-        8,
-        16,
-        8
+        20,
+        16
         );
 
     bannerLayout->setSpacing(8);
+
+    m_noDatabaseTitle =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseTitle->setObjectName(
+        QStringLiteral("noDatabaseTitle")
+        );
+
+    bannerLayout->addWidget(
+        m_noDatabaseTitle
+        );
 
     m_noDatabaseMessage =
         new QLabel(m_noDatabaseBanner);
@@ -123,8 +134,82 @@ BasePage::BasePage(
     m_noDatabaseMessage->setWordWrap(true);
 
     bannerLayout->addWidget(
-        m_noDatabaseMessage,
-        1
+        m_noDatabaseMessage
+        );
+
+    m_noDatabaseStepOne =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseStepOne->setObjectName(
+        QStringLiteral("noDatabaseStepOne")
+        );
+
+    m_noDatabaseStepOne->setWordWrap(true);
+
+    bannerLayout->addWidget(
+        m_noDatabaseStepOne
+        );
+
+    m_noDatabaseStepTwo =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseStepTwo->setObjectName(
+        QStringLiteral("noDatabaseStepTwo")
+        );
+
+    m_noDatabaseStepTwo->setWordWrap(true);
+
+    bannerLayout->addWidget(
+        m_noDatabaseStepTwo
+        );
+
+    m_noDatabaseStepThree =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseStepThree->setObjectName(
+        QStringLiteral("noDatabaseStepThree")
+        );
+
+    m_noDatabaseStepThree->setWordWrap(true);
+
+    bannerLayout->addWidget(
+        m_noDatabaseStepThree
+        );
+
+    m_noDatabaseNextSteps =
+        new QLabel(m_noDatabaseBanner);
+
+    m_noDatabaseNextSteps->setObjectName(
+        QStringLiteral("noDatabaseNextSteps")
+        );
+
+    m_noDatabaseNextSteps->setWordWrap(true);
+
+    bannerLayout->addWidget(
+        m_noDatabaseNextSteps
+        );
+
+    auto* buttonLayout =
+        new QHBoxLayout;
+
+    buttonLayout->setContentsMargins(
+        0,
+        4,
+        0,
+        0
+        );
+
+    buttonLayout->setSpacing(8);
+
+    m_newDatabaseButton =
+        new QPushButton(m_noDatabaseBanner);
+
+    m_newDatabaseButton->setObjectName(
+        QStringLiteral("noDatabaseNewButton")
+        );
+
+    buttonLayout->addWidget(
+        m_newDatabaseButton
         );
 
     m_openDatabaseButton =
@@ -134,19 +219,14 @@ BasePage::BasePage(
         QStringLiteral("noDatabaseOpenButton")
         );
 
-    bannerLayout->addWidget(
+    buttonLayout->addWidget(
         m_openDatabaseButton
         );
 
-    m_newDatabaseButton =
-        new QPushButton(m_noDatabaseBanner);
+    buttonLayout->addStretch();
 
-    m_newDatabaseButton->setObjectName(
-        QStringLiteral("noDatabaseNewButton")
-        );
-
-    bannerLayout->addWidget(
-        m_newDatabaseButton
+    bannerLayout->addLayout(
+        buttonLayout
         );
 
     connect(
@@ -229,10 +309,45 @@ void BasePage::refresh()
 
 void BasePage::retranslateUi()
 {
+    if (m_noDatabaseTitle)
+    {
+        m_noDatabaseTitle->setText(
+            tr("Getting Started")
+            );
+    }
+
     if (m_noDatabaseMessage)
     {
         m_noDatabaseMessage->setText(
-            tr("No database is open. Open an existing database or create a new one to continue.")
+            tr("No database is open. Set up ClassMngr in this order:")
+            );
+    }
+
+    if (m_noDatabaseStepOne)
+    {
+        m_noDatabaseStepOne->setText(
+            tr("1. Create a new database, or open an existing one.")
+            );
+    }
+
+    if (m_noDatabaseStepTwo)
+    {
+        m_noDatabaseStepTwo->setText(
+            tr("2. Create or import your Korean teachers.")
+            );
+    }
+
+    if (m_noDatabaseStepThree)
+    {
+        m_noDatabaseStepThree->setText(
+            tr("3. Create your classes and assign their teachers.")
+            );
+    }
+
+    if (m_noDatabaseNextSteps)
+    {
+        m_noDatabaseNextSteps->setText(
+            tr("Next, add schedules and rosters, then fill in any other information you need.")
             );
     }
 

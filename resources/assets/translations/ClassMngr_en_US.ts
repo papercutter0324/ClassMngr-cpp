@@ -797,9 +797,44 @@
 <context>
     <name>BasePage</name>
     <message>
-        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+235"/>
-        <source>No database is open. Open an existing database or create a new one to continue.</source>
-        <translation>No database is open. Open an existing database or create a new one to continue.</translation>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+204"/>
+        <source>Unsaved Changes</source>
+        <translation>Unsaved Changes</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>This page has unsaved changes.</source>
+        <translation>This page has unsaved changes.</translation>
+    </message>
+    <message>
+        <location line="+106"/>
+        <source>Getting Started</source>
+        <translation>Getting Started</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>No database is open. Set up ClassMngr in this order:</source>
+        <translation>No database is open. Set up ClassMngr in this order:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>1. Create a new database, or open an existing one.</source>
+        <translation>1. Create a new database, or open an existing one.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>2. Create or import your Korean teachers.</source>
+        <translation>2. Create or import your Korean teachers.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>3. Create your classes and assign their teachers.</source>
+        <translation>3. Create your classes and assign their teachers.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Next, add schedules and rosters, then fill in any other information you need.</source>
+        <translation>Next, add schedules and rosters, then fill in any other information you need.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -810,16 +845,6 @@
         <location line="+7"/>
         <source>New Database...</source>
         <translation>New Database...</translation>
-    </message>
-    <message>
-        <location line="-50"/>
-        <source>Unsaved Changes</source>
-        <translation>Unsaved Changes</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>This page has unsaved changes.</source>
-        <translation>This page has unsaved changes.</translation>
     </message>
 </context>
 <context>

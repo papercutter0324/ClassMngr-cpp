@@ -797,9 +797,44 @@
 <context>
     <name>BasePage</name>
     <message>
-        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+235"/>
-        <source>No database is open. Open an existing database or create a new one to continue.</source>
-        <translation>열려 있는 데이터베이스가 없습니다. 계속하려면 기존 데이터베이스를 열거나 새 데이터베이스를 만드세요.</translation>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+204"/>
+        <source>Unsaved Changes</source>
+        <translation>저장되지 않은 변경 사항</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>This page has unsaved changes.</source>
+        <translation>이 페이지에 저장되지 않은 변경 사항이 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+106"/>
+        <source>Getting Started</source>
+        <translation>시작하기</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>No database is open. Set up ClassMngr in this order:</source>
+        <translation>열려 있는 데이터베이스가 없습니다. 다음 순서로 ClassMngr를 설정하세요:</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>1. Create a new database, or open an existing one.</source>
+        <translation>1. 새 데이터베이스를 만들거나 기존 데이터베이스를 여세요.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>2. Create or import your Korean teachers.</source>
+        <translation>2. 한국인 교사를 만들거나 가져오세요.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>3. Create your classes and assign their teachers.</source>
+        <translation>3. 수업을 만들고 담당 교사를 지정하세요.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Next, add schedules and rosters, then fill in any other information you need.</source>
+        <translation>다음으로 일정과 명단을 추가한 후 필요한 기타 정보를 입력하세요.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -810,16 +845,6 @@
         <location line="+7"/>
         <source>New Database...</source>
         <translation>새 데이터베이스...</translation>
-    </message>
-    <message>
-        <location line="-50"/>
-        <source>Unsaved Changes</source>
-        <translation>저장되지 않은 변경 사항</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>This page has unsaved changes.</source>
-        <translation>이 페이지에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
 </context>
 <context>
