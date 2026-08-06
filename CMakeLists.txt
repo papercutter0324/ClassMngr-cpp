@@ -99,22 +99,14 @@ if(NOT ZLIB_FOUND)
     find_package(ZLIB REQUIRED)
 endif()
 
-set(CLASSMNGR_UPDATE_MANIFEST_URL "" CACHE STRING
-    "HTTPS URL for the stable auto-update manifest"
-)
-set(CLASSMNGR_UPDATE_SIGNATURE_URL "" CACHE STRING
-    "HTTPS URL for the detached signature for the stable auto-update manifest"
-)
-set(CLASSMNGR_UPDATE_PUBLIC_KEY_PEM "" CACHE STRING
-    "PEM encoded public key used to verify the auto-update manifest"
-)
-option(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE
-    "Require detached manifest signature verification before parsing update URLs"
-    ON
+set(CLASSMNGR_UPDATE_API_URL
+    "https://api.github.com/repos/papercutter0324/ClassMngr-cpp/releases?per_page=10"
+    CACHE STRING
+    "GitHub Releases API URL used for main-program update checks"
 )
 option(CLASSMNGR_UPDATE_CHECK_ON_STARTUP
-    "Check for updates after the main window is shown"
-    OFF
+    "Check GitHub Releases for updates during application startup"
+    ON
 )
 
 set(CLASSMNGR_RESOURCE_PACK_MANIFEST_URL "" CACHE STRING
@@ -131,14 +123,9 @@ option(CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE
     ON
 )
 option(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP
-    "Check configured resource packs for updates after launch"
-    ON
+    "Enable the dormant resource-pack startup updater"
+    OFF
 )
-
-set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP false)
-if(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE)
-    set(CLASSMNGR_UPDATE_REQUIRE_SIGNATURE_CPP true)
-endif()
 
 set(CLASSMNGR_UPDATE_CHECK_ON_STARTUP_CPP false)
 if(CLASSMNGR_UPDATE_CHECK_ON_STARTUP)
@@ -702,10 +689,14 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrUpdaterTests
         tests/updater_tests.cpp
+        src/core/updater/github_release.cpp
+        src/core/updater/update_configuration.cpp
         src/core/updater/update_downloader.cpp
-        src/core/updater/update_manifest.cpp
+        src/core/updater/update_installer.cpp
+        src/core/updater/update_service.cpp
         src/core/updater/update_signature_verifier.cpp
         src/core/updater/version.cpp
+        src/ui/shared/dialogs/update_dialog.cpp
     )
 
     target_compile_features(ClassMngrUpdaterTests
@@ -724,6 +715,7 @@ if(BUILD_TESTING)
             Qt6::Core
             Qt6::Network
             Qt6::Test
+            Qt6::Widgets
     )
 
     if(WIN32)

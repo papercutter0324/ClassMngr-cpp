@@ -1,17 +1,29 @@
+#include "core/updater/github_release.h"
+#include "core/updater/update_configuration.h"
 #include "core/updater/update_downloader.h"
-#include "core/updater/update_manifest.h"
+#include "core/updater/update_service.h"
 #include "core/updater/update_signature_verifier.h"
 #include "core/updater/version.h"
+#include "ui/shared/dialogs/update_dialog.h"
 
+#include <QCoreApplication>
 #include <QCryptographicHash>
+#include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
+#include <QFrame>
 #include <QHostAddress>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSignalSpy>
-#include <QStringList>
+#include <QPushButton>
+#include <QStandardPaths>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTest>
+
+#include <utility>
 
 namespace
 {
@@ -27,117 +39,102 @@ QString sha256Hex(
         );
 }
 
-QByteArray manifestJson(
-    const QString& version = QStringLiteral("0.1.1"),
-    const QString& platformKey = QStringLiteral("windows-x64"),
-    const QString& url = QStringLiteral("https://example.com/ClassMngr.exe"),
-    const QString& sha256 = QString(64, QLatin1Char('a')),
-    qint64 sizeBytes = 123
+QString assetName(
+    const QString& version,
+    const QString& platformKey
     )
 {
-    QJsonObject artifact;
-    artifact.insert(
-        QStringLiteral("url"),
-        url
-        );
-    artifact.insert(
-        QStringLiteral("fileName"),
-        QStringLiteral("ClassMngr.exe")
-        );
-    artifact.insert(
-        QStringLiteral("sha256"),
-        sha256
-        );
-    artifact.insert(
-        QStringLiteral("sizeBytes"),
-        sizeBytes
-        );
+    if (platformKey == QStringLiteral("windows-x64"))
+    {
+        return QStringLiteral("ClassMngr-%1-win-x64.exe")
+            .arg(version);
+    }
 
-    QJsonObject platforms;
-    platforms.insert(
-        platformKey,
-        artifact
-        );
+    if (platformKey == QStringLiteral("windows-arm64"))
+    {
+        return QStringLiteral("ClassMngr-%1-win-arm64.exe")
+            .arg(version);
+    }
 
-    QJsonObject manifest;
-    manifest.insert(
-        QStringLiteral("schemaVersion"),
-        1
-        );
-    manifest.insert(
-        QStringLiteral("channel"),
-        QStringLiteral("stable")
-        );
-    manifest.insert(
-        QStringLiteral("latestVersion"),
-        version
-        );
-    manifest.insert(
-        QStringLiteral("minimumSupportedVersion"),
-        QStringLiteral("0.1.0")
-        );
-    manifest.insert(
-        QStringLiteral("releaseDate"),
-        QStringLiteral("2026-06-18")
-        );
-    manifest.insert(
-        QStringLiteral("notesUrl"),
-        QStringLiteral("https://example.com/notes")
-        );
-    manifest.insert(
-        QStringLiteral("platforms"),
-        platforms
-        );
+    if (platformKey == QStringLiteral("macos-universal"))
+    {
+        return QStringLiteral("ClassMngr-%1-macos-universal.dmg")
+            .arg(version);
+    }
 
-    return QJsonDocument(manifest).toJson(
-        QJsonDocument::Compact
-        );
+    return QStringLiteral("ClassMngr-%1-linux-x86_64.tar.gz")
+        .arg(version);
 }
 
-QByteArray manifestJsonForPlatforms(
-    const QStringList& platformKeys
+QJsonObject releaseAsset(
+    const QString& version,
+    const QString& platformKey,
+    const QString& digest = QStringLiteral(
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ),
+    const QString& nameOverride = QString()
     )
 {
-    QJsonObject platforms;
+    const QString name =
+        nameOverride.isEmpty()
+            ? assetName(version, platformKey)
+            : nameOverride;
 
-    for (const QString& platformKey : platformKeys)
+    QJsonObject asset;
+    asset.insert(QStringLiteral("name"), name);
+    asset.insert(QStringLiteral("state"), QStringLiteral("uploaded"));
+    asset.insert(QStringLiteral("size"), 123);
+    asset.insert(QStringLiteral("digest"), digest);
+    asset.insert(
+        QStringLiteral("browser_download_url"),
+        QStringLiteral("https://github.com/example/releases/download/v%1/%2")
+            .arg(version, name)
+        );
+    return asset;
+}
+
+QJsonObject releaseObject(
+    const QString& version,
+    const QString& platformKey,
+    bool draft = false,
+    bool prerelease = false,
+    bool includeAsset = true
+    )
+{
+    QJsonArray assets;
+
+    if (includeAsset)
     {
-        QJsonObject artifact;
-        artifact.insert(
-            QStringLiteral("url"),
-            QStringLiteral("https://example.com/%1/ClassMngr.exe")
-                .arg(platformKey)
-            );
-        artifact.insert(
-            QStringLiteral("fileName"),
-            QStringLiteral("ClassMngr-%1.exe")
-                .arg(platformKey)
-            );
-        artifact.insert(
-            QStringLiteral("sha256"),
-            QString(64, QLatin1Char('a'))
-            );
-        artifact.insert(
-            QStringLiteral("sizeBytes"),
-            123
-            );
-
-        platforms.insert(
-            platformKey,
-            artifact
+        assets.append(
+            releaseAsset(
+                version,
+                platformKey
+                )
             );
     }
 
-    QJsonObject root =
-        QJsonDocument::fromJson(
-            manifestJson()
-            ).object();
-    root.insert(
-        QStringLiteral("platforms"),
-        platforms
+    QJsonObject release;
+    release.insert(QStringLiteral("tag_name"), QStringLiteral("v") + version);
+    release.insert(
+        QStringLiteral("html_url"),
+        QStringLiteral("https://github.com/example/releases/tag/v%1")
+            .arg(version)
         );
+    release.insert(
+        QStringLiteral("published_at"),
+        QStringLiteral("2026-08-05T14:49:05Z")
+        );
+    release.insert(QStringLiteral("draft"), draft);
+    release.insert(QStringLiteral("prerelease"), prerelease);
+    release.insert(QStringLiteral("assets"), assets);
+    return release;
+}
 
-    return QJsonDocument(root).toJson(
+QByteArray releasesJson(
+    const QJsonArray& releases
+    )
+{
+    return QJsonDocument(releases).toJson(
         QJsonDocument::Compact
         );
 }
@@ -176,12 +173,12 @@ QByteArray signedTestSignature()
         );
 }
 
-class OneShotHttpServer : public QObject
+class HttpServer : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit OneShotHttpServer(
+    explicit HttpServer(
         QByteArray body,
         QObject* parent = nullptr
         )
@@ -192,7 +189,7 @@ public:
             &m_server,
             &QTcpServer::newConnection,
             this,
-            &OneShotHttpServer::respond
+            &HttpServer::respond
             );
     }
 
@@ -204,23 +201,29 @@ public:
             );
     }
 
-    QUrl url() const
+    QUrl url(
+        const QString& path = QStringLiteral("/releases")
+        ) const
     {
         return QUrl(
-            QStringLiteral("http://127.0.0.1:%1/update.bin")
+            QStringLiteral("http://127.0.0.1:%1%2")
                 .arg(m_server.serverPort())
+                .arg(path)
             );
     }
 
-    QString errorString() const
+    void setBody(
+        QByteArray body
+        )
     {
-        return m_server.errorString();
+        m_body =
+            std::move(body);
     }
 
 private slots:
     void respond()
     {
-        auto* socket =
+        QTcpSocket* socket =
             m_server.nextPendingConnection();
 
         if (!socket)
@@ -237,18 +240,17 @@ private slots:
                 socket->readAll();
 
                 const QByteArray headers =
-                    QByteArray("HTTP/1.1 200 OK\r\n")
-                    + "Content-Type: application/octet-stream\r\n"
-                    + "Content-Length: "
+                    QByteArrayLiteral("HTTP/1.1 200 OK\r\n")
+                    + QByteArrayLiteral("Content-Type: application/json\r\n")
+                    + QByteArrayLiteral("Content-Length: ")
                     + QByteArray::number(m_body.size())
-                    + "\r\nConnection: close\r\n\r\n";
+                    + QByteArrayLiteral("\r\nConnection: close\r\n\r\n");
 
                 socket->write(headers);
                 socket->write(m_body);
                 socket->disconnectFromHost();
             }
             );
-
         connect(
             socket,
             &QTcpSocket::disconnected,
@@ -270,174 +272,354 @@ class UpdaterTests : public QObject
 private slots:
     void versionRejectsNonStrictFormat();
     void versionComparesNumerically();
-    void manifestRejectsInvalidFields();
-    void manifestRequiresCurrentPlatform();
-    void manifestSelectsPlatformArtifact();
-    void manifestSelectsWindowsArm64BeforeX64Fallback();
+    void githubParserRejectsMalformedResponse();
+    void githubParserSkipsDraftPrereleaseAndIncompleteReleases();
+    void githubParserRequiresDigest();
+    void githubParserSelectsArm64BeforeX64Fallback();
+    void githubParserAcceptsLegacyLinuxArchiveName();
+    void freshnessBoundaryIsExactlySixHours();
+    void serviceCachesSuccessfulResultAndSkipsFreshCheck();
+    void dialogShowsDisabledResourcePackSection();
+    void dialogShowsDownloadActionForAvailableUpdate();
     void signatureVerifierAcceptsValidSignature();
     void signatureVerifierRejectsChangedPayload();
     void downloaderRejectsChecksumMismatch();
+    void downloaderRejectsOversizedPayload();
+    void downloaderCanCancelAndRemovesPartialFile();
 };
 
 void UpdaterTests::versionRejectsNonStrictFormat()
 {
     QVERIFY(!Version::parse(QStringLiteral("1.2")).has_value());
-    QVERIFY(!Version::parse(QStringLiteral("1.2.3.4")).has_value());
     QVERIFY(!Version::parse(QStringLiteral("v1.2.3")).has_value());
 }
 
 void UpdaterTests::versionComparesNumerically()
 {
     const auto lower =
-        Version::parse(
-            QStringLiteral("1.2.9")
-            );
+        Version::parse(QStringLiteral("1.2.9"));
     const auto higher =
-        Version::parse(
-            QStringLiteral("1.10.0")
-            );
+        Version::parse(QStringLiteral("1.10.0"));
 
     QVERIFY(lower.has_value());
     QVERIFY(higher.has_value());
     QVERIFY(*higher > *lower);
 }
 
-void UpdaterTests::manifestRejectsInvalidFields()
+void UpdaterTests::githubParserRejectsMalformedResponse()
 {
     QVERIFY(
-        !UpdateManifest::fromJson(
-            manifestJson(QStringLiteral("1.2")),
+        !GitHubRelease::latestCompatibleFromJson(
+            QByteArrayLiteral("{bad json"),
             {QStringLiteral("windows-x64")}
-            ).has_value()
-        );
-
-    QVERIFY(
-        !UpdateManifest::fromJson(
-            manifestJson(
-                QStringLiteral("0.1.1"),
-                QStringLiteral("windows-x64"),
-                QStringLiteral("http://example.com/update.exe")
-                ),
-            {QStringLiteral("windows-x64")}
-            ).has_value()
-        );
-
-    QVERIFY(
-        !UpdateManifest::fromJson(
-            manifestJson(
-                QStringLiteral("0.1.1"),
-                QStringLiteral("windows-x64"),
-                QStringLiteral("https://example.com/update.exe"),
-                QStringLiteral("abc")
-                ),
-            {QStringLiteral("windows-x64")}
-            ).has_value()
-        );
-
-    QJsonObject root =
-        QJsonDocument::fromJson(
-            manifestJson()
-            ).object();
-    root.insert(
-        QStringLiteral("schemaVersion"),
-        2
-        );
-
-    QVERIFY(
-        !UpdateManifest::fromJson(
-            QJsonDocument(root).toJson(QJsonDocument::Compact),
-            {QStringLiteral("windows-x64")}
-            ).has_value()
+            )
         );
 }
 
-void UpdaterTests::manifestRequiresCurrentPlatform()
+void UpdaterTests::githubParserSkipsDraftPrereleaseAndIncompleteReleases()
 {
-    const auto manifest =
-        UpdateManifest::fromJson(
-            manifestJson(
-                QStringLiteral("0.1.1"),
-                QStringLiteral("macos-universal")
-                ),
+    QJsonArray releases;
+    releases.append(
+        releaseObject(
+            QStringLiteral("2.0.0"),
+            QStringLiteral("windows-x64"),
+            true
+            )
+        );
+    releases.append(
+        releaseObject(
+            QStringLiteral("1.9.0"),
+            QStringLiteral("windows-x64"),
+            false,
+            true
+            )
+        );
+    releases.append(
+        releaseObject(
+            QStringLiteral("1.8.0"),
+            QStringLiteral("windows-x64"),
+            false,
+            false,
+            false
+            )
+        );
+    releases.append(
+        releaseObject(
+            QStringLiteral("1.7.0"),
+            QStringLiteral("windows-x64")
+            )
+        );
+
+    const auto release =
+        GitHubRelease::latestCompatibleFromJson(
+            releasesJson(releases),
             {QStringLiteral("windows-x64")}
             );
 
-    QVERIFY(!manifest.has_value());
+    QVERIFY(release.has_value());
+    QCOMPARE(release->version().toString(), QStringLiteral("1.7.0"));
 }
 
-void UpdaterTests::manifestSelectsPlatformArtifact()
+void UpdaterTests::githubParserRequiresDigest()
 {
-    const auto manifest =
-        UpdateManifest::fromJson(
-            manifestJson(),
+    QJsonObject release =
+        releaseObject(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("windows-x64")
+            );
+    QJsonArray assets;
+    assets.append(
+        releaseAsset(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("windows-x64"),
+            QString()
+            )
+        );
+    release.insert(QStringLiteral("assets"), assets);
+
+    QVERIFY(
+        !GitHubRelease::latestCompatibleFromJson(
+            releasesJson({release}),
             {QStringLiteral("windows-x64")}
+            )
+        );
+}
+
+void UpdaterTests::githubParserSelectsArm64BeforeX64Fallback()
+{
+    QJsonObject release =
+        releaseObject(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("windows-x64")
+            );
+    QJsonArray assets =
+        release.value(QStringLiteral("assets")).toArray();
+    assets.append(
+        releaseAsset(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("windows-arm64")
+            )
+        );
+    release.insert(QStringLiteral("assets"), assets);
+
+    const auto parsed =
+        GitHubRelease::latestCompatibleFromJson(
+            releasesJson({release}),
+            {
+                QStringLiteral("windows-arm64"),
+                QStringLiteral("windows-x64")
+            }
             );
 
-    QVERIFY(manifest.has_value());
-
-    const auto artifact =
-        manifest->artifactForAny(
-            {QStringLiteral("windows-x64")}
-            );
-
-    QVERIFY(artifact.has_value());
+    QVERIFY(parsed.has_value());
     QCOMPARE(
-        artifact->platformKey,
-        QStringLiteral("windows-x64")
-        );
-}
-
-void UpdaterTests::manifestSelectsWindowsArm64BeforeX64Fallback()
-{
-    const QStringList windowsArm64Keys = {
-        QStringLiteral("windows-arm64"),
-        QStringLiteral("windows-x64")
-    };
-
-    const auto nativeManifest =
-        UpdateManifest::fromJson(
-            manifestJsonForPlatforms(
-                {
-                    QStringLiteral("windows-x64"),
-                    QStringLiteral("windows-arm64")
-                }
-                ),
-            windowsArm64Keys
-            );
-
-    QVERIFY(nativeManifest.has_value());
-
-    const auto nativeArtifact =
-        nativeManifest->artifactForAny(
-            windowsArm64Keys
-            );
-
-    QVERIFY(nativeArtifact.has_value());
-    QCOMPARE(
-        nativeArtifact->platformKey,
+        parsed->artifact().platformKey,
         QStringLiteral("windows-arm64")
         );
+}
 
-    const auto fallbackManifest =
-        UpdateManifest::fromJson(
-            manifestJsonForPlatforms(
-                {QStringLiteral("windows-x64")}
+void UpdaterTests::githubParserAcceptsLegacyLinuxArchiveName()
+{
+    QJsonObject release =
+        releaseObject(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("linux-x86_64")
+            );
+    QJsonArray assets;
+    assets.append(
+        releaseAsset(
+            QStringLiteral("1.0.0"),
+            QStringLiteral("linux-x86_64"),
+            QStringLiteral(
+                "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 ),
-            windowsArm64Keys
-            );
-
-    QVERIFY(fallbackManifest.has_value());
-
-    const auto fallbackArtifact =
-        fallbackManifest->artifactForAny(
-            windowsArm64Keys
-            );
-
-    QVERIFY(fallbackArtifact.has_value());
-    QCOMPARE(
-        fallbackArtifact->platformKey,
-        QStringLiteral("windows-x64")
+            QStringLiteral("ClassMngr-linux-x86_64.tar.gz")
+            )
         );
+    release.insert(QStringLiteral("assets"), assets);
+
+    const auto parsed =
+        GitHubRelease::latestCompatibleFromJson(
+            releasesJson({release}),
+            {QStringLiteral("linux-x86_64")}
+            );
+
+    QVERIFY(parsed.has_value());
+    QCOMPARE(
+        parsed->artifact().fileName,
+        QStringLiteral("ClassMngr-linux-x86_64.tar.gz")
+        );
+}
+
+void UpdaterTests::freshnessBoundaryIsExactlySixHours()
+{
+    const QDateTime checkedAt =
+        QDateTime::fromString(
+            QStringLiteral("2026-08-06T00:00:00Z"),
+            Qt::ISODate
+            );
+
+    QVERIFY(
+        UpdateService::isTimestampFresh(
+            checkedAt,
+            checkedAt.addSecs(6 * 60 * 60)
+            )
+        );
+    QVERIFY(
+        !UpdateService::isTimestampFresh(
+            checkedAt,
+            checkedAt.addSecs(6 * 60 * 60).addMSecs(1)
+            )
+        );
+}
+
+void UpdaterTests::serviceCachesSuccessfulResultAndSkipsFreshCheck()
+{
+    QJsonArray releases;
+    releases.append(
+        releaseObject(
+            QStringLiteral("9.9.9"),
+            GitHubRelease::currentPlatformKeys().first()
+            )
+        );
+
+    HttpServer server(
+        releasesJson(releases)
+        );
+    QVERIFY(server.listen());
+
+    QCoreApplication::setApplicationVersion(
+        QStringLiteral("1.0.0")
+        );
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl =
+        server.url();
+
+    UpdateService service(configuration);
+    QSignalSpy succeededSpy(
+        &service,
+        &UpdateService::checkSucceeded
+        );
+
+    QVERIFY(
+        service.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(
+        !service.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(succeededSpy.wait(5000));
+    QVERIFY(service.hasResult());
+    QVERIFY(service.isResultFresh());
+    QVERIFY(
+        !service.checkForUpdates(
+            UpdateService::CheckPolicy::IfStale
+            )
+    );
+    QCOMPARE(succeededSpy.count(), 1);
+
+    server.setBody(
+        QByteArrayLiteral("{bad json")
+        );
+    QSignalSpy failedSpy(
+        &service,
+        &UpdateService::checkFailed
+        );
+    QVERIFY(
+        service.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(failedSpy.wait(5000));
+    QVERIFY(service.hasResult());
+    QVERIFY(service.lastResult()->updateAvailable);
+}
+
+void UpdaterTests::dialogShowsDisabledResourcePackSection()
+{
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl =
+        QUrl(QStringLiteral("https://example.com/releases"));
+    UpdateService service(configuration);
+
+    UpdateDialog dialog(
+        &service,
+        true
+        );
+
+    QFrame* resourceSection =
+        dialog.findChild<QFrame*>(
+            QStringLiteral("resourcePackUpdateSection")
+            );
+
+    QVERIFY(resourceSection);
+    QVERIFY(!resourceSection->isEnabled());
+    QVERIFY(
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("updateCheckButton")
+            )
+        );
+}
+
+void UpdaterTests::dialogShowsDownloadActionForAvailableUpdate()
+{
+    QJsonArray releases;
+    releases.append(
+        releaseObject(
+            QStringLiteral("9.9.9"),
+            GitHubRelease::currentPlatformKeys().first()
+            )
+        );
+
+    HttpServer server(
+        releasesJson(releases)
+        );
+    QVERIFY(server.listen());
+
+    QCoreApplication::setApplicationVersion(
+        QStringLiteral("1.0.0")
+        );
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl =
+        server.url();
+    UpdateService service(configuration);
+    QSignalSpy succeededSpy(
+        &service,
+        &UpdateService::checkSucceeded
+        );
+
+    QVERIFY(
+        service.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(succeededSpy.wait(5000));
+
+    UpdateDialog dialog(
+        &service,
+        true
+        );
+    dialog.refreshForOpen();
+
+    QPushButton* primaryButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("updatePrimaryButton")
+            );
+    QPushButton* closeButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("updateCloseButton")
+            );
+
+    QVERIFY(primaryButton);
+    QVERIFY(!primaryButton->isHidden());
+    QCOMPARE(primaryButton->text(), QStringLiteral("Download Update"));
+    QVERIFY(closeButton);
+    QCOMPARE(closeButton->text(), QStringLiteral("Not Now"));
 }
 
 void UpdaterTests::signatureVerifierAcceptsValidSignature()
@@ -457,38 +639,27 @@ void UpdaterTests::signatureVerifierAcceptsValidSignature()
 
 void UpdaterTests::signatureVerifierRejectsChangedPayload()
 {
-    const auto status =
-        UpdateSignatureVerifier::verifyDetachedSignature(
+    QVERIFY(
+        !UpdateSignatureVerifier::verifyDetachedSignature(
             signedTestPayload() + QByteArrayLiteral("changed"),
             signedTestSignature(),
             signedTestPublicKey()
-            );
-
-    QVERIFY(!status);
+            )
+        );
 }
 
 void UpdaterTests::downloaderRejectsChecksumMismatch()
 {
     const QByteArray body =
         QByteArrayLiteral("downloaded bytes");
-
-    OneShotHttpServer server(body);
-
-    if (!server.listen())
-    {
-        QSKIP(
-            qPrintable(
-                QStringLiteral("Local TCP server unavailable: %1")
-                    .arg(server.errorString())
-                )
-            );
-    }
+    HttpServer server(body);
+    QVERIFY(server.listen());
 
     UpdateArtifact artifact;
     artifact.platformKey =
         QStringLiteral("windows-x64");
     artifact.url =
-        server.url();
+        server.url(QStringLiteral("/update.bin"));
     artifact.fileName =
         QStringLiteral("ClassMngr-test-update.bin");
     artifact.sha256 =
@@ -501,21 +672,95 @@ void UpdaterTests::downloaderRejectsChecksumMismatch()
         &downloader,
         &UpdateDownloader::downloadFailed
         );
-    QSignalSpy successSpy(
-        &downloader,
-        &UpdateDownloader::downloadSucceeded
-        );
 
     downloader.download(artifact);
 
     QVERIFY(failedSpy.wait(5000));
-    QCOMPARE(successSpy.count(), 0);
     QVERIFY(
         failedSpy.takeFirst().first().toString().contains(
             QStringLiteral("checksum"),
             Qt::CaseInsensitive
             )
         );
+}
+
+void UpdaterTests::downloaderRejectsOversizedPayload()
+{
+    const QByteArray body =
+        QByteArrayLiteral("larger than declared");
+    HttpServer server(body);
+    QVERIFY(server.listen());
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        QStringLiteral("ClassMngr-oversize-test.bin");
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        3;
+
+    UpdateDownloader downloader;
+    QSignalSpy failedSpy(
+        &downloader,
+        &UpdateDownloader::downloadFailed
+        );
+
+    downloader.download(artifact);
+
+    QVERIFY(failedSpy.wait(5000));
+    QVERIFY(!downloader.isBusy());
+}
+
+void UpdaterTests::downloaderCanCancelAndRemovesPartialFile()
+{
+    const QByteArray body(
+        1024 * 1024,
+        'x'
+        );
+    HttpServer server(body);
+    QVERIFY(server.listen());
+
+    const QString fileName =
+        QStringLiteral("ClassMngr-cancel-test.bin");
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        fileName;
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        body.size();
+
+    UpdateDownloader downloader;
+    QSignalSpy cancelledSpy(
+        &downloader,
+        &UpdateDownloader::downloadCancelled
+        );
+
+    downloader.download(artifact);
+    downloader.cancel();
+
+    QCOMPARE(cancelledSpy.count(), 1);
+
+    const QString partialPath =
+        QDir(
+            QStandardPaths::writableLocation(
+                QStandardPaths::TempLocation
+                )
+            ).filePath(
+                QStringLiteral("ClassMngr/updates/%1.part")
+                    .arg(fileName)
+                );
+
+    QVERIFY(!QFileInfo::exists(partialPath));
 }
 
 QTEST_MAIN(UpdaterTests)

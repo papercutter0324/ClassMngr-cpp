@@ -22,14 +22,6 @@ ResourcePackConfiguration ResourcePackConfiguration::fromBuild()
             BuildInfo::ResourcePackPublicKeyPem
             ).trimmed();
 
-    if (configuration.publicKeyPem.isEmpty())
-    {
-        configuration.publicKeyPem =
-            QString::fromUtf8(
-                BuildInfo::UpdatePublicKeyPem
-                ).trimmed();
-    }
-
     configuration.requireSignature =
         BuildInfo::ResourcePackRequireSignature;
     configuration.checkOnStartup =

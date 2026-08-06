@@ -10,4 +10,8 @@ public:
     [[nodiscard]] static Status launch(
         const QString& filePath
         );
+
+    [[nodiscard]] static Status revealInFolder(
+        const QString& filePath
+        );
 };

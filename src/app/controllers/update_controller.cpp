@@ -1,56 +1,99 @@
 #include "update_controller.h"
 
 #include "app/mainwindow.h"
-#include "core/resource_packs/resource_pack_configuration.h"
-#include "core/resource_packs/resource_pack_update_service.h"
 #include "core/updater/update_configuration.h"
+#include "core/updater/update_service.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
+#include "ui/shared/widgets/splash/splashscreen.h"
 
 #include <QAction>
-#include <QDebug>
+#include <QDialog>
 
 UpdateController::UpdateController(
-    MainWindow* window,
+    UpdateService* service,
     QObject* parent
     )
     : QObject(parent)
-    , m_window(window)
+    , m_service(service)
 {
-}
-
-void UpdateController::connectActions(
-    ActionRegistry& actions
-    )
-{
-    if (!actions.checkForUpdates)
-    {
-        return;
-    }
+    Q_ASSERT(m_service);
 
     connect(
-        actions.checkForUpdates,
-        &QAction::triggered,
+        m_service,
+        &UpdateService::checkSucceeded,
         this,
-        &UpdateController::showManualUpdateDialog
+        [this](const UpdateCheckResult& result)
+        {
+            if (
+                result.updateAvailable
+                && !hasVisibleDialog()
+                && !m_automaticPromptSuppressed
+                )
+            {
+                showAutomaticUpdateDialog();
+            }
+        }
         );
 }
 
-void UpdateController::maybeCheckOnStartup()
+void UpdateController::attachMainWindow(
+    MainWindow* window,
+    ActionRegistry& actions
+    )
 {
-    maybeCheckResourcePacksOnStartup();
+    m_window =
+        window;
 
-    if (m_startupCheckStarted)
+    connect(
+        window,
+        &QObject::destroyed,
+        this,
+        [this]()
+        {
+            if (m_dialog)
+            {
+                m_dialog->close();
+            }
+
+            m_window =
+                nullptr;
+        }
+        );
+
+    if (actions.checkForUpdates)
+    {
+        connect(
+            actions.checkForUpdates,
+            &QAction::triggered,
+            this,
+            &UpdateController::showManualUpdateDialog,
+            Qt::UniqueConnection
+            );
+    }
+}
+
+void UpdateController::setSplashScreen(
+    SplashScreen* splash
+    )
+{
+    m_splash =
+        splash;
+}
+
+void UpdateController::startStartupCheck()
+{
+    if (m_startupCheckStarted || !m_service)
     {
         return;
     }
 
     const UpdateConfiguration configuration =
-        UpdateConfiguration::fromBuild();
+        m_service->configuration();
 
     if (
         !configuration.checkOnStartup
-        || !configuration.hasManifestUrl()
+        || !configuration.hasReleasesApiUrl()
         )
     {
         return;
@@ -58,120 +101,150 @@ void UpdateController::maybeCheckOnStartup()
 
     m_startupCheckStarted =
         true;
-
-    auto* service =
-        new UpdateService(
-            configuration,
-            this
-            );
-
-    connect(
-        service,
-        &UpdateService::checkSucceeded,
-        this,
-        [this, service](const UpdateCheckResult& result)
-        {
-            service->deleteLater();
-
-            if (result.updateAvailable)
-            {
-                showUpdateDialogForResult(result);
-            }
-        }
+    m_service->checkForUpdates(
+        UpdateService::CheckPolicy::Force
         );
-
-    connect(
-        service,
-        &UpdateService::checkFailed,
-        service,
-        &QObject::deleteLater
-        );
-
-    service->checkForUpdates();
 }
 
-void UpdateController::maybeCheckResourcePacksOnStartup()
+void UpdateController::setStartupComplete()
 {
-    if (m_resourcePackCheckStarted)
-    {
-        return;
-    }
-
-    const ResourcePackConfiguration configuration =
-        ResourcePackConfiguration::fromBuild();
-
-    if (
-        !configuration.checkOnStartup
-        || !configuration.hasManifestUrl()
-        )
-    {
-        return;
-    }
-
-    m_resourcePackCheckStarted =
+    m_startupComplete =
         true;
+    m_splash =
+        nullptr;
 
-    auto* service =
-        new ResourcePackUpdateService(
-            configuration,
-            this
-            );
+    if (m_dialog)
+    {
+        m_dialog->setStartupComplete(true);
+    }
+}
 
-    connect(
-        service,
-        &ResourcePackUpdateService::checkSucceeded,
-        this,
-        [service](const QStringList& stagedPackIds)
-        {
-            if (!stagedPackIds.isEmpty())
-            {
-                qInfo().noquote()
-                    << tr("Resource-pack updates were downloaded and will be used after the next launch: %1")
-                           .arg(stagedPackIds.join(QStringLiteral(", ")));
-            }
-
-            service->deleteLater();
-        }
-        );
-
-    connect(
-        service,
-        &ResourcePackUpdateService::checkFailed,
-        this,
-        [service](const QString& message)
-        {
-            qWarning().noquote()
-                << tr("Resource-pack update check failed: %1")
-                       .arg(message);
-            service->deleteLater();
-        }
-        );
-
-    service->checkForUpdates();
+bool UpdateController::hasVisibleDialog() const
+{
+    return m_dialog
+        && m_dialog->isVisible();
 }
 
 void UpdateController::showManualUpdateDialog()
 {
-    auto* dialog =
-        new UpdateDialog(m_window);
+    UpdateDialog* dialog =
+        ensureDialog(false);
 
-    dialog->setAttribute(
-        Qt::WA_DeleteOnClose
-        );
     dialog->show();
-    dialog->beginCheck();
+    dialog->raise();
+    dialog->activateWindow();
+    dialog->refreshForOpen();
 }
 
-void UpdateController::showUpdateDialogForResult(
-    const UpdateCheckResult& result
+void UpdateController::showAutomaticUpdateDialog()
+{
+    UpdateDialog* dialog =
+        ensureDialog(true);
+
+    yieldSplashToDialog();
+
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+    dialog->refreshForOpen();
+}
+
+UpdateDialog* UpdateController::ensureDialog(
+    bool automaticPrompt
     )
 {
+    if (m_dialog)
+    {
+        if (automaticPrompt)
+        {
+            m_dialog->setProperty(
+                "automaticUpdatePrompt",
+                true
+                );
+        }
+
+        return m_dialog;
+    }
+
     auto* dialog =
-        new UpdateDialog(m_window);
+        new UpdateDialog(
+            m_service,
+            m_startupComplete,
+            m_startupComplete ? m_window.data() : nullptr
+            );
 
     dialog->setAttribute(
         Qt::WA_DeleteOnClose
         );
-    dialog->showAvailableUpdate(result);
-    dialog->show();
+    dialog->setProperty(
+        "automaticUpdatePrompt",
+        automaticPrompt
+        );
+
+    m_dialog =
+        dialog;
+
+    connect(
+        dialog,
+        &QDialog::finished,
+        this,
+        [this, dialog](int)
+        {
+            if (
+                dialog->property(
+                    "automaticUpdatePrompt"
+                    ).toBool()
+                )
+            {
+                m_automaticPromptSuppressed =
+                    true;
+            }
+
+            restoreSplashAfterDialog();
+        }
+        );
+
+    connect(
+        dialog,
+        &QObject::destroyed,
+        this,
+        [this]()
+        {
+            m_dialog =
+                nullptr;
+        }
+        );
+
+    return dialog;
+}
+
+void UpdateController::yieldSplashToDialog()
+{
+    if (!m_splash || m_startupComplete)
+    {
+        return;
+    }
+
+    m_splash->setWindowFlag(
+        Qt::WindowStaysOnTopHint,
+        false
+        );
+    m_splash->show();
+    m_splash->lower();
+}
+
+void UpdateController::restoreSplashAfterDialog()
+{
+    if (!m_splash || m_startupComplete)
+    {
+        return;
+    }
+
+    m_splash->setWindowFlag(
+        Qt::WindowStaysOnTopHint,
+        true
+        );
+    m_splash->show();
+    m_splash->raise();
+    m_splash->activateWindow();
 }

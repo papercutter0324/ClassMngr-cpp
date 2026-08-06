@@ -181,7 +181,7 @@
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
         <location line="+397"/>
         <source>New Database...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">New Database...</translation>
     </message>
     <message>
         <location line="-396"/>
@@ -793,7 +793,7 @@
 <context>
     <name>BasePage</name>
     <message>
-        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+204"/>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+279"/>
         <source>Unsaved Changes</source>
         <translation>Unsaved Changes</translation>
     </message>
@@ -803,7 +803,7 @@
         <translation>This page has unsaved changes.</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+31"/>
         <source>Getting Started</source>
         <translation>Getting Started</translation>
     </message>
@@ -2093,62 +2093,63 @@
 <context>
     <name>FileController</name>
     <message>
-        <location filename="../../../src/app/controllers/file_controller.cpp" line="+165"/>
-        <location line="+30"/>
+        <location filename="../../../src/app/controllers/file_controller.cpp" line="+175"/>
+        <location line="+26"/>
         <location line="+16"/>
         <source>New Database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+77"/>
-        <location line="+120"/>
+        <location line="-40"/>
+        <location line="+73"/>
+        <location line="+118"/>
+        <location line="+24"/>
         <source>ClassMngr Database (*.tps)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-168"/>
+        <location line="-190"/>
         <source>Unable to replace existing database file:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+46"/>
-        <location line="+62"/>
+        <location line="+60"/>
         <source>Open Database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-30"/>
-        <location line="+154"/>
+        <location line="+150"/>
         <source>Missing File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-153"/>
-        <location line="+154"/>
+        <location line="-149"/>
+        <location line="+150"/>
         <source>File not found:
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-67"/>
-        <location line="+253"/>
+        <location line="-63"/>
+        <location line="+241"/>
         <source>Save Database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-217"/>
         <source>Export Database As</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-138"/>
         <source>Legacy SQLite Database (*.db)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+241"/>
         <source>(No Recent Files)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2163,7 +2164,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+108"/>
+        <location line="+100"/>
         <source>Export Database</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2176,7 +2177,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="+52"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="+54"/>
         <source>Creating main window...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2226,7 +2227,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+23"/>
         <source>Restoring window layout...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2236,7 +2237,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/main.cpp" line="+261"/>
+        <location filename="../../../src/main.cpp" line="+284"/>
+        <source>Checking for updates...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+18"/>
         <source>Loading resource packs...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2246,7 +2252,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+21"/>
         <source>Ready...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3134,21 +3140,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/core/updater/update_service.cpp" line="+37"/>
-        <source>update manifest</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>update manifest signature</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>update data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../../src/features/campus/data/campus_json_repository.cpp" line="+136"/>
         <source>Unable to open campus file for writing:
 %1</source>
@@ -3525,7 +3516,7 @@
     </message>
     <message>
         <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="+73"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+64"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+63"/>
         <location filename="../../../src/ui/shared/printing/pdf_print_service.cpp" line="+51"/>
         <source>Print job sent.</source>
         <translation type="unfinished"></translation>
@@ -3573,7 +3564,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+13"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1643"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1598"/>
         <source>Unable to create a temporary print file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3588,24 +3579,24 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+280"/>
+        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+282"/>
         <source>Reports created successfully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Report export was canceled.</source>
         <translation>Report export was cancelled.</translation>
     </message>
     <message>
-        <location line="+80"/>
-        <location line="+1697"/>
+        <location line="+82"/>
+        <location line="+1708"/>
         <location line="+40"/>
         <source>Speaking Evaluation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1727"/>
+        <location line="-1738"/>
         <source>Unable to configure the report PDF page.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3650,7 +3641,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-1543"/>
+        <location line="-1547"/>
         <source>ClassMngr&apos;s PowerPoint workspace could not be prepared.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3670,7 +3661,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+189"/>
+        <location line="+193"/>
         <source>The internal speaking-evaluation renderer is unavailable: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3720,7 +3711,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+50"/>
         <source>An exact PDF file can be selected only for one report.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3732,38 +3723,39 @@ Rm: %1</source>
     </message>
     <message>
         <location line="-15"/>
-        <location line="+37"/>
+        <location line="+36"/>
+        <location line="+11"/>
         <source>A PDF named &quot;%1&quot; already exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+24"/>
-        <source>The staged report files are incomplete.</source>
+        <source>The staged output files are incomplete.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+28"/>
-        <source>An existing PDF could not be prepared for replacement.</source>
+        <source>An existing output file could not be prepared for replacement.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+29"/>
-        <source>A PDF could not be copied to the selected folder.</source>
+        <source>An output file could not be copied to the selected folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+30"/>
-        <source>A PDF could not be finalized in the selected folder.</source>
+        <source>An output file could not be finalized in the selected folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+28"/>
-        <source>Internal Template (Beta)</source>
+        <source>Internal Template (Default)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <source>PowerPoint Template (Recommended)</source>
+        <source>PowerPoint (Fallback)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3772,7 +3764,12 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+16"/>
+        <source>Speaking Evaluation Reports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+30"/>
         <source>Student</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3812,7 +3809,12 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+40"/>
+        <source>A ZIP archive named &quot;%1&quot; already exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
         <source>A temporary report folder could not be created.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3822,7 +3824,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+83"/>
         <source>Print Speaking Evaluation Report</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3832,7 +3834,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+393"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+431"/>
         <source>Creating report for %1…</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3871,7 +3873,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-338"/>
         <source>No sub prep print file path was provided.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3886,12 +3888,12 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+17"/>
         <source>Unable to determine the sub prep print area.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+272"/>
         <source>Unable to add a page to the sub prep print file.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4623,10 +4625,6 @@ Rm: %1</source>
         <location line="+4"/>
         <source>not set</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Imported Class:</source>
-        <translation type="vanished">Imported Class:</translation>
     </message>
     <message>
         <location filename="../../../src/data/data_service.cpp" line="+535"/>
@@ -5754,7 +5752,7 @@ Rm: %1</source>
 <context>
     <name>RosterPrintDialog</name>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+243"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
         <source>Save Rosters As</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5764,7 +5762,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+384"/>
+        <location line="+431"/>
         <location line="+670"/>
         <source>%1 of %2 selected</source>
         <translation type="unfinished"></translation>
@@ -6128,18 +6126,6 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Select Imported Class Color</source>
-        <translation type="vanished">Select Imported Class Colour</translation>
-    </message>
-    <message>
-        <source>Color %1</source>
-        <translation type="vanished">Colour %1</translation>
-    </message>
-    <message>
-        <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
-        <translation type="vanished">The spreadsheet uses multiple colours for this class; confirm the selected colour.</translation>
-    </message>
-    <message>
         <location line="+136"/>
         <source>Choose a worksheet.</source>
         <translation type="unfinished"></translation>
@@ -6184,10 +6170,6 @@ Rm: %1</source>
         <location line="+15"/>
         <source>I reviewed these cells and want to skip them.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Korean Teachers and Rooms</source>
-        <translation type="vanished">Korean Teachers and Rooms</translation>
     </message>
     <message>
         <location line="+194"/>
@@ -6339,10 +6321,6 @@ Choose a different existing class, create a new class, or skip an imported class
         <translation type="unfinished">Select Imported Class Colour</translation>
     </message>
     <message>
-        <source>Color %1</source>
-        <translation type="vanished">Colour %1</translation>
-    </message>
-    <message>
         <location line="+136"/>
         <source>Choose a resolution for every Korean teacher.</source>
         <translation type="unfinished"></translation>
@@ -6470,10 +6448,6 @@ Ignored occupied cells: %7%8</source>
         <source>
 My Information name was updated.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Imported Class</source>
-        <translation type="vanished">Imported Class</translation>
     </message>
     <message>
         <location line="-1034"/>
@@ -7149,17 +7123,12 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
 <context>
     <name>SpeakingEvalBatchExportDialog</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-348"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-386"/>
         <source>Export / Print Speaking Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Export PDF speaking-evaluation reports, print them, or do both.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+13"/>
+        <location line="+20"/>
         <source>Current Student</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7174,78 +7143,60 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
         <source>Renderer:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+6"/>
-        <location line="+140"/>
         <source>Export PDFs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-138"/>
+        <location line="+2"/>
         <source>Output:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+137"/>
+        <location line="+3"/>
+        <source>Keep individual PDFs after zipping</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+143"/>
         <source>Print Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-137"/>
         <source>Choose…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
-        <source>PDF Folder:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Open PDF Folder after saving</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+16"/>
         <source>Preview Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+119"/>
+        <location line="+125"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-118"/>
-        <location line="+247"/>
+        <location line="-124"/>
+        <location line="+279"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-163"/>
-        <location line="+45"/>
-        <source>Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-42"/>
-        <location line="+48"/>
-        <source>Uses PowerPoint to generate student reports using a bundled template. (Supports Windows and MacOS.)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-25"/>
+        <location line="-165"/>
         <source>Export PDF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+3"/>
         <source>Print Report</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7260,32 +7211,7 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
-        <source>Choose PDF Folder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+56"/>
-        <source>PDF Folder Unavailable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>The selected PDF folder does not exist and could not be created. Choose another folder and try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+24"/>
-        <source>Overwrite Existing Reports?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>%1 existing report(s) will be replaced. Do you want to overwrite them?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+21"/>
+        <location line="+150"/>
         <source>Creating speaking-evaluation reports…</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7309,12 +7235,12 @@ Retry the entire batch using the PowerPoint template?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+66"/>
         <source>Reports Ready</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-10"/>
         <source>%1 report(s) were saved%2.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7324,12 +7250,90 @@ Retry the entire batch using the PowerPoint template?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-33"/>
         <source>%1 report(s) were sent to the printer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="-425"/>
+        <source>Export speaking-evaluation reports, print them, or do both.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+64"/>
+        <source>Output Folder:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open Output Folder after saving</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+98"/>
+        <location line="+51"/>
+        <source>This is the recommended method for creating reports.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-47"/>
+        <location line="+54"/>
+        <source>Only use if the internal method doesn&apos;t work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-52"/>
+        <location line="+54"/>
+        <source>Only use if the internal method doesn&apos;t work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-30"/>
+        <source>Export ZIP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+39"/>
+        <source>Choose Output Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+59"/>
+        <source>Output Folder Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>The selected output folder does not exist and could not be created. Choose another folder and try again.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+43"/>
+        <source>Overwrite Existing Output?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 existing output file(s) will be replaced. Do you want to overwrite them?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+93"/>
+        <source>%1 report(s) were saved to %2.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Individual PDF files were also saved.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The reports were also sent to the printer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+36"/>
         <source>Report Export Failed</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8141,42 +8145,45 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-191"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-288"/>
+        <location line="-195"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+12"/>
         <source>Campus Information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+92"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+95"/>
         <source>Personal Zoom Information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+66"/>
+        <location line="+184"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+69"/>
         <source>Class Materials &amp; Lesson Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="292"/>
+        <location line="-156"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+12"/>
         <source>Materials Location</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="308"/>
+        <location line="+7"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+16"/>
         <source>Detailed Class &amp; Lesson Notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+19"/>
+        <location line="-28"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+18"/>
         <source>Book Report Grading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+48"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+51"/>
         <source>Schedule</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8187,14 +8194,8 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+39"/>
-        <source>Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-241"/>
+        <location line="+21"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-235"/>
         <source>Office Number</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8219,7 +8220,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+70"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+73"/>
         <source>Zoom Login ID</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8232,7 +8233,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     </message>
     <message>
         <location line="+7"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+53"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+83"/>
         <source>Grading Instructions</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9009,22 +9010,10 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Grade</source>
-        <translation type="obsolete">Grade</translation>
-    </message>
-    <message>
-        <source>Level</source>
-        <translation type="obsolete">Level</translation>
-    </message>
-    <message>
         <location line="-136"/>
         <location line="+419"/>
         <source>Room</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Background Color</source>
-        <translation type="obsolete">Background Colour</translation>
     </message>
     <message>
         <location line="-416"/>
@@ -9069,72 +9058,146 @@ Version: %2</source>
     </message>
 </context>
 <context>
-    <name>UpdateController</name>
-    <message>
-        <location filename="../../../src/app/controllers/update_controller.cpp" line="+129"/>
-        <source>Resource-pack updates were downloaded and will be used after the next launch: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Resource-pack update check failed: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UpdateDialog</name>
     <message>
-        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+48"/>
+        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+96"/>
         <source>Checking for Updates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Contacting the update server...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+431"/>
         <source>You&apos;re Up to Date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+191"/>
         <source>ClassMngr %1 is the newest available version.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-208"/>
         <source>Update Available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-14"/>
         <source>View release notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="-327"/>
         <source>Downloading Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-72"/>
+        <source>Contacting GitHub Releases...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Downloading %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+40"/>
-        <source>Ready to Install</source>
+        <location line="+7"/>
+        <source>Cancel Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>The update download failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+11"/>
+        <source>Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+95"/>
+        <source>&lt;b&gt;Resource Packs&lt;/b&gt;&lt;br&gt;Coming soon</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+118"/>
+        <source>ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
+        <source>No update check has been completed yet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>Download Update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+65"/>
+        <source>Not Now</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-31"/>
+        <source>Installation will be available after ClassMngr finishes starting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Download Complete</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Ready to Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-28"/>
         <source>The update was downloaded and verified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+20"/>
+        <source>Open Download Folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>The latest refresh failed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Try Again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+99"/>
+        <source>Released %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Last checked %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>Linux Update Downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extract the downloaded archive and replace your existing ClassMngr application directory when convenient.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Install Update</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9144,61 +9207,42 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+32"/>
-        <location line="+77"/>
-        <source>Software Update</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-32"/>
+        <location line="-431"/>
+        <location line="+328"/>
         <source>Check Again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Download</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="-106"/>
         <source>Install and Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-477"/>
+        <location line="+74"/>
+        <location line="+192"/>
+        <location line="+102"/>
+        <location line="+63"/>
+        <location line="+33"/>
+        <location line="+62"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
-        <source>Check for a newer version of ClassMngr.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+96"/>
+        <location line="-9"/>
         <source>Update Check Failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+89"/>
         <source>ClassMngr %1 is available. You are currently using %2.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Release date: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>This version is below the minimum supported version. Please update soon.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UpdateDownloader</name>
     <message>
-        <location filename="../../../src/core/updater/update_downloader.cpp" line="+69"/>
+        <location filename="../../../src/core/updater/update_downloader.cpp" line="+73"/>
         <source>Update download URL must use HTTPS.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9213,12 +9257,12 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+111"/>
         <source>Unable to write update download file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+47"/>
         <source>Update download failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9229,12 +9273,12 @@ Version: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <source>Update download size did not match the manifest.</source>
+        <source>Update download size did not match the GitHub release metadata.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+13"/>
-        <source>Update download checksum did not match the manifest.</source>
+        <source>Update download checksum did not match the GitHub release metadata.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9246,37 +9290,32 @@ Version: %2</source>
 <context>
     <name>UpdateService</name>
     <message>
-        <location filename="../../../src/core/updater/update_service.cpp" line="+48"/>
-        <source>Update manifest URL is not configured.</source>
+        <location filename="../../../src/core/updater/update_service.cpp" line="+136"/>
+        <source>GitHub releases API URL is not configured.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Update manifest URL must use HTTPS.</source>
+        <source>GitHub releases API URL must use HTTPS.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Update public key is not configured.</source>
+        <location line="+50"/>
+        <source>Unable to check GitHub releases: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+44"/>
-        <source>Unable to download %1: %2</source>
+        <location line="+14"/>
+        <source>Unable to check GitHub releases: HTTP %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+18"/>
-        <source>Unable to download %1: HTTP %2</source>
+        <location line="+12"/>
+        <source>GitHub releases response is too large.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+40"/>
-        <source>Update signature URL is not configured or is not HTTPS.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+63"/>
+        <location line="+37"/>
         <source>Current application version is invalid: %1</source>
         <translation type="unfinished"></translation>
     </message>

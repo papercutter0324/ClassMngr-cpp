@@ -64,6 +64,7 @@ public:
         std::function<void(const QString&)> progressCallback,
         bool isAdmin,
         LanguageService* languageService,
+        UpdateController* updateController,
         MainWindowStartupOptions startupOptions = {},
         QWidget *parent = nullptr
         );
@@ -156,7 +157,7 @@ private:
     std::unique_ptr<NavigationController> m_navigationController;
     std::unique_ptr<EditController> m_editController;
     std::unique_ptr<ThemeController> m_themeController;
-    std::unique_ptr<UpdateController> m_updateController;
+    UpdateController* m_updateController = nullptr;
     std::unique_ptr<LanguageController> m_languageController;
     std::unique_ptr<FontSizeController> m_fontSizeController;
 
@@ -165,7 +166,6 @@ private:
     // =====================================================
 
     bool m_isAdmin = false;
-    bool m_startupUpdateCheckQueued = false;
     bool m_testingClassesReturnToPersonalSchedule = true;
     bool m_startupFontSizeRefreshQueued = false;
     MainWindowStartupOptions m_startupOptions;

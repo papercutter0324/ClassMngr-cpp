@@ -5,27 +5,19 @@
 UpdateConfiguration UpdateConfiguration::fromBuild()
 {
     UpdateConfiguration configuration;
-    configuration.manifestUrl =
+    configuration.releasesApiUrl =
         QUrl(
-            QString::fromUtf8(BuildInfo::UpdateManifestUrl).trimmed()
+            QString::fromUtf8(BuildInfo::UpdateApiUrl).trimmed()
             );
-    configuration.signatureUrl =
-        QUrl(
-            QString::fromUtf8(BuildInfo::UpdateSignatureUrl).trimmed()
-            );
-    configuration.publicKeyPem =
-        QString::fromUtf8(BuildInfo::UpdatePublicKeyPem).trimmed();
-    configuration.requireSignature =
-        BuildInfo::UpdateRequireSignature;
     configuration.checkOnStartup =
         BuildInfo::UpdateCheckOnStartup;
 
     return configuration;
 }
 
-bool UpdateConfiguration::hasManifestUrl() const
+bool UpdateConfiguration::hasReleasesApiUrl() const
 {
-    return manifestUrl.isValid()
-        && !manifestUrl.isRelative()
-        && !manifestUrl.isEmpty();
+    return releasesApiUrl.isValid()
+        && !releasesApiUrl.isRelative()
+        && !releasesApiUrl.isEmpty();
 }

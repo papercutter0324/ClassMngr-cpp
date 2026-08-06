@@ -1,7 +1,5 @@
 #include "update_service.h"
 
-#include "core/updater/update_signature_verifier.h"
-
 #include <QCoreApplication>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -10,6 +8,9 @@
 
 namespace
 {
+constexpr qint64 MaximumResponseBytes = 4 * 1024 * 1024;
+constexpr int CheckTransferTimeoutMs = 15000;
+
 bool isLocalHttpUrl(
     const QUrl& url
     )
@@ -25,22 +26,6 @@ bool isLocalHttpUrl(
     return host == QStringLiteral("localhost")
         || host == QStringLiteral("127.0.0.1")
         || host == QStringLiteral("::1");
-}
-
-QString fetchKindName(
-    UpdateService::FetchKind kind
-    )
-{
-    switch (kind)
-    {
-    case UpdateService::FetchKind::Manifest:
-        return QObject::tr("update manifest");
-
-    case UpdateService::FetchKind::Signature:
-        return QObject::tr("update manifest signature");
-    }
-
-    return QObject::tr("update data");
 }
 
 bool isSuccessfulHttpStatus(
@@ -78,64 +63,119 @@ UpdateConfiguration UpdateService::configuration() const
     return m_configuration;
 }
 
-void UpdateService::checkForUpdates()
+bool UpdateService::hasResult() const
+{
+    return m_lastResult.has_value();
+}
+
+std::optional<UpdateCheckResult> UpdateService::lastResult() const
+{
+    return m_lastResult;
+}
+
+QDateTime UpdateService::lastSuccessfulCheckUtc() const
+{
+    return m_lastSuccessfulCheckUtc;
+}
+
+bool UpdateService::isResultFresh(
+    const QDateTime& nowUtc
+    ) const
+{
+    return m_lastResult.has_value()
+        && isTimestampFresh(
+            m_lastSuccessfulCheckUtc,
+            nowUtc
+            );
+}
+
+bool UpdateService::isTimestampFresh(
+    const QDateTime& checkedAtUtc,
+    const QDateTime& nowUtc
+    )
+{
+    if (!checkedAtUtc.isValid() || !nowUtc.isValid())
+    {
+        return false;
+    }
+
+    const qint64 ageMilliseconds =
+        checkedAtUtc.msecsTo(nowUtc);
+
+    if (ageMilliseconds < 0)
+    {
+        return true;
+    }
+
+    return ageMilliseconds
+        <= std::chrono::duration_cast<std::chrono::milliseconds>(
+            ResultFreshness
+            ).count();
+}
+
+bool UpdateService::checkForUpdates(
+    CheckPolicy policy
+    )
 {
     if (m_busy)
     {
-        return;
-    }
-
-    if (!m_configuration.hasManifestUrl())
-    {
-        fail(
-            tr("Update manifest URL is not configured.")
-            );
-        return;
-    }
-
-    if (!isAllowedManifestUrl(m_configuration.manifestUrl))
-    {
-        fail(
-            tr("Update manifest URL must use HTTPS.")
-            );
-        return;
+        return false;
     }
 
     if (
-        m_configuration.requireSignature
-        && m_configuration.publicKeyPem.trimmed().isEmpty()
+        policy == CheckPolicy::IfStale
+        && isResultFresh()
         )
     {
-        fail(
-            tr("Update public key is not configured.")
-            );
-        return;
+        return false;
     }
 
-    m_busy = true;
-    m_manifestData.clear();
-    m_signatureData.clear();
+    if (!m_configuration.hasReleasesApiUrl())
+    {
+        fail(
+            tr("GitHub releases API URL is not configured.")
+            );
+        return false;
+    }
+
+    if (!isAllowedApiUrl(m_configuration.releasesApiUrl))
+    {
+        fail(
+            tr("GitHub releases API URL must use HTTPS.")
+            );
+        return false;
+    }
+
+    m_busy =
+        true;
 
     emit checkStarted();
 
-    fetch(
-        m_configuration.manifestUrl,
-        FetchKind::Manifest
+    QNetworkRequest request(
+        m_configuration.releasesApiUrl
         );
-}
-
-void UpdateService::fetch(
-    const QUrl& url,
-    FetchKind kind
-    )
-{
-    QNetworkRequest request(url);
     request.setAttribute(
         QNetworkRequest::RedirectPolicyAttribute,
         QNetworkRequest::NoLessSafeRedirectPolicy
         );
+    request.setTransferTimeout(
+        CheckTransferTimeoutMs
+        );
+    request.setRawHeader(
+        QByteArrayLiteral("Accept"),
+        QByteArrayLiteral("application/vnd.github+json")
+        );
+    request.setRawHeader(
+        QByteArrayLiteral("X-GitHub-Api-Version"),
+        QByteArrayLiteral("2022-11-28")
+        );
+    request.setRawHeader(
+        QByteArrayLiteral("User-Agent"),
+        QByteArrayLiteral("ClassMngr/")
+            + QCoreApplication::applicationVersion().toUtf8()
+        );
 
-    auto* reply =
+    QNetworkReply* reply =
         m_network.get(
             request
             );
@@ -144,122 +184,64 @@ void UpdateService::fetch(
         reply,
         &QNetworkReply::finished,
         this,
-        [this, reply, kind]()
+        [this, reply]()
         {
             reply->deleteLater();
 
             if (reply->error() != QNetworkReply::NoError)
             {
                 fail(
-                    tr("Unable to download %1: %2")
-                        .arg(
-                            fetchKindName(kind),
-                            reply->errorString()
-                            )
+                    tr("Unable to check GitHub releases: %1")
+                        .arg(reply->errorString())
                     );
                 return;
             }
 
-            if (
-                !isSuccessfulHttpStatus(
-                    reply->attribute(
-                        QNetworkRequest::HttpStatusCodeAttribute
-                        )
-                    )
-                )
+            const QVariant statusCode =
+                reply->attribute(
+                    QNetworkRequest::HttpStatusCodeAttribute
+                    );
+
+            if (!isSuccessfulHttpStatus(statusCode))
             {
                 fail(
-                    tr("Unable to download %1: HTTP %2")
-                        .arg(
-                            fetchKindName(kind)
-                            )
-                        .arg(
-                            reply->attribute(
-                                QNetworkRequest::HttpStatusCodeAttribute
-                                ).toInt()
-                            )
+                    tr("Unable to check GitHub releases: HTTP %1")
+                        .arg(statusCode.toInt())
                     );
                 return;
             }
 
-            handleFetched(
-                kind,
-                reply->readAll()
-                );
+            const QByteArray data =
+                reply->readAll();
+
+            if (data.size() > MaximumResponseBytes)
+            {
+                fail(
+                    tr("GitHub releases response is too large.")
+                    );
+                return;
+            }
+
+            completeCheck(data);
         }
         );
+
+    return true;
 }
 
-void UpdateService::handleFetched(
-    FetchKind kind,
+void UpdateService::completeCheck(
     const QByteArray& data
     )
 {
-    switch (kind)
-    {
-    case FetchKind::Manifest:
-        m_manifestData =
-            data;
-
-        if (m_configuration.requireSignature)
-        {
-            const QUrl signatureUrl =
-                resolvedSignatureUrl();
-
-            if (!isAllowedManifestUrl(signatureUrl))
-            {
-                fail(
-                    tr("Update signature URL is not configured or is not HTTPS.")
-                    );
-                return;
-            }
-
-            fetch(
-                signatureUrl,
-                FetchKind::Signature
-                );
-            return;
-        }
-
-        completeCheck();
-        return;
-
-    case FetchKind::Signature:
-        m_signatureData =
-            data;
-        completeCheck();
-        return;
-    }
-}
-
-void UpdateService::completeCheck()
-{
-    if (m_configuration.requireSignature)
-    {
-        if (
-            auto status =
-                UpdateSignatureVerifier::verifyDetachedSignature(
-                    m_manifestData,
-                    m_signatureData,
-                    m_configuration.publicKeyPem
-                    );
-            !status
-            )
-        {
-            fail(status.error());
-            return;
-        }
-    }
-
-    const auto manifest =
-        UpdateManifest::fromJson(
-            m_manifestData
+    const auto release =
+        GitHubRelease::latestCompatibleFromJson(
+            data
             );
 
-    if (!manifest)
+    if (!release)
     {
         fail(
-            manifest.error()
+            release.error()
             );
         return;
     }
@@ -278,39 +260,31 @@ void UpdateService::completeCheck()
         return;
     }
 
-    const auto artifact =
-        manifest->artifactForAny(
-            UpdateManifest::currentPlatformKeys()
-            );
-
-    if (!artifact)
-    {
-        fail(
-            artifact.error()
-            );
-        return;
-    }
+    const QDateTime checkedAtUtc =
+        QDateTime::currentDateTimeUtc();
 
     UpdateCheckResult result;
     result.currentVersion =
         *currentVersion;
     result.latestVersion =
-        manifest->latestVersion();
-    result.minimumSupportedVersion =
-        manifest->minimumSupportedVersion();
+        release->version();
     result.artifact =
-        *artifact;
+        release->artifact();
     result.releaseDate =
-        manifest->releaseDate();
-    result.notesUrl =
-        manifest->notesUrl();
+        release->releaseDate();
+    result.releaseUrl =
+        release->releaseUrl();
+    result.checkedAtUtc =
+        checkedAtUtc;
     result.updateAvailable =
-        manifest->latestVersion() > *currentVersion;
-    result.currentVersionSupported =
-        !manifest->minimumSupportedVersion().isValid()
-        || *currentVersion >= manifest->minimumSupportedVersion();
+        release->version() > *currentVersion;
 
-    m_busy = false;
+    m_busy =
+        false;
+    m_lastResult =
+        result;
+    m_lastSuccessfulCheckUtc =
+        checkedAtUtc;
 
     emit checkSucceeded(result);
 }
@@ -319,42 +293,13 @@ void UpdateService::fail(
     const QString& message
     )
 {
-    m_busy = false;
+    m_busy =
+        false;
 
     emit checkFailed(message);
 }
 
-QUrl UpdateService::resolvedSignatureUrl() const
-{
-    if (
-        m_configuration.signatureUrl.isValid()
-        && !m_configuration.signatureUrl.isRelative()
-        && !m_configuration.signatureUrl.isEmpty()
-        )
-    {
-        return m_configuration.signatureUrl;
-    }
-
-    QUrl derived =
-        m_configuration.manifestUrl;
-
-    const QString path =
-        derived.path();
-
-    if (path.endsWith(QStringLiteral(".json")))
-    {
-        derived.setPath(
-            path.left(path.size() - 5)
-            + QStringLiteral(".sig")
-            );
-
-        return derived;
-    }
-
-    return QUrl();
-}
-
-bool UpdateService::isAllowedManifestUrl(
+bool UpdateService::isAllowedApiUrl(
     const QUrl& url
     ) const
 {

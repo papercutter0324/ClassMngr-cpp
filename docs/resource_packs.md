@@ -110,10 +110,11 @@ cmake --preset linux-gcc-release \
   -DCLASSMNGR_RESOURCE_PACK_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----...-----END PUBLIC KEY-----"
 ```
 
-`CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE` and
-`CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP` both default to `ON`. If the
-resource-pack public key is omitted, the application update key is reused. With
-no manifest URL configured, startup checks are skipped.
+`CLASSMNGR_RESOURCE_PACK_REQUIRE_SIGNATURE` defaults to `ON`.
+`CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP` defaults to `OFF` while the
+resource-pack update interface remains disabled. Configure a dedicated
+resource-pack public key when signature verification is enabled. With no
+manifest URL configured, resource-pack checks are skipped.
 
 Each download is size- and SHA-256-verified, checked for its expected RCC root,
 then installed through an atomic metadata update. Network or validation failures

@@ -6,8 +6,12 @@
 #include <QNetworkRequest>
 #include <QStandardPaths>
 
+#include <utility>
+
 namespace
 {
+constexpr int DownloadTransferTimeoutMs = 30000;
+
 bool isSuccessfulHttpStatus(
     const QVariant& statusCode
     )
@@ -63,7 +67,7 @@ void UpdateDownloader::download(
         return;
     }
 
-    if (!UpdateManifest::isAllowedDownloadUrl(artifact.url))
+    if (!GitHubRelease::isAllowedDownloadUrl(artifact.url))
     {
         fail(
             tr("Update download URL must use HTTPS.")
@@ -119,6 +123,9 @@ void UpdateDownloader::download(
         QNetworkRequest::RedirectPolicyAttribute,
         QNetworkRequest::NoLessSafeRedirectPolicy
         );
+    request.setTransferTimeout(
+        DownloadTransferTimeoutMs
+        );
 
     m_reply =
         m_network.get(
@@ -149,6 +156,48 @@ void UpdateDownloader::download(
     emit downloadStarted();
 }
 
+void UpdateDownloader::cancel()
+{
+    if (!m_busy)
+    {
+        return;
+    }
+
+    const QString partialPath =
+        m_outputFile.fileName();
+
+    if (m_reply)
+    {
+        QNetworkReply* reply =
+            std::exchange(
+                m_reply,
+                nullptr
+                );
+        disconnect(
+            reply,
+            nullptr,
+            this,
+            nullptr
+            );
+        reply->abort();
+        reply->deleteLater();
+    }
+
+    if (m_outputFile.isOpen())
+    {
+        m_outputFile.close();
+    }
+
+    if (!partialPath.isEmpty())
+    {
+        QFile::remove(partialPath);
+    }
+
+    reset();
+
+    emit downloadCancelled();
+}
+
 void UpdateDownloader::handleReadyRead()
 {
     if (!m_reply || !m_outputFile.isOpen())
@@ -164,7 +213,13 @@ void UpdateDownloader::handleReadyRead()
         return;
     }
 
-    if (m_outputFile.write(data) != data.size())
+    if (
+        (
+            m_artifact.sizeBytes > 0
+            && m_bytesWritten + data.size() > m_artifact.sizeBytes
+            )
+        || m_outputFile.write(data) != data.size()
+        )
     {
         fail(
             tr("Unable to write update download file.")
@@ -185,6 +240,11 @@ void UpdateDownloader::handleFinished()
     }
 
     handleReadyRead();
+
+    if (!m_reply)
+    {
+        return;
+    }
 
     const QNetworkReply::NetworkError networkError =
         m_reply->error();
@@ -227,7 +287,7 @@ void UpdateDownloader::handleFinished()
     if (m_artifact.sizeBytes > 0 && m_bytesWritten != m_artifact.sizeBytes)
     {
         fail(
-            tr("Update download size did not match the manifest.")
+            tr("Update download size did not match the GitHub release metadata.")
             );
         return;
     }
@@ -240,7 +300,7 @@ void UpdateDownloader::handleFinished()
     if (actualHash.compare(m_artifact.sha256, Qt::CaseInsensitive) != 0)
     {
         fail(
-            tr("Update download checksum did not match the manifest.")
+            tr("Update download checksum did not match the GitHub release metadata.")
             );
         return;
     }
@@ -274,10 +334,19 @@ void UpdateDownloader::fail(
 
     if (m_reply)
     {
-        m_reply->abort();
-        m_reply->deleteLater();
-        m_reply =
-            nullptr;
+        QNetworkReply* reply =
+            std::exchange(
+                m_reply,
+                nullptr
+                );
+        disconnect(
+            reply,
+            nullptr,
+            this,
+            nullptr
+            );
+        reply->abort();
+        reply->deleteLater();
     }
 
     if (m_outputFile.isOpen())

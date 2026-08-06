@@ -40,6 +40,7 @@ MainWindow::MainWindow(
     std::function<void(const QString&)> progressCallback,
     bool isAdmin,
     LanguageService* languageService,
+    UpdateController* updateController,
     MainWindowStartupOptions startupOptions,
     QWidget* parent
     )
@@ -48,6 +49,7 @@ MainWindow::MainWindow(
     , m_isAdmin(isAdmin)
     , m_startupOptions(startupOptions)
     , m_languageService(languageService)
+    , m_updateController(updateController)
 {
     progressCallback(tr("Creating main window..."));
     ui->setupUi(this);
@@ -236,12 +238,13 @@ void MainWindow::connectControllers()
             );
     m_themeController->connectActions(m_actions);
 
-    m_updateController =
-        std::make_unique<UpdateController>(
+    if (m_updateController)
+    {
+        m_updateController->attachMainWindow(
             this,
-            this
+            m_actions
             );
-    m_updateController->connectActions(m_actions);
+    }
 
     m_languageController =
         std::make_unique<LanguageController>(
@@ -670,21 +673,6 @@ void MainWindow::showEvent(QShowEvent* event)
             );
     }
 
-    if (
-        !m_startupUpdateCheckQueued
-        && m_updateController
-        && m_startupOptions.runPostShowStartupTasks
-        )
-    {
-        m_startupUpdateCheckQueued =
-            true;
-
-        QTimer::singleShot(
-            0,
-            m_updateController.get(),
-            &UpdateController::maybeCheckOnStartup
-            );
-    }
 }
 
 void MainWindow::reapplyStartupFontSize()

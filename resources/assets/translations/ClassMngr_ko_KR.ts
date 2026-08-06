@@ -34,10 +34,6 @@
         <translation>감사의 말</translation>
     </message>
     <message>
-        <source>This non-commercial application is built with %1 under Qt&apos;s open-source licensing terms and includes the %2 and %3 font families.</source>
-        <translation type="vanished">이 비상업용 애플리케이션은 Qt의 오픈 소스 라이선스 조건에 따라 %1로 제작되었으며 %2 및 %3 폰트 패밀리를 포함합니다.</translation>
-    </message>
-    <message>
         <location line="+37"/>
         <source>Qt source and license information: %1</source>
         <translation>Qt 소스 및 라이선스 정보: %1</translation>
@@ -797,7 +793,7 @@
 <context>
     <name>BasePage</name>
     <message>
-        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+204"/>
+        <location filename="../../../src/ui/shared/pages/basepage.cpp" line="+279"/>
         <source>Unsaved Changes</source>
         <translation>저장되지 않은 변경 사항</translation>
     </message>
@@ -807,7 +803,7 @@
         <translation>이 페이지에 저장되지 않은 변경 사항이 있습니다.</translation>
     </message>
     <message>
-        <location line="+106"/>
+        <location line="+31"/>
         <source>Getting Started</source>
         <translation>시작하기</translation>
     </message>
@@ -2051,10 +2047,6 @@
         <translation>일</translation>
     </message>
     <message>
-        <source>Mon.</source>
-        <translation type="vanished">월</translation>
-    </message>
-    <message>
         <location line="+1"/>
         <source>Mon</source>
         <translation type="unfinished">월</translation>
@@ -2103,21 +2095,22 @@
 <context>
     <name>FileController</name>
     <message>
-        <location filename="../../../src/app/controllers/file_controller.cpp" line="+165"/>
-        <location line="+30"/>
+        <location filename="../../../src/app/controllers/file_controller.cpp" line="+175"/>
+        <location line="+26"/>
         <location line="+16"/>
         <source>New Database</source>
         <translation>새 데이터베이스</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+77"/>
-        <location line="+120"/>
+        <location line="-40"/>
+        <location line="+73"/>
+        <location line="+118"/>
+        <location line="+24"/>
         <source>ClassMngr Database (*.tps)</source>
         <translation>ClassMngr 데이터베이스 (*.tps)</translation>
     </message>
     <message>
-        <location line="-168"/>
+        <location line="-190"/>
         <source>Unable to replace existing database file:
 %1</source>
         <translation>기존 데이터베이스 파일을 교체할 수 없습니다:
@@ -2125,42 +2118,42 @@
     </message>
     <message>
         <location line="+46"/>
-        <location line="+62"/>
+        <location line="+60"/>
         <source>Open Database</source>
         <translation>데이터베이스 열기</translation>
     </message>
     <message>
         <location line="-30"/>
-        <location line="+154"/>
+        <location line="+150"/>
         <source>Missing File</source>
         <translation>파일 없음</translation>
     </message>
     <message>
-        <location line="-153"/>
-        <location line="+154"/>
+        <location line="-149"/>
+        <location line="+150"/>
         <source>File not found:
 %1</source>
         <translation>파일을 찾을 수 없습니다:
 %1</translation>
     </message>
     <message>
-        <location line="-67"/>
-        <location line="+253"/>
+        <location line="-63"/>
+        <location line="+241"/>
         <source>Save Database</source>
         <translation>데이터베이스 저장</translation>
     </message>
     <message>
-        <location line="-229"/>
+        <location line="-217"/>
         <source>Export Database As</source>
         <translation>데이터베이스 다른 이름으로 내보내기</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-138"/>
         <source>Legacy SQLite Database (*.db)</source>
         <translation>레거시 SQLite 데이터베이스 (*.db)</translation>
     </message>
     <message>
-        <location line="+109"/>
+        <location line="+241"/>
         <source>(No Recent Files)</source>
         <translation>(최근 파일 없음)</translation>
     </message>
@@ -2175,7 +2168,7 @@
         <translation>최근 파일 목록 지우기</translation>
     </message>
     <message>
-        <location line="+108"/>
+        <location line="+100"/>
         <source>Export Database</source>
         <translation>데이터베이스 내보내기</translation>
     </message>
@@ -2188,7 +2181,12 @@
         <translation>메인 창</translation>
     </message>
     <message>
-        <location filename="../../../src/main.cpp" line="+261"/>
+        <location filename="../../../src/main.cpp" line="+284"/>
+        <source>Checking for updates...</source>
+        <translation>업데이트 확인 중...</translation>
+    </message>
+    <message>
+        <location line="+18"/>
         <source>Loading resource packs...</source>
         <translation>리소스 팩을 불러오는 중...</translation>
     </message>
@@ -2198,7 +2196,7 @@
         <translation>애플리케이션 아이콘을 불러오는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/app/mainwindow.cpp" line="+52"/>
+        <location filename="../../../src/app/mainwindow.cpp" line="+54"/>
         <source>Creating main window...</source>
         <translation>메인 창을 만드는 중...</translation>
     </message>
@@ -2248,12 +2246,12 @@
         <translation>최근 파일 로드 중...</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+23"/>
         <source>Restoring window layout...</source>
         <translation>창 레이아웃을 복원하는 중...</translation>
     </message>
     <message>
-        <location filename="../../../src/main.cpp" line="+19"/>
+        <location filename="../../../src/main.cpp" line="+21"/>
         <source>Ready...</source>
         <translation>준비 완료...</translation>
     </message>
@@ -2389,30 +2387,6 @@
         <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="+127"/>
         <source>Mon</source>
         <translation>월</translation>
-    </message>
-    <message>
-        <source>Tues.</source>
-        <translation type="vanished">화</translation>
-    </message>
-    <message>
-        <source>Wed.</source>
-        <translation type="vanished">수</translation>
-    </message>
-    <message>
-        <source>Thurs.</source>
-        <translation type="vanished">목</translation>
-    </message>
-    <message>
-        <source>Fri.</source>
-        <translation type="vanished">금</translation>
-    </message>
-    <message>
-        <source>Sat.</source>
-        <translation type="vanished">토</translation>
-    </message>
-    <message>
-        <source>Sun.</source>
-        <translation type="vanished">일</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -3034,14 +3008,6 @@
         <translation>글자 수: %1/%2</translation>
     </message>
     <message>
-        <source>Clear text?</source>
-        <translation type="vanished">텍스트를 지울까요?</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to clear the comment?</source>
-        <translation type="vanished">댓글을 지우시겠습니까?</translation>
-    </message>
-    <message>
         <location filename="../../../src/features/classes/models/class_tab_navigation_model.cpp" line="+84"/>
         <source>Other</source>
         <translation>기타</translation>
@@ -3403,154 +3369,6 @@
         <translation>문서</translation>
     </message>
     <message>
-        <source>Guides</source>
-        <translation type="vanished">안내서</translation>
-    </message>
-    <message>
-        <source>Lesson Planning</source>
-        <translation type="vanished">수업 계획</translation>
-    </message>
-    <message>
-        <source>PowerPoint Shortcuts</source>
-        <translation type="vanished">PowerPoint 단축키</translation>
-    </message>
-    <message>
-        <source>Lesson Templates</source>
-        <translation type="vanished">수업 템플릿</translation>
-    </message>
-    <message>
-        <source>Speaking / Writing</source>
-        <translation type="vanished">말하기 / 쓰기</translation>
-    </message>
-    <message>
-        <source>Skill / TBL</source>
-        <translation type="vanished">기능 / TBL</translation>
-    </message>
-    <message>
-        <source>Student-Led Activities</source>
-        <translation type="vanished">학생 주도 활동</translation>
-    </message>
-    <message>
-        <source>Middle School OE</source>
-        <translation type="vanished">중학교 OE</translation>
-    </message>
-    <message>
-        <source>Theseus Paragraph Writing</source>
-        <translation type="vanished">Theseus 단락 쓰기</translation>
-    </message>
-    <message>
-        <source>CREO</source>
-        <translation type="vanished">CREO</translation>
-    </message>
-    <message>
-        <source>Online Essay</source>
-        <translation type="vanished">온라인 에세이</translation>
-    </message>
-    <message>
-        <source>Essay Topic Template</source>
-        <translation type="vanished">에세이 주제 템플릿</translation>
-    </message>
-    <message>
-        <source>Essay Brainstorm</source>
-        <translation type="vanished">에세이 브레인스토밍</translation>
-    </message>
-    <message>
-        <source>Theseus Paragraphs Explained</source>
-        <translation type="vanished">Theseus 단락 설명</translation>
-    </message>
-    <message>
-        <source>Speaking Evals</source>
-        <translation type="vanished">말하기 평가</translation>
-    </message>
-    <message>
-        <source>One-to-One Evaluations</source>
-        <translation type="vanished">1:1 평가</translation>
-    </message>
-    <message>
-        <source>In-Class Presentations</source>
-        <translation type="vanished">수업 내 발표</translation>
-    </message>
-    <message>
-        <source>Finishing in One Class</source>
-        <translation type="vanished">한 수업에 마치기</translation>
-    </message>
-    <message>
-        <source>Topic Options</source>
-        <translation type="vanished">주제 선택지</translation>
-    </message>
-    <message>
-        <source>Regular Template</source>
-        <translation type="vanished">기본 템플릿</translation>
-    </message>
-    <message>
-        <source>Athena/Song&apos;s Template</source>
-        <translation type="vanished">Athena/Song 템플릿</translation>
-    </message>
-    <message>
-        <source>Winner Certificates</source>
-        <translation type="vanished">수상자 증서</translation>
-    </message>
-    <message>
-        <source>Book Reports</source>
-        <translation type="vanished">독후감</translation>
-    </message>
-    <message>
-        <source>Grading Rubric</source>
-        <translation type="vanished">평가 기준표</translation>
-    </message>
-    <message>
-        <source>Grading Rubric (40%)</source>
-        <translation type="vanished">평가 기준표 (40%)</translation>
-    </message>
-    <message>
-        <source>Student Info Handout</source>
-        <translation type="vanished">학생 정보 유인물</translation>
-    </message>
-    <message>
-        <source>Training</source>
-        <translation type="vanished">연수</translation>
-    </message>
-    <message>
-        <source>Observation</source>
-        <translation type="vanished">관찰</translation>
-    </message>
-    <message>
-        <source>Reflection</source>
-        <translation type="vanished">성찰</translation>
-    </message>
-    <message>
-        <source>Final Reflection</source>
-        <translation type="vanished">최종 성찰</translation>
-    </message>
-    <message>
-        <source>Vacation / Sub Prep</source>
-        <translation type="vanished">휴가 / 대체 수업 준비</translation>
-    </message>
-    <message>
-        <source>Applying for Vacation</source>
-        <translation type="vanished">휴가 신청</translation>
-    </message>
-    <message>
-        <source>Vacation Guidelines</source>
-        <translation type="vanished">휴가 지침</translation>
-    </message>
-    <message>
-        <source>Vacacation Request Form</source>
-        <translation type="vanished">휴가 신청서</translation>
-    </message>
-    <message>
-        <source>Sub Prep Procedures</source>
-        <translation type="vanished">대체 수업 준비 절차</translation>
-    </message>
-    <message>
-        <source>Sub Prep Checklist</source>
-        <translation type="vanished">대체 수업 준비 체크리스트</translation>
-    </message>
-    <message>
-        <source>Sub Prep Template</source>
-        <translation type="vanished">대체 수업 준비 템플릿</translation>
-    </message>
-    <message>
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="+14"/>
         <source>Useful Links</source>
         <translation>유용한 링크</translation>
@@ -3648,21 +3466,6 @@
         <location filename="../../../src/ui/shared/widgets/sidebar/sidebar_definitions.cpp" line="+6"/>
         <source>Fall</source>
         <translation>가을</translation>
-    </message>
-    <message>
-        <location filename="../../../src/core/updater/update_service.cpp" line="+37"/>
-        <source>update manifest</source>
-        <translation>업데이트 매니페스트</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>update manifest signature</source>
-        <translation>업데이트 매니페스트 서명</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>update data</source>
-        <translation>업데이트 데이터</translation>
     </message>
     <message>
         <location filename="../../../src/core/resource_packs/resource_pack_update_service.cpp" line="+54"/>
@@ -3774,7 +3577,7 @@
     </message>
     <message>
         <location filename="../../../src/features/schedule/services/schedule_print_service.cpp" line="+73"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+64"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+63"/>
         <location filename="../../../src/ui/shared/printing/pdf_print_service.cpp" line="+51"/>
         <source>Print job sent.</source>
         <translation>인쇄 작업을 보냈습니다.</translation>
@@ -3823,7 +3626,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+13"/>
-        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1643"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="+1598"/>
         <source>Unable to create a temporary print file.</source>
         <translation>임시 인쇄 파일을 만들 수 없습니다.</translation>
     </message>
@@ -3950,100 +3753,64 @@ Rm: %1</source>
         <translation>노트</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+280"/>
+        <location filename="../../../src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp" line="+282"/>
         <source>Reports created successfully.</source>
         <translation>보고서를 만들었습니다.</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Report export was canceled.</source>
         <translation>보고서 내보내기가 취소되었습니다.</translation>
     </message>
     <message>
-        <source>A ZIP entry has an invalid file name.</source>
-        <translation>ZIP 항목의 파일 이름이 올바르지 않습니다.</translation>
-    </message>
-    <message>
-        <source>The file &quot;%1&quot; could not be opened for archiving.</source>
-        <translation>압축할 파일 &quot;%1&quot;을(를) 열 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The file &quot;%1&quot; is too large for a standard ZIP archive.</source>
-        <translation>파일 &quot;%1&quot;이(가) 표준 ZIP 압축 파일에 넣기에는 너무 큽니다.</translation>
-    </message>
-    <message>
-        <source>A ZIP entry file name is too long.</source>
-        <translation>ZIP 항목의 파일 이름이 너무 깁니다.</translation>
-    </message>
-    <message>
-        <source>The file &quot;%1&quot; could not be read for archiving.</source>
-        <translation>압축할 파일 &quot;%1&quot;을(를) 읽을 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>There are no files to add to the ZIP archive.</source>
-        <translation>ZIP 압축 파일에 추가할 파일이 없습니다.</translation>
-    </message>
-    <message>
-        <source>There are too many files for a standard ZIP archive.</source>
-        <translation>표준 ZIP 압축 파일에 넣기에는 파일이 너무 많습니다.</translation>
-    </message>
-    <message>
-        <source>The ZIP archive would contain more than one file named &quot;%1&quot;.</source>
-        <translation>ZIP 압축 파일에 &quot;%1&quot; 이름의 파일이 두 개 이상 포함됩니다.</translation>
-    </message>
-    <message>
-        <source>The ZIP archive could not be created.</source>
-        <translation>ZIP 압축 파일을 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The report files are too large for a standard ZIP archive.</source>
-        <translation>보고서 파일이 표준 ZIP 압축 파일에 넣기에는 너무 큽니다.</translation>
-    </message>
-    <message>
-        <source>A report could not be written to the ZIP archive.</source>
-        <translation>보고서를 ZIP 압축 파일에 쓸 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The ZIP archive directory could not be written.</source>
-        <translation>ZIP 압축 파일의 디렉터리를 쓸 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>The ZIP archive could not be finalized.</source>
-        <translation>ZIP 압축 파일을 완료할 수 없습니다.</translation>
-    </message>
-    <message>
+        <location line="+1655"/>
         <source>The staged output files are incomplete.</source>
         <translation>준비된 출력 파일이 완전하지 않습니다.</translation>
     </message>
     <message>
+        <location line="+28"/>
         <source>An existing output file could not be prepared for replacement.</source>
         <translation>기존 출력 파일을 교체할 수 있도록 준비하지 못했습니다.</translation>
     </message>
     <message>
+        <location line="+29"/>
         <source>An output file could not be copied to the selected folder.</source>
         <translation>출력 파일을 선택한 폴더에 복사할 수 없습니다.</translation>
     </message>
     <message>
+        <location line="+30"/>
         <source>An output file could not be finalized in the selected folder.</source>
         <translation>선택한 폴더에서 출력 파일을 완료할 수 없습니다.</translation>
     </message>
     <message>
+        <location line="+28"/>
+        <source>Internal Template (Default)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>PowerPoint (Fallback)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+75"/>
         <source>Speaking Evaluation Reports</source>
         <translation>말하기 평가 보고서</translation>
     </message>
     <message>
+        <location line="+139"/>
         <source>A ZIP archive named &quot;%1&quot; already exists.</source>
         <translation>&quot;%1&quot; 이름의 ZIP 압축 파일이 이미 있습니다.</translation>
     </message>
     <message>
-        <location line="+80"/>
-        <location line="+1697"/>
+        <location line="-1904"/>
+        <location line="+1708"/>
         <location line="+40"/>
         <source>Speaking Evaluation</source>
         <translation>말하기 평가</translation>
     </message>
     <message>
-        <location line="-1727"/>
+        <location line="-1738"/>
         <source>Unable to configure the report PDF page.</source>
         <translation>보고서 PDF 페이지를 구성할 수 없습니다.</translation>
     </message>
@@ -4083,36 +3850,12 @@ Rm: %1</source>
         <translation>PowerPoint 자동화를 준비할 수 없습니다.</translation>
     </message>
     <message>
-        <source>The temporary report directory is unavailable.</source>
-        <translation type="vanished">임시 보고서 디렉터리를 사용할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>A temporary PowerPoint directory could not be created.</source>
-        <translation type="vanished">임시 PowerPoint 디렉터리를 만들 수 없습니다.</translation>
-    </message>
-    <message>
         <location line="+796"/>
         <source>PowerPoint could not be started.</source>
         <translation>PowerPoint를 시작할 수 없습니다.</translation>
     </message>
     <message>
-        <source>PowerPoint did not finish exporting the report.</source>
-        <translation type="vanished">PowerPoint가 보고서 내보내기를 완료하지 못했습니다.</translation>
-    </message>
-    <message>
-        <source>PowerPoint could not export the report.</source>
-        <translation type="vanished">PowerPoint에서 보고서를 내보낼 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>PowerPoint did not create a PDF report.</source>
-        <translation type="vanished">PowerPoint에서 PDF 보고서를 만들지 못했습니다.</translation>
-    </message>
-    <message>
-        <source>PowerPoint&apos;s ClassMngr Documents folder could not be created.</source>
-        <translation type="vanished">PowerPoint의 ClassMngr Documents 폴더를 만들 수 없습니다.</translation>
-    </message>
-    <message>
-        <location line="-1543"/>
+        <location line="-1547"/>
         <source>ClassMngr&apos;s PowerPoint workspace could not be prepared.</source>
         <translation>ClassMngr의 PowerPoint 작업 공간을 준비할 수 없습니다.</translation>
     </message>
@@ -4132,7 +3875,7 @@ Rm: %1</source>
         <translation>PowerPoint의 임시 보고서 파일을 삭제할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+189"/>
+        <location line="+193"/>
         <source>The internal speaking-evaluation renderer is unavailable: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4182,7 +3925,7 @@ Rm: %1</source>
         <translation>%1의 준비된 PowerPoint PDF가 완전하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+50"/>
         <source>An exact PDF file can be selected only for one report.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4194,47 +3937,18 @@ Rm: %1</source>
     </message>
     <message>
         <location line="-15"/>
-        <location line="+37"/>
+        <location line="+36"/>
+        <location line="+11"/>
         <source>A PDF named &quot;%1&quot; already exists.</source>
         <translation>이름이 &quot;%1&quot;인 PDF가 이미 있습니다.</translation>
     </message>
     <message>
-        <location line="+24"/>
-        <source>The staged report files are incomplete.</source>
-        <translation>준비된 보고서 파일이 완전하지 않습니다.</translation>
-    </message>
-    <message>
-        <location line="+28"/>
-        <source>An existing PDF could not be prepared for replacement.</source>
-        <translation>기존 PDF를 교체할 수 있도록 준비하지 못했습니다.</translation>
-    </message>
-    <message>
-        <location line="+29"/>
-        <source>A PDF could not be copied to the selected folder.</source>
-        <translation>PDF를 선택한 폴더에 복사할 수 없습니다.</translation>
-    </message>
-    <message>
-        <location line="+30"/>
-        <source>A PDF could not be finalized in the selected folder.</source>
-        <translation>선택한 폴더에서 PDF를 완료할 수 없습니다.</translation>
-    </message>
-    <message>
-        <location line="+28"/>
-        <source>Internal Template (Beta)</source>
-        <translation>내부 템플릿 (Beta)</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>PowerPoint Template (Recommended)</source>
-        <translation>PowerPoint 템플릿(권장)</translation>
-    </message>
-    <message>
-        <location line="+59"/>
+        <location line="+200"/>
         <source>Evaluation</source>
         <translation>평가</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+46"/>
         <source>Student</source>
         <translation>학생</translation>
     </message>
@@ -4274,11 +3988,7 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose a folder for the PDF reports.</source>
-        <translation type="vanished">PDF 보고서를 저장할 폴더를 선택하세요.</translation>
-    </message>
-    <message>
-        <location line="+27"/>
+        <location line="+53"/>
         <source>A temporary report folder could not be created.</source>
         <translation>임시 보고서 폴더를 만들 수 없습니다.</translation>
     </message>
@@ -4288,7 +3998,7 @@ Rm: %1</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+83"/>
         <source>Print Speaking Evaluation Report</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4298,7 +4008,7 @@ Rm: %1</source>
         <translation>말하기 평가 보고서 인쇄</translation>
     </message>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+393"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="+431"/>
         <source>Creating report for %1…</source>
         <translation>%1의 보고서 만드는 중…</translation>
     </message>
@@ -4308,7 +4018,7 @@ Rm: %1</source>
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location filename="../../../src/features/sub_prep/services/sub_prep_print_service.cpp" line="-338"/>
         <source>No sub prep print file path was provided.</source>
         <translation>대체 수업 준비 인쇄 파일 경로가 제공되지 않았습니다.</translation>
     </message>
@@ -4323,12 +4033,12 @@ Rm: %1</source>
         <translation>대체 수업 준비 인쇄 파일을 만들 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+27"/>
+        <location line="+17"/>
         <source>Unable to determine the sub prep print area.</source>
         <translation>대체 수업 준비 인쇄 영역을 확인할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+272"/>
         <source>Unable to add a page to the sub prep print file.</source>
         <translation>대체 수업 준비 인쇄 파일에 페이지를 추가할 수 없습니다.</translation>
     </message>
@@ -5117,38 +4827,6 @@ Rm: %1</source>
         <translation>통합 문서에서 지원되는 사용자 일정 영역을 찾을 수 없습니다.</translation>
     </message>
     <message>
-        <source>Mon</source>
-        <translation type="vanished">월</translation>
-    </message>
-    <message>
-        <source>Tues</source>
-        <translation type="vanished">화</translation>
-    </message>
-    <message>
-        <source>Wed</source>
-        <translation type="vanished">수</translation>
-    </message>
-    <message>
-        <source>Thurs</source>
-        <translation type="vanished">목</translation>
-    </message>
-    <message>
-        <source>Fri</source>
-        <translation type="vanished">금</translation>
-    </message>
-    <message>
-        <source>Sat</source>
-        <translation type="vanished">토</translation>
-    </message>
-    <message>
-        <source>Sun</source>
-        <translation type="vanished">일</translation>
-    </message>
-    <message>
-        <source>%1 overlaps %2 on %3.</source>
-        <translation type="vanished">%1이(가) %3에 %2와(과) 겹칩니다.</translation>
-    </message>
-    <message>
         <location filename="../../../src/features/schedule/ui/schedule_import_review_dialog.cpp" line="-105"/>
         <location line="+4"/>
         <source>[Int]</source>
@@ -5189,10 +4867,6 @@ Rm: %1</source>
         <location line="+9"/>
         <source>No grade, level, teacher, day, or color differences.</source>
         <translation>학년, 레벨, 교사, 요일 또는 색상에 차이가 없습니다.</translation>
-    </message>
-    <message>
-        <source>Imported Class:</source>
-        <translation type="vanished">가져온 수업:</translation>
     </message>
     <message>
         <location line="-564"/>
@@ -5270,10 +4944,6 @@ Rm: %1</source>
         <location line="-13"/>
         <source>Expected Monday/Wednesday/Friday or Tuesday/Thursday.</source>
         <translation>월요일/수요일/금요일 또는 화요일/목요일 일정이어야 합니다.</translation>
-    </message>
-    <message>
-        <source>Expected Monday/Wednesday, Monday/Friday, or Tuesday/Thursday.</source>
-        <translation type="vanished">월요일/수요일, 월요일/금요일 또는 화요일/목요일 일정이어야 합니다.</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -6102,7 +5772,7 @@ Rm: %1</source>
 <context>
     <name>RosterPrintDialog</name>
     <message>
-        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+243"/>
+        <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
         <source>Save Rosters As</source>
         <translation>명단 다른 이름으로 저장</translation>
     </message>
@@ -6112,7 +5782,7 @@ Rm: %1</source>
         <translation>PDF 문서 (*.pdf)</translation>
     </message>
     <message>
-        <location line="+384"/>
+        <location line="+431"/>
         <location line="+670"/>
         <source>%1 of %2 selected</source>
         <translation>%2개 중 %1개 선택됨</translation>
@@ -6146,10 +5816,6 @@ Rm: %1</source>
         <location line="+6"/>
         <source>Template</source>
         <translation>템플릿</translation>
-    </message>
-    <message>
-        <source>Live Preview</source>
-        <translation type="vanished">실시간 미리 보기</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -6321,21 +5987,9 @@ Rm: %1</source>
         <translation>일정 가져오기</translation>
     </message>
     <message>
-        <source>Choose the schedule type, then continue.</source>
-        <translation type="vanished">일정 유형을 선택한 후 계속하세요.</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation type="vanished">뒤로</translation>
-    </message>
-    <message>
         <location line="+759"/>
         <source>Next</source>
         <translation>다음</translation>
-    </message>
-    <message>
-        <source>Import</source>
-        <translation type="vanished">가져오기</translation>
     </message>
     <message>
         <location line="-710"/>
@@ -6348,25 +6002,9 @@ Rm: %1</source>
         <translation>XLSX 일정 선택...</translation>
     </message>
     <message>
-        <source>Browse...</source>
-        <translation type="vanished">찾아보기...</translation>
-    </message>
-    <message>
         <location line="+16"/>
         <source>Schedule type</source>
         <translation>일정 유형</translation>
-    </message>
-    <message>
-        <source>Normal schedule</source>
-        <translation type="vanished">정규 일정</translation>
-    </message>
-    <message>
-        <source>Intensive schedule</source>
-        <translation type="vanished">집중 일정</translation>
-    </message>
-    <message>
-        <source>Worksheet:</source>
-        <translation type="vanished">워크시트:</translation>
     </message>
     <message>
         <location line="-58"/>
@@ -6375,21 +6013,9 @@ Rm: %1</source>
         <translation>파일과 일정 유형을 선택하세요.</translation>
     </message>
     <message>
-        <source>Ready to read the workbook.</source>
-        <translation type="vanished">통합 문서를 읽을 준비가 되었습니다.</translation>
-    </message>
-    <message>
-        <source>Choose your schedule section</source>
-        <translation type="vanished">내 일정 영역 선택</translation>
-    </message>
-    <message>
         <location line="+124"/>
         <source>Use the selected spreadsheet name even though it does not match My Information.</source>
         <translation>내 정보와 일치하지 않더라도 선택한 스프레드시트 이름을 사용합니다.</translation>
-    </message>
-    <message>
-        <source>Review &amp; Reconcile</source>
-        <translation type="vanished">검토 및 조정</translation>
     </message>
     <message>
         <location line="+135"/>
@@ -6412,10 +6038,6 @@ Rm: %1</source>
         <translation>.xlsx 확장자의 Excel 통합 문서를 선택하세요.</translation>
     </message>
     <message>
-        <source>Choose Normal schedule or Intensive schedule.</source>
-        <translation type="vanished">정규 일정 또는 집중 일정을 선택하세요.</translation>
-    </message>
-    <message>
         <location line="+61"/>
         <source>The selected workbook could not be opened.</source>
         <translation>선택한 통합 문서를 열 수 없습니다.</translation>
@@ -6429,10 +6051,6 @@ Rm: %1</source>
         <location line="+71"/>
         <source>Select a worksheet...</source>
         <translation>워크시트 선택...</translation>
-    </message>
-    <message>
-        <source>Workbook loaded. Choose the worksheet to import.</source>
-        <translation type="vanished">통합 문서를 불러왔습니다. 가져올 워크시트를 선택하세요.</translation>
     </message>
     <message>
         <location line="+197"/>
@@ -6453,14 +6071,6 @@ Rm: %1</source>
         <location line="+7"/>
         <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
         <translation>내 정보의 이름은 “%1”이지만 선택한 스프레드시트 영역의 이름은 “%2”입니다.</translation>
-    </message>
-    <message>
-        <source>My Information name: %1</source>
-        <translation type="vanished">내 정보 이름: %1</translation>
-    </message>
-    <message>
-        <source>Unrecognized cells</source>
-        <translation type="vanished">인식되지 않은 셀</translation>
     </message>
     <message>
         <location line="-150"/>
@@ -6531,158 +6141,6 @@ Rm: %1</source>
         <translation>통합 문서를 불러오는 중...</translation>
     </message>
     <message>
-        <source>I reviewed these cells and want to skip them.</source>
-        <translation type="vanished">이 셀을 검토했으며 건너뛰겠습니다.</translation>
-    </message>
-    <message>
-        <source>Korean teachers and rooms</source>
-        <translation type="vanished">한국인 교사 및 강의실</translation>
-    </message>
-    <message>
-        <source>Spreadsheet</source>
-        <translation type="vanished">스프레드시트</translation>
-    </message>
-    <message>
-        <source>Resolution</source>
-        <translation type="vanished">처리 방법</translation>
-    </message>
-    <message>
-        <source>Imported room</source>
-        <translation type="vanished">가져온 강의실</translation>
-    </message>
-    <message>
-        <source>Choose a room...</source>
-        <translation type="vanished">강의실 선택...</translation>
-    </message>
-    <message>
-        <source>Choose a resolution...</source>
-        <translation type="vanished">처리 방법 선택...</translation>
-    </message>
-    <message>
-        <source>Keep existing: %1</source>
-        <translation type="vanished">기존 항목 유지: %1</translation>
-    </message>
-    <message>
-        <source>Update room globally (%1 affected classes)</source>
-        <translation type="vanished">강의실을 전체적으로 업데이트(영향받는 수업 %1개)</translation>
-    </message>
-    <message>
-        <source>Skip affected classes</source>
-        <translation type="vanished">영향받는 수업 건너뛰기</translation>
-    </message>
-    <message>
-        <source>Use existing: %1</source>
-        <translation type="vanished">기존 항목 사용: %1</translation>
-    </message>
-    <message>
-        <source>Update existing room: %1</source>
-        <translation type="vanished">기존 강의실 업데이트: %1</translation>
-    </message>
-    <message>
-        <source>Create a new Korean teacher</source>
-        <translation type="vanished">새 한국인 교사 만들기</translation>
-    </message>
-    <message>
-        <source>Classes</source>
-        <translation type="vanished">수업</translation>
-    </message>
-    <message>
-        <source>Choose Update, Create, or Skip...</source>
-        <translation type="vanished">업데이트, 만들기 또는 건너뛰기 선택...</translation>
-    </message>
-    <message>
-        <source>Update suggested: %1</source>
-        <translation type="vanished">업데이트 제안: %1</translation>
-    </message>
-    <message>
-        <source>Update existing: %1</source>
-        <translation type="vanished">기존 항목 업데이트: %1</translation>
-    </message>
-    <message>
-        <source>Create new class</source>
-        <translation type="vanished">새 수업 만들기</translation>
-    </message>
-    <message>
-        <source>Skip imported class</source>
-        <translation type="vanished">가져온 수업 건너뛰기</translation>
-    </message>
-    <message>
-        <source>time unavailable</source>
-        <translation type="vanished">시간을 사용할 수 없음</translation>
-    </message>
-    <message>
-        <source>Select Imported Class Color</source>
-        <translation type="vanished">가져온 수업 색상 선택</translation>
-    </message>
-    <message>
-        <source>Color %1</source>
-        <translation type="vanished">색상 %1</translation>
-    </message>
-    <message>
-        <source>Choose a resolution for every Korean teacher.</source>
-        <translation type="vanished">각 한국인 교사의 처리 방법을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Choose one imported room for this Korean teacher resolution.</source>
-        <translation type="vanished">이 한국인 교사의 처리 방법에 사용할 가져온 강의실을 하나 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Choose an action for every class.</source>
-        <translation type="vanished">각 수업에 적용할 작업을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Choose how this imported row should be reconciled.</source>
-        <translation type="vanished">가져온 이 행을 처리할 방법을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Two imported classes cannot use the same existing class.</source>
-        <translation type="vanished">가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Choose an existing class to update.</source>
-        <translation type="vanished">업데이트할 기존 수업을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>The imported row will be skipped and its unique existing match will keep its current schedule.</source>
-        <translation type="vanished">가져온 행을 건너뛰고, 정확히 일치하는 기존 수업 하나는 현재 일정을 유지합니다.</translation>
-    </message>
-    <message>
-        <source>The imported row will be skipped.</source>
-        <translation type="vanished">가져온 행을 건너뜁니다.</translation>
-    </message>
-    <message>
-        <source>%1 %2 has an invalid meeting pattern. Update the spreadsheet or skip this class.</source>
-        <translation type="vanished">%1 %2의 수업 시간 패턴이 잘못되었습니다. 스프레드시트를 수정하거나 이 수업을 건너뛰세요.</translation>
-    </message>
-    <message>
-        <source>Meeting pattern:</source>
-        <translation type="vanished">수업 시간 패턴:</translation>
-    </message>
-    <message>
-        <source>The spreadsheet uses multiple colors for this class; confirm the selected color.</source>
-        <translation type="vanished">스프레드시트에서 이 수업에 여러 색상을 사용합니다. 선택한 색상을 확인하세요.</translation>
-    </message>
-    <message>
-        <source>The proposed schedule has a conflict: %1</source>
-        <translation type="vanished">적용 예정 일정에 충돌이 있습니다: %1</translation>
-    </message>
-    <message>
-        <source>Acknowledge the unrecognized cells before importing.</source>
-        <translation type="vanished">인식되지 않은 셀을 확인한 후 가져오세요.</translation>
-    </message>
-    <message>
-        <source>All required resolutions are complete.</source>
-        <translation type="vanished">필요한 처리 방법을 모두 지정했습니다.</translation>
-    </message>
-    <message>
-        <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
-        <translation type="vanished">적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
-    </message>
-    <message>
-        <source> My Information name will be set to “%1”.</source>
-        <translation type="vanished"> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
-    </message>
-    <message>
         <location line="+352"/>
         <source>Choose a worksheet.</source>
         <translation>워크시트를 선택하세요.</translation>
@@ -6691,42 +6149,6 @@ Rm: %1</source>
         <location line="-272"/>
         <source>The selected worksheet contains no supported user schedules.</source>
         <translation>선택한 워크시트에 지원되는 사용자 일정이 없습니다.</translation>
-    </message>
-    <message>
-        <source>Is this schedule valid and ready to import?</source>
-        <translation type="vanished">이 일정이 유효하며 가져올 준비가 되었습니까?</translation>
-    </message>
-    <message>
-        <source>Confirm Schedule Import</source>
-        <translation type="vanished">일정 가져오기 확인</translation>
-    </message>
-    <message>
-        <source>No database is open.</source>
-        <translation type="vanished">열려 있는 데이터베이스가 없습니다.</translation>
-    </message>
-    <message>
-        <source>Schedule imported successfully.
-Korean teachers created: %1
-Korean teacher rooms updated: %2
-Classes created: %3
-Classes updated: %4
-Classes skipped: %5
-Schedules cleared: %6
-Ignored occupied cells: %7%8</source>
-        <translation type="vanished">일정을 성공적으로 가져왔습니다.
-만든 한국인 교사: %1
-업데이트한 한국인 교사 강의실: %2
-만든 수업: %3
-업데이트한 수업: %4
-건너뛴 수업: %5
-지운 일정: %6
-무시한 내용이 있는 셀: %7%8</translation>
-    </message>
-    <message>
-        <source>
-My Information name was updated.</source>
-        <translation type="vanished">
-내 정보 이름이 업데이트되었습니다.</translation>
     </message>
 </context>
 <context>
@@ -6768,14 +6190,6 @@ My Information name was updated.</source>
         <location line="+15"/>
         <source>I reviewed these cells and want to skip them.</source>
         <translation type="unfinished">이 셀을 검토했으며 건너뛰겠습니다.</translation>
-    </message>
-    <message>
-        <source>Korean Teachers and Rooms</source>
-        <translation type="vanished">한국인 교사 및 강의실</translation>
-    </message>
-    <message>
-        <source>Korean Teacher</source>
-        <translation type="obsolete">한국인 교사</translation>
     </message>
     <message>
         <location line="+194"/>
@@ -6927,10 +6341,6 @@ Choose a different existing class, create a new class, or skip an imported class
         <translation type="unfinished">가져온 수업 색상 선택</translation>
     </message>
     <message>
-        <source>Color %1</source>
-        <translation type="vanished">색상 %1</translation>
-    </message>
-    <message>
         <location line="+136"/>
         <source>Choose a resolution for every Korean teacher.</source>
         <translation type="unfinished">각 한국인 교사의 처리 방법을 선택하세요.</translation>
@@ -6949,10 +6359,6 @@ Choose a different existing class, create a new class, or skip an imported class
         <location line="+5"/>
         <source>Choose how this imported row should be reconciled.</source>
         <translation type="unfinished">가져온 이 행을 처리할 방법을 선택하세요.</translation>
-    </message>
-    <message>
-        <source>Two imported classes cannot use the same existing class.</source>
-        <translation type="obsolete">가져온 두 수업에 동일한 기존 수업을 사용할 수 없습니다.</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -7016,10 +6422,6 @@ Choose a different existing class, create a new class, or skip an imported class
         <translation type="unfinished">필요한 처리 방법을 모두 지정했습니다.</translation>
     </message>
     <message>
-        <source>Proposed snapshot: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; %4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; %8 occupied cell(s) acknowledged and ignored.%9</source>
-        <translation type="obsolete">적용 예정 내용: 교사 %1명 만들기, 강의실 %2개 업데이트, 교사 그룹 %3개 건너뛰기; 수업 %4개 만들기, %5개 업데이트, %6개 건너뛰기; 기존 일정 %7개 지우기; 내용이 있는 셀 %8개를 확인하고 무시하기.%9</translation>
-    </message>
-    <message>
         <location line="+17"/>
         <source> My Information name will be set to “%1”.</source>
         <translation type="unfinished"> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
@@ -7074,10 +6476,6 @@ Ignored occupied cells: %7%8</source>
 My Information name was updated.</source>
         <translation type="unfinished">
 내 정보 이름이 업데이트되었습니다.</translation>
-    </message>
-    <message>
-        <source>Imported Class</source>
-        <translation type="vanished">가져온 수업</translation>
     </message>
     <message>
         <location line="-1034"/>
@@ -7271,14 +6669,6 @@ My Information name was updated.</source>
         <translation>등록된 수업 시간이 없습니다.</translation>
     </message>
     <message>
-        <source>Show Weekends</source>
-        <translation type="vanished">주말 표시</translation>
-    </message>
-    <message>
-        <source>Show Intensive Schedule</source>
-        <translation type="vanished">집중 일정 표시</translation>
-    </message>
-    <message>
         <location line="-467"/>
         <source>Print Schedule</source>
         <translation>일정 인쇄</translation>
@@ -7287,18 +6677,6 @@ My Information name was updated.</source>
         <location line="+1"/>
         <source>Export Schedule</source>
         <translation>일정 내보내기</translation>
-    </message>
-    <message>
-        <source>Use 24-Hour Time</source>
-        <translation type="vanished">24시간 형식 사용</translation>
-    </message>
-    <message>
-        <source>Show English Names</source>
-        <translation type="vanished">영어 이름 표시</translation>
-    </message>
-    <message>
-        <source>Show All Hours</source>
-        <translation type="vanished">모든 시간 표시</translation>
     </message>
     <message>
         <location line="-135"/>
@@ -7602,14 +6980,6 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>개선할 점 메모를 하나 이상 추가하세요.</translation>
     </message>
     <message>
-        <source>AI Comments for Class</source>
-        <translation type="vanished">반 전체 AI 코멘트</translation>
-    </message>
-    <message>
-        <source>Create one anonymized prompt for multiple students, then paste the AI response back to review before applying.</source>
-        <translation type="vanished">여러 학생을 위한 익명 프롬프트를 하나 만든 다음, AI 응답을 붙여 넣고 검토한 후 적용합니다.</translation>
-    </message>
-    <message>
         <location line="+33"/>
         <source>Generate Class Comments</source>
         <translation>반 전체 코멘트 생성</translation>
@@ -7789,16 +7159,9 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
 </context>
 <context>
-    <name>SpeakingEvalAiPromptPreviewDialog</name>
-    <message>
-        <source>Close</source>
-        <translation type="obsolete">닫기</translation>
-    </message>
-</context>
-<context>
     <name>SpeakingEvalBatchExportDialog</name>
     <message>
-        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-348"/>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-386"/>
         <source>Export / Print Speaking Reports</source>
         <translation>말하기 평가 보고서 내보내기 / 인쇄</translation>
     </message>
@@ -7823,33 +7186,33 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>보고서:</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+17"/>
         <source>Renderer:</source>
         <translation>렌더러:</translation>
     </message>
     <message>
         <location line="+6"/>
-        <location line="+140"/>
         <source>Export PDFs</source>
         <translation>PDF 내보내기</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>Keep individual PDFs after zipping</source>
         <translation>압축 후 개별 PDF 파일 유지</translation>
     </message>
     <message>
-        <location line="-138"/>
+        <location line="-3"/>
         <source>Output:</source>
         <translation>출력:</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+137"/>
+        <location line="+9"/>
+        <location line="+143"/>
         <source>Print Reports</source>
         <translation>보고서 인쇄</translation>
     </message>
     <message>
-        <location line="-131"/>
+        <location line="-137"/>
         <source>Choose…</source>
         <translation>선택…</translation>
     </message>
@@ -7870,39 +7233,28 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+119"/>
+        <location line="+125"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-118"/>
-        <location line="+247"/>
+        <location line="-124"/>
+        <location line="+279"/>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
     <message>
-        <location line="-163"/>
-        <location line="+45"/>
-        <source>Only recommended if PowerPoint is unavailable or an error occurs. (Supports Windows, MacOS, and Linux.)</source>
-        <translation>PowerPoint를 사용할 수 없거나 오류가 발생한 경우에만 권장됩니다. (Windows, macOS 및 Linux 지원)</translation>
-    </message>
-    <message>
-        <location line="-42"/>
-        <location line="+48"/>
-        <source>Uses PowerPoint to generate student reports using a bundled template. (Supports Windows and MacOS.)</source>
-        <translation>PowerPoint와 포함된 템플릿을 사용하여 학생 보고서를 생성합니다. (Windows 및 macOS 지원)</translation>
-    </message>
-    <message>
-        <location line="-25"/>
+        <location line="-165"/>
         <source>Export PDF</source>
         <translation>PDF 내보내기</translation>
     </message>
     <message>
+        <location line="+0"/>
         <source>Export ZIP</source>
         <translation>ZIP 내보내기</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+3"/>
         <source>Print Report</source>
         <translation>보고서 인쇄</translation>
     </message>
@@ -7917,12 +7269,12 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>인쇄</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+25"/>
         <source>Choose Output Folder</source>
         <translation>출력 폴더 선택</translation>
     </message>
     <message>
-        <location line="+56"/>
+        <location line="+59"/>
         <source>Output Folder Unavailable</source>
         <translation>출력 폴더를 사용할 수 없음</translation>
     </message>
@@ -7932,7 +7284,7 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>선택한 출력 폴더가 없으며 만들 수도 없습니다. 다른 폴더를 선택하고 다시 시도하세요.</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+43"/>
         <source>Overwrite Existing Output?</source>
         <translation>기존 출력 파일을 덮어쓰시겠습니까?</translation>
     </message>
@@ -7970,24 +7322,45 @@ Retry the entire batch using the PowerPoint template?</source>
 PowerPoint 템플릿을 사용하여 전체 일괄 작업을 다시 시도하시겠습니까?</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+66"/>
         <source>Reports Ready</source>
         <translation>보고서 준비 완료</translation>
     </message>
     <message>
+        <location line="-33"/>
         <source>%1 report(s) were saved to %2.</source>
         <translation>보고서 %1개를 %2에 저장했습니다.</translation>
     </message>
     <message>
+        <location line="-266"/>
+        <location line="+51"/>
+        <source>This is the recommended method for creating reports.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-47"/>
+        <location line="+54"/>
+        <source>Only use if the internal method doesn&apos;t work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-52"/>
+        <location line="+54"/>
+        <source>Only use if the internal method doesn&apos;t work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+217"/>
         <source>Individual PDF files were also saved.</source>
         <translation>개별 PDF 파일도 저장했습니다.</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>The reports were also sent to the printer.</source>
         <translation>보고서도 프린터로 전송했습니다.</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+6"/>
         <source>%1 report(s) were saved%2.</source>
         <translation>보고서 %1개를 저장했습니다%2.</translation>
     </message>
@@ -7997,12 +7370,12 @@ PowerPoint 템플릿을 사용하여 전체 일괄 작업을 다시 시도하시
         <translation> 및 프린터로 전송</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="-33"/>
         <source>%1 report(s) were sent to the printer.</source>
         <translation>보고서 %1개를 프린터로 보냈습니다.</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+59"/>
         <source>Report Export Failed</source>
         <translation>보고서 내보내기 실패</translation>
     </message>
@@ -8037,26 +7410,6 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location line="+320"/>
         <source>Edit Notes and Comment</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter Comment</source>
-        <translation type="vanished">댓글 입력</translation>
-    </message>
-    <message>
-        <source>Clear</source>
-        <translation type="vanished">지우기</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation type="vanished">확인</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="vanished">취소</translation>
-    </message>
-    <message>
-        <source>Edit Comment</source>
-        <translation type="vanished">댓글 편집</translation>
     </message>
 </context>
 <context>
@@ -8469,10 +7822,6 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>비공개 메모(보고서에 포함되지 않음)</translation>
     </message>
     <message>
-        <source>Add internal notes about this student…</source>
-        <translation type="vanished">이 학생에 대한 내부 메모 추가…</translation>
-    </message>
-    <message>
         <location line="+17"/>
         <source>Preview AI Prompt</source>
         <translation type="unfinished"></translation>
@@ -8581,46 +7930,6 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget.cpp" line="+31"/>
         <source>Type the student&apos;s report comment…</source>
         <translation>학생 보고서 의견을 입력하세요…</translation>
-    </message>
-    <message>
-        <source>Speaking Evaluation</source>
-        <translation type="vanished">말하기 평가</translation>
-    </message>
-    <message>
-        <source>English Name:</source>
-        <translation type="vanished">영어 이름:</translation>
-    </message>
-    <message>
-        <source>Korean Name:</source>
-        <translation type="vanished">한국어 이름:</translation>
-    </message>
-    <message>
-        <source>Grade:</source>
-        <translation type="vanished">학년:</translation>
-    </message>
-    <message>
-        <source>Native Teacher:</source>
-        <translation type="vanished">원어민 교사:</translation>
-    </message>
-    <message>
-        <source>Korean Teacher:</source>
-        <translation type="vanished">한국인 교사:</translation>
-    </message>
-    <message>
-        <source>Date:</source>
-        <translation type="vanished">날짜:</translation>
-    </message>
-    <message>
-        <source>Comments:</source>
-        <translation type="vanished">의견:</translation>
-    </message>
-    <message>
-        <source>Overall Grade:</source>
-        <translation type="vanished">종합 등급:</translation>
-    </message>
-    <message>
-        <source>Native Teacher Signature:</source>
-        <translation type="vanished">원어민 교사 서명:</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp" line="+642"/>
@@ -8855,14 +8164,14 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>중요 정보</translation>
     </message>
     <message>
-        <location line="-153"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+270"/>
+        <location line="-160"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+306"/>
         <source>Class Information</source>
         <translation>수업 정보</translation>
     </message>
     <message>
-        <location line="-229"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-353"/>
+        <location line="-66"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-359"/>
         <source>Sub Prep</source>
         <translation>대체 수업 준비</translation>
     </message>
@@ -8873,25 +8182,25 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>대체 수업 자료와 수업 노트를 준비합니다.</translation>
     </message>
     <message>
-        <location line="+38"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+144"/>
+        <location line="+31"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+147"/>
         <source>Personal Zoom Information</source>
         <translation>개인 Zoom 정보</translation>
     </message>
     <message>
-        <location line="+70"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+40"/>
+        <location line="+77"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+43"/>
         <source>Zoom Login ID</source>
         <translation>Zoom 로그인 ID</translation>
     </message>
     <message>
-        <location line="-77"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-132"/>
+        <location line="-84"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-138"/>
         <source>Campus Information</source>
         <translation>캠퍼스 정보</translation>
     </message>
     <message>
-        <location line="-24"/>
+        <location line="-17"/>
         <location line="+402"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-33"/>
         <source>Generate Sub Prep</source>
@@ -8905,7 +8214,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     </message>
     <message>
         <location line="+70"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+81"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+84"/>
         <source>Office Number</source>
         <translation>사무실 번호</translation>
     </message>
@@ -8940,36 +8249,39 @@ The package was created at:
 %1</translation>
     </message>
     <message>
-        <location line="-358"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+96"/>
+        <location line="-365"/>
+        <location line="+184"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+99"/>
         <source>Class Materials &amp; Lesson Notes</source>
         <translation>수업 자료 및 수업 노트</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="292"/>
+        <location line="-156"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+12"/>
         <source>Materials Location</source>
         <translation>자료 위치</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="308"/>
+        <location line="+7"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+16"/>
         <source>Detailed Class &amp; Lesson Notes</source>
         <translation>상세 학급 및 수업 노트</translation>
     </message>
     <message>
-        <location line="+77"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+29"/>
+        <location line="+49"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+31"/>
         <source>Grading Instructions</source>
         <translation>채점 지침</translation>
     </message>
     <message>
-        <location line="-70"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-10"/>
+        <location line="-77"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-13"/>
         <source>Book Report Grading</source>
         <translation>독후감 채점</translation>
     </message>
     <message>
-        <location line="+77"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+29"/>
+        <location line="+84"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+32"/>
         <source>Special Instructions</source>
         <translation>특별 지침</translation>
     </message>
@@ -9001,15 +8313,9 @@ The package was created at:
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="-14"/>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="+9"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-72"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-102"/>
         <source>Zoom Password</source>
         <translation>Zoom 비밀번호</translation>
-    </message>
-    <message>
-        <location line="-42"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+163"/>
-        <source>Notes</source>
-        <translation>노트</translation>
     </message>
     <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_class_information.cpp" line="-46"/>
@@ -9017,8 +8323,8 @@ The package was created at:
         <translation>학생 수</translation>
     </message>
     <message>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="-14"/>
-        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="-72"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page.cpp" line="-63"/>
+        <location filename="../../../src/features/sub_prep/ui/sub_prep_page_ui.cpp" line="+121"/>
         <source>Schedule</source>
         <translation>일정</translation>
     </message>
@@ -9572,10 +8878,6 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose an Essay block, an Oral Testing block, or assign one of your saved testing classes.</source>
-        <translation type="vanished">에세이 블록 또는 구술 시험 블록을 선택하거나 저장된 시험 수업 중 하나를 배정하세요.</translation>
-    </message>
-    <message>
         <location line="+64"/>
         <source>Assignment Type</source>
         <translation type="unfinished"></translation>
@@ -9605,10 +8907,6 @@ Version: %2</source>
         <location line="+110"/>
         <source>Choose a testing class or manage your classes.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose an Oral Testing block or assign one of your saved testing classes.</source>
-        <translation type="vanished">구술 시험 블록을 선택하거나 저장된 시험 수업 중 하나를 배정하세요.</translation>
     </message>
     <message>
         <location line="-165"/>
@@ -9644,21 +8942,6 @@ Version: %2</source>
         <location line="+35"/>
         <source>Testing Assignment</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>TestingBlockDialog</name>
-    <message>
-        <source>Room</source>
-        <translation type="obsolete">교실</translation>
-    </message>
-    <message>
-        <source>Save</source>
-        <translation type="obsolete">저장</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation type="obsolete">취소</translation>
     </message>
 </context>
 <context>
@@ -9780,26 +9063,10 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Name</source>
-        <translation type="obsolete">이름</translation>
-    </message>
-    <message>
-        <source>Grade</source>
-        <translation type="obsolete">학년</translation>
-    </message>
-    <message>
-        <source>Level</source>
-        <translation type="obsolete">레벨</translation>
-    </message>
-    <message>
         <location line="-136"/>
         <location line="+419"/>
         <source>Room</source>
         <translation type="unfinished">교실</translation>
-    </message>
-    <message>
-        <source>Background Color</source>
-        <translation type="obsolete">배경 색상</translation>
     </message>
     <message>
         <location line="-416"/>
@@ -9844,72 +9111,146 @@ Version: %2</source>
     </message>
 </context>
 <context>
-    <name>UpdateController</name>
-    <message>
-        <location filename="../../../src/app/controllers/update_controller.cpp" line="+129"/>
-        <source>Resource-pack updates were downloaded and will be used after the next launch: %1</source>
-        <translation>리소스 팩 업데이트를 다운로드했으며 다음 실행부터 사용됩니다: %1</translation>
-    </message>
-    <message>
-        <location line="+15"/>
-        <source>Resource-pack update check failed: %1</source>
-        <translation>리소스 팩 업데이트 확인에 실패했습니다: %1</translation>
-    </message>
-</context>
-<context>
     <name>UpdateDialog</name>
     <message>
-        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+48"/>
+        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+96"/>
         <source>Checking for Updates</source>
         <translation>업데이트 확인 중</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Contacting the update server...</source>
-        <translation>업데이트 서버에 연결하는 중...</translation>
-    </message>
-    <message>
-        <location line="+20"/>
+        <location line="+431"/>
         <source>You&apos;re Up to Date</source>
         <translation>최신 버전입니다</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+191"/>
         <source>ClassMngr %1 is the newest available version.</source>
         <translation>ClassMngr %1이(가) 사용 가능한 최신 버전입니다.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="-208"/>
         <source>Update Available</source>
         <translation>업데이트 사용 가능</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-14"/>
         <source>View release notes</source>
         <translation>릴리스 노트 보기</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="-327"/>
         <source>Downloading Update</source>
         <translation>업데이트 다운로드 중</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-72"/>
+        <source>Contacting GitHub Releases...</source>
+        <translation>GitHub 릴리스를 확인하는 중...</translation>
+    </message>
+    <message>
+        <location line="+73"/>
         <source>Downloading %1...</source>
         <translation>%1 다운로드 중...</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+7"/>
+        <source>Cancel Download</source>
+        <translation>다운로드 취소</translation>
+    </message>
+    <message>
+        <location line="+41"/>
+        <source>The update download failed: %1</source>
+        <translation>업데이트 다운로드에 실패했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <location line="+11"/>
+        <source>Updates</source>
+        <translation>업데이트</translation>
+    </message>
+    <message>
+        <location line="+95"/>
+        <source>&lt;b&gt;Resource Packs&lt;/b&gt;&lt;br&gt;Coming soon</source>
+        <translation>&lt;b&gt;리소스 팩&lt;/b&gt;&lt;br&gt;출시 예정</translation>
+    </message>
+    <message>
+        <location line="+118"/>
+        <source>ClassMngr</source>
+        <translation>ClassMngr</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>No update check has been completed yet.</source>
+        <translation>아직 업데이트 확인이 완료되지 않았습니다.</translation>
+    </message>
+    <message>
+        <location line="+52"/>
+        <source>Download Update</source>
+        <translation>업데이트 다운로드</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <location line="+65"/>
+        <source>Not Now</source>
+        <translation>나중에</translation>
+    </message>
+    <message>
+        <location line="-31"/>
+        <source>Installation will be available after ClassMngr finishes starting.</source>
+        <translation>ClassMngr 시작이 완료되면 설치할 수 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Download Complete</source>
+        <translation>다운로드 완료</translation>
+    </message>
+    <message>
+        <location line="+15"/>
         <source>Ready to Install</source>
         <translation>설치 준비 완료</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-28"/>
         <source>The update was downloaded and verified.</source>
         <translation>업데이트를 다운로드하고 확인했습니다.</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+20"/>
+        <source>Open Download Folder</source>
+        <translation>다운로드 폴더 열기</translation>
+    </message>
+    <message>
+        <location line="+42"/>
+        <source>The latest refresh failed: %1</source>
+        <translation>최신 정보 새로 고침에 실패했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+25"/>
+        <source>Try Again</source>
+        <translation>다시 시도</translation>
+    </message>
+    <message>
+        <location line="+99"/>
+        <source>Released %1</source>
+        <translation>출시일: %1</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Last checked %1</source>
+        <translation>마지막 확인: %1</translation>
+    </message>
+    <message>
+        <location line="+37"/>
+        <source>Linux Update Downloaded</source>
+        <translation>Linux 업데이트 다운로드 완료</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Extract the downloaded archive and replace your existing ClassMngr application directory when convenient.</source>
+        <translation>다운로드한 압축 파일을 풀고 편한 때에 기존 ClassMngr 애플리케이션 디렉터리를 교체하세요.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
         <source>Install Update</source>
         <translation>업데이트 설치</translation>
     </message>
@@ -9919,61 +9260,42 @@ Version: %2</source>
         <translation>업데이트 패키지를 연 후 ClassMngr가 종료됩니다. 계속할까요?</translation>
     </message>
     <message>
-        <location line="+32"/>
-        <location line="+77"/>
-        <source>Software Update</source>
-        <translation>소프트웨어 업데이트</translation>
-    </message>
-    <message>
-        <location line="-32"/>
+        <location line="-431"/>
+        <location line="+328"/>
         <source>Check Again</source>
         <translation>다시 확인</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <source>Download</source>
-        <translation>다운로드</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="-106"/>
         <source>Install and Close</source>
         <translation>설치 후 닫기</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-477"/>
+        <location line="+74"/>
+        <location line="+192"/>
+        <location line="+102"/>
+        <location line="+63"/>
+        <location line="+33"/>
+        <location line="+62"/>
         <source>Close</source>
         <translation>닫기</translation>
     </message>
     <message>
-        <location line="+18"/>
-        <source>Check for a newer version of ClassMngr.</source>
-        <translation>ClassMngr의 새 버전을 확인합니다.</translation>
-    </message>
-    <message>
-        <location line="+96"/>
+        <location line="-9"/>
         <source>Update Check Failed</source>
         <translation>업데이트 확인 실패</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+89"/>
         <source>ClassMngr %1 is available. You are currently using %2.</source>
         <translation>ClassMngr %1을(를) 사용할 수 있습니다. 현재 %2을(를) 사용하고 있습니다.</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>Release date: %1</source>
-        <translation>출시일: %1</translation>
-    </message>
-    <message>
-        <location line="+10"/>
-        <source>This version is below the minimum supported version. Please update soon.</source>
-        <translation>이 버전은 최소 지원 버전보다 낮습니다. 곧 업데이트하세요.</translation>
     </message>
 </context>
 <context>
     <name>UpdateDownloader</name>
     <message>
-        <location filename="../../../src/core/updater/update_downloader.cpp" line="+69"/>
+        <location filename="../../../src/core/updater/update_downloader.cpp" line="+73"/>
         <source>Update download URL must use HTTPS.</source>
         <translation>업데이트 다운로드 URL은 HTTPS를 사용해야 합니다.</translation>
     </message>
@@ -9988,12 +9310,12 @@ Version: %2</source>
         <translation>업데이트 다운로드 파일을 준비할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+111"/>
         <source>Unable to write update download file.</source>
         <translation>업데이트 다운로드 파일에 쓸 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+47"/>
         <source>Update download failed: %1</source>
         <translation>업데이트 다운로드에 실패했습니다: %1</translation>
     </message>
@@ -10004,13 +9326,13 @@ Version: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <source>Update download size did not match the manifest.</source>
-        <translation>업데이트 다운로드 크기가 매니페스트와 일치하지 않습니다.</translation>
+        <source>Update download size did not match the GitHub release metadata.</source>
+        <translation>업데이트 다운로드 크기가 GitHub 릴리스 메타데이터와 일치하지 않습니다.</translation>
     </message>
     <message>
         <location line="+13"/>
-        <source>Update download checksum did not match the manifest.</source>
-        <translation>업데이트 다운로드 체크섬이 매니페스트와 일치하지 않습니다.</translation>
+        <source>Update download checksum did not match the GitHub release metadata.</source>
+        <translation>업데이트 다운로드 체크섬이 GitHub 릴리스 메타데이터와 일치하지 않습니다.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -10021,37 +9343,32 @@ Version: %2</source>
 <context>
     <name>UpdateService</name>
     <message>
-        <location filename="../../../src/core/updater/update_service.cpp" line="+48"/>
-        <source>Update manifest URL is not configured.</source>
-        <translation>업데이트 매니페스트 URL이 설정되지 않았습니다.</translation>
+        <location filename="../../../src/core/updater/update_service.cpp" line="+136"/>
+        <source>GitHub releases API URL is not configured.</source>
+        <translation>GitHub 릴리스 API URL이 구성되지 않았습니다.</translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Update manifest URL must use HTTPS.</source>
-        <translation>업데이트 매니페스트 URL은 HTTPS를 사용해야 합니다.</translation>
+        <source>GitHub releases API URL must use HTTPS.</source>
+        <translation>GitHub 릴리스 API URL은 HTTPS를 사용해야 합니다.</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Update public key is not configured.</source>
-        <translation>업데이트 공개 키가 설정되지 않았습니다.</translation>
+        <location line="+50"/>
+        <source>Unable to check GitHub releases: %1</source>
+        <translation>GitHub 릴리스를 확인할 수 없습니다: %1</translation>
     </message>
     <message>
-        <location line="+44"/>
-        <source>Unable to download %1: %2</source>
-        <translation>%1을(를) 다운로드할 수 없습니다: %2</translation>
+        <location line="+14"/>
+        <source>Unable to check GitHub releases: HTTP %1</source>
+        <translation>GitHub 릴리스를 확인할 수 없습니다: HTTP %1</translation>
     </message>
     <message>
-        <location line="+18"/>
-        <source>Unable to download %1: HTTP %2</source>
-        <translation>%1을(를) 다운로드할 수 없습니다: HTTP %2</translation>
+        <location line="+12"/>
+        <source>GitHub releases response is too large.</source>
+        <translation>GitHub 릴리스 응답이 너무 큽니다.</translation>
     </message>
     <message>
-        <location line="+40"/>
-        <source>Update signature URL is not configured or is not HTTPS.</source>
-        <translation>업데이트 서명 URL이 설정되지 않았거나 HTTPS를 사용하지 않습니다.</translation>
-    </message>
-    <message>
-        <location line="+63"/>
+        <location line="+37"/>
         <source>Current application version is invalid: %1</source>
         <translation>현재 애플리케이션 버전이 올바르지 않습니다: %1</translation>
     </message>

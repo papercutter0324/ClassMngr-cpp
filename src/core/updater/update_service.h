@@ -1,21 +1,24 @@
 #pragma once
 
 #include "core/updater/update_configuration.h"
-#include "core/updater/update_manifest.h"
+#include "core/updater/github_release.h"
 
+#include <QDateTime>
 #include <QNetworkAccessManager>
 #include <QObject>
+
+#include <chrono>
+#include <optional>
 
 struct UpdateCheckResult
 {
     Version currentVersion;
     Version latestVersion;
-    Version minimumSupportedVersion;
     UpdateArtifact artifact;
     QDate releaseDate;
-    QUrl notesUrl;
+    QUrl releaseUrl;
+    QDateTime checkedAtUtc;
     bool updateAvailable = false;
-    bool currentVersionSupported = true;
 };
 
 class UpdateService : public QObject
@@ -23,10 +26,10 @@ class UpdateService : public QObject
     Q_OBJECT
 
 public:
-    enum class FetchKind
+    enum class CheckPolicy
     {
-        Manifest,
-        Signature
+        IfStale,
+        Force
     };
 
     explicit UpdateService(
@@ -36,9 +39,22 @@ public:
 
     [[nodiscard]] bool isBusy() const;
     [[nodiscard]] UpdateConfiguration configuration() const;
+    [[nodiscard]] bool hasResult() const;
+    [[nodiscard]] std::optional<UpdateCheckResult> lastResult() const;
+    [[nodiscard]] QDateTime lastSuccessfulCheckUtc() const;
+    [[nodiscard]] bool isResultFresh(
+        const QDateTime& nowUtc = QDateTime::currentDateTimeUtc()
+        ) const;
+
+    [[nodiscard]] static bool isTimestampFresh(
+        const QDateTime& checkedAtUtc,
+        const QDateTime& nowUtc
+        );
 
 public slots:
-    void checkForUpdates();
+    bool checkForUpdates(
+        CheckPolicy policy = CheckPolicy::Force
+        );
 
 signals:
     void checkStarted();
@@ -50,28 +66,24 @@ signals:
         );
 
 private:
-    void fetch(
-        const QUrl& url,
-        FetchKind kind
-        );
-    void handleFetched(
-        FetchKind kind,
+    void completeCheck(
         const QByteArray& data
         );
-    void completeCheck();
     void fail(
         const QString& message
         );
 
-    [[nodiscard]] QUrl resolvedSignatureUrl() const;
-    [[nodiscard]] bool isAllowedManifestUrl(
+    [[nodiscard]] bool isAllowedApiUrl(
         const QUrl& url
         ) const;
 
 private:
+    static constexpr auto ResultFreshness =
+        std::chrono::hours(6);
+
     UpdateConfiguration m_configuration;
     QNetworkAccessManager m_network;
     bool m_busy = false;
-    QByteArray m_manifestData;
-    QByteArray m_signatureData;
+    std::optional<UpdateCheckResult> m_lastResult;
+    QDateTime m_lastSuccessfulCheckUtc;
 };

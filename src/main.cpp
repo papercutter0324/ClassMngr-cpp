@@ -1,4 +1,5 @@
 #include "app/mainwindow.h"
+#include "app/controllers/update_controller.h"
 #include "app/startup_database_path.h"
 #include "core/appsettings.h"
 #include "core/build_info.h"
@@ -7,6 +8,7 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
+#include "core/updater/update_service.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -269,6 +271,27 @@ int main(int argc, char *argv[])
 
     startupTimer.start();
 
+    UpdateService updateService;
+    UpdateController updateController(
+        &updateService,
+        &app
+        );
+    updateController.setSplashScreen(
+        &splash
+        );
+
+    updateProgress(
+        QCoreApplication::translate(
+            "MainWindow",
+            "Checking for updates..."
+            )
+        );
+
+    if (!startupPerformance.enabled)
+    {
+        updateController.startStartupCheck();
+    }
+
 
 
     // =====================================================
@@ -305,6 +328,7 @@ int main(int argc, char *argv[])
         updateProgress,
         isAdminMode(app.arguments()),
         &languageService,
+        &updateController,
         {
             .loadMostRecentDatabase = !startupPerformance.enabled,
             .runPostShowStartupTasks = !startupPerformance.enabled,
@@ -352,6 +376,7 @@ int main(int argc, char *argv[])
             &app,
             &window,
             &splash,
+            &updateController,
             &startupPerformance,
             &processStartupTimer,
             processStartToWindowConstructedMs,
@@ -359,8 +384,29 @@ int main(int argc, char *argv[])
             progress
         ]()
     {
+        const bool preserveUpdateDialogFocus =
+            updateController.hasVisibleDialog();
+
+        if (preserveUpdateDialogFocus)
+        {
+            window.setAttribute(
+                Qt::WA_ShowWithoutActivating,
+                true
+                );
+        }
+
         window.show();
+
+        if (preserveUpdateDialogFocus)
+        {
+            window.setAttribute(
+                Qt::WA_ShowWithoutActivating,
+                false
+                );
+        }
+
         splash.close();
+        updateController.setStartupComplete();
 
         if (startupPerformance.enabled)
         {

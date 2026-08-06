@@ -1,11 +1,13 @@
 #pragma once
 
-#include "core/updater/update_service.h"
-
 #include <QObject>
+#include <QPointer>
 
 class ActionRegistry;
 class MainWindow;
+class SplashScreen;
+class UpdateDialog;
+class UpdateService;
 
 class UpdateController : public QObject
 {
@@ -13,25 +15,37 @@ class UpdateController : public QObject
 
 public:
     explicit UpdateController(
-        MainWindow* window,
+        UpdateService* service,
         QObject* parent = nullptr
         );
 
-    void connectActions(
+    void attachMainWindow(
+        MainWindow* window,
         ActionRegistry& actions
         );
-
-    void maybeCheckOnStartup();
-
-private:
-    void maybeCheckResourcePacksOnStartup();
-    void showManualUpdateDialog();
-    void showUpdateDialogForResult(
-        const UpdateCheckResult& result
+    void setSplashScreen(
+        SplashScreen* splash
         );
+    void startStartupCheck();
+    void setStartupComplete();
+
+    [[nodiscard]] bool hasVisibleDialog() const;
 
 private:
-    MainWindow* m_window = nullptr;
+    void showManualUpdateDialog();
+    void showAutomaticUpdateDialog();
+    UpdateDialog* ensureDialog(
+        bool automaticPrompt
+        );
+    void yieldSplashToDialog();
+    void restoreSplashAfterDialog();
+
+private:
+    UpdateService* m_service = nullptr;
+    QPointer<MainWindow> m_window;
+    QPointer<SplashScreen> m_splash;
+    QPointer<UpdateDialog> m_dialog;
     bool m_startupCheckStarted = false;
-    bool m_resourcePackCheckStarted = false;
+    bool m_startupComplete = false;
+    bool m_automaticPromptSuppressed = false;
 };

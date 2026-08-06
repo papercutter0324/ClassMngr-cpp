@@ -81,3 +81,32 @@ Status UpdateInstaller::launch(
     return {};
 #endif
 }
+
+Status UpdateInstaller::revealInFolder(
+    const QString& filePath
+    )
+{
+    const QFileInfo fileInfo(filePath);
+
+    if (!fileInfo.exists() || !fileInfo.isFile())
+    {
+        return std::unexpected(
+            QStringLiteral("Downloaded update file was not found.")
+            );
+    }
+
+    if (
+        !QDesktopServices::openUrl(
+            QUrl::fromLocalFile(
+                fileInfo.absolutePath()
+                )
+            )
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to open the update download folder.")
+            );
+    }
+
+    return {};
+}

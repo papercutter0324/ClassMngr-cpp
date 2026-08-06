@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/updater/update_manifest.h"
+#include "core/updater/github_release.h"
 
 #include <QCryptographicHash>
 #include <QFile>
@@ -24,6 +24,7 @@ public slots:
     void download(
         const UpdateArtifact& artifact
         );
+    void cancel();
 
 signals:
     void downloadStarted();
@@ -37,6 +38,7 @@ signals:
     void downloadFailed(
         const QString& message
         );
+    void downloadCancelled();
 
 private:
     void handleReadyRead();
