@@ -1,14 +1,19 @@
 #include "update_controller.h"
 
 #include "app/mainwindow.h"
+#include "core/settingsmanager.h"
 #include "core/updater/update_configuration.h"
+#include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
+#include "core/updater/version.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 
 #include <QAction>
 #include <QDialog>
+
+#include <optional>
 
 UpdateController::UpdateController(
     UpdateService* service,
@@ -19,22 +24,113 @@ UpdateController::UpdateController(
 {
     Q_ASSERT(m_service);
 
+    UpdateDownloader::cleanupDownloads(
+        UpdateDownloader::CleanupMode::OrphansOnly
+        );
+
     connect(
         m_service,
         &UpdateService::checkSucceeded,
         this,
         [this](const UpdateCheckResult& result)
         {
+            reconcileSkippedVersion(result);
+
+            UpdateDownloader::cleanupDownloads(
+                result.updateAvailable
+                    ? UpdateDownloader::CleanupMode::KeepOnlyArtifact
+                    : UpdateDownloader::CleanupMode::RemoveAll,
+                result.updateAvailable
+                    ? std::optional<UpdateArtifact>(result.artifact)
+                    : std::nullopt
+                );
+
             if (
                 result.updateAvailable
                 && !hasVisibleDialog()
                 && !m_automaticPromptSuppressed
+                && automaticChecksEnabled()
+                && !isVersionSkipped(
+                    result.latestVersion.toString()
+                    )
                 )
             {
                 showAutomaticUpdateDialog();
             }
         }
         );
+}
+
+bool UpdateController::automaticChecksEnabled() const
+{
+    return m_service
+        && m_service->configuration().checkOnStartup
+        && SettingsManager::instance()
+            .automaticUpdateChecksEnabled();
+}
+
+bool UpdateController::isVersionSkipped(
+    const QString& version
+    ) const
+{
+    return !version.trimmed().isEmpty()
+        && SettingsManager::instance().skippedUpdateVersion()
+            == version.trimmed();
+}
+
+void UpdateController::reconcileSkippedVersion(
+    const UpdateCheckResult& result
+    )
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    const QString skippedText =
+        settings.skippedUpdateVersion();
+
+    if (skippedText.isEmpty())
+    {
+        return;
+    }
+
+    const auto skipped =
+        Version::parse(skippedText);
+    if (
+        !skipped
+        || result.currentVersion >= *skipped
+        || result.latestVersion > *skipped
+        )
+    {
+        settings.clearSkippedUpdateVersion();
+        if (m_dialog)
+        {
+            m_dialog->setSkippedVersion(QString());
+        }
+    }
+}
+
+void UpdateController::skipVersion(
+    const QString& version
+    )
+{
+    const auto parsed =
+        Version::parse(version);
+    if (!parsed)
+    {
+        return;
+    }
+
+    SettingsManager::instance().setSkippedUpdateVersion(
+        parsed->toString()
+        );
+    m_automaticPromptSuppressed =
+        true;
+}
+
+void UpdateController::unskipVersion()
+{
+    SettingsManager::instance().clearSkippedUpdateVersion();
+    m_automaticPromptSuppressed =
+        false;
 }
 
 void UpdateController::attachMainWindow(
@@ -92,7 +188,7 @@ void UpdateController::startStartupCheck()
         m_service->configuration();
 
     if (
-        !configuration.checkOnStartup
+        !automaticChecksEnabled()
         || !configuration.hasReleasesApiUrl()
         )
     {
@@ -155,6 +251,9 @@ UpdateDialog* UpdateController::ensureDialog(
 {
     if (m_dialog)
     {
+        m_dialog->setSkippedVersion(
+            SettingsManager::instance().skippedUpdateVersion()
+            );
         if (automaticPrompt)
         {
             m_dialog->setProperty(
@@ -170,7 +269,8 @@ UpdateDialog* UpdateController::ensureDialog(
         new UpdateDialog(
             m_service,
             m_startupComplete,
-            m_startupComplete ? m_window.data() : nullptr
+            m_startupComplete ? m_window.data() : nullptr,
+            SettingsManager::instance().skippedUpdateVersion()
             );
 
     dialog->setAttribute(
@@ -183,6 +283,19 @@ UpdateDialog* UpdateController::ensureDialog(
 
     m_dialog =
         dialog;
+
+    connect(
+        dialog,
+        &UpdateDialog::skipVersionRequested,
+        this,
+        &UpdateController::skipVersion
+        );
+    connect(
+        dialog,
+        &UpdateDialog::unskipVersionRequested,
+        this,
+        &UpdateController::unskipVersion
+        );
 
     connect(
         dialog,

@@ -293,6 +293,53 @@ void SettingsManager::setShowPowerPointDataAccessNotice(
 }
 
 // =========================================================
+// Updates
+// =========================================================
+
+bool SettingsManager::automaticUpdateChecksEnabled() const
+{
+    return get(
+        Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED,
+        true
+        ).toBool();
+}
+
+void SettingsManager::setAutomaticUpdateChecksEnabled(
+    bool enabled
+    )
+{
+    set(
+        Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED,
+        enabled
+        );
+}
+
+QString SettingsManager::skippedUpdateVersion() const
+{
+    return get(
+        Keys::SKIPPED_UPDATE_VERSION,
+        QString()
+        ).toString().trimmed();
+}
+
+void SettingsManager::setSkippedUpdateVersion(
+    const QString& version
+    )
+{
+    set(
+        Keys::SKIPPED_UPDATE_VERSION,
+        version.trimmed()
+        );
+}
+
+void SettingsManager::clearSkippedUpdateVersion()
+{
+    remove(
+        Keys::SKIPPED_UPDATE_VERSION
+        );
+}
+
+// =========================================================
 // Recent Files
 // =========================================================
 

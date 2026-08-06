@@ -81,6 +81,12 @@ public:
         static constexpr auto SHOW_POWERPOINT_DATA_ACCESS_NOTICE =
             "options/showPowerPointDataAccessNotice";
 
+        static constexpr auto AUTOMATIC_UPDATE_CHECKS_ENABLED =
+            "updates/automaticChecksEnabled";
+
+        static constexpr auto SKIPPED_UPDATE_VERSION =
+            "updates/skippedVersion";
+
         static constexpr auto RECENT_FILES =
             "files/recent";
 
@@ -178,6 +184,21 @@ public:
     void setShowPowerPointDataAccessNotice(
         bool enabled
         );
+
+    // =====================================================
+    // Updates
+    // =====================================================
+
+    bool automaticUpdateChecksEnabled() const;
+    void setAutomaticUpdateChecksEnabled(
+        bool enabled
+        );
+
+    QString skippedUpdateVersion() const;
+    void setSkippedUpdateVersion(
+        const QString& version
+        );
+    void clearSkippedUpdateVersion();
 
     // =====================================================
     // Recent Files

@@ -19,18 +19,33 @@
 UpdateDialog::UpdateDialog(
     UpdateService* service,
     bool startupComplete,
-    QWidget* parent
+    QWidget* parent,
+    const QString& skippedVersion
     )
     : QDialog(parent)
     , m_service(service)
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
+    , m_skippedVersion(skippedVersion)
 {
     Q_ASSERT(m_service);
 
     buildUi();
     connectSignals();
     showInitialState();
+}
+
+void UpdateDialog::setSkippedVersion(
+    const QString& version
+    )
+{
+    m_skippedVersion =
+        version.trimmed();
+
+    if (m_hasResult && !m_downloader->isBusy())
+    {
+        showResult(m_result);
+    }
 }
 
 void UpdateDialog::refreshForOpen()
@@ -78,7 +93,7 @@ void UpdateDialog::closeEvent(
 {
     if (m_downloader->isBusy())
     {
-        m_downloader->cancel();
+        m_downloader->pause();
     }
 
     QDialog::closeEvent(event);
@@ -103,6 +118,10 @@ void UpdateDialog::handleCheckStarted()
         QString(),
         false,
         tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
         );
 }
 
@@ -135,6 +154,7 @@ void UpdateDialog::handlePrimaryAction()
     switch (m_primaryAction)
     {
     case PrimaryAction::Download:
+    case PrimaryAction::Resume:
         if (m_hasResult && m_result.updateAvailable)
         {
             m_downloader->download(
@@ -143,8 +163,8 @@ void UpdateDialog::handlePrimaryAction()
         }
         return;
 
-    case PrimaryAction::CancelDownload:
-        m_downloader->cancel();
+    case PrimaryAction::Pause:
+        m_downloader->pause();
         return;
 
     case PrimaryAction::Install:
@@ -155,6 +175,75 @@ void UpdateDialog::handlePrimaryAction()
     case PrimaryAction::None:
         return;
     }
+}
+
+void UpdateDialog::handleSecondaryAction()
+{
+    switch (m_secondaryAction)
+    {
+    case SecondaryAction::SkipVersion:
+        if (m_hasResult && m_result.updateAvailable)
+        {
+            m_skippedVersion =
+                m_result.latestVersion.toString();
+            emit skipVersionRequested(
+                m_skippedVersion
+                );
+            reject();
+        }
+        return;
+
+    case SecondaryAction::UnskipVersion:
+        m_skippedVersion.clear();
+        emit unskipVersionRequested();
+        if (m_hasResult)
+        {
+            showResult(m_result);
+        }
+        return;
+
+    case SecondaryAction::DiscardDownload:
+        m_downloader->discard();
+        return;
+
+    case SecondaryAction::None:
+        return;
+    }
+}
+
+void UpdateDialog::handleDownloadPreparing(
+    qint64 bytesAvailable,
+    qint64 bytesTotal
+    )
+{
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(
+        bytesTotal > 0
+            ? static_cast<int>(
+                (bytesAvailable * 100) / bytesTotal
+                )
+            : 0
+        );
+    m_progressBar->setVisible(true);
+
+    setStatus(
+        QStringLiteral("◌"),
+        QStringLiteral("#4da3ff"),
+        tr("Preparing Download"),
+        tr("Verifying the saved update data before resuming...")
+        );
+    configureActions(
+        false,
+        false,
+        PrimaryAction::Pause,
+        tr("Pause Download"),
+        true,
+        tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
+        );
 }
 
 void UpdateDialog::handleDownloadStarted()
@@ -173,10 +262,14 @@ void UpdateDialog::handleDownloadStarted()
     configureActions(
         false,
         false,
-        PrimaryAction::CancelDownload,
-        tr("Cancel Download"),
+        PrimaryAction::Pause,
+        tr("Pause Download"),
         true,
         tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
         );
 }
 
@@ -210,6 +303,43 @@ void UpdateDialog::handleDownloadSucceeded(
     showReadyToInstall();
 }
 
+void UpdateDialog::handleDownloadPaused(
+    qint64 bytesReceived,
+    qint64 bytesTotal
+    )
+{
+    m_downloadedFilePath.clear();
+    showPausedDownload(
+        bytesReceived,
+        bytesTotal
+        );
+}
+
+void UpdateDialog::handleDownloadVerifying()
+{
+    m_progressBar->setVisible(true);
+    m_progressBar->setRange(0, 0);
+
+    setStatus(
+        QStringLiteral("◌"),
+        QStringLiteral("#4da3ff"),
+        tr("Verifying Download"),
+        tr("Checking the update size and SHA-256 checksum...")
+        );
+    configureActions(
+        false,
+        false,
+        PrimaryAction::Pause,
+        tr("Pause Download"),
+        true,
+        tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
+        );
+}
+
 void UpdateDialog::handleDownloadFailed(
     const QString& message
     )
@@ -220,7 +350,7 @@ void UpdateDialog::handleDownloadFailed(
         );
 }
 
-void UpdateDialog::handleDownloadCancelled()
+void UpdateDialog::handleDownloadDiscarded()
 {
     m_downloadedFilePath.clear();
 
@@ -362,6 +492,10 @@ void UpdateDialog::buildUi()
             );
     m_checkButton->setObjectName("updateCheckButton");
 
+    m_secondaryButton =
+        new TextFitPushButton(this);
+    m_secondaryButton->setObjectName("updateSecondaryButton");
+
     m_primaryButton =
         new TextFitPushButton(this);
     m_primaryButton->setObjectName("updatePrimaryButton");
@@ -375,6 +509,7 @@ void UpdateDialog::buildUi()
 
     buttonLayout->addWidget(m_checkButton);
     buttonLayout->addStretch();
+    buttonLayout->addWidget(m_secondaryButton);
     buttonLayout->addWidget(m_primaryButton);
     buttonLayout->addWidget(m_closeButton);
     rootLayout->addLayout(buttonLayout);
@@ -403,6 +538,12 @@ void UpdateDialog::connectSignals()
 
     connect(
         m_downloader,
+        &UpdateDownloader::downloadPreparing,
+        this,
+        &UpdateDialog::handleDownloadPreparing
+        );
+    connect(
+        m_downloader,
         &UpdateDownloader::downloadStarted,
         this,
         &UpdateDialog::handleDownloadStarted
@@ -412,6 +553,18 @@ void UpdateDialog::connectSignals()
         &UpdateDownloader::downloadProgress,
         this,
         &UpdateDialog::handleDownloadProgress
+        );
+    connect(
+        m_downloader,
+        &UpdateDownloader::downloadPaused,
+        this,
+        &UpdateDialog::handleDownloadPaused
+        );
+    connect(
+        m_downloader,
+        &UpdateDownloader::downloadVerifying,
+        this,
+        &UpdateDialog::handleDownloadVerifying
         );
     connect(
         m_downloader,
@@ -427,9 +580,9 @@ void UpdateDialog::connectSignals()
         );
     connect(
         m_downloader,
-        &UpdateDownloader::downloadCancelled,
+        &UpdateDownloader::downloadDiscarded,
         this,
-        &UpdateDialog::handleDownloadCancelled
+        &UpdateDialog::handleDownloadDiscarded
         );
 
     connect(
@@ -437,6 +590,12 @@ void UpdateDialog::connectSignals()
         &QPushButton::clicked,
         this,
         &UpdateDialog::forceCheck
+        );
+    connect(
+        m_secondaryButton,
+        &QPushButton::clicked,
+        this,
+        &UpdateDialog::handleSecondaryAction
         );
     connect(
         m_primaryButton,
@@ -472,6 +631,10 @@ void UpdateDialog::showInitialState()
         false,
         tr("Close")
         );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
+        );
 }
 
 void UpdateDialog::showResult(
@@ -504,11 +667,40 @@ void UpdateDialog::showResult(
 
     if (result.updateAvailable)
     {
+        if (m_downloader->hasCompletedDownload(result.artifact))
+        {
+            m_downloader->download(
+                result.artifact
+                );
+            return;
+        }
+
+        if (m_downloader->hasResumableDownload(result.artifact))
+        {
+            showPausedDownload(
+                m_downloader->resumableBytes(result.artifact),
+                result.artifact.sizeBytes
+                );
+            return;
+        }
+
+        const bool skipped =
+            m_skippedVersion
+            == result.latestVersion.toString();
+        QString details =
+            resultDetails(result);
+        if (skipped)
+        {
+            details +=
+                QStringLiteral("\n\n")
+                + tr("Automatic prompts are disabled for this version.");
+        }
+
         setStatus(
             QStringLiteral("●"),
             QStringLiteral("#e9a23b"),
             tr("Update Available"),
-            resultDetails(result)
+            details
             );
         configureActions(
             false,
@@ -517,6 +709,14 @@ void UpdateDialog::showResult(
             tr("Download Update"),
             true,
             tr("Not Now")
+            );
+        configureSecondaryAction(
+            skipped
+                ? SecondaryAction::UnskipVersion
+                : SecondaryAction::SkipVersion,
+            skipped
+                ? tr("Notify Me About This Version")
+                : tr("Skip This Version")
             );
         return;
     }
@@ -534,6 +734,10 @@ void UpdateDialog::showResult(
         QString(),
         false,
         tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
         );
 }
 
@@ -584,6 +788,54 @@ void UpdateDialog::showReadyToInstall()
         tr("Not Now")
         );
 #endif
+
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
+        );
+}
+
+void UpdateDialog::showPausedDownload(
+    qint64 bytesReceived,
+    qint64 bytesTotal
+    )
+{
+    m_progressBar->setVisible(true);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(
+        bytesTotal > 0
+            ? static_cast<int>(
+                (bytesReceived * 100) / bytesTotal
+                )
+            : 0
+        );
+
+    const QString amount =
+        tr("%1 of %2")
+            .arg(
+                QLocale::system().formattedDataSize(bytesReceived),
+                QLocale::system().formattedDataSize(bytesTotal)
+                );
+
+    setStatus(
+        QStringLiteral("Ⅱ"),
+        QStringLiteral("#e9a23b"),
+        tr("Download Paused"),
+        tr("%1 has been saved and can be resumed.")
+            .arg(amount)
+        );
+    configureActions(
+        false,
+        false,
+        PrimaryAction::Resume,
+        tr("Resume Download"),
+        true,
+        tr("Close")
+        );
+    configureSecondaryAction(
+        SecondaryAction::DiscardDownload,
+        tr("Discard Download")
+        );
 }
 
 void UpdateDialog::showFailure(
@@ -633,6 +885,10 @@ void UpdateDialog::showFailure(
     m_checkButton->setText(
         tr("Try Again")
         );
+    configureSecondaryAction(
+        SecondaryAction::None,
+        QString()
+        );
 }
 
 void UpdateDialog::showOperationFailure(
@@ -640,6 +896,33 @@ void UpdateDialog::showOperationFailure(
     )
 {
     m_progressBar->setVisible(false);
+
+    if (
+        m_hasResult
+        && m_downloader->hasResumableDownload(
+            m_result.artifact
+            )
+        )
+    {
+        showPausedDownload(
+            m_downloader->resumableBytes(
+                m_result.artifact
+                ),
+            m_result.artifact.sizeBytes
+            );
+        m_statusIndicator->setText(
+            QStringLiteral("!")
+            );
+        m_statusIndicator->setStyleSheet(
+            QStringLiteral("color: #d9534f;")
+            );
+        m_detailsLabel->setText(
+            m_detailsLabel->text()
+            + QStringLiteral("\n\n")
+            + message
+            );
+        return;
+    }
 
     if (m_hasResult)
     {
@@ -700,6 +983,21 @@ void UpdateDialog::configureActions(
 
     m_closeButton->setText(closeText);
     m_closeButton->setEnabled(true);
+}
+
+void UpdateDialog::configureSecondaryAction(
+    SecondaryAction action,
+    const QString& text,
+    bool enabled
+    )
+{
+    m_secondaryAction =
+        action;
+    m_secondaryButton->setText(text);
+    m_secondaryButton->setVisible(
+        action != SecondaryAction::None
+        );
+    m_secondaryButton->setEnabled(enabled);
 }
 
 QString UpdateDialog::resultDetails(

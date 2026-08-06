@@ -19,13 +19,23 @@ public:
     explicit UpdateDialog(
         UpdateService* service,
         bool startupComplete,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        const QString& skippedVersion = QString()
         );
 
     void refreshForOpen();
     void setStartupComplete(
         bool complete
         );
+    void setSkippedVersion(
+        const QString& version
+        );
+
+signals:
+    void skipVersionRequested(
+        const QString& version
+        );
+    void unskipVersionRequested();
 
 protected:
     void closeEvent(
@@ -42,6 +52,11 @@ private slots:
         );
     void forceCheck();
     void handlePrimaryAction();
+    void handleSecondaryAction();
+    void handleDownloadPreparing(
+        qint64 bytesAvailable,
+        qint64 bytesTotal
+        );
     void handleDownloadStarted();
     void handleDownloadProgress(
         qint64 bytesReceived,
@@ -53,16 +68,30 @@ private slots:
     void handleDownloadFailed(
         const QString& message
         );
-    void handleDownloadCancelled();
+    void handleDownloadPaused(
+        qint64 bytesReceived,
+        qint64 bytesTotal
+        );
+    void handleDownloadVerifying();
+    void handleDownloadDiscarded();
 
 private:
     enum class PrimaryAction
     {
         None,
         Download,
-        CancelDownload,
+        Resume,
+        Pause,
         Install,
         Reveal
+    };
+
+    enum class SecondaryAction
+    {
+        None,
+        SkipVersion,
+        UnskipVersion,
+        DiscardDownload
     };
 
     void buildUi();
@@ -72,6 +101,10 @@ private:
         const UpdateCheckResult& result
         );
     void showReadyToInstall();
+    void showPausedDownload(
+        qint64 bytesReceived,
+        qint64 bytesTotal
+        );
     void showFailure(
         const QString& message
         );
@@ -91,6 +124,11 @@ private:
         const QString& primaryText,
         bool primaryEnabled,
         const QString& closeText
+        );
+    void configureSecondaryAction(
+        SecondaryAction action,
+        const QString& text,
+        bool enabled = true
         );
     QString resultDetails(
         const UpdateCheckResult& result
@@ -112,13 +150,16 @@ private:
     QLabel* m_notesLabel = nullptr;
     QProgressBar* m_progressBar = nullptr;
     QPushButton* m_checkButton = nullptr;
+    QPushButton* m_secondaryButton = nullptr;
     QPushButton* m_primaryButton = nullptr;
     QPushButton* m_closeButton = nullptr;
 
     UpdateCheckResult m_result;
     QString m_downloadedFilePath;
     QString m_lastRefreshError;
+    QString m_skippedVersion;
     PrimaryAction m_primaryAction = PrimaryAction::None;
+    SecondaryAction m_secondaryAction = SecondaryAction::None;
     bool m_hasResult = false;
     bool m_startupComplete = false;
 };

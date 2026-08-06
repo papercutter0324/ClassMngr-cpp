@@ -279,6 +279,19 @@ void MenuBuilder::buildOptionsMenu(MainWindow* window)
         }
         );
 
+    options->addSeparator();
+
+    QMenu* updatesMenu =
+        options->addMenu(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "Updates"
+                )
+            );
+    updatesMenu->addAction(
+        actions.automaticallyCheckForUpdates
+        );
+
 #ifdef Q_OS_MACOS
     options->addSeparator();
 

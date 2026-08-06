@@ -8,6 +8,7 @@ class MainWindow;
 class SplashScreen;
 class UpdateDialog;
 class UpdateService;
+struct UpdateCheckResult;
 
 class UpdateController : public QObject
 {
@@ -32,6 +33,17 @@ public:
     [[nodiscard]] bool hasVisibleDialog() const;
 
 private:
+    [[nodiscard]] bool automaticChecksEnabled() const;
+    [[nodiscard]] bool isVersionSkipped(
+        const QString& version
+        ) const;
+    void reconcileSkippedVersion(
+        const UpdateCheckResult& result
+        );
+    void skipVersion(
+        const QString& version
+        );
+    void unskipVersion();
     void showManualUpdateDialog();
     void showAutomaticUpdateDialog();
     UpdateDialog* ensureDialog(

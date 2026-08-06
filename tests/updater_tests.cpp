@@ -11,6 +11,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QFile>
 #include <QFrame>
 #include <QHostAddress>
 #include <QJsonArray>
@@ -18,7 +19,9 @@
 #include <QJsonObject>
 #include <QSignalSpy>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QStandardPaths>
+#include <QTemporaryDir>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTest>
@@ -173,6 +176,58 @@ QByteArray signedTestSignature()
         );
 }
 
+void writeDownloadRecord(
+    const QString& directory,
+    const UpdateArtifact& artifact,
+    const QByteArray& partialData,
+    const QString& status = QStringLiteral("partial"),
+    const QString& etag = QStringLiteral("\"test-etag\"")
+    )
+{
+    const QString finalPath =
+        QDir(directory).filePath(
+            QFileInfo(artifact.fileName).fileName()
+            );
+    const QString dataPath =
+        status == QStringLiteral("completed")
+            ? finalPath
+            : finalPath + QStringLiteral(".part");
+
+    QFile dataFile(dataPath);
+    QVERIFY(dataFile.open(QIODevice::WriteOnly));
+    QCOMPARE(dataFile.write(partialData), partialData.size());
+    dataFile.close();
+
+    QJsonObject record;
+    record.insert(QStringLiteral("schemaVersion"), 1);
+    record.insert(QStringLiteral("platform"), artifact.platformKey);
+    record.insert(QStringLiteral("url"), artifact.url.toString());
+    record.insert(QStringLiteral("fileName"), artifact.fileName);
+    record.insert(QStringLiteral("sha256"), artifact.sha256);
+    record.insert(QStringLiteral("sizeBytes"), artifact.sizeBytes);
+    record.insert(QStringLiteral("etag"), etag);
+    record.insert(QStringLiteral("lastModified"), QString());
+    record.insert(QStringLiteral("status"), status);
+    record.insert(
+        QStringLiteral("createdAtUtc"),
+        QStringLiteral("2026-08-01T00:00:00.000Z")
+        );
+    record.insert(
+        QStringLiteral("updatedAtUtc"),
+        QStringLiteral("2026-08-01T00:00:00.000Z")
+        );
+
+    QFile metadataFile(
+        finalPath + QStringLiteral(".download.json")
+        );
+    QVERIFY(metadataFile.open(QIODevice::WriteOnly));
+    const QByteArray metadata =
+        QJsonDocument(record).toJson(
+            QJsonDocument::Compact
+            );
+    QCOMPARE(metadataFile.write(metadata), metadata.size());
+}
+
 class HttpServer : public QObject
 {
     Q_OBJECT
@@ -220,6 +275,32 @@ public:
             std::move(body);
     }
 
+    void setRangeSupport(
+        bool enabled
+        )
+    {
+        m_rangeSupport =
+            enabled;
+    }
+
+    void setRejectRanges(
+        bool enabled
+        )
+    {
+        m_rejectRanges =
+            enabled;
+    }
+
+    [[nodiscard]] QByteArray lastRequest() const
+    {
+        return m_lastRequest;
+    }
+
+    [[nodiscard]] int requestCount() const
+    {
+        return m_requestCount;
+    }
+
 private slots:
     void respond()
     {
@@ -237,17 +318,83 @@ private slots:
             socket,
             [this, socket]()
             {
-                socket->readAll();
+                const QByteArray request =
+                    socket->readAll();
+                if (!request.contains(QByteArrayLiteral("\r\n\r\n")))
+                {
+                    return;
+                }
+
+                if (socket->property("responded").toBool())
+                {
+                    return;
+                }
+                socket->setProperty("responded", true);
+                m_lastRequest =
+                    request;
+                ++m_requestCount;
+
+                QByteArray responseBody =
+                    m_body;
+                QByteArray status =
+                    QByteArrayLiteral("HTTP/1.1 200 OK\r\n");
+                QByteArray rangeHeaders;
+
+                const QRegularExpression rangePattern(
+                    QStringLiteral(
+                        R"((?:^|\r\n)Range: bytes=(\d+)-\r\n)"
+                        ),
+                    QRegularExpression::CaseInsensitiveOption
+                    );
+                const QRegularExpressionMatch rangeMatch =
+                    rangePattern.match(
+                        QString::fromLatin1(request)
+                        );
+                if (m_rejectRanges && rangeMatch.hasMatch())
+                {
+                    responseBody.clear();
+                    status =
+                        QByteArrayLiteral(
+                            "HTTP/1.1 416 Range Not Satisfiable\r\n"
+                            );
+                    rangeHeaders =
+                        QByteArrayLiteral("Content-Range: bytes */")
+                        + QByteArray::number(m_body.size())
+                        + QByteArrayLiteral("\r\n");
+                }
+                else if (
+                    m_rangeSupport
+                    && rangeMatch.hasMatch()
+                    )
+                {
+                    const qint64 offset =
+                        rangeMatch.captured(1).toLongLong();
+                    responseBody =
+                        m_body.mid(offset);
+                    status =
+                        QByteArrayLiteral(
+                            "HTTP/1.1 206 Partial Content\r\n"
+                            );
+                    rangeHeaders =
+                        QByteArrayLiteral("Content-Range: bytes ")
+                        + QByteArray::number(offset)
+                        + QByteArrayLiteral("-")
+                        + QByteArray::number(m_body.size() - 1)
+                        + QByteArrayLiteral("/")
+                        + QByteArray::number(m_body.size())
+                        + QByteArrayLiteral("\r\nETag: \"test-etag\"\r\n");
+                }
 
                 const QByteArray headers =
-                    QByteArrayLiteral("HTTP/1.1 200 OK\r\n")
+                    status
                     + QByteArrayLiteral("Content-Type: application/json\r\n")
+                    + rangeHeaders
                     + QByteArrayLiteral("Content-Length: ")
-                    + QByteArray::number(m_body.size())
+                    + QByteArray::number(responseBody.size())
                     + QByteArrayLiteral("\r\nConnection: close\r\n\r\n");
 
                 socket->write(headers);
-                socket->write(m_body);
+                socket->write(responseBody);
                 socket->disconnectFromHost();
             }
             );
@@ -262,6 +409,10 @@ private slots:
 private:
     QTcpServer m_server;
     QByteArray m_body;
+    QByteArray m_lastRequest;
+    int m_requestCount = 0;
+    bool m_rangeSupport = false;
+    bool m_rejectRanges = false;
 };
 }
 
@@ -281,11 +432,17 @@ private slots:
     void serviceCachesSuccessfulResultAndSkipsFreshCheck();
     void dialogShowsDisabledResourcePackSection();
     void dialogShowsDownloadActionForAvailableUpdate();
+    void dialogShowsSkipAndUnskipActions();
     void signatureVerifierAcceptsValidSignature();
     void signatureVerifierRejectsChangedPayload();
     void downloaderRejectsChecksumMismatch();
     void downloaderRejectsOversizedPayload();
-    void downloaderCanCancelAndRemovesPartialFile();
+    void downloaderCanPauseAndRetainsPartialFile();
+    void downloaderResumesWithValidatedRange();
+    void downloaderRestartsWhenRangeIsIgnored();
+    void downloaderRestartsAfterRejectedRange();
+    void downloaderReusesVerifiedCompletedPackage();
+    void cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles();
 };
 
 void UpdaterTests::versionRejectsNonStrictFormat()
@@ -622,6 +779,79 @@ void UpdaterTests::dialogShowsDownloadActionForAvailableUpdate()
     QCOMPARE(closeButton->text(), QStringLiteral("Not Now"));
 }
 
+void UpdaterTests::dialogShowsSkipAndUnskipActions()
+{
+    QJsonArray releases;
+    releases.append(
+        releaseObject(
+            QStringLiteral("9.9.9"),
+            GitHubRelease::currentPlatformKeys().first()
+            )
+        );
+
+    HttpServer server(
+        releasesJson(releases)
+        );
+    QVERIFY(server.listen());
+
+    QCoreApplication::setApplicationVersion(
+        QStringLiteral("1.0.0")
+        );
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl =
+        server.url();
+    UpdateService service(configuration);
+    QSignalSpy succeededSpy(
+        &service,
+        &UpdateService::checkSucceeded
+        );
+    QVERIFY(service.checkForUpdates());
+    QVERIFY(succeededSpy.wait(5000));
+
+    UpdateDialog availableDialog(
+        &service,
+        true
+        );
+    availableDialog.refreshForOpen();
+    QPushButton* skipButton =
+        availableDialog.findChild<QPushButton*>(
+            QStringLiteral("updateSecondaryButton")
+            );
+    QVERIFY(skipButton);
+    QCOMPARE(
+        skipButton->text(),
+        QStringLiteral("Skip This Version")
+        );
+
+    QSignalSpy skipSpy(
+        &availableDialog,
+        &UpdateDialog::skipVersionRequested
+        );
+    skipButton->click();
+    QCOMPARE(skipSpy.count(), 1);
+    QCOMPARE(
+        skipSpy.takeFirst().first().toString(),
+        QStringLiteral("9.9.9")
+        );
+
+    UpdateDialog skippedDialog(
+        &service,
+        true,
+        nullptr,
+        QStringLiteral("9.9.9")
+        );
+    skippedDialog.refreshForOpen();
+    QPushButton* unskipButton =
+        skippedDialog.findChild<QPushButton*>(
+            QStringLiteral("updateSecondaryButton")
+            );
+    QVERIFY(unskipButton);
+    QCOMPARE(
+        unskipButton->text(),
+        QStringLiteral("Notify Me About This Version")
+        );
+}
+
 void UpdaterTests::signatureVerifierAcceptsValidSignature()
 {
     const auto status =
@@ -715,7 +945,7 @@ void UpdaterTests::downloaderRejectsOversizedPayload()
     QVERIFY(!downloader.isBusy());
 }
 
-void UpdaterTests::downloaderCanCancelAndRemovesPartialFile()
+void UpdaterTests::downloaderCanPauseAndRetainsPartialFile()
 {
     const QByteArray body(
         1024 * 1024,
@@ -740,15 +970,15 @@ void UpdaterTests::downloaderCanCancelAndRemovesPartialFile()
         body.size();
 
     UpdateDownloader downloader;
-    QSignalSpy cancelledSpy(
+    QSignalSpy pausedSpy(
         &downloader,
-        &UpdateDownloader::downloadCancelled
+        &UpdateDownloader::downloadPaused
         );
 
     downloader.download(artifact);
-    downloader.cancel();
+    downloader.pause();
 
-    QCOMPARE(cancelledSpy.count(), 1);
+    QCOMPARE(pausedSpy.count(), 1);
 
     const QString partialPath =
         QDir(
@@ -760,7 +990,366 @@ void UpdaterTests::downloaderCanCancelAndRemovesPartialFile()
                     .arg(fileName)
                 );
 
+    QVERIFY(QFileInfo::exists(partialPath));
+    QVERIFY(
+        QFileInfo::exists(
+            partialPath.chopped(
+                QStringLiteral(".part").size()
+                )
+            + QStringLiteral(".download.json")
+            )
+        );
+
+    downloader.discard();
     QVERIFY(!QFileInfo::exists(partialPath));
+}
+
+void UpdaterTests::downloaderResumesWithValidatedRange()
+{
+    const QByteArray body =
+        QByteArrayLiteral("0123456789abcdef");
+    HttpServer server(body);
+    server.setRangeSupport(true);
+    QVERIFY(server.listen());
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        QStringLiteral("ClassMngr-resume-test.bin");
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        body.size();
+
+    writeDownloadRecord(
+        directory.path(),
+        artifact,
+        body.first(5)
+        );
+
+    UpdateDownloader downloader(
+        nullptr,
+        directory.path()
+        );
+    QSignalSpy succeededSpy(
+        &downloader,
+        &UpdateDownloader::downloadSucceeded
+        );
+
+    downloader.download(artifact);
+    QVERIFY(succeededSpy.wait(5000));
+
+    QVERIFY(
+        server.lastRequest().contains(
+            QByteArrayLiteral("Range: bytes=5-")
+            )
+        );
+    QVERIFY(
+        server.lastRequest().contains(
+            QByteArrayLiteral("If-Range: \"test-etag\"")
+            )
+        );
+
+    QFile completed(
+        QDir(directory.path()).filePath(
+            artifact.fileName
+            )
+        );
+    QVERIFY(completed.open(QIODevice::ReadOnly));
+    QCOMPARE(completed.readAll(), body);
+}
+
+void UpdaterTests::downloaderRestartsWhenRangeIsIgnored()
+{
+    const QByteArray body =
+        QByteArrayLiteral("server-sends-the-whole-file");
+    HttpServer server(body);
+    QVERIFY(server.listen());
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        QStringLiteral("ClassMngr-range-ignored.bin");
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        body.size();
+
+    writeDownloadRecord(
+        directory.path(),
+        artifact,
+        body.first(4)
+        );
+
+    UpdateDownloader downloader(
+        nullptr,
+        directory.path()
+        );
+    QSignalSpy succeededSpy(
+        &downloader,
+        &UpdateDownloader::downloadSucceeded
+        );
+
+    downloader.download(artifact);
+    QVERIFY(succeededSpy.wait(5000));
+    QVERIFY(
+        server.lastRequest().contains(
+            QByteArrayLiteral("Range: bytes=4-")
+            )
+        );
+
+    QFile completed(
+        QDir(directory.path()).filePath(
+            artifact.fileName
+            )
+        );
+    QVERIFY(completed.open(QIODevice::ReadOnly));
+    QCOMPARE(completed.readAll(), body);
+}
+
+void UpdaterTests::downloaderRestartsAfterRejectedRange()
+{
+    const QByteArray body =
+        QByteArrayLiteral("range-retry-body");
+    HttpServer server(body);
+    server.setRejectRanges(true);
+    QVERIFY(server.listen());
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        QStringLiteral("ClassMngr-range-retry.bin");
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        body.size();
+    writeDownloadRecord(
+        directory.path(),
+        artifact,
+        body.first(3)
+        );
+
+    UpdateDownloader downloader(
+        nullptr,
+        directory.path()
+        );
+    QSignalSpy succeededSpy(
+        &downloader,
+        &UpdateDownloader::downloadSucceeded
+        );
+    downloader.download(artifact);
+    QVERIFY(succeededSpy.wait(5000));
+    QCOMPARE(server.requestCount(), 2);
+}
+
+void UpdaterTests::downloaderReusesVerifiedCompletedPackage()
+{
+    const QByteArray body =
+        QByteArrayLiteral("already verified package");
+    HttpServer server(body);
+    QVERIFY(server.listen());
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    UpdateArtifact artifact;
+    artifact.platformKey =
+        QStringLiteral("windows-x64");
+    artifact.url =
+        server.url(QStringLiteral("/update.bin"));
+    artifact.fileName =
+        QStringLiteral("ClassMngr-completed-test.bin");
+    artifact.sha256 =
+        sha256Hex(body);
+    artifact.sizeBytes =
+        body.size();
+
+    writeDownloadRecord(
+        directory.path(),
+        artifact,
+        body,
+        QStringLiteral("completed")
+        );
+
+    UpdateDownloader downloader(
+        nullptr,
+        directory.path()
+        );
+    QVERIFY(
+        downloader.hasCompletedDownload(
+            artifact
+            )
+        );
+
+    QSignalSpy succeededSpy(
+        &downloader,
+        &UpdateDownloader::downloadSucceeded
+        );
+    downloader.download(artifact);
+    QVERIFY(succeededSpy.wait(5000));
+    QCOMPARE(server.requestCount(), 0);
+}
+
+void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    UpdateArtifact current;
+    current.platformKey =
+        QStringLiteral("windows-x64");
+    current.url =
+        QUrl(QStringLiteral("https://example.com/current.bin"));
+    current.fileName =
+        QStringLiteral("ClassMngr-current.bin");
+    current.sha256 =
+        sha256Hex(QByteArrayLiteral("current"));
+    current.sizeBytes =
+        7;
+
+    UpdateArtifact old =
+        current;
+    old.url =
+        QUrl(QStringLiteral("https://example.com/old.bin"));
+    old.fileName =
+        QStringLiteral("ClassMngr-old.bin");
+    old.sha256 =
+        sha256Hex(QByteArrayLiteral("old"));
+    old.sizeBytes =
+        3;
+
+    writeDownloadRecord(
+        directory.path(),
+        current,
+        QByteArrayLiteral("current"),
+        QStringLiteral("completed")
+        );
+    writeDownloadRecord(
+        directory.path(),
+        old,
+        QByteArrayLiteral("old"),
+        QStringLiteral("completed")
+        );
+
+    const QDateTime now =
+        QDateTime::fromString(
+            QStringLiteral("2026-08-06T00:00:00Z"),
+            Qt::ISODate
+            );
+    const QDateTime oldTimestamp =
+        now.addDays(-30).addMSecs(-1);
+
+    QFile orphan(
+        QDir(directory.path()).filePath(
+            QStringLiteral("ClassMngr-orphan.bin.part")
+            )
+        );
+    QVERIFY(orphan.open(QIODevice::WriteOnly));
+    orphan.write("orphan");
+    QVERIFY(
+        orphan.setFileTime(
+            oldTimestamp,
+            QFileDevice::FileModificationTime
+            )
+        );
+    orphan.close();
+
+    QFile exactBoundary(
+        QDir(directory.path()).filePath(
+            QStringLiteral("ClassMngr-exact-boundary.bin.part")
+            )
+        );
+    QVERIFY(exactBoundary.open(QIODevice::WriteOnly));
+    exactBoundary.write("keep");
+    QVERIFY(
+        exactBoundary.setFileTime(
+            now.addDays(-30),
+            QFileDevice::FileModificationTime
+            )
+        );
+    exactBoundary.close();
+
+    QFile freshOrphan(
+        QDir(directory.path()).filePath(
+            QStringLiteral("ClassMngr-fresh-orphan.bin.part")
+            )
+        );
+    QVERIFY(freshOrphan.open(QIODevice::WriteOnly));
+    freshOrphan.write("keep");
+    QVERIFY(
+        freshOrphan.setFileTime(
+            now.addDays(-30).addMSecs(1),
+            QFileDevice::FileModificationTime
+            )
+        );
+    freshOrphan.close();
+
+    QFile unrelated(
+        QDir(directory.path()).filePath(
+            QStringLiteral("notes.txt")
+            )
+        );
+    QVERIFY(unrelated.open(QIODevice::WriteOnly));
+    unrelated.write("keep");
+    QVERIFY(
+        unrelated.setFileTime(
+            oldTimestamp,
+            QFileDevice::FileModificationTime
+            )
+        );
+    unrelated.close();
+
+    UpdateDownloader::cleanupDownloads(
+        UpdateDownloader::CleanupMode::KeepOnlyArtifact,
+        current,
+        directory.path(),
+        now
+        );
+
+    QVERIFY(
+        QFileInfo::exists(
+            QDir(directory.path()).filePath(
+                current.fileName
+                )
+            )
+        );
+    QVERIFY(
+        !QFileInfo::exists(
+            QDir(directory.path()).filePath(
+                old.fileName
+                )
+            )
+        );
+    QVERIFY(
+        !QFileInfo::exists(
+            orphan.fileName()
+            )
+        );
+    QVERIFY(QFileInfo::exists(exactBoundary.fileName()));
+    QVERIFY(QFileInfo::exists(freshOrphan.fileName()));
+    QVERIFY(
+        QFileInfo::exists(
+            unrelated.fileName()
+            )
+        );
 }
 
 QTEST_MAIN(UpdaterTests)

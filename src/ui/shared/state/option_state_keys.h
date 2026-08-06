@@ -27,4 +27,10 @@ namespace OptionKeys
 
     inline constexpr const char* SidebarMarqueeEnabled =
         "options/sidebarMarqueeEnabled";
+
+    inline constexpr const char* AutomaticUpdateChecksEnabled =
+        "updates/automaticChecksEnabled";
+
+    inline constexpr const char* SkippedUpdateVersion =
+        "updates/skippedVersion";
 }

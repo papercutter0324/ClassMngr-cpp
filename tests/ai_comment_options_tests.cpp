@@ -16,6 +16,7 @@ private slots:
     void initTestCase();
     void providerAndVoiceDefaultsPersist();
     void providerUrlsAndCustomValidation();
+    void updatePreferencesDefaultAndPersist();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -136,6 +137,46 @@ void AiCommentOptionsTests::
             QStringLiteral("http://example.ai")
             ).isEmpty()
         );
+}
+
+void AiCommentOptionsTests::
+    updatePreferencesDefaultAndPersist()
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    settings.remove(
+        QString::fromUtf8(
+            OptionKeys::AutomaticUpdateChecksEnabled
+            )
+        );
+    settings.clearSkippedUpdateVersion();
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.automaticallyCheckForUpdates);
+    QVERIFY(
+        defaults.automaticallyCheckForUpdates->isChecked()
+        );
+    QVERIFY(settings.automaticUpdateChecksEnabled());
+
+    defaults.automaticallyCheckForUpdates->setChecked(false);
+    QVERIFY(!settings.automaticUpdateChecksEnabled());
+
+    ActionRegistry reloaded;
+    reloaded.createActions();
+    QVERIFY(
+        !reloaded.automaticallyCheckForUpdates->isChecked()
+        );
+
+    settings.setSkippedUpdateVersion(
+        QStringLiteral(" 2.4.1 ")
+        );
+    QCOMPARE(
+        settings.skippedUpdateVersion(),
+        QStringLiteral("2.4.1")
+        );
+    settings.clearSkippedUpdateVersion();
+    QVERIFY(settings.skippedUpdateVersion().isEmpty());
 }
 
 QTEST_MAIN(AiCommentOptionsTests)

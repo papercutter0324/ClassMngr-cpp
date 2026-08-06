@@ -377,6 +377,11 @@ void ActionRegistry::retranslate()
         tr("Animate Overflowing Sidebar Text"),
         tr("Animate overflowing sidebar names on hover")
         );
+    updateActionText(
+        automaticallyCheckForUpdates,
+        tr("Automatically Check for Updates"),
+        tr("Check GitHub Releases for a newer version when ClassMngr starts")
+        );
 #ifdef Q_OS_MACOS
     updateActionText(
         showPowerPointDataAccessNotice,
@@ -1077,6 +1082,26 @@ void ActionRegistry::createOptionActions()
         [](bool enabled)
         {
             SettingsManager::instance().setSidebarMarqueeEnabled(
+                enabled
+                );
+        }
+        );
+
+    automaticallyCheckForUpdates =
+        createCheckableAction(
+            tr("Automatically Check for Updates"),
+            tr("Check GitHub Releases for a newer version when ClassMngr starts")
+            );
+    automaticallyCheckForUpdates->setChecked(
+        SettingsManager::instance().automaticUpdateChecksEnabled()
+        );
+    connect(
+        automaticallyCheckForUpdates,
+        &QAction::toggled,
+        this,
+        [](bool enabled)
+        {
+            SettingsManager::instance().setAutomaticUpdateChecksEnabled(
                 enabled
                 );
         }

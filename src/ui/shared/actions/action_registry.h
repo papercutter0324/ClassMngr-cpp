@@ -34,6 +34,7 @@ public:
 
     QAction* showSidebarTooltips = nullptr;
     QAction* animateSidebarText = nullptr;
+    QAction* automaticallyCheckForUpdates = nullptr;
 #ifdef Q_OS_MACOS
     QAction* showPowerPointDataAccessNotice = nullptr;
 #endif
