@@ -179,598 +179,610 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
-        <location line="+397"/>
+        <location line="+402"/>
         <source>New Database...</source>
         <translation>새 데이터베이스...</translation>
     </message>
     <message>
-        <location line="-396"/>
-        <location line="+397"/>
+        <location line="-401"/>
+        <location line="+402"/>
         <source>Create a new database</source>
         <translation>새 데이터베이스 만들기</translation>
     </message>
     <message>
-        <location line="-393"/>
-        <location line="+400"/>
+        <location line="-398"/>
+        <location line="+405"/>
         <source>Open...</source>
         <translation>열기...</translation>
     </message>
     <message>
-        <location line="-399"/>
-        <location line="+400"/>
+        <location line="-404"/>
+        <location line="+405"/>
         <source>Open an existing file</source>
         <translation>기존 파일 열기</translation>
     </message>
     <message>
-        <location line="-396"/>
-        <location line="+403"/>
+        <location line="-401"/>
+        <location line="+408"/>
         <source>Save</source>
         <translation>저장</translation>
     </message>
     <message>
-        <location line="-402"/>
-        <location line="+403"/>
+        <location line="-407"/>
+        <location line="+408"/>
         <source>Save the current file</source>
         <translation>현재 파일 저장</translation>
     </message>
     <message>
-        <location line="-399"/>
-        <location line="+406"/>
+        <location line="-404"/>
+        <location line="+411"/>
         <source>Save As...</source>
         <translation>다른 이름으로 저장...</translation>
     </message>
     <message>
-        <location line="-405"/>
-        <location line="+406"/>
+        <location line="-410"/>
+        <location line="+411"/>
         <source>Save the file with a new name</source>
         <translation>새 이름으로 파일 저장</translation>
     </message>
     <message>
-        <location line="-402"/>
-        <location line="+407"/>
+        <location line="-407"/>
+        <location line="+412"/>
         <source>Export As...</source>
         <translation>다른 이름으로 내보내기...</translation>
     </message>
     <message>
-        <location line="-406"/>
-        <location line="+407"/>
+        <location line="-411"/>
+        <location line="+412"/>
         <source>Export the current file</source>
         <translation>현재 파일 내보내기</translation>
     </message>
     <message>
-        <location line="-403"/>
-        <location line="+410"/>
+        <location line="-408"/>
+        <location line="+415"/>
         <source>Close</source>
         <translation>닫기</translation>
     </message>
     <message>
-        <location line="-409"/>
-        <location line="+410"/>
+        <location line="-414"/>
+        <location line="+415"/>
         <source>Close the current file</source>
         <translation>현재 파일 닫기</translation>
     </message>
     <message>
-        <location line="-406"/>
-        <location line="+413"/>
+        <location line="-411"/>
+        <location line="+418"/>
         <source>Exit</source>
         <translation>종료</translation>
     </message>
     <message>
-        <location line="-412"/>
-        <location line="+413"/>
+        <location line="-417"/>
+        <location line="+418"/>
         <source>Exit the application</source>
         <translation>애플리케이션 종료</translation>
     </message>
     <message>
-        <location line="-408"/>
-        <location line="+426"/>
+        <location line="-413"/>
+        <location line="+431"/>
         <source>Undo</source>
         <translation>실행 취소</translation>
     </message>
     <message>
-        <location line="-425"/>
-        <location line="+426"/>
+        <location line="-430"/>
+        <location line="+431"/>
         <source>Undo the last action</source>
         <translation>마지막 작업 실행 취소</translation>
     </message>
     <message>
-        <location line="-422"/>
-        <location line="+428"/>
+        <location line="-427"/>
+        <location line="+433"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
     </message>
     <message>
-        <location line="-427"/>
-        <location line="+428"/>
+        <location line="-432"/>
+        <location line="+433"/>
         <source>Redo the last undone action</source>
         <translation>마지막으로 취소한 작업 다시 실행</translation>
     </message>
     <message>
-        <location line="-424"/>
-        <location line="+430"/>
+        <location line="-429"/>
+        <location line="+435"/>
         <source>Cut</source>
         <translation>잘라내기</translation>
     </message>
     <message>
-        <location line="-429"/>
-        <location line="+430"/>
+        <location line="-434"/>
+        <location line="+435"/>
         <source>Cut the selected content</source>
         <translation>선택한 내용 잘라내기</translation>
     </message>
     <message>
-        <location line="-426"/>
-        <location line="+432"/>
+        <location line="-431"/>
+        <location line="+437"/>
         <source>Copy</source>
         <translation>복사</translation>
     </message>
     <message>
-        <location line="-431"/>
-        <location line="+432"/>
+        <location line="-436"/>
+        <location line="+437"/>
         <source>Copy the selected content</source>
         <translation>선택한 내용 복사</translation>
     </message>
     <message>
-        <location line="-428"/>
-        <location line="+434"/>
+        <location line="-433"/>
+        <location line="+439"/>
         <source>Paste</source>
         <translation>붙여넣기</translation>
     </message>
     <message>
-        <location line="-433"/>
-        <location line="+434"/>
+        <location line="-438"/>
+        <location line="+439"/>
         <source>Paste content from the clipboard</source>
         <translation>클립보드 내용 붙여넣기</translation>
     </message>
     <message>
-        <location line="-429"/>
-        <location line="+448"/>
+        <location line="-434"/>
+        <location line="+453"/>
         <source>New Class</source>
         <translation>새 수업</translation>
     </message>
     <message>
-        <location line="-447"/>
-        <location line="+448"/>
+        <location line="-452"/>
+        <location line="+453"/>
         <source>Create a new class</source>
         <translation>새 수업 만들기</translation>
     </message>
     <message>
-        <location line="-444"/>
-        <location line="+449"/>
+        <location line="-449"/>
+        <location line="+454"/>
         <source>Delete Class</source>
         <translation>수업 삭제</translation>
     </message>
     <message>
-        <location line="-448"/>
-        <location line="+449"/>
+        <location line="-453"/>
+        <location line="+454"/>
         <source>Delete the selected class</source>
         <translation>선택한 수업 삭제</translation>
     </message>
     <message>
-        <location line="-445"/>
-        <location line="+450"/>
+        <location line="-450"/>
+        <location line="+455"/>
         <source>Import Classes...</source>
         <translation>수업 가져오기...</translation>
     </message>
     <message>
-        <location line="-449"/>
-        <location line="+450"/>
+        <location line="-454"/>
+        <location line="+455"/>
         <source>Import classes from a class package</source>
         <translation>수업 패키지에서 수업 가져오기</translation>
     </message>
     <message>
-        <location line="-446"/>
-        <location line="+451"/>
+        <location line="-451"/>
+        <location line="+456"/>
         <source>Export Classes...</source>
         <translation>수업 내보내기...</translation>
     </message>
     <message>
-        <location line="-450"/>
-        <location line="+451"/>
+        <location line="-455"/>
+        <location line="+456"/>
         <source>Export selected classes to a class package</source>
         <translation>선택한 수업을 수업 패키지로 내보내기</translation>
     </message>
     <message>
-        <location line="-447"/>
-        <location line="+452"/>
+        <location line="-452"/>
+        <location line="+457"/>
         <source>New Teacher</source>
         <translation>새 교사</translation>
     </message>
     <message>
-        <location line="-451"/>
-        <location line="+452"/>
+        <location line="-456"/>
+        <location line="+457"/>
         <source>Create a new teacher</source>
         <translation>새 교사 만들기</translation>
     </message>
     <message>
-        <location line="-448"/>
-        <location line="+453"/>
+        <location line="-453"/>
+        <location line="+458"/>
         <source>Delete Teacher</source>
         <translation>교사 삭제</translation>
     </message>
     <message>
-        <location line="-452"/>
-        <location line="+453"/>
+        <location line="-457"/>
+        <location line="+458"/>
         <source>Delete the selected teacher</source>
         <translation>선택한 교사 삭제</translation>
     </message>
     <message>
-        <location line="-449"/>
-        <location line="+454"/>
+        <location line="-454"/>
+        <location line="+459"/>
         <source>Import Teachers...</source>
         <translation>교사 가져오기...</translation>
     </message>
     <message>
-        <location line="-453"/>
-        <location line="+454"/>
+        <location line="-458"/>
+        <location line="+459"/>
         <source>Import teachers and campus staff from an Excel workbook</source>
         <translation>Excel 통합 문서에서 교사 및 캠퍼스 직원 가져오기</translation>
     </message>
     <message>
-        <location line="-447"/>
-        <location line="+462"/>
+        <location line="-452"/>
+        <location line="+467"/>
         <source>Automatic</source>
         <translation>자동</translation>
     </message>
     <message>
-        <location line="-461"/>
-        <location line="+462"/>
+        <location line="-466"/>
+        <location line="+467"/>
         <source>Automatically save changes</source>
         <translation>변경 사항을 자동으로 저장</translation>
     </message>
     <message>
-        <location line="-458"/>
-        <location line="+463"/>
+        <location line="-463"/>
+        <location line="+468"/>
         <source>Manual</source>
         <translation>수동</translation>
     </message>
     <message>
-        <location line="-462"/>
-        <location line="+463"/>
+        <location line="-467"/>
+        <location line="+468"/>
         <source>Save changes manually</source>
         <translation>변경 사항을 수동으로 저장</translation>
     </message>
     <message>
-        <location line="-455"/>
-        <location line="+472"/>
+        <location line="-460"/>
+        <location line="+477"/>
         <source>Dark Theme</source>
         <translation>어두운 테마</translation>
     </message>
     <message>
-        <location line="-471"/>
-        <location line="+472"/>
+        <location line="-476"/>
+        <location line="+477"/>
         <source>Use dark theme</source>
         <translation>어두운 테마 사용</translation>
     </message>
     <message>
-        <location line="-468"/>
-        <location line="+473"/>
+        <location line="-473"/>
+        <location line="+478"/>
         <source>Light Theme</source>
         <translation>밝은 테마</translation>
     </message>
     <message>
-        <location line="-472"/>
-        <location line="+473"/>
+        <location line="-477"/>
+        <location line="+478"/>
         <source>Use light theme</source>
         <translation>밝은 테마 사용</translation>
     </message>
     <message>
-        <location line="-465"/>
-        <location line="+481"/>
+        <location line="-470"/>
+        <location line="+486"/>
         <source>System Default</source>
         <translation>시스템 기본값</translation>
     </message>
     <message>
-        <location line="-480"/>
-        <location line="+481"/>
+        <location line="-485"/>
+        <location line="+486"/>
         <source>Use the system language</source>
         <translation>시스템 언어 사용</translation>
     </message>
     <message>
-        <location line="-477"/>
-        <location line="+482"/>
+        <location line="-482"/>
+        <location line="+487"/>
         <source>English</source>
         <translation>영어</translation>
     </message>
     <message>
-        <location line="-481"/>
-        <location line="+482"/>
+        <location line="-486"/>
+        <location line="+487"/>
         <source>Use English</source>
         <translation>영어 사용</translation>
     </message>
     <message>
-        <location line="-478"/>
-        <location line="+483"/>
+        <location line="-483"/>
+        <location line="+488"/>
         <source>Korean</source>
         <translation>한국어</translation>
     </message>
     <message>
-        <location line="-482"/>
-        <location line="+483"/>
+        <location line="-487"/>
+        <location line="+488"/>
         <source>Use Korean</source>
         <translation>한국어 사용</translation>
     </message>
     <message>
-        <location line="-475"/>
+        <location line="-480"/>
         <location line="+29"/>
-        <location line="+471"/>
+        <location line="+476"/>
         <location line="+57"/>
         <source>Small</source>
         <translation>작게</translation>
     </message>
     <message>
-        <location line="-556"/>
-        <location line="+500"/>
+        <location line="-561"/>
+        <location line="+505"/>
         <source>Use small font size</source>
         <translation>작은 글꼴 크기 사용</translation>
     </message>
     <message>
-        <location line="-496"/>
-        <location line="+501"/>
+        <location line="-501"/>
+        <location line="+506"/>
         <source>Normal</source>
         <translation>보통</translation>
     </message>
     <message>
-        <location line="-500"/>
-        <location line="+501"/>
+        <location line="-505"/>
+        <location line="+506"/>
         <source>Use normal font size</source>
         <translation>보통 글꼴 크기 사용</translation>
     </message>
     <message>
-        <location line="-497"/>
+        <location line="-502"/>
         <location line="+29"/>
-        <location line="+473"/>
+        <location line="+478"/>
         <location line="+57"/>
         <source>Large</source>
         <translation>크게</translation>
     </message>
     <message>
-        <location line="-558"/>
-        <location line="+502"/>
+        <location line="-563"/>
+        <location line="+507"/>
         <source>Use large font size</source>
         <translation>큰 글꼴 크기 사용</translation>
     </message>
     <message>
-        <location line="-498"/>
-        <location line="+503"/>
+        <location line="-503"/>
+        <location line="+508"/>
         <source>Extra Large</source>
         <translation>매우 크게</translation>
     </message>
     <message>
-        <location line="-502"/>
-        <location line="+503"/>
+        <location line="-507"/>
+        <location line="+508"/>
         <source>Use extra large font size</source>
         <translation>매우 큰 글꼴 크기 사용</translation>
     </message>
     <message>
-        <location line="-495"/>
-        <location line="+527"/>
+        <location line="-500"/>
+        <location line="+532"/>
         <source>None</source>
         <translation>없음</translation>
     </message>
     <message>
-        <location line="-526"/>
-        <location line="+527"/>
+        <location line="-531"/>
+        <location line="+532"/>
         <source>Show PDF pages with no added spacing</source>
         <translation>PDF 페이지 사이에 간격 없이 표시</translation>
     </message>
     <message>
-        <location line="-522"/>
-        <location line="+528"/>
+        <location line="-527"/>
+        <location line="+533"/>
         <source>Show PDF pages with small spacing</source>
         <translation>PDF 페이지 사이를 좁은 간격으로 표시</translation>
     </message>
     <message>
-        <location line="-524"/>
-        <location line="+529"/>
+        <location line="-529"/>
+        <location line="+534"/>
         <source>Medium</source>
         <translation>보통</translation>
     </message>
     <message>
-        <location line="-528"/>
-        <location line="+529"/>
+        <location line="-533"/>
+        <location line="+534"/>
         <source>Show PDF pages with medium spacing</source>
         <translation>PDF 페이지 사이를 보통 간격으로 표시</translation>
     </message>
     <message>
-        <location line="-524"/>
-        <location line="+530"/>
+        <location line="-529"/>
+        <location line="+535"/>
         <source>Show PDF pages with large spacing</source>
         <translation>PDF 페이지 사이를 넓은 간격으로 표시</translation>
     </message>
     <message>
-        <location line="-522"/>
-        <location line="+554"/>
+        <location line="-527"/>
+        <location line="+559"/>
         <source>Default</source>
         <translation>기본값</translation>
     </message>
     <message>
-        <location line="-553"/>
-        <location line="+554"/>
+        <location line="-558"/>
+        <location line="+559"/>
         <source>Use the current theme&apos;s PDF viewer background</source>
         <translation>현재 테마의 PDF 뷰어 배경 사용</translation>
     </message>
     <message>
-        <location line="-550"/>
-        <location line="+555"/>
+        <location line="-555"/>
+        <location line="+560"/>
         <source>White</source>
         <translation>흰색</translation>
     </message>
     <message>
-        <location line="-554"/>
-        <location line="+555"/>
+        <location line="-559"/>
+        <location line="+560"/>
         <source>Use a white PDF viewer background</source>
         <translation>흰색 PDF 뷰어 배경 사용</translation>
     </message>
     <message>
-        <location line="-551"/>
-        <location line="+556"/>
+        <location line="-556"/>
+        <location line="+561"/>
         <source>Black</source>
         <translation>검은색</translation>
     </message>
     <message>
-        <location line="-555"/>
-        <location line="+556"/>
+        <location line="-560"/>
+        <location line="+561"/>
         <source>Use a black PDF viewer background</source>
         <translation>검은색 PDF 뷰어 배경 사용</translation>
     </message>
     <message>
-        <location line="-548"/>
-        <location line="+577"/>
-        <source>ChatGPT</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-576"/>
-        <location line="+577"/>
-        <source>Open ChatGPT for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-573"/>
-        <location line="+579"/>
-        <source>Gemini</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-578"/>
-        <location line="+579"/>
-        <source>Open Gemini for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
-        <location line="+581"/>
-        <source>Claude</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-580"/>
-        <location line="+581"/>
-        <source>Open Claude for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
-        <location line="+581"/>
-        <source>Microsoft Copilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-580"/>
-        <location line="+581"/>
-        <source>Open Microsoft Copilot for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
+        <location line="-553"/>
         <location line="+582"/>
-        <source>Custom Website...</source>
+        <source>ChatGPT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-581"/>
         <location line="+582"/>
+        <source>Open ChatGPT for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-578"/>
+        <location line="+584"/>
+        <source>Gemini</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-583"/>
+        <location line="+584"/>
+        <source>Open Gemini for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+586"/>
+        <source>Claude</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-585"/>
+        <location line="+586"/>
+        <source>Open Claude for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+586"/>
+        <source>Microsoft Copilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-585"/>
+        <location line="+586"/>
+        <source>Open Microsoft Copilot for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+587"/>
+        <source>Custom Website...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-586"/>
+        <location line="+587"/>
         <source>Choose a custom HTTPS AI website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-572"/>
-        <location line="+667"/>
+        <location line="-577"/>
+        <location line="+672"/>
         <source>Direct to Student</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-666"/>
-        <location line="+667"/>
+        <location line="-671"/>
+        <location line="+672"/>
         <source>Write AI comments directly to the student</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-661"/>
-        <location line="+667"/>
+        <location line="-666"/>
+        <location line="+672"/>
         <source>Third Person</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-666"/>
-        <location line="+667"/>
+        <location line="-671"/>
+        <location line="+672"/>
         <source>Write AI comments for a parent or guardian</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-661"/>
-        <location line="+671"/>
+        <location line="-666"/>
+        <location line="+676"/>
         <source>Show Sidebar Tooltips</source>
         <translation>사이드바 툴팁 표시</translation>
     </message>
     <message>
-        <location line="-670"/>
-        <location line="+671"/>
+        <location line="-675"/>
+        <location line="+676"/>
         <source>Show full sidebar names in tooltips when they do not fit</source>
         <translation>사이드바 이름이 잘릴 때 전체 이름을 툴팁으로 표시</translation>
     </message>
     <message>
-        <location line="-667"/>
-        <location line="+672"/>
+        <location line="-672"/>
+        <location line="+677"/>
         <source>Animate Overflowing Sidebar Text</source>
         <translation>긴 사이드바 텍스트 애니메이션</translation>
     </message>
     <message>
-        <location line="-671"/>
-        <location line="+672"/>
+        <location line="-676"/>
+        <location line="+677"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation>마우스를 올리면 잘린 사이드바 이름을 움직여 표시</translation>
     </message>
     <message>
-        <location line="-667"/>
-        <location line="+705"/>
+        <location line="-673"/>
+        <location line="+710"/>
+        <source>Automatically Check for Updates</source>
+        <translation>업데이트 자동 확인</translation>
+    </message>
+    <message>
+        <location line="-709"/>
+        <location line="+710"/>
+        <source>Check GitHub Releases for a newer version when ClassMngr starts</source>
+        <translation>ClassMngr 시작 시 GitHub 릴리스에서 새 버전 확인</translation>
+    </message>
+    <message>
+        <location line="-705"/>
+        <location line="+725"/>
         <source>Show Data Access Notice Before Export</source>
         <translation>내보내기 전에 데이터 접근 안내 표시</translation>
     </message>
     <message>
-        <location line="-704"/>
-        <location line="+705"/>
+        <location line="-724"/>
+        <location line="+725"/>
         <source>Show a notice before PowerPoint accesses its protected workspace</source>
         <translation>PowerPoint의 보호된 작업 공간에 접근하기 전에 안내 표시</translation>
     </message>
     <message>
-        <location line="-700"/>
-        <location line="+728"/>
+        <location line="-720"/>
+        <location line="+748"/>
         <source>Check for Updates...</source>
         <translation>업데이트 확인...</translation>
     </message>
     <message>
-        <location line="-727"/>
-        <location line="+728"/>
+        <location line="-747"/>
+        <location line="+748"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation>ClassMngr의 새 버전 확인</translation>
     </message>
     <message>
-        <location line="-724"/>
-        <location line="+729"/>
+        <location line="-744"/>
+        <location line="+749"/>
         <source>About</source>
         <translation>정보</translation>
     </message>
     <message>
-        <location line="-728"/>
-        <location line="+729"/>
+        <location line="-748"/>
+        <location line="+749"/>
         <source>Show application information</source>
         <translation>애플리케이션 정보 표시</translation>
     </message>
     <message>
-        <location line="-725"/>
-        <location line="+737"/>
+        <location line="-745"/>
+        <location line="+757"/>
         <source>Manage Campuses</source>
         <translation>캠퍼스 관리</translation>
     </message>
     <message>
-        <location line="-736"/>
-        <location line="+737"/>
+        <location line="-756"/>
+        <location line="+757"/>
         <source>Manage campus settings</source>
         <translation>캠퍼스 설정 관리</translation>
     </message>
     <message>
-        <location line="-160"/>
+        <location line="-180"/>
         <source>Custom AI Website</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2349,7 +2361,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+18"/>
+        <source>Updates</source>
+        <translation type="unfinished">업데이트</translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>PowerPoint</source>
         <translation>PowerPoint</translation>
     </message>
@@ -5303,6 +5320,73 @@ Rm: %1</source>
         <source>Committing the testing class deletion failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../../src/core/zip_archive_writer.cpp" line="+134"/>
+        <source>A ZIP entry has an invalid file name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The file &quot;%1&quot; could not be opened for archiving.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The file &quot;%1&quot; is too large for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>A ZIP entry file name is too long.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The file &quot;%1&quot; could not be read for archiving.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+116"/>
+        <source>There are no files to add to the ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>There are too many files for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The ZIP archive would contain more than one file named &quot;%1&quot;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The ZIP archive could not be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+25"/>
+        <location line="+31"/>
+        <source>The report files are too large for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>A report could not be written to the ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>The ZIP archive directory could not be written.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>The ZIP archive could not be finalized.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -6014,8 +6098,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+124"/>
-        <source>Use the selected spreadsheet name even though it does not match My Information.</source>
-        <translation>내 정보와 일치하지 않더라도 선택한 스프레드시트 이름을 사용합니다.</translation>
+        <source>Update my name on the My Information page to match the selected name.</source>
+        <translation>선택한 이름과 일치하도록 내 정보 페이지의 이름을 업데이트합니다.</translation>
     </message>
     <message>
         <location line="+135"/>
@@ -6069,8 +6153,8 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+7"/>
-        <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
-        <translation>내 정보의 이름은 “%1”이지만 선택한 스프레드시트 영역의 이름은 “%2”입니다.</translation>
+        <source>Entered name on the My Information page: %1</source>
+        <translation>내 정보 페이지에 입력된 이름: %1</translation>
     </message>
     <message>
         <location line="-150"/>
@@ -6149,6 +6233,14 @@ Rm: %1</source>
         <location line="-272"/>
         <source>The selected worksheet contains no supported user schedules.</source>
         <translation>선택한 워크시트에 지원되는 사용자 일정이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Name Mismatch</source>
+        <translation>이름 불일치</translation>
+    </message>
+    <message>
+        <source>The selected name does not match the name entered on the My Information page. Do you want to continue anyway?</source>
+        <translation>선택한 이름이 내 정보 페이지에 입력된 이름과 일치하지 않습니다. 그래도 계속하시겠습니까?</translation>
     </message>
 </context>
 <context>
@@ -6425,6 +6517,10 @@ Choose a different existing class, create a new class, or skip an imported class
         <location line="+17"/>
         <source> My Information name will be set to “%1”.</source>
         <translation type="unfinished"> 내 정보 이름이 “%1”(으)로 설정됩니다.</translation>
+    </message>
+    <message>
+        <source> My Information name will be updated to “%1”.</source>
+        <translation> 내 정보 이름이 “%1”(으)로 업데이트됩니다.</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -9113,52 +9209,51 @@ Version: %2</source>
 <context>
     <name>UpdateDialog</name>
     <message>
-        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+96"/>
+        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+111"/>
         <source>Checking for Updates</source>
         <translation>업데이트 확인 중</translation>
     </message>
     <message>
-        <location line="+431"/>
+        <location line="+612"/>
         <source>You&apos;re Up to Date</source>
         <translation>최신 버전입니다</translation>
     </message>
     <message>
-        <location line="+191"/>
+        <location line="+282"/>
         <source>ClassMngr %1 is the newest available version.</source>
         <translation>ClassMngr %1이(가) 사용 가능한 최신 버전입니다.</translation>
     </message>
     <message>
-        <location line="-208"/>
+        <location line="-307"/>
         <source>Update Available</source>
         <translation>업데이트 사용 가능</translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-43"/>
         <source>View release notes</source>
         <translation>릴리스 노트 보기</translation>
     </message>
     <message>
-        <location line="-327"/>
+        <location line="-401"/>
         <source>Downloading Update</source>
         <translation>업데이트 다운로드 중</translation>
     </message>
     <message>
-        <location line="-72"/>
+        <location line="-142"/>
         <source>Contacting GitHub Releases...</source>
         <translation>GitHub 릴리스를 확인하는 중...</translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+143"/>
         <source>Downloading %1...</source>
         <translation>%1 다운로드 중...</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Cancel Download</source>
-        <translation>다운로드 취소</translation>
+        <translation type="vanished">다운로드 취소</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+89"/>
         <source>The update download failed: %1</source>
         <translation>업데이트 다운로드에 실패했습니다: %1</translation>
     </message>
@@ -9174,7 +9269,7 @@ Version: %2</source>
         <translation>&lt;b&gt;리소스 팩&lt;/b&gt;&lt;br&gt;출시 예정</translation>
     </message>
     <message>
-        <location line="+118"/>
+        <location line="+147"/>
         <source>ClassMngr</source>
         <translation>ClassMngr</translation>
     </message>
@@ -9184,13 +9279,13 @@ Version: %2</source>
         <translation>아직 업데이트 확인이 완료되지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+85"/>
         <source>Download Update</source>
         <translation>업데이트 다운로드</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+65"/>
+        <location line="+77"/>
         <source>Not Now</source>
         <translation>나중에</translation>
     </message>
@@ -9215,12 +9310,79 @@ Version: %2</source>
         <translation>업데이트를 다운로드하고 확인했습니다.</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="-519"/>
+        <source>Preparing Download</source>
+        <translation>다운로드 준비 중</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Verifying the saved update data before resuming...</source>
+        <translation>재개하기 전에 저장된 업데이트 데이터를 확인하는 중...</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+27"/>
+        <location line="+67"/>
+        <source>Pause Download</source>
+        <translation>다운로드 일시 중지</translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <source>Verifying Download</source>
+        <translation>다운로드 확인 중</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Checking the update size and SHA-256 checksum...</source>
+        <translation>업데이트 크기와 SHA-256 체크섬을 확인하는 중...</translation>
+    </message>
+    <message>
+        <location line="+369"/>
+        <source>Automatic prompts are disabled for this version.</source>
+        <translation>이 버전의 자동 알림을 사용하지 않도록 설정했습니다.</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Notify Me About This Version</source>
+        <translation>이 버전 다시 알림</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skip This Version</source>
+        <translation>이 버전 건너뛰기</translation>
+    </message>
+    <message>
+        <location line="+52"/>
         <source>Open Download Folder</source>
         <translation>다운로드 폴더 열기</translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+43"/>
+        <source>%1 of %2</source>
+        <translation>%2 중 %1</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Download Paused</source>
+        <translation>다운로드 일시 중지됨</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 has been saved and can be resumed.</source>
+        <translation>%1이(가) 저장되었으며 다운로드를 재개할 수 있습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Resume Download</source>
+        <translation>다운로드 재개</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Discard Download</source>
+        <translation>다운로드 삭제</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>The latest refresh failed: %1</source>
         <translation>최신 정보 새로 고침에 실패했습니다: %1</translation>
     </message>
@@ -9230,7 +9392,7 @@ Version: %2</source>
         <translation>다시 시도</translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+138"/>
         <source>Released %1</source>
         <translation>출시일: %1</translation>
     </message>
@@ -9260,24 +9422,27 @@ Version: %2</source>
         <translation>업데이트 패키지를 연 후 ClassMngr가 종료됩니다. 계속할까요?</translation>
     </message>
     <message>
-        <location line="-431"/>
-        <location line="+328"/>
+        <location line="-592"/>
+        <location line="+474"/>
         <source>Check Again</source>
         <translation>다시 확인</translation>
     </message>
     <message>
-        <location line="-106"/>
+        <location line="-178"/>
         <source>Install and Close</source>
         <translation>설치 후 닫기</translation>
     </message>
     <message>
-        <location line="-477"/>
-        <location line="+74"/>
-        <location line="+192"/>
-        <location line="+102"/>
-        <location line="+63"/>
-        <location line="+33"/>
-        <location line="+62"/>
+        <location line="-662"/>
+        <location line="+117"/>
+        <location line="+27"/>
+        <location line="+67"/>
+        <location line="+170"/>
+        <location line="+127"/>
+        <location line="+104"/>
+        <location line="+37"/>
+        <location line="+60"/>
+        <location line="+50"/>
         <source>Close</source>
         <translation>닫기</translation>
     </message>
@@ -9287,7 +9452,7 @@ Version: %2</source>
         <translation>업데이트 확인 실패</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+128"/>
         <source>ClassMngr %1 is available. You are currently using %2.</source>
         <translation>ClassMngr %1을(를) 사용할 수 있습니다. 현재 %2을(를) 사용하고 있습니다.</translation>
     </message>
@@ -9295,42 +9460,71 @@ Version: %2</source>
 <context>
     <name>UpdateDownloader</name>
     <message>
-        <location filename="../../../src/core/updater/update_downloader.cpp" line="+73"/>
         <source>Update download URL must use HTTPS.</source>
-        <translation>업데이트 다운로드 URL은 HTTPS를 사용해야 합니다.</translation>
+        <translation type="vanished">업데이트 다운로드 URL은 HTTPS를 사용해야 합니다.</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location filename="../../../src/core/updater/update_downloader.cpp" line="+295"/>
+        <source>The update download metadata is invalid.</source>
+        <translation>업데이트 다운로드 메타데이터가 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+22"/>
         <source>Unable to create update download directory.</source>
         <translation>업데이트 다운로드 디렉터리를 만들 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+186"/>
+        <source>Unable to read the saved update download.</source>
+        <translation>저장된 업데이트 다운로드를 읽을 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Unable to prepare the saved update download.</source>
+        <translation>저장된 업데이트 다운로드를 준비할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+35"/>
         <source>Unable to prepare update download file.</source>
         <translation>업데이트 다운로드 파일을 준비할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+9"/>
+        <source>Unable to save update download metadata.</source>
+        <translation>업데이트 다운로드 메타데이터를 저장할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+119"/>
+        <source>Unable to restart the update download.</source>
+        <translation>업데이트 다운로드를 다시 시작할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>The update server returned an invalid resume range.</source>
+        <translation>업데이트 서버가 잘못된 재개 범위를 반환했습니다.</translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>Unable to write update download file.</source>
         <translation>업데이트 다운로드 파일에 쓸 수 없습니다.</translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+80"/>
         <source>Update download failed: %1</source>
         <translation>업데이트 다운로드에 실패했습니다: %1</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+13"/>
         <source>Update download failed: HTTP %1</source>
         <translation>업데이트 다운로드에 실패했습니다: HTTP %1</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Update download size did not match the GitHub release metadata.</source>
         <translation>업데이트 다운로드 크기가 GitHub 릴리스 메타데이터와 일치하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+41"/>
         <source>Update download checksum did not match the GitHub release metadata.</source>
         <translation>업데이트 다운로드 체크섬이 GitHub 릴리스 메타데이터와 일치하지 않습니다.</translation>
     </message>
@@ -9338,6 +9532,16 @@ Version: %2</source>
         <location line="+10"/>
         <source>Unable to finalize update download.</source>
         <translation>업데이트 다운로드를 완료할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Unable to save verified update metadata.</source>
+        <translation>확인된 업데이트 메타데이터를 저장할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>The saved update package could not be verified.</source>
+        <translation>저장된 업데이트 패키지를 확인할 수 없습니다.</translation>
     </message>
 </context>
 <context>

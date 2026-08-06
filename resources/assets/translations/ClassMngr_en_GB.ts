@@ -179,598 +179,610 @@
     <name>ActionRegistry</name>
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
-        <location line="+397"/>
+        <location line="+402"/>
         <source>New Database...</source>
         <translation type="unfinished">New Database...</translation>
     </message>
     <message>
-        <location line="-396"/>
-        <location line="+397"/>
+        <location line="-401"/>
+        <location line="+402"/>
         <source>Create a new database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-393"/>
-        <location line="+400"/>
+        <location line="-398"/>
+        <location line="+405"/>
         <source>Open...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-399"/>
-        <location line="+400"/>
+        <location line="-404"/>
+        <location line="+405"/>
         <source>Open an existing file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-396"/>
-        <location line="+403"/>
+        <location line="-401"/>
+        <location line="+408"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-402"/>
-        <location line="+403"/>
+        <location line="-407"/>
+        <location line="+408"/>
         <source>Save the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-399"/>
-        <location line="+406"/>
+        <location line="-404"/>
+        <location line="+411"/>
         <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-405"/>
-        <location line="+406"/>
+        <location line="-410"/>
+        <location line="+411"/>
         <source>Save the file with a new name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-402"/>
-        <location line="+407"/>
+        <location line="-407"/>
+        <location line="+412"/>
         <source>Export As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-406"/>
-        <location line="+407"/>
+        <location line="-411"/>
+        <location line="+412"/>
         <source>Export the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-403"/>
-        <location line="+410"/>
+        <location line="-408"/>
+        <location line="+415"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-409"/>
-        <location line="+410"/>
+        <location line="-414"/>
+        <location line="+415"/>
         <source>Close the current file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-406"/>
-        <location line="+413"/>
+        <location line="-411"/>
+        <location line="+418"/>
         <source>Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-412"/>
-        <location line="+413"/>
+        <location line="-417"/>
+        <location line="+418"/>
         <source>Exit the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-408"/>
-        <location line="+426"/>
+        <location line="-413"/>
+        <location line="+431"/>
         <source>Undo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-425"/>
-        <location line="+426"/>
+        <location line="-430"/>
+        <location line="+431"/>
         <source>Undo the last action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-422"/>
-        <location line="+428"/>
+        <location line="-427"/>
+        <location line="+433"/>
         <source>Redo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-427"/>
-        <location line="+428"/>
+        <location line="-432"/>
+        <location line="+433"/>
         <source>Redo the last undone action</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-424"/>
-        <location line="+430"/>
+        <location line="-429"/>
+        <location line="+435"/>
         <source>Cut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-429"/>
-        <location line="+430"/>
+        <location line="-434"/>
+        <location line="+435"/>
         <source>Cut the selected content</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-426"/>
-        <location line="+432"/>
+        <location line="-431"/>
+        <location line="+437"/>
         <source>Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-431"/>
-        <location line="+432"/>
+        <location line="-436"/>
+        <location line="+437"/>
         <source>Copy the selected content</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-428"/>
-        <location line="+434"/>
+        <location line="-433"/>
+        <location line="+439"/>
         <source>Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-433"/>
-        <location line="+434"/>
+        <location line="-438"/>
+        <location line="+439"/>
         <source>Paste content from the clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-429"/>
-        <location line="+448"/>
-        <source>New Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-447"/>
-        <location line="+448"/>
-        <source>Create a new class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-444"/>
-        <location line="+449"/>
-        <source>Delete Class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-448"/>
-        <location line="+449"/>
-        <source>Delete the selected class</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-445"/>
-        <location line="+450"/>
-        <source>Import Classes...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-449"/>
-        <location line="+450"/>
-        <source>Import classes from a class package</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-446"/>
-        <location line="+451"/>
-        <source>Export Classes...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-450"/>
-        <location line="+451"/>
-        <source>Export selected classes to a class package</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-447"/>
-        <location line="+452"/>
-        <source>New Teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-451"/>
-        <location line="+452"/>
-        <source>Create a new teacher</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-448"/>
+        <location line="-434"/>
         <location line="+453"/>
-        <source>Delete Teacher</source>
+        <source>New Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-452"/>
         <location line="+453"/>
-        <source>Delete the selected teacher</source>
+        <source>Create a new class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-449"/>
         <location line="+454"/>
-        <source>Import Teachers...</source>
+        <source>Delete Class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-453"/>
         <location line="+454"/>
-        <source>Import teachers and campus staff from an Excel workbook</source>
+        <source>Delete the selected class</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-447"/>
-        <location line="+462"/>
-        <source>Automatic</source>
+        <location line="-450"/>
+        <location line="+455"/>
+        <source>Import Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-461"/>
-        <location line="+462"/>
-        <source>Automatically save changes</source>
+        <location line="-454"/>
+        <location line="+455"/>
+        <source>Import classes from a class package</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-458"/>
-        <location line="+463"/>
-        <source>Manual</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-462"/>
-        <location line="+463"/>
-        <source>Save changes manually</source>
+        <location line="-451"/>
+        <location line="+456"/>
+        <source>Export Classes...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-455"/>
-        <location line="+472"/>
+        <location line="+456"/>
+        <source>Export selected classes to a class package</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-452"/>
+        <location line="+457"/>
+        <source>New Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-456"/>
+        <location line="+457"/>
+        <source>Create a new teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-453"/>
+        <location line="+458"/>
+        <source>Delete Teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-457"/>
+        <location line="+458"/>
+        <source>Delete the selected teacher</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-454"/>
+        <location line="+459"/>
+        <source>Import Teachers...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-458"/>
+        <location line="+459"/>
+        <source>Import teachers and campus staff from an Excel workbook</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-452"/>
+        <location line="+467"/>
+        <source>Automatic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-466"/>
+        <location line="+467"/>
+        <source>Automatically save changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-463"/>
+        <location line="+468"/>
+        <source>Manual</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-467"/>
+        <location line="+468"/>
+        <source>Save changes manually</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-460"/>
+        <location line="+477"/>
         <source>Dark Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-471"/>
-        <location line="+472"/>
+        <location line="-476"/>
+        <location line="+477"/>
         <source>Use dark theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-468"/>
-        <location line="+473"/>
+        <location line="-473"/>
+        <location line="+478"/>
         <source>Light Theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-472"/>
-        <location line="+473"/>
+        <location line="-477"/>
+        <location line="+478"/>
         <source>Use light theme</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-465"/>
-        <location line="+481"/>
+        <location line="-470"/>
+        <location line="+486"/>
         <source>System Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-480"/>
-        <location line="+481"/>
+        <location line="-485"/>
+        <location line="+486"/>
         <source>Use the system language</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-477"/>
-        <location line="+482"/>
+        <location line="-482"/>
+        <location line="+487"/>
         <source>English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-481"/>
-        <location line="+482"/>
+        <location line="-486"/>
+        <location line="+487"/>
         <source>Use English</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-478"/>
-        <location line="+483"/>
+        <location line="-483"/>
+        <location line="+488"/>
         <source>Korean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-482"/>
-        <location line="+483"/>
+        <location line="-487"/>
+        <location line="+488"/>
         <source>Use Korean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-475"/>
+        <location line="-480"/>
         <location line="+29"/>
-        <location line="+471"/>
+        <location line="+476"/>
         <location line="+57"/>
         <source>Small</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-556"/>
-        <location line="+500"/>
+        <location line="-561"/>
+        <location line="+505"/>
         <source>Use small font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-496"/>
-        <location line="+501"/>
+        <location line="-501"/>
+        <location line="+506"/>
         <source>Normal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-500"/>
-        <location line="+501"/>
+        <location line="-505"/>
+        <location line="+506"/>
         <source>Use normal font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-497"/>
+        <location line="-502"/>
         <location line="+29"/>
-        <location line="+473"/>
+        <location line="+478"/>
         <location line="+57"/>
         <source>Large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-558"/>
-        <location line="+502"/>
+        <location line="-563"/>
+        <location line="+507"/>
         <source>Use large font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-498"/>
-        <location line="+503"/>
+        <location line="-503"/>
+        <location line="+508"/>
         <source>Extra Large</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-502"/>
-        <location line="+503"/>
+        <location line="-507"/>
+        <location line="+508"/>
         <source>Use extra large font size</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-495"/>
-        <location line="+527"/>
+        <location line="-500"/>
+        <location line="+532"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-526"/>
-        <location line="+527"/>
+        <location line="-531"/>
+        <location line="+532"/>
         <source>Show PDF pages with no added spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-522"/>
-        <location line="+528"/>
+        <location line="-527"/>
+        <location line="+533"/>
         <source>Show PDF pages with small spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-524"/>
-        <location line="+529"/>
+        <location line="-529"/>
+        <location line="+534"/>
         <source>Medium</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-528"/>
-        <location line="+529"/>
+        <location line="-533"/>
+        <location line="+534"/>
         <source>Show PDF pages with medium spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-524"/>
-        <location line="+530"/>
+        <location line="-529"/>
+        <location line="+535"/>
         <source>Show PDF pages with large spacing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-522"/>
-        <location line="+554"/>
+        <location line="-527"/>
+        <location line="+559"/>
         <source>Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-553"/>
-        <location line="+554"/>
+        <location line="-558"/>
+        <location line="+559"/>
         <source>Use the current theme&apos;s PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-550"/>
-        <location line="+555"/>
+        <location line="-555"/>
+        <location line="+560"/>
         <source>White</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-554"/>
-        <location line="+555"/>
+        <location line="-559"/>
+        <location line="+560"/>
         <source>Use a white PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-551"/>
-        <location line="+556"/>
+        <location line="-556"/>
+        <location line="+561"/>
         <source>Black</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-555"/>
-        <location line="+556"/>
+        <location line="-560"/>
+        <location line="+561"/>
         <source>Use a black PDF viewer background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-548"/>
-        <location line="+577"/>
-        <source>ChatGPT</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-576"/>
-        <location line="+577"/>
-        <source>Open ChatGPT for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-573"/>
-        <location line="+579"/>
-        <source>Gemini</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-578"/>
-        <location line="+579"/>
-        <source>Open Gemini for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
-        <location line="+581"/>
-        <source>Claude</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-580"/>
-        <location line="+581"/>
-        <source>Open Claude for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
-        <location line="+581"/>
-        <source>Microsoft Copilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-580"/>
-        <location line="+581"/>
-        <source>Open Microsoft Copilot for AI comment prompts</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-575"/>
+        <location line="-553"/>
         <location line="+582"/>
-        <source>Custom Website...</source>
+        <source>ChatGPT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-581"/>
         <location line="+582"/>
+        <source>Open ChatGPT for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-578"/>
+        <location line="+584"/>
+        <source>Gemini</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-583"/>
+        <location line="+584"/>
+        <source>Open Gemini for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+586"/>
+        <source>Claude</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-585"/>
+        <location line="+586"/>
+        <source>Open Claude for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+586"/>
+        <source>Microsoft Copilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-585"/>
+        <location line="+586"/>
+        <source>Open Microsoft Copilot for AI comment prompts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-580"/>
+        <location line="+587"/>
+        <source>Custom Website...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-586"/>
+        <location line="+587"/>
         <source>Choose a custom HTTPS AI website</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-572"/>
-        <location line="+667"/>
-        <source>Direct to Student</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-666"/>
-        <location line="+667"/>
-        <source>Write AI comments directly to the student</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-661"/>
-        <location line="+667"/>
-        <source>Third Person</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-666"/>
-        <location line="+667"/>
-        <source>Write AI comments for a parent or guardian</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-661"/>
-        <location line="+671"/>
-        <source>Show Sidebar Tooltips</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-670"/>
-        <location line="+671"/>
-        <source>Show full sidebar names in tooltips when they do not fit</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="-667"/>
+        <location line="-577"/>
         <location line="+672"/>
-        <source>Animate Overflowing Sidebar Text</source>
+        <source>Direct to Student</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="-671"/>
         <location line="+672"/>
+        <source>Write AI comments directly to the student</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-666"/>
+        <location line="+672"/>
+        <source>Third Person</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-671"/>
+        <location line="+672"/>
+        <source>Write AI comments for a parent or guardian</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-666"/>
+        <location line="+676"/>
+        <source>Show Sidebar Tooltips</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-675"/>
+        <location line="+676"/>
+        <source>Show full sidebar names in tooltips when they do not fit</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-672"/>
+        <location line="+677"/>
+        <source>Animate Overflowing Sidebar Text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-676"/>
+        <location line="+677"/>
         <source>Animate overflowing sidebar names on hover</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-667"/>
-        <location line="+705"/>
+        <location line="-673"/>
+        <location line="+710"/>
+        <source>Automatically Check for Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-709"/>
+        <location line="+710"/>
+        <source>Check GitHub Releases for a newer version when ClassMngr starts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-705"/>
+        <location line="+725"/>
         <source>Show Data Access Notice Before Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-704"/>
-        <location line="+705"/>
+        <location line="-724"/>
+        <location line="+725"/>
         <source>Show a notice before PowerPoint accesses its protected workspace</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-700"/>
-        <location line="+728"/>
+        <location line="-720"/>
+        <location line="+748"/>
         <source>Check for Updates...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-727"/>
-        <location line="+728"/>
+        <location line="-747"/>
+        <location line="+748"/>
         <source>Check for a newer version of ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-724"/>
-        <location line="+729"/>
+        <location line="-744"/>
+        <location line="+749"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-728"/>
-        <location line="+729"/>
+        <location line="-748"/>
+        <location line="+749"/>
         <source>Show application information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-725"/>
-        <location line="+737"/>
+        <location line="-745"/>
+        <location line="+757"/>
         <source>Manage Campuses</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-736"/>
-        <location line="+737"/>
+        <location line="-756"/>
+        <location line="+757"/>
         <source>Manage campus settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-160"/>
+        <location line="-180"/>
         <source>Custom AI Website</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2345,7 +2357,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+18"/>
+        <source>Updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>PowerPoint</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5283,6 +5300,73 @@ Rm: %1</source>
         <source>Committing the testing class deletion failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../../src/core/zip_archive_writer.cpp" line="+134"/>
+        <source>A ZIP entry has an invalid file name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>The file &quot;%1&quot; could not be opened for archiving.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>The file &quot;%1&quot; is too large for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>A ZIP entry file name is too long.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>The file &quot;%1&quot; could not be read for archiving.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+116"/>
+        <source>There are no files to add to the ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>There are too many files for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>The ZIP archive would contain more than one file named &quot;%1&quot;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>The ZIP archive could not be created.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <location line="+25"/>
+        <location line="+31"/>
+        <source>The report files are too large for a standard ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-44"/>
+        <source>A report could not be written to the ZIP archive.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>The ZIP archive directory could not be written.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+44"/>
+        <source>The ZIP archive could not be finalized.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -6041,7 +6125,7 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+97"/>
-        <source>Use the selected spreadsheet name even though it does not match My Information.</source>
+        <source>Update my name on the My Information page to match the selected name.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6122,12 +6206,20 @@ Rm: %1</source>
     </message>
     <message>
         <location line="+7"/>
-        <source>My Information says “%1”, but the selected spreadsheet section is “%2”.</source>
+        <source>Entered name on the My Information page: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+136"/>
         <source>Choose a worksheet.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name Mismatch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The selected name does not match the name entered on the My Information page. Do you want to continue anyway?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6404,6 +6496,10 @@ Choose a different existing class, create a new class, or skip an imported class
     <message>
         <location line="+17"/>
         <source> My Information name will be set to “%1”.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> My Information name will be updated to “%1”.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9060,52 +9156,47 @@ Version: %2</source>
 <context>
     <name>UpdateDialog</name>
     <message>
-        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+96"/>
+        <location filename="../../../src/ui/shared/dialogs/update_dialog.cpp" line="+111"/>
         <source>Checking for Updates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+431"/>
+        <location line="+612"/>
         <source>You&apos;re Up to Date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+191"/>
+        <location line="+282"/>
         <source>ClassMngr %1 is the newest available version.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-208"/>
+        <location line="-307"/>
         <source>Update Available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-14"/>
+        <location line="-43"/>
         <source>View release notes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-327"/>
+        <location line="-401"/>
         <source>Downloading Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-72"/>
+        <location line="-142"/>
         <source>Contacting GitHub Releases...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+73"/>
+        <location line="+143"/>
         <source>Downloading %1...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+7"/>
-        <source>Cancel Download</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location line="+41"/>
+        <location line="+89"/>
         <source>The update download failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9121,7 +9212,7 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+118"/>
+        <location line="+147"/>
         <source>ClassMngr</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9131,13 +9222,13 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+85"/>
         <source>Download Update</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+65"/>
+        <location line="+77"/>
         <source>Not Now</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9162,12 +9253,79 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="-519"/>
+        <source>Preparing Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Verifying the saved update data before resuming...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+27"/>
+        <location line="+67"/>
+        <source>Pause Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="-7"/>
+        <source>Verifying Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Checking the update size and SHA-256 checksum...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+369"/>
+        <source>Automatic prompts are disabled for this version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>Notify Me About This Version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Skip This Version</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+52"/>
         <source>Open Download Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+42"/>
+        <location line="+43"/>
+        <source>%1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Download Paused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>%1 has been saved and can be resumed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Resume Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Discard Download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>The latest refresh failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9177,7 +9335,7 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+99"/>
+        <location line="+138"/>
         <source>Released %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9207,24 +9365,27 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-431"/>
-        <location line="+328"/>
+        <location line="-592"/>
+        <location line="+474"/>
         <source>Check Again</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-106"/>
+        <location line="-178"/>
         <source>Install and Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-477"/>
-        <location line="+74"/>
-        <location line="+192"/>
-        <location line="+102"/>
-        <location line="+63"/>
-        <location line="+33"/>
-        <location line="+62"/>
+        <location line="-662"/>
+        <location line="+117"/>
+        <location line="+27"/>
+        <location line="+67"/>
+        <location line="+170"/>
+        <location line="+127"/>
+        <location line="+104"/>
+        <location line="+37"/>
+        <location line="+60"/>
+        <location line="+50"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9234,7 +9395,7 @@ Version: %2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+128"/>
         <source>ClassMngr %1 is available. You are currently using %2.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9242,42 +9403,67 @@ Version: %2</source>
 <context>
     <name>UpdateDownloader</name>
     <message>
-        <location filename="../../../src/core/updater/update_downloader.cpp" line="+73"/>
-        <source>Update download URL must use HTTPS.</source>
+        <location filename="../../../src/core/updater/update_downloader.cpp" line="+295"/>
+        <source>The update download metadata is invalid.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+22"/>
         <source>Unable to create update download directory.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+186"/>
+        <source>Unable to read the saved update download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Unable to prepare the saved update download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+35"/>
         <source>Unable to prepare update download file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+9"/>
+        <source>Unable to save update download metadata.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+119"/>
+        <source>Unable to restart the update download.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>The update server returned an invalid resume range.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+57"/>
         <source>Unable to write update download file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+47"/>
+        <location line="+80"/>
         <source>Update download failed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+13"/>
         <source>Update download failed: HTTP %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Update download size did not match the GitHub release metadata.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+41"/>
         <source>Update download checksum did not match the GitHub release metadata.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9285,6 +9471,16 @@ Version: %2</source>
         <location line="+10"/>
         <source>Unable to finalize update download.</source>
         <translation>Unable to finalise update download.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Unable to save verified update metadata.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>The saved update package could not be verified.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
