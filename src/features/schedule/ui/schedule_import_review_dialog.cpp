@@ -2730,6 +2730,20 @@ void ScheduleImportReviewDialog::updateReviewState()
             ? tr("All required resolutions are complete.")
             : message
         );
+    QString profileNameChange;
+    if (m_request.updateProfileName)
+    {
+        profileNameChange =
+            tr(" My Information name will be updated to “%1”.")
+                .arg(m_preview.user.name);
+    }
+    else if (m_request.profileName.trimmed().isEmpty())
+    {
+        profileNameChange =
+            tr(" My Information name will be set to “%1”.")
+                .arg(m_preview.user.name);
+    }
+
     m_reviewSummary->setText(
         tr("Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
            "%4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; "
@@ -2742,12 +2756,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             .arg(skips)
             .arg(cleared)
             .arg(m_preview.user.diagnostics.size())
-            .arg(
-                m_request.profileName.trimmed().isEmpty()
-                    ? tr(" My Information name will be set to “%1”.")
-                        .arg(m_preview.user.name)
-                    : QString()
-                )
+            .arg(profileNameChange)
             .arg(
                 m_request.kind != ScheduleImportKind::Intensive
                     ? QString()
@@ -3005,6 +3014,8 @@ ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
         m_preview.user.name;
     plan.saveProfileNameIfBlank =
         m_request.profileName.trimmed().isEmpty();
+    plan.updateProfileName =
+        m_request.updateProfileName;
     plan.unknownCellsAcknowledged =
         !m_warningAcknowledgement
         || m_warningAcknowledgement->isChecked();

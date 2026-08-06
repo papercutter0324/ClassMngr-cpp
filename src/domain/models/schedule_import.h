@@ -148,6 +148,7 @@ struct ScheduleImportPlan
         ScheduleImportIntensiveMode::UpdateExisting;
     QString selectedUserName;
     bool saveProfileNameIfBlank = false;
+    bool updateProfileName = false;
     bool unknownCellsAcknowledged = false;
     QList<ScheduleImportClassCandidate> candidates;
     QList<IntensiveSlotState> intensiveSlotStates;

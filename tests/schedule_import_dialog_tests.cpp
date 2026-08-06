@@ -11,6 +11,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QEvent>
 #include <QFile>
 #include <QFrame>
 #include <QGroupBox>
@@ -29,6 +30,7 @@
 #include <QTableWidget>
 #include <QTabWidget>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QtTest>
@@ -499,6 +501,7 @@ void ScheduleImportDialogTests::requiresFileAndScheduleKind()
 void ScheduleImportDialogTests
     ::mismatchedProfileRequiresConfirmation()
 {
+    ScheduleWidgetTestStubs::setMatchImportedClasses(true);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     const QString path =
@@ -529,9 +532,14 @@ void ScheduleImportDialogTests
         dialog.findChild<QPushButton*>(
             QStringLiteral("scheduleImportNextButton")
             );
+    auto* status =
+        dialog.findChild<QLabel*>(
+            QStringLiteral("scheduleImportUserStatus")
+            );
     QVERIFY(users);
     QVERIFY(confirmation);
     QVERIFY(next);
+    QVERIFY(status);
 
     for (int index = 0; index < users->count(); ++index)
     {
@@ -542,9 +550,100 @@ void ScheduleImportDialogTests
         }
     }
     QVERIFY(!confirmation->isHidden());
-    QVERIFY(!next->isEnabled());
+    QVERIFY(!confirmation->isChecked());
+    QCOMPARE(
+        confirmation->text(),
+        QStringLiteral(
+            "Update my name on the My Information page to match the selected name."
+            )
+        );
+    QCOMPARE(
+        status->text(),
+        QStringLiteral(
+            "Entered name on the My Information page: "
+            "A Name That Is Not In The Workbook"
+            )
+        );
+    QVERIFY(next->isEnabled());
+
+    bool mismatchWarningShown = false;
+    QTimer::singleShot(
+        0,
+        [&mismatchWarningShown]()
+        {
+            auto* messageBox =
+                qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget()
+                    );
+            QVERIFY(messageBox);
+            QCOMPARE(
+                messageBox->windowTitle(),
+                QStringLiteral("Name Mismatch")
+                );
+            QCOMPARE(
+                messageBox->text(),
+                QStringLiteral(
+                    "The selected name does not match the name entered "
+                    "on the My Information page. Do you want to continue anyway?"
+                    )
+            );
+            mismatchWarningShown = true;
+            messageBox->button(QMessageBox::No)->click();
+        }
+        );
+    next->click();
+    QVERIFY(mismatchWarningShown);
+    QVERIFY(
+        !dialog.findChild<ScheduleImportReviewDialog*>()
+        );
+
+    bool continueWarningShown = false;
+    QTimer::singleShot(
+        0,
+        [&continueWarningShown]()
+        {
+            auto* messageBox =
+                qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget()
+                    );
+            QVERIFY(messageBox);
+            continueWarningShown = true;
+            messageBox->button(QMessageBox::Yes)->click();
+        }
+        );
+    next->click();
+    QVERIFY(continueWarningShown);
+    auto* continueReview =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(continueReview);
+    QPointer<ScheduleImportReviewDialog> closedReview =
+        continueReview;
+    continueReview->reject();
+    QCoreApplication::sendPostedEvents(
+        nullptr,
+        QEvent::DeferredDelete
+        );
+    QVERIFY(closedReview.isNull());
+
     confirmation->setChecked(true);
     QVERIFY(next->isEnabled());
+    next->click();
+
+    auto* review =
+        dialog.findChild<ScheduleImportReviewDialog*>();
+    QVERIFY(review);
+    auto* reviewSummary =
+        review->findChild<QLabel*>(
+            QStringLiteral("scheduleImportReviewSummary")
+            );
+    QVERIFY(reviewSummary);
+    QVERIFY(
+        reviewSummary->text().contains(
+            QStringLiteral(
+                "My Information name will be updated to “Alice”."
+                )
+            )
+        );
 }
 
 void ScheduleImportDialogTests::reportsAsyncWorkbookFailure()

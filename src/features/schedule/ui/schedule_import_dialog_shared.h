@@ -12,6 +12,7 @@ struct ScheduleImportReviewRequest
     ScheduleImportUserBlock user;
     ScheduleImportKind kind = ScheduleImportKind::Normal;
     QString profileName;
+    bool updateProfileName = false;
 };
 
 [[nodiscard]] DataService* openScheduleImportDataService(

@@ -291,7 +291,8 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     summary.classesCreated = plan.candidates.size();
     summary.ignoredCells = plan.diagnostics.size();
     summary.profileNameUpdated =
-        plan.saveProfileNameIfBlank;
+        plan.saveProfileNameIfBlank
+        || plan.updateProfileName;
     return summary;
 }
 

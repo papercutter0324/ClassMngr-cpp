@@ -1637,7 +1637,10 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         }
     }
 
-    if (plan.saveProfileNameIfBlank)
+    if (
+        plan.saveProfileNameIfBlank
+        || plan.updateProfileName
+        )
     {
         query.prepare(
             QStringLiteral(
@@ -1662,7 +1665,10 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
         }
 
         if (
-            existingName.isEmpty()
+            (
+                existingName.isEmpty()
+                || plan.updateProfileName
+                )
             && !plan.selectedUserName.trimmed().isEmpty()
             )
         {

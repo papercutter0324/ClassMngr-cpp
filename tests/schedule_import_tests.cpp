@@ -1941,6 +1941,32 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
             query.value(0).toString(),
             QStringLiteral("Existing User")
             );
+
+        plan.updateProfileName = true;
+        const auto updatedProfileImport =
+            repository.apply(plan);
+        const QString updateError =
+            updatedProfileImport.has_value()
+                ? QString()
+                : updatedProfileImport.error();
+        QVERIFY2(
+            updatedProfileImport.has_value(),
+            qPrintable(updateError)
+            );
+        QVERIFY(updatedProfileImport->profileNameUpdated);
+
+        execOrFail(
+            query,
+            QStringLiteral(
+                "SELECT value FROM app_settings "
+                "WHERE key='myInfo/name'"
+                )
+            );
+        QVERIFY(query.next());
+        QCOMPARE(
+            query.value(0).toString(),
+            QStringLiteral("Alice")
+            );
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

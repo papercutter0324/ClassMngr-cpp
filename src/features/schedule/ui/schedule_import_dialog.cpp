@@ -21,6 +21,7 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
@@ -215,7 +216,10 @@ void ScheduleImportDialog::buildUi()
 
     m_nameConfirmation =
         new QCheckBox(
-            tr("Use the selected spreadsheet name even though it does not match My Information."),
+            tr(
+                "Update my name on the My Information page "
+                "to match the selected name."
+                ),
             m_userSection
             );
     m_nameConfirmation->setObjectName(
@@ -782,11 +786,8 @@ void ScheduleImportDialog::updateUserSelection()
     else if (mismatch)
     {
         m_userStatus->setText(
-            tr("My Information says “%1”, but the selected spreadsheet section is “%2”.")
-                .arg(
-                    m_profileName,
-                    user->name
-                    )
+            tr("Entered name on the My Information page: %1")
+                .arg(m_profileName)
             );
         m_userStatus->setVisible(true);
     }
@@ -834,23 +835,10 @@ void ScheduleImportDialog::updateNavigation()
         {
             const ScheduleImportUserBlock* user =
                 selectedUser();
-            const bool mismatch =
-                user
-                && !m_profileName.isEmpty()
-                && normalizedScheduleImportUserName(
-                    user->name
-                    )
-                    != normalizedScheduleImportUserName(
-                        m_profileName
-                        );
             nextEnabled =
                 sourceReady
                 && selectedSheet()
-                && user
-                && (
-                    !mismatch
-                    || m_nameConfirmation->isChecked()
-                    );
+                && user;
         }
     }
 
@@ -933,6 +921,33 @@ void ScheduleImportDialog::goNext()
         return;
     }
 
+    const bool mismatch =
+        !m_profileName.isEmpty()
+        && normalizedScheduleImportUserName(
+            selectedUser()->name
+            )
+            != normalizedScheduleImportUserName(
+                m_profileName
+                );
+    if (
+        mismatch
+        && !m_nameConfirmation->isChecked()
+        && QMessageBox::question(
+            this,
+            tr("Name Mismatch"),
+            tr(
+                "The selected name does not match the name entered "
+                "on the My Information page. "
+                "Do you want to continue anyway?"
+                ),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No
+            ) != QMessageBox::Yes
+        )
+    {
+        return;
+    }
+
     openReviewDialog();
 }
 
@@ -949,6 +964,8 @@ void ScheduleImportDialog::openReviewDialog()
     request.user = *selectedUser();
     request.kind = selectedKind();
     request.profileName = m_profileName;
+    request.updateProfileName =
+        m_nameConfirmation->isChecked();
 
     auto* review =
         new ScheduleImportReviewDialog(
