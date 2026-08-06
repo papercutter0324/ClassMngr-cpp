@@ -1,31 +1,32 @@
-# ClassMngr 0.13.0 Release Notes
+# ClassMngr 0.14.0 Release Notes
 
-ClassMngr 0.13.0 makes first-time setup clearer, introduces the new ClassMngr
-database file format, and simplifies sharing batches of speaking-evaluation
-reports.
+ClassMngr 0.14.0 makes it easier to keep the app up to date, improves schedule
+imports and substitute notes, and resolves a couple of platform and layout
+issues.
 
-## Getting Started
+## App Updates
 
-- Added a Getting Started panel when no database is open.
-- The panel guides new users through creating or opening a database, adding or
-  importing Korean teachers, creating classes, and then adding schedules and
-  rosters.
+- ClassMngr can now automatically check for published updates when it starts.
+- Updates are delivered through GitHub Releases and verified after download.
+- You can skip notifications for a particular version, or pause, resume, and
+  discard an in-progress download.
 
-## ClassMngr Database Files
+## Schedule Imports
 
-- New databases, saved copies, and exports now use the `.tps` ClassMngr
-  Database format.
-- Existing legacy `.db` databases can still be opened.
-- On Windows, the installer can associate `.tps` files with ClassMngr so they
-  open directly from File Explorer.
+- Simplified the instructions for selecting your name from an imported
+  schedule.
+- When the selected name differs from the name in My Information, you can
+  continue with the import or update My Information to match it.
 
-## Speaking-Evaluation Reports
+## Substitute Notes
 
-- Exporting reports for multiple students now creates a single ZIP archive by
-  default, making the reports easier to share.
-- Added an option to also keep the individual PDF files when creating a ZIP
-  archive.
-- The built-in report template is now the default and recommended report
-  generator.
-- PowerPoint remains available as a fallback when the built-in generator does
-  not work.
+- Reworked the Substitute Notes page into a more compact, easier-to-scan
+  layout.
+- Materials Location and Detailed Class & Lesson Notes now appear together in
+  the same section, both in the app and in generated documents.
+
+## Fixes
+
+- Fixed roster-print previews so they resize correctly when the template type
+  changes.
+- Fixed a macOS crash that could occur when opening a file.
