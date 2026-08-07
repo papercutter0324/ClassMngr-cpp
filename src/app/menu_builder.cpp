@@ -2,10 +2,474 @@
 
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
-#include "ui/shared/menus/menu_utils.h"
 
+#include <QAction>
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QGroupBox>
 #include <QMenu>
 #include <QMenuBar>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QTabWidget>
+#include <QVBoxLayout>
+
+#include <initializer_list>
+
+namespace
+{
+
+QString preferencesText(
+    const char* text
+    )
+{
+    return QCoreApplication::translate(
+        "MenuBuilder",
+        text
+        );
+}
+
+QGroupBox* addActionChoices(
+    QWidget* parent,
+    QVBoxLayout* pageLayout,
+    const QString& title,
+    std::initializer_list<QAction*> actions
+    )
+{
+    auto* group = new QGroupBox(title, parent);
+    auto* layout = new QVBoxLayout(group);
+
+    for (QAction* action : actions)
+    {
+        if (!action)
+        {
+            continue;
+        }
+
+        auto* button =
+            new QRadioButton(action->text(), group);
+        button->setChecked(action->isChecked());
+        button->setEnabled(action->isEnabled());
+
+        QObject::connect(
+            button,
+            &QRadioButton::toggled,
+            action,
+            [action](bool checked)
+            {
+                if (checked && !action->isChecked())
+                {
+                    action->trigger();
+                }
+            }
+            );
+        QObject::connect(
+            action,
+            &QAction::changed,
+            button,
+            [action, button]()
+            {
+                button->setChecked(action->isChecked());
+                button->setEnabled(action->isEnabled());
+                button->setText(action->text());
+            }
+            );
+
+        layout->addWidget(button);
+    }
+
+    pageLayout->addWidget(group);
+    return group;
+}
+
+QCheckBox* addActionCheckBox(
+    QWidget* parent,
+    QVBoxLayout* pageLayout,
+    QAction* action
+    )
+{
+    if (!action)
+    {
+        return nullptr;
+    }
+
+    auto* checkBox =
+        new QCheckBox(action->text(), parent);
+    checkBox->setChecked(action->isChecked());
+    checkBox->setEnabled(action->isEnabled());
+
+    QObject::connect(
+        checkBox,
+        &QCheckBox::toggled,
+        action,
+        [action](bool checked)
+        {
+            if (checked != action->isChecked())
+            {
+                action->trigger();
+            }
+        }
+        );
+    QObject::connect(
+        action,
+        &QAction::changed,
+        checkBox,
+        [action, checkBox]()
+        {
+            checkBox->setChecked(action->isChecked());
+            checkBox->setEnabled(action->isEnabled());
+            checkBox->setText(action->text());
+        }
+        );
+
+    pageLayout->addWidget(checkBox);
+    return checkBox;
+}
+
+QWidget* createPreferencesPage(
+    QTabWidget* tabs,
+    const char* objectName
+    )
+{
+    auto* page = new QWidget(tabs);
+    page->setObjectName(
+        QString::fromLatin1(objectName)
+        );
+
+    auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(10);
+    layout->setAlignment(Qt::AlignTop);
+    return page;
+}
+
+QVBoxLayout* pageLayout(
+    QWidget* page
+    )
+{
+    return qobject_cast<QVBoxLayout*>(page->layout());
+}
+
+void showPreferencesDialog(
+    MainWindow* window
+    )
+{
+    auto& actions = window->actions();
+
+    QDialog dialog(window);
+    dialog.setObjectName(
+        QStringLiteral("preferencesDialog")
+        );
+    dialog.setWindowTitle(
+        preferencesText("Preferences")
+        );
+    dialog.resize(680, 560);
+
+    auto* layout = new QVBoxLayout(&dialog);
+    layout->setContentsMargins(18, 18, 18, 18);
+    layout->setSpacing(10);
+
+    auto* tabs = new QTabWidget(&dialog);
+    tabs->setObjectName(
+        QStringLiteral("preferencesTabs")
+        );
+    layout->addWidget(tabs, 1);
+
+    QWidget* generalPage =
+        createPreferencesPage(
+            tabs,
+            "preferencesGeneralTab"
+            );
+    QVBoxLayout* generalLayout =
+        pageLayout(generalPage);
+    addActionChoices(
+        generalPage,
+        generalLayout,
+        preferencesText("Save Mode"),
+        {
+            actions.saveModeState
+                ? actions.saveModeState->action(
+                    SaveMode::Automatic
+                    )
+                : nullptr,
+            actions.saveModeState
+                ? actions.saveModeState->action(
+                    SaveMode::Manual
+                    )
+                : nullptr
+        }
+        );
+
+    auto* updatesGroup =
+        new QGroupBox(
+            preferencesText("Updates"),
+            generalPage
+            );
+    auto* updatesLayout =
+        new QVBoxLayout(updatesGroup);
+    addActionCheckBox(
+        updatesGroup,
+        updatesLayout,
+        actions.automaticallyCheckForUpdates
+        );
+    generalLayout->addWidget(updatesGroup);
+
+    auto* sidebarGroup =
+        new QGroupBox(
+            preferencesText("Sidebar"),
+            generalPage
+            );
+    auto* sidebarLayout =
+        new QVBoxLayout(sidebarGroup);
+    addActionCheckBox(
+        sidebarGroup,
+        sidebarLayout,
+        actions.showSidebarTooltips
+        );
+    addActionCheckBox(
+        sidebarGroup,
+        sidebarLayout,
+        actions.animateSidebarText
+        );
+    generalLayout->addWidget(sidebarGroup);
+
+#ifdef Q_OS_MACOS
+    if (actions.showPowerPointDataAccessNotice)
+    {
+        auto* powerPointButton =
+            new QPushButton(
+                actions.showPowerPointDataAccessNotice->text(),
+                generalPage
+                );
+        QObject::connect(
+            powerPointButton,
+            &QPushButton::clicked,
+            actions.showPowerPointDataAccessNotice,
+            &QAction::trigger
+            );
+        generalLayout->addWidget(powerPointButton);
+    }
+#endif
+
+    tabs->addTab(
+        generalPage,
+        preferencesText("General")
+        );
+
+    QWidget* appearancePage =
+        createPreferencesPage(
+            tabs,
+            "preferencesAppearanceTab"
+            );
+    QVBoxLayout* appearanceLayout =
+        pageLayout(appearancePage);
+    addActionChoices(
+        appearancePage,
+        appearanceLayout,
+        preferencesText("Theme"),
+        {
+            actions.themeState
+                ? actions.themeState->action(Theme::Dark)
+                : nullptr,
+            actions.themeState
+                ? actions.themeState->action(Theme::Light)
+                : nullptr
+        }
+        );
+    addActionChoices(
+        appearancePage,
+        appearanceLayout,
+        preferencesText("Language"),
+        {
+            actions.languageState
+                ? actions.languageState->action(
+                    Language::SystemDefault
+                    )
+                : nullptr,
+            actions.languageState
+                ? actions.languageState->action(
+                    Language::English
+                    )
+                : nullptr,
+            actions.languageState
+                ? actions.languageState->action(
+                    Language::Korean
+                    )
+                : nullptr
+        }
+        );
+    addActionChoices(
+        appearancePage,
+        appearanceLayout,
+        preferencesText("Font Size"),
+        {
+            actions.fontSizeState
+                ? actions.fontSizeState->action(
+                    FontSize::Small
+                    )
+                : nullptr,
+            actions.fontSizeState
+                ? actions.fontSizeState->action(
+                    FontSize::Normal
+                    )
+                : nullptr,
+            actions.fontSizeState
+                ? actions.fontSizeState->action(
+                    FontSize::Large
+                    )
+                : nullptr,
+            actions.fontSizeState
+                ? actions.fontSizeState->action(
+                    FontSize::ExtraLarge
+                    )
+                : nullptr
+        }
+        );
+    tabs->addTab(
+        appearancePage,
+        preferencesText("Appearance")
+        );
+
+    QWidget* documentsPage =
+        createPreferencesPage(
+            tabs,
+            "preferencesDocumentsTab"
+            );
+    QVBoxLayout* documentsLayout =
+        pageLayout(documentsPage);
+    addActionChoices(
+        documentsPage,
+        documentsLayout,
+        preferencesText("Page Spacing"),
+        {
+            actions.documentPageSpacingState
+                ? actions.documentPageSpacingState->action(
+                    DocumentPageSpacing::None
+                    )
+                : nullptr,
+            actions.documentPageSpacingState
+                ? actions.documentPageSpacingState->action(
+                    DocumentPageSpacing::Small
+                    )
+                : nullptr,
+            actions.documentPageSpacingState
+                ? actions.documentPageSpacingState->action(
+                    DocumentPageSpacing::Medium
+                    )
+                : nullptr,
+            actions.documentPageSpacingState
+                ? actions.documentPageSpacingState->action(
+                    DocumentPageSpacing::Large
+                    )
+                : nullptr
+        }
+        );
+    addActionChoices(
+        documentsPage,
+        documentsLayout,
+        preferencesText("Background Color"),
+        {
+            actions.documentViewerBackgroundState
+                ? actions.documentViewerBackgroundState->action(
+                    DocumentViewerBackground::Default
+                    )
+                : nullptr,
+            actions.documentViewerBackgroundState
+                ? actions.documentViewerBackgroundState->action(
+                    DocumentViewerBackground::White
+                    )
+                : nullptr,
+            actions.documentViewerBackgroundState
+                ? actions.documentViewerBackgroundState->action(
+                    DocumentViewerBackground::Black
+                    )
+                : nullptr
+        }
+        );
+    tabs->addTab(
+        documentsPage,
+        preferencesText("Documents")
+        );
+
+    QWidget* aiCommentsPage =
+        createPreferencesPage(
+            tabs,
+            "preferencesAiCommentsTab"
+            );
+    QVBoxLayout* aiCommentsLayout =
+        pageLayout(aiCommentsPage);
+    addActionChoices(
+        aiCommentsPage,
+        aiCommentsLayout,
+        preferencesText("Preferred AI Website"),
+        {
+            actions.aiCommentProviderState
+                ? actions.aiCommentProviderState->action(
+                    AiCommentProvider::ChatGPT
+                    )
+                : nullptr,
+            actions.aiCommentProviderState
+                ? actions.aiCommentProviderState->action(
+                    AiCommentProvider::Gemini
+                    )
+                : nullptr,
+            actions.aiCommentProviderState
+                ? actions.aiCommentProviderState->action(
+                    AiCommentProvider::Claude
+                    )
+                : nullptr,
+            actions.aiCommentProviderState
+                ? actions.aiCommentProviderState->action(
+                    AiCommentProvider::MicrosoftCopilot
+                    )
+                : nullptr,
+            actions.aiCommentProviderState
+                ? actions.aiCommentProviderState->action(
+                    AiCommentProvider::CustomWebsite
+                    )
+                : nullptr
+        }
+        );
+    addActionChoices(
+        aiCommentsPage,
+        aiCommentsLayout,
+        preferencesText("Comment Voice"),
+        {
+            actions.aiCommentVoiceState
+                ? actions.aiCommentVoiceState->action(
+                    AiCommentVoice::DirectToStudent
+                    )
+                : nullptr,
+            actions.aiCommentVoiceState
+                ? actions.aiCommentVoiceState->action(
+                    AiCommentVoice::ThirdPerson
+                    )
+                : nullptr
+        }
+        );
+    tabs->addTab(
+        aiCommentsPage,
+        preferencesText("AI Comments")
+        );
+
+    auto* buttons =
+        new QDialogButtonBox(
+            QDialogButtonBox::Close,
+            &dialog
+            );
+    QObject::connect(
+        buttons,
+        &QDialogButtonBox::rejected,
+        &dialog,
+        &QDialog::reject
+        );
+    layout->addWidget(buttons);
+
+    dialog.exec();
+}
+
+} // namespace
 
 // Missing safety: menu duplication risk
 // Option: Store menus in MainWindow
@@ -18,7 +482,6 @@ void MenuBuilder::build(MainWindow* window)
     buildFileMenu(window);
     buildEditMenu(window);
     buildClassMenu(window);
-    buildOptionsMenu(window);
     buildHelpMenu(window);
 
     if (window->isAdmin())
@@ -76,6 +539,28 @@ void MenuBuilder::buildEditMenu(MainWindow* window)
     menu->addAction(a.cut);
     menu->addAction(a.copy);
     menu->addAction(a.paste);
+
+    menu->addSeparator();
+
+    auto* preferencesAction =
+        menu->addAction(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "Preferences..."
+                )
+            );
+    preferencesAction->setObjectName(
+        QStringLiteral("preferencesAction")
+        );
+    QObject::connect(
+        preferencesAction,
+        &QAction::triggered,
+        window,
+        [window]()
+        {
+            showPreferencesDialog(window);
+        }
+        );
 }
 
 void MenuBuilder::buildClassMenu(MainWindow* window)
@@ -109,210 +594,6 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
     teacherMenu->addAction(a.deleteTeacher);
     teacherMenu->addSeparator();
     teacherMenu->addAction(a.importTeachers);
-}
-
-void MenuBuilder::buildOptionsMenu(MainWindow* window)
-{
-    auto& actions = window->actions();
-
-    QMenu* options =
-        window->menuBar()->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Options")
-    );
-
-    //
-    // Save Mode
-    //
-    QMenu* saveMenu =
-        options->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Save Mode")
-    );
-
-    addOptionMenu<SaveMode>(
-        saveMenu,
-        actions.saveModeState,
-        {
-            SaveMode::Automatic,
-            SaveMode::Manual
-        }
-        );
-
-    //
-    // Theme
-    //
-    QMenu* themeMenu =
-        options->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Theme")
-    );
-
-    addOptionMenu<Theme>(
-        themeMenu,
-        actions.themeState,
-        {
-            Theme::Dark,
-            Theme::Light
-        }
-        );
-
-    //
-    // Language
-    //
-    QMenu* languageMenu =
-        options->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Language")
-    );
-
-    if (actions.languageState)
-    {
-        languageMenu->addAction(
-            actions.languageState->action(Language::SystemDefault)
-            );
-
-        languageMenu->addAction(
-            actions.languageState->action(Language::English)
-            );
-
-        languageMenu->addAction(
-            actions.languageState->action(Language::Korean)
-            );
-    }
-
-    //
-    // Font Size
-    //
-    QMenu* fontSizeMenu =
-        options->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Font Size")
-    );
-
-    addOptionMenu<FontSize>(
-        fontSizeMenu,
-        actions.fontSizeState,
-        {
-            FontSize::Small,
-            FontSize::Normal,
-            FontSize::Large,
-            FontSize::ExtraLarge
-        }
-        );
-
-    options->addSeparator();
-
-    QMenu* documentsMenu =
-        options->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Documents")
-            );
-
-    QMenu* documentPageSpacingMenu =
-        documentsMenu->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Page Spacing")
-            );
-
-    addOptionMenu<DocumentPageSpacing>(
-        documentPageSpacingMenu,
-        actions.documentPageSpacingState,
-        {
-            DocumentPageSpacing::None,
-            DocumentPageSpacing::Small,
-            DocumentPageSpacing::Medium,
-            DocumentPageSpacing::Large
-        }
-        );
-
-    QMenu* documentViewerBackgroundMenu =
-        documentsMenu->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Background Color")
-            );
-
-    addOptionMenu<DocumentViewerBackground>(
-        documentViewerBackgroundMenu,
-        actions.documentViewerBackgroundState,
-        {
-            DocumentViewerBackground::Default,
-            DocumentViewerBackground::White,
-            DocumentViewerBackground::Black
-        }
-        );
-
-    options->addSeparator();
-
-    QMenu* aiCommentsMenu =
-        options->addMenu(
-            QCoreApplication::translate(
-                "MenuBuilder",
-                "AI Comments"
-                )
-            );
-
-    QMenu* aiWebsiteMenu =
-        aiCommentsMenu->addMenu(
-            QCoreApplication::translate(
-                "MenuBuilder",
-                "Preferred AI Website"
-                )
-            );
-    addOptionMenu<AiCommentProvider>(
-        aiWebsiteMenu,
-        actions.aiCommentProviderState,
-        {
-            AiCommentProvider::ChatGPT,
-            AiCommentProvider::Gemini,
-            AiCommentProvider::Claude,
-            AiCommentProvider::MicrosoftCopilot,
-            AiCommentProvider::CustomWebsite
-        }
-        );
-
-    QMenu* aiVoiceMenu =
-        aiCommentsMenu->addMenu(
-            QCoreApplication::translate(
-                "MenuBuilder",
-                "Comment Voice"
-                )
-            );
-    addOptionMenu<AiCommentVoice>(
-        aiVoiceMenu,
-        actions.aiCommentVoiceState,
-        {
-            AiCommentVoice::DirectToStudent,
-            AiCommentVoice::ThirdPerson
-        }
-        );
-
-    options->addSeparator();
-
-    QMenu* updatesMenu =
-        options->addMenu(
-            QCoreApplication::translate(
-                "MenuBuilder",
-                "Updates"
-                )
-            );
-    updatesMenu->addAction(
-        actions.automaticallyCheckForUpdates
-        );
-
-#ifdef Q_OS_MACOS
-    options->addSeparator();
-
-    QMenu* powerPointMenu =
-        options->addMenu(
-            QCoreApplication::translate("MenuBuilder", "PowerPoint")
-            );
-    powerPointMenu->addAction(
-        actions.showPowerPointDataAccessNotice
-        );
-#endif
-
-    options->addSeparator();
-
-    QMenu* sidebarMenu =
-        options->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Sidebar")
-    );
-
-    sidebarMenu->addAction(actions.showSidebarTooltips);
-    sidebarMenu->addAction(actions.animateSidebarText);
 }
 
 void MenuBuilder::buildHelpMenu(MainWindow* window)
