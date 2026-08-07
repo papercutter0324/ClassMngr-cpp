@@ -1,3 +1,18 @@
+# ClassMngr 0.14.1 Release Notes
+
+ClassMngr 0.14.1 improves access to app settings and adds a Windows Start
+Menu shortcut option for easier setup.
+
+## Preferences
+
+- Replaced the old Options menu with a new Preferences dialog.
+- Made app settings easier to find and use from a more consistent interface.
+
+## Windows Installation
+
+- Added an option to place a ClassMngr shortcut in the Windows Start Menu
+  during installation.
+  
 # ClassMngr 0.14.0 Release Notes
 
 ClassMngr 0.14.0 makes it easier to keep the app up to date, improves schedule
