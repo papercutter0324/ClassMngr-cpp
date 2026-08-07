@@ -77,8 +77,11 @@ english.AssociateTps=Associate .tps files with ClassMngr
 korean.AssociateTps=.tps 파일을 ClassMngr와 연결
 english.FileAssociations=File associations:
 korean.FileAssociations=파일 연결:
+english.CreateStartMenuEntry=Create a Start Menu entry
+korean.CreateStartMenuEntry=시작 메뉴 항목 만들기
 
 [Tasks]
+Name: "startmenuentry"; Description: "{cm:CreateStartMenuEntry}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "associatetps"; Description: "{cm:AssociateTps}"; GroupDescription: "{cm:FileAssociations}"
 
@@ -104,7 +107,7 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "ClassMngr.exe,{#VCRedistF
 Source: "{#SourceDir}\{#VCRedistFileName}"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
-Name: "{group}\{#AppName}"; Filename: "{app}\ClassMngr.exe"
+Name: "{group}\{#AppName}"; Filename: "{app}\ClassMngr.exe"; Tasks: startmenuentry
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\ClassMngr.exe"; Tasks: desktopicon
 
 [Registry]
