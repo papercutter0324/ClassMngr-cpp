@@ -567,14 +567,10 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
 {
     auto& a = window->actions();
 
-    QMenu* menu =
-        window->menuBar()->addMenu(
-        QCoreApplication::translate("MenuBuilder", "Manage")
-    );
-
+    // Classes menu (top-level)
     QMenu* classMenu =
-        menu->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Class")
+        window->menuBar()->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Classes")
             );
 
     classMenu->addAction(a.newClass);
@@ -585,9 +581,10 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
     classMenu->addAction(a.importClasses);
     classMenu->addAction(a.exportClasses);
 
+    // Teachers menu (top-level)
     QMenu* teacherMenu =
-        menu->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Teacher")
+        window->menuBar()->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Teachers")
             );
 
     teacherMenu->addAction(a.newTeacher);
