@@ -14,6 +14,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
+#include <QtGlobal>
 #include <QVBoxLayout>
 
 UpdateDialog::UpdateDialog(
@@ -26,9 +27,13 @@ UpdateDialog::UpdateDialog(
     , m_service(service)
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
-    , m_skippedVersion(skippedVersion)
+    , m_skippedVersion(skippedVersion.trimmed())
 {
     Q_ASSERT(m_service);
+    if (!m_service)
+    {
+        qFatal("UpdateDialog requires a valid UpdateService pointer.");
+    }
 
     buildUi();
     connectSignals();
@@ -50,17 +55,17 @@ void UpdateDialog::setSkippedVersion(
 
 void UpdateDialog::refreshForOpen()
 {
+    if (m_service->isBusy())
+    {
+        handleCheckStarted();
+        return;
+    }
+
     if (m_service->hasResult())
     {
         showResult(
             *m_service->lastResult()
             );
-    }
-
-    if (m_service->isBusy())
-    {
-        handleCheckStarted();
-        return;
     }
 
     if (!m_service->isResultFresh())
@@ -81,6 +86,11 @@ void UpdateDialog::setStartupComplete(
     if (
         complete
         && !m_downloadedFilePath.isEmpty()
+        && m_hasResult
+        && m_result.updateAvailable
+        && m_downloader->hasCompletedDownload(
+            m_result.artifact
+            )
         )
     {
         showReadyToInstall();
@@ -102,6 +112,12 @@ void UpdateDialog::closeEvent(
 void UpdateDialog::handleCheckStarted()
 {
     m_lastRefreshError.clear();
+
+    m_metadataLabel->clear();
+    m_metadataLabel->setVisible(false);
+    m_notesLabel->clear();
+    m_notesLabel->setVisible(false);
+
     m_progressBar->setRange(0, 0);
     m_progressBar->setVisible(true);
 
@@ -378,7 +394,7 @@ void UpdateDialog::buildUi()
 
     auto* heading =
         new QLabel(
-            tr("Updates"),
+            tr("ClassMngr"),
             this
             );
     heading->setObjectName("pageTitle");
@@ -400,25 +416,43 @@ void UpdateDialog::buildUi()
     programLayout->setHorizontalSpacing(12);
     programLayout->setVerticalSpacing(6);
 
+    // Column 0: indicator (fixed width ~32px)
+    programLayout->setColumnMinimumWidth(0, 32);
+    // Column 1: horizontal spacer (~24px minimum)
+    programLayout->setColumnMinimumWidth(1, 24);
+    // Column 2: content area expands
+    programLayout->setColumnStretch(0, 0);
+    programLayout->setColumnStretch(1, 0);
+    programLayout->setColumnStretch(2, 1);
+
+    // Row 0-3: content rows (minimum size, no expansion)
+    programLayout->setRowStretch(0, 0);
+    programLayout->setRowStretch(1, 0);
+    programLayout->setRowStretch(2, 0);
+    programLayout->setRowStretch(3, 0);
+    // Row 4: progress bar (expands if needed)
+    programLayout->setRowStretch(4, 1);
+
     m_statusIndicator =
         new QLabel(
             QStringLiteral("○"),
             m_programFrame
             );
     m_statusIndicator->setObjectName("programUpdateIndicator");
-    m_statusIndicator->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
+    m_statusIndicator->setAlignment(Qt::AlignVCenter | Qt::AlignHCenter);
     QFont indicatorFont =
         m_statusIndicator->font();
     indicatorFont.setPointSize(18);
     indicatorFont.setWeight(QFont::DemiBold);
     m_statusIndicator->setFont(indicatorFont);
 
+    // Swap font sizes: title larger (14pt), details smaller (10pt)
     m_titleLabel =
         new QLabel(m_programFrame);
     m_titleLabel->setObjectName("programUpdateTitle");
     QFont titleFont =
         m_titleLabel->font();
-    titleFont.setPointSize(12);
+    titleFont.setPointSize(14);
     titleFont.setWeight(QFont::DemiBold);
     m_titleLabel->setFont(titleFont);
 
@@ -426,6 +460,10 @@ void UpdateDialog::buildUi()
         new QLabel(m_programFrame);
     m_detailsLabel->setObjectName("programUpdateDetails");
     m_detailsLabel->setWordWrap(true);
+    QFont detailsFont =
+        m_detailsLabel->font();
+    detailsFont.setPointSize(10);
+    m_detailsLabel->setFont(detailsFont);
 
     m_metadataLabel =
         new QLabel(m_programFrame);
@@ -437,18 +475,30 @@ void UpdateDialog::buildUi()
     m_notesLabel->setObjectName("programUpdateNotes");
     m_notesLabel->setOpenExternalLinks(true);
     m_notesLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    QFont notesFont =
+        m_notesLabel->font();
+    notesFont.setPointSize(10);
+    m_notesLabel->setFont(notesFont);
 
     m_progressBar =
         new QProgressBar(m_programFrame);
     m_progressBar->setObjectName("programUpdateProgress");
     m_progressBar->setVisible(false);
 
-    programLayout->addWidget(m_statusIndicator, 0, 0, 2, 1);
-    programLayout->addWidget(m_titleLabel, 0, 1);
-    programLayout->addWidget(m_detailsLabel, 1, 1);
-    programLayout->addWidget(m_metadataLabel, 2, 1);
-    programLayout->addWidget(m_notesLabel, 3, 1);
-    programLayout->addWidget(m_progressBar, 4, 0, 1, 2);
+    // Add left alignment to all content labels
+    m_titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    m_detailsLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    m_metadataLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+    m_notesLabel->setAlignment(Qt::AlignLeft);
+
+    // Place indicator in row 0-3 (spanning all content rows, vertically centered)
+    programLayout->addWidget(m_statusIndicator, 0, 0, 4, 1, Qt::AlignVCenter);
+    // Content labels start from row 0 in column 2
+    programLayout->addWidget(m_titleLabel, 0, 2);
+    programLayout->addWidget(m_detailsLabel, 1, 2);
+    programLayout->addWidget(m_metadataLabel, 2, 2);
+    programLayout->addWidget(m_notesLabel, 3, 2);
+    programLayout->addWidget(m_progressBar, 4, 0, 1, 3);
 
     rootLayout->addWidget(m_programFrame);
 
@@ -607,7 +657,7 @@ void UpdateDialog::connectSignals()
         m_closeButton,
         &QPushButton::clicked,
         this,
-        &QDialog::reject
+        &QWidget::close
         );
 }
 
@@ -615,7 +665,9 @@ void UpdateDialog::showInitialState()
 {
     m_progressBar->setVisible(false);
     m_notesLabel->clear();
+    m_notesLabel->setVisible(false);
     m_metadataLabel->clear();
+    m_metadataLabel->setVisible(false);
 
     setStatus(
         QStringLiteral("○"),
@@ -641,14 +693,39 @@ void UpdateDialog::showResult(
     const UpdateCheckResult& result
     )
 {
+    const bool versionChanged =
+        m_hasResult
+        && m_result.latestVersion.toString()
+            != result.latestVersion.toString();
+    const bool artifactChanged =
+        m_hasResult
+        && (
+            m_result.artifact.fileName != result.artifact.fileName
+            || m_result.artifact.sizeBytes != result.artifact.sizeBytes
+            );
+
+    if (!result.updateAvailable || versionChanged || artifactChanged)
+    {
+        m_downloadedFilePath.clear();
+    }
+
     m_result =
         result;
     m_hasResult =
         true;
     m_progressBar->setVisible(false);
-    m_metadataLabel->setText(
-        resultMetadata(result)
-        );
+    const QString metadataText =
+        resultMetadata(result);
+    if (metadataText.isEmpty())
+    {
+        m_metadataLabel->clear();
+        m_metadataLabel->setVisible(false);
+    }
+    else
+    {
+        m_metadataLabel->setText(metadataText);
+        m_metadataLabel->setVisible(true);
+    }
 
     if (result.releaseUrl.isValid())
     {
@@ -659,16 +736,26 @@ void UpdateDialog::showResult(
                     tr("View release notes")
                     )
             );
+        m_notesLabel->setVisible(true);
     }
     else
     {
         m_notesLabel->clear();
+        m_notesLabel->setVisible(false);
     }
 
     if (result.updateAvailable)
     {
         if (m_downloader->hasCompletedDownload(result.artifact))
         {
+            if (!m_downloadedFilePath.isEmpty())
+            {
+                showReadyToInstall();
+                return;
+            }
+
+            // Re-enter the downloader so it can verify the saved artifact and
+            // report the verified file path through downloadSucceeded().
             m_downloader->download(
                 result.artifact
                 );
@@ -867,7 +954,9 @@ void UpdateDialog::showFailure(
     }
 
     m_notesLabel->clear();
+    m_notesLabel->setVisible(false);
     m_metadataLabel->clear();
+    m_metadataLabel->setVisible(false);
     setStatus(
         QStringLiteral("!"),
         QStringLiteral("#d9534f"),
@@ -1004,18 +1093,34 @@ QString UpdateDialog::resultDetails(
     const UpdateCheckResult& result
     ) const
 {
+    QString releaseInfo;
+    if (result.releaseDate.isValid())
+    {
+        releaseInfo = tr(" (Released: %1)")
+            .arg(
+                QLocale::system().toString(
+                    result.releaseDate,
+                    QLocale::ShortFormat
+                    )
+                );
+    }
+
     if (result.updateAvailable)
     {
-        return tr("ClassMngr %1 is available. You are currently using %2.")
+        return tr("ClassMngr %1 is available%2. You are currently using %3.")
             .arg(
                 result.latestVersion.toString(),
+                releaseInfo,
                 result.currentVersion.toString()
                 );
     }
 
-    return tr("ClassMngr %1 is the newest available version.")
+    return tr("Latest Version: %1%2")
         .arg(
-            result.currentVersion.toString()
+            result.latestVersion.toString(),
+            releaseInfo.isEmpty()
+                ? QString()
+                : releaseInfo
             );
 }
 
@@ -1023,37 +1128,31 @@ QString UpdateDialog::resultMetadata(
     const UpdateCheckResult& result
     ) const
 {
-    QStringList metadata;
-
-    if (result.releaseDate.isValid())
+    if (!result.updateAvailable)
     {
-        metadata.append(
-            tr("Released %1")
-                .arg(
-                    QLocale::system().toString(
-                        result.releaseDate,
-                        QLocale::ShortFormat
-                        )
-                    )
-            );
+        return QString();
     }
 
-    if (result.checkedAtUtc.isValid())
+    const QString fileName =
+        result.artifact.fileName.trimmed();
+
+    if (fileName.isEmpty())
     {
-        metadata.append(
-            tr("Last checked %1")
-                .arg(
-                    QLocale::system().toString(
-                        result.checkedAtUtc.toLocalTime(),
-                        QLocale::ShortFormat
-                        )
-                    )
-            );
+        return QString();
     }
 
-    return metadata.join(
-        QStringLiteral("  •  ")
-        );
+    if (result.artifact.sizeBytes <= 0)
+    {
+        return fileName;
+    }
+
+    return tr("%1 • %2")
+        .arg(
+            fileName,
+            QLocale::system().formattedDataSize(
+                result.artifact.sizeBytes
+                )
+            );
 }
 
 void UpdateDialog::installOrRevealUpdate()
