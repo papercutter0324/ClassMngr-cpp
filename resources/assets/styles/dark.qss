@@ -484,6 +484,15 @@ QMenu {
     border: 1px solid #444444;
 }
 
+QMenu::separator {
+    height: 1px;
+    min-height: 1px;
+    max-height: 1px;
+    background-color: #686868;
+    border: none;
+    margin: 4px 8px;
+}
+
 QMenu::item {
     padding: 5px 24px;
 }
