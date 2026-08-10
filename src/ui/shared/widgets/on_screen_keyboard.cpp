@@ -230,6 +230,7 @@ bool OnScreenKeyboard::eventFilter(
             event->type() == QEvent::PaletteChange
             || event->type() == QEvent::ApplicationPaletteChange
             || event->type() == QEvent::StyleChange
+            || event->type() == QEvent::DynamicPropertyChange
             )
         )
     {
@@ -581,9 +582,17 @@ void OnScreenKeyboard::refreshTriggerIcon()
         return;
     }
 
-    const QColor buttonText =
-        m_triggerButton->palette().color(QPalette::ButtonText);
-    const QString iconPath = buttonText.lightness() > 128
+    const QString theme =
+        m_triggerButton->property("theme").toString();
+    const bool usesDarkTheme = theme == QStringLiteral("dark")
+        || (
+            theme.isEmpty()
+            && m_triggerButton
+                ->palette()
+                .color(QPalette::ButtonText)
+                .lightness() > 128
+            );
+    const QString iconPath = usesDarkTheme
         ? QStringLiteral(":/assets/icons/keyboard_dark.svg")
         : QStringLiteral(":/assets/icons/keyboard_light.svg");
 

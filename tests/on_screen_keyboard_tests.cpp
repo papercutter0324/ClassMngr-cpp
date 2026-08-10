@@ -1,7 +1,9 @@
 #include "ui/shared/input/hangul_composer.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
+#include <QImage>
 #include <QLineEdit>
+#include <QPalette>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QStandardItemModel>
@@ -25,6 +27,7 @@ private slots:
     void mouseClicksKeepTableCellTargeted();
     void characterKeysHaveUniformCompactWidth();
     void triggerUsesIconAndAccessibleText();
+    void triggerIconUsesThemePropertyBeforePaletteIsPolished();
 };
 
 void OnScreenKeyboardTests::composesSimpleSyllableAndMovesFinal()
@@ -311,6 +314,45 @@ void OnScreenKeyboardTests::triggerUsesIconAndAccessibleText()
         trigger.accessibleName(),
         QStringLiteral("Korean Keyboard")
         );
+}
+
+void OnScreenKeyboardTests
+    ::triggerIconUsesThemePropertyBeforePaletteIsPolished()
+{
+    OnScreenKeyboard keyboard;
+    QPushButton trigger;
+    QPalette staleLightPalette = trigger.palette();
+    staleLightPalette.setColor(
+        QPalette::ButtonText,
+        QColor(Qt::black)
+        );
+    trigger.setPalette(staleLightPalette);
+    keyboard.setTriggerButton(&trigger);
+
+    trigger.setProperty("theme", QStringLiteral("dark"));
+
+    const QImage icon = trigger
+        .icon()
+        .pixmap(trigger.iconSize())
+        .toImage()
+        .convertToFormat(QImage::Format_ARGB32);
+    bool foundWhiteStroke = false;
+
+    for (int y = 0; y < icon.height() && !foundWhiteStroke; ++y)
+    {
+        for (int x = 0; x < icon.width(); ++x)
+        {
+            const QColor pixel = icon.pixelColor(x, y);
+
+            if (pixel.alpha() > 220 && pixel.lightness() > 220)
+            {
+                foundWhiteStroke = true;
+                break;
+            }
+        }
+    }
+
+    QVERIFY(foundWhiteStroke);
 }
 
 QTEST_MAIN(OnScreenKeyboardTests)
