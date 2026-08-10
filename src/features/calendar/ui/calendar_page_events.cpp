@@ -2,6 +2,7 @@
 
 #include "calendar_settings_dialog.h"
 #include "academic_calendar_provider.h"
+#include "calendar_event_cache.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
@@ -304,12 +305,7 @@ void CalendarPage::handleCalendarConfigureRequested(
         this,
         [this]()
         {
-            if (m_calendarModel)
-            {
-                m_calendarModel->reload();
-            }
-
-            refreshUpcomingEvents();
+            invalidateCalendarData();
         }
         );
 
@@ -337,6 +333,7 @@ void CalendarPage::handleCalendarDisplayedMonthChanged(
     m_calendarVisibleMonth =
         firstOfMonth;
 
+    refreshCalendarData();
     refreshUpcomingEvents();
 }
 void CalendarPage::buildCalendarContent()
@@ -364,11 +361,34 @@ void CalendarPage::buildCalendarContent()
         UiConstants::ClassInfo::SectionCard::Spacing
         );
 
+    m_calendarCache =
+        new CalendarEventCache(this);
+    connect(
+        m_calendarCache,
+        &CalendarEventCache::cacheChanged,
+        this,
+        [this]()
+        {
+            refreshUpcomingEvents();
+            ensureNextTenEvents();
+        }
+        );
+    connect(
+        m_calendarCache,
+        &CalendarEventCache::loadingChanged,
+        this,
+        &CalendarPage::refreshUpcomingEvents
+        );
+    connect(
+        m_calendarCache,
+        &CalendarEventCache::nextEventMonthFound,
+        this,
+        &CalendarPage::handleNextEventMonthFound
+        );
+
     m_calendarModel =
         new CalendarEventModel(
-            m_services
-                ? m_services->dataService()
-                : nullptr,
+            m_calendarCache,
             this
             );
 
@@ -461,6 +481,7 @@ void CalendarPage::buildCalendarContent()
         );
 
     updateCalendarCampusFilter();
+    refreshCalendarData();
 
     m_scrollContentLayout->addWidget(
         card
@@ -473,13 +494,186 @@ void CalendarPage::updateCalendarCampusFilter()
         return;
     }
 
+    const CalendarEventDisplayOptions options =
+        calendarEventDisplayOptions();
+
     m_calendarModel->setCampusFilter(
-        currentCampusCodes(),
-        allCampusCodes(),
-        showAllCalendarCampuses(),
-        hideStartOfTermEvents()
+        options.currentCampusCodes,
+        options.allCampusCodes,
+        options.showAllCampuses,
+        options.hideStartOfTermEvents
         );
     refreshUpcomingEvents();
+    ensureNextTenEvents();
+}
+
+void CalendarPage::refreshCalendarData()
+{
+    if (!m_calendarCache)
+    {
+        return;
+    }
+
+    auto* dataService =
+        openDataService(m_services);
+    const QString databasePath =
+        dataService
+            ? dataService->currentDatabasePath()
+            : QString();
+
+    m_calendarCache->setDatabasePath(databasePath);
+
+    if (databasePath.isEmpty())
+    {
+        refreshUpcomingEvents();
+        return;
+    }
+
+    const QDate today =
+        QDate::currentDate();
+    const QDate visibleMonth =
+        m_calendarVisibleMonth.isValid()
+            ? m_calendarVisibleMonth
+            : QDate(today.year(), today.month(), 1);
+    const QDate visibleMonthEnd =
+        visibleMonth.addMonths(1).addDays(-1);
+
+    m_calendarCache->requestRange(
+        visibleMonth,
+        visibleMonthEnd,
+        CalendarEventCache::Priority::Foreground
+        );
+    m_calendarCache->requestRange(
+        today,
+        today.addDays(30),
+        CalendarEventCache::Priority::Foreground
+        );
+
+    const QDate prefetchStart =
+        visibleMonth.addMonths(1);
+    const QDate prefetchEnd =
+        visibleMonth.addMonths(5).addDays(-1);
+
+    m_calendarCache->requestRange(
+        prefetchStart,
+        prefetchEnd,
+        CalendarEventCache::Priority::Background
+        );
+
+    if (!m_nextTenSearchEnd.isValid())
+    {
+        const QDate currentMonth(
+            today.year(),
+            today.month(),
+            1
+            );
+
+        m_nextTenSearchEnd =
+            currentMonth.addMonths(5).addDays(-1);
+
+        if (visibleMonth != currentMonth)
+        {
+            m_calendarCache->requestRange(
+                currentMonth,
+                m_nextTenSearchEnd,
+                CalendarEventCache::Priority::Background
+                );
+        }
+    }
+
+    refreshUpcomingEvents();
+    ensureNextTenEvents();
+}
+
+void CalendarPage::invalidateCalendarData()
+{
+    if (!m_calendarCache)
+    {
+        return;
+    }
+
+    m_nextTenSearchEnd = {};
+    m_nextTenSearchComplete = false;
+    m_nextTenLookupPending = false;
+    m_calendarCache->invalidate();
+    refreshCalendarData();
+}
+
+void CalendarPage::ensureNextTenEvents()
+{
+    if (
+        !m_calendarCache
+        || !m_nextTenSearchEnd.isValid()
+        || m_nextTenSearchComplete
+        || m_nextTenLookupPending
+        )
+    {
+        return;
+    }
+
+    const CalendarEventDisplayOptions options =
+        calendarEventDisplayOptions();
+
+    if (options.activeTypes.isEmpty())
+    {
+        return;
+    }
+
+    const QDate today =
+        QDate::currentDate();
+    const QList<CalendarEvent> visibleEvents =
+        filterUpcomingEvents(
+            m_calendarCache->eventsInRange(
+                today,
+                m_nextTenSearchEnd
+                ),
+            options
+            );
+
+    if (
+        visibleEvents.size() >= UpcomingEventsLimit
+        || !m_calendarCache->isRangeLoaded(
+            today,
+            m_nextTenSearchEnd
+            )
+        )
+    {
+        return;
+    }
+
+    m_nextTenLookupPending = true;
+    m_calendarCache->requestNextEventMonth(
+        m_nextTenSearchEnd.addDays(1),
+        CalendarEventCache::Priority::Background
+        );
+}
+
+void CalendarPage::handleNextEventMonthFound(
+    const QDate& firstEventDate
+    )
+{
+    m_nextTenLookupPending = false;
+
+    if (!firstEventDate.isValid())
+    {
+        m_nextTenSearchComplete = true;
+        refreshUpcomingEvents();
+        return;
+    }
+
+    const QDate firstOfMonth(
+        firstEventDate.year(),
+        firstEventDate.month(),
+        1
+        );
+
+    m_nextTenSearchEnd =
+        firstOfMonth.addMonths(1).addDays(-1);
+    m_calendarCache->requestRange(
+        firstOfMonth,
+        m_nextTenSearchEnd,
+        CalendarEventCache::Priority::Background
+        );
 }
 void CalendarPage::syncCalendarFontSize()
 {
@@ -607,10 +801,5 @@ void CalendarPage::openCalendarDialog(
         }
     }
 
-    if (m_calendarModel)
-    {
-        m_calendarModel->reload();
-    }
-
-    refreshUpcomingEvents();
+    invalidateCalendarData();
 }

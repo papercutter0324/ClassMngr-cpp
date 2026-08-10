@@ -238,6 +238,46 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
     return events;
 }
 
+QDate CalendarEventRepository::findNextCalendarEventStartDate(
+    const QDate& fromDate
+    )
+{
+    if (!fromDate.isValid())
+    {
+        return {};
+    }
+
+    QSqlQuery query(m_database);
+
+    query.prepare(R"(
+        SELECT MIN(start_date)
+        FROM calendar_events
+        WHERE start_date >= ?
+    )");
+    query.addBindValue(
+        fromDate.toString(Qt::ISODate)
+        );
+
+    if (!query.exec())
+    {
+        qWarning()
+            << "Failed to find next calendar event:"
+            << query.lastError().text();
+
+        return {};
+    }
+
+    if (!query.next())
+    {
+        return {};
+    }
+
+    return QDate::fromString(
+        query.value(0).toString(),
+        Qt::ISODate
+        );
+}
+
 CalendarEvent CalendarEventRepository::getCalendarEvent(
     int eventId
     )

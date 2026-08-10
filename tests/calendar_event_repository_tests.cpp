@@ -1,4 +1,5 @@
 #include "data/repositories/calendar_event_repository.h"
+#include "data/database/database_schema_manager.h"
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -74,6 +75,8 @@ private slots:
     void rangeQueryIncludesEventsThatOverlapRange();
     void rangeQuerySortsByDateTimeAndTitle();
     void upcomingQueryExcludesPastEventsAndLimitsResults();
+    void nextEventQueryFindsEarliestFutureStartDate();
+    void schemaCreatesEndDateIndex();
     void savesAndLoadsRepeatSeriesId();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
@@ -289,6 +292,95 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
         QVERIFY(!titles(upcoming).contains(QStringLiteral("Past")));
         QCOMPARE(upcoming.first().title, QStringLiteral("Ongoing"));
         QCOMPARE(upcoming.last().title, QStringLiteral("Future 9"));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_next_event_tests");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Earlier"),
+                QDate(2026, 7, 5),
+                QTime(9, 0),
+                QDate(2026, 7, 5),
+                QTime(10, 0)
+                )
+            );
+        repository.saveCalendarEvent(
+            makeEvent(
+                QStringLiteral("Later"),
+                QDate(2026, 8, 12),
+                QTime(9, 0),
+                QDate(2026, 8, 12),
+                QTime(10, 0)
+                )
+            );
+
+        QCOMPARE(
+            repository.findNextCalendarEventStartDate(
+                QDate(2026, 7, 6)
+                ),
+            QDate(2026, 8, 12)
+            );
+        QVERIFY(
+            !repository.findNextCalendarEventStartDate(
+                QDate(2026, 9, 1)
+                ).isValid()
+            );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::schemaCreatesEndDateIndex()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_schema_index_tests");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+
+        DatabaseSchemaManager::ensureSchema(database);
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral("PRAGMA index_list(calendar_events)")));
+
+        bool foundEndDateIndex = false;
+        while (query.next())
+        {
+            if (
+                query.value(QStringLiteral("name")).toString()
+                == QStringLiteral("idx_calendar_events_end_dates")
+                )
+            {
+                foundEndDateIndex = true;
+                break;
+            }
+        }
+
+        QVERIFY(foundEndDateIndex);
     }
 
     QSqlDatabase::removeDatabase(connectionName);

@@ -115,10 +115,7 @@ void CalendarPage::refresh()
 
     updateCalendarCampusFilter();
 
-    if (m_calendarModel)
-    {
-        m_calendarModel->reload();
-    }
+    refreshCalendarData();
 
     if (m_academicCalendarProvider)
     {
@@ -134,10 +131,7 @@ void CalendarPage::clearDatabaseState()
 
     updateCalendarCampusFilter();
 
-    if (m_calendarModel)
-    {
-        m_calendarModel->reload();
-    }
+    invalidateCalendarData();
 
     if (m_academicCalendarProvider)
     {
@@ -218,10 +212,7 @@ void CalendarPage::showEvent(
     BasePage::showEvent(event);
     updateCalendarCampusFilter();
 
-    if (m_calendarModel)
-    {
-        m_calendarModel->reload();
-    }
+    refreshCalendarData();
 
     if (m_academicCalendarProvider)
     {

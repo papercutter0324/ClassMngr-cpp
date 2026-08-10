@@ -4,25 +4,31 @@
 #include <QStringList>
 #include <QVariantList>
 
-class DataService;
+class CalendarEventCache;
 
 class CalendarEventModel : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
+    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
 
 public:
     explicit CalendarEventModel(
-        DataService* dataService,
+        CalendarEventCache* cache,
         QObject* parent = nullptr
         );
 
     int revision() const;
+    bool isLoading() const;
 
     Q_INVOKABLE QVariantList eventsForDate(
         int year,
         int month,
         int day
+        ) const;
+    Q_INVOKABLE bool isMonthLoaded(
+        int year,
+        int month
         ) const;
 
     void setCampusFilter(
@@ -36,9 +42,10 @@ public:
 
 signals:
     void revisionChanged();
+    void loadingChanged();
 
 private:
-    DataService* m_dataService = nullptr;
+    CalendarEventCache* m_cache = nullptr;
     QStringList m_currentCampusCodes;
     QStringList m_allCampusCodes;
     bool m_showAllCampuses = false;

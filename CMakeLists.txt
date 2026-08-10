@@ -1128,6 +1128,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrCalendarEventRepositoryTests
         tests/calendar_event_repository_tests.cpp
+        src/data/database/database_schema_manager.cpp
         src/data/repositories/calendar_event_repository.cpp
     )
 
@@ -1151,6 +1152,37 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrCalendarEventRepositoryTests
         COMMAND ClassMngrCalendarEventRepositoryTests
+    )
+
+    qt_add_executable(ClassMngrCalendarEventCacheTests
+        tests/calendar_event_cache_tests.cpp
+        src/data/repositories/calendar_event_repository.cpp
+        src/features/calendar/calendar_event_campus_filter.cpp
+        src/features/calendar/ui/calendar_event_cache.cpp
+        src/features/calendar/ui/calendar_event_model.cpp
+    )
+
+    target_compile_features(ClassMngrCalendarEventCacheTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrCalendarEventCacheTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrCalendarEventCacheTests
+        PRIVATE
+            Qt6::Concurrent
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrCalendarEventCacheTests
+        COMMAND ClassMngrCalendarEventCacheTests
     )
 
     qt_add_executable(ClassMngrDataServiceLifecycleTests
@@ -2571,6 +2603,7 @@ if(BUILD_TESTING)
             ClassMngrTestingBlockRepositoryTests
             ClassMngrTestingClassRepositoryTests
             ClassMngrCalendarEventRepositoryTests
+            ClassMngrCalendarEventCacheTests
             ClassMngrDataServiceLifecycleTests
             ClassMngrCalendarImportTests
             ClassMngrScheduleImportTests

@@ -1,6 +1,6 @@
 #include "calendar_event_model.h"
 
-#include "data/data_service.h"
+#include "calendar_event_cache.h"
 #include "domain/models/calendar_event.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 
@@ -8,17 +8,43 @@
 #include <QVariantMap>
 
 CalendarEventModel::CalendarEventModel(
-    DataService* dataService,
+    CalendarEventCache* cache,
     QObject* parent
     )
     : QObject(parent)
-    , m_dataService(dataService)
+    , m_cache(cache)
 {
+    if (!m_cache)
+    {
+        return;
+    }
+
+    connect(
+        m_cache,
+        &CalendarEventCache::cacheChanged,
+        this,
+        &CalendarEventModel::reload
+        );
+    connect(
+        m_cache,
+        &CalendarEventCache::loadingChanged,
+        this,
+        [this]()
+        {
+            emit loadingChanged();
+            reload();
+        }
+        );
 }
 
 int CalendarEventModel::revision() const
 {
     return m_revision;
+}
+
+bool CalendarEventModel::isLoading() const
+{
+    return m_cache && m_cache->isLoading();
 }
 
 QVariantList CalendarEventModel::eventsForDate(
@@ -28,14 +54,6 @@ QVariantList CalendarEventModel::eventsForDate(
     ) const
 {
     QVariantList values;
-
-    if (
-        !m_dataService
-        || !m_dataService->isOpen()
-        )
-    {
-        return values;
-    }
 
     const QDate date(
         year,
@@ -48,10 +66,13 @@ QVariantList CalendarEventModel::eventsForDate(
         return values;
     }
 
+    if (!m_cache)
+    {
+        return values;
+    }
+
     const QList<CalendarEvent> events =
-        m_dataService->loadCalendarEventsForDate(
-            date
-            );
+        m_cache->eventsForDate(date);
 
     for (const CalendarEvent& event : events)
     {
@@ -110,6 +131,25 @@ QVariantList CalendarEventModel::eventsForDate(
     }
 
     return values;
+}
+
+bool CalendarEventModel::isMonthLoaded(
+    int year,
+    int month
+    ) const
+{
+    if (!m_cache)
+    {
+        return false;
+    }
+
+    const QDate firstOfMonth(year, month, 1);
+
+    return firstOfMonth.isValid()
+        && m_cache->isRangeLoaded(
+            firstOfMonth,
+            firstOfMonth.addMonths(1).addDays(-1)
+            );
 }
 
 void CalendarEventModel::setCampusFilter(

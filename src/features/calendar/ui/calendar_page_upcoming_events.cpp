@@ -1,5 +1,6 @@
 #include "calendar_page.h"
 
+#include "calendar_event_cache.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -34,7 +35,6 @@
 namespace
 {
 constexpr int UpcomingEventsNext30Days = 30;
-constexpr int UpcomingEventsLimit = 10;
 constexpr int UpcomingEventColumnSpacing = 16;
 constexpr int UpcomingEventDateColumnMinimumWidth = 72;
 constexpr int UpcomingEventTimeColumnMinimumWidth = 104;
@@ -516,10 +516,37 @@ void CalendarPage::refreshUpcomingEvents()
     };
 
     std::array<QList<CalendarEvent>, UpcomingEventsScopeCount> eventsByScope;
+    std::array<QList<CalendarEvent>, UpcomingEventsScopeCount> filteredEventsByScope;
+    std::array<bool, UpcomingEventsScopeCount> loadingByScope{};
+    const CalendarEventDisplayOptions options =
+        calendarEventDisplayOptions();
+
     for (UpcomingEventsScope scope : scopes)
     {
         eventsByScope[scopeIndex(scope)] =
             upcomingEventsForScope(scope);
+        filteredEventsByScope[scopeIndex(scope)] =
+            filterUpcomingEvents(
+                eventsByScope[scopeIndex(scope)],
+                options
+                );
+
+        if (scope == UpcomingEventsScope::Next10Events)
+        {
+            while (
+                filteredEventsByScope[scopeIndex(scope)].size()
+                > UpcomingEventsLimit
+                )
+            {
+                filteredEventsByScope[scopeIndex(scope)].removeLast();
+            }
+        }
+
+        loadingByScope[scopeIndex(scope)] =
+            upcomingEventsLoading(
+                scope,
+                filteredEventsByScope[scopeIndex(scope)]
+                );
     }
 
     int dateColumnWidth = UpcomingEventDateColumnMinimumWidth;
@@ -543,34 +570,9 @@ void CalendarPage::refreshUpcomingEvents()
                 );
     }
 
-    const QStringList activeTypes =
-        activeCalendarEventTypes();
-
     for (UpcomingEventsScope scope : scopes)
     {
-        QList<CalendarEvent> filteredEvents;
-        for (const CalendarEvent& event : eventsByScope[scopeIndex(scope)])
-        {
-            if (
-                activeTypes.contains(
-                    normalizedCalendarEventType(event.eventType)
-                    )
-                && calendarEventVisible(event)
-                )
-            {
-                filteredEvents.append(event);
-            }
-        }
-
-        if (scope == UpcomingEventsScope::Next10Events)
-        {
-            while (filteredEvents.size() > UpcomingEventsLimit)
-            {
-                filteredEvents.removeLast();
-            }
-        }
-
-        for (const CalendarEvent& event : filteredEvents)
+        for (const CalendarEvent& event : filteredEventsByScope[scopeIndex(scope)])
         {
             dateColumnWidth =
                 qMax(
@@ -583,7 +585,10 @@ void CalendarPage::refreshUpcomingEvents()
                 qMax(
                     timeColumnWidth,
                     eventTextMetrics.horizontalAdvance(
-                        upcomingEventTimeText(event)
+                        upcomingEventTimeText(
+                            event,
+                            options.use24HourTime
+                            )
                         ) + UpcomingEventColumnTextPadding
                     );
         }
@@ -593,7 +598,9 @@ void CalendarPage::refreshUpcomingEvents()
     {
         renderUpcomingEvents(
             scope,
-            eventsByScope[scopeIndex(scope)],
+            filteredEventsByScope[scopeIndex(scope)],
+            loadingByScope[scopeIndex(scope)],
+            options.use24HourTime,
             dateColumnWidth,
             timeColumnWidth,
             eventTypeColumnWidth
@@ -603,6 +610,8 @@ void CalendarPage::refreshUpcomingEvents()
 void CalendarPage::renderUpcomingEvents(
     UpcomingEventsScope scope,
     const QList<CalendarEvent>& events,
+    bool loading,
+    bool use24HourTime,
     int dateColumnWidth,
     int timeColumnWidth,
     int eventTypeColumnWidth
@@ -626,36 +635,13 @@ void CalendarPage::renderUpcomingEvents(
         delete item;
     }
 
-    const QStringList activeTypes =
-        activeCalendarEventTypes();
-
-    QList<CalendarEvent> filteredEvents;
-    for (const CalendarEvent& event : events)
-    {
-        if (
-            activeTypes.contains(
-                normalizedCalendarEventType(event.eventType)
-                )
-            && calendarEventVisible(event)
-            )
-        {
-            filteredEvents.append(event);
-        }
-    }
-
-    if (scope == UpcomingEventsScope::Next10Events)
-    {
-        while (filteredEvents.size() > UpcomingEventsLimit)
-        {
-            filteredEvents.removeLast();
-        }
-    }
-
-    if (filteredEvents.isEmpty())
+    if (events.isEmpty())
     {
         auto* empty =
             new QLabel(
-                tr("No upcoming events."),
+                loading
+                    ? tr("Loading events…")
+                    : tr("No upcoming events."),
                 layout->parentWidget()
                 );
         empty->setObjectName(
@@ -668,7 +654,7 @@ void CalendarPage::renderUpcomingEvents(
         return;
     }
 
-    for (const CalendarEvent& event : filteredEvents)
+    for (const CalendarEvent& event : events)
     {
         layout->addWidget(
             createUpcomingEventRow(
@@ -676,19 +662,31 @@ void CalendarPage::renderUpcomingEvents(
                 dateColumnWidth,
                 timeColumnWidth,
                 eventTypeColumnWidth,
+                use24HourTime,
                 layout->parentWidget()
                 )
             );
+    }
+
+    if (loading)
+    {
+        auto* loadingLabel =
+            new QLabel(
+                tr("Loading more events…"),
+                layout->parentWidget()
+                );
+        loadingLabel->setObjectName(
+            QStringLiteral("sectionSubtitle")
+            );
+        loadingLabel->setAlignment(Qt::AlignCenter);
+        layout->addWidget(loadingLabel);
     }
 }
 QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
     UpcomingEventsScope scope
     ) const
 {
-    auto* dataService =
-        openDataService(m_services);
-
-    if (!dataService)
+    if (!m_calendarCache)
     {
         return {};
     }
@@ -704,26 +702,166 @@ QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
             m_calendarVisibleMonth.isValid()
                 ? m_calendarVisibleMonth
                 : QDate(today.year(), today.month(), 1);
-        return dataService->loadCalendarEventsInRange(
+        return m_calendarCache->eventsInRange(
             firstOfMonth,
             firstOfMonth.addMonths(1).addDays(-1)
             );
     }
 
     case UpcomingEventsScope::Next30Days:
-        return dataService->loadCalendarEventsInRange(
+        return m_calendarCache->eventsInRange(
             today,
             today.addDays(UpcomingEventsNext30Days)
             );
 
     case UpcomingEventsScope::Next10Events:
-        return dataService->loadUpcomingCalendarEvents(
+        return m_nextTenSearchEnd.isValid()
+            ? m_calendarCache->eventsInRange(
             today,
-            100
-            );
+            m_nextTenSearchEnd
+            )
+            : QList<CalendarEvent>();
     }
 
     return {};
+}
+bool CalendarPage::upcomingEventsLoading(
+    UpcomingEventsScope scope,
+    const QList<CalendarEvent>& events
+    ) const
+{
+    if (!m_calendarCache)
+    {
+        return false;
+    }
+
+    const QDate today =
+        QDate::currentDate();
+
+    switch (scope)
+    {
+    case UpcomingEventsScope::CurrentMonth:
+    {
+        const QDate firstOfMonth =
+            m_calendarVisibleMonth.isValid()
+                ? m_calendarVisibleMonth
+                : QDate(today.year(), today.month(), 1);
+        return !m_calendarCache->isRangeLoaded(
+            firstOfMonth,
+            firstOfMonth.addMonths(1).addDays(-1)
+            );
+    }
+
+    case UpcomingEventsScope::Next30Days:
+        return !m_calendarCache->isRangeLoaded(
+            today,
+            today.addDays(UpcomingEventsNext30Days)
+            );
+
+    case UpcomingEventsScope::Next10Events:
+        return !activeCalendarEventTypes().isEmpty()
+            && events.size() < UpcomingEventsLimit
+            && !m_nextTenSearchComplete;
+    }
+
+    return false;
+}
+
+CalendarPage::CalendarEventDisplayOptions
+CalendarPage::calendarEventDisplayOptions() const
+{
+    CalendarEventDisplayOptions options;
+    options.activeTypes =
+        activeCalendarEventTypes();
+
+    auto* dataService =
+        openDataService(m_services);
+
+    if (dataService)
+    {
+        options.showAllCampuses =
+            settingToBool(
+                dataService->loadSetting(
+                    CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                    false
+                    ),
+                false
+                );
+        options.hideStartOfTermEvents =
+            settingToBool(
+                dataService->loadSetting(
+                    CalendarSettingsKeys::HideStartOfTermEvents,
+                    false
+                    ),
+                false
+                );
+        options.use24HourTime =
+            settingToBool(
+                dataService->loadSetting(
+                    QStringLiteral("schedule_use_24h"),
+                    QStringLiteral("false")
+                    ),
+                false
+                );
+
+        const QString currentName =
+            dataService
+                ->loadSetting(
+                    QStringLiteral("myInfo/campus"),
+                    QString()
+                    )
+                .toString();
+        const QList<CampusInfo> campuses =
+            campusRepository().loadCampuses();
+
+        options.currentCampusCodes.append(currentName);
+
+        for (const CampusInfo& campus : campuses)
+        {
+            options.allCampusCodes.append(campus.campusCode);
+            options.allCampusCodes.append(campus.id);
+
+            if (
+                campus.id.compare(currentName, Qt::CaseInsensitive) == 0
+                || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
+                || campus.campusName.compare(currentName, Qt::CaseInsensitive) == 0
+                )
+            {
+                options.currentCampusCodes.append(campus.campusCode);
+                options.currentCampusCodes.append(campus.id);
+                options.currentCampusCodes.append(campusDisplayName(campus));
+            }
+        }
+    }
+
+    options.currentCampusCodes.removeAll(QString());
+    options.currentCampusCodes.removeDuplicates();
+    options.allCampusCodes.removeAll(QString());
+    options.allCampusCodes.removeDuplicates();
+    return options;
+}
+
+QList<CalendarEvent> CalendarPage::filterUpcomingEvents(
+    const QList<CalendarEvent>& events,
+    const CalendarEventDisplayOptions& options
+    ) const
+{
+    QList<CalendarEvent> filteredEvents;
+
+    for (const CalendarEvent& event : events)
+    {
+        if (
+            options.activeTypes.contains(
+                normalizedCalendarEventType(event.eventType)
+                )
+            && calendarEventVisible(event, options)
+            )
+        {
+            filteredEvents.append(event);
+        }
+    }
+
+    return filteredEvents;
 }
 QStringList CalendarPage::activeCalendarEventTypes() const
 {
@@ -1015,7 +1153,8 @@ QString CalendarPage::upcomingEventDateText(
             );
 }
 QString CalendarPage::upcomingEventTimeText(
-    const CalendarEvent& event
+    const CalendarEvent& event,
+    bool use24HourTime
     ) const
 {
     if (event.allDay)
@@ -1041,20 +1180,8 @@ QString CalendarPage::upcomingEventTimeText(
         return QString();
     }
 
-    auto* dataService =
-        openDataService(m_services);
-    const bool use24h =
-        dataService
-        && settingToBool(
-            dataService->loadSetting(
-                QStringLiteral("schedule_use_24h"),
-                QStringLiteral("false")
-                ),
-            false
-            );
-
     const QString format =
-        use24h
+        use24HourTime
             ? QStringLiteral("HH:mm")
             : QStringLiteral("h:mm AP");
 
@@ -1070,11 +1197,12 @@ QString CalendarPage::upcomingEventTimeText(
             );
 }
 bool CalendarPage::calendarEventVisible(
-    const CalendarEvent& event
+    const CalendarEvent& event,
+    const CalendarEventDisplayOptions& options
     ) const
 {
     if (
-        hideStartOfTermEvents()
+        options.hideStartOfTermEvents
         && isStartOfTermCalendarEvent(event)
         )
     {
@@ -1083,103 +1211,17 @@ bool CalendarPage::calendarEventVisible(
 
     return CalendarEventCampusFilter::eventMatchesCampus(
         event,
-        currentCampusCodes(),
-        allCampusCodes(),
-        showAllCalendarCampuses()
+        options.currentCampusCodes,
+        options.allCampusCodes,
+        options.showAllCampuses
         );
-}
-bool CalendarPage::showAllCalendarCampuses() const
-{
-    auto* dataService =
-        openDataService(m_services);
-
-    return dataService
-        && settingToBool(
-            dataService->loadSetting(
-                CalendarSettingsKeys::ShowEventsAtAllCampuses,
-                false
-                ),
-            false
-            );
-}
-bool CalendarPage::hideStartOfTermEvents() const
-{
-    auto* dataService =
-        openDataService(m_services);
-
-    return dataService
-        && settingToBool(
-            dataService->loadSetting(
-                CalendarSettingsKeys::HideStartOfTermEvents,
-                false
-                ),
-            false
-            );
-}
-QStringList CalendarPage::currentCampusCodes() const
-{
-    QStringList codes;
-    QString currentId;
-    QString currentName;
-
-    if (auto* dataService = openDataService(m_services))
-    {
-        currentName =
-            dataService
-                ->loadSetting(
-                    QStringLiteral("myInfo/campus"),
-                    QString()
-                    )
-                .toString();
-        currentId =
-            currentName;
-    }
-
-    codes.append(currentId);
-    codes.append(currentName);
-
-    const QList<CampusInfo> campuses =
-        campusRepository().loadCampuses();
-
-    for (const CampusInfo& campus : campuses)
-    {
-        if (
-            campus.id.compare(currentId, Qt::CaseInsensitive) == 0
-            || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
-            || campus.campusName.compare(currentName, Qt::CaseInsensitive) == 0
-            )
-        {
-            codes.append(campus.campusCode);
-            codes.append(campus.id);
-            codes.append(campusDisplayName(campus));
-        }
-    }
-
-    codes.removeAll(QString());
-    codes.removeDuplicates();
-    return codes;
-}
-QStringList CalendarPage::allCampusCodes() const
-{
-    QStringList codes;
-    const QList<CampusInfo> campuses =
-        campusRepository().loadCampuses();
-
-    for (const CampusInfo& campus : campuses)
-    {
-        codes.append(campus.campusCode);
-        codes.append(campus.id);
-    }
-
-    codes.removeAll(QString());
-    codes.removeDuplicates();
-    return codes;
 }
 QWidget* CalendarPage::createUpcomingEventRow(
     const CalendarEvent& event,
     int dateColumnWidth,
     int timeColumnWidth,
     int eventTypeColumnWidth,
+    bool use24HourTime,
     QWidget* parent
     )
 {
@@ -1254,7 +1296,10 @@ QWidget* CalendarPage::createUpcomingEventRow(
 
     auto* time =
         new QLabel(
-            upcomingEventTimeText(event),
+            upcomingEventTimeText(
+                event,
+                use24HourTime
+                ),
             row
             );
     time->setFont(eventFont);

@@ -13,6 +13,7 @@
 
 class AcademicCalendarProvider;
 class ApplicationServices;
+class CalendarEventCache;
 class CalendarEventModel;
 class QEvent;
 class QFont;
@@ -78,6 +79,18 @@ private slots:
         );
 
 private:
+    static constexpr int UpcomingEventsLimit = 10;
+
+    struct CalendarEventDisplayOptions
+    {
+        QStringList activeTypes;
+        QStringList currentCampusCodes;
+        QStringList allCampusCodes;
+        bool showAllCampuses = false;
+        bool hideStartOfTermEvents = false;
+        bool use24HourTime = false;
+    };
+
     void buildUi();
     void buildCalendarContent();
     void buildUpcomingEventsPanel(
@@ -95,17 +108,34 @@ private:
         const CalendarEvent& event,
         bool existingEvent
         );
+    void refreshCalendarData();
+    void invalidateCalendarData();
+    void ensureNextTenEvents();
+    void handleNextEventMonthFound(
+        const QDate& firstEventDate
+        );
     void refreshUpcomingEvents();
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,
         const QList<CalendarEvent>& events,
+        bool loading,
+        bool use24HourTime,
         int dateColumnWidth,
         int timeColumnWidth,
         int eventTypeColumnWidth
         );
     QList<CalendarEvent> upcomingEventsForScope(
         UpcomingEventsScope scope
+        ) const;
+    bool upcomingEventsLoading(
+        UpcomingEventsScope scope,
+        const QList<CalendarEvent>& events
+        ) const;
+    CalendarEventDisplayOptions calendarEventDisplayOptions() const;
+    QList<CalendarEvent> filterUpcomingEvents(
+        const QList<CalendarEvent>& events,
+        const CalendarEventDisplayOptions& options
         ) const;
     QStringList activeCalendarEventTypes() const;
     QColor calendarEventTypeColor(
@@ -134,20 +164,19 @@ private:
         const CalendarEvent& event
         ) const;
     QString upcomingEventTimeText(
-        const CalendarEvent& event
+        const CalendarEvent& event,
+        bool use24HourTime
         ) const;
     bool calendarEventVisible(
-        const CalendarEvent& event
+        const CalendarEvent& event,
+        const CalendarEventDisplayOptions& options
         ) const;
-    bool showAllCalendarCampuses() const;
-    bool hideStartOfTermEvents() const;
-    QStringList currentCampusCodes() const;
-    QStringList allCampusCodes() const;
     QWidget* createUpcomingEventRow(
         const CalendarEvent& event,
         int dateColumnWidth,
         int timeColumnWidth,
         int eventTypeColumnWidth,
+        bool use24HourTime,
         QWidget* parent
         );
     QLabel* createTopLevelHeading(
@@ -163,6 +192,7 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_upcomingEventsHeading = nullptr;
+    CalendarEventCache* m_calendarCache = nullptr;
     CalendarEventModel* m_calendarModel = nullptr;
     AcademicCalendarProvider* m_academicCalendarProvider = nullptr;
     QQuickWidget* m_calendarView = nullptr;
@@ -171,4 +201,7 @@ private:
     QList<QPushButton*> m_eventTypeFilterButtons;
     QHash<QString, bool> m_eventTypeFilterStates;
     QDate m_calendarVisibleMonth;
+    QDate m_nextTenSearchEnd;
+    bool m_nextTenSearchComplete = false;
+    bool m_nextTenLookupPending = false;
 };

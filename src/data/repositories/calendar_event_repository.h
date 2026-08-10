@@ -26,6 +26,10 @@ public:
         int limit
         );
 
+    QDate findNextCalendarEventStartDate(
+        const QDate& fromDate
+        );
+
     CalendarEvent getCalendarEvent(
         int eventId
         );

@@ -493,6 +493,11 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
         ON calendar_events (start_date, end_date, start_time, title)
     )");
 
+    query.exec(R"(
+        CREATE INDEX IF NOT EXISTS idx_calendar_events_end_dates
+        ON calendar_events (end_date, start_date, start_time, title)
+    )");
+
     ensureTableColumn(
         database,
         QStringLiteral("calendar_events"),

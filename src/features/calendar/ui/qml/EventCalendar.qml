@@ -44,6 +44,7 @@ Item {
     readonly property int sectionDividerWidth: 3
 
     readonly property int termRevision: termProvider ? termProvider.revision : 0
+    readonly property int eventRevision: eventProvider ? eventProvider.revision : -1
     readonly property var calendarLocale: Qt.locale()
     readonly property int firstDayOfWeek: termProvider
                                           ? termProvider.firstDayOfWeek
@@ -65,6 +66,12 @@ Item {
                                              && shownDate.getMonth() === 0)
 
     readonly property var academicRows: academicRowsForRevision(root.termRevision)
+    readonly property bool visibleMonthEventsLoading: eventRevision >= 0
+                                                   && eventProvider
+                                                   && eventProvider.loading
+                                                   && !eventProvider.isMonthLoaded(
+                                                       shownDate.getFullYear(),
+                                                       shownDate.getMonth() + 1)
 
     function academicRowsForRevision(revision) {
         if (!termProvider)
@@ -619,6 +626,22 @@ Item {
                                 root.eventActivated(eventId)
                             }
                         }
+                    }
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    visible: root.visibleMonthEventsLoading
+                    text: qsTr("Loading events…")
+                    color: root.textColor
+                    font.pixelSize: root.baseFontPixelSize
+                    padding: 10
+                    z: 2
+
+                    background: Rectangle {
+                        color: root.calendarBackground
+                        border.color: root.gridLineColor
+                        radius: 4
                     }
                 }
             }
