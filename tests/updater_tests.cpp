@@ -17,6 +17,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
+#include <QLocale>
+#include <QMetaObject>
+#include <QProgressBar>
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -433,6 +437,7 @@ private slots:
     void dialogShowsDisabledResourcePackSection();
     void dialogShowsDownloadActionForAvailableUpdate();
     void dialogShowsSkipAndUnskipActions();
+    void dialogUsesConsistentProgramStatusLayout();
     void signatureVerifierAcceptsValidSignature();
     void signatureVerifierRejectsChangedPayload();
     void downloaderRejectsChecksumMismatch();
@@ -850,6 +855,227 @@ void UpdaterTests::dialogShowsSkipAndUnskipActions()
         unskipButton->text(),
         QStringLiteral("Notify Me About This Version")
         );
+}
+
+void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
+{
+    QJsonArray releases;
+    releases.append(
+        releaseObject(
+            QStringLiteral("9.9.9"),
+            GitHubRelease::currentPlatformKeys().first()
+            )
+        );
+
+    HttpServer server(
+        releasesJson(releases)
+        );
+    QVERIFY(server.listen());
+
+    const auto verifyStatusHeader =
+        [](UpdateDialog& dialog)
+        {
+            dialog.resize(640, dialog.sizeHint().height());
+            dialog.show();
+            QCoreApplication::processEvents();
+
+            QLabel* indicator =
+                dialog.findChild<QLabel*>(
+                    QStringLiteral("programUpdateIndicator")
+                    );
+            QLabel* title =
+                dialog.findChild<QLabel*>(
+                    QStringLiteral("programUpdateTitle")
+                    );
+            QLabel* details =
+                dialog.findChild<QLabel*>(
+                    QStringLiteral("programUpdateDetails")
+                    );
+
+            QVERIFY(indicator);
+            QVERIFY(title);
+            QVERIFY(details);
+            QCOMPARE(title->x(), details->x());
+            QVERIFY(indicator->geometry().right() < title->geometry().left());
+            QVERIFY(indicator->geometry().center().y() >= title->geometry().top());
+            QVERIFY(indicator->geometry().center().y() <= details->geometry().bottom());
+        };
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl =
+        server.url();
+
+    QCoreApplication::setApplicationVersion(
+        QStringLiteral("9.9.9")
+        );
+    UpdateService currentService(configuration);
+    QSignalSpy currentSucceededSpy(
+        &currentService,
+        &UpdateService::checkSucceeded
+        );
+    QVERIFY(
+        currentService.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(currentSucceededSpy.wait(5000));
+
+    UpdateDialog currentDialog(
+        &currentService,
+        true
+        );
+    currentDialog.refreshForOpen();
+    verifyStatusHeader(currentDialog);
+
+    QLabel* currentTitle =
+        currentDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateTitle")
+            );
+    QLabel* currentNotes =
+        currentDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateNotes")
+            );
+    QProgressBar* currentProgress =
+        currentDialog.findChild<QProgressBar*>(
+            QStringLiteral("programUpdateProgress")
+            );
+    QLabel* currentProgressText =
+        currentDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateProgressText")
+            );
+    QVERIFY(
+        !currentDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateMetadata")
+            )
+        );
+    QVERIFY(currentTitle);
+    QVERIFY(currentNotes);
+    QVERIFY(currentProgress);
+    QVERIFY(currentProgressText);
+    QVERIFY(!currentNotes->isHidden());
+    QCOMPARE(currentNotes->x(), currentTitle->x());
+    QVERIFY(currentProgress->isHidden());
+    QVERIFY(currentProgressText->isHidden());
+
+    QCoreApplication::setApplicationVersion(
+        QStringLiteral("1.0.0")
+        );
+    UpdateService availableService(configuration);
+    QSignalSpy availableSucceededSpy(
+        &availableService,
+        &UpdateService::checkSucceeded
+        );
+    QVERIFY(
+        availableService.checkForUpdates(
+            UpdateService::CheckPolicy::Force
+            )
+        );
+    QVERIFY(availableSucceededSpy.wait(5000));
+
+    UpdateDialog availableDialog(
+        &availableService,
+        true
+        );
+    availableDialog.refreshForOpen();
+    verifyStatusHeader(availableDialog);
+
+    QLabel* availableTitle =
+        availableDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateTitle")
+            );
+    QLabel* availableDetails =
+        availableDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateDetails")
+            );
+    QLabel* availableNotes =
+        availableDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateNotes")
+            );
+    QProgressBar* availableProgress =
+        availableDialog.findChild<QProgressBar*>(
+            QStringLiteral("programUpdateProgress")
+            );
+    QLabel* availableProgressText =
+        availableDialog.findChild<QLabel*>(
+            QStringLiteral("programUpdateProgressText")
+            );
+    QVERIFY(availableTitle);
+    QVERIFY(availableDetails);
+    QVERIFY(availableNotes);
+    QVERIFY(availableProgress);
+    QVERIFY(availableProgressText);
+    QVERIFY(
+        availableDetails->text().contains(
+            QStringLiteral("Installed Version: 1.0.0")
+            )
+        );
+    QVERIFY(
+        !availableDetails->text().contains(
+            QStringLiteral("You are currently using")
+            )
+        );
+    QCOMPARE(availableNotes->x(), availableTitle->x());
+    QVERIFY(availableProgress->isHidden());
+    QVERIFY(availableProgressText->isHidden());
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &availableDialog,
+            "handleDownloadStarted",
+            Qt::DirectConnection
+            )
+        );
+    QCoreApplication::processEvents();
+    verifyStatusHeader(availableDialog);
+
+    QCOMPARE(
+        availableTitle->text(),
+        QStringLiteral("Downloading Update")
+        );
+    QVERIFY(!availableProgress->isHidden());
+    QVERIFY(!availableProgressText->isHidden());
+    QCOMPARE(availableProgress->x(), availableTitle->x());
+    QCOMPARE(availableProgressText->x(), availableTitle->x());
+    QCOMPARE(
+        availableDetails->text(),
+        QStringLiteral("The update is being downloaded.")
+        );
+    QCOMPARE(
+        availableProgressText->text(),
+        QStringLiteral("%1 of %2")
+            .arg(
+                QLocale::system().formattedDataSize(0),
+                QLocale::system().formattedDataSize(123)
+                )
+        );
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &availableDialog,
+            "handleDownloadProgress",
+            Qt::DirectConnection,
+            Q_ARG(qint64, 61),
+            Q_ARG(qint64, 123)
+            )
+        );
+    QCOMPARE(
+        availableProgressText->text(),
+        QStringLiteral("%1 of %2")
+            .arg(
+                QLocale::system().formattedDataSize(61),
+                QLocale::system().formattedDataSize(123)
+                )
+        );
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &availableDialog,
+            "handleDownloadSucceeded",
+            Qt::DirectConnection,
+            Q_ARG(QString, QStringLiteral("C:/temp/ClassMngr-update.exe"))
+            )
+        );
+    QVERIFY(availableProgressText->isHidden());
 }
 
 void UpdaterTests::signatureVerifierAcceptsValidSignature()

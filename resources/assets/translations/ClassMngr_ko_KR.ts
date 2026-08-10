@@ -9269,8 +9269,8 @@ Version: %2</source>
     </message>
     <message>
         <location line="+143"/>
-        <source>Downloading %1...</source>
-        <translation>%1 다운로드 중...</translation>
+        <source>The update is being downloaded.</source>
+        <translation>업데이트를 다운로드하는 중입니다.</translation>
     </message>
     <message>
         <source>Cancel Download</source>
@@ -9392,8 +9392,8 @@ Version: %2</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>%1 has been saved and can be resumed.</source>
-        <translation>%1이(가) 저장되었으며 다운로드를 재개할 수 있습니다.</translation>
+        <source>The download has been paused and can be resumed.</source>
+        <translation>다운로드가 일시 중지되었습니다. 다시 시작할 수 있습니다.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -9477,8 +9477,12 @@ Version: %2</source>
     </message>
     <message>
         <location line="+128"/>
-        <source>ClassMngr %1 is available. You are currently using %2.</source>
-        <translation>ClassMngr %1을(를) 사용할 수 있습니다. 현재 %2을(를) 사용하고 있습니다.</translation>
+        <source>ClassMngr %1 is available%2.</source>
+        <translation>ClassMngr %1을(를) 사용할 수 있습니다%2.</translation>
+    </message>
+    <message>
+        <source>Installed Version: %1</source>
+        <translation>설치된 버전: %1</translation>
     </message>
 </context>
 <context>

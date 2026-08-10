@@ -113,10 +113,9 @@ void UpdateDialog::handleCheckStarted()
 {
     m_lastRefreshError.clear();
 
-    m_metadataLabel->clear();
-    m_metadataLabel->setVisible(false);
     m_notesLabel->clear();
     m_notesLabel->setVisible(false);
+    clearProgressText();
 
     m_progressBar->setRange(0, 0);
     m_progressBar->setVisible(true);
@@ -241,6 +240,7 @@ void UpdateDialog::handleDownloadPreparing(
             : 0
         );
     m_progressBar->setVisible(true);
+    setProgressText(bytesAvailable, bytesTotal);
 
     setStatus(
         QStringLiteral("◌"),
@@ -267,13 +267,13 @@ void UpdateDialog::handleDownloadStarted()
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(0);
     m_progressBar->setVisible(true);
+    setProgressText(0, m_result.artifact.sizeBytes);
 
     setStatus(
         QStringLiteral("↓"),
         QStringLiteral("#4da3ff"),
         tr("Downloading Update"),
-        tr("Downloading %1...")
-            .arg(m_result.artifact.fileName)
+        tr("The update is being downloaded.")
         );
     configureActions(
         false,
@@ -297,6 +297,7 @@ void UpdateDialog::handleDownloadProgress(
     if (bytesTotal <= 0)
     {
         m_progressBar->setRange(0, 0);
+        clearProgressText();
         return;
     }
 
@@ -306,6 +307,7 @@ void UpdateDialog::handleDownloadProgress(
             (bytesReceived * 100) / bytesTotal
             )
         );
+    setProgressText(bytesReceived, bytesTotal);
 }
 
 void UpdateDialog::handleDownloadSucceeded(
@@ -335,6 +337,7 @@ void UpdateDialog::handleDownloadVerifying()
 {
     m_progressBar->setVisible(true);
     m_progressBar->setRange(0, 0);
+    clearProgressText();
 
     setStatus(
         QStringLiteral("◌"),
@@ -425,13 +428,12 @@ void UpdateDialog::buildUi()
     programLayout->setColumnStretch(1, 0);
     programLayout->setColumnStretch(2, 1);
 
-    // Row 0-3: content rows (minimum size, no expansion)
+    // Row 0 is the stable status header. Supporting rows appear below it
+    // only when the current status has supporting content to show.
     programLayout->setRowStretch(0, 0);
     programLayout->setRowStretch(1, 0);
     programLayout->setRowStretch(2, 0);
     programLayout->setRowStretch(3, 0);
-    // Row 4: progress bar (expands if needed)
-    programLayout->setRowStretch(4, 1);
 
     m_statusIndicator =
         new QLabel(
@@ -465,11 +467,6 @@ void UpdateDialog::buildUi()
     detailsFont.setPointSize(10);
     m_detailsLabel->setFont(detailsFont);
 
-    m_metadataLabel =
-        new QLabel(m_programFrame);
-    m_metadataLabel->setObjectName("programUpdateMetadata");
-    m_metadataLabel->setWordWrap(true);
-
     m_notesLabel =
         new QLabel(m_programFrame);
     m_notesLabel->setObjectName("programUpdateNotes");
@@ -485,20 +482,36 @@ void UpdateDialog::buildUi()
     m_progressBar->setObjectName("programUpdateProgress");
     m_progressBar->setVisible(false);
 
-    // Add left alignment to all content labels
+    m_progressLabel =
+        new QLabel(m_programFrame);
+    m_progressLabel->setObjectName("programUpdateProgressText");
+    m_progressLabel->setVisible(false);
+    m_progressLabel->setFont(detailsFont);
+
+    // Keep the status heading and details together so the indicator always
+    // aligns with the same compact header, regardless of optional rows.
     m_titleLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     m_detailsLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-    m_metadataLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     m_notesLabel->setAlignment(Qt::AlignLeft);
+    m_progressLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
 
-    // Place indicator in row 0-3 (spanning all content rows, vertically centered)
-    programLayout->addWidget(m_statusIndicator, 0, 0, 4, 1, Qt::AlignVCenter);
-    // Content labels start from row 0 in column 2
-    programLayout->addWidget(m_titleLabel, 0, 2);
-    programLayout->addWidget(m_detailsLabel, 1, 2);
-    programLayout->addWidget(m_metadataLabel, 2, 2);
-    programLayout->addWidget(m_notesLabel, 3, 2);
-    programLayout->addWidget(m_progressBar, 4, 0, 1, 3);
+    auto* statusHeaderLayout =
+        new QVBoxLayout;
+    statusHeaderLayout->setContentsMargins(0, 0, 0, 0);
+    statusHeaderLayout->setSpacing(6);
+    statusHeaderLayout->addWidget(m_titleLabel);
+    statusHeaderLayout->addWidget(m_detailsLabel);
+
+    programLayout->addWidget(
+        m_statusIndicator,
+        0,
+        0,
+        Qt::AlignVCenter | Qt::AlignHCenter
+        );
+    programLayout->addLayout(statusHeaderLayout, 0, 2);
+    programLayout->addWidget(m_notesLabel, 1, 2);
+    programLayout->addWidget(m_progressBar, 2, 2);
+    programLayout->addWidget(m_progressLabel, 3, 2);
 
     rootLayout->addWidget(m_programFrame);
 
@@ -664,10 +677,9 @@ void UpdateDialog::connectSignals()
 void UpdateDialog::showInitialState()
 {
     m_progressBar->setVisible(false);
+    clearProgressText();
     m_notesLabel->clear();
     m_notesLabel->setVisible(false);
-    m_metadataLabel->clear();
-    m_metadataLabel->setVisible(false);
 
     setStatus(
         QStringLiteral("○"),
@@ -714,18 +726,7 @@ void UpdateDialog::showResult(
     m_hasResult =
         true;
     m_progressBar->setVisible(false);
-    const QString metadataText =
-        resultMetadata(result);
-    if (metadataText.isEmpty())
-    {
-        m_metadataLabel->clear();
-        m_metadataLabel->setVisible(false);
-    }
-    else
-    {
-        m_metadataLabel->setText(metadataText);
-        m_metadataLabel->setVisible(true);
-    }
+    clearProgressText();
 
     if (result.releaseUrl.isValid())
     {
@@ -833,6 +834,7 @@ void UpdateDialog::showReadyToInstall()
     m_progressBar->setVisible(true);
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(100);
+    clearProgressText();
 
     QString details =
         tr("The update was downloaded and verified.");
@@ -896,20 +898,13 @@ void UpdateDialog::showPausedDownload(
                 )
             : 0
         );
-
-    const QString amount =
-        tr("%1 of %2")
-            .arg(
-                QLocale::system().formattedDataSize(bytesReceived),
-                QLocale::system().formattedDataSize(bytesTotal)
-                );
+    setProgressText(bytesReceived, bytesTotal);
 
     setStatus(
         QStringLiteral("Ⅱ"),
         QStringLiteral("#e9a23b"),
         tr("Download Paused"),
-        tr("%1 has been saved and can be resumed.")
-            .arg(amount)
+        tr("The download has been paused and can be resumed.")
         );
     configureActions(
         false,
@@ -930,6 +925,7 @@ void UpdateDialog::showFailure(
     )
 {
     m_progressBar->setVisible(false);
+    clearProgressText();
 
     if (m_service->hasResult())
     {
@@ -955,8 +951,6 @@ void UpdateDialog::showFailure(
 
     m_notesLabel->clear();
     m_notesLabel->setVisible(false);
-    m_metadataLabel->clear();
-    m_metadataLabel->setVisible(false);
     setStatus(
         QStringLiteral("!"),
         QStringLiteral("#d9534f"),
@@ -985,6 +979,7 @@ void UpdateDialog::showOperationFailure(
     )
 {
     m_progressBar->setVisible(false);
+    clearProgressText();
 
     if (
         m_hasResult
@@ -1047,6 +1042,33 @@ void UpdateDialog::setStatus(
     m_detailsLabel->setText(details);
 }
 
+void UpdateDialog::setProgressText(
+    qint64 bytesReceived,
+    qint64 bytesTotal
+    )
+{
+    if (bytesTotal <= 0)
+    {
+        clearProgressText();
+        return;
+    }
+
+    m_progressLabel->setText(
+        tr("%1 of %2")
+            .arg(
+                QLocale::system().formattedDataSize(bytesReceived),
+                QLocale::system().formattedDataSize(bytesTotal)
+                )
+        );
+    m_progressLabel->setVisible(true);
+}
+
+void UpdateDialog::clearProgressText()
+{
+    m_progressLabel->clear();
+    m_progressLabel->setVisible(false);
+}
+
 void UpdateDialog::configureActions(
     bool checkVisible,
     bool checkEnabled,
@@ -1107,12 +1129,14 @@ QString UpdateDialog::resultDetails(
 
     if (result.updateAvailable)
     {
-        return tr("ClassMngr %1 is available%2. You are currently using %3.")
+        return tr("ClassMngr %1 is available%2.")
             .arg(
                 result.latestVersion.toString(),
-                releaseInfo,
-                result.currentVersion.toString()
-                );
+                releaseInfo
+                )
+            + QStringLiteral("\n")
+            + tr("Installed Version: %1")
+                .arg(result.currentVersion.toString());
     }
 
     return tr("Latest Version: %1%2")
@@ -1121,37 +1145,6 @@ QString UpdateDialog::resultDetails(
             releaseInfo.isEmpty()
                 ? QString()
                 : releaseInfo
-            );
-}
-
-QString UpdateDialog::resultMetadata(
-    const UpdateCheckResult& result
-    ) const
-{
-    if (!result.updateAvailable)
-    {
-        return QString();
-    }
-
-    const QString fileName =
-        result.artifact.fileName.trimmed();
-
-    if (fileName.isEmpty())
-    {
-        return QString();
-    }
-
-    if (result.artifact.sizeBytes <= 0)
-    {
-        return fileName;
-    }
-
-    return tr("%1 • %2")
-        .arg(
-            fileName,
-            QLocale::system().formattedDataSize(
-                result.artifact.sizeBytes
-                )
             );
 }
 

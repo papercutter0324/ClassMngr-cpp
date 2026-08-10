@@ -9223,8 +9223,8 @@ Version: %2</source>
     </message>
     <message>
         <location line="+143"/>
-        <source>Downloading %1...</source>
-        <translation type="unfinished"></translation>
+        <source>The update is being downloaded.</source>
+        <translation>The update is being downloaded.</translation>
     </message>
     <message>
         <location line="+89"/>
@@ -9342,8 +9342,8 @@ Version: %2</source>
     </message>
     <message>
         <location line="+1"/>
-        <source>%1 has been saved and can be resumed.</source>
-        <translation>%1 has been saved and can be resumed.</translation>
+        <source>The download has been paused and can be resumed.</source>
+        <translation>The download has been paused and can be resumed.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -9427,8 +9427,12 @@ Version: %2</source>
     </message>
     <message>
         <location line="+128"/>
-        <source>ClassMngr %1 is available. You are currently using %2.</source>
-        <translation type="unfinished"></translation>
+        <source>ClassMngr %1 is available%2.</source>
+        <translation>ClassMngr %1 is available%2.</translation>
+    </message>
+    <message>
+        <source>Installed Version: %1</source>
+        <translation>Installed Version: %1</translation>
     </message>
 </context>
 <context>

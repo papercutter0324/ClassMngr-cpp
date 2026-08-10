@@ -117,6 +117,11 @@ private:
         const QString& title,
         const QString& details
         );
+    void setProgressText(
+        qint64 bytesReceived,
+        qint64 bytesTotal
+        );
+    void clearProgressText();
     void configureActions(
         bool checkVisible,
         bool checkEnabled,
@@ -133,9 +138,6 @@ private:
     QString resultDetails(
         const UpdateCheckResult& result
         ) const;
-    QString resultMetadata(
-        const UpdateCheckResult& result
-        ) const;
     void installOrRevealUpdate();
 
 private:
@@ -146,9 +148,9 @@ private:
     QLabel* m_statusIndicator = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_detailsLabel = nullptr;
-    QLabel* m_metadataLabel = nullptr;
     QLabel* m_notesLabel = nullptr;
     QProgressBar* m_progressBar = nullptr;
+    QLabel* m_progressLabel = nullptr;
     QPushButton* m_checkButton = nullptr;
     QPushButton* m_secondaryButton = nullptr;
     QPushButton* m_primaryButton = nullptr;
