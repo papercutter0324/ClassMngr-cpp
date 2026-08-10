@@ -46,6 +46,7 @@ QGroupBox* addActionChoices(
 {
     auto* group = new QGroupBox(title, parent);
     auto* layout = new QVBoxLayout(group);
+    layout->setSpacing(12);
 
     for (QAction* action : actions)
     {
@@ -146,7 +147,7 @@ QWidget* createPreferencesPage(
 
     auto* layout = new QVBoxLayout(page);
     layout->setContentsMargins(12, 12, 12, 12);
-    layout->setSpacing(10);
+    layout->setSpacing(24);
     layout->setAlignment(Qt::AlignTop);
     return page;
 }
@@ -215,6 +216,7 @@ void showPreferencesDialog(
             );
     auto* updatesLayout =
         new QVBoxLayout(updatesGroup);
+    updatesLayout->setSpacing(12);
     addActionCheckBox(
         updatesGroup,
         updatesLayout,
@@ -229,6 +231,7 @@ void showPreferencesDialog(
             );
     auto* sidebarLayout =
         new QVBoxLayout(sidebarGroup);
+    sidebarLayout->setSpacing(12);
     addActionCheckBox(
         sidebarGroup,
         sidebarLayout,
@@ -248,6 +251,10 @@ void showPreferencesDialog(
             );
     auto* excelImportLayout =
         new QFormLayout(excelImportGroup);
+    excelImportLayout->setFormAlignment(
+        Qt::AlignLeft | Qt::AlignTop
+        );
+    excelImportLayout->setLabelAlignment(Qt::AlignLeft);
     auto* excelImportTimeout =
         new QComboBox(excelImportGroup);
     excelImportTimeout->setObjectName(
@@ -274,8 +281,12 @@ void showPreferencesDialog(
             )
         );
     excelImportLayout->addRow(
-        preferencesText("Workbook timeout:"),
+        preferencesText("Workbook Timeout:"),
         excelImportTimeout
+        );
+    excelImportLayout->setAlignment(
+        excelImportTimeout,
+        Qt::AlignLeft
         );
     QObject::connect(
         excelImportTimeout,
