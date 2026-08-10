@@ -1188,10 +1188,12 @@ void ScheduleEditorDialog::saveChanges()
 }
 
 SchedulePrintDialog::SchedulePrintDialog(
+    Action action,
     QWidget* parent
     )
     : QDialog(parent)
 {
+    Q_UNUSED(action);
     QTimer::singleShot(
         0,
         this,

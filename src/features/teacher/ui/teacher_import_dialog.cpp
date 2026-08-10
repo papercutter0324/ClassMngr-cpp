@@ -1,4 +1,6 @@
 #include "teacher_import_dialog.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/settingsmanager.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
@@ -42,7 +44,7 @@ TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     m_fileEdit->setReadOnly(true);
     m_fileEdit->setPlaceholderText(tr("Select an XLSX teacher list..."));
     fileLabel->setBuddy(m_fileEdit);
-    m_browseButton = new QPushButton(tr("Browse..."), this);
+    m_browseButton = new TextFitPushButton(tr("Browse..."), this);
     m_browseButton->setObjectName(QStringLiteral("teacherImportBrowseButton"));
     fileLayout->addWidget(m_fileEdit, 1);
     fileLayout->addWidget(m_browseButton);
@@ -109,7 +111,8 @@ TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     m_candidateScrollArea->setWidget(checklistsHost);
     mainLayout->addWidget(m_candidateScrollArea, 1);
 
-    m_buttons = new QDialogButtonBox(QDialogButtonBox::Cancel, this);
+    m_buttons =
+        new TextFitDialogButtonBox(QDialogButtonBox::Cancel, this);
     m_importButton = m_buttons->addButton(tr("Import"), QDialogButtonBox::AcceptRole);
     m_importButton->setObjectName(QStringLiteral("teacherImportAcceptButton"));
     m_importButton->setEnabled(false);

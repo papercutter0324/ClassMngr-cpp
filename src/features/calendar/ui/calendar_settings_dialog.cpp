@@ -5,6 +5,8 @@
 #include "data/data_service.h"
 #include "features/calendar/calendar_event_import_service.h"
 #include "features/calendar/calendar_settings_keys.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
 #include <QDateEdit>
@@ -311,7 +313,7 @@ void CalendarSettingsDialog::buildUi()
     mainLayout->addWidget(tabs);
 
     m_buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Save | QDialogButtonBox::Cancel,
             this
             );
@@ -375,7 +377,7 @@ QWidget* CalendarSettingsDialog::buildOptionsTab()
     layout->addWidget(m_startWeekOnMondayCheck);
 
     m_resetEventsButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Reset Calendar to Defaults"),
             page
             );
@@ -513,7 +515,7 @@ QWidget* CalendarSettingsDialog::buildTermSchedulesTab()
         );
 
     m_restoreButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Restore Term Defaults"),
             page
             );
@@ -573,7 +575,7 @@ QWidget* CalendarSettingsDialog::buildImportTab()
     m_importUrlEdit->setMinimumWidth(420);
 
     m_importButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Import Events"),
             page
             );

@@ -14,6 +14,7 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/utils/sidebar_node_naming.h"
 
@@ -496,7 +497,7 @@ int chooseRecord(
     }
 
     auto* buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
             &dialog
             );

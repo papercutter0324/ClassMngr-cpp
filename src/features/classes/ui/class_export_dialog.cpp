@@ -5,6 +5,8 @@
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QDialogButtonBox>
 #include <QCollator>
@@ -108,14 +110,14 @@ ClassExportDialog::ClassExportDialog(
     }
 
     auto* selectionLayout = new QHBoxLayout;
-    auto* selectAllButton = new QPushButton(tr("Select All"), this);
-    auto* clearButton = new QPushButton(tr("Clear"), this);
+    auto* selectAllButton = new TextFitPushButton(tr("Select All"), this);
+    auto* clearButton = new TextFitPushButton(tr("Clear"), this);
     selectionLayout->addWidget(selectAllButton);
     selectionLayout->addWidget(clearButton);
     selectionLayout->addStretch(1);
     layout->addLayout(selectionLayout);
 
-    auto* buttons = new QDialogButtonBox(
+    auto* buttons = new TextFitDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     m_exportButton = buttons->button(QDialogButtonBox::Ok);
     m_exportButton->setObjectName(QStringLiteral("exportClassesButton"));

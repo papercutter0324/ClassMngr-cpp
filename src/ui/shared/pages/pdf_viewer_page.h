@@ -33,6 +33,10 @@ public:
     ~PdfViewerPage() override;
 
     void retranslateUi() override;
+    [[nodiscard]] PageOutputCapabilities
+        outputCapabilities() const override;
+    void printCurrentPage() override;
+    void saveCurrentPageAs() override;
 
     [[nodiscard]] bool loadPdf(
         const PdfViewerDocumentDescriptor& descriptor
@@ -107,8 +111,6 @@ private:
     QPushButton* m_zoomInButton = nullptr;
     QPushButton* m_fitWidthButton = nullptr;
     QPushButton* m_fitPageButton = nullptr;
-    QPushButton* m_exportButton = nullptr;
-    QPushButton* m_printButton = nullptr;
 
     QString m_currentFilePath;
     qreal m_currentZoom = 1.0;

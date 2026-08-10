@@ -6,9 +6,6 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
-#include "ui/shared/widgets/text_fit_push_button.h"
-
-#include <algorithm>
 
 #include <QtTest>
 
@@ -18,6 +15,7 @@
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QTabWidget>
 #include <QTimer>
 
 namespace ScheduleWidgetTestStubs
@@ -29,8 +27,9 @@ void RosterEditorWidget::importScores()
 {
 }
 
-void RosterEditorWidget::printRosters()
+void RosterEditorWidget::outputRosters(bool print)
 {
+    Q_UNUSED(print);
 }
 
 namespace
@@ -115,7 +114,7 @@ class TestingClassesPageTests : public QObject
 private slots:
     void init();
     void rosterEditorOmitsRemoveButtonAndKeepsContextAction();
-    void rosterPrintControlUsesConciseTextFitLabel();
+    void outputAvailabilityFollowsRosterTabAndLoadedClass();
     void testingClassesUsesNarrowNonCollapsibleNavigation();
     void testingRosterHidesEvaluationsWithoutLosingData();
 };
@@ -222,29 +221,35 @@ void TestingClassesPageTests
     QVERIFY(foundRemoveAction);
 }
 
-void TestingClassesPageTests::rosterPrintControlUsesConciseTextFitLabel()
+void TestingClassesPageTests
+    ::outputAvailabilityFollowsRosterTabAndLoadedClass()
 {
     ApplicationServices services;
-    RosterEditorWidget editor(&services, true);
-
-    const auto buttons =
-        editor.findChildren<QPushButton*>();
-    const auto printButton =
-        std::find_if(
-            buttons.cbegin(),
-            buttons.cend(),
-            [](const QPushButton* button)
-            {
-                return button->text() == QStringLiteral("Print");
-            }
+    const Result<int> created =
+        services.dataService()->createTestingClass(
+            testingClass(QStringLiteral("Output Availability"))
             );
+    QVERIFY(created);
 
-    QVERIFY(printButton != buttons.cend());
-    QVERIFY(dynamic_cast<TextFitPushButton*>(*printButton));
-    QVERIFY(
-        (*printButton)->minimumSizeHint().width()
-        >= (*printButton)->sizeHint().width()
+    TestingClassesPage page(&services);
+    page.setDatabaseOpen(true);
+    page.openTestingClass(*created);
+
+    auto* tabs = page.findChild<QTabWidget*>(
+        QStringLiteral("testingClassesTabs")
         );
+    QVERIFY(tabs);
+
+    QVERIFY(!page.outputCapabilities().printEnabled);
+    QVERIFY(!page.outputCapabilities().saveAsEnabled);
+
+    tabs->setCurrentIndex(1);
+    QVERIFY(page.outputCapabilities().printEnabled);
+    QVERIFY(page.outputCapabilities().saveAsEnabled);
+
+    tabs->setCurrentIndex(2);
+    QVERIFY(!page.outputCapabilities().printEnabled);
+    QVERIFY(!page.outputCapabilities().saveAsEnabled);
 }
 
 void TestingClassesPageTests

@@ -185,7 +185,6 @@ void SpeakingEvalPage::buildUi()
 
     const QList<QString> reportLabels{
         tr("Report Editor"),
-        tr("Print"),
         tr("Generate Comments")
     };
 
@@ -207,7 +206,7 @@ void SpeakingEvalPage::buildUi()
         bottomLayout()->addWidget(button);
         m_reportButtons.append(button);
 
-        if (index == 2)
+        if (index == 1)
         {
             bottomLayout()->addSpacing(20);
         }
@@ -266,15 +265,6 @@ void SpeakingEvalPage::buildUi()
     {
         connect(
             m_reportButtons.at(1),
-            &QPushButton::clicked,
-            this,
-            &SpeakingEvalPage::exportReports
-            );
-    }
-    if (m_reportButtons.size() > 2)
-    {
-        connect(
-            m_reportButtons.at(2),
             &QPushButton::clicked,
             this,
             &SpeakingEvalPage::generateClassAiComments

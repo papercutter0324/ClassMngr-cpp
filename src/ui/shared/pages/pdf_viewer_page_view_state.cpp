@@ -44,8 +44,6 @@ void PdfViewerPage::applyUiFonts()
     applyStandardFont(m_zoomInButton);
     applyStandardFont(m_fitWidthButton);
     applyStandardFont(m_fitPageButton);
-    applyStandardFont(m_exportButton);
-    applyStandardFont(m_printButton);
 
     if (QHBoxLayout* layout = bottomLayout())
     {
@@ -322,41 +320,6 @@ void PdfViewerPage::updatePageDisplay()
 
 void PdfViewerPage::updateDocumentActionButtons()
 {
-    const bool hasFile =
-        !m_currentFilePath.trimmed().isEmpty();
-    const bool canExport =
-        hasFile
-        && m_documentDescriptor.exportEnabled
-        && !m_documentDescriptor.exportFilePath.trimmed().isEmpty();
-    const bool canPrint =
-        hasFile
-        && m_document
-        && m_document->status() == QPdfDocument::Status::Ready
-        && m_document->pageCount() > 0
-        && m_documentDescriptor.printEnabled;
-
-    m_exportButton->setVisible(
-        true
-        );
-    m_exportButton->setEnabled(
-        canExport
-        );
-    m_exportButton->setToolTip(
-        canExport
-            ? tr("Export this file")
-            : tr("Export is not available for this file")
-        );
-
-    m_printButton->setVisible(
-        true
-        );
-    m_printButton->setEnabled(
-        canPrint
-        );
-    m_printButton->setToolTip(
-        canPrint
-            ? tr("Print this file")
-            : tr("Print is not available for this file")
-        );
+    emit outputCapabilitiesChanged();
 }
 

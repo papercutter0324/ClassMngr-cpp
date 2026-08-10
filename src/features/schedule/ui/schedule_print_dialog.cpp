@@ -1,4 +1,5 @@
 #include "schedule_print_dialog.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QFileDialog>
 #include <QFileInfo>
@@ -26,11 +27,17 @@ int requiredColumnWidth(
 }
 
 SchedulePrintDialog::SchedulePrintDialog(
+    Action action,
     QWidget* parent
     )
     : QDialog(parent)
+    , m_selectedAction(action)
 {
-    setWindowTitle(tr("Export Schedule"));
+    setWindowTitle(
+        action == Action::Print
+            ? tr("Print Schedule")
+            : tr("Save Schedule As")
+        );
 
     auto* layout =
         new QVBoxLayout(this);
@@ -151,35 +158,30 @@ SchedulePrintDialog::SchedulePrintDialog(
 
     auto* buttonLayout = new QHBoxLayout;
     auto* cancelButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Cancel"),
             this
             );
     cancelButton->setObjectName(
         QStringLiteral("schedulePrintCancelButton")
         );
-    auto* saveAsButton =
-        new QPushButton(
-            tr("Save As"),
+    auto* outputButton =
+        new TextFitPushButton(
+            action == Action::Print
+                ? tr("Print")
+                : tr("Save As..."),
             this
             );
-    saveAsButton->setObjectName(
-        QStringLiteral("schedulePrintSaveAsButton")
+    outputButton->setObjectName(
+        action == Action::Print
+            ? QStringLiteral("schedulePrintButton")
+            : QStringLiteral("schedulePrintSaveAsButton")
         );
-    auto* printButton =
-        new QPushButton(
-            tr("Print"),
-            this
-            );
-    printButton->setObjectName(
-        QStringLiteral("schedulePrintButton")
-        );
-    printButton->setDefault(true);
+    outputButton->setDefault(true);
 
     buttonLayout->addWidget(cancelButton);
     buttonLayout->addStretch(1);
-    buttonLayout->addWidget(saveAsButton);
-    buttonLayout->addWidget(printButton);
+    buttonLayout->addWidget(outputButton);
 
     connect(
         cancelButton,
@@ -188,16 +190,12 @@ SchedulePrintDialog::SchedulePrintDialog(
         &QDialog::reject
         );
     connect(
-        saveAsButton,
+        outputButton,
         &QPushButton::clicked,
         this,
-        &SchedulePrintDialog::chooseSavePath
-        );
-    connect(
-        printButton,
-        &QPushButton::clicked,
-        this,
-        &SchedulePrintDialog::acceptPrint
+        action == Action::Print
+            ? &SchedulePrintDialog::acceptPrint
+            : &SchedulePrintDialog::chooseSavePath
         );
 
     layout->addLayout(buttonLayout);

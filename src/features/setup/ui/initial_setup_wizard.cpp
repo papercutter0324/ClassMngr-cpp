@@ -14,9 +14,13 @@
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include <algorithm>
+
+#include <QAbstractButton>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QEvent>
 #include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
@@ -129,7 +133,8 @@ public:
             tr("The teacher importer will open in a separate window. Return here after the import completes."),
             this));
 
-        auto* importButton = new QPushButton(tr("Import Teachers..."), this);
+        auto* importButton =
+            new TextFitPushButton(tr("Import Teachers..."), this);
         importButton->setObjectName(QStringLiteral("setupImportTeachersButton"));
         layout->addWidget(importButton, 0, Qt::AlignLeft);
 
@@ -216,7 +221,8 @@ public:
             tr("Choose whether the workbook contains your regular or intensive schedule, then review the detected classes before importing."),
             this));
 
-        auto* importButton = new QPushButton(tr("Import Schedule..."), this);
+        auto* importButton =
+            new TextFitPushButton(tr("Import Schedule..."), this);
         importButton->setObjectName(QStringLiteral("setupImportScheduleButton"));
         layout->addWidget(importButton, 0, Qt::AlignLeft);
 
@@ -293,7 +299,8 @@ public:
         auto* signatureLabel = explanatoryLabel(
             tr("Your Signature (Optional) - Used for Speaking Evaulations"),
             this);
-        auto* browse = new QPushButton(tr("Choose Signature"), this);
+        auto* browse =
+            new TextFitPushButton(tr("Choose Signature"), this);
         browse->setObjectName(QStringLiteral("setupSignatureButton"));
         signatureHeading->addWidget(signatureLabel, 1);
         signatureHeading->addWidget(browse, 0, Qt::AlignRight);
@@ -515,7 +522,8 @@ public:
         scroll->setWidget(content);
         outer->addWidget(scroll);
 
-        m_addAnother = new QPushButton(tr("Add Another Teacher"), this);
+        m_addAnother =
+            new TextFitPushButton(tr("Add Another Teacher"), this);
         m_addAnother->setObjectName(QStringLiteral("setupAddAnotherTeacherButton"));
         outer->addWidget(m_addAnother, 0, Qt::AlignRight);
 
@@ -1022,6 +1030,20 @@ InitialSetupWizard::InitialSetupWizard(
     setPage(CompletionPage, new ::CompletionWizardPage(this));
     setStartId(ResourcesPage);
 
+    for (const QWizard::WizardButton role : {
+             QWizard::BackButton,
+             QWizard::NextButton,
+             QWizard::CommitButton,
+             QWizard::FinishButton,
+             QWizard::CancelButton})
+    {
+        if (QAbstractButton* wizardButton = button(role))
+        {
+            wizardButton->installEventFilter(this);
+        }
+    }
+    refreshWizardButtonMinimumWidths();
+
     connect(this, &QWizard::currentIdChanged, this, [this](int pageId)
     {
         constexpr int standardWidth = 760;
@@ -1031,7 +1053,56 @@ InitialSetupWizard::InitialSetupWizard(
             : standardWidth;
         setMinimumWidth(targetWidth);
         resize(targetWidth, height());
+        refreshWizardButtonMinimumWidths();
     });
+}
+
+bool InitialSetupWizard::eventFilter(QObject* watched, QEvent* event)
+{
+    switch (event->type())
+    {
+    case QEvent::Polish:
+    case QEvent::Show:
+    case QEvent::FontChange:
+    case QEvent::StyleChange:
+    case QEvent::LanguageChange:
+    case QEvent::LayoutRequest:
+        if (auto* wizardButton = qobject_cast<QPushButton*>(watched))
+        {
+            wizardButton->setMinimumWidth(
+                std::max(
+                    wizardButton->minimumWidth(),
+                    wizardButton->sizeHint().width()
+                    )
+                );
+        }
+        break;
+    default:
+        break;
+    }
+
+    return QWizard::eventFilter(watched, event);
+}
+
+void InitialSetupWizard::refreshWizardButtonMinimumWidths()
+{
+    for (const QWizard::WizardButton role : {
+             QWizard::BackButton,
+             QWizard::NextButton,
+             QWizard::CommitButton,
+             QWizard::FinishButton,
+             QWizard::CancelButton})
+    {
+        if (auto* wizardButton = qobject_cast<QPushButton*>(button(role)))
+        {
+            wizardButton->setMinimumWidth(
+                std::max(
+                    wizardButton->minimumWidth(),
+                    wizardButton->sizeHint().width()
+                    )
+                );
+        }
+    }
 }
 
 ApplicationServices* InitialSetupWizard::services() const

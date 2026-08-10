@@ -56,6 +56,8 @@ public:
         const ScheduleViewModel& model
         );
     void clearPreviewModel();
+    void printSchedule();
+    void saveScheduleAs();
 
 signals:
     void classInfoSaved(
@@ -71,7 +73,6 @@ signals:
 private slots:
     void setDisplayMode(int modeId);
     void openSettings();
-    void exportSchedule();
     void onCellClicked(
         int row,
         int column
@@ -86,6 +87,9 @@ private:
         const QStringList& days
         );
     void clearTableWidgets();
+    void outputSchedule(
+        bool print
+        );
     void updateTableMinimumHeight();
     void reloadSlotStates();
     void reloadTestingBlocks();
@@ -135,7 +139,6 @@ private:
     QPushButton* m_testingModeButton = nullptr;
     QPushButton* m_settingsButton = nullptr;
     QPushButton* m_testingClassesButton = nullptr;
-    QPushButton* m_exportButton = nullptr;
     QPushButton* m_importButton = nullptr;
     QLabel* m_testingBanner = nullptr;
 };

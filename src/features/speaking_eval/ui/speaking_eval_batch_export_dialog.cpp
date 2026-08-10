@@ -36,20 +36,29 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     int currentStudentIndex,
     const QString& defaultOutputDirectory,
+    Mode mode,
     QWidget* parent
     )
     : QDialog(parent)
     , m_reports(reports)
     , m_currentStudentIndex(currentStudentIndex)
+    , m_mode(mode)
 {
-    setWindowTitle(tr("Export / Print Speaking Reports"));
+    const bool saving = m_mode == Mode::SaveAs;
+    setWindowTitle(
+        saving
+            ? tr("Save Speaking Reports As")
+            : tr("Print Speaking Reports")
+        );
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(18, 18, 18, 18);
     layout->setSpacing(12);
 
     auto* introduction = new QLabel(
-        tr("Export speaking-evaluation reports, print them, or do both."),
+        saving
+            ? tr("Save speaking-evaluation reports to files.")
+            : tr("Print speaking-evaluation reports."),
         this
         );
     introduction->setWordWrap(true);
@@ -94,8 +103,11 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     formLayout->addRow(QString(), m_rendererNote);
 
     m_savePdfCheck = new QCheckBox(tr("Export PDFs"), this);
-    m_savePdfCheck->setChecked(true);
+    m_savePdfCheck->setChecked(saving);
+    m_savePdfCheck->setEnabled(false);
+    m_savePdfCheck->setVisible(saving);
     formLayout->addRow(tr("Output:"), m_savePdfCheck);
+    formLayout->labelForField(m_savePdfCheck)->setVisible(saving);
 
     m_keepIndividualPdfsCheck = new QCheckBox(
         tr("Keep individual PDFs after zipping"),
@@ -105,6 +117,9 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     formLayout->addRow(QString(), m_keepIndividualPdfsCheck);
 
     m_printReportsCheck = new QCheckBox(tr("Print Reports"), this);
+    m_printReportsCheck->setChecked(!saving);
+    m_printReportsCheck->setEnabled(false);
+    m_printReportsCheck->setVisible(!saving);
     formLayout->addRow(QString(), m_printReportsCheck);
 
     auto* outputDirectoryLayout = new QHBoxLayout;
@@ -114,12 +129,16 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     outputDirectoryLayout->addWidget(m_outputDirectoryEdit, 1);
     outputDirectoryLayout->addWidget(m_chooseDirectoryButton);
     formLayout->addRow(tr("Output Folder:"), outputDirectoryLayout);
+    formLayout->labelForField(outputDirectoryLayout)->setVisible(saving);
+    m_outputDirectoryEdit->setVisible(saving);
+    m_chooseDirectoryButton->setVisible(saving);
 
     m_openOutputFolderCheck = new QCheckBox(
         tr("Open Output Folder after saving"),
         this
         );
     m_openOutputFolderCheck->setChecked(false);
+    m_openOutputFolderCheck->setVisible(saving);
     formLayout->addRow(QString(), m_openOutputFolderCheck);
 
     layout->addLayout(formLayout);
@@ -129,7 +148,10 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     m_previewButton = new TextFitPushButton(tr("Preview Reports"), this);
     buttons->addWidget(m_previewButton);
     buttons->addStretch();
-    m_exportButton = new TextFitPushButton(tr("Export"), this);
+    m_exportButton = new TextFitPushButton(
+        saving ? tr("Save As...") : tr("Print"),
+        this
+        );
     auto* cancelButton = new TextFitPushButton(tr("Cancel"), this);
     buttons->addWidget(m_exportButton);
     buttons->addWidget(cancelButton);
@@ -245,16 +267,14 @@ void SpeakingEvalBatchExportDialog::updateControls()
 
     const bool oneReport = selectedReports().size() == 1;
     m_savePdfCheck->setText(oneReport ? tr("Export PDF") : tr("Export ZIP"));
-    m_keepIndividualPdfsCheck->setVisible(!oneReport);
+    m_keepIndividualPdfsCheck->setVisible(
+        m_mode == Mode::SaveAs && !oneReport
+        );
     m_keepIndividualPdfsCheck->setEnabled(saving && !oneReport);
     m_printReportsCheck->setText(oneReport ? tr("Print Report") : tr("Print Reports"));
-    if (saving && m_printReportsCheck->isChecked())
+    if (m_mode == Mode::SaveAs)
     {
-        m_exportButton->setText(tr("Export & Print"));
-    }
-    else if (saving)
-    {
-        m_exportButton->setText(tr("Export"));
+        m_exportButton->setText(tr("Save As..."));
     }
     else
     {

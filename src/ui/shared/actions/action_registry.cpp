@@ -97,6 +97,7 @@ void ActionRegistry::createActions()
     createFileActions();
     createEditActions();
     createClassActions();
+    createPrintExportActions();
     createOptionActions();
     createHelpActions();
     createAdminActions();
@@ -164,6 +165,17 @@ void ActionRegistry::retranslate()
         paste,
         tr("Paste"),
         tr("Paste content from the clipboard")
+        );
+
+    updateActionText(
+        printCurrentPage,
+        tr("Print"),
+        tr("Print from the current page")
+        );
+    updateActionText(
+        saveCurrentPageAs,
+        tr("Save As..."),
+        tr("Save output from the current page")
         );
 
     updateActionText(
@@ -611,6 +623,23 @@ void ActionRegistry::createEditActions()
     cut->setShortcut(QKeySequence::Cut);
     copy->setShortcut(QKeySequence::Copy);
     paste->setShortcut(QKeySequence::Paste);
+}
+
+void ActionRegistry::createPrintExportActions()
+{
+    printCurrentPage =
+        createAction(
+            tr("Print"),
+            tr("Print from the current page")
+            );
+    saveCurrentPageAs =
+        createAction(
+            tr("Save As..."),
+            tr("Save output from the current page")
+            );
+
+    printCurrentPage->setEnabled(false);
+    saveCurrentPageAs->setEnabled(false);
 }
 
 // =========================================================

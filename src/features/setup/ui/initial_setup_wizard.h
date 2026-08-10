@@ -40,7 +40,12 @@ public:
     void setCreatedClassId(int classId);
     [[nodiscard]] int createdClassId() const;
 
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
+    void refreshWizardButtonMinimumWidths();
+
     ApplicationServices* m_services = nullptr;
     ClassInfo m_classDraft;
     int m_createdClassId = -1;

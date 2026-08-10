@@ -2,6 +2,7 @@
 
 #include "data/data_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -174,7 +175,7 @@ void TestingAssignmentDialog::buildUi()
     footerLayout->addStretch(1);
 
     auto* footer =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Save | QDialogButtonBox::Cancel,
             footerRow
             );

@@ -20,6 +20,7 @@ public:
     };
 
     explicit SchedulePrintDialog(
+        Action action,
         QWidget* parent = nullptr
         );
 

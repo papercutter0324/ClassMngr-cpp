@@ -1,4 +1,5 @@
 #include "basepage.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QFrame>
 #include <QEvent>
@@ -202,7 +203,7 @@ BasePage::BasePage(
     buttonLayout->setSpacing(8);
 
     m_initialSetupButton =
-        new QPushButton(m_noDatabaseBanner);
+        new TextFitPushButton(m_noDatabaseBanner);
 
     m_initialSetupButton->setObjectName(
         QStringLiteral("noDatabaseSetupButton")
@@ -233,7 +234,7 @@ BasePage::BasePage(
     databaseButtonLayout->setSpacing(8);
 
     m_newDatabaseButton =
-        new QPushButton(m_noDatabaseBanner);
+        new TextFitPushButton(m_noDatabaseBanner);
 
     m_newDatabaseButton->setObjectName(
         QStringLiteral("noDatabaseNewButton")
@@ -244,7 +245,7 @@ BasePage::BasePage(
         );
 
     m_openDatabaseButton =
-        new QPushButton(m_noDatabaseBanner);
+        new TextFitPushButton(m_noDatabaseBanner);
 
     m_openDatabaseButton->setObjectName(
         QStringLiteral("noDatabaseOpenButton")
@@ -415,6 +416,19 @@ void BasePage::clearDatabaseState()
 {
 }
 
+PageOutputCapabilities BasePage::outputCapabilities() const
+{
+    return {};
+}
+
+void BasePage::printCurrentPage()
+{
+}
+
+void BasePage::saveCurrentPageAs()
+{
+}
+
 void BasePage::setDatabaseOpen(
     bool databaseOpen
     )
@@ -423,6 +437,11 @@ void BasePage::setDatabaseOpen(
     {
         return;
     }
+
+    const bool databaseStateChanged =
+        m_databaseOpen != databaseOpen;
+
+    m_databaseOpen = databaseOpen;
 
     m_noDatabaseBannerEnabled =
         !databaseOpen;
@@ -433,6 +452,11 @@ void BasePage::setDatabaseOpen(
 
     updateNoDatabaseBannerGeometry();
     updateNoDatabaseBannerLayout();
+
+    if (databaseStateChanged)
+    {
+        emit outputCapabilitiesChanged();
+    }
 }
 
 void BasePage::changeEvent(
@@ -497,6 +521,11 @@ void BasePage::setBottomBarVisible(
     {
         m_bottomBar->setVisible(visible);
     }
+}
+
+bool BasePage::isDatabaseOpen() const
+{
+    return m_databaseOpen;
 }
 
 void BasePage::updateNoDatabaseBannerGeometry()

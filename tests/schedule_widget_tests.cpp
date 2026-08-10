@@ -57,7 +57,7 @@ class ScheduleWidgetTests : public QObject
 private slots:
     void init();
     void persistsAndMirrorsEveryViewOption();
-    void exportUsesSelectedTeacherNameLanguage();
+    void printUsesSelectedTeacherNameLanguage();
     void importButtonRequestsScheduleImport();
     void controlsUseTextFitButtons();
     void legacyHourSettingsDoNotCarryForward();
@@ -176,7 +176,7 @@ void ScheduleWidgetTests
         );
 }
 
-void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
+void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
 {
     ApplicationServices services;
     services.dataService()->saveSetting(
@@ -185,13 +185,7 @@ void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
         );
     ScheduleWidget widget(&services);
 
-    QVERIFY(
-        QMetaObject::invokeMethod(
-            &widget,
-            "exportSchedule",
-            Qt::DirectConnection
-            )
-        );
+    widget.printSchedule();
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
     QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 
@@ -200,13 +194,7 @@ void ScheduleWidgetTests::exportUsesSelectedTeacherNameLanguage()
         QStringLiteral("false")
         );
     widget.refreshSchedule();
-    QVERIFY(
-        QMetaObject::invokeMethod(
-            &widget,
-            "exportSchedule",
-            Qt::DirectConnection
-            )
-        );
+    widget.printSchedule();
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 2);
     QVERIFY(!ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 }
@@ -243,8 +231,7 @@ void ScheduleWidgetTests::controlsUseTextFitButtons()
         QStringLiteral("scheduleIntensiveModeButton"),
         QStringLiteral("scheduleTestingModeButton"),
         QStringLiteral("scheduleTestingClassesButton"),
-        QStringLiteral("scheduleImportButton"),
-        QStringLiteral("scheduleExportButton")
+        QStringLiteral("scheduleImportButton")
     };
 
     for (const QString& buttonName : buttonNames)
@@ -643,17 +630,7 @@ void ScheduleWidgetTests
     const auto buttons =
         controls->findChildren<QPushButton*>();
     QVERIFY(controls->findChildren<QCheckBox*>().isEmpty());
-    QCOMPARE(buttons.size(), 7);
-    QVERIFY(
-        std::any_of(
-            buttons.cbegin(),
-            buttons.cend(),
-            [](const QPushButton* button)
-            {
-                return button->text() == QStringLiteral("Export");
-            }
-            )
-        );
+    QCOMPARE(buttons.size(), 6);
     QVERIFY(
         std::any_of(
             buttons.cbegin(),

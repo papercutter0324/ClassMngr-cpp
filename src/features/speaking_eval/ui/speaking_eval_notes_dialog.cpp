@@ -4,6 +4,7 @@
 #include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -200,7 +201,7 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
     syncCommentUi();
 
     auto* buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
             this
             );

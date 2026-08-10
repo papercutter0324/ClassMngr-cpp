@@ -142,17 +142,25 @@ void RosterEditorWidget::importScores()
         );
 }
 
-void RosterEditorWidget::printRosters()
+void RosterEditorWidget::outputRosters(
+    bool print
+    )
 {
     if (hasUnsavedChanges() && !saveChanges())
     {
         return;
     }
 
+    const RosterPrintDialog::Action action =
+        print
+            ? RosterPrintDialog::Action::Print
+            : RosterPrintDialog::Action::SaveAs;
+
     RosterPrintDialog dialog(
         m_services,
         m_classroom.id,
         RosterTemplatePrintService::Scope::CurrentClass,
+        action,
         this,
         m_testingClassMode
         );
@@ -172,7 +180,7 @@ void RosterEditorWidget::printRosters()
     request.perClassExtraInfoOrientation = dialog.selectedPerClassExtraInfoOrientation();
 
     RosterTemplatePrintService::Result result;
-    switch (dialog.selectedAction())
+    switch (action)
     {
     case RosterPrintDialog::Action::SaveAs:
         result = RosterTemplatePrintService::saveRostersPdf(

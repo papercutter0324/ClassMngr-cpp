@@ -80,6 +80,23 @@ void RosterEditorWidget::loadClass(
     m_widthsDirty = false;
     m_loadingRoster = false;
     updateActions();
+    emit outputCapabilitiesChanged();
+}
+
+PageOutputCapabilities RosterEditorWidget::outputCapabilities() const
+{
+    const bool enabled = m_classroom.id > 0;
+    return {enabled, enabled};
+}
+
+void RosterEditorWidget::printCurrentPage()
+{
+    outputRosters(true);
+}
+
+void RosterEditorWidget::saveCurrentPageAs()
+{
+    outputRosters(false);
 }
 
 void RosterEditorWidget::clearDatabaseState()

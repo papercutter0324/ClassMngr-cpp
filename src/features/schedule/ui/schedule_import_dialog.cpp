@@ -8,6 +8,8 @@
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -124,7 +126,7 @@ void ScheduleImportDialog::buildUi()
         tr("Select an XLSX schedule...")
         );
     m_browseButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Browse"),
             m_fileSection
             );
@@ -266,7 +268,7 @@ void ScheduleImportDialog::buildUi()
     layout->addStretch();
 
     m_buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Cancel,
             this
             );

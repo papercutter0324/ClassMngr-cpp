@@ -1,6 +1,8 @@
 #include "schedule_settings_dialog.h"
 
 #include "data/data_service.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
 #include <QDialogButtonBox>
@@ -60,7 +62,7 @@ void ScheduleSettingsDialog::buildUi()
     layout->addWidget(tabs);
 
     auto* buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Save | QDialogButtonBox::Cancel,
             this
             );
@@ -198,7 +200,7 @@ QWidget* ScheduleSettingsDialog::buildTestingTab()
     layout->addWidget(m_testingAffectsM1Check);
 
     auto* clearButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Clear Testing Layout"),
             page
             );

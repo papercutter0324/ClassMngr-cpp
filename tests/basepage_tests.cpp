@@ -133,6 +133,7 @@ private slots:
     void noDatabaseBannerFitsNarrowPage();
     void noDatabaseBannerRetranslatesOnLanguageChange();
     void databaseStateClearHookIsDispatched();
+    void outputContractDefaultsToUnsupportedAndSignalsDatabaseChanges();
 };
 
 void BasePageTests::noDatabaseBannerVisibilityAndActions()
@@ -547,6 +548,33 @@ void BasePageTests::databaseStateClearHookIsDispatched()
     QCOMPARE(page.databaseClearCount, 0);
     page.clearDatabaseState();
     QCOMPARE(page.databaseClearCount, 1);
+}
+
+void BasePageTests
+    ::outputContractDefaultsToUnsupportedAndSignalsDatabaseChanges()
+{
+    TestPage page;
+    QSignalSpy capabilitySpy(
+        &page,
+        &BasePage::outputCapabilitiesChanged
+        );
+
+    const PageOutputCapabilities capabilities =
+        page.outputCapabilities();
+    QVERIFY(!capabilities.printEnabled);
+    QVERIFY(!capabilities.saveAsEnabled);
+
+    page.printCurrentPage();
+    page.saveCurrentPageAs();
+
+    page.setDatabaseOpen(true);
+    QCOMPARE(capabilitySpy.count(), 1);
+
+    page.setDatabaseOpen(true);
+    QCOMPARE(capabilitySpy.count(), 1);
+
+    page.setDatabaseOpen(false);
+    QCOMPARE(capabilitySpy.count(), 2);
 }
 
 QTEST_MAIN(BasePageTests)

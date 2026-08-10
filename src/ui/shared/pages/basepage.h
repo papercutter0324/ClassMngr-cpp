@@ -16,6 +16,12 @@ class QPushButton;
 class QResizeEvent;
 class QWidget;
 
+struct PageOutputCapabilities
+{
+    bool printEnabled = false;
+    bool saveAsEnabled = false;
+};
+
 class BasePage : public QWidget
 {
     Q_OBJECT
@@ -60,6 +66,13 @@ public:
 
     virtual void clearDatabaseState();
 
+    [[nodiscard]] virtual PageOutputCapabilities
+        outputCapabilities() const;
+
+    virtual void printCurrentPage();
+
+    virtual void saveCurrentPageAs();
+
     void setDatabaseOpen(
         bool databaseOpen
         );
@@ -73,6 +86,8 @@ signals:
     void openDatabaseRequested();
 
     void newDatabaseRequested();
+
+    void outputCapabilitiesChanged();
 
 
 
@@ -97,6 +112,8 @@ protected:
     void resizeEvent(
         QResizeEvent* event
         ) override;
+
+    [[nodiscard]] bool isDatabaseOpen() const;
 
 
 
@@ -137,6 +154,8 @@ private:
     QPushButton* m_initialSetupButton = nullptr;
 
     bool m_noDatabaseBannerEnabled = false;
+
+    bool m_databaseOpen = false;
 
     void updateNoDatabaseBannerGeometry();
 

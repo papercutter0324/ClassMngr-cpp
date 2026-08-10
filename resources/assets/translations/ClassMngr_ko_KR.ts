@@ -178,6 +178,18 @@
 <context>
     <name>ActionRegistry</name>
     <message>
+        <source>Print</source>
+        <translation>인쇄</translation>
+    </message>
+    <message>
+        <source>Print from the current page</source>
+        <translation>현재 페이지에서 인쇄</translation>
+    </message>
+    <message>
+        <source>Save output from the current page</source>
+        <translation>현재 페이지의 출력 저장</translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
         <location line="+402"/>
         <source>New Database...</source>
@@ -2275,6 +2287,10 @@
 </context>
 <context>
     <name>MenuBuilder</name>
+    <message>
+        <source>Print / Export</source>
+        <translation>인쇄 / 내보내기</translation>
+    </message>
     <message>
         <location filename="../../../src/app/menu_builder.cpp" line="+36"/>
         <source>File</source>
@@ -5855,6 +5871,7 @@ Rm: %1</source>
 </context>
 <context>
     <name>RosterPrintDialog</name>
+    <message><source>Save As...</source><translation>다른 이름으로 저장...</translation></message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
         <source>Save Rosters As</source>
@@ -6596,6 +6613,8 @@ My Information name was updated.</source>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
+    <message><source>Print Schedule</source><translation>일정표 인쇄</translation></message>
+    <message><source>Save As...</source><translation>다른 이름으로 저장...</translation></message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="+33"/>
         <source>Export Schedule</source>
@@ -7256,6 +7275,11 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
 </context>
 <context>
     <name>SpeakingEvalBatchExportDialog</name>
+    <message><source>Save Speaking Reports As</source><translation>말하기 평가 보고서를 다른 이름으로 저장</translation></message>
+    <message><source>Print Speaking Reports</source><translation>말하기 평가 보고서 인쇄</translation></message>
+    <message><source>Save speaking-evaluation reports to files.</source><translation>말하기 평가 보고서를 파일로 저장합니다.</translation></message>
+    <message><source>Print speaking-evaluation reports.</source><translation>말하기 평가 보고서를 인쇄합니다.</translation></message>
+    <message><source>Save As...</source><translation>다른 이름으로 저장...</translation></message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-386"/>
         <source>Export / Print Speaking Reports</source>

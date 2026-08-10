@@ -71,12 +71,6 @@ void RosterEditorWidget::retranslateUi()
             );
     }
 
-    if (m_printButton)
-    {
-        m_printButton->setText(tr("Print"));
-        m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
-    }
-
     if (m_koreanKeyboardButton)
     {
         m_koreanKeyboardButton->setText(tr("Korean Keyboard"));
@@ -129,11 +123,6 @@ void RosterEditorWidget::updateActions()
             &reason
             )
         );
-
-    if (m_printButton)
-    {
-        m_printButton->setEnabled(m_classroom.id > 0);
-    }
 
     if (m_koreanKeyboardButton)
     {
@@ -222,8 +211,6 @@ void RosterEditorWidget::buildUi()
     m_importButton->setToolTip(
         tr("Import final grades from speaking evaluations.")
         );
-    m_printButton = new TextFitPushButton(tr("Print"), this);
-    m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
     m_koreanKeyboardButton =
         new TextFitPushButton(
             tr("Korean Keyboard"),
@@ -236,7 +223,6 @@ void RosterEditorWidget::buildUi()
     m_removeColumnButton = new TextFitPushButton(tr("Remove Column"), this);
     m_saveButton = new TextFitPushButton(tr("Save Changes"), this);
     bottomLayout()->addWidget(m_importButton);
-    bottomLayout()->addWidget(m_printButton);
     bottomLayout()->addWidget(m_koreanKeyboardButton);
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_addColumnButton);
@@ -247,7 +233,6 @@ void RosterEditorWidget::buildUi()
     connect(m_removeColumnButton, &QPushButton::clicked, this, &RosterEditorWidget::removeColumn);
     connect(m_saveButton, &QPushButton::clicked, this, &RosterEditorWidget::saveData);
     connect(m_importButton, &QPushButton::clicked, this, &RosterEditorWidget::importScores);
-    connect(m_printButton, &QPushButton::clicked, this, &RosterEditorWidget::printRosters);
     connect(
         m_koreanKeyboardButton,
         &QPushButton::clicked,

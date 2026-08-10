@@ -298,6 +298,7 @@ void MainWindow::retranslateUi()
     {
         menuBar()->clear();
         buildMenus();
+        updatePrintExportActions();
     }
 
     if (m_fileController)
@@ -347,6 +348,38 @@ void MainWindow::retranslateUi()
 
 void MainWindow::connectSignals()
 {
+    if (m_pages && m_actions.printCurrentPage)
+    {
+        connect(
+            m_actions.printCurrentPage,
+            &QAction::triggered,
+            m_pages,
+            &PageManager::printCurrentPage
+            );
+    }
+
+    if (m_pages && m_actions.saveCurrentPageAs)
+    {
+        connect(
+            m_actions.saveCurrentPageAs,
+            &QAction::triggered,
+            m_pages,
+            &PageManager::saveCurrentPageAs
+            );
+    }
+
+    if (m_pages)
+    {
+        connect(
+            m_pages,
+            &PageManager::outputCapabilitiesChanged,
+            this,
+            &MainWindow::updatePrintExportActions
+            );
+    }
+
+    updatePrintExportActions();
+
     if (m_pages)
     {
         connect(
@@ -659,6 +692,36 @@ void MainWindow::connectSignals()
                 AboutDialog dialog(this);
                 dialog.exec();
             }
+            );
+    }
+}
+
+void MainWindow::updatePrintExportActions()
+{
+    const PageOutputCapabilities capabilities =
+        m_pages
+            ? m_pages->outputCapabilities()
+            : PageOutputCapabilities{};
+
+    if (m_actions.printCurrentPage)
+    {
+        m_actions.printCurrentPage->setEnabled(
+            capabilities.printEnabled
+            );
+    }
+
+    if (m_actions.saveCurrentPageAs)
+    {
+        m_actions.saveCurrentPageAs->setEnabled(
+            capabilities.saveAsEnabled
+            );
+    }
+
+    if (m_actions.printExportMenu)
+    {
+        m_actions.printExportMenu->setEnabled(
+            capabilities.printEnabled
+            || capabilities.saveAsEnabled
             );
     }
 }

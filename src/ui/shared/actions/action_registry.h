@@ -53,6 +53,14 @@ public:
     QMenu* recentFilesMenu = nullptr;
 
     // =====================================================
+    // Print / Export
+    // =====================================================
+
+    QAction* printCurrentPage = nullptr;
+    QAction* saveCurrentPageAs = nullptr;
+    QMenu* printExportMenu = nullptr;
+
+    // =====================================================
     // Edit
     // =====================================================
 
@@ -104,6 +112,7 @@ private:
 
     void createFileActions();
     void createEditActions();
+    void createPrintExportActions();
     void createClassActions();
     void createOptionActions();
     void createHelpActions();

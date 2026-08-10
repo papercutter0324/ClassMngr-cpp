@@ -207,6 +207,29 @@ void RostersPage::retranslateUi()
     }
 }
 
+PageOutputCapabilities RostersPage::outputCapabilities() const
+{
+    return isDatabaseOpen() && m_editor
+        ? m_editor->outputCapabilities()
+        : PageOutputCapabilities{};
+}
+
+void RostersPage::printCurrentPage()
+{
+    if (m_editor)
+    {
+        m_editor->printCurrentPage();
+    }
+}
+
+void RostersPage::saveCurrentPageAs()
+{
+    if (m_editor)
+    {
+        m_editor->saveCurrentPageAs();
+    }
+}
+
 void RostersPage::buildUi()
 {
     contentLayout()->setContentsMargins(
@@ -301,6 +324,12 @@ void RostersPage::buildUi()
     contentLayout()->addWidget(
         m_editor,
         1
+        );
+    connect(
+        m_editor,
+        &BasePage::outputCapabilitiesChanged,
+        this,
+        &BasePage::outputCapabilitiesChanged
         );
 
     setRosterEditorAvailable(false);

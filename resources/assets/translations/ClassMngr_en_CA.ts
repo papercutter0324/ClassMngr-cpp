@@ -178,6 +178,18 @@
 <context>
     <name>ActionRegistry</name>
     <message>
+        <source>Print</source>
+        <translation>Print</translation>
+    </message>
+    <message>
+        <source>Print from the current page</source>
+        <translation>Print from the current page</translation>
+    </message>
+    <message>
+        <source>Save output from the current page</source>
+        <translation>Save output from the current page</translation>
+    </message>
+    <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
         <location line="+402"/>
         <source>New Database...</source>
@@ -2271,6 +2283,10 @@
 </context>
 <context>
     <name>MenuBuilder</name>
+    <message>
+        <source>Print / Export</source>
+        <translation>Print / Export</translation>
+    </message>
     <message>
         <location filename="../../../src/app/menu_builder.cpp" line="+36"/>
         <source>File</source>
@@ -5835,6 +5851,7 @@ Rm: %1</source>
 </context>
 <context>
     <name>RosterPrintDialog</name>
+    <message><source>Save As...</source><translation>Save As...</translation></message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
         <source>Save Rosters As</source>
@@ -6568,6 +6585,8 @@ My Information name was updated.</source>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
+    <message><source>Print Schedule</source><translation>Print Schedule</translation></message>
+    <message><source>Save As...</source><translation>Save As...</translation></message>
     <message>
         <location filename="../../../src/features/schedule/ui/schedule_print_dialog.cpp" line="+33"/>
         <source>Export Schedule</source>
@@ -7218,6 +7237,11 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
 </context>
 <context>
     <name>SpeakingEvalBatchExportDialog</name>
+    <message><source>Save Speaking Reports As</source><translation>Save Speaking Reports As</translation></message>
+    <message><source>Print Speaking Reports</source><translation>Print Speaking Reports</translation></message>
+    <message><source>Save speaking-evaluation reports to files.</source><translation>Save speaking-evaluation reports to files.</translation></message>
+    <message><source>Print speaking-evaluation reports.</source><translation>Print speaking-evaluation reports.</translation></message>
+    <message><source>Save As...</source><translation>Save As...</translation></message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-386"/>
         <source>Export / Print Speaking Reports</source>

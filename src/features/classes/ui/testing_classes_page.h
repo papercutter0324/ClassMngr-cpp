@@ -36,6 +36,10 @@ public:
     void refresh() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
+    [[nodiscard]] PageOutputCapabilities
+        outputCapabilities() const override;
+    void printCurrentPage() override;
+    void saveCurrentPageAs() override;
     void saveData() override;
     bool saveChanges() override;
     bool hasUnsavedChanges() const override;

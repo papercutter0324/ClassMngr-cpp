@@ -100,23 +100,37 @@ void PdfViewerPage::retranslateUi()
             );
     }
 
-    if (m_exportButton)
-    {
-        m_exportButton->setText(
-            tr("Export")
-            );
-    }
-
-    if (m_printButton)
-    {
-        m_printButton->setText(
-            tr("Print")
-            );
-    }
-
     applyUiFonts();
     updatePageDisplay();
     updateDocumentActionButtons();
+}
+
+PageOutputCapabilities PdfViewerPage::outputCapabilities() const
+{
+    const bool hasFile =
+        !m_currentFilePath.trimmed().isEmpty();
+    const bool canSave =
+        hasFile
+        && m_documentDescriptor.exportEnabled
+        && !m_documentDescriptor.exportFilePath.trimmed().isEmpty();
+    const bool canPrint =
+        hasFile
+        && m_document
+        && m_document->status() == QPdfDocument::Status::Ready
+        && m_document->pageCount() > 0
+        && m_documentDescriptor.printEnabled;
+
+    return {canPrint, canSave};
+}
+
+void PdfViewerPage::printCurrentPage()
+{
+    printFile();
+}
+
+void PdfViewerPage::saveCurrentPageAs()
+{
+    exportFile();
 }
 
 void PdfViewerPage::changeEvent(

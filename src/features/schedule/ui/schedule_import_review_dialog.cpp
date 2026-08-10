@@ -14,6 +14,7 @@
 #include "features/teacher/import/teacher_import_name_utils.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QCheckBox>
 #include <QColor>
@@ -1348,7 +1349,7 @@ void ScheduleImportReviewDialog::buildUi()
     outerLayout->addWidget(m_reviewPage, 1);
 
     m_buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Cancel,
             this
             );

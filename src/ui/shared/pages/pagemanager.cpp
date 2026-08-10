@@ -225,6 +225,19 @@ void PageManager::registerPages()
             this,
             &PageManager::newDatabaseRequested
             );
+
+        connect(
+            page,
+            &BasePage::outputCapabilitiesChanged,
+            this,
+            [this, page]()
+            {
+                if (page == currentWidget())
+                {
+                    emit outputCapabilitiesChanged();
+                }
+            }
+            );
     }
 }
 
@@ -246,6 +259,8 @@ void PageManager::showPage(
     setCurrentWidget(
         m_pages[type]
         );
+
+    emit outputCapabilitiesChanged();
 }
 
 bool PageManager::confirmCurrentPageCanLeave(
@@ -349,6 +364,38 @@ void PageManager::clearDatabaseState()
         {
             page->clearDatabaseState();
         }
+    }
+}
+
+PageOutputCapabilities PageManager::outputCapabilities() const
+{
+    auto* page =
+        qobject_cast<BasePage*>(currentWidget());
+
+    return page
+        ? page->outputCapabilities()
+        : PageOutputCapabilities{};
+}
+
+void PageManager::printCurrentPage()
+{
+    auto* page =
+        qobject_cast<BasePage*>(currentWidget());
+
+    if (page && page->outputCapabilities().printEnabled)
+    {
+        page->printCurrentPage();
+    }
+}
+
+void PageManager::saveCurrentPageAs()
+{
+    auto* page =
+        qobject_cast<BasePage*>(currentWidget());
+
+    if (page && page->outputCapabilities().saveAsEnabled)
+    {
+        page->saveCurrentPageAs();
     }
 }
 

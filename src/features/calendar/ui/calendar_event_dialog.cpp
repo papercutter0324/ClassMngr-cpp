@@ -3,6 +3,7 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QAbstractButton>
 #include <QButtonGroup>
@@ -733,7 +734,7 @@ void CalendarEventDialog::buildUi()
     mainLayout->addLayout(eventTypeLayout);
 
     m_buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Save
             | QDialogButtonBox::Cancel,
             this

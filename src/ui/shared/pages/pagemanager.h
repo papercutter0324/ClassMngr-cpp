@@ -112,6 +112,13 @@ public:
 
     void clearDatabaseState();
 
+    [[nodiscard]] PageOutputCapabilities
+        outputCapabilities() const;
+
+    void printCurrentPage();
+
+    void saveCurrentPageAs();
+
 
 
 signals:
@@ -121,6 +128,8 @@ signals:
     void openDatabaseRequested();
 
     void newDatabaseRequested();
+
+    void outputCapabilitiesChanged();
 
 
 public:

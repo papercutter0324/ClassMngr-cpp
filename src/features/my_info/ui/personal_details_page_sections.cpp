@@ -10,6 +10,7 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -639,12 +640,12 @@ void PersonalDetailsPage::buildSignatureSection()
     actionsLayout->addStretch();
 
     m_chooseSignatureButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Add Signature Image..."),
             card
             );
     m_removeSignatureButton =
-        new QPushButton(
+        new TextFitPushButton(
             tr("Remove"),
             card
             );

@@ -3,6 +3,7 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
 #include "domain/models/classroom.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -316,7 +317,7 @@ ClassImportDialog::ClassImportDialog(
     m_validationLabel->setWordWrap(true);
     mainLayout->addWidget(m_validationLabel);
 
-    auto* buttons = new QDialogButtonBox(
+    auto* buttons = new TextFitDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     m_importButton = buttons->button(QDialogButtonBox::Ok);
     m_importButton->setObjectName(QStringLiteral("importClassesButton"));

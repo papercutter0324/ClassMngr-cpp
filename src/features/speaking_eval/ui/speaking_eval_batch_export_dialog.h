@@ -15,10 +15,17 @@ class SpeakingEvalBatchExportDialog : public QDialog
     Q_OBJECT
 
 public:
+    enum class Mode
+    {
+        Print,
+        SaveAs
+    };
+
     explicit SpeakingEvalBatchExportDialog(
         const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
         int currentStudentIndex,
         const QString& defaultOutputDirectory,
+        Mode mode,
         QWidget* parent = nullptr
         );
 
@@ -41,6 +48,7 @@ private:
 private:
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     int m_currentStudentIndex = -1;
+    Mode m_mode = Mode::SaveAs;
     QComboBox* m_scopeSelector = nullptr;
     QComboBox* m_rendererSelector = nullptr;
     QCheckBox* m_savePdfCheck = nullptr;

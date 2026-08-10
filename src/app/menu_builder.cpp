@@ -3,6 +3,8 @@
 #include "core/settingsmanager.h"
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
@@ -291,7 +293,7 @@ void showPreferencesDialog(
     if (actions.showPowerPointDataAccessNotice)
     {
         auto* powerPointButton =
-            new QPushButton(
+            new TextFitPushButton(
                 actions.showPowerPointDataAccessNotice->text(),
                 generalPage
                 );
@@ -548,7 +550,7 @@ void showPreferencesDialog(
         );
 
     auto* buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Close,
             &dialog
             );
@@ -576,12 +578,36 @@ void MenuBuilder::build(MainWindow* window)
     buildFileMenu(window);
     buildEditMenu(window);
     buildClassMenu(window);
+    buildPrintExportMenu(window);
     buildHelpMenu(window);
 
     if (window->isAdmin())
     {
         buildAdminMenu(window);
     }
+}
+
+void MenuBuilder::buildPrintExportMenu(
+    MainWindow* window
+    )
+{
+    auto& actions = window->actions();
+
+    actions.printExportMenu =
+        window->menuBar()->addMenu(
+            QCoreApplication::translate(
+                "MenuBuilder",
+                "Print / Export"
+                )
+            );
+
+    actions.printExportMenu->addAction(
+        actions.printCurrentPage
+        );
+    actions.printExportMenu->addAction(
+        actions.saveCurrentPageAs
+        );
+    actions.printExportMenu->setEnabled(false);
 }
 
 void MenuBuilder::buildFileMenu(MainWindow* window)

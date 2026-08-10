@@ -181,50 +181,6 @@ void PdfViewerPage::buildUi()
         button->setFixedHeight(32);
     }
 
-    m_exportButton =
-        new TextFitPushButton(
-            tr("Export"),
-            this
-            );
-    m_exportButton->setToolTip(
-        tr("Export this file")
-        );
-
-    m_printButton =
-        new TextFitPushButton(
-            tr("Print"),
-            this
-            );
-    m_printButton->setToolTip(
-        tr("Print this file")
-        );
-
-    for (QPushButton* button : {m_exportButton, m_printButton})
-    {
-        RoleStyleRegistry::apply(
-            button,
-            UiRoles::ButtonFooter
-            );
-        button->setSizePolicy(
-            QSizePolicy::Preferred,
-            QSizePolicy::Preferred
-            );
-        button->setFixedHeight(32);
-    }
-
-    const int documentActionButtonWidth =
-        std::max(
-            m_exportButton->minimumSizeHint().width(),
-            m_printButton->minimumSizeHint().width()
-            );
-
-    for (QPushButton* button : {m_exportButton, m_printButton})
-    {
-        button->setMinimumWidth(
-            documentActionButtonWidth
-            );
-    }
-
     m_zoomLabel =
         new QLabel(
             tr("Zoom:"),
@@ -281,13 +237,6 @@ void PdfViewerPage::buildUi()
     bottomLayout()->addWidget(
         m_fitPageButton
         );
-    bottomLayout()->addSpacing(20);
-    bottomLayout()->addWidget(
-        m_exportButton
-        );
-    bottomLayout()->addWidget(
-        m_printButton
-        );
     bottomLayout()->addStretch();
 
     connect(
@@ -338,20 +287,6 @@ void PdfViewerPage::buildUi()
                     );
             updateZoomDisplay();
         }
-        );
-
-    connect(
-        m_exportButton,
-        &QPushButton::clicked,
-        this,
-        &PdfViewerPage::exportFile
-        );
-
-    connect(
-        m_printButton,
-        &QPushButton::clicked,
-        this,
-        &PdfViewerPage::printFile
         );
 
     connect(

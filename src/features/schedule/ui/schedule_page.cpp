@@ -63,6 +63,30 @@ void SchedulePage::retranslateUi()
     }
 }
 
+PageOutputCapabilities SchedulePage::outputCapabilities() const
+{
+    const bool enabled =
+        isDatabaseOpen() && m_scheduleWidget;
+
+    return {enabled, enabled};
+}
+
+void SchedulePage::printCurrentPage()
+{
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->printSchedule();
+    }
+}
+
+void SchedulePage::saveCurrentPageAs()
+{
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->saveScheduleAs();
+    }
+}
+
 void SchedulePage::showEvent(
     QShowEvent* event
     )

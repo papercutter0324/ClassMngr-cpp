@@ -76,7 +76,6 @@ void SpeakingEvalPage::retranslateUi()
 
     const QList<QString> reportLabels{
         tr("Report Editor"),
-        tr("Print"),
         tr("Generate Comments")
     };
 
@@ -248,23 +247,7 @@ void SpeakingEvalPage::updateActions()
             );
     }
 
-    bool hasStudents = false;
-
-    for (const QStringList& row : m_model->rows())
-    {
-        if (
-            !row.value(
-                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-                ).trimmed().isEmpty()
-            || !row.value(
-                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-                ).trimmed().isEmpty()
-            )
-        {
-            hasStudents = true;
-            break;
-        }
-    }
+    const bool hasStudents = hasReportStudents();
 
     for (QPushButton* button : m_reportButtons)
     {
@@ -279,9 +262,55 @@ void SpeakingEvalPage::updateActions()
                     : hasActiveClass
                         ? tr("Import or enter a student name to create reports.")
                         : tr("Select a class to create reports.")
-                );
+            );
         }
     }
+
+    emit outputCapabilitiesChanged();
+}
+
+bool SpeakingEvalPage::hasReportStudents() const
+{
+    if (!m_model)
+    {
+        return false;
+    }
+
+    for (const QStringList& row : m_model->rows())
+    {
+        if (
+            !row.value(
+                SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
+                ).trimmed().isEmpty()
+            || !row.value(
+                SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
+                ).trimmed().isEmpty()
+            )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+PageOutputCapabilities SpeakingEvalPage::outputCapabilities() const
+{
+    const bool enabled =
+        isDatabaseOpen()
+        && m_classroom.id > 0
+        && hasReportStudents();
+    return {enabled, enabled};
+}
+
+void SpeakingEvalPage::printCurrentPage()
+{
+    outputReports(true);
+}
+
+void SpeakingEvalPage::saveCurrentPageAs()
+{
+    outputReports(false);
 }
 
 void SpeakingEvalPage::showReports()
@@ -312,6 +341,11 @@ void SpeakingEvalPage::showReports()
             classInfo,
             signatureImage
             );
+
+    if (reports.isEmpty())
+    {
+        return;
+    }
     const int selectedRow =
         m_table ? m_table->currentIndex().row() : -1;
     const int currentReportIndex =
@@ -421,7 +455,9 @@ void SpeakingEvalPage::generateClassAiComments()
         );
 }
 
-void SpeakingEvalPage::exportReports()
+void SpeakingEvalPage::outputReports(
+    bool print
+    )
 {
     if (!m_model || m_classroom.id <= 0)
     {
@@ -449,6 +485,11 @@ void SpeakingEvalPage::exportReports()
             signatureImage
             );
 
+    if (reports.isEmpty())
+    {
+        return;
+    }
+
     const int selectedRow = m_table ? m_table->currentIndex().row() : -1;
     const int currentReportIndex =
         qMax(
@@ -466,6 +507,9 @@ void SpeakingEvalPage::exportReports()
             classInfo,
             m_evaluationName
             ),
+        print
+            ? SpeakingEvalBatchExportDialog::Mode::Print
+            : SpeakingEvalBatchExportDialog::Mode::SaveAs,
         this
         );
     dialog.exec();

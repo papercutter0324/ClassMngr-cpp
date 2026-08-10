@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
 #include <utility>
@@ -403,7 +404,7 @@ void SubPrepPrintDialog::buildUi()
     m_targetRootEdit->setText(SubPrepPackageService::defaultTargetRoot());
     folderLayout->addWidget(m_targetRootEdit, 0, 1, Qt::AlignVCenter);
     auto* selectFolderButton =
-        new QPushButton(tr("Select Folder"), m_folderOptions);
+        new TextFitPushButton(tr("Select Folder"), m_folderOptions);
     selectFolderButton->setObjectName(
         QStringLiteral("subPrepSelectFolderButton")
         );
@@ -501,9 +502,9 @@ void SubPrepPrintDialog::buildUi()
     rootLayout->addWidget(m_validationLabel);
 
     auto* buttonLayout = new QHBoxLayout;
-    auto* cancelButton = new QPushButton(tr("Cancel"), this);
+    auto* cancelButton = new TextFitPushButton(tr("Cancel"), this);
     cancelButton->setObjectName(QStringLiteral("subPrepPrintCancelButton"));
-    m_okButton = new QPushButton(tr("OK"), this);
+    m_okButton = new TextFitPushButton(tr("OK"), this);
     m_okButton->setObjectName(QStringLiteral("subPrepGenerateOkButton"));
     m_okButton->setDefault(true);
     buttonLayout->addWidget(cancelButton);

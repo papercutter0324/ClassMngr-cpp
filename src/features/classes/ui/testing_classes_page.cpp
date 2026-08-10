@@ -204,6 +204,37 @@ void TestingClassesPage::retranslateUi()
         );
 }
 
+PageOutputCapabilities TestingClassesPage::outputCapabilities() const
+{
+    if (
+        !isDatabaseOpen()
+        || !m_tabs
+        || m_tabs->currentWidget() != m_rosterEditor
+        || !m_rosterEditor
+        )
+    {
+        return {};
+    }
+
+    return m_rosterEditor->outputCapabilities();
+}
+
+void TestingClassesPage::printCurrentPage()
+{
+    if (outputCapabilities().printEnabled)
+    {
+        m_rosterEditor->printCurrentPage();
+    }
+}
+
+void TestingClassesPage::saveCurrentPageAs()
+{
+    if (outputCapabilities().saveAsEnabled)
+    {
+        m_rosterEditor->saveCurrentPageAs();
+    }
+}
+
 void TestingClassesPage::saveData()
 {
     saveChanges();
@@ -632,6 +663,12 @@ void TestingClassesPage::buildUi()
             m_tabs
             );
     m_rosterEditor->setTestingClassMode(true);
+    connect(
+        m_rosterEditor,
+        &BasePage::outputCapabilitiesChanged,
+        this,
+        &BasePage::outputCapabilitiesChanged
+        );
 
     auto* notesPage =
         new QWidget(m_tabs);
@@ -650,6 +687,15 @@ void TestingClassesPage::buildUi()
     m_tabs->addTab(detailsPage, tr("Details"));
     m_tabs->addTab(m_rosterEditor, tr("Roster"));
     m_tabs->addTab(notesPage, tr("Notes"));
+    connect(
+        m_tabs,
+        &QTabWidget::currentChanged,
+        this,
+        [this](int)
+        {
+            emit outputCapabilitiesChanged();
+        }
+        );
 
     splitter->addWidget(navigation);
     splitter->addWidget(m_tabs);

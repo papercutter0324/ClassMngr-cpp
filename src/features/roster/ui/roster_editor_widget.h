@@ -55,6 +55,10 @@ public:
         bool testingClassMode
         );
     void retranslateUi() override;
+    [[nodiscard]] PageOutputCapabilities
+        outputCapabilities() const override;
+    void printCurrentPage() override;
+    void saveCurrentPageAs() override;
 
 private slots:
     void addColumn();
@@ -68,8 +72,6 @@ private slots:
 
     void importScores();
 
-    void printRosters();
-
     void openKoreanKeyboard();
 
     void autosave();
@@ -82,6 +84,9 @@ private slots:
 
 private:
     void buildUi();
+    void outputRosters(
+        bool print
+        );
 
     void updateHeaderText();
 
@@ -158,7 +163,6 @@ private:
     RosterItemDelegate* m_delegate = nullptr;
 
     QPushButton* m_importButton = nullptr;
-    QPushButton* m_printButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;

@@ -62,6 +62,10 @@ public:
     void refresh() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
+    [[nodiscard]] PageOutputCapabilities
+        outputCapabilities() const override;
+    void printCurrentPage() override;
+    void saveCurrentPageAs() override;
 
 private slots:
     void importNames();
@@ -75,8 +79,6 @@ private slots:
     void showReports();
 
     void generateClassAiComments();
-
-    void exportReports();
 
 private:
     void buildUi();
@@ -123,6 +125,10 @@ private:
     void setupTable();
 
     void updateHeaderText();
+    [[nodiscard]] bool hasReportStudents() const;
+    void outputReports(
+        bool print
+        );
 
     bool saveEvaluationInternal(
         bool showValidationMessages,

@@ -527,8 +527,13 @@ private slots:
         QVERIFY(longTextSizeHintWidth > normalSizeHintWidth);
         QVERIFY(
             longTextWidth
-            >= QFontMetrics(button.font())
-                .horizontalAdvance(button.text()) + 48
+            >= longTextSizeHintWidth
+            );
+
+        button.setMinimumWidth(longTextWidth + 25);
+        QCOMPARE(
+            button.minimumSizeHint().width(),
+            longTextWidth + 25
             );
 
         QFont largerFont = button.font();

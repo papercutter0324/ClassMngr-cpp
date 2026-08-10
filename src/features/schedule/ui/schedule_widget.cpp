@@ -801,9 +801,25 @@ void ScheduleWidget::editTestingAssignment(
     loadSchedule();
 }
 
-void ScheduleWidget::exportSchedule()
+void ScheduleWidget::printSchedule()
 {
-    SchedulePrintDialog dialog(this);
+    outputSchedule(true);
+}
+
+void ScheduleWidget::saveScheduleAs()
+{
+    outputSchedule(false);
+}
+
+void ScheduleWidget::outputSchedule(
+    bool print
+    )
+{
+    const SchedulePrintDialog::Action action =
+        print
+            ? SchedulePrintDialog::Action::Print
+            : SchedulePrintDialog::Action::SaveAs;
+    SchedulePrintDialog dialog(action, this);
 
     if (dialog.exec() != QDialog::Accepted)
     {
@@ -837,7 +853,7 @@ void ScheduleWidget::exportSchedule()
 
     SchedulePrintService::Result result;
 
-    if (dialog.selectedAction() == SchedulePrintDialog::Action::Print)
+    if (print)
     {
         result = SchedulePrintService::printSchedule(request);
     }
@@ -853,7 +869,7 @@ void ScheduleWidget::exportSchedule()
     {
         QMessageBox::warning(
             this,
-            dialog.selectedAction() == SchedulePrintDialog::Action::Print
+            print
                 ? tr("Print Schedule")
                 : tr("Export Schedule"),
             result.message
@@ -950,14 +966,6 @@ void ScheduleWidget::buildUi()
         );
     m_importButton->setMinimumWidth(110);
     controlsLayout->addWidget(m_importButton);
-
-    m_exportButton =
-        new TextFitPushButton(this);
-    m_exportButton->setObjectName(
-        QStringLiteral("scheduleExportButton")
-        );
-    m_exportButton->setMinimumWidth(110);
-    controlsLayout->addWidget(m_exportButton);
 
     m_settingsButton =
         new QPushButton(this);
@@ -1073,12 +1081,6 @@ void ScheduleWidget::buildUi()
         &ScheduleWidget::scheduleImportRequested
         );
 
-    connect(
-        m_exportButton,
-        &QPushButton::clicked,
-        this,
-        &ScheduleWidget::exportSchedule
-        );
 
     connect(
         m_table,
@@ -1358,7 +1360,6 @@ void ScheduleWidget::updateButtons()
         || !m_settingsButton
         || !m_testingClassesButton
         || !m_importButton
-        || !m_exportButton
         || !m_testingBanner
         )
     {
@@ -1401,9 +1402,6 @@ void ScheduleWidget::updateButtons()
         tr("Testing Classes")
         );
 
-    m_exportButton->setText(
-        tr("Export")
-        );
     m_importButton->setText(
         tr("Import")
         );

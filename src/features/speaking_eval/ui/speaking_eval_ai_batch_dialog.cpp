@@ -6,6 +6,7 @@
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -546,7 +547,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         );
 
     auto* buttons =
-        new QDialogButtonBox(
+        new TextFitDialogButtonBox(
             QDialogButtonBox::Cancel,
             this
             );

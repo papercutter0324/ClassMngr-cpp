@@ -34,6 +34,7 @@ public:
         ApplicationServices* services,
         int currentClassId,
         RosterTemplatePrintService::Scope defaultScope,
+        Action action,
         QWidget* parent = nullptr,
         bool currentClassOnly = false
         );
