@@ -5664,7 +5664,7 @@ Rm: %1</source>
     <message>
         <location line="-145"/>
         <location line="+149"/>
-        <source>Open Korean typing website</source>
+        <source>Open Korean / English on-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7630,7 +7630,7 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="+3"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
-        <source>Open Korean typing website</source>
+        <source>Open Korean / English on-screen keyboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9542,6 +9542,49 @@ Version: %2</source>
         <location line="+37"/>
         <source>Current application version is invalid: %1</source>
         <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OnScreenKeyboard</name>
+    <message>
+        <source>On-Screen Keyboard</source>
+        <translation>On-Screen Keyboard</translation>
+    </message>
+    <message>
+        <source>Korean / English Keyboard</source>
+        <translation>Korean / English Keyboard</translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <source>Korean</source>
+        <translation>Korean</translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation>Shift</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation>Space</translation>
+    </message>
+    <message>
+        <source>Backspace</source>
+        <translation>Backspace</translation>
+    </message>
+    <message>
+        <source>Enter</source>
+        <translation>Enter</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Select an editable text cell to use the on-screen keyboard.</source>
+        <translation>Select an editable text cell to use the on-screen keyboard.</translation>
     </message>
 </context>
 </TS>

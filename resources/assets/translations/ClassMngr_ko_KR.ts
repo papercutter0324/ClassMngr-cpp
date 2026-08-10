@@ -5592,8 +5592,8 @@ Rm: %1</source>
     <message>
         <location line="-145"/>
         <location line="+149"/>
-        <source>Open Korean typing website</source>
-        <translation>한국어 입력 웹사이트 열기</translation>
+        <source>Open Korean / English on-screen keyboard</source>
+        <translation>한/영 화면 키보드 열기</translation>
     </message>
     <message>
         <location line="-133"/>
@@ -7674,8 +7674,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+3"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+5"/>
-        <source>Open Korean typing website</source>
-        <translation>한국어 입력 웹사이트 열기</translation>
+        <source>Open Korean / English on-screen keyboard</source>
+        <translation>한/영 화면 키보드 열기</translation>
     </message>
     <message>
         <location line="-54"/>
@@ -9603,6 +9603,49 @@ Version: %2</source>
         <location line="+37"/>
         <source>Current application version is invalid: %1</source>
         <translation>현재 애플리케이션 버전이 올바르지 않습니다: %1</translation>
+    </message>
+</context>
+<context>
+    <name>OnScreenKeyboard</name>
+    <message>
+        <source>On-Screen Keyboard</source>
+        <translation>화면 키보드</translation>
+    </message>
+    <message>
+        <source>Korean / English Keyboard</source>
+        <translation>한/영 키보드</translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation>영어</translation>
+    </message>
+    <message>
+        <source>Korean</source>
+        <translation>한국어</translation>
+    </message>
+    <message>
+        <source>Shift</source>
+        <translation>Shift</translation>
+    </message>
+    <message>
+        <source>Space</source>
+        <translation>스페이스</translation>
+    </message>
+    <message>
+        <source>Backspace</source>
+        <translation>백스페이스</translation>
+    </message>
+    <message>
+        <source>Enter</source>
+        <translation>엔터</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Select an editable text cell to use the on-screen keyboard.</source>
+        <translation>화면 키보드를 사용하려면 편집할 수 있는 텍스트 셀을 선택하세요.</translation>
     </message>
 </context>
 </TS>

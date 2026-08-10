@@ -364,6 +364,8 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/PretendardVariable.ttf
         resources/assets/icons/app_icon.ico
         resources/assets/icons/check.png
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
         resources/assets/icons/combo_arrow_dark.svg
         resources/assets/icons/combo_arrow_light.svg
         resources/assets/icons/spin_up_dark.svg
@@ -685,6 +687,49 @@ endif()
 if(BUILD_TESTING)
     find_package(Qt6 6.11.1 REQUIRED COMPONENTS
         Test
+    )
+
+    qt_add_executable(ClassMngrOnScreenKeyboardTests
+        tests/on_screen_keyboard_tests.cpp
+        src/ui/shared/input/hangul_composer.cpp
+        src/ui/shared/widgets/on_screen_keyboard.cpp
+    )
+
+    qt_add_resources(ClassMngrOnScreenKeyboardTests keyboard_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
+    )
+
+    target_compile_features(ClassMngrOnScreenKeyboardTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrOnScreenKeyboardTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrOnScreenKeyboardTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
+    add_test(
+        NAME ClassMngrOnScreenKeyboardTests
+        COMMAND ClassMngrOnScreenKeyboardTests
+    )
+
+    set_tests_properties(
+        ClassMngrOnScreenKeyboardTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrUpdaterTests
@@ -1589,8 +1634,18 @@ if(BUILD_TESTING)
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/ui/shared/pages/basepage.cpp
+        src/ui/shared/input/hangul_composer.cpp
         src/ui/shared/widgets/clickable_color_preview.cpp
         src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/on_screen_keyboard.cpp
+    )
+
+    qt_add_resources(ClassMngrTestingClassesPageTests keyboard_integration_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
     )
 
     target_compile_features(ClassMngrTestingClassesPageTests

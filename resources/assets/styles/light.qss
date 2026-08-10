@@ -381,6 +381,10 @@ QPushButton {
     min-height: 24px;
 }
 
+QWidget#onScreenKeyboard QPushButton {
+    text-align: center;
+}
+
 QPushButton:hover {
     background-color: #f5f5f5;
     border-color: #3daee9;

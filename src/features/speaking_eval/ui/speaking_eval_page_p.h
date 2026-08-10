@@ -1,6 +1,7 @@
 #include "speaking_eval_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -22,10 +23,10 @@
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QAbstractButton>
-#include <QDesktopServices>
 #include <QHash>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPainter>
@@ -38,7 +39,6 @@
 #include <QTabWidget>
 #include <QTimer>
 #include <QUndoStack>
-#include <QUrl>
 #include <QVBoxLayout>
 
 #include <utility>

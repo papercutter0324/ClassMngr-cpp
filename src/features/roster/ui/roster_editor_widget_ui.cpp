@@ -13,14 +13,14 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QAbstractItemModel>
-#include <QDesktopServices>
 #include <QHeaderView>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QPushButton>
-#include <QUrl>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace
@@ -73,9 +73,11 @@ void RosterEditorWidget::retranslateUi()
 
     if (m_koreanKeyboardButton)
     {
-        m_koreanKeyboardButton->setText(tr("Korean Keyboard"));
         m_koreanKeyboardButton->setToolTip(
-            tr("Open Korean typing website")
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
             );
     }
 
@@ -211,13 +213,21 @@ void RosterEditorWidget::buildUi()
     m_importButton->setToolTip(
         tr("Import final grades from speaking evaluations.")
         );
-    m_koreanKeyboardButton =
-        new TextFitPushButton(
-            tr("Korean Keyboard"),
-            this
-            );
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("rosterKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
     m_koreanKeyboardButton->setToolTip(
-        tr("Open Korean typing website")
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(
+        m_koreanKeyboardButton
         );
     m_addColumnButton = new TextFitPushButton(tr("Add Column"), this);
     m_removeColumnButton = new TextFitPushButton(tr("Remove Column"), this);
@@ -270,7 +280,28 @@ void RosterEditorWidget::buildUi()
         m_table->selectionModel(),
         &QItemSelectionModel::currentChanged,
         this,
-        &RosterEditorWidget::updateActions
+        [this](const QModelIndex&, const QModelIndex&)
+        {
+            updateActions();
+
+            if (
+                m_onScreenKeyboard
+                && m_onScreenKeyboard->isVisible()
+                )
+            {
+                QTimer::singleShot(
+                    0,
+                    this,
+                    [this]()
+                    {
+                        if (m_onScreenKeyboard)
+                        {
+                            m_onScreenKeyboard->retarget(m_table);
+                        }
+                    }
+                    );
+            }
+        }
         );
     connect(
         m_table->horizontalHeader(),
@@ -295,9 +326,10 @@ void RosterEditorWidget::buildUi()
 
 void RosterEditorWidget::openKoreanKeyboard()
 {
-    QDesktopServices::openUrl(
-        QUrl(QStringLiteral("https://www.branah.com/korean"))
-        );
+    if (m_onScreenKeyboard)
+    {
+        m_onScreenKeyboard->showFor(m_table);
+    }
 }
 
 void RosterEditorWidget::updateHeaderText()

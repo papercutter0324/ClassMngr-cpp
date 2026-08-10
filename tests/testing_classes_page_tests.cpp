@@ -6,6 +6,7 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QtTest>
 
@@ -114,6 +115,8 @@ class TestingClassesPageTests : public QObject
 private slots:
     void init();
     void rosterEditorOmitsRemoveButtonAndKeepsContextAction();
+    void rosterKeyboardTriggerOpensInAppPalette();
+    void rosterKeyboardWritesToKoreanNameCell();
     void outputAvailabilityFollowsRosterTabAndLoadedClass();
     void testingClassesUsesNarrowNonCollapsibleNavigation();
     void testingRosterHidesEvaluationsWithoutLosingData();
@@ -219,6 +222,97 @@ void TestingClassesPageTests
             )
         );
     QVERIFY(foundRemoveAction);
+}
+
+void TestingClassesPageTests
+    ::rosterKeyboardTriggerOpensInAppPalette()
+{
+    ApplicationServices services;
+    RosterEditorWidget editor(&services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Athena"),
+            43
+            )
+        );
+    editor.resize(900, 500);
+    editor.show();
+    QApplication::processEvents();
+
+    auto* trigger = editor.findChild<QPushButton*>(
+        QStringLiteral("rosterKoreanKeyboardButton")
+        );
+    auto* keyboard = editor.findChild<OnScreenKeyboard*>();
+    QVERIFY(trigger);
+    QVERIFY(keyboard);
+    QVERIFY(trigger->text().isEmpty());
+    QVERIFY(!trigger->icon().isNull());
+    QCOMPARE(
+        trigger->accessibleName(),
+        QStringLiteral("Korean Keyboard")
+        );
+    QVERIFY(trigger->toolTip().contains(QStringLiteral("on-screen")));
+
+    trigger->click();
+    QApplication::processEvents();
+    QVERIFY(keyboard->isVisible());
+    keyboard->close();
+}
+
+void TestingClassesPageTests
+    ::rosterKeyboardWritesToKoreanNameCell()
+{
+    ApplicationServices services;
+    RosterEditorWidget editor(&services, true);
+    editor.loadClass(
+        Classroom(
+            QStringLiteral("Athena"),
+            43
+            )
+        );
+    editor.resize(900, 500);
+    editor.show();
+    QApplication::processEvents();
+
+    auto* table = editor.findChild<RosterTableView*>();
+    auto* trigger = editor.findChild<QPushButton*>(
+        QStringLiteral("rosterKoreanKeyboardButton")
+        );
+    auto* keyboard = editor.findChild<OnScreenKeyboard*>();
+    QVERIFY(table);
+    QVERIFY(trigger);
+    QVERIFY(keyboard);
+
+    const int koreanColumn = columnByName(
+        table->model(),
+        QStringLiteral("Korean")
+        );
+    QVERIFY(koreanColumn >= 0);
+    const QModelIndex koreanNameCell =
+        table->model()->index(0, koreanColumn);
+    QVERIFY(koreanNameCell.isValid());
+
+    table->setCurrentIndex(koreanNameCell);
+    trigger->click();
+    QApplication::processEvents();
+    QVERIFY(keyboard->target());
+
+    keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_r")
+        )->click();
+    keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_k")
+        )->click();
+    keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardEnter")
+        )->click();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        table->model()->data(koreanNameCell).toString(),
+        QStringLiteral("가")
+        );
+    keyboard->close();
 }
 
 void TestingClassesPageTests

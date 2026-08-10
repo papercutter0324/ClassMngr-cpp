@@ -18,6 +18,7 @@ class RosterHeaderView;
 class RosterItemDelegate;
 class RosterModel;
 class RosterTableView;
+class OnScreenKeyboard;
 
 class RosterEditorWidget : public BasePage
 {
@@ -164,6 +165,7 @@ private:
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;

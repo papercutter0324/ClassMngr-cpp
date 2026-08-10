@@ -93,11 +93,11 @@ void SpeakingEvalPage::retranslateUi()
 
     if (m_koreanKeyboardButton)
     {
-        m_koreanKeyboardButton->setText(
-            tr("Korean Keyboard")
-            );
         m_koreanKeyboardButton->setToolTip(
-            tr("Open Korean typing website")
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
             );
     }
 
@@ -205,9 +205,10 @@ void SpeakingEvalPage::autosave()
 
 void SpeakingEvalPage::openKoreanKeyboard()
 {
-    QDesktopServices::openUrl(
-        QUrl(QStringLiteral("https://www.branah.com/korean"))
-        );
+    if (m_onScreenKeyboard)
+    {
+        m_onScreenKeyboard->showFor(m_table);
+    }
 }
 
 void SpeakingEvalPage::updateActions()

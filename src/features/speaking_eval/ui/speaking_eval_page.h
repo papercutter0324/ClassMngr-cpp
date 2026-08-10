@@ -22,6 +22,7 @@ class QWidget;
 class UniformWidthTabWidget;
 class SpeakingEvalDelegate;
 class SpeakingEvalModel;
+class OnScreenKeyboard;
 
 class SpeakingEvalPage : public BasePage
 {
@@ -189,6 +190,7 @@ private:
     QPushButton* m_importNamesButton = nullptr;
     QList<QPushButton*> m_reportButtons;
     QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QPushButton* m_saveButton = nullptr;
     QTimer* m_autosaveTimer = nullptr;
 };

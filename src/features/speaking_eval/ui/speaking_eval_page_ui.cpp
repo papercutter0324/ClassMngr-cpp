@@ -214,19 +214,22 @@ void SpeakingEvalPage::buildUi()
 
     bottomLayout()->addSpacing(20);
 
-    m_koreanKeyboardButton =
-        new TextFitPushButton(
-            tr("Korean Keyboard"),
-            this
-            );
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("speakingEvalKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
 
     m_koreanKeyboardButton->setToolTip(
-        tr("Open Korean typing website")
+        tr("Open Korean / English on-screen keyboard")
         );
-
-    m_koreanKeyboardButton->setSizePolicy(
-        QSizePolicy::Expanding,
-        QSizePolicy::Preferred
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(
+        m_koreanKeyboardButton
         );
 
     bottomLayout()->addWidget(m_koreanKeyboardButton);
@@ -304,6 +307,32 @@ void SpeakingEvalPage::buildUi()
                 currentClassIdFromTabs(m_classTabs),
                 currentEvaluationNameFromTabs()
                 );
+        }
+        );
+
+    connect(
+        m_table->selectionModel(),
+        &QItemSelectionModel::currentChanged,
+        this,
+        [this](const QModelIndex&, const QModelIndex&)
+        {
+            if (
+                m_onScreenKeyboard
+                && m_onScreenKeyboard->isVisible()
+                )
+            {
+                QTimer::singleShot(
+                    0,
+                    this,
+                    [this]()
+                    {
+                        if (m_onScreenKeyboard)
+                        {
+                            m_onScreenKeyboard->retarget(m_table);
+                        }
+                    }
+                    );
+            }
         }
         );
 
