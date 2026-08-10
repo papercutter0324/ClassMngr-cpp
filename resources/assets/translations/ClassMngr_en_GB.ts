@@ -5520,7 +5520,7 @@ Rm: %1</source>
         <location line="+51"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-144"/>
         <location line="+149"/>
-        <source>Print Rosters</source>
+        <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7629,13 +7629,13 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="-114"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+13"/>
-        <source>New Report</source>
+        <source>Report Editor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location line="+1"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+1"/>
-        <source>Print Reports</source>
+        <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

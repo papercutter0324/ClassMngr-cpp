@@ -5540,8 +5540,8 @@ Rm: %1</source>
         <location line="+51"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-144"/>
         <location line="+149"/>
-        <source>Print Rosters</source>
-        <translation>명단 인쇄</translation>
+        <source>Print</source>
+        <translation>인쇄</translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-67"/>
@@ -7723,8 +7723,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="-113"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+14"/>
-        <source>Print Reports</source>
-        <translation>보고서 인쇄</translation>
+        <source>Print</source>
+        <translation>인쇄</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -7772,8 +7772,8 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-342"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-231"/>
-        <source>New Report</source>
-        <translation>새 보고서</translation>
+        <source>Report Editor</source>
+        <translation>보고서 편집기</translation>
     </message>
     <message>
         <location line="+30"/>

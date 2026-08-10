@@ -73,7 +73,7 @@ void RosterEditorWidget::retranslateUi()
 
     if (m_printButton)
     {
-        m_printButton->setText(tr("Print Rosters"));
+        m_printButton->setText(tr("Print"));
         m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
     }
 
@@ -222,7 +222,7 @@ void RosterEditorWidget::buildUi()
     m_importButton->setToolTip(
         tr("Import final grades from speaking evaluations.")
         );
-    m_printButton = new TextFitPushButton(tr("Print Rosters"), this);
+    m_printButton = new TextFitPushButton(tr("Print"), this);
     m_printButton->setToolTip(tr("Print rosters as an A4 PDF."));
     m_koreanKeyboardButton =
         new TextFitPushButton(

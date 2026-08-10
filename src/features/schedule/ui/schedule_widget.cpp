@@ -890,17 +890,17 @@ void ScheduleWidget::buildUi()
     m_modeButtonGroup->setExclusive(true);
 
     m_regularModeButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_regularModeButton->setObjectName(
         QStringLiteral("scheduleRegularModeButton")
         );
     m_intensiveModeButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_intensiveModeButton->setObjectName(
         QStringLiteral("scheduleIntensiveModeButton")
         );
     m_testingModeButton =
-        new QPushButton(this);
+        new TextFitPushButton(this);
     m_testingModeButton->setObjectName(
         QStringLiteral("scheduleTestingModeButton")
         );

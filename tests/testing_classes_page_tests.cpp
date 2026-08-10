@@ -6,6 +6,7 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
 
@@ -114,6 +115,7 @@ class TestingClassesPageTests : public QObject
 private slots:
     void init();
     void rosterEditorOmitsRemoveButtonAndKeepsContextAction();
+    void rosterPrintControlUsesConciseTextFitLabel();
     void testingClassesUsesNarrowNonCollapsibleNavigation();
     void testingRosterHidesEvaluationsWithoutLosingData();
 };
@@ -218,6 +220,31 @@ void TestingClassesPageTests
             )
         );
     QVERIFY(foundRemoveAction);
+}
+
+void TestingClassesPageTests::rosterPrintControlUsesConciseTextFitLabel()
+{
+    ApplicationServices services;
+    RosterEditorWidget editor(&services, true);
+
+    const auto buttons =
+        editor.findChildren<QPushButton*>();
+    const auto printButton =
+        std::find_if(
+            buttons.cbegin(),
+            buttons.cend(),
+            [](const QPushButton* button)
+            {
+                return button->text() == QStringLiteral("Print");
+            }
+            );
+
+    QVERIFY(printButton != buttons.cend());
+    QVERIFY(dynamic_cast<TextFitPushButton*>(*printButton));
+    QVERIFY(
+        (*printButton)->minimumSizeHint().width()
+        >= (*printButton)->sizeHint().width()
+        );
 }
 
 void TestingClassesPageTests

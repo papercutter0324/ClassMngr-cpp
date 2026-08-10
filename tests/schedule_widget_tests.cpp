@@ -4,6 +4,7 @@
 #include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 #include "domain/models/testing_class.h"
 
 #include <QtTest>
@@ -58,6 +59,7 @@ private slots:
     void persistsAndMirrorsEveryViewOption();
     void exportUsesSelectedTeacherNameLanguage();
     void importButtonRequestsScheduleImport();
+    void controlsUseTextFitButtons();
     void legacyHourSettingsDoNotCarryForward();
     void testingModeFiltersClassesAndDisplaysSavedBlock();
     void testingModeDisplaysAssignedTestingClassCard();
@@ -229,6 +231,33 @@ void ScheduleWidgetTests::importButtonRequestsScheduleImport()
         );
     importButton->click();
     QCOMPARE(spy.count(), 1);
+}
+
+void ScheduleWidgetTests::controlsUseTextFitButtons()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    const QStringList buttonNames{
+        QStringLiteral("scheduleRegularModeButton"),
+        QStringLiteral("scheduleIntensiveModeButton"),
+        QStringLiteral("scheduleTestingModeButton"),
+        QStringLiteral("scheduleTestingClassesButton"),
+        QStringLiteral("scheduleImportButton"),
+        QStringLiteral("scheduleExportButton")
+    };
+
+    for (const QString& buttonName : buttonNames)
+    {
+        auto* button =
+            widget.findChild<QPushButton*>(buttonName);
+        QVERIFY(button);
+        QVERIFY(dynamic_cast<TextFitPushButton*>(button));
+        QVERIFY(
+            button->minimumSizeHint().width()
+            >= button->sizeHint().width()
+            );
+    }
 }
 
 void ScheduleWidgetTests

@@ -5526,8 +5526,8 @@ Rm: %1</source>
         <location line="+51"/>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-144"/>
         <location line="+149"/>
-        <source>Print Rosters</source>
-        <translation type="unfinished"></translation>
+        <source>Print</source>
+        <translation>Print</translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_editor_widget_ui.cpp" line="-67"/>
@@ -7685,8 +7685,8 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location line="-113"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+14"/>
-        <source>Print Reports</source>
-        <translation>Print Reports</translation>
+        <source>Print</source>
+        <translation>Print</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -7734,8 +7734,8 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="-342"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-231"/>
-        <source>New Report</source>
-        <translation>New Report</translation>
+        <source>Report Editor</source>
+        <translation>Report Editor</translation>
     </message>
     <message>
         <location line="+30"/>
