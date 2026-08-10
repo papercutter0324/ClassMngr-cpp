@@ -1,3 +1,32 @@
+# ClassMngr 0.16.0 Release Notes
+
+ClassMngr 0.16.0 adds an on-screen Korean / English keyboard, makes update
+status easier to follow, and refines the look of Preferences and Dark-theme
+menus.
+
+## On-Screen Keyboard
+
+- Added a Korean / English on-screen keyboard for people who do not have an
+  easy way to type in Korean.
+- Use the new keyboard button in roster and speaking-evaluation tables to type
+  Korean or English directly into the selected editable cell.
+
+## App Updates
+
+- Refined update-check status messages and layout so the download and installed
+  version details are easier to understand.
+
+## Preferences
+
+- Improved spacing between options and sections for a clearer Preferences
+  dialog.
+
+## Dark Theme
+
+- Made menu dividers more visible in the Dark theme.
+- Ensured the on-screen keyboard button uses an icon that matches the selected
+  theme.
+
 # ClassMngr 0.15.0 Release Notes
 
 ClassMngr 0.15.0 makes it quicker to get started with a new file, improves
