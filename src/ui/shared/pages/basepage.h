@@ -68,6 +68,8 @@ public:
 
 signals:
 
+    void initialSetupRequested();
+
     void openDatabaseRequested();
 
     void newDatabaseRequested();
@@ -131,6 +133,8 @@ private:
     QPushButton* m_openDatabaseButton = nullptr;
 
     QPushButton* m_newDatabaseButton = nullptr;
+
+    QPushButton* m_initialSetupButton = nullptr;
 
     bool m_noDatabaseBannerEnabled = false;
 

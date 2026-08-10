@@ -116,6 +116,8 @@ public:
 
 signals:
 
+    void initialSetupRequested();
+
     void openDatabaseRequested();
 
     void newDatabaseRequested();

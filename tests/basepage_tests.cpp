@@ -114,6 +114,11 @@ public:
             return QStringLiteral("Translated new database");
         }
 
+        if (qstrcmp(sourceText, "Initial Setup...") == 0)
+        {
+            return QStringLiteral("Translated initial setup");
+        }
+
         return {};
     }
 };
@@ -153,9 +158,15 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
             QStringLiteral("noDatabaseNewButton")
             );
 
+    auto* setupButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseSetupButton")
+            );
+
     QVERIFY(banner);
     QVERIFY(openButton);
     QVERIFY(newButton);
+    QVERIFY(setupButton);
     QVERIFY(!banner->isVisible());
 
     auto* title =
@@ -228,6 +239,7 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
         );
     QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
     QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
+    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
 
     page.hide();
 
@@ -237,6 +249,12 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
 
     QVERIFY(banner->isVisible());
     QVERIFY(newButton->geometry().left() < openButton->geometry().left());
+    QVERIFY(setupButton->isDefault());
+
+    QSignalSpy setupSpy(
+        &page,
+        &BasePage::initialSetupRequested
+        );
 
     QSignalSpy openSpy(
         &page,
@@ -246,6 +264,11 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
     QSignalSpy newSpy(
         &page,
         &BasePage::newDatabaseRequested
+        );
+
+    QTest::mouseClick(
+        setupButton,
+        Qt::LeftButton
         );
 
     QTest::mouseClick(
@@ -260,6 +283,7 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
 
     QCOMPARE(openSpy.count(), 1);
     QCOMPARE(newSpy.count(), 1);
+    QCOMPARE(setupSpy.count(), 1);
 
     page.setDatabaseOpen(true);
     QCoreApplication::processEvents();
@@ -353,6 +377,7 @@ void BasePageTests::noDatabaseBannerFitsNarrowPage()
         QStringLiteral("noDatabaseStepTwo"),
         QStringLiteral("noDatabaseStepThree"),
         QStringLiteral("noDatabaseNextSteps"),
+        QStringLiteral("noDatabaseSetupButton"),
         QStringLiteral("noDatabaseNewButton"),
         QStringLiteral("noDatabaseOpenButton")
     };
@@ -429,6 +454,11 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
             QStringLiteral("noDatabaseNewButton")
             );
 
+    auto* setupButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseSetupButton")
+            );
+
     QVERIFY(banner);
     QVERIFY(title);
     QVERIFY(message);
@@ -438,6 +468,7 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
     QVERIFY(nextSteps);
     QVERIFY(openButton);
     QVERIFY(newButton);
+    QVERIFY(setupButton);
 
     NoDatabaseBannerTranslator translator;
     qApp->installTranslator(&translator);
@@ -454,6 +485,7 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
     QCOMPARE(nextSteps->text(), QStringLiteral("Translated next steps"));
     QCOMPARE(openButton->text(), QStringLiteral("Translated open database"));
     QCOMPARE(newButton->text(), QStringLiteral("Translated new database"));
+    QCOMPARE(setupButton->text(), QStringLiteral("Translated initial setup"));
 
     for (QLabel* label : {
              title,
@@ -505,6 +537,7 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
         );
     QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
     QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
+    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
 }
 
 void BasePageTests::databaseStateClearHookIsDispatched()

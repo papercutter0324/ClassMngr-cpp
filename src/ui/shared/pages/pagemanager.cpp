@@ -207,6 +207,13 @@ void PageManager::registerPages()
 
         connect(
             page,
+            &BasePage::initialSetupRequested,
+            this,
+            &PageManager::initialSetupRequested
+            );
+
+        connect(
+            page,
             &BasePage::openDatabaseRequested,
             this,
             &PageManager::openDatabaseRequested

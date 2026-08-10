@@ -201,6 +201,37 @@ BasePage::BasePage(
 
     buttonLayout->setSpacing(8);
 
+    m_initialSetupButton =
+        new QPushButton(m_noDatabaseBanner);
+
+    m_initialSetupButton->setObjectName(
+        QStringLiteral("noDatabaseSetupButton")
+        );
+
+    m_initialSetupButton->setDefault(true);
+
+    buttonLayout->addWidget(
+        m_initialSetupButton
+        );
+
+    buttonLayout->addStretch();
+
+    bannerLayout->addLayout(
+        buttonLayout
+        );
+
+    auto* databaseButtonLayout =
+        new QHBoxLayout;
+
+    databaseButtonLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    databaseButtonLayout->setSpacing(8);
+
     m_newDatabaseButton =
         new QPushButton(m_noDatabaseBanner);
 
@@ -208,7 +239,7 @@ BasePage::BasePage(
         QStringLiteral("noDatabaseNewButton")
         );
 
-    buttonLayout->addWidget(
+    databaseButtonLayout->addWidget(
         m_newDatabaseButton
         );
 
@@ -219,14 +250,21 @@ BasePage::BasePage(
         QStringLiteral("noDatabaseOpenButton")
         );
 
-    buttonLayout->addWidget(
+    databaseButtonLayout->addWidget(
         m_openDatabaseButton
         );
 
-    buttonLayout->addStretch();
+    databaseButtonLayout->addStretch();
 
     bannerLayout->addLayout(
-        buttonLayout
+        databaseButtonLayout
+        );
+
+    connect(
+        m_initialSetupButton,
+        &QPushButton::clicked,
+        this,
+        &BasePage::initialSetupRequested
         );
 
     connect(
@@ -355,6 +393,13 @@ void BasePage::retranslateUi()
     {
         m_openDatabaseButton->setText(
             tr("Open Database...")
+            );
+    }
+
+    if (m_initialSetupButton)
+    {
+        m_initialSetupButton->setText(
+            tr("Initial Setup...")
             );
     }
 

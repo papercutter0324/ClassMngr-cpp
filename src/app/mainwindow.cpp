@@ -19,6 +19,7 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
+#include "features/setup/ui/initial_setup_wizard.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_info_page.h"
@@ -346,6 +347,16 @@ void MainWindow::retranslateUi()
 
 void MainWindow::connectSignals()
 {
+    if (m_pages)
+    {
+        connect(
+            m_pages,
+            &PageManager::initialSetupRequested,
+            this,
+            &MainWindow::startInitialSetup
+            );
+    }
+
     if (m_pages && m_actions.openFile)
     {
         connect(
@@ -648,6 +659,46 @@ void MainWindow::connectSignals()
                 AboutDialog dialog(this);
                 dialog.exec();
             }
+            );
+    }
+}
+
+void MainWindow::startInitialSetup()
+{
+    if (
+        !m_fileController
+        || !m_services
+        || !m_fileController->createNewDatabaseInteractive()
+        )
+    {
+        return;
+    }
+
+    InitialSetupWizard wizard(
+        m_services.get(),
+        this
+        );
+
+    if (wizard.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    if (m_pages)
+    {
+        m_pages->refreshAll();
+        m_pages->showPage(PageType::MySchedule);
+    }
+
+    if (m_sidebarController)
+    {
+        m_sidebarController->refreshAllSidebars();
+    }
+
+    if (ui && ui->sidebarWidget)
+    {
+        ui->sidebarWidget->selectMyInfoSection(
+            QStringLiteral("my_info_schedule")
             );
     }
 }

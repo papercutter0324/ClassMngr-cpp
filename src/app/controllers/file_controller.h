@@ -40,6 +40,8 @@ public:
         bool exiting = false
         );
 
+    [[nodiscard]] bool createNewDatabaseInteractive();
+
 public slots:
     void autosave();
 

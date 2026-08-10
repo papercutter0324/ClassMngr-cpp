@@ -166,8 +166,13 @@ void FileController::loadDatabaseOnStartup(
 
 void FileController::newFile()
 {
+    (void) createNewDatabaseInteractive();
+}
+
+bool FileController::createNewDatabaseInteractive()
+{
     if (!confirmUnsavedChanges())
-        return;
+        return false;
 
     const QString filePath =
         QFileDialog::getSaveFileName(
@@ -178,7 +183,7 @@ void FileController::newFile()
             );
 
     if (filePath.isEmpty())
-        return;
+        return false;
 
     const QString normalizedPath =
         normalizeNativeOutputFilePath(filePath);
@@ -186,7 +191,7 @@ void FileController::newFile()
     if (!m_services)
     {
         enterNoDatabaseState();
-        return;
+        return false;
     }
 
     closeActiveDatabase();
@@ -204,7 +209,7 @@ void FileController::newFile()
             );
 
         enterNoDatabaseState();
-        return;
+        return false;
     }
 
     const Status opened =
@@ -219,7 +224,7 @@ void FileController::newFile()
             );
 
         enterNoDatabaseState();
-        return;
+        return false;
     }
 
     m_currentFile =
@@ -235,6 +240,8 @@ void FileController::newFile()
     {
         setLoadedFileState();
     }
+
+    return true;
 }
 
 void FileController::openFile()
