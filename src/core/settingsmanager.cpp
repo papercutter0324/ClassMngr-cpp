@@ -5,9 +5,23 @@
 
 namespace
 {
-constexpr int DefaultExcelImportTimeoutSeconds = 90;
-constexpr int MinimumExcelImportTimeoutSeconds = 1;
-constexpr int MaximumExcelImportTimeoutSeconds = 3600;
+constexpr int DefaultExcelImportTimeoutSeconds = 120;
+
+bool isSupportedExcelImportTimeoutSeconds(
+    int seconds
+    )
+{
+    switch (seconds)
+    {
+    case 30:
+    case 60:
+    case 120:
+    case 300:
+        return true;
+    default:
+        return false;
+    }
+}
 
 std::unique_ptr<QSettings> createSettings()
 {
@@ -246,7 +260,7 @@ bool SettingsManager::sidebarMarqueeEnabled() const
 {
     return get(
         Keys::SIDEBAR_MARQUEE_ENABLED,
-        false
+        true
         ).toBool();
 }
 
@@ -302,14 +316,14 @@ void SettingsManager::setShowPowerPointDataAccessNotice(
 
 int SettingsManager::excelImportTimeoutSeconds() const
 {
-    return qBound(
-        MinimumExcelImportTimeoutSeconds,
+    const int seconds =
         get(
             Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
             DefaultExcelImportTimeoutSeconds
-            ).toInt(),
-        MaximumExcelImportTimeoutSeconds
-        );
+            ).toInt();
+    return isSupportedExcelImportTimeoutSeconds(seconds)
+        ? seconds
+        : DefaultExcelImportTimeoutSeconds;
 }
 
 void SettingsManager::setExcelImportTimeoutSeconds(
@@ -318,11 +332,9 @@ void SettingsManager::setExcelImportTimeoutSeconds(
 {
     set(
         Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
-        qBound(
-            MinimumExcelImportTimeoutSeconds,
-            seconds,
-            MaximumExcelImportTimeoutSeconds
-            )
+        isSupportedExcelImportTimeoutSeconds(seconds)
+            ? seconds
+            : DefaultExcelImportTimeoutSeconds
         );
 }
 

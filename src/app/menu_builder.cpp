@@ -3,18 +3,20 @@
 #include "core/settingsmanager.h"
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
+#include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
+#include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QSpinBox>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
@@ -245,16 +247,24 @@ void showPreferencesDialog(
     auto* excelImportLayout =
         new QFormLayout(excelImportGroup);
     auto* excelImportTimeout =
-        new QSpinBox(excelImportGroup);
+        new QComboBox(excelImportGroup);
     excelImportTimeout->setObjectName(
-        QStringLiteral("preferencesExcelImportTimeoutSeconds")
+        QStringLiteral("preferencesExcelImportTimeout")
         );
-    excelImportTimeout->setRange(1, 3600);
-    excelImportTimeout->setSuffix(
-        preferencesText(" seconds")
+    excelImportTimeout->addItem(
+        preferencesText("30 Seconds"),
+        30
         );
-    excelImportTimeout->setValue(
-        SettingsManager::instance().excelImportTimeoutSeconds()
+    excelImportTimeout->addItem(
+        preferencesText("1 Minute"), 60);
+    excelImportTimeout->addItem(
+        preferencesText("2 Minutes"), 120);
+    excelImportTimeout->addItem(
+        preferencesText("5 Minutes"), 300);
+    excelImportTimeout->setCurrentIndex(
+        excelImportTimeout->findData(
+            SettingsManager::instance().excelImportTimeoutSeconds()
+            )
         );
     excelImportTimeout->setToolTip(
         preferencesText(
@@ -267,11 +277,11 @@ void showPreferencesDialog(
         );
     QObject::connect(
         excelImportTimeout,
-        QOverload<int>::of(&QSpinBox::valueChanged),
-        [](int seconds)
+        QOverload<int>::of(&QComboBox::currentIndexChanged),
+        [excelImportTimeout](int index)
         {
             SettingsManager::instance().setExcelImportTimeoutSeconds(
-                seconds
+                excelImportTimeout->itemData(index).toInt()
                 );
         }
         );
@@ -384,7 +394,7 @@ void showPreferencesDialog(
     addActionChoices(
         documentsPage,
         documentsLayout,
-        preferencesText("Page Spacing"),
+        preferencesText("PDF Page Spacing"),
         {
             actions.documentPageSpacingState
                 ? actions.documentPageSpacingState->action(
@@ -442,7 +452,7 @@ void showPreferencesDialog(
             );
     QVBoxLayout* aiCommentsLayout =
         pageLayout(aiCommentsPage);
-    addActionChoices(
+    QGroupBox* preferredAiWebsiteGroup = addActionChoices(
         aiCommentsPage,
         aiCommentsLayout,
         preferencesText("Preferred AI Website"),
@@ -474,6 +484,47 @@ void showPreferencesDialog(
                 : nullptr
         }
         );
+    auto* customWebsiteUrl =
+        new QLabel(preferredAiWebsiteGroup);
+    customWebsiteUrl->setObjectName(
+        QStringLiteral("preferencesCustomAiWebsiteUrl")
+        );
+    customWebsiteUrl->setTextInteractionFlags(
+        Qt::TextSelectableByMouse
+        );
+    customWebsiteUrl->setWordWrap(true);
+    const auto updateCustomWebsiteUrl =
+        [customWebsiteUrl]()
+        {
+            const QString url =
+                SettingsManager::instance()
+                    .get(
+                        QString::fromUtf8(
+                            OptionKeys::AiCommentCustomWebsiteUrl
+                            )
+                        )
+                    .toString()
+                    .trimmed();
+            customWebsiteUrl->setText(
+                url.isEmpty()
+                    ? QString()
+                    : preferencesText("Custom website: %1").arg(url)
+                );
+            customWebsiteUrl->setVisible(!url.isEmpty());
+        };
+    updateCustomWebsiteUrl();
+    if (actions.aiCommentProviderState)
+    {
+        QObject::connect(
+            actions.aiCommentProviderState->action(
+                AiCommentProvider::CustomWebsite
+                ),
+            &QAction::triggered,
+            customWebsiteUrl,
+            updateCustomWebsiteUrl
+            );
+    }
+    preferredAiWebsiteGroup->layout()->addWidget(customWebsiteUrl);
     addActionChoices(
         aiCommentsPage,
         aiCommentsLayout,

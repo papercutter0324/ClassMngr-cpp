@@ -17,6 +17,7 @@ private slots:
     void providerAndVoiceDefaultsPersist();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
+    void sidebarMarqueeDefaultAndPersists();
     void excelImportTimeoutDefaultsAndPersists();
 
 private:
@@ -189,16 +190,42 @@ void AiCommentOptionsTests::excelImportTimeoutDefaultsAndPersists()
             SettingsManager::Keys::EXCEL_IMPORT_TIMEOUT_SECONDS
             )
         );
-    QCOMPARE(settings.excelImportTimeoutSeconds(), 90);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 120);
+
+    settings.setExcelImportTimeoutSeconds(30);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 30);
+
+    settings.setExcelImportTimeoutSeconds(60);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 60);
 
     settings.setExcelImportTimeoutSeconds(120);
     QCOMPARE(settings.excelImportTimeoutSeconds(), 120);
 
-    settings.setExcelImportTimeoutSeconds(0);
-    QCOMPARE(settings.excelImportTimeoutSeconds(), 1);
+    settings.setExcelImportTimeoutSeconds(300);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 300);
 
-    settings.setExcelImportTimeoutSeconds(7200);
-    QCOMPARE(settings.excelImportTimeoutSeconds(), 3600);
+    settings.setExcelImportTimeoutSeconds(90);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 120);
+}
+
+void AiCommentOptionsTests::sidebarMarqueeDefaultAndPersists()
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    settings.remove(
+        QString::fromUtf8(
+            SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
+            )
+        );
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.animateSidebarText);
+    QVERIFY(defaults.animateSidebarText->isChecked());
+    QVERIFY(settings.sidebarMarqueeEnabled());
+
+    defaults.animateSidebarText->setChecked(false);
+    QVERIFY(!settings.sidebarMarqueeEnabled());
 }
 
 QTEST_MAIN(AiCommentOptionsTests)

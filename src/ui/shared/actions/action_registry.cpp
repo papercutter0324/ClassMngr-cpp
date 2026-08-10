@@ -344,7 +344,7 @@ void ActionRegistry::retranslate()
             aiCommentProviderState->action(
                 AiCommentProvider::CustomWebsite
                 ),
-            tr("Custom Website..."),
+            tr("Custom Website"),
             tr("Choose a custom HTTPS AI website")
             );
     }
@@ -931,7 +931,7 @@ void ActionRegistry::createOptionActions()
         aiCommentProviderState->addOption(
             AiCommentProvider::CustomWebsite,
             createCheckableAction(
-                tr("Custom Website..."),
+                tr("Custom Website"),
                 tr("Choose a custom HTTPS AI website")
                 ),
             false
