@@ -81,6 +81,9 @@ public:
         static constexpr auto SHOW_POWERPOINT_DATA_ACCESS_NOTICE =
             "options/showPowerPointDataAccessNotice";
 
+        static constexpr auto EXCEL_IMPORT_TIMEOUT_SECONDS =
+            "imports/excelTimeoutSeconds";
+
         static constexpr auto AUTOMATIC_UPDATE_CHECKS_ENABLED =
             "updates/automaticChecksEnabled";
 
@@ -183,6 +186,15 @@ public:
     bool showPowerPointDataAccessNotice() const;
     void setShowPowerPointDataAccessNotice(
         bool enabled
+        );
+
+    // =====================================================
+    // Imports
+    // =====================================================
+
+    [[nodiscard]] int excelImportTimeoutSeconds() const;
+    void setExcelImportTimeoutSeconds(
+        int seconds
         );
 
     // =====================================================

@@ -5,6 +5,10 @@
 
 namespace
 {
+constexpr int DefaultExcelImportTimeoutSeconds = 90;
+constexpr int MinimumExcelImportTimeoutSeconds = 1;
+constexpr int MaximumExcelImportTimeoutSeconds = 3600;
+
 std::unique_ptr<QSettings> createSettings()
 {
     const QString settingsRoot =
@@ -289,6 +293,36 @@ void SettingsManager::setShowPowerPointDataAccessNotice(
     set(
         Keys::SHOW_POWERPOINT_DATA_ACCESS_NOTICE,
         enabled
+        );
+}
+
+// =========================================================
+// Imports
+// =========================================================
+
+int SettingsManager::excelImportTimeoutSeconds() const
+{
+    return qBound(
+        MinimumExcelImportTimeoutSeconds,
+        get(
+            Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
+            DefaultExcelImportTimeoutSeconds
+            ).toInt(),
+        MaximumExcelImportTimeoutSeconds
+        );
+}
+
+void SettingsManager::setExcelImportTimeoutSeconds(
+    int seconds
+    )
+{
+    set(
+        Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
+        qBound(
+            MinimumExcelImportTimeoutSeconds,
+            seconds,
+            MaximumExcelImportTimeoutSeconds
+            )
         );
 }
 

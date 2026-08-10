@@ -1,5 +1,6 @@
 #include "menu_builder.h"
 
+#include "core/settingsmanager.h"
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
 
@@ -7,11 +8,13 @@
 #include <QCheckBox>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QGroupBox>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QSpinBox>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
@@ -233,6 +236,46 @@ void showPreferencesDialog(
         actions.animateSidebarText
         );
     generalLayout->addWidget(sidebarGroup);
+
+    auto* excelImportGroup =
+        new QGroupBox(
+            preferencesText("Excel Imports"),
+            generalPage
+            );
+    auto* excelImportLayout =
+        new QFormLayout(excelImportGroup);
+    auto* excelImportTimeout =
+        new QSpinBox(excelImportGroup);
+    excelImportTimeout->setObjectName(
+        QStringLiteral("preferencesExcelImportTimeoutSeconds")
+        );
+    excelImportTimeout->setRange(1, 3600);
+    excelImportTimeout->setSuffix(
+        preferencesText(" seconds")
+        );
+    excelImportTimeout->setValue(
+        SettingsManager::instance().excelImportTimeoutSeconds()
+        );
+    excelImportTimeout->setToolTip(
+        preferencesText(
+            "Stop loading a teacher or schedule workbook after this time."
+            )
+        );
+    excelImportLayout->addRow(
+        preferencesText("Workbook timeout:"),
+        excelImportTimeout
+        );
+    QObject::connect(
+        excelImportTimeout,
+        QOverload<int>::of(&QSpinBox::valueChanged),
+        [](int seconds)
+        {
+            SettingsManager::instance().setExcelImportTimeoutSeconds(
+                seconds
+                );
+        }
+        );
+    generalLayout->addWidget(excelImportGroup);
 
 #ifdef Q_OS_MACOS
     if (actions.showPowerPointDataAccessNotice)

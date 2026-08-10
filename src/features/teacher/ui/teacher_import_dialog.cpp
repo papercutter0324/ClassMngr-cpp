@@ -1,5 +1,6 @@
 #include "teacher_import_dialog.h"
 
+#include "core/settingsmanager.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
 
 #include <QButtonGroup>
@@ -17,6 +18,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QScrollArea>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrentRun>
 
@@ -143,6 +145,8 @@ void TeacherImportDialog::validateSelectedFile()
         m_fileEdit->text();
     const quint64 requestId =
         ++m_validationRequestId;
+    const int timeoutSeconds =
+        SettingsManager::instance().excelImportTimeoutSeconds();
 
     clearOptions();
     m_valid = false;
@@ -159,12 +163,15 @@ void TeacherImportDialog::validateSelectedFile()
         new QFutureWatcher<TeacherImportFileValidation>(
             this
             );
+    auto* timeout = new QTimer(watcher);
+    timeout->setSingleShot(true);
     connect(
         watcher,
         &QFutureWatcher<TeacherImportFileValidation>::finished,
         this,
-        [this, watcher, requestId]()
+        [this, watcher, timeout, requestId]()
         {
+            timeout->stop();
             const TeacherImportFileValidation validation =
                 watcher->result();
             watcher->deleteLater();
@@ -178,6 +185,26 @@ void TeacherImportDialog::validateSelectedFile()
             applyValidation(validation);
         }
         );
+    connect(
+        timeout,
+        &QTimer::timeout,
+        this,
+        [this, requestId, timeoutSeconds]()
+        {
+            if (requestId != m_validationRequestId)
+            {
+                return;
+            }
+
+            ++m_validationRequestId;
+            setLoading(false);
+            m_statusLabel->setText(
+                tr("Loading the workbook timed out after %1 seconds. "
+                   "Try again or increase the timeout in Preferences.")
+                    .arg(timeoutSeconds)
+                );
+        }
+        );
     watcher->setFuture(
         QtConcurrent::run(
             [filePath]()
@@ -186,6 +213,7 @@ void TeacherImportDialog::validateSelectedFile()
             }
             )
         );
+    timeout->start(timeoutSeconds * 1000);
 }
 
 void TeacherImportDialog::applyValidation(

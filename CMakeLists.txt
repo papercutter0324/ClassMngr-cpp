@@ -1391,6 +1391,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrTeacherImportDialogTests
         tests/teacher_import_dialog_tests.cpp
+        src/core/settingsmanager.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/teacher/import/sectioned_contact_list_template.cpp
         src/features/teacher/import/teacher_import_file_validator.cpp
@@ -1626,6 +1627,7 @@ if(BUILD_TESTING)
     qt_add_executable(ClassMngrScheduleImportDialogTests
         tests/schedule_import_dialog_tests.cpp
         tests/schedule_widget_test_stubs.cpp
+        src/core/settingsmanager.cpp
         src/core/utils/colorutils.cpp
         src/domain/models/classroom.cpp
         src/features/calendar/calendar_workbook_reader.cpp

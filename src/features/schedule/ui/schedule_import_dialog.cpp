@@ -1,6 +1,7 @@
 #include "schedule_import_dialog.h"
 
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "data/data_service.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
@@ -27,6 +28,7 @@
 #include <QRadioButton>
 #include <QScreen>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrentRun>
 
@@ -418,18 +420,23 @@ bool ScheduleImportDialog::loadWorkbook()
         m_fileEdit->text();
     const quint64 requestId =
         ++m_loadRequestId;
+    const int timeoutSeconds =
+        SettingsManager::instance().excelImportTimeoutSeconds();
     setLoading(true);
 
     auto* watcher =
         new QFutureWatcher<ScheduleWorkbookLoadResult>(
             this
             );
+    auto* timeout = new QTimer(watcher);
+    timeout->setSingleShot(true);
     connect(
         watcher,
         &QFutureWatcher<ScheduleWorkbookLoadResult>::finished,
         this,
-        [this, watcher, requestId, filePath, kind]()
+        [this, watcher, timeout, requestId, filePath, kind]()
         {
+            timeout->stop();
             const ScheduleWorkbookLoadResult result =
                 watcher->result();
             watcher->deleteLater();
@@ -465,6 +472,26 @@ bool ScheduleImportDialog::loadWorkbook()
                 );
         }
         );
+    connect(
+        timeout,
+        &QTimer::timeout,
+        this,
+        [this, requestId, timeoutSeconds]()
+        {
+            if (requestId != m_loadRequestId)
+            {
+                return;
+            }
+
+            ++m_loadRequestId;
+            setLoading(false);
+            setSourceStatus(
+                tr("Loading the workbook timed out after %1 seconds. "
+                   "Try again or increase the timeout in Preferences.")
+                    .arg(timeoutSeconds)
+                );
+        }
+        );
     watcher->setFuture(
         QtConcurrent::run(
             [filePath, kind]()
@@ -494,6 +521,7 @@ bool ScheduleImportDialog::loadWorkbook()
             }
             )
         );
+    timeout->start(timeoutSeconds * 1000);
     return true;
 }
 

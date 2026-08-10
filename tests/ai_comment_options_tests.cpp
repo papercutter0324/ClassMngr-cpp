@@ -17,6 +17,7 @@ private slots:
     void providerAndVoiceDefaultsPersist();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
+    void excelImportTimeoutDefaultsAndPersists();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -177,6 +178,27 @@ void AiCommentOptionsTests::
         );
     settings.clearSkippedUpdateVersion();
     QVERIFY(settings.skippedUpdateVersion().isEmpty());
+}
+
+void AiCommentOptionsTests::excelImportTimeoutDefaultsAndPersists()
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    settings.remove(
+        QString::fromUtf8(
+            SettingsManager::Keys::EXCEL_IMPORT_TIMEOUT_SECONDS
+            )
+        );
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 90);
+
+    settings.setExcelImportTimeoutSeconds(120);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 120);
+
+    settings.setExcelImportTimeoutSeconds(0);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 1);
+
+    settings.setExcelImportTimeoutSeconds(7200);
+    QCOMPARE(settings.excelImportTimeoutSeconds(), 3600);
 }
 
 QTEST_MAIN(AiCommentOptionsTests)
