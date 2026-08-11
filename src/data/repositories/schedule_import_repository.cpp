@@ -486,7 +486,7 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     if (!m_database.isOpen())
     {
         return std::unexpected(
-            QObject::tr("No database is open.")
+            QObject::tr("No Teacher Profile is open.")
             );
     }
 
@@ -817,7 +817,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     if (!m_database.isOpen())
     {
         return std::unexpected(
-            QObject::tr("No database is open.")
+            QObject::tr("No Teacher Profile is open.")
             );
     }
 

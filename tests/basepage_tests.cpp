@@ -66,7 +66,7 @@ public:
 
         if (qstrcmp(
                 sourceText,
-                "No database is open. Set up ClassMngr in this order:"
+                "No Teacher Profile is open. Set up ClassMngr in this order:"
                 ) == 0)
         {
             return QStringLiteral("Translated introduction");
@@ -74,7 +74,7 @@ public:
 
         if (qstrcmp(
                 sourceText,
-                "1. Create a new database, or open an existing one."
+                "1. Create a new Teacher Profile, or open an existing one."
                 ) == 0)
         {
             return QStringLiteral("Translated first step");
@@ -104,14 +104,14 @@ public:
             return QStringLiteral("Translated next steps");
         }
 
-        if (qstrcmp(sourceText, "Open Database...") == 0)
+        if (qstrcmp(sourceText, "Open Teacher Profile...") == 0)
         {
-            return QStringLiteral("Translated open database");
+            return QStringLiteral("Translated open Teacher Profile");
         }
 
-        if (qstrcmp(sourceText, "New Database...") == 0)
+        if (qstrcmp(sourceText, "New Teacher Profile...") == 0)
         {
-            return QStringLiteral("Translated new database");
+            return QStringLiteral("Translated new Teacher Profile");
         }
 
         if (qstrcmp(sourceText, "Initial Setup...") == 0)
@@ -211,13 +211,13 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
     QCOMPARE(
         message->text(),
         QStringLiteral(
-            "No database is open. Set up ClassMngr in this order:"
+            "No Teacher Profile is open. Set up ClassMngr in this order:"
             )
         );
     QCOMPARE(
         stepOne->text(),
         QStringLiteral(
-            "1. Create a new database, or open an existing one."
+            "1. Create a new Teacher Profile, or open an existing one."
             )
         );
     QCOMPARE(
@@ -238,8 +238,8 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
             "Next, add schedules and rosters, then fill in any other information you need."
             )
         );
-    QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
-    QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
+    QCOMPARE(newButton->text(), QStringLiteral("New Teacher Profile..."));
+    QCOMPARE(openButton->text(), QStringLiteral("Open Teacher Profile..."));
     QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
 
     page.hide();
@@ -484,8 +484,8 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
     QCOMPARE(stepTwo->text(), QStringLiteral("Translated second step"));
     QCOMPARE(stepThree->text(), QStringLiteral("Translated third step"));
     QCOMPARE(nextSteps->text(), QStringLiteral("Translated next steps"));
-    QCOMPARE(openButton->text(), QStringLiteral("Translated open database"));
-    QCOMPARE(newButton->text(), QStringLiteral("Translated new database"));
+    QCOMPARE(openButton->text(), QStringLiteral("Translated open Teacher Profile"));
+    QCOMPARE(newButton->text(), QStringLiteral("Translated new Teacher Profile"));
     QCOMPARE(setupButton->text(), QStringLiteral("Translated initial setup"));
 
     for (QLabel* label : {
@@ -509,13 +509,13 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
     QCOMPARE(
         message->text(),
         QStringLiteral(
-            "No database is open. Set up ClassMngr in this order:"
+            "No Teacher Profile is open. Set up ClassMngr in this order:"
             )
         );
     QCOMPARE(
         stepOne->text(),
         QStringLiteral(
-            "1. Create a new database, or open an existing one."
+            "1. Create a new Teacher Profile, or open an existing one."
             )
         );
     QCOMPARE(
@@ -536,8 +536,8 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
             "Next, add schedules and rosters, then fill in any other information you need."
             )
         );
-    QCOMPARE(openButton->text(), QStringLiteral("Open Database..."));
-    QCOMPARE(newButton->text(), QStringLiteral("New Database..."));
+    QCOMPARE(openButton->text(), QStringLiteral("Open Teacher Profile..."));
+    QCOMPARE(newButton->text(), QStringLiteral("New Teacher Profile..."));
     QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
 }
 

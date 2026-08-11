@@ -2961,7 +2961,7 @@ void ScheduleImportReviewDialog::applyImport()
             ? dataService->importSchedule(plan)
             : Result<ScheduleImportSummary>(
                 std::unexpected(
-                    tr("No database is open.")
+                    tr("No Teacher Profile is open.")
                     )
                 );
 

@@ -107,8 +107,8 @@ void ActionRegistry::retranslate()
 {
     updateActionText(
         newFile,
-        tr("New Database..."),
-        tr("Create a new database")
+        tr("New Teacher Profile..."),
+        tr("Create a new Teacher Profile")
         );
     updateActionText(
         openFile,
@@ -520,8 +520,8 @@ void ActionRegistry::createFileActions()
         createAction(
             QApplication::style()->standardIcon(
                 QStyle::SP_FileIcon),
-            tr("New Database..."),
-            tr("Create a new database")
+            tr("New Teacher Profile..."),
+            tr("Create a new Teacher Profile")
             );
 
     openFile =

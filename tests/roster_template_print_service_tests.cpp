@@ -811,7 +811,7 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfRejectsMissingDatabas
             );
 
     QCOMPARE(result.status, RosterTemplatePrintService::Status::Failed);
-    QVERIFY(result.message.contains(QStringLiteral("No database")));
+    QVERIFY(result.message.contains(QStringLiteral("No Teacher Profile")));
 }
 
 void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScope()

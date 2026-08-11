@@ -171,7 +171,7 @@ QList<PackageClass> loadPackageClasses(
     {
         if (errorMessage)
         {
-            *errorMessage = QObject::tr("No database is open.");
+            *errorMessage = QObject::tr("No Teacher Profile is open.");
         }
         return result;
     }

@@ -55,7 +55,7 @@ Status DataService::openDatabase(
     {
         closeDatabase();
         return std::unexpected(
-            QStringLiteral("No database path was provided.")
+            QStringLiteral("No Teacher Profile path was provided.")
             );
     }
 
@@ -68,7 +68,7 @@ Status DataService::openDatabase(
     if (normalizedPath.trimmed().isEmpty())
     {
         return std::unexpected(
-            QStringLiteral("Database path could not be resolved.")
+            QStringLiteral("Teacher Profile path could not be resolved.")
             );
     }
 
@@ -78,7 +78,7 @@ Status DataService::openDatabase(
         )
     {
         return std::unexpected(
-            QStringLiteral("Unable to create database directory:\n%1")
+            QStringLiteral("Unable to create Teacher Profile directory:\n%1")
                 .arg(databaseInfo.absolutePath())
             );
     }
@@ -108,7 +108,7 @@ Status DataService::openDatabase(
         }
 
         return std::unexpected(
-            QStringLiteral("Unable to open database:\n%1\n\n%2")
+            QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
                 .arg(normalizedPath, openError)
             );
     }
@@ -373,7 +373,7 @@ Status DataService::saveNativeEnglishTeacherDirectory(
 {
     if (!m_nativeEnglishTeacherRepository)
     {
-        return std::unexpected(QStringLiteral("No database is open."));
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
     return m_nativeEnglishTeacherRepository->saveDirectory(teachers, deletedIds);
 }
@@ -392,7 +392,7 @@ Status DataService::saveGsTeamDirectory(
 {
     if (!m_gsTeamRepository)
     {
-        return std::unexpected(QStringLiteral("No database is open."));
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
     return m_gsTeamRepository->saveDirectory(members, deletedIds);
 }
@@ -403,7 +403,7 @@ Result<TeacherImportSummary> DataService::importTeachers(
 {
     if (!m_teacherImportRepository)
     {
-        return std::unexpected(QStringLiteral("No database is open."));
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
     return m_teacherImportRepository->importTeachers(plan);
 }
@@ -638,7 +638,7 @@ Result<QList<TestingBlock>> DataService::loadTestingBlocks()
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -651,7 +651,7 @@ DataService::loadTestingAssignments()
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -668,7 +668,7 @@ Status DataService::saveTestingBlock(
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -690,7 +690,7 @@ Status DataService::assignTestingClass(
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -710,7 +710,7 @@ Status DataService::deleteTestingAssignment(
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -728,7 +728,7 @@ Status DataService::deleteTestingBlock(
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -743,7 +743,7 @@ Status DataService::clearTestingBlocks()
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -755,7 +755,7 @@ Status DataService::clearTestingAssignments()
     if (!m_testingBlockRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -771,7 +771,7 @@ Result<int> DataService::createTestingClass(
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -789,7 +789,7 @@ Status DataService::updateTestingClass(
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -803,7 +803,7 @@ Result<TestingClass> DataService::loadTestingClass(
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -815,7 +815,7 @@ Result<QList<TestingClass>> DataService::loadTestingClasses()
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -829,7 +829,7 @@ Status DataService::deleteTestingClass(
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -843,7 +843,7 @@ Result<bool> DataService::isTestingClass(
     if (!m_testingClassRepository)
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -1167,7 +1167,7 @@ Status DataService::saveAs(
     if (!isOpen())
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -1207,7 +1207,7 @@ Status DataService::saveAs(
         )
     {
         return std::unexpected(
-            QStringLiteral("Unable to replace existing database file:\n%1")
+            QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
                 .arg(targetPath)
             );
     }
@@ -1215,7 +1215,7 @@ Status DataService::saveAs(
     if (!QFile::copy(sourcePath, targetPath))
     {
         return std::unexpected(
-            QStringLiteral("Unable to copy database to:\n%1")
+            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
                 .arg(targetPath)
             );
     }
@@ -1230,7 +1230,7 @@ Status DataService::exportAs(
     if (!isOpen())
     {
         return std::unexpected(
-            QStringLiteral("No database is open.")
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
 
@@ -1270,7 +1270,7 @@ Status DataService::exportAs(
         )
     {
         return std::unexpected(
-            QStringLiteral("Unable to replace existing database file:\n%1")
+            QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
                 .arg(targetPath)
             );
     }
@@ -1278,7 +1278,7 @@ Status DataService::exportAs(
     if (!QFile::copy(sourcePath, targetPath))
     {
         return std::unexpected(
-            QStringLiteral("Unable to copy database to:\n%1")
+            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
                 .arg(targetPath)
             );
     }

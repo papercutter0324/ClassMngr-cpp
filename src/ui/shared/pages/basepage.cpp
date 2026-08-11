@@ -358,14 +358,14 @@ void BasePage::retranslateUi()
     if (m_noDatabaseMessage)
     {
         m_noDatabaseMessage->setText(
-            tr("No database is open. Set up ClassMngr in this order:")
+            tr("No Teacher Profile is open. Set up ClassMngr in this order:")
             );
     }
 
     if (m_noDatabaseStepOne)
     {
         m_noDatabaseStepOne->setText(
-            tr("1. Create a new database, or open an existing one.")
+            tr("1. Create a new Teacher Profile, or open an existing one.")
             );
     }
 
@@ -393,7 +393,7 @@ void BasePage::retranslateUi()
     if (m_openDatabaseButton)
     {
         m_openDatabaseButton->setText(
-            tr("Open Database...")
+            tr("Open Teacher Profile...")
             );
     }
 
@@ -407,7 +407,7 @@ void BasePage::retranslateUi()
     if (m_newDatabaseButton)
     {
         m_newDatabaseButton->setText(
-            tr("New Database...")
+            tr("New Teacher Profile...")
             );
     }
 }

@@ -231,7 +231,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
         QMessageBox::warning(
             this,
             tr("Clear Testing Layout"),
-            tr("No database is open.")
+            tr("No Teacher Profile is open.")
             );
         return;
     }

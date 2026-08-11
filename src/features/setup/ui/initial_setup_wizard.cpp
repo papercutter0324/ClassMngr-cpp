@@ -93,6 +93,7 @@ public:
 
         layout->addSpacing(12);
         layout->addWidget(m_teacherList);
+        layout->addSpacing(24);
         layout->addWidget(m_schedule);
         layout->addStretch();
 
@@ -485,6 +486,8 @@ public:
 
         auto* requiredGroup = new QGroupBox(tr("Required Information"), content);
         auto* required = new QFormLayout(requiredGroup);
+        required->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+        required->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_englishName = addLine(required, tr("English Name *"), "setupTeacherEnglishName");
         m_koreanName = addLine(required, tr("Korean Name *"), "setupTeacherKoreanName");
         m_spelling = addLine(required, tr("Preferred Spelling *"), "setupTeacherPreferredSpelling");
@@ -726,6 +729,8 @@ public:
 
         auto* pageLayout = new QVBoxLayout(this);
         auto* layout = new QFormLayout;
+        layout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
+        layout->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_teacher = new QComboBox(this);
         m_teacher->setObjectName(QStringLiteral("setupClassTeacher"));
         layout->addRow(tr("Korean Teacher"), m_teacher);

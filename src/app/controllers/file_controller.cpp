@@ -174,13 +174,28 @@ bool FileController::createNewDatabaseInteractive()
     if (!confirmUnsavedChanges())
         return false;
 
-    const QString filePath =
-        QFileDialog::getSaveFileName(
-            nullptr,
-            tr("New Database"),
-            databaseDialogDirectory(),
-            tr("ClassMngr Database (*.tps)")
-            );
+    QFileDialog fileDialog(
+        nullptr,
+        tr("New Teacher Profile"),
+        databaseDialogDirectory(),
+        tr("ClassMngr Teacher Profile (*.tps)")
+        );
+    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
+    fileDialog.setFileMode(QFileDialog::AnyFile);
+    fileDialog.setDefaultSuffix(QStringLiteral("tps"));
+
+    if (fileDialog.exec() != QDialog::Accepted)
+    {
+        return false;
+    }
+
+    const QStringList selectedFiles = fileDialog.selectedFiles();
+    if (selectedFiles.isEmpty())
+    {
+        return false;
+    }
+
+    const QString filePath = selectedFiles.constFirst();
 
     if (filePath.isEmpty())
         return false;
@@ -203,8 +218,8 @@ bool FileController::createNewDatabaseInteractive()
     {
         QMessageBox::warning(
             nullptr,
-            tr("New Database"),
-            tr("Unable to replace existing database file:\n%1")
+            tr("New Teacher Profile"),
+            tr("Unable to replace existing Teacher Profile file:\n%1")
                 .arg(normalizedPath)
             );
 
@@ -219,7 +234,7 @@ bool FileController::createNewDatabaseInteractive()
     {
         QMessageBox::warning(
             nullptr,
-            tr("New Database"),
+            tr("New Teacher Profile"),
             opened.error()
             );
 
@@ -252,11 +267,11 @@ void FileController::openFile()
     const QString filePath =
         QFileDialog::getOpenFileName(
             nullptr,
-            tr("Open Database"),
+            tr("Open Teacher Profile"),
             databaseDialogDirectory(),
-            tr("ClassMngr Database (*.tps)")
+            tr("ClassMngr Teacher Profile (*.tps)")
                 + QStringLiteral(";;")
-                + tr("Legacy SQLite Database (*.db)")
+                + tr("Legacy Teacher Profile (*.db)")
             );
 
     if (filePath.isEmpty())
@@ -312,7 +327,7 @@ bool FileController::loadDatabase(
         {
             QMessageBox::warning(
                 nullptr,
-                tr("Open Database"),
+                tr("Open Teacher Profile"),
                 opened.error()
                 );
         }
@@ -370,9 +385,9 @@ void FileController::saveAsFile()
     QString filePath =
         QFileDialog::getSaveFileName(
             nullptr,
-            tr("Save Database"),
+            tr("Save Teacher Profile"),
             databaseDialogDirectory(),
-            tr("ClassMngr Database (*.tps)")
+            tr("ClassMngr Teacher Profile (*.tps)")
             );
 
     if (filePath.isEmpty())
@@ -394,9 +409,9 @@ void FileController::exportAsFile()
     const QString filePath =
         QFileDialog::getSaveFileName(
             nullptr,
-            tr("Export Database As"),
+            tr("Export Teacher Profile As"),
             databaseDialogDirectory(),
-            tr("ClassMngr Database (*.tps)")
+            tr("ClassMngr Teacher Profile (*.tps)")
             );
 
     if (filePath.isEmpty())
@@ -611,7 +626,7 @@ bool FileController::saveDatabaseAs(
     {
         QMessageBox::warning(
             nullptr,
-            tr("Save Database"),
+            tr("Save Teacher Profile"),
             saved.error()
             );
 
@@ -645,7 +660,7 @@ bool FileController::exportDatabaseAs(
     {
         QMessageBox::warning(
             nullptr,
-            tr("Export Database"),
+            tr("Export Teacher Profile"),
             exported.error()
             );
 

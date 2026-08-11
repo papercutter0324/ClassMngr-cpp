@@ -81,7 +81,7 @@ void CalendarEventImportService::importFromDefaultSource()
     if (!m_dataService || !m_dataService->isOpen())
     {
         emit importFailed(
-            tr("The calendar database is not available.")
+            tr("The calendar Teacher Profile is not available.")
             );
         return;
     }

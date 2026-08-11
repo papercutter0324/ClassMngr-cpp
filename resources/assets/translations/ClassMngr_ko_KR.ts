@@ -192,14 +192,14 @@
     <message>
         <location filename="../../../src/ui/shared/actions/action_registry.cpp" line="+109"/>
         <location line="+402"/>
-        <source>New Database...</source>
-        <translation>새 데이터베이스...</translation>
+        <source>New Teacher Profile...</source>
+        <translation>새 교사 프로필...</translation>
     </message>
     <message>
         <location line="-401"/>
         <location line="+402"/>
-        <source>Create a new database</source>
-        <translation>새 데이터베이스 만들기</translation>
+        <source>Create a new Teacher Profile</source>
+        <translation>새 교사 프로필 만들기</translation>
     </message>
     <message>
         <location line="-398"/>
@@ -833,13 +833,13 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>No database is open. Set up ClassMngr in this order:</source>
-        <translation>열려 있는 데이터베이스가 없습니다. 다음 순서로 ClassMngr를 설정하세요:</translation>
+        <source>No Teacher Profile is open. Set up ClassMngr in this order:</source>
+        <translation>열려 있는 교사 프로필이 없습니다. 다음 순서로 ClassMngr를 설정하세요:</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>1. Create a new database, or open an existing one.</source>
-        <translation>1. 새 데이터베이스를 만들거나 기존 데이터베이스를 여세요.</translation>
+        <source>1. Create a new Teacher Profile, or open an existing one.</source>
+        <translation>1. 새 교사 프로필을 만들거나 기존 교사 프로필을 여세요.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -858,13 +858,13 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>Open Database...</source>
-        <translation>데이터베이스 열기...</translation>
+        <source>Open Teacher Profile...</source>
+        <translation>교사 프로필 열기...</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>New Database...</source>
-        <translation>새 데이터베이스...</translation>
+        <source>New Teacher Profile...</source>
+        <translation>새 교사 프로필...</translation>
     </message>
 </context>
 <context>
@@ -1014,8 +1014,8 @@
     <name>CalendarEventImportService</name>
     <message>
         <location filename="../../../src/features/calendar/calendar_event_import_service.cpp" line="+84"/>
-        <source>The calendar database is not available.</source>
-        <translation>캘린더 데이터베이스를 사용할 수 없습니다.</translation>
+        <source>The calendar Teacher Profile is not available.</source>
+        <translation>캘린더 교사 프로필을 사용할 수 없습니다.</translation>
     </message>
 </context>
 <context>
@@ -2122,29 +2122,29 @@
         <location filename="../../../src/app/controllers/file_controller.cpp" line="+175"/>
         <location line="+26"/>
         <location line="+16"/>
-        <source>New Database</source>
-        <translation>새 데이터베이스</translation>
+        <source>New Teacher Profile</source>
+        <translation>새 교사 프로필</translation>
     </message>
     <message>
         <location line="-40"/>
         <location line="+73"/>
         <location line="+118"/>
         <location line="+24"/>
-        <source>ClassMngr Database (*.tps)</source>
-        <translation>ClassMngr 데이터베이스 (*.tps)</translation>
+        <source>ClassMngr Teacher Profile (*.tps)</source>
+        <translation>ClassMngr 교사 프로필 (*.tps)</translation>
     </message>
     <message>
         <location line="-190"/>
-        <source>Unable to replace existing database file:
+        <source>Unable to replace existing Teacher Profile file:
 %1</source>
-        <translation>기존 데이터베이스 파일을 교체할 수 없습니다:
+        <translation>기존 교사 프로필 파일을 교체할 수 없습니다:
 %1</translation>
     </message>
     <message>
         <location line="+46"/>
         <location line="+60"/>
-        <source>Open Database</source>
-        <translation>데이터베이스 열기</translation>
+        <source>Open Teacher Profile</source>
+        <translation>교사 프로필 열기</translation>
     </message>
     <message>
         <location line="-30"/>
@@ -2163,18 +2163,18 @@
     <message>
         <location line="-63"/>
         <location line="+241"/>
-        <source>Save Database</source>
-        <translation>데이터베이스 저장</translation>
+        <source>Save Teacher Profile</source>
+        <translation>교사 프로필 저장</translation>
     </message>
     <message>
         <location line="-217"/>
-        <source>Export Database As</source>
-        <translation>데이터베이스 다른 이름으로 내보내기</translation>
+        <source>Export Teacher Profile As</source>
+        <translation>교사 프로필 다른 이름으로 내보내기</translation>
     </message>
     <message>
         <location line="-138"/>
-        <source>Legacy SQLite Database (*.db)</source>
-        <translation>레거시 SQLite 데이터베이스 (*.db)</translation>
+        <source>Legacy Teacher Profile (*.db)</source>
+        <translation>레거시 교사 프로필 (*.db)</translation>
     </message>
     <message>
         <location line="+241"/>
@@ -2193,8 +2193,8 @@
     </message>
     <message>
         <location line="+100"/>
-        <source>Export Database</source>
-        <translation>데이터베이스 내보내기</translation>
+        <source>Export Teacher Profile</source>
+        <translation>교사 프로필 내보내기</translation>
     </message>
 </context>
 <context>
@@ -3188,8 +3188,8 @@
     </message>
     <message>
         <location line="+8"/>
-        <source>The imported teacher did not receive a database ID.</source>
-        <translation>가져온 교사에 데이터베이스 ID가 할당되지 않았습니다.</translation>
+        <source>The imported teacher did not receive a Teacher Profile ID.</source>
+        <translation>가져온 교사에 교사 프로필 ID가 할당되지 않았습니다.</translation>
     </message>
     <message>
         <location line="+40"/>
@@ -3283,8 +3283,8 @@
     </message>
     <message>
         <location line="+9"/>
-        <source>The imported class did not receive a database ID.</source>
-        <translation>가져온 수업에 데이터베이스 ID가 할당되지 않았습니다.</translation>
+        <source>The imported class did not receive a Teacher Profile ID.</source>
+        <translation>가져온 수업에 교사 프로필 ID가 할당되지 않았습니다.</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -3534,8 +3534,8 @@
         <location line="+331"/>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="+102"/>
         <location filename="../../../src/features/sub_prep/services/sub_prep_package_service.cpp" line="+174"/>
-        <source>No database is open.</source>
-        <translation>열려 있는 데이터베이스가 없습니다.</translation>
+        <source>No Teacher Profile is open.</source>
+        <translation>열려 있는 교사 프로필이 없습니다.</translation>
     </message>
     <message>
         <location filename="../../../src/features/roster/services/roster_template_print_private_service.inc" line="+8"/>
@@ -6561,8 +6561,8 @@ Choose a different existing class, create a new class, or skip an imported class
     </message>
     <message>
         <location line="+17"/>
-        <source>No database is open.</source>
-        <translation type="unfinished">열려 있는 데이터베이스가 없습니다.</translation>
+        <source>No Teacher Profile is open.</source>
+        <translation type="unfinished">열려 있는 교사 프로필이 없습니다.</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -6767,8 +6767,8 @@ My Information name was updated.</source>
     </message>
     <message>
         <location line="-26"/>
-        <source>No database is open.</source>
-        <translation type="unfinished">열려 있는 데이터베이스가 없습니다.</translation>
+        <source>No Teacher Profile is open.</source>
+        <translation type="unfinished">열려 있는 교사 프로필이 없습니다.</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -6801,8 +6801,8 @@ My Information name was updated.</source>
     </message>
     <message>
         <location line="-71"/>
-        <source>No database is open.</source>
-        <translation type="unfinished">열려 있는 데이터베이스가 없습니다.</translation>
+        <source>No Teacher Profile is open.</source>
+        <translation type="unfinished">열려 있는 교사 프로필이 없습니다.</translation>
     </message>
     <message>
         <location line="+249"/>

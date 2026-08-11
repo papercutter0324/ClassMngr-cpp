@@ -99,7 +99,7 @@ Result loadRosterClassesForRequest(
 {
     if (!request.services || !request.services->hasOpenDatabase())
     {
-        return failed(QObject::tr("No database is open."));
+        return failed(QObject::tr("No Teacher Profile is open."));
     }
 
     DataService* dataService =

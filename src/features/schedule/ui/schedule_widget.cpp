@@ -725,7 +725,7 @@ void ScheduleWidget::editTestingAssignment(
         QMessageBox::warning(
             this,
             tr("Testing Assignment"),
-            tr("No database is open.")
+            tr("No Teacher Profile is open.")
             );
         return;
     }

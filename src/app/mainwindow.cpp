@@ -28,6 +28,7 @@
 
 #include <QLayout>
 #include <QMenuBar>
+#include <QMessageBox>
 #include <QScreen>
 #include <QTimer>
 
@@ -728,6 +729,13 @@ void MainWindow::updatePrintExportActions()
 
 void MainWindow::startInitialSetup()
 {
+    QMessageBox::information(
+        this,
+        tr("Initial Setup"),
+        tr("First, create a Teacher Profile file. Choose where to save it and give it a name; this file stores your ClassMngr data.\n\n"
+           "To replace an existing profile with new data, select its .tps file in the next dialog.")
+        );
+
     if (
         !m_fileController
         || !m_services

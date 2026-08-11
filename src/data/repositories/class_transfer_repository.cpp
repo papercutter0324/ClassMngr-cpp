@@ -802,7 +802,7 @@ Result<int> insertTeacher(
     if (id <= 0)
     {
         return std::unexpected(
-            QObject::tr("The imported teacher did not receive a database ID.")
+            QObject::tr("The imported teacher did not receive a Teacher Profile ID.")
             );
     }
 
@@ -1091,7 +1091,7 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(QObject::tr("No database is open."));
+        return std::unexpected(QObject::tr("No Teacher Profile is open."));
     }
 
     if (classIds.isEmpty())
@@ -1210,7 +1210,7 @@ Result<ClassImportPreview> ClassTransferRepository::previewImport(
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(QObject::tr("No database is open."));
+        return std::unexpected(QObject::tr("No Teacher Profile is open."));
     }
 
     return buildPreview(m_database, package);
@@ -1223,7 +1223,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
 {
     if (!m_database.isOpen())
     {
-        return std::unexpected(QObject::tr("No database is open."));
+        return std::unexpected(QObject::tr("No Teacher Profile is open."));
     }
 
     const auto validatedResult = validatePlan(m_database, package, plan);
@@ -1342,7 +1342,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
             if (classId <= 0)
             {
                 return std::unexpected(
-                    QObject::tr("The imported class did not receive a database ID.")
+                    QObject::tr("The imported class did not receive a Teacher Profile ID.")
                     );
             }
 
