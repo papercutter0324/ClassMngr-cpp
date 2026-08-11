@@ -336,6 +336,11 @@ void showPreferencesDialog(
         preferencesText("Theme"),
         {
             actions.themeState
+                ? actions.themeState->action(
+                    Theme::SystemDefault
+                    )
+                : nullptr,
+            actions.themeState
                 ? actions.themeState->action(Theme::Dark)
                 : nullptr,
             actions.themeState

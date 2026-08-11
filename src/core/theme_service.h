@@ -3,6 +3,7 @@
 #include "ui/shared/constants/options.h"
 
 #include <QObject>
+#include <QMetaObject>
 #include <QPalette>
 
 class ThemeService : public QObject
@@ -30,6 +31,14 @@ signals:
     void themeChanged();
 
 private:
+    Theme resolvedTheme(
+        Theme theme
+        ) const;
+
+    void applyTheme(
+        Theme theme
+        );
+
     QString stylesheetPath(
         Theme theme
         ) const;
@@ -51,6 +60,8 @@ private:
         ) const;
 
 private:
-    Theme m_currentTheme = Theme::Dark;
+    Theme m_currentTheme = Theme::Light;
+    Theme m_themePreference = Theme::SystemDefault;
     bool m_hasAppliedTheme = false;
+    QMetaObject::Connection m_systemColorSchemeConnection;
 };

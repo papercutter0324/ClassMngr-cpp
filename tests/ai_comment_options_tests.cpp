@@ -14,6 +14,7 @@ class AiCommentOptionsTests : public QObject
 
 private slots:
     void initTestCase();
+    void themeDefaultsToSystemDefaultAndPersists();
     void providerAndVoiceDefaultsPersist();
     void providerUrlsAndCustomValidation();
     void updatePreferencesDefaultAndPersist();
@@ -32,6 +33,40 @@ void AiCommentOptionsTests::initTestCase()
         m_settingsRoot.path().toUtf8()
         );
     SettingsManager::instance().clear();
+}
+
+void AiCommentOptionsTests::themeDefaultsToSystemDefaultAndPersists()
+{
+    SettingsManager& settings =
+        SettingsManager::instance();
+    settings.remove(
+        QString::fromUtf8(
+            OptionKeys::Theme
+            )
+        );
+
+    ActionRegistry defaults;
+    defaults.createActions();
+    QVERIFY(defaults.themeState);
+    QCOMPARE(
+        defaults.themeState->current(),
+        Theme::SystemDefault
+        );
+    QVERIFY(
+        defaults.themeState
+            ->action(Theme::SystemDefault)
+            ->isChecked()
+        );
+
+    defaults.themeState->set(Theme::Light);
+    settings.sync();
+
+    ActionRegistry reloaded;
+    reloaded.createActions();
+    QCOMPARE(
+        reloaded.themeState->current(),
+        Theme::Light
+        );
 }
 
 void AiCommentOptionsTests::

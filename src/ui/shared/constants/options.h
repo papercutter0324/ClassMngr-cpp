@@ -9,7 +9,9 @@ enum class SaveMode
 enum class Theme
 {
     Dark,
-    Light
+    Light,
+    // Keep light and dark's stored values stable for existing preferences.
+    SystemDefault
 };
 
 enum class FontSize

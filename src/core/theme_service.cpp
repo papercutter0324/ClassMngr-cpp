@@ -8,6 +8,7 @@
 #include <QIODevice>
 #include <QPalette>
 #include <QStyle>
+#include <QStyleHints>
 #include <QWidget>
 #include <QDebug>
 
@@ -24,6 +25,83 @@ Theme ThemeService::currentTheme() const
 }
 
 void ThemeService::setTheme(
+    Theme theme
+    )
+{
+    m_themePreference = theme;
+
+    auto* app =
+        qobject_cast<QApplication*>(
+            QApplication::instance()
+            );
+
+    if (!app)
+    {
+        m_currentTheme = resolvedTheme(theme);
+        m_hasAppliedTheme = false;
+        return;
+    }
+
+    if (theme == Theme::SystemDefault)
+    {
+        if (!m_systemColorSchemeConnection)
+        {
+            m_systemColorSchemeConnection =
+                connect(
+                    app->styleHints(),
+                    &QStyleHints::colorSchemeChanged,
+                    this,
+                    [this](Qt::ColorScheme)
+                    {
+                        if (m_themePreference == Theme::SystemDefault)
+                        {
+                            applyTheme(
+                                resolvedTheme(
+                                    Theme::SystemDefault
+                                    )
+                                );
+                        }
+                    }
+                    );
+        }
+    }
+    else if (m_systemColorSchemeConnection)
+    {
+        disconnect(m_systemColorSchemeConnection);
+        m_systemColorSchemeConnection = {};
+    }
+
+    applyTheme(
+        resolvedTheme(theme)
+        );
+}
+
+Theme ThemeService::resolvedTheme(
+    Theme theme
+    ) const
+{
+    if (theme != Theme::SystemDefault)
+    {
+        return theme;
+    }
+
+    const auto* app =
+        qobject_cast<QApplication*>(
+            QApplication::instance()
+            );
+
+    if (
+        app
+        && app->styleHints()->colorScheme() == Qt::ColorScheme::Dark
+        )
+    {
+        return Theme::Dark;
+    }
+
+    return Theme::Light;
+}
+
+void ThemeService::applyTheme(
     Theme theme
     )
 {
@@ -78,6 +156,9 @@ QString ThemeService::stylesheetPath(
 {
     switch (theme)
     {
+    case Theme::SystemDefault:
+        return ResourcePaths::Styles::light();
+
     case Theme::Light:
         return ResourcePaths::Styles::light();
 
@@ -94,6 +175,9 @@ QString ThemeService::themeKey(
 {
     switch (theme)
     {
+    case Theme::SystemDefault:
+        return QStringLiteral("light");
+
     case Theme::Light:
         return QStringLiteral("light");
 

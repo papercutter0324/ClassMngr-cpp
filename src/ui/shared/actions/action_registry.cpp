@@ -231,6 +231,11 @@ void ActionRegistry::retranslate()
     if (themeState)
     {
         updateActionText(
+            themeState->action(Theme::SystemDefault),
+            tr("System Default"),
+            tr("Use the system theme")
+            );
+        updateActionText(
             themeState->action(Theme::Dark),
             tr("Dark Theme"),
             tr("Use dark theme")
@@ -724,6 +729,12 @@ void ActionRegistry::createOptionActions()
     themeState =
         new OptionState<Theme>(OptionKeys::Theme, this);
 
+    auto systemDefaultThemeAction =
+        createCheckableAction(
+            tr("System Default"),
+            tr("Use the system theme")
+        );
+
     auto darkThemeAction =
         createCheckableAction(
             tr("Dark Theme"),
@@ -736,12 +747,16 @@ void ActionRegistry::createOptionActions()
             tr("Use light theme")
         );
 
+    themeState->addOption(
+        Theme::SystemDefault,
+        systemDefaultThemeAction
+        );
     themeState->addOption(Theme::Dark, darkThemeAction);
     themeState->addOption(Theme::Light, lightThemeAction);
 
     // LOAD from settings (THIS is the correct place)
     themeState->loadFromSettings(
-        Theme::Dark
+        Theme::SystemDefault
     );
 
     languageState =

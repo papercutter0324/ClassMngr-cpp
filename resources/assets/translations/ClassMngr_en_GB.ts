@@ -472,6 +472,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Use the system theme</source>
+        <translation>Use the system theme</translation>
+    </message>
+    <message>
         <location line="-485"/>
         <location line="+486"/>
         <source>Use the system language</source>

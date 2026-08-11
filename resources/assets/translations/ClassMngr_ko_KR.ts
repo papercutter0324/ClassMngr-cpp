@@ -472,6 +472,10 @@
         <translation>시스템 기본값</translation>
     </message>
     <message>
+        <source>Use the system theme</source>
+        <translation>시스템 테마 사용</translation>
+    </message>
+    <message>
         <location line="-485"/>
         <location line="+486"/>
         <source>Use the system language</source>
