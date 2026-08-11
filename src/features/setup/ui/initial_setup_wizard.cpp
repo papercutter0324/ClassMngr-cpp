@@ -93,7 +93,7 @@ public:
 
         layout->addSpacing(12);
         layout->addWidget(m_teacherList);
-        layout->addSpacing(24);
+        layout->addSpacing(12);
         layout->addWidget(m_schedule);
         layout->addStretch();
 
