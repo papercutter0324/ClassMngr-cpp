@@ -148,14 +148,14 @@ void OnScreenKeyboard::setTarget(
     m_target = isEligibleTarget(target)
         ? target
         : nullptr;
-    m_targetIndex = {};
+    m_targetIndex = QPersistentModelIndex{};
 }
 
 void OnScreenKeyboard::clearTarget()
 {
     commitComposition();
     m_target.clear();
-    m_targetIndex = {};
+    m_targetIndex = QPersistentModelIndex{};
 }
 
 void OnScreenKeyboard::showFor(
