@@ -156,6 +156,7 @@ public:
             TeacherImportDialog dialog(this);
             if (dialog.exec() != QDialog::Accepted)
             {
+                setup->reject();
                 return;
             }
 
@@ -244,6 +245,7 @@ public:
             ScheduleImportDialog dialog(setup->services(), this);
             if (dialog.exec() != QDialog::Accepted)
             {
+                setup->reject();
                 return;
             }
 

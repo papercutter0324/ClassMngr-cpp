@@ -15,6 +15,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QStandardPaths>
+#include <QUuid>
 
 namespace
 {
@@ -171,6 +172,18 @@ void FileController::newFile()
 
 bool FileController::createNewDatabaseInteractive()
 {
+    return createNewDatabaseInteractive(false);
+}
+
+bool FileController::createInitialSetupDatabaseInteractive()
+{
+    return createNewDatabaseInteractive(true);
+}
+
+bool FileController::createNewDatabaseInteractive(
+    bool forInitialSetup
+    )
+{
     if (!confirmUnsavedChanges())
         return false;
 
@@ -202,6 +215,11 @@ bool FileController::createNewDatabaseInteractive()
 
     const QString normalizedPath =
         normalizeNativeOutputFilePath(filePath);
+
+    if (forInitialSetup)
+    {
+        return createInitialSetupDatabase(normalizedPath);
+    }
 
     if (!m_services)
     {
@@ -257,6 +275,162 @@ bool FileController::createNewDatabaseInteractive()
     }
 
     return true;
+}
+
+bool FileController::createInitialSetupDatabase(
+    const QString& filePath
+    )
+{
+    if (!m_services)
+    {
+        enterNoDatabaseState();
+        return false;
+    }
+
+    closeActiveDatabase();
+
+    m_initialSetupDatabasePath = filePath;
+    m_initialSetupBackupPath.clear();
+
+    if (QFile::exists(filePath))
+    {
+        m_initialSetupBackupPath = initialSetupBackupPath(filePath);
+        if (!QFile::rename(filePath, m_initialSetupBackupPath))
+        {
+            QMessageBox::warning(
+                nullptr,
+                tr("New Teacher Profile"),
+                tr("Unable to preserve the existing Teacher Profile file:\n%1")
+                    .arg(filePath)
+                );
+            m_initialSetupDatabasePath.clear();
+            m_initialSetupBackupPath.clear();
+            enterNoDatabaseState();
+            return false;
+        }
+    }
+
+    const Status opened =
+        m_services->openDatabase(filePath);
+
+    if (!opened)
+    {
+        const QString error = opened.error();
+        cancelInitialSetup();
+        QMessageBox::warning(
+            nullptr,
+            tr("New Teacher Profile"),
+            error
+            );
+        return false;
+    }
+
+    m_currentFile =
+        m_services->currentDatabasePath();
+
+    if (m_window)
+    {
+        m_window->applyDatabaseLoadedState();
+    }
+    else
+    {
+        setLoadedFileState();
+    }
+
+    return true;
+}
+
+void FileController::finishInitialSetup()
+{
+    if (m_initialSetupDatabasePath.isEmpty())
+    {
+        return;
+    }
+
+    if (
+        !m_initialSetupBackupPath.isEmpty()
+        && !QFile::remove(m_initialSetupBackupPath)
+        )
+    {
+        QMessageBox::warning(
+            nullptr,
+            tr("Initial Setup"),
+            tr("Setup is complete, but the replaced Teacher Profile could not be removed:\n%1")
+                .arg(m_initialSetupBackupPath)
+            );
+    }
+
+    m_initialSetupDatabasePath.clear();
+    m_initialSetupBackupPath.clear();
+
+    if (!m_currentFile.isEmpty())
+    {
+        updateRecentFiles(m_currentFile);
+    }
+}
+
+void FileController::cancelInitialSetup()
+{
+    const QString databasePath = m_initialSetupDatabasePath;
+    const QString backupPath = m_initialSetupBackupPath;
+
+    closeActiveDatabase();
+
+    m_initialSetupDatabasePath.clear();
+    m_initialSetupBackupPath.clear();
+
+    if (!databasePath.isEmpty())
+    {
+        if (backupPath.isEmpty())
+        {
+            if (QFile::exists(databasePath) && !QFile::remove(databasePath))
+            {
+                QMessageBox::warning(
+                    nullptr,
+                    tr("Initial Setup"),
+                    tr("The incomplete Teacher Profile could not be removed:\n%1")
+                        .arg(databasePath)
+                    );
+            }
+        }
+        else
+        {
+            const QString incompletePath = initialSetupBackupPath(databasePath);
+            bool movedIncompleteProfile = true;
+            if (QFile::exists(databasePath))
+            {
+                movedIncompleteProfile =
+                    QFile::rename(databasePath, incompletePath);
+            }
+
+            if (
+                !movedIncompleteProfile
+                || !QFile::rename(backupPath, databasePath)
+                )
+            {
+                if (
+                    movedIncompleteProfile
+                    && QFile::exists(incompletePath)
+                    )
+                {
+                    QFile::rename(incompletePath, databasePath);
+                }
+
+                QMessageBox::warning(
+                    nullptr,
+                    tr("Initial Setup"),
+                    tr("The original Teacher Profile could not be restored:\n%1")
+                        .arg(backupPath)
+                    );
+            }
+            else if (QFile::exists(incompletePath))
+            {
+                QFile::remove(incompletePath);
+            }
+        }
+    }
+
+    enterNoDatabaseState();
 }
 
 void FileController::openFile()
@@ -688,6 +862,20 @@ void FileController::closeActiveDatabase()
     {
         m_window->clearDatabaseBackedState();
     }
+}
+
+QString FileController::initialSetupBackupPath(
+    const QString& filePath
+    ) const
+{
+    const QFileInfo info(filePath);
+    return info.absoluteDir().filePath(
+        QStringLiteral(".%1.initial-setup-%2.backup")
+            .arg(
+                info.fileName(),
+                QUuid::createUuid().toString(QUuid::WithoutBraces)
+                )
+        );
 }
 
 QString FileController::normalizeInputFilePath(

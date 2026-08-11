@@ -42,6 +42,11 @@ public:
 
     [[nodiscard]] bool createNewDatabaseInteractive();
 
+    [[nodiscard]] bool createInitialSetupDatabaseInteractive();
+
+    void finishInitialSetup();
+    void cancelInitialSetup();
+
 public slots:
     void autosave();
 
@@ -80,6 +85,18 @@ private:
     bool exportDatabaseAs(
         const QString& filePath
         );
+
+    bool createNewDatabaseInteractive(
+        bool forInitialSetup
+        );
+
+    bool createInitialSetupDatabase(
+        const QString& filePath
+        );
+
+    [[nodiscard]] QString initialSetupBackupPath(
+        const QString& filePath
+        ) const;
 
     void closeActiveDatabase();
 
@@ -123,6 +140,8 @@ private:
     ActionRegistry* m_actions{};
 
     QString m_currentFile;
+    QString m_initialSetupDatabasePath;
+    QString m_initialSetupBackupPath;
 };
 
 #endif // FILE_CONTROLLER_H

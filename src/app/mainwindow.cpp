@@ -739,7 +739,7 @@ void MainWindow::startInitialSetup()
     if (
         !m_fileController
         || !m_services
-        || !m_fileController->createNewDatabaseInteractive()
+        || !m_fileController->createInitialSetupDatabaseInteractive()
         )
     {
         return;
@@ -752,8 +752,11 @@ void MainWindow::startInitialSetup()
 
     if (wizard.exec() != QDialog::Accepted)
     {
+        m_fileController->cancelInitialSetup();
         return;
     }
+
+    m_fileController->finishInitialSetup();
 
     if (m_pages)
     {
