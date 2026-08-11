@@ -477,18 +477,18 @@ QWidget* CalendarSettingsDialog::buildTermSchedulesTab()
 
             connect(
                 dateEdit,
-                &QDateEdit::editingFinished,
+                &QDateEdit::dateChanged,
                 this,
-                [this, school, term]()
+                [this, school, term](const QDate&)
                 {
                     commitDate(school, term);
                 }
                 );
             connect(
                 weekEdit,
-                &QSpinBox::editingFinished,
+                qOverload<int>(&QSpinBox::valueChanged),
                 this,
-                [this, school, term]()
+                [this, school, term](int)
                 {
                     commitWeeks(school, term);
                 }
