@@ -45,12 +45,14 @@ namespace
 {
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
-constexpr int RowHeight = 60;
+constexpr int RowHeight = 48;
+constexpr int RowBaseHeight = 22;
+constexpr int RowHeightPerEntry = 38;
 constexpr int CompactPreviewTimeColumnWidth = 84;
 constexpr int CompactPreviewHeaderHeight = 36;
-constexpr int CompactPreviewRowHeight = 50;
-constexpr int CompactPreviewRowBaseHeight = 24;
-constexpr int CompactPreviewRowHeightPerEntry = 40;
+constexpr int CompactPreviewRowHeight = 40;
+constexpr int CompactPreviewRowBaseHeight = 19;
+constexpr int CompactPreviewRowHeightPerEntry = 32;
 constexpr int PreviewFontSizeReduction = 4;
 constexpr int PreviewTimeFontSizeReduction = 2;
 constexpr int TimeCellRole = Qt::UserRole + 1;
@@ -261,7 +263,8 @@ ScheduleDisplayMode displayModeFromSetting(
 QString classCellStyle(
     const QString& classColor,
     const QString& fontColor,
-    int padding,
+    qreal verticalPadding,
+    int horizontalPadding,
     int borderRadius
     )
 {
@@ -269,8 +272,8 @@ QString classCellStyle(
         "QLabel {"
         "background:%1;"
         "color:%2;"
-        "padding:%3px;"
-        "border-radius:%4px;"
+        "padding:%3px %4px;"
+        "border-radius:%5px;"
         "}"
         )
         .arg(
@@ -283,7 +286,8 @@ QString classCellStyle(
                 ? QStringLiteral("#000000")
                 : fontColor
             )
-        .arg(padding)
+        .arg(verticalPadding)
+        .arg(horizontalPadding)
         .arg(borderRadius
             );
 }
@@ -1312,7 +1316,7 @@ void ScheduleWidget::loadSchedule()
                 m_compactPreview
                     ? CompactPreviewRowBaseHeight
                         + (maxEntryCount * CompactPreviewRowHeightPerEntry)
-                    : 28 + (maxEntryCount * 48)
+                    : RowBaseHeight + (maxEntryCount * RowHeightPerEntry)
                 )
             );
     }
@@ -1792,6 +1796,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
         classCellStyle(
             entry.classColor,
             entry.fontColor,
+            m_compactPreview ? 2.4 : 3.2,
             m_compactPreview ? 3 : 4,
             m_compactPreview ? 5 : 6
             )
@@ -1841,7 +1846,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
         FontManager::setManagedRichText(
             label,
             QStringLiteral(
-                "<div style=\"text-align:center; line-height:1.15;\">"
+                "<div style=\"text-align:center; line-height:0.92;\">"
                 "<div style=\"color:%1; font-size:%2pt; font-weight:700;\">%3</div>"
                 "<div style=\"color:%1; font-size:%4pt; font-weight:500;\">%5</div>"
                 "<div style=\"color:%1; font-family:'%6'; font-size:%7pt; font-weight:400;\">%8</div>"
@@ -1885,7 +1890,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
     FontManager::setManagedRichText(
         label,
         QStringLiteral(
-            "<div style=\"text-align:center; line-height:1.25;\">"
+            "<div style=\"text-align:center; line-height:1.00;\">"
             "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
             "<div style=\"color:%1; font-size:%5pt; font-weight:400;\">%6</div>"
             "</div>"
@@ -1942,6 +1947,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
             classCellStyle(
                 entries.first().classColor,
                 entries.first().fontColor,
+                m_compactPreview ? 2.4 : 3.2,
                 m_compactPreview ? 3 : 4,
                 m_compactPreview ? 5 : 6
                 )
@@ -1968,7 +1974,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
 
         html +=
             QStringLiteral(
-                "<div style=\"margin-bottom:%7px; text-align:center; line-height:1.2;\">"
+                "<div style=\"margin-bottom:%7px; text-align:center; line-height:0.96;\">"
                 "<div style=\"color:%1; font-family:'%2'; font-size:%3pt; font-weight:600;\">%4</div>"
                 "<div style=\"color:%1; font-size:%5pt; font-weight:400;\">%6</div>"
                 "</div>"
@@ -1993,7 +1999,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
                         )
                     )
                 .arg(escaped(englishLine))
-                .arg(m_compactPreview ? 6 : 8);
+                .arg(m_compactPreview ? 4.8 : 6.4);
     }
 
     FontManager::setManagedRichText(
@@ -2052,10 +2058,11 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "background:white;"
                 "color:black;"
                 "border-radius:%1px;"
-                "padding:%2px;"
+                "padding:%2px %3px;"
                 "}"
                 )
                 .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 3.2 : 4.8)
                 .arg(m_compactPreview ? 4 : 6)
             );
     }
@@ -2102,7 +2109,7 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "color:%2;"
                 "border:1px solid %3;"
                 "border-radius:%4px;"
-                "padding:%5px;"
+                "padding:%5px %6px;"
                 "}"
                 )
                 .arg(
@@ -2117,6 +2124,7 @@ QWidget* ScheduleWidget::createSlotLabel(
                         : QStringLiteral("#D39B25")
                     )
                 .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 3.2 : 4.8)
                 .arg(m_compactPreview ? 4 : 6)
             );
     }
@@ -2141,10 +2149,11 @@ QWidget* ScheduleWidget::createSlotLabel(
                 "background:#DCDCDC;"
                 "color:black;"
                 "border-radius:%1px;"
-                "padding:%2px;"
+                "padding:%2px %3px;"
                 "}"
                 )
                 .arg(m_compactPreview ? 5 : 6)
+                .arg(m_compactPreview ? 3.2 : 4.8)
                 .arg(m_compactPreview ? 4 : 6)
             );
     }
