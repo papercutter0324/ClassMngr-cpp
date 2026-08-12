@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+using namespace SidebarControllerPrivate;
+
 void SidebarController::refreshClassSidebar()
 {
     if (!m_sidebar)

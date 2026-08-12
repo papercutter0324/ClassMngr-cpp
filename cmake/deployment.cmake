@@ -1,0 +1,55 @@
+include_guard(GLOBAL)
+
+if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
+    add_custom_command(TARGET ClassMngr POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E env
+            ${CLASSMNGR_WINDEPLOYQT_ENV}
+            "$<TARGET_FILE:Qt6::windeployqt>"
+            --qmldir "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
+            --skip-plugin-types qmltooling
+            --exclude-plugins qsqlibase,qsqlmimer,qsqloci,qsqlodbc,qsqlpsql
+            --translations en,ko
+            ${CLASSMNGR_WINDEPLOYQT_TARGET_ARGS}
+            --dir "$<TARGET_FILE_DIR:ClassMngr>"
+            "$<TARGET_FILE:ClassMngr>"
+        COMMENT "Deploying Qt runtime dependencies"
+    )
+endif()
+
+install(TARGETS ClassMngr
+    BUNDLE  DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(FILES
+    licenses/fonts/inter/LICENSE.txt
+    DESTINATION licenses/fonts/inter
+)
+
+install(FILES
+    licenses/fonts/pretendard/LICENSE.txt
+    DESTINATION licenses/fonts/pretendard
+)
+
+install(FILES
+    licenses/fonts/just-another-hand/LICENSE.txt
+    DESTINATION licenses/fonts/just-another-hand
+)
+
+qt6_generate_deploy_script(
+    TARGET ClassMngr
+    OUTPUT_SCRIPT deploy_script
+    CONTENT "
+${CLASSMNGR_QT_DEPLOY_PREAMBLE}
+qt_deploy_qml_imports(TARGET ClassMngr PLUGINS_FOUND plugins_found)
+qt_deploy_runtime_dependencies(
+    EXECUTABLE \"${CLASSMNGR_QT_DEPLOY_EXECUTABLE}\"
+    ADDITIONAL_MODULES \${plugins_found}
+    GENERATE_QT_CONF
+${CLASSMNGR_QT_DEPLOY_OPTIONS}
+)
+${CLASSMNGR_QT_DEPLOY_POSTAMBLE}
+"
+)
+install(SCRIPT ${deploy_script})

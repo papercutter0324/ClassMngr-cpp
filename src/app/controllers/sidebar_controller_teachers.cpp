@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+using namespace SidebarControllerPrivate;
+
 Teacher SidebarController::getTeacherById(int teacherId) const
 {
     auto* ds =

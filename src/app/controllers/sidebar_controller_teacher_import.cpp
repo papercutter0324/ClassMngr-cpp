@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+using namespace SidebarControllerPrivate;
+
 #include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 

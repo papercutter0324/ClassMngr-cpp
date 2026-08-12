@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+using namespace SidebarControllerPrivate;
+
 #include "core/utils/file_name_utils.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"

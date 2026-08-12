@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+using namespace SidebarControllerPrivate;
+
 SidebarController::SidebarController(
     ApplicationServices* services,
     Sidebar* sidebar,
