@@ -1,5 +1,7 @@
 #pragma once
 
+#include "domain/models/document_output_result.h"
+
 #include <QPageLayout>
 #include <QPageSize>
 #include <QString>
@@ -14,12 +16,8 @@ namespace PdfPrintService
 {
 inline constexpr int GeneratedPdfResolutionDpi = 300;
 
-enum class Status
-{
-    Sent,
-    Canceled,
-    Failed
-};
+using Status = DocumentOutputStatus;
+using Result = DocumentOutputResult;
 
 struct Request
 {
@@ -32,12 +30,6 @@ struct Request
     bool fitToPageByDefault = false;
     std::optional<QPageSize::PageSizeId> preferredPageSize;
     bool lockPreferredPageSize = false;
-};
-
-struct Result
-{
-    Status status = Status::Failed;
-    QString message;
 };
 
 struct BatchRequest

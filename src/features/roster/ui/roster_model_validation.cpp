@@ -16,48 +16,41 @@ QStringList RosterModel::validateCell(
 
     if (name.compare(QStringLiteral("English"), Qt::CaseInsensitive) == 0)
     {
-        if (value.size() > 20)
+        const auto issues = StudentNameUtils::validateEnglishName(value);
+        if (issues.contains(StudentNameUtils::ValidationIssue::EnglishTooLong))
         {
             errors.append(
                 tr("English name should be 20 characters or less.")
                 );
         }
 
-        for (const QChar& character : value)
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsNonAscii
+                ))
         {
-            if (character.unicode() > 127)
-            {
-                errors.append(
-                    tr("English name should use ASCII characters.")
-                    );
-
-                break;
-            }
+            errors.append(
+                tr("English name should use ASCII characters.")
+                );
         }
     }
     else if (name.compare(QStringLiteral("Korean"), Qt::CaseInsensitive) == 0)
     {
-        const int length =
-            StudentNameUtils::baseKoreanName(value).size();
-
-        if (length == 0 || length == 3)
-        {
-            return errors;
-        }
-
-        if (length <= 1)
+        const auto issues = StudentNameUtils::validateKoreanName(value);
+        if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort))
         {
             errors.append(
                 tr("Korean name looks too short.")
                 );
         }
-        else if (length >= 6)
+        else if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
         {
             errors.append(
                 tr("Korean name looks too long.")
                 );
         }
-        else
+        else if (issues.contains(
+                     StudentNameUtils::ValidationIssue::KoreanUnusualLength
+                     ))
         {
             errors.append(
                 tr("Korean name length is unusual.")
@@ -137,18 +130,10 @@ void RosterModel::validateRawInput(
         return;
     }
 
-    bool hasNonAscii = false;
-
-    for (const QChar& character : rawValue)
-    {
-        if (character.unicode() > 127)
-        {
-            hasNonAscii = true;
-            break;
-        }
-    }
-
-    if (!hasNonAscii)
+    const auto issues = StudentNameUtils::validateEnglishName(rawValue);
+    if (!issues.contains(
+            StudentNameUtils::ValidationIssue::EnglishContainsNonAscii
+            ))
     {
         return;
     }
@@ -192,7 +177,7 @@ void RosterModel::validateDuplicateNames()
     }
 
     const QHash<QString, QList<int>> rowsByPair =
-        StudentNameUtils::rowsByNamePair(
+        StudentNameUtils::duplicateRowsByNamePair(
             m_rows,
             englishColumn,
             koreanColumn

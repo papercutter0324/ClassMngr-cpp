@@ -1,6 +1,7 @@
 #include "schedule_import_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -45,8 +46,7 @@ QString queryFailure(
     const QString& action
     )
 {
-    return QObject::tr("%1 failed: %2")
-        .arg(action, query.lastError().text());
+    return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
 int dayIndex(

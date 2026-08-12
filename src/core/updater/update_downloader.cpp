@@ -1,5 +1,7 @@
 #include "update_downloader.h"
 
+#include "core/network/http_request_policy.h"
+
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonDocument>
@@ -39,13 +41,6 @@ QString defaultUpdateDownloadDirectory()
     return QDir(baseDirectory).filePath(
         QStringLiteral("ClassMngr/updates")
         );
-}
-
-bool isSuccessfulHttpStatus(
-    int status
-    )
-{
-    return status >= 200 && status < 300;
 }
 
 QString artifactFileName(
@@ -595,10 +590,7 @@ void UpdateDownloader::startRequest(
     QNetworkRequest request(
         m_artifact.url
         );
-    request.setAttribute(
-        QNetworkRequest::RedirectPolicyAttribute,
-        QNetworkRequest::NoLessSafeRedirectPolicy
-        );
+    HttpRequestPolicy::applySafeRedirectPolicy(request);
     request.setTransferTimeout(
         DownloadTransferTimeoutMs
         );
@@ -732,7 +724,7 @@ bool UpdateDownloader::validateResponse()
             return false;
         }
     }
-    else if (!isSuccessfulHttpStatus(status))
+    else if (!HttpRequestPolicy::isSuccessfulStatus(status))
     {
         return false;
     }
@@ -872,7 +864,7 @@ void UpdateDownloader::handleFinished()
 
     if (
         statusCode.isValid()
-        && !isSuccessfulHttpStatus(statusCode.toInt())
+        && !HttpRequestPolicy::isSuccessfulStatus(statusCode)
         )
     {
         fail(

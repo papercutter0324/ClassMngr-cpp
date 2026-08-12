@@ -1,66 +1,37 @@
 #include "testing_block_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+#include "domain/rules/schedule_value_parser.h"
 
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QStringList>
-#include <QTime>
 
 namespace
 {
-QString canonicalWeekday(
-    const QString& day
-    )
+struct CanonicalScheduleKey
 {
-    const QString normalized =
-        day.trimmed();
-    const QStringList weekdays{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday"),
-        QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
-    };
+    QString day;
+    QString startTime;
+};
 
-    for (const QString& weekday : weekdays)
-    {
-        if (
-            normalized.compare(
-                weekday,
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        {
-            return weekday;
-        }
-    }
-
-    return {};
-}
-
-QString canonicalStartTime(
+Result<CanonicalScheduleKey> canonicalScheduleKey(
+    const QString& day,
     const QString& startTime
     )
 {
-    const QString normalized =
-        startTime.trimmed();
-    const QTime parsed =
-        QTime::fromString(
-            normalized,
-            QStringLiteral("HH:mm")
-            );
-    if (
-        !parsed.isValid()
-        || parsed.toString(QStringLiteral("HH:mm")) != normalized
-        )
+    const auto weekday = ScheduleValueParser::parseWeekday(day);
+    const auto time = ScheduleValueParser::parseTime(startTime);
+
+    if (!weekday || !time)
     {
-        return {};
+        return std::unexpected(
+            QObject::tr("A testing block requires a valid weekday and start time.")
+            );
     }
-    return normalized;
+
+    return CanonicalScheduleKey{weekday->text, time->text};
 }
 
 QString queryFailure(
@@ -68,11 +39,7 @@ QString queryFailure(
     const QString& action
     )
 {
-    return QObject::tr("%1 failed: %2")
-        .arg(
-            action,
-            query.lastError().text()
-            );
+    return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
 Status validateKey(
@@ -80,10 +47,7 @@ Status validateKey(
     const QString& startTime
     )
 {
-    if (
-        canonicalWeekday(day).isEmpty()
-        || canonicalStartTime(startTime).isEmpty()
-        )
+    if (!canonicalScheduleKey(day, startTime))
     {
         return std::unexpected(
             QObject::tr("A testing block requires a valid weekday and start time.")
@@ -99,6 +63,12 @@ Result<int> existingClassId(
     const QString& startTime
     )
 {
+    const auto key = canonicalScheduleKey(day, startTime);
+    if (!key)
+    {
+        return std::unexpected(key.error());
+    }
+
     QSqlQuery query(database);
     query.prepare(R"(
         SELECT class_id
@@ -106,17 +76,16 @@ Result<int> existingClassId(
         WHERE day=?
         AND start_time=?
     )");
-    query.addBindValue(canonicalWeekday(day));
-    query.addBindValue(canonicalStartTime(startTime));
+    query.addBindValue(key->day);
+    query.addBindValue(key->startTime);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QObject::tr("Checking the testing assignment")
+        );
+    if (!executed)
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Checking the testing assignment")
-                )
-            );
+        return std::unexpected(executed.error().userMessage());
     }
 
     if (!query.next())
@@ -321,6 +290,9 @@ Status TestingBlockRepository::saveTestingBlock(
             );
     }
 
+    const auto key = canonicalScheduleKey(day, startTime);
+    Q_ASSERT(key);
+
     QSqlQuery query(m_database);
     query.prepare(R"(
         INSERT INTO schedule_testing_blocks (
@@ -336,8 +308,8 @@ Status TestingBlockRepository::saveTestingBlock(
             room=excluded.room,
             class_id=NULL
     )");
-    query.addBindValue(canonicalWeekday(day));
-    query.addBindValue(canonicalStartTime(startTime));
+    query.addBindValue(key->day);
+    query.addBindValue(key->startTime);
     const QString normalizedRoom =
         room.trimmed();
     query.addBindValue(
@@ -421,6 +393,9 @@ Status TestingBlockRepository::assignTestingClass(
             );
     }
 
+    const auto key = canonicalScheduleKey(day, startTime);
+    Q_ASSERT(key);
+
     QSqlQuery query(m_database);
     query.prepare(R"(
         INSERT INTO schedule_testing_blocks (
@@ -436,8 +411,8 @@ Status TestingBlockRepository::assignTestingClass(
             room='',
             class_id=excluded.class_id
     )");
-    query.addBindValue(canonicalWeekday(day));
-    query.addBindValue(canonicalStartTime(startTime));
+    query.addBindValue(key->day);
+    query.addBindValue(key->startTime);
     query.addBindValue(classId);
 
     if (!query.exec())
@@ -490,14 +465,17 @@ Status TestingBlockRepository::deleteTestingBlock(
         return valid;
     }
 
+    const auto key = canonicalScheduleKey(day, startTime);
+    Q_ASSERT(key);
+
     QSqlQuery query(m_database);
     query.prepare(R"(
         DELETE FROM schedule_testing_blocks
         WHERE day=?
         AND start_time=?
     )");
-    query.addBindValue(canonicalWeekday(day));
-    query.addBindValue(canonicalStartTime(startTime));
+    query.addBindValue(key->day);
+    query.addBindValue(key->startTime);
 
     if (!query.exec())
     {

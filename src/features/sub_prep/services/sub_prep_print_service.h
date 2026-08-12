@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/document_output_result.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 
@@ -10,12 +11,8 @@ class QWidget;
 
 namespace SubPrepPrintService
 {
-enum class Status
-{
-    Sent,
-    Canceled,
-    Failed
-};
+using Status = DocumentOutputStatus;
+using Result = DocumentOutputResult;
 
 struct CampusInformation
 {
@@ -42,12 +39,6 @@ struct Request
     ScheduleViewModel schedule;
     QList<SubPrepClassInformation::TeacherGroup> classInformation;
     QString subNotes;
-};
-
-struct Result
-{
-    Status status = Status::Failed;
-    QString message;
 };
 
 [[nodiscard]] Result saveSubPrepPdf(

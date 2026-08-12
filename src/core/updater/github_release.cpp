@@ -1,5 +1,7 @@
 #include "github_release.h"
 
+#include "core/network/http_request_policy.h"
+
 #include <QJsonArray>
 #include <QDateTime>
 #include <QJsonDocument>
@@ -13,23 +15,6 @@
 
 namespace
 {
-bool isLocalHttpUrl(
-    const QUrl& url
-    )
-{
-    if (url.scheme() != QStringLiteral("http"))
-    {
-        return false;
-    }
-
-    const QString host =
-        url.host().toLower();
-
-    return host == QStringLiteral("localhost")
-        || host == QStringLiteral("127.0.0.1")
-        || host == QStringLiteral("::1");
-}
-
 QString architectureKey()
 {
     const QString architecture =
@@ -428,12 +413,7 @@ bool GitHubRelease::isAllowedDownloadUrl(
     const QUrl& url
     )
 {
-    return url.isValid()
-        && !url.isRelative()
-        && (
-            url.scheme() == QStringLiteral("https")
-            || isLocalHttpUrl(url)
-            );
+    return HttpRequestPolicy::isAllowedSecureUrl(url);
 }
 
 Version GitHubRelease::version() const

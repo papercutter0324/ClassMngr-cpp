@@ -1,6 +1,7 @@
 #include "speaking_eval_batch_report_service.h"
 
 #include "core/resource_paths.h"
+#include "core/utils/file_name_utils.h"
 #include "core/zip_archive_writer.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -2159,17 +2160,14 @@ QString safeFileName(
     {
         baseName = !english.isEmpty() ? english : korean;
     }
-    baseName.replace(
-        QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")),
-        QStringLiteral("-")
-        );
     baseName = baseName.simplified();
-    if (baseName.isEmpty())
-    {
-        baseName = QObject::tr("Student");
-    }
 
-    return QStringLiteral("%1.pdf").arg(baseName);
+    return FileNameUtils::filesystemSafeFileName(
+        baseName,
+        QStringLiteral(".pdf"),
+        QObject::tr("Student"),
+        QChar(u'-')
+        );
 }
 
 bool isPowerPointRendererAvailable()

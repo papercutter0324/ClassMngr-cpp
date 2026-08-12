@@ -344,7 +344,7 @@ bool SpeakingEvalModel::containsNamePair(
 {
     const QString key =
         StudentNameUtils::namePairKey(
-            normalizeEnglishName(englishName),
+            StudentNameUtils::normalizeEnglishName(englishName),
             StudentNameUtils::normalizeKoreanName(koreanName)
             );
 
@@ -501,7 +501,7 @@ SpeakingEvalModel::ProcessedValue SpeakingEvalModel::processValue(
     {
     case SpeakingEvalColumn::EnglishName:
         normalized =
-            normalizeEnglishName(value);
+            StudentNameUtils::normalizeEnglishName(value);
         break;
     case SpeakingEvalColumn::KoreanName:
         normalized =
@@ -539,144 +539,6 @@ SpeakingEvalModel::ProcessedValue SpeakingEvalModel::processValue(
     };
 }
 
-QString SpeakingEvalModel::normalizeEnglishName(
-    const QString& value
-    ) const
-{
-    static const QRegularExpression spacedHyphenExpression(
-        QStringLiteral("\\s*-\\s*")
-        );
-    static const QRegularExpression repeatedHyphenExpression(
-        QStringLiteral("-{2,}")
-        );
-    static const QRegularExpression repeatedPeriodExpression(
-        QStringLiteral("\\.{2,}")
-        );
-    static const QRegularExpression spacedPeriodExpression(
-        QStringLiteral("\\s*\\.\\s*")
-        );
-    static const QRegularExpression joinedInitialsExpression(
-        QStringLiteral("\\b([A-Za-z])[.-]+-?[.-]*([A-Za-z])\\b")
-        );
-    static const QRegularExpression adjacentInitialsExpression(
-        QStringLiteral("\\b([A-Za-z])\\. ?([A-Za-z])\\.")
-        );
-
-    if (value.trimmed().isEmpty())
-    {
-        return {};
-    }
-
-    QString filtered;
-    filtered.reserve(value.size());
-
-    for (const QChar& character : value)
-    {
-        const ushort code =
-            character.unicode();
-
-        if (
-            (code >= 'A' && code <= 'Z')
-            || (code >= 'a' && code <= 'z')
-            || code == '.'
-            || code == '-'
-            )
-        {
-            filtered.append(character);
-        }
-        else if (character.isSpace())
-        {
-            filtered.append(QLatin1Char(' '));
-        }
-    }
-
-    QString cleaned =
-        filtered.simplified();
-
-    cleaned.replace(
-        spacedHyphenExpression,
-        QStringLiteral("-")
-        );
-
-    cleaned.replace(
-        repeatedHyphenExpression,
-        QStringLiteral("-")
-        );
-
-    cleaned.replace(
-        repeatedPeriodExpression,
-        QStringLiteral(".")
-        );
-
-    cleaned.replace(
-        spacedPeriodExpression,
-        QStringLiteral(".")
-        );
-
-    cleaned.replace(
-        joinedInitialsExpression,
-        QStringLiteral("\\1.\\2")
-        );
-
-    QString result;
-    QString token;
-    QChar previousSeparator;
-
-    const auto flushToken =
-        [&result, &token, &previousSeparator]()
-        {
-            if (token.isEmpty())
-            {
-                return;
-            }
-
-            const QString lower =
-                token.toLower();
-
-            if (
-                result.isEmpty()
-                || previousSeparator == QLatin1Char(' ')
-                || previousSeparator == QLatin1Char('.')
-                )
-            {
-                result +=
-                    lower.left(1).toUpper()
-                    + lower.mid(1);
-            }
-            else
-            {
-                result += lower;
-            }
-
-            token.clear();
-        };
-
-    for (const QChar& character : cleaned)
-    {
-        if (
-            character == QLatin1Char(' ')
-            || character == QLatin1Char('.')
-            || character == QLatin1Char('-')
-            )
-        {
-            flushToken();
-            result.append(character);
-            previousSeparator = character;
-            continue;
-        }
-
-        token.append(character);
-    }
-
-    flushToken();
-
-    result.replace(
-        adjacentInitialsExpression,
-        QStringLiteral("\\1.\\2.")
-        );
-
-    return result.trimmed();
-}
 
 QString SpeakingEvalModel::normalizeScore(
     const QString& value
@@ -753,42 +615,36 @@ QStringList SpeakingEvalModel::validateValue(
 
     if (columnId == SpeakingEvalColumn::EnglishName)
     {
-        if (value.size() > 20)
+        const auto issues = StudentNameUtils::validateEnglishName(value);
+        if (issues.contains(StudentNameUtils::ValidationIssue::EnglishTooLong))
         {
             errors.append(
                 tr("English name must be 20 characters or fewer.")
                 );
         }
 
-        for (const QChar& character : value)
+        if (issues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsNonAscii
+                ))
         {
-            if (character.unicode() > 127)
-            {
-                errors.append(
-                    tr("Only standard English letters are allowed.")
-                    );
-
-                break;
-            }
+            errors.append(
+                tr("Only standard English letters are allowed.")
+                );
         }
     }
     else if (columnId == SpeakingEvalColumn::KoreanName)
     {
-        const int length =
-            StudentNameUtils::baseKoreanName(value).size();
-
-        if (length == 3)
-        {
-            return errors;
-        }
-
-        if (length <= 1 || length >= 6)
+        const auto issues = StudentNameUtils::validateKoreanName(value);
+        if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
+            || issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
         {
             errors.append(
                 tr("Invalid Korean name length.")
                 );
         }
-        else
+        else if (issues.contains(
+                     StudentNameUtils::ValidationIssue::KoreanUnusualLength
+                     ))
         {
             errors.append(
                 tr("Uncommon Korean name length. Please verify.")
@@ -838,7 +694,7 @@ void SpeakingEvalModel::validateDuplicateNames()
         SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
 
     const QHash<QString, QList<int>> rowsByPair =
-        StudentNameUtils::rowsByNamePair(
+        StudentNameUtils::duplicateRowsByNamePair(
             m_rows,
             englishColumn,
             koreanColumn

@@ -5,6 +5,94 @@
 
 namespace StudentNameUtils
 {
+QString normalizeEnglishName(const QString& value)
+{
+    static const QRegularExpression spacedHyphenExpression(
+        QStringLiteral("\\s*-\\s*")
+        );
+    static const QRegularExpression repeatedHyphenExpression(
+        QStringLiteral("-{2,}")
+        );
+    static const QRegularExpression repeatedPeriodExpression(
+        QStringLiteral("\\.{2,}")
+        );
+    static const QRegularExpression spacedPeriodExpression(
+        QStringLiteral("\\s*\\.\\s*")
+        );
+    static const QRegularExpression joinedInitialsExpression(
+        QStringLiteral("\\b([A-Za-z])[.-]+-?[.-]*([A-Za-z])\\b")
+        );
+    static const QRegularExpression adjacentInitialsExpression(
+        QStringLiteral("\\b([A-Za-z])\\. ?([A-Za-z])\\.")
+        );
+
+    if (value.trimmed().isEmpty())
+    {
+        return {};
+    }
+
+    QString filtered;
+    filtered.reserve(value.size());
+    for (const QChar character : value)
+    {
+        const ushort code = character.unicode();
+        if ((code >= 'A' && code <= 'Z')
+            || (code >= 'a' && code <= 'z')
+            || code == '.' || code == '-')
+        {
+            filtered.append(character);
+        }
+        else if (character.isSpace())
+        {
+            filtered.append(QLatin1Char(' '));
+        }
+    }
+
+    QString cleaned = filtered.simplified();
+    cleaned.replace(spacedHyphenExpression, QStringLiteral("-"));
+    cleaned.replace(repeatedHyphenExpression, QStringLiteral("-"));
+    cleaned.replace(repeatedPeriodExpression, QStringLiteral("."));
+    cleaned.replace(spacedPeriodExpression, QStringLiteral("."));
+    cleaned.replace(joinedInitialsExpression, QStringLiteral("\\1.\\2"));
+
+    QString result;
+    QString token;
+    QChar previousSeparator;
+    const auto flushToken = [&result, &token, &previousSeparator]()
+    {
+        if (token.isEmpty())
+        {
+            return;
+        }
+        const QString lower = token.toLower();
+        result += result.isEmpty()
+                || previousSeparator == QLatin1Char(' ')
+                || previousSeparator == QLatin1Char('.')
+            ? lower.left(1).toUpper() + lower.mid(1)
+            : lower;
+        token.clear();
+    };
+
+    for (const QChar character : cleaned)
+    {
+        if (character == QLatin1Char(' ')
+            || character == QLatin1Char('.')
+            || character == QLatin1Char('-'))
+        {
+            flushToken();
+            result.append(character);
+            previousSeparator = character;
+        }
+        else
+        {
+            token.append(character);
+        }
+    }
+    flushToken();
+    result.replace(adjacentInitialsExpression, QStringLiteral("\\1.\\2."));
+    return result.trimmed();
+}
+
 
 QString normalizeKoreanName(
     const QString& value
@@ -131,6 +219,70 @@ QHash<QString, QList<int>> rowsByNamePair(
     }
 
     return rowsByPair;
+}
+
+QList<ValidationIssue> validateEnglishName(
+    const QString& value,
+    qsizetype maximumLength
+    )
+{
+    QList<ValidationIssue> issues;
+    if (value.size() > maximumLength)
+    {
+        issues.append(ValidationIssue::EnglishTooLong);
+    }
+    for (const QChar character : value)
+    {
+        if (character.unicode() > 127)
+        {
+            issues.append(ValidationIssue::EnglishContainsNonAscii);
+            break;
+        }
+    }
+    return issues;
+}
+
+QList<ValidationIssue> validateKoreanName(const QString& value)
+{
+    const int length = baseKoreanName(value).size();
+    if (length == 0 || length == 3)
+    {
+        return {};
+    }
+    if (length <= 1)
+    {
+        return {ValidationIssue::KoreanTooShort};
+    }
+    if (length >= 6)
+    {
+        return {ValidationIssue::KoreanTooLong};
+    }
+    return {ValidationIssue::KoreanUnusualLength};
+}
+
+QHash<QString, QList<int>> duplicateRowsByNamePair(
+    const QList<QStringList>& rows,
+    int englishColumn,
+    int koreanColumn
+    )
+{
+    QHash<QString, QList<int>> duplicates = rowsByNamePair(
+        rows,
+        englishColumn,
+        koreanColumn
+        );
+    for (auto it = duplicates.begin(); it != duplicates.end();)
+    {
+        if (it.value().size() < 2)
+        {
+            it = duplicates.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    return duplicates;
 }
 
 QList<int> duplicateNameRows(

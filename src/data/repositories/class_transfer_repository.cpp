@@ -1,6 +1,7 @@
 #include "class_transfer_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
@@ -756,8 +757,7 @@ Status queryFailure(
     )
 {
     return std::unexpected(
-        QObject::tr("%1 failed: %2")
-            .arg(operation, query.lastError().text())
+        SqlQueryUtils::errorFor(query, operation).userMessage()
         );
 }
 

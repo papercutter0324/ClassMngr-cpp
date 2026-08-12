@@ -107,10 +107,6 @@ private:
         const QString& value
         ) const;
 
-    QString normalizeEnglishName(
-        const QString& value
-        ) const;
-
     QString normalizeScore(
         const QString& value
         ) const;

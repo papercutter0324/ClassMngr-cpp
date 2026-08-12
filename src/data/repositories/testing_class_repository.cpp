@@ -1,13 +1,13 @@
 #include "testing_class_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+#include "domain/rules/schedule_value_parser.h"
 
 #include <QObject>
 #include <QPair>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QStringList>
-#include <QTime>
 #include <QVariant>
 
 namespace
@@ -17,63 +17,7 @@ QString queryFailure(
     const QString& action
     )
 {
-    return QObject::tr("%1 failed: %2")
-        .arg(
-            action,
-            query.lastError().text()
-            );
-}
-
-QString canonicalWeekday(
-    const QString& day
-    )
-{
-    const QString normalized = day.trimmed();
-    const QStringList weekdays{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday"),
-        QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
-    };
-
-    for (const QString& weekday : weekdays)
-    {
-        if (
-            normalized.compare(
-                weekday,
-                Qt::CaseInsensitive
-                ) == 0
-            )
-        {
-            return weekday;
-        }
-    }
-
-    return {};
-}
-
-QString canonicalStartTime(
-    const QString& startTime
-    )
-{
-    const QString normalized =
-        startTime.trimmed();
-    const QTime parsed =
-        QTime::fromString(
-            normalized,
-            QStringLiteral("HH:mm")
-            );
-    if (
-        !parsed.isValid()
-        || parsed.toString(QStringLiteral("HH:mm")) != normalized
-        )
-    {
-        return {};
-    }
-    return normalized;
+    return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
 Status validateTestingClass(
@@ -208,15 +152,15 @@ Result<int> TestingClassRepository::createTestingClass(
     const bool hasAssignment =
         !assignmentDay.trimmed().isEmpty()
         || !assignmentStartTime.trimmed().isEmpty();
-    const QString canonicalDay =
-        canonicalWeekday(assignmentDay);
-    const QString normalizedStartTime =
-        canonicalStartTime(assignmentStartTime);
+    const auto canonicalDay =
+        ScheduleValueParser::parseWeekday(assignmentDay);
+    const auto normalizedStartTime =
+        ScheduleValueParser::parseTime(assignmentStartTime);
     if (
         hasAssignment
         && (
-            canonicalDay.isEmpty()
-            || normalizedStartTime.isEmpty()
+            !canonicalDay
+            || !normalizedStartTime
             )
         )
     {
@@ -238,11 +182,13 @@ Result<int> TestingClassRepository::createTestingClass(
     QSqlQuery query(m_database);
     query.prepare(QStringLiteral("INSERT INTO classes (name) VALUES (?)"));
     query.addBindValue(testingClass.name.trimmed());
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QObject::tr("Creating the testing class")
+        );
+    if (!executed)
     {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Creating the testing class"))
-            );
+        return std::unexpected(executed.error().userMessage());
     }
 
     const int classId =
@@ -312,8 +258,8 @@ Result<int> TestingClassRepository::createTestingClass(
             )
             VALUES (?, ?, '', ?)
         )");
-        query.addBindValue(canonicalDay);
-        query.addBindValue(normalizedStartTime);
+        query.addBindValue(canonicalDay->text);
+        query.addBindValue(normalizedStartTime->text);
         query.addBindValue(classId);
         if (!query.exec())
         {

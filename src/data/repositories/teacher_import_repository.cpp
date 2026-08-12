@@ -1,6 +1,7 @@
 #include "teacher_import_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 
 #include <QObject>
@@ -22,7 +23,7 @@ QString koreanTeacherNameKey(const QString& value)
 
 QString queryFailure(const QSqlQuery& query, const QString& action)
 {
-    return QObject::tr("%1 failed: %2").arg(action, query.lastError().text());
+    return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
 Status validatePlan(const TeacherImportPlan& plan)

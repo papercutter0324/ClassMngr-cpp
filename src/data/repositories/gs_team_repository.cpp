@@ -1,6 +1,7 @@
 #include "gs_team_repository.h"
 
 #include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
 
 #include <QSet>
 #include <QSqlError>
@@ -16,7 +17,7 @@ QString normalizedName(const QString& value)
 Status queryError(const QSqlQuery& query, const QString& action)
 {
     return std::unexpected(
-        QObject::tr("%1 failed: %2").arg(action, query.lastError().text())
+        SqlQueryUtils::errorFor(query, action).userMessage()
         );
 }
 }

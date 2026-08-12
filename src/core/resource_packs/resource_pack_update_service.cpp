@@ -1,5 +1,6 @@
 #include "resource_pack_update_service.h"
 
+#include "core/network/http_request_policy.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/updater/update_signature_verifier.h"
 
@@ -13,38 +14,6 @@
 namespace
 {
 constexpr qint64 MaximumManifestBytes = 1024 * 1024;
-
-bool isLocalHttpUrl(
-    const QUrl& url
-    )
-{
-    if (url.scheme() != QStringLiteral("http"))
-    {
-        return false;
-    }
-
-    const QString host =
-        url.host().toLower();
-
-    return host == QStringLiteral("localhost")
-        || host == QStringLiteral("127.0.0.1")
-        || host == QStringLiteral("::1");
-}
-
-bool isSuccessfulHttpStatus(
-    const QVariant& statusCode
-    )
-{
-    if (!statusCode.isValid())
-    {
-        return true;
-    }
-
-    const int status =
-        statusCode.toInt();
-
-    return status >= 200 && status < 300;
-}
 
 QString fetchKindName(
     ResourcePackUpdateService::FetchKind kind
@@ -125,10 +94,7 @@ void ResourcePackUpdateService::fetch(
     )
 {
     QNetworkRequest request(url);
-    request.setAttribute(
-        QNetworkRequest::RedirectPolicyAttribute,
-        QNetworkRequest::NoLessSafeRedirectPolicy
-        );
+    HttpRequestPolicy::applySafeRedirectPolicy(request);
 
     auto* reply =
         m_network.get(request);
@@ -154,7 +120,7 @@ void ResourcePackUpdateService::fetch(
             }
 
             if (
-                !isSuccessfulHttpStatus(
+                !HttpRequestPolicy::isSuccessfulStatus(
                     reply->attribute(
                         QNetworkRequest::HttpStatusCodeAttribute
                         )
@@ -319,10 +285,7 @@ void ResourcePackUpdateService::startNextDownload()
     }
 
     QNetworkRequest request(m_currentArtifact.url);
-    request.setAttribute(
-        QNetworkRequest::RedirectPolicyAttribute,
-        QNetworkRequest::NoLessSafeRedirectPolicy
-        );
+    HttpRequestPolicy::applySafeRedirectPolicy(request);
 
     m_downloadReply =
         m_network.get(request);
@@ -417,7 +380,7 @@ void ResourcePackUpdateService::handleDownloadFinished()
         return;
     }
 
-    if (!isSuccessfulHttpStatus(statusCode))
+    if (!HttpRequestPolicy::isSuccessfulStatus(statusCode))
     {
         fail(
             tr("Unable to download resource pack '%1': HTTP %2")
@@ -571,10 +534,5 @@ bool ResourcePackUpdateService::isAllowedManifestUrl(
     const QUrl& url
     ) const
 {
-    return url.isValid()
-        && !url.isRelative()
-        && (
-            url.scheme() == QStringLiteral("https")
-            || isLocalHttpUrl(url)
-            );
+    return HttpRequestPolicy::isAllowedSecureUrl(url);
 }

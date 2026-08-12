@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/document_output_result.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
@@ -17,12 +18,8 @@ class QWidget;
 namespace RosterTemplatePrintService
 {
 
-enum class Status
-{
-    Sent,
-    Canceled,
-    Failed
-};
+using Status = DocumentOutputStatus;
+using Result = DocumentOutputResult;
 
 enum class Scope
 {
@@ -36,12 +33,6 @@ enum class TemplateId
     ByDay,
     Daily,
     PerClassWithExtraInfo
-};
-
-struct Result
-{
-    Status status = Status::Failed;
-    QString message;
 };
 
 struct Request

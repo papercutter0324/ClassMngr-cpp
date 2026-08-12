@@ -1,4 +1,13 @@
 classmngr_add_qt_test(
+    NAME SharedPolicy
+    SOURCES
+        tests/shared_policy_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Sql
+)
+
+classmngr_add_qt_test(
         NAME OnScreenKeyboard
         SOURCES
             tests/on_screen_keyboard_tests.cpp

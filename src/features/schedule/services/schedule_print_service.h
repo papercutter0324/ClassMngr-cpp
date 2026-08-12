@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/document_output_result.h"
 #include "features/schedule/ui/schedule_print_style.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/constants/options.h"
@@ -11,12 +12,8 @@ class QWidget;
 
 namespace SchedulePrintService
 {
-enum class Status
-{
-    Sent,
-    Canceled,
-    Failed
-};
+using Status = DocumentOutputStatus;
+using Result = DocumentOutputResult;
 
 struct Request
 {
@@ -27,12 +24,6 @@ struct Request
     QString userName;
     bool showEnglishNames = false;
     QPageLayout::Orientation pageOrientation = QPageLayout::Landscape;
-};
-
-struct Result
-{
-    Status status = Status::Failed;
-    QString message;
 };
 
 [[nodiscard]] Result printSchedule(

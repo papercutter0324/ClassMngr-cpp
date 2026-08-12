@@ -1,5 +1,7 @@
 #include "resource_pack_manifest.h"
 
+#include "core/network/http_request_policy.h"
+
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -9,23 +11,6 @@
 namespace
 {
 constexpr int SupportedSchemaVersion = 1;
-
-bool isLocalHttpUrl(
-    const QUrl& url
-    )
-{
-    if (url.scheme() != QStringLiteral("http"))
-    {
-        return false;
-    }
-
-    const QString host =
-        url.host().toLower();
-
-    return host == QStringLiteral("localhost")
-        || host == QStringLiteral("127.0.0.1")
-        || host == QStringLiteral("::1");
-}
 
 bool isValidPackId(
     const QString& packId
@@ -249,12 +234,7 @@ bool ResourcePackManifest::isAllowedDownloadUrl(
     const QUrl& url
     )
 {
-    return url.isValid()
-        && !url.isRelative()
-        && (
-            url.scheme() == QStringLiteral("https")
-            || isLocalHttpUrl(url)
-            );
+    return HttpRequestPolicy::isAllowedSecureUrl(url);
 }
 
 int ResourcePackManifest::schemaVersion() const

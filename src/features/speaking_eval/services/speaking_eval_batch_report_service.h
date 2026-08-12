@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/document_output_result.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "domain/models/class_info.h"
 
@@ -20,13 +21,8 @@ enum class Renderer
     PowerPoint
 };
 
-enum class Status
-{
-    Completed,
-    Canceled,
-    Failed,
-    InternalRendererFailed
-};
+using Status = DocumentOutputStatus;
+using Result = DocumentOutputResult;
 
 struct StudentReport
 {
@@ -50,14 +46,6 @@ struct Request
     QString outputFilePath;
     std::function<bool(int completed, int total, const QString& studentName)>
         progressCallback;
-};
-
-struct Result
-{
-    Status status = Status::Failed;
-    QString message;
-    QStringList savedPdfPaths;
-    QString savedArchivePath;
 };
 
 [[nodiscard]] QString rendererDisplayName(
