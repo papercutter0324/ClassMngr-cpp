@@ -1786,6 +1786,8 @@ if(BUILD_TESTING)
         src/domain/models/classroom.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/classes/config/class_info_config.cpp
+        src/features/schedule/schedule_display_mode_preferences.cpp
+        src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/import/schedule_workbook_parser.cpp
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_import_dialog.cpp
@@ -1923,6 +1925,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrUniformWidthTabBarTests
         tests/uniform_width_tab_bar_tests.cpp
+        src/core/fontmanager.cpp
         src/features/classes/ui/classes_navigation_tabs.cpp
         src/features/classes/ui/classes_navigation_tabs.h
         src/ui/shared/widgets/navigation_pill_style.cpp

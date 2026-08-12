@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/jscpd.json",
+  "minLines": 10,
+  "minTokens": 75,
+  "maxLines": 1000,
+  "threshold": 100,
+  "reporters": [
+    "console",
+    "json"
+  ],
+  "output": "artifacts/duplication",
+  "formats": [
+    "cpp"
+  ],
+  "ignore": [
+    "**/build/**",
+    "**/dist/**",
+    "**/tests/fixtures/**"
+  ],
+  "gitignore": true,
+  "absolute": true
+}

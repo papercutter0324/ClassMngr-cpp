@@ -1,0 +1,51 @@
+name: Duplication report
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/duplication-report.yml"
+      - ".jscpd.json"
+      - "src/**"
+      - "tests/**"
+  pull_request:
+    paths:
+      - ".github/workflows/duplication-report.yml"
+      - ".jscpd.json"
+      - "src/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: C++ token duplication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Generate report
+        run: npx --yes jscpd@4.0.5 --config .jscpd.json src tests
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cpp-duplication-report
+          path: artifacts/duplication
+          if-no-files-found: warn

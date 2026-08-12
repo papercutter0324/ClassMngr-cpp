@@ -67,7 +67,7 @@ void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
     auto* position = table->findChild<QComboBox*>();
     QTRY_VERIFY(position);
     const QStringList expectedPositions{
-        QStringLiteral("Co-ordinator"),
+        QStringLiteral("Coordinator"),
         QStringLiteral("Team Leader"),
         QStringLiteral("M3 Song's"),
         QStringLiteral("M2 Song's"),

@@ -1977,7 +1977,7 @@ void ScheduleImportDialogTests
         FontManager::adjustedPointSize(9)
         );
     QCOMPARE(table->columnWidth(0), 84);
-    QCOMPARE(table->rowHeight(0), 64);
+    QCOMPARE(table->rowHeight(0), 51);
 
     auto* scheduledClass =
         qobject_cast<QLabel*>(
@@ -1998,7 +1998,11 @@ void ScheduleImportDialogTests
                 )
             )
         );
-    QVERIFY(scheduledClass->styleSheet().contains(QStringLiteral("padding:3px")));
+    QVERIFY(
+        scheduledClass->styleSheet().contains(
+            QStringLiteral("padding:2.4px 3px")
+            )
+        );
 }
 
 void ScheduleImportDialogTests
@@ -2133,8 +2137,16 @@ void ScheduleImportDialogTests
         lunch->font().pointSize(),
         FontManager::adjustedPointSize(12)
         );
-    QVERIFY(essay->styleSheet().contains(QStringLiteral("padding:4px")));
-    QVERIFY(lunch->styleSheet().contains(QStringLiteral("padding:4px")));
+    QVERIFY(
+        essay->styleSheet().contains(
+            QStringLiteral("padding:3.2px 4px")
+            )
+        );
+    QVERIFY(
+        lunch->styleSheet().contains(
+            QStringLiteral("padding:3.2px 4px")
+            )
+        );
 }
 
 void ScheduleImportDialogTests
