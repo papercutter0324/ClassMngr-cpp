@@ -1,5 +1,7 @@
 #include "uniform_width_tab_bar.h"
 
+#include "ui/shared/widgets/navigation_pill_style.h"
+
 #include <algorithm>
 
 #include <QApplication>
@@ -18,16 +20,8 @@
 namespace
 {
 
-constexpr int NavigationTabHorizontalPadding = 14;
-constexpr int NavigationTabVerticalPadding = 6;
-constexpr int NavigationTabGap = 6;
-constexpr qreal NavigationTabRadius = 7.0;
-constexpr qreal NavigationTabBorderWidth = 1.0;
-constexpr int NavigationTabBorderExtent = 2;
-constexpr int NavigationTabIconSpacing = 4;
 constexpr int ScrollButtonWidth = 28;
 constexpr int DragScrollStep = 48;
-const QColor NavigationTabSelectedTextColor(Qt::black);
 
 class EdgeAlignedTabBarStyle final : public QProxyStyle
 {
@@ -347,6 +341,24 @@ void UniformWidthTabBar::setNavigationTabTextColor(
     update();
 }
 
+bool UniformWidthTabBar::currentSelectionVisible() const
+{
+    return m_currentSelectionVisible;
+}
+
+void UniformWidthTabBar::setCurrentSelectionVisible(
+    bool visible
+    )
+{
+    if (m_currentSelectionVisible == visible)
+    {
+        return;
+    }
+
+    m_currentSelectionVisible = visible;
+    update();
+}
+
 int UniformWidthTabBar::naturalWidth() const
 {
     int width = 0;
@@ -576,7 +588,6 @@ QSize UniformWidthTabBar::naturalTabSizeHint(
         return QTabBar::tabSizeHint(index);
     }
 
-    const QFontMetrics metrics(font());
     const QIcon icon =
         tabIcon(index);
     const int iconExtent =
@@ -592,43 +603,18 @@ QSize UniformWidthTabBar::naturalTabSizeHint(
                 QSize(iconExtent, iconExtent)
                 );
 
-    int contentWidth =
-        metrics.horizontalAdvance(
-            tabText(index)
-            );
-
-    if (!iconSize.isEmpty())
-    {
-        contentWidth +=
-            iconSize.width()
-            + NavigationTabIconSpacing;
-    }
-
-    const int contentHeight =
-        std::max(
-            metrics.height(),
-            iconSize.height()
-            );
-
-    return QSize(
-        contentWidth
-            + (2 * NavigationTabHorizontalPadding)
-            + NavigationTabGap
-            + NavigationTabBorderExtent,
-        contentHeight
-            + (2 * NavigationTabVerticalPadding)
-            + NavigationTabBorderExtent
+    return NavigationPillStyle::sizeHint(
+        fontMetrics(),
+        icon,
+        tabText(index),
+        iconSize,
+        NavigationPillStyle::Gap
         );
 }
 
 void UniformWidthTabBar::paintNavigationPills()
 {
     QPainter painter(this);
-    painter.setRenderHint(
-        QPainter::Antialiasing,
-        true
-        );
-    painter.setFont(font());
 
     for (int index = 0; index < count(); ++index)
     {
@@ -643,201 +629,38 @@ void UniformWidthTabBar::paintNavigationPills()
                 QStyle::State_Enabled
                 );
         const bool selected =
-            option.state.testFlag(
+            m_currentSelectionVisible
+            && option.state.testFlag(
                 QStyle::State_Selected
                 );
         const bool hovered =
             option.state.testFlag(
                 QStyle::State_MouseOver
                 );
-        const QPalette::ColorGroup colorGroup =
-            enabled
-                ? (
-                    isActiveWindow()
-                        ? QPalette::Active
-                        : QPalette::Inactive
-                    )
-                : QPalette::Disabled;
-
-        QColor fillColor =
-            m_navigationTabFillColor.isValid()
-                ? m_navigationTabFillColor
-                : option.palette.color(
-                    colorGroup,
-                    QPalette::Button
-                    );
-        QColor borderColor =
-            m_navigationTabBorderColor.isValid()
-                ? m_navigationTabBorderColor
-                : option.palette.color(
-                    colorGroup,
-                    QPalette::Mid
-                    );
-        QColor textColor =
-            m_navigationTabTextColor.isValid()
-                ? m_navigationTabTextColor
-                : option.palette.color(
-                    colorGroup,
-                    QPalette::ButtonText
-                    );
-
-        if (selected)
-        {
-            fillColor =
-                m_navigationTabSelectedColor.isValid()
-                    ? m_navigationTabSelectedColor
-                    : option.palette.color(
-                        colorGroup,
-                        QPalette::Highlight
-                        );
-            borderColor =
-                fillColor;
-            textColor =
-                NavigationTabSelectedTextColor;
-        }
-        else if (hovered)
-        {
-            fillColor =
-                m_navigationTabHoverColor.isValid()
-                    ? m_navigationTabHoverColor
-                    : option.palette.color(
-                        colorGroup,
-                        QPalette::Light
-                        );
-            borderColor =
-                m_navigationTabSelectedColor.isValid()
-                    ? m_navigationTabSelectedColor
-                    : option.palette.color(
-                        colorGroup,
-                        QPalette::Highlight
-                        );
-        }
-
-        const QRect tabBounds =
-            tabRect(index);
-        const QRectF pillRect =
-            QRectF(
-                tabBounds.adjusted(
-                    0,
-                    0,
-                    -NavigationTabGap,
-                    0
-                    )
-                ).adjusted(
-                    NavigationTabBorderWidth / 2.0,
-                    NavigationTabBorderWidth / 2.0,
-                    -NavigationTabBorderWidth / 2.0,
-                    -NavigationTabBorderWidth / 2.0
-                    );
-
-        painter.setBrush(
-            fillColor
-            );
-        painter.setPen(
-            QPen(
-                borderColor,
-                NavigationTabBorderWidth
-                )
-            );
-        painter.drawRoundedRect(
-            pillRect,
-            NavigationTabRadius,
-            NavigationTabRadius
-            );
-
-        QRect contentRect =
-            pillRect.toAlignedRect().adjusted(
-                NavigationTabHorizontalPadding,
-                0,
-                -NavigationTabHorizontalPadding,
-                0
-                );
-        const QIcon icon =
-            tabIcon(index);
-
-        painter.setPen(
-            textColor
-            );
-
-        if (icon.isNull())
-        {
-            const QString text =
-                painter.fontMetrics().elidedText(
-                    tabText(index),
-                    elideMode(),
-                    contentRect.width()
-                    );
-
-            painter.drawText(
-                contentRect,
-                Qt::AlignCenter,
-                text
-                );
-            continue;
-        }
-
-        const int iconExtent =
-            style()->pixelMetric(
-                QStyle::PM_SmallIconSize,
-                &option,
-                this
-                );
-        const QSize iconSize =
-            icon.actualSize(
-                QSize(iconExtent, iconExtent)
-                );
-        const int textWidth =
-            painter.fontMetrics().horizontalAdvance(
-                tabText(index)
-                );
-        const int combinedWidth =
-            iconSize.width()
-            + NavigationTabIconSpacing
-            + textWidth;
-        const int iconLeft =
-            contentRect.center().x()
-            - (combinedWidth / 2);
-        const QRect iconRect(
-            iconLeft,
-            contentRect.center().y()
-                - (iconSize.height() / 2),
-            iconSize.width(),
-            iconSize.height()
-            );
-
-        icon.paint(
+        NavigationPillStyle::paint(
             &painter,
-            iconRect,
-            Qt::AlignCenter,
-            enabled
-                ? QIcon::Normal
-                : QIcon::Disabled,
-            selected
-                ? QIcon::On
-                : QIcon::Off
-            );
-
-        const QRect textRect(
-            iconRect.right()
-                + 1
-                + NavigationTabIconSpacing,
-            contentRect.top(),
-            contentRect.right()
-                - iconRect.right()
-                - NavigationTabIconSpacing,
-            contentRect.height()
-            );
-        const QString text =
-            painter.fontMetrics().elidedText(
-                tabText(index),
-                elideMode(),
-                textRect.width()
-                );
-
-        painter.drawText(
-            textRect,
-            Qt::AlignVCenter | Qt::AlignLeft,
-            text
+            tabRect(index),
+            tabText(index),
+            tabIcon(index),
+            font(),
+            elideMode(),
+            style(),
+            this,
+            option.palette,
+            {
+                enabled,
+                selected,
+                hovered,
+                isActiveWindow()
+            },
+            {
+                m_navigationTabFillColor,
+                m_navigationTabBorderColor,
+                m_navigationTabHoverColor,
+                m_navigationTabSelectedColor,
+                m_navigationTabTextColor
+            },
+            NavigationPillStyle::Gap
             );
     }
 }
@@ -1025,6 +848,11 @@ void UniformWidthTabWidget::setTabKind(
 {
     m_tabKind =
         kind;
+    m_tabAlignment =
+        kind == UniformWidthTabKind::Class
+        || kind == UniformWidthTabKind::Section
+            ? UniformWidthTabAlignment::Center
+            : UniformWidthTabAlignment::Leading;
 
     const QString value =
         kindPropertyValue(kind);
@@ -1101,7 +929,25 @@ void UniformWidthTabWidget::setTabAppearance(
 
     updateGeometry();
     update();
-    scheduleCenterTabBar();
+    scheduleAlignTabBar();
+}
+
+UniformWidthTabAlignment UniformWidthTabWidget::tabAlignment() const
+{
+    return m_tabAlignment;
+}
+
+void UniformWidthTabWidget::setTabAlignment(
+    UniformWidthTabAlignment alignment
+    )
+{
+    if (m_tabAlignment == alignment)
+    {
+        return;
+    }
+
+    m_tabAlignment = alignment;
+    scheduleAlignTabBar();
 }
 
 bool UniformWidthTabWidget::eventFilter(
@@ -1131,10 +977,10 @@ bool UniformWidthTabWidget::eventFilter(
             && uniformTabBar->naturalWidth() <= width()
             )
         {
-            centerTabBar();
+            alignTabBar();
         }
 
-        scheduleCenterTabBar();
+        scheduleAlignTabBar();
     }
 
     return QTabWidget::eventFilter(
@@ -1148,7 +994,7 @@ void UniformWidthTabWidget::resizeEvent(
     )
 {
     QTabWidget::resizeEvent(event);
-    scheduleCenterTabBar();
+    scheduleAlignTabBar();
 }
 
 void UniformWidthTabWidget::showEvent(
@@ -1156,7 +1002,7 @@ void UniformWidthTabWidget::showEvent(
     )
 {
     QTabWidget::showEvent(event);
-    scheduleCenterTabBar();
+    scheduleAlignTabBar();
 }
 
 void UniformWidthTabWidget::tabInserted(
@@ -1164,7 +1010,7 @@ void UniformWidthTabWidget::tabInserted(
     )
 {
     QTabWidget::tabInserted(index);
-    scheduleCenterTabBar();
+    scheduleAlignTabBar();
 }
 
 void UniformWidthTabWidget::tabRemoved(
@@ -1172,17 +1018,17 @@ void UniformWidthTabWidget::tabRemoved(
     )
 {
     QTabWidget::tabRemoved(index);
-    scheduleCenterTabBar();
+    scheduleAlignTabBar();
 }
 
-void UniformWidthTabWidget::scheduleCenterTabBar()
+void UniformWidthTabWidget::scheduleAlignTabBar()
 {
-    if (m_centerTabBarScheduled)
+    if (m_alignmentScheduled)
     {
         return;
     }
 
-    m_centerTabBarScheduled =
+    m_alignmentScheduled =
         true;
 
     QTimer::singleShot(
@@ -1190,14 +1036,14 @@ void UniformWidthTabWidget::scheduleCenterTabBar()
         this,
         [this]
         {
-            centerTabBar();
-            m_centerTabBarScheduled =
+            alignTabBar();
+            m_alignmentScheduled =
                 false;
         }
         );
 }
 
-void UniformWidthTabWidget::centerTabBar()
+void UniformWidthTabWidget::alignTabBar()
 {
     auto* bar =
         qobject_cast<UniformWidthTabBar*>(
@@ -1214,8 +1060,35 @@ void UniformWidthTabWidget::centerTabBar()
         return;
     }
 
+    const bool tabsAtBottom =
+        tabPosition() == QTabWidget::South;
+    const Qt::Corner leadingCorner =
+        tabsAtBottom
+            ? Qt::BottomLeftCorner
+            : Qt::TopLeftCorner;
+    const Qt::Corner trailingCorner =
+        tabsAtBottom
+            ? Qt::BottomRightCorner
+            : Qt::TopRightCorner;
+    const auto cornerWidth =
+        [](const QWidget* corner)
+        {
+            if (!corner)
+            {
+                return 0;
+            }
+
+            return std::max(
+                corner->width(),
+                corner->sizeHint().width()
+                );
+        };
+    const int leadingCornerWidth =
+        cornerWidth(cornerWidget(leadingCorner));
+    const int trailingCornerWidth =
+        cornerWidth(cornerWidget(trailingCorner));
     const int availableWidth =
-        width();
+        width() - leadingCornerWidth - trailingCornerWidth;
     const int naturalWidth =
         bar->naturalWidth();
 
@@ -1235,11 +1108,14 @@ void UniformWidthTabWidget::centerTabBar()
             naturalWidth,
             availableWidth
             );
-    const int centeredX =
-        (availableWidth - centeredWidth) / 2;
+    const int alignedX =
+        m_tabAlignment == UniformWidthTabAlignment::Center
+            ? leadingCornerWidth
+                + ((availableWidth - centeredWidth) / 2)
+            : leadingCornerWidth;
 
     if (
-        geometry.x() == centeredX
+        geometry.x() == alignedX
         && geometry.width() == centeredWidth
         )
     {
@@ -1247,7 +1123,7 @@ void UniformWidthTabWidget::centerTabBar()
     }
 
     geometry.setX(
-        centeredX
+        alignedX
         );
     geometry.setWidth(
         centeredWidth

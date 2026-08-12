@@ -359,6 +359,103 @@ const QList<ClassTime>& preferredTimes(
         : entry.regularTimes;
 }
 
+const QList<ClassTime>& timesForFilter(
+    const ClassTabNavigation::ClassEntry& entry,
+    ClassTabNavigation::ScheduleSource scheduleSource
+    )
+{
+    return scheduleSource == ClassTabNavigation::ScheduleSource::Intensive
+        ? entry.intensiveTimes
+        : entry.regularTimes;
+}
+
+QString normalizedDay(
+    const QString& day
+    )
+{
+    return day.trimmed().toCaseFolded();
+}
+
+QSet<QString> expandedFilterDays(
+    const ClassTabNavigation::DayFilter& dayFilter
+    )
+{
+    QSet<QString> result;
+
+    for (const QString& day : dayFilter.selectedDays)
+    {
+        const QString normalized = normalizedDay(day);
+
+        if (normalized == QStringLiteral("wkend")
+            || normalized == QStringLiteral("weekend"))
+        {
+            result.insert(QStringLiteral("saturday"));
+            result.insert(QStringLiteral("sunday"));
+            continue;
+        }
+
+        if (!normalized.isEmpty())
+        {
+            result.insert(normalized);
+        }
+    }
+
+    return result;
+}
+
+bool matchesDayFilter(
+    const ClassTabNavigation::ClassEntry& entry,
+    const ClassTabNavigation::DayFilter& dayFilter
+    )
+{
+    const QList<ClassTime>& scheduleTimes =
+        timesForFilter(entry, dayFilter.scheduleSource);
+
+    if (
+        dayFilter.visibilityScope
+            == ClassTabNavigation::VisibilityScope::ActiveSchedule
+        && scheduleTimes.isEmpty()
+        )
+    {
+        return false;
+    }
+
+    const QSet<QString> selectedDays = expandedFilterDays(dayFilter);
+
+    if (selectedDays.isEmpty())
+    {
+        return true;
+    }
+
+    for (const ClassTime& time : scheduleTimes)
+    {
+        if (selectedDays.contains(normalizedDay(time.day)))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+QList<ClassTabNavigation::ClassEntry> filteredEntries(
+    const QList<ClassTabNavigation::ClassEntry>& entries,
+    const ClassTabNavigation::DayFilter& dayFilter
+    )
+{
+    QList<ClassTabNavigation::ClassEntry> result;
+
+    for (const ClassTabNavigation::ClassEntry& entry : entries)
+    {
+        if (matchesDayFilter(entry, dayFilter))
+        {
+            result.append(entry);
+        }
+    }
+
+    return result;
+}
+
 int timeOrder(
     const QString& value
     )
@@ -767,18 +864,22 @@ namespace ClassTabNavigation
 {
 Model build(
     const QList<ClassEntry>& entries,
-    GroupingPolicy groupingPolicy
+    GroupingPolicy groupingPolicy,
+    const DayFilter& dayFilter
     )
 {
+    const QList<ClassEntry> filtered =
+        filteredEntries(entries, dayFilter);
+
     Model model;
     model.mode =
         groupingPolicy == GroupingPolicy::AlwaysGradeGrouped
-        || entries.size() > FlatClassThreshold
+        || filtered.size() > FlatClassThreshold
             ? Mode::GradeGrouped
             : Mode::Flat;
 
     const QList<ClassEntry> sorted =
-        sortedEntries(entries);
+        sortedEntries(filtered);
 
     if (model.mode == Mode::Flat)
     {

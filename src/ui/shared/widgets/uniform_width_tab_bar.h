@@ -28,6 +28,12 @@ enum class UniformWidthTabAppearance
     NavigationPill
 };
 
+enum class UniformWidthTabAlignment
+{
+    Leading,
+    Center
+};
+
 class UniformWidthTabBar : public QTabBar
 {
     Q_OBJECT
@@ -86,6 +92,9 @@ public:
 
     QColor navigationTabTextColor() const;
     void setNavigationTabTextColor(const QColor& color);
+
+    bool currentSelectionVisible() const;
+    void setCurrentSelectionVisible(bool visible);
 
     int naturalWidth() const;
 
@@ -153,6 +162,7 @@ private:
     QColor m_navigationTabHoverColor;
     QColor m_navigationTabSelectedColor;
     QColor m_navigationTabTextColor;
+    bool m_currentSelectionVisible = true;
     bool m_scrollControlRefreshScheduled = false;
     bool m_dragScrollCandidate = false;
     bool m_dragScrolling = false;
@@ -189,6 +199,12 @@ public:
         UniformWidthTabAppearance appearance
         );
 
+    UniformWidthTabAlignment tabAlignment() const;
+
+    void setTabAlignment(
+        UniformWidthTabAlignment alignment
+        );
+
 protected:
     bool eventFilter(
         QObject* watched,
@@ -216,12 +232,14 @@ private:
         UniformWidthTabKind kind
         );
 
-    void scheduleCenterTabBar();
-    void centerTabBar();
+    void scheduleAlignTabBar();
+    void alignTabBar();
 
 private:
     UniformWidthTabKind m_tabKind = UniformWidthTabKind::Generic;
     UniformWidthTabAppearance m_tabAppearance =
         UniformWidthTabAppearance::Platform;
-    bool m_centerTabBarScheduled = false;
+    UniformWidthTabAlignment m_tabAlignment =
+        UniformWidthTabAlignment::Leading;
+    bool m_alignmentScheduled = false;
 };

@@ -540,6 +540,14 @@ QTabBar[uniformTabKind="section"] {
     qproperty-navigationTabTextColor: #27313a;
 }
 
+NavigationPillButton {
+    qproperty-navigationTabFillColor: #deded8;
+    qproperty-navigationTabBorderColor: #c5c7c3;
+    qproperty-navigationTabHoverColor: #f5f5f5;
+    qproperty-navigationTabSelectedColor: #3daee9;
+    qproperty-navigationTabTextColor: #27313a;
+}
+
 UniformWidthTabBar QToolButton#ScrollLeftButton,
 UniformWidthTabBar QToolButton#ScrollRightButton {
     background-color: #f5f3ee;

@@ -60,6 +60,9 @@ public:
     void saveScheduleAs();
 
 signals:
+    void displayModeChanged(
+        ScheduleDisplayMode mode
+        );
     void classInfoSaved(
         int classId
         );

@@ -3,6 +3,7 @@
 #include "domain/models/class_info.h"
 
 #include <QList>
+#include <QSet>
 #include <QString>
 
 namespace ClassTabNavigation
@@ -19,6 +20,25 @@ enum class GroupingPolicy
 {
     Adaptive,
     AlwaysGradeGrouped
+};
+
+enum class ScheduleSource
+{
+    Regular,
+    Intensive
+};
+
+enum class VisibilityScope
+{
+    AllClasses,
+    ActiveSchedule
+};
+
+struct DayFilter
+{
+    QSet<QString> selectedDays;
+    ScheduleSource scheduleSource{ScheduleSource::Regular};
+    VisibilityScope visibilityScope{VisibilityScope::AllClasses};
 };
 
 struct ClassEntry
@@ -55,6 +75,7 @@ struct Model
 
 Model build(
     const QList<ClassEntry>& entries,
-    GroupingPolicy groupingPolicy = GroupingPolicy::Adaptive
+    GroupingPolicy groupingPolicy = GroupingPolicy::Adaptive,
+    const DayFilter& dayFilter = {}
     );
 }

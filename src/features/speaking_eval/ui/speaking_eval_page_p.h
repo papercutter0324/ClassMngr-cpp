@@ -12,6 +12,9 @@
 #include "domain/models/speaking_evaluation.h"
 #include "domain/models/teacher.h"
 #include "data/data_service.h"
+#include "features/classes/class_navigation_preferences.h"
+#include "features/classes/ui/classes_navigation_settings_dialog.h"
+#include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
@@ -21,9 +24,12 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_pill_button.h"
 
 #include <QAbstractButton>
+#include <QDialog>
 #include <QHash>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QInputDialog>
 #include <QItemSelectionModel>
@@ -47,6 +53,36 @@ namespace
 {
 
 inline constexpr int AutosaveDelayMs = 750;
+constexpr int DayFilterSpacer = 16;
+
+struct DayFilterButtonDefinition
+{
+    QString key;
+    QString objectName;
+};
+
+const QList<DayFilterButtonDefinition>& dayFilterButtonDefinitions()
+{
+    static const QList<DayFilterButtonDefinition> definitions{
+        {QStringLiteral("Monday"), QStringLiteral("speakingEvalMondayFilterButton")},
+        {QStringLiteral("Tuesday"), QStringLiteral("speakingEvalTuesdayFilterButton")},
+        {QStringLiteral("Wednesday"), QStringLiteral("speakingEvalWednesdayFilterButton")},
+        {QStringLiteral("Thursday"), QStringLiteral("speakingEvalThursdayFilterButton")},
+        {QStringLiteral("Friday"), QStringLiteral("speakingEvalFridayFilterButton")},
+        {QStringLiteral("Wkend"), QStringLiteral("speakingEvalWeekendFilterButton")}
+    };
+
+    return definitions;
+}
+
+ClassTabNavigation::ScheduleSource scheduleSourceForMode(
+    ScheduleDisplayMode mode
+    )
+{
+    return mode == ScheduleDisplayMode::Intensive
+        ? ClassTabNavigation::ScheduleSource::Intensive
+        : ClassTabNavigation::ScheduleSource::Regular;
+}
 
 const QStringList& evaluationNames()
 {

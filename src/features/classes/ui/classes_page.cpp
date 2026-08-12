@@ -6,19 +6,24 @@
 #include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_navigation_tabs.h"
+#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/class_notes_page.h"
+#include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/roster/ui/roster_editor_widget.h"
-#include "features/classes/models/class_tab_navigation_model.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <utility>
 
 #include <QFont>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QStackedWidget>
 #include <QTabBar>
 #include <QTabWidget>
@@ -27,6 +32,55 @@
 
 namespace
 {
+constexpr int DayFilterSpacer = 16;
+
+struct DayFilterButtonDefinition
+{
+    QString key;
+    QString objectName;
+};
+
+const QList<DayFilterButtonDefinition>& dayFilterButtonDefinitions()
+{
+    static const QList<DayFilterButtonDefinition> definitions{
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("classesMondayFilterButton")
+        },
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral("classesTuesdayFilterButton")
+        },
+        {
+            QStringLiteral("Wednesday"),
+            QStringLiteral("classesWednesdayFilterButton")
+        },
+        {
+            QStringLiteral("Thursday"),
+            QStringLiteral("classesThursdayFilterButton")
+        },
+        {
+            QStringLiteral("Friday"),
+            QStringLiteral("classesFridayFilterButton")
+        },
+        {
+            QStringLiteral("Wkend"),
+            QStringLiteral("classesWeekendFilterButton")
+        }
+    };
+
+    return definitions;
+}
+
+ClassTabNavigation::ScheduleSource scheduleSourceForMode(
+    ScheduleDisplayMode mode
+    )
+{
+    return mode == ScheduleDisplayMode::Intensive
+        ? ClassTabNavigation::ScheduleSource::Intensive
+        : ClassTabNavigation::ScheduleSource::Regular;
+}
+
 QWidget* tabPage(
     QWidget* parent,
     int classId = -1
@@ -82,6 +136,15 @@ bool ClassesPage::openClass(
         updateHeaderText();
         return false;
     }
+
+    setScheduleSource(
+        scheduleSourceForMode(
+            ScheduleDisplayModePreferences::load(dataService)
+            )
+        );
+    setVisibilityScope(
+        ClassNavigationPreferences::load(dataService)
+        );
 
     if (!commitActiveEditor())
     {
@@ -146,6 +209,15 @@ int ClassesPage::currentClassId() const
 ClassesSection ClassesPage::currentSection() const
 {
     return m_currentSection;
+}
+
+void ClassesPage::setScheduleDisplayMode(
+    ScheduleDisplayMode mode
+    )
+{
+    setScheduleSource(
+        scheduleSourceForMode(mode)
+        );
 }
 
 void ClassesPage::saveData()
@@ -375,6 +447,7 @@ void ClassesPage::rebuildClassTabs(
     }
 
     m_rebuildingTabs = true;
+    m_dayFilterButtons.clear();
 
     while (QLayoutItem* item = m_classTabsLayout->takeAt(0))
     {
@@ -429,7 +502,8 @@ void ClassesPage::rebuildClassTabs(
     const ClassTabNavigation::Model navigation =
         ClassTabNavigation::build(
             entries,
-            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            m_dayFilter
             );
 
     auto* gradeTabs =
@@ -439,6 +513,7 @@ void ClassesPage::rebuildClassTabs(
             m_classTabsContainer
             );
     gradeTabs->setObjectName("classesGradeTabs");
+    createDayFilterControls(gradeTabs);
 
     const auto connectClassTabs =
         [this](QTabWidget* tabs)
@@ -454,6 +529,7 @@ void ClassesPage::rebuildClassTabs(
                         return;
                     }
 
+                    setNavigationSelectionVisible(true);
                     activateClass(currentClassIdFromTabs(tabs));
                 }
                 );
@@ -501,6 +577,7 @@ void ClassesPage::rebuildClassTabs(
                 return;
             }
 
+            setNavigationSelectionVisible(true);
             activateClass(currentClassIdFromTabs(gradeTabs));
         }
         );
@@ -509,6 +586,229 @@ void ClassesPage::rebuildClassTabs(
     m_classTabsLayout->addWidget(gradeTabs);
     syncTabsToClass(selectedClassId);
     m_rebuildingTabs = false;
+}
+
+void ClassesPage::createDayFilterControls(
+    UniformWidthTabWidget* gradeTabs
+    )
+{
+    if (!gradeTabs)
+    {
+        return;
+    }
+
+    auto* controls = new QWidget(gradeTabs);
+    controls->setObjectName(
+        QStringLiteral("classesDayFilterControls")
+        );
+    auto* layout = new QHBoxLayout(controls);
+    layout->setContentsMargins(DayFilterSpacer, 0, 0, 0);
+    layout->setSpacing(6);
+
+    for (const DayFilterButtonDefinition& definition
+         : dayFilterButtonDefinitions())
+    {
+        auto* button = new NavigationPillButton(controls);
+        button->setObjectName(definition.objectName);
+        button->setText(
+            definition.key == QStringLiteral("Monday")
+                ? tr("Mon.")
+                : definition.key == QStringLiteral("Tuesday")
+                    ? tr("Tues.")
+                    : definition.key == QStringLiteral("Wednesday")
+                        ? tr("Wed.")
+                        : definition.key == QStringLiteral("Thursday")
+                            ? tr("Thurs.")
+                            : definition.key == QStringLiteral("Friday")
+                                ? tr("Fri.")
+                                : tr("Wkend")
+            );
+        button->setCheckable(true);
+        button->setChecked(
+            dayFilterEnabled(definition.key)
+            );
+        button->setProperty(
+            "classesDayFilter",
+            definition.key
+            );
+        button->setAccessibleName(button->text());
+        layout->addWidget(button);
+
+        m_dayFilterButtons.insert(
+            definition.key,
+            button
+            );
+
+        connect(
+            button,
+            &QPushButton::toggled,
+            this,
+            [this, key = definition.key](bool enabled)
+            {
+                setDayFilterEnabled(key, enabled);
+            }
+            );
+    }
+
+    auto* settingsButton = new QPushButton(controls);
+    settingsButton->setObjectName(
+        QStringLiteral("classesNavigationSettingsButton")
+        );
+    settingsButton->setProperty(
+        "role",
+        QString::fromUtf8(UiRoles::IconButton)
+        );
+    settingsButton->setFixedSize(42, 36);
+    settingsButton->setAccessibleName(
+        tr("Classes Settings")
+        );
+    settingsButton->setToolTip(
+        tr("Classes Settings")
+        );
+    layout->addWidget(settingsButton);
+
+    connect(
+        settingsButton,
+        &QPushButton::clicked,
+        this,
+        &ClassesPage::openNavigationSettings
+        );
+
+    gradeTabs->setCornerWidget(
+        controls,
+        Qt::TopRightCorner
+        );
+}
+
+void ClassesPage::setDayFilterEnabled(
+    const QString& key,
+    bool enabled
+    )
+{
+    if (dayFilterEnabled(key) == enabled)
+    {
+        return;
+    }
+
+    if (key == QStringLiteral("Wkend"))
+    {
+        if (enabled)
+        {
+            m_dayFilter.selectedDays.insert(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.insert(QStringLiteral("Sunday"));
+        }
+        else
+        {
+            m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+        }
+    }
+    else if (enabled)
+    {
+        m_dayFilter.selectedDays.insert(key);
+    }
+    else
+    {
+        m_dayFilter.selectedDays.remove(key);
+    }
+
+    rebuildClassTabs(m_currentClassId);
+    restoreSelections();
+}
+
+bool ClassesPage::dayFilterEnabled(
+    const QString& key
+    ) const
+{
+    if (key == QStringLiteral("Wkend"))
+    {
+        return m_dayFilter.selectedDays.contains(QStringLiteral("Saturday"))
+            || m_dayFilter.selectedDays.contains(QStringLiteral("Sunday"));
+    }
+
+    return m_dayFilter.selectedDays.contains(key);
+}
+
+void ClassesPage::setNavigationSelectionVisible(
+    bool visible
+    )
+{
+    if (!m_classTabs)
+    {
+        return;
+    }
+
+    const QList<UniformWidthTabBar*> tabBars =
+        m_classTabs->findChildren<UniformWidthTabBar*>();
+
+    for (UniformWidthTabBar* tabBar : tabBars)
+    {
+        if (tabBar)
+        {
+            tabBar->setCurrentSelectionVisible(visible);
+        }
+    }
+}
+
+void ClassesPage::openNavigationSettings()
+{
+    ClassesNavigationSettingsDialog dialog(
+        {m_dayFilter.visibilityScope},
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const ClassesNavigationSettingsValues values =
+        dialog.values();
+    auto* dataService =
+        m_services
+            ? m_services->dataService()
+            : nullptr;
+    ClassNavigationPreferences::save(
+        dataService,
+        values.visibilityScope
+        );
+    setVisibilityScope(values.visibilityScope);
+}
+
+void ClassesPage::setScheduleSource(
+    ClassTabNavigation::ScheduleSource source
+    )
+{
+    if (m_dayFilter.scheduleSource == source)
+    {
+        return;
+    }
+
+    m_dayFilter.scheduleSource = source;
+
+    if (m_classTabs && !m_rebuildingTabs)
+    {
+        rebuildClassTabs(m_currentClassId);
+        restoreSelections();
+    }
+}
+
+void ClassesPage::setVisibilityScope(
+    ClassTabNavigation::VisibilityScope visibilityScope
+    )
+{
+    if (m_dayFilter.visibilityScope == visibilityScope)
+    {
+        return;
+    }
+
+    m_dayFilter.visibilityScope = visibilityScope;
+
+    if (m_classTabs && !m_rebuildingTabs)
+    {
+        rebuildClassTabs(m_currentClassId);
+        restoreSelections();
+    }
 }
 
 bool ClassesPage::activateClass(
@@ -638,6 +938,7 @@ void ClassesPage::syncTabsToClass(
                 && classPage->property("class_id").toInt() == classId
                 )
             {
+                setNavigationSelectionVisible(true);
                 m_classTabs->setCurrentIndex(gradeIndex);
                 classTabs->setCurrentIndex(classIndex);
                 return;
@@ -645,8 +946,15 @@ void ClassesPage::syncTabsToClass(
         }
     }
 
+    if (classId > 0)
+    {
+        setNavigationSelectionVisible(false);
+        return;
+    }
+
     if (m_classTabs->count() > 0)
     {
+        setNavigationSelectionVisible(true);
         m_classTabs->setCurrentIndex(0);
 
         if (auto* classTabs =
@@ -663,7 +971,19 @@ int ClassesPage::currentClassIdFromTabs(
     QTabWidget* tabs
     ) const
 {
-    if (!tabs || tabs->currentIndex() < 0)
+    if (
+        !tabs
+        || tabs->currentIndex() < 0
+        )
+    {
+        return -1;
+    }
+
+    if (const auto* tabBar =
+            qobject_cast<const UniformWidthTabBar*>(
+                tabs->tabBar()
+                );
+        tabBar && !tabBar->currentSelectionVisible())
     {
         return -1;
     }

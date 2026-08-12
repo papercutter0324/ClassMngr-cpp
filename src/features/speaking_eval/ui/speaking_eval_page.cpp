@@ -67,6 +67,15 @@ void SpeakingEvalPage::loadEvaluations(
     m_evaluationClasses =
         dataService->getClasses();
 
+    setScheduleSource(
+        scheduleSourceForMode(
+            ScheduleDisplayModePreferences::load(dataService)
+            )
+        );
+    setVisibilityScope(
+        ClassNavigationPreferences::load(dataService)
+        );
+
     int classId =
         selectedClassId > 0
             ? selectedClassId
@@ -119,6 +128,15 @@ void SpeakingEvalPage::loadEvaluations(
 
     setEvaluationEditorAvailable(
         classroom.id > 0
+        );
+}
+
+void SpeakingEvalPage::setScheduleDisplayMode(
+    ScheduleDisplayMode mode
+    )
+{
+    setScheduleSource(
+        scheduleSourceForMode(mode)
         );
 }
 
@@ -248,7 +266,11 @@ void SpeakingEvalPage::rebuildClassTabs(
     }
 
     const ClassTabNavigation::Model navigation =
-        ClassTabNavigation::build(entries);
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::Adaptive,
+            m_dayFilter
+            );
 
     const auto createTabPage =
         [](QWidget* parent, int classId)
@@ -280,6 +302,7 @@ void SpeakingEvalPage::rebuildClassTabs(
                         return;
                     }
 
+                    setNavigationSelectionVisible(true);
                     activateEvaluation(
                         currentClassIdFromTabs(tabs),
                         currentEvaluationNameFromTabs()
@@ -301,6 +324,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             QSizePolicy::Maximum
             );
         tabs->setObjectName("speakingEvalClassTabs");
+        createDayFilterControls(tabs);
 
         for (const ClassTabNavigation::ClassTab& tab
              : navigation.flatClasses)
@@ -333,6 +357,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             QSizePolicy::Maximum
             );
         gradeTabs->setObjectName("speakingEvalGradeTabs");
+        createDayFilterControls(gradeTabs);
 
         for (const ClassTabNavigation::GradeGroup& group
              : navigation.gradeGroups)
@@ -389,11 +414,12 @@ void SpeakingEvalPage::rebuildClassTabs(
                     m_rebuildingClassTabs
                     || m_restoringClassTabs
                     || m_syncingEvaluationTabs
-                    )
+                )
                 {
                     return;
                 }
 
+                setNavigationSelectionVisible(true);
                 activateEvaluation(
                     currentClassIdFromTabs(gradeTabs),
                     currentEvaluationNameFromTabs()
@@ -407,7 +433,7 @@ void SpeakingEvalPage::rebuildClassTabs(
     }
 
     m_classTabsContainer->setVisible(
-        m_classTabs && m_classTabs->count() > 0
+        m_classTabs && !m_evaluationClasses.isEmpty()
         );
 
     syncEvaluationTabFont();
@@ -418,6 +444,207 @@ void SpeakingEvalPage::rebuildClassTabs(
         );
 
     m_rebuildingClassTabs = false;
+}
+
+void SpeakingEvalPage::createDayFilterControls(
+    UniformWidthTabWidget* tabs
+    )
+{
+    if (!tabs)
+    {
+        return;
+    }
+
+    auto* controls = new QWidget(tabs);
+    controls->setObjectName(
+        QStringLiteral("speakingEvalDayFilterControls")
+        );
+    auto* layout = new QHBoxLayout(controls);
+    layout->setContentsMargins(DayFilterSpacer, 0, 0, 0);
+    layout->setSpacing(6);
+
+    for (const DayFilterButtonDefinition& definition
+         : dayFilterButtonDefinitions())
+    {
+        auto* button = new NavigationPillButton(controls);
+        button->setObjectName(definition.objectName);
+        button->setText(
+            definition.key == QStringLiteral("Monday")
+                ? tr("Mon.")
+                : definition.key == QStringLiteral("Tuesday")
+                    ? tr("Tues.")
+                    : definition.key == QStringLiteral("Wednesday")
+                        ? tr("Wed.")
+                        : definition.key == QStringLiteral("Thursday")
+                            ? tr("Thurs.")
+                            : definition.key == QStringLiteral("Friday")
+                                ? tr("Fri.")
+                                : tr("Wkend")
+            );
+        button->setCheckable(true);
+        button->setChecked(dayFilterEnabled(definition.key));
+        button->setProperty("speakingEvalDayFilter", definition.key);
+        button->setAccessibleName(button->text());
+        layout->addWidget(button);
+
+        connect(
+            button,
+            &QPushButton::toggled,
+            this,
+            [this, key = definition.key](bool enabled)
+            {
+                setDayFilterEnabled(key, enabled);
+            }
+            );
+    }
+
+    auto* settingsButton = new QPushButton(controls);
+    settingsButton->setObjectName(
+        QStringLiteral("speakingEvalNavigationSettingsButton")
+        );
+    settingsButton->setProperty(
+        "role",
+        QString::fromUtf8(UiRoles::IconButton)
+        );
+    settingsButton->setFixedSize(42, 36);
+    settingsButton->setAccessibleName(tr("Speaking Evaluation Settings"));
+    settingsButton->setToolTip(tr("Speaking Evaluation Settings"));
+    layout->addWidget(settingsButton);
+
+    connect(
+        settingsButton,
+        &QPushButton::clicked,
+        this,
+        &SpeakingEvalPage::openNavigationSettings
+        );
+
+    tabs->setCornerWidget(controls, Qt::TopRightCorner);
+}
+
+void SpeakingEvalPage::setDayFilterEnabled(
+    const QString& key,
+    bool enabled
+    )
+{
+    if (dayFilterEnabled(key) == enabled)
+    {
+        return;
+    }
+
+    if (key == QStringLiteral("Wkend"))
+    {
+        if (enabled)
+        {
+            m_dayFilter.selectedDays.insert(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.insert(QStringLiteral("Sunday"));
+        }
+        else
+        {
+            m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+        }
+    }
+    else if (enabled)
+    {
+        m_dayFilter.selectedDays.insert(key);
+    }
+    else
+    {
+        m_dayFilter.selectedDays.remove(key);
+    }
+
+    rebuildClassTabs(m_classroom.id);
+    restoreEvaluationTabSelection();
+}
+
+bool SpeakingEvalPage::dayFilterEnabled(
+    const QString& key
+    ) const
+{
+    if (key == QStringLiteral("Wkend"))
+    {
+        return m_dayFilter.selectedDays.contains(QStringLiteral("Saturday"))
+            || m_dayFilter.selectedDays.contains(QStringLiteral("Sunday"));
+    }
+
+    return m_dayFilter.selectedDays.contains(key);
+}
+
+void SpeakingEvalPage::openNavigationSettings()
+{
+    ClassesNavigationSettingsDialog dialog(
+        {m_dayFilter.visibilityScope},
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const ClassesNavigationSettingsValues values = dialog.values();
+    ClassNavigationPreferences::save(
+        m_services ? m_services->dataService() : nullptr,
+        values.visibilityScope
+        );
+    setVisibilityScope(values.visibilityScope);
+}
+
+void SpeakingEvalPage::setScheduleSource(
+    ClassTabNavigation::ScheduleSource source
+    )
+{
+    if (m_dayFilter.scheduleSource == source)
+    {
+        return;
+    }
+
+    m_dayFilter.scheduleSource = source;
+
+    if (m_classTabs && !m_rebuildingClassTabs)
+    {
+        rebuildClassTabs(m_classroom.id);
+        restoreEvaluationTabSelection();
+    }
+}
+
+void SpeakingEvalPage::setVisibilityScope(
+    ClassTabNavigation::VisibilityScope visibilityScope
+    )
+{
+    if (m_dayFilter.visibilityScope == visibilityScope)
+    {
+        return;
+    }
+
+    m_dayFilter.visibilityScope = visibilityScope;
+
+    if (m_classTabs && !m_rebuildingClassTabs)
+    {
+        rebuildClassTabs(m_classroom.id);
+        restoreEvaluationTabSelection();
+    }
+}
+
+void SpeakingEvalPage::setNavigationSelectionVisible(
+    bool visible
+    )
+{
+    if (!m_classTabs)
+    {
+        return;
+    }
+
+    const QList<UniformWidthTabBar*> tabBars =
+        m_classTabs->findChildren<UniformWidthTabBar*>();
+
+    for (UniformWidthTabBar* tabBar : tabBars)
+    {
+        if (tabBar)
+        {
+            tabBar->setCurrentSelectionVisible(visible);
+        }
+    }
 }
 
 void SpeakingEvalPage::syncEvaluationTabFont()
@@ -542,6 +769,7 @@ void SpeakingEvalPage::syncTabWidgetToClass(
             && page->property("class_id").toInt() == classId
             )
         {
+            setNavigationSelectionVisible(true);
             tabs->setCurrentIndex(index);
             return;
         }
@@ -566,17 +794,25 @@ void SpeakingEvalPage::syncTabWidgetToClass(
             if (
                 childPage
                 && childPage->property("class_id").toInt() == classId
-                )
-            {
-                tabs->setCurrentIndex(index);
-                nestedTabs->setCurrentIndex(childIndex);
-                return;
+            )
+        {
+            setNavigationSelectionVisible(true);
+            tabs->setCurrentIndex(index);
+            nestedTabs->setCurrentIndex(childIndex);
+            return;
             }
         }
     }
 
+    if (classId > 0)
+    {
+        setNavigationSelectionVisible(false);
+        return;
+    }
+
     if (tabs->count() > 0)
     {
+        setNavigationSelectionVisible(true);
         tabs->setCurrentIndex(0);
 
         auto* nestedTabs =
@@ -598,6 +834,12 @@ int SpeakingEvalPage::currentClassIdFromTabs(
     ) const
 {
     if (!tabs || tabs->currentIndex() < 0)
+    {
+        return -1;
+    }
+
+    if (const auto* tabBar = qobject_cast<const UniformWidthTabBar*>(tabs->tabBar());
+        tabBar && !tabBar->currentSelectionVisible())
     {
         return -1;
     }

@@ -6,6 +6,7 @@
 #include "core/fontmanager.h"
 #include "core/theme_service.h"
 #include "data/data_service.h"
+#include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/schedule_settings_dialog.h"
@@ -137,12 +138,8 @@ const QString ShowKoreanTeacherEnglishNames =
     QStringLiteral("schedule_show_korean_teacher_english_names");
 const QString ShowWeekends =
     QStringLiteral("schedule_show_weekends");
-const QString ShowIntensive =
-    QStringLiteral("schedule_show_intensive");
 const QString ShowAllHoursV2 =
     QStringLiteral("schedule_show_all_hours_v2");
-const QString DisplayMode =
-    QStringLiteral("schedule_display_mode");
 const QString TestingAffectsM1 =
     QStringLiteral("schedule_testing_affects_m1");
 }
@@ -211,53 +208,6 @@ QString escaped(
     )
 {
     return text.toHtmlEscaped();
-}
-
-QString displayModeSetting(
-    ScheduleDisplayMode mode
-    )
-{
-    switch (mode)
-    {
-    case ScheduleDisplayMode::Intensive:
-        return QStringLiteral("intensive");
-
-    case ScheduleDisplayMode::Testing:
-        return QStringLiteral("testing");
-
-    case ScheduleDisplayMode::Regular:
-        return QStringLiteral("regular");
-    }
-
-    return QStringLiteral("regular");
-}
-
-ScheduleDisplayMode displayModeFromSetting(
-    const QVariant& value,
-    bool legacyIntensive
-    )
-{
-    const QString normalized =
-        value.toString().trimmed().toLower();
-
-    if (normalized == QStringLiteral("intensive"))
-    {
-        return ScheduleDisplayMode::Intensive;
-    }
-
-    if (normalized == QStringLiteral("testing"))
-    {
-        return ScheduleDisplayMode::Testing;
-    }
-
-    if (normalized == QStringLiteral("regular"))
-    {
-        return ScheduleDisplayMode::Regular;
-    }
-
-    return legacyIntensive
-        ? ScheduleDisplayMode::Intensive
-        : ScheduleDisplayMode::Regular;
 }
 
 QString classCellStyle(
@@ -473,16 +423,14 @@ void ScheduleWidget::setDisplayMode(
 
     m_displayMode = mode;
 
-    if (auto* dataService = openDataService(m_services))
-    {
-        dataService->saveSetting(
-            SettingsKeys::DisplayMode,
-            displayModeSetting(m_displayMode)
-            );
-    }
+    ScheduleDisplayModePreferences::save(
+        openDataService(m_services),
+        m_displayMode
+        );
 
     updateButtons();
     loadSchedule();
+    emit displayModeChanged(m_displayMode);
 }
 
 void ScheduleWidget::openSettings()
@@ -1151,32 +1099,10 @@ void ScheduleWidget::loadSettings()
             false
             );
 
-    const QVariant storedMode =
-        dataService->loadSetting(
-            SettingsKeys::DisplayMode,
-            QVariant()
-            );
-    const bool legacyIntensive =
-        settingToBool(
-            dataService->loadSetting(
-                SettingsKeys::ShowIntensive,
-                QStringLiteral("false")
-                ),
-            false
-            );
     m_displayMode =
-        displayModeFromSetting(
-            storedMode,
-            legacyIntensive
+        ScheduleDisplayModePreferences::load(
+            dataService
             );
-
-    if (!storedMode.isValid())
-    {
-        dataService->saveSetting(
-            SettingsKeys::DisplayMode,
-            displayModeSetting(m_displayMode)
-            );
-    }
 }
 
 void ScheduleWidget::loadSchedule()

@@ -1,14 +1,18 @@
 #pragma once
 
 #include "domain/models/classroom.h"
+#include "features/classes/models/class_tab_navigation_model.h"
+#include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/pages/basepage.h"
 
+#include <QHash>
 #include <QList>
 
 class ApplicationServices;
 class ClassDetailsPage;
 class ClassNotesPage;
 class QLabel;
+class NavigationPillButton;
 class QStackedWidget;
 class QTabWidget;
 class QVBoxLayout;
@@ -43,6 +47,10 @@ public:
     int currentClassId() const;
     ClassesSection currentSection() const;
 
+    void setScheduleDisplayMode(
+        ScheduleDisplayMode mode
+        );
+
     void saveData() override;
     bool saveChanges() override;
     bool hasUnsavedChanges() const override;
@@ -60,6 +68,20 @@ signals:
 private:
     void buildUi();
     void rebuildClassTabs(int selectedClassId);
+    void createDayFilterControls(UniformWidthTabWidget* gradeTabs);
+    void setDayFilterEnabled(
+        const QString& key,
+        bool enabled
+        );
+    bool dayFilterEnabled(const QString& key) const;
+    void setNavigationSelectionVisible(bool visible);
+    void openNavigationSettings();
+    void setScheduleSource(
+        ClassTabNavigation::ScheduleSource source
+        );
+    void setVisibilityScope(
+        ClassTabNavigation::VisibilityScope visibilityScope
+        );
     bool activateClass(int classId);
     bool activateSection(ClassesSection section);
     bool commitActiveEditor();
@@ -82,6 +104,11 @@ private:
     ClassesSection m_currentSection = ClassesSection::Details;
     bool m_rebuildingTabs = false;
     bool m_restoringTabs = false;
+    ClassTabNavigation::DayFilter m_dayFilter{
+        {},
+        ClassTabNavigation::ScheduleSource::Regular,
+        ClassTabNavigation::VisibilityScope::ActiveSchedule
+    };
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
@@ -89,6 +116,7 @@ private:
     QWidget* m_navigationContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
+    QHash<QString, NavigationPillButton*> m_dayFilterButtons;
     UniformWidthTabWidget* m_classTabs = nullptr;
     UniformWidthTabWidget* m_sectionTabs = nullptr;
     QStackedWidget* m_editorStack = nullptr;

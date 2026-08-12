@@ -1,6 +1,8 @@
 #pragma once
 
 #include "domain/models/classroom.h"
+#include "features/classes/models/class_tab_navigation_model.h"
+#include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QList>
@@ -10,6 +12,7 @@ class QLabel;
 class QTabWidget;
 class QVBoxLayout;
 class RosterEditorWidget;
+class UniformWidthTabWidget;
 class QWidget;
 
 class RostersPage : public BasePage
@@ -27,6 +30,9 @@ public:
         );
     void loadRosters(
         int selectedClassId = -1
+        );
+    void setScheduleDisplayMode(
+        ScheduleDisplayMode mode
         );
 
     void saveData() override;
@@ -50,6 +56,22 @@ private:
     void rebuildRosterTabs(
         int selectedClassId
         );
+    void createDayFilterControls(
+        UniformWidthTabWidget* tabs
+        );
+    void setDayFilterEnabled(
+        const QString& key,
+        bool enabled
+        );
+    bool dayFilterEnabled(const QString& key) const;
+    void openNavigationSettings();
+    void setScheduleSource(
+        ClassTabNavigation::ScheduleSource source
+        );
+    void setVisibilityScope(
+        ClassTabNavigation::VisibilityScope visibilityScope
+        );
+    void setNavigationSelectionVisible(bool visible);
     bool activateRosterClass(
         int classId
         );
@@ -75,6 +97,11 @@ private:
     Classroom m_currentClassroom;
     bool m_rebuildingRosterTabs = false;
     bool m_restoringRosterTabs = false;
+    ClassTabNavigation::DayFilter m_dayFilter{
+        {},
+        ClassTabNavigation::ScheduleSource::Regular,
+        ClassTabNavigation::VisibilityScope::ActiveSchedule
+    };
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;

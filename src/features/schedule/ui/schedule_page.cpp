@@ -63,6 +63,13 @@ void SchedulePage::retranslateUi()
     }
 }
 
+ScheduleDisplayMode SchedulePage::displayMode() const
+{
+    return m_scheduleWidget
+        ? m_scheduleWidget->displayState().displayMode
+        : ScheduleDisplayMode::Regular;
+}
+
 PageOutputCapabilities SchedulePage::outputCapabilities() const
 {
     const bool enabled =
@@ -193,6 +200,13 @@ void SchedulePage::buildUi()
         Qt::AlignTop
         );
     scrollContentLayout->addStretch();
+
+    connect(
+        m_scheduleWidget,
+        &ScheduleWidget::displayModeChanged,
+        this,
+        &SchedulePage::displayModeChanged
+        );
 
     connect(
         m_scheduleWidget,

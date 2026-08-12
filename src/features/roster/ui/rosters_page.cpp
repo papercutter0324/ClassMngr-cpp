@@ -6,15 +6,22 @@
 #include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "features/classes/class_navigation_preferences.h"
 #include "features/classes/models/class_tab_navigation_model.h"
+#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/roster/ui/roster_editor_widget.h"
+#include "features/schedule/schedule_display_mode_preferences.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
+#include <QDialog>
 #include <QFont>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QPushButton>
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -24,6 +31,37 @@
 
 namespace
 {
+constexpr int DayFilterSpacer = 16;
+
+struct DayFilterButtonDefinition
+{
+    QString key;
+    QString objectName;
+};
+
+const QList<DayFilterButtonDefinition>& dayFilterButtonDefinitions()
+{
+    static const QList<DayFilterButtonDefinition> definitions{
+        {QStringLiteral("Monday"), QStringLiteral("rosterMondayFilterButton")},
+        {QStringLiteral("Tuesday"), QStringLiteral("rosterTuesdayFilterButton")},
+        {QStringLiteral("Wednesday"), QStringLiteral("rosterWednesdayFilterButton")},
+        {QStringLiteral("Thursday"), QStringLiteral("rosterThursdayFilterButton")},
+        {QStringLiteral("Friday"), QStringLiteral("rosterFridayFilterButton")},
+        {QStringLiteral("Wkend"), QStringLiteral("rosterWeekendFilterButton")}
+    };
+
+    return definitions;
+}
+
+ClassTabNavigation::ScheduleSource scheduleSourceForMode(
+    ScheduleDisplayMode mode
+    )
+{
+    return mode == ScheduleDisplayMode::Intensive
+        ? ClassTabNavigation::ScheduleSource::Intensive
+        : ClassTabNavigation::ScheduleSource::Regular;
+}
+
 QString sidebarClassDisplayName(
     DataService* dataService,
     int classId
@@ -99,6 +137,15 @@ void RostersPage::loadRosters(
     m_rosterClasses =
         dataService->getClasses();
 
+    setScheduleSource(
+        scheduleSourceForMode(
+            ScheduleDisplayModePreferences::load(dataService)
+            )
+        );
+    setVisibilityScope(
+        ClassNavigationPreferences::load(dataService)
+        );
+
     int classId =
         selectedClassId > 0
             ? selectedClassId
@@ -123,6 +170,15 @@ void RostersPage::loadRosters(
         m_currentClassroom.id > 0
         );
     updateHeaderText();
+}
+
+void RostersPage::setScheduleDisplayMode(
+    ScheduleDisplayMode mode
+    )
+{
+    setScheduleSource(
+        scheduleSourceForMode(mode)
+        );
 }
 
 void RostersPage::saveData()
@@ -402,7 +458,9 @@ void RostersPage::rebuildRosterTabs(
 
     const ClassTabNavigation::Model navigation =
         ClassTabNavigation::build(
-            entries
+            entries,
+            ClassTabNavigation::GroupingPolicy::Adaptive,
+            m_dayFilter
             );
 
     const auto createTabPage =
@@ -431,6 +489,7 @@ void RostersPage::rebuildRosterTabs(
                         return;
                     }
 
+                    setNavigationSelectionVisible(true);
                     activateRosterClass(
                         currentClassIdFromTabs(tabs)
                         );
@@ -451,6 +510,7 @@ void RostersPage::rebuildRosterTabs(
             QSizePolicy::Maximum
             );
         tabs->setObjectName("rosterClassTabs");
+        createDayFilterControls(tabs);
 
         for (const ClassTabNavigation::ClassTab& tab
              : navigation.flatClasses)
@@ -481,6 +541,7 @@ void RostersPage::rebuildRosterTabs(
             QSizePolicy::Maximum
             );
         gradeTabs->setObjectName("rosterGradeTabs");
+        createDayFilterControls(gradeTabs);
 
         for (const ClassTabNavigation::GradeGroup& group
              : navigation.gradeGroups)
@@ -536,6 +597,7 @@ void RostersPage::rebuildRosterTabs(
                     return;
                 }
 
+                setNavigationSelectionVisible(true);
                 activateRosterClass(
                     currentClassIdFromTabs(gradeTabs)
                     );
@@ -547,13 +609,214 @@ void RostersPage::rebuildRosterTabs(
     }
 
     m_tabsContainer->setVisible(
-        m_rosterTabs && m_rosterTabs->count() > 0
+        m_rosterTabs && !m_rosterClasses.isEmpty()
         );
     syncTabWidgetToClass(
         m_rosterTabs,
         selectedClassId
         );
     m_rebuildingRosterTabs = false;
+}
+
+void RostersPage::createDayFilterControls(
+    UniformWidthTabWidget* tabs
+    )
+{
+    if (!tabs)
+    {
+        return;
+    }
+
+    auto* controls = new QWidget(tabs);
+    controls->setObjectName(
+        QStringLiteral("rosterDayFilterControls")
+        );
+    auto* layout = new QHBoxLayout(controls);
+    layout->setContentsMargins(DayFilterSpacer, 0, 0, 0);
+    layout->setSpacing(6);
+
+    for (const DayFilterButtonDefinition& definition
+         : dayFilterButtonDefinitions())
+    {
+        auto* button = new NavigationPillButton(controls);
+        button->setObjectName(definition.objectName);
+        button->setText(
+            definition.key == QStringLiteral("Monday")
+                ? tr("Mon.")
+                : definition.key == QStringLiteral("Tuesday")
+                    ? tr("Tues.")
+                    : definition.key == QStringLiteral("Wednesday")
+                        ? tr("Wed.")
+                        : definition.key == QStringLiteral("Thursday")
+                            ? tr("Thurs.")
+                            : definition.key == QStringLiteral("Friday")
+                                ? tr("Fri.")
+                                : tr("Wkend")
+            );
+        button->setCheckable(true);
+        button->setChecked(dayFilterEnabled(definition.key));
+        button->setProperty("rosterDayFilter", definition.key);
+        button->setAccessibleName(button->text());
+        layout->addWidget(button);
+
+        connect(
+            button,
+            &QPushButton::toggled,
+            this,
+            [this, key = definition.key](bool enabled)
+            {
+                setDayFilterEnabled(key, enabled);
+            }
+            );
+    }
+
+    auto* settingsButton = new QPushButton(controls);
+    settingsButton->setObjectName(
+        QStringLiteral("rosterNavigationSettingsButton")
+        );
+    settingsButton->setProperty(
+        "role",
+        QString::fromUtf8(UiRoles::IconButton)
+        );
+    settingsButton->setFixedSize(42, 36);
+    settingsButton->setAccessibleName(tr("Rosters Settings"));
+    settingsButton->setToolTip(tr("Rosters Settings"));
+    layout->addWidget(settingsButton);
+
+    connect(
+        settingsButton,
+        &QPushButton::clicked,
+        this,
+        &RostersPage::openNavigationSettings
+        );
+
+    tabs->setCornerWidget(controls, Qt::TopRightCorner);
+}
+
+void RostersPage::setDayFilterEnabled(
+    const QString& key,
+    bool enabled
+    )
+{
+    if (dayFilterEnabled(key) == enabled)
+    {
+        return;
+    }
+
+    if (key == QStringLiteral("Wkend"))
+    {
+        if (enabled)
+        {
+            m_dayFilter.selectedDays.insert(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.insert(QStringLiteral("Sunday"));
+        }
+        else
+        {
+            m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+            m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+        }
+    }
+    else if (enabled)
+    {
+        m_dayFilter.selectedDays.insert(key);
+    }
+    else
+    {
+        m_dayFilter.selectedDays.remove(key);
+    }
+
+    rebuildRosterTabs(m_currentClassroom.id);
+    restoreRosterTabSelection();
+}
+
+bool RostersPage::dayFilterEnabled(
+    const QString& key
+    ) const
+{
+    if (key == QStringLiteral("Wkend"))
+    {
+        return m_dayFilter.selectedDays.contains(QStringLiteral("Saturday"))
+            || m_dayFilter.selectedDays.contains(QStringLiteral("Sunday"));
+    }
+
+    return m_dayFilter.selectedDays.contains(key);
+}
+
+void RostersPage::openNavigationSettings()
+{
+    ClassesNavigationSettingsDialog dialog(
+        {m_dayFilter.visibilityScope},
+        this
+        );
+
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    const ClassesNavigationSettingsValues values = dialog.values();
+    ClassNavigationPreferences::save(
+        m_services ? m_services->dataService() : nullptr,
+        values.visibilityScope
+        );
+    setVisibilityScope(values.visibilityScope);
+}
+
+void RostersPage::setScheduleSource(
+    ClassTabNavigation::ScheduleSource source
+    )
+{
+    if (m_dayFilter.scheduleSource == source)
+    {
+        return;
+    }
+
+    m_dayFilter.scheduleSource = source;
+
+    if (m_rosterTabs && !m_rebuildingRosterTabs)
+    {
+        rebuildRosterTabs(m_currentClassroom.id);
+        restoreRosterTabSelection();
+    }
+}
+
+void RostersPage::setVisibilityScope(
+    ClassTabNavigation::VisibilityScope visibilityScope
+    )
+{
+    if (m_dayFilter.visibilityScope == visibilityScope)
+    {
+        return;
+    }
+
+    m_dayFilter.visibilityScope = visibilityScope;
+
+    if (m_rosterTabs && !m_rebuildingRosterTabs)
+    {
+        rebuildRosterTabs(m_currentClassroom.id);
+        restoreRosterTabSelection();
+    }
+}
+
+void RostersPage::setNavigationSelectionVisible(
+    bool visible
+    )
+{
+    if (!m_rosterTabs)
+    {
+        return;
+    }
+
+    const QList<UniformWidthTabBar*> tabBars =
+        m_rosterTabs->findChildren<UniformWidthTabBar*>();
+
+    for (UniformWidthTabBar* tabBar : tabBars)
+    {
+        if (tabBar)
+        {
+            tabBar->setCurrentSelectionVisible(visible);
+        }
+    }
 }
 
 bool RostersPage::activateRosterClass(
@@ -628,6 +891,7 @@ void RostersPage::syncTabWidgetToClass(
 
         if (page && page->property("class_id").toInt() == classId)
         {
+            setNavigationSelectionVisible(true);
             tabs->setCurrentIndex(index);
             return;
         }
@@ -652,17 +916,25 @@ void RostersPage::syncTabWidgetToClass(
             if (
                 childPage
                 && childPage->property("class_id").toInt() == classId
-                )
-            {
-                tabs->setCurrentIndex(index);
-                nestedTabs->setCurrentIndex(childIndex);
-                return;
+            )
+        {
+            setNavigationSelectionVisible(true);
+            tabs->setCurrentIndex(index);
+            nestedTabs->setCurrentIndex(childIndex);
+            return;
             }
         }
     }
 
+    if (classId > 0)
+    {
+        setNavigationSelectionVisible(false);
+        return;
+    }
+
     if (tabs->count() > 0)
     {
+        setNavigationSelectionVisible(true);
         tabs->setCurrentIndex(0);
 
         if (auto* nestedTabs =
@@ -682,6 +954,12 @@ int RostersPage::currentClassIdFromTabs(
     ) const
 {
     if (!tabs || tabs->currentIndex() < 0)
+    {
+        return -1;
+    }
+
+    if (const auto* tabBar = qobject_cast<const UniformWidthTabBar*>(tabs->tabBar());
+        tabBar && !tabBar->currentSelectionVisible())
     {
         return -1;
     }

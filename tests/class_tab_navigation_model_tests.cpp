@@ -34,6 +34,28 @@ ClassTabNavigation::ClassEntry classEntry(
     entry.teacherEn = teacherEn;
     return entry;
 }
+
+QList<int> classIds(
+    const ClassTabNavigation::Model& model
+    )
+{
+    QList<int> result;
+
+    for (const ClassTabNavigation::ClassTab& tab : model.flatClasses)
+    {
+        result.append(tab.classId);
+    }
+
+    for (const ClassTabNavigation::GradeGroup& group : model.gradeGroups)
+    {
+        for (const ClassTabNavigation::ClassTab& tab : group.classes)
+        {
+            result.append(tab.classId);
+        }
+    }
+
+    return result;
+}
 }
 
 class ClassTabNavigationTests : public QObject
@@ -47,6 +69,11 @@ private slots:
     void gradeModeLabelsUseLevelAndSchedule();
     void classTabsSortByLevelThenDay();
     void duplicateLabelsAreDisambiguated();
+    void dayFilterLeavesAllClassesVisibleWhenEmpty();
+    void dayFilterMatchesAnySelectedRegularDay();
+    void weekendDayFilterMatchesSaturdayAndSunday();
+    void dayFilterUsesSelectedScheduleSource();
+    void activeScheduleScopeExcludesClassesWithoutSelectedSchedule();
     void sidebarDefinesClassListAndClassesPage();
 };
 
@@ -333,6 +360,209 @@ void ClassTabNavigationTests::duplicateLabelsAreDisambiguated()
         model.flatClasses.at(2).label,
         QStringLiteral("E4 Perseus • M 4:00 • Bob #3")
         );
+}
+
+void ClassTabNavigationTests::dayFilterLeavesAllClassesVisibleWhenEmpty()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo")
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            {}
+            );
+
+    QCOMPARE(classIds(model), QList<int>({1, 2}));
+}
+
+void ClassTabNavigationTests::dayFilterMatchesAnySelectedRegularDay()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {
+                classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM")),
+                classTime(QStringLiteral("Friday"), QStringLiteral("4:00 PM"))
+            }
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Theseus"),
+            {classTime(QStringLiteral("Wednesday"), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            3,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo")
+            )
+    };
+    ClassTabNavigation::DayFilter filter;
+    filter.selectedDays = {
+        QStringLiteral("Friday"),
+        QStringLiteral("Wednesday")
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+
+    QCOMPARE(classIds(model), QList<int>({2, 1}));
+}
+
+void ClassTabNavigationTests::weekendDayFilterMatchesSaturdayAndSunday()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Saturday"), QStringLiteral("10:00 AM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo"),
+            {classTime(QStringLiteral("Sunday"), QStringLiteral("11:00 AM"))}
+            ),
+        classEntry(
+            3,
+            QStringLiteral("M1"),
+            QStringLiteral("Solis"),
+            {classTime(QStringLiteral("Friday"), QStringLiteral("4:00 PM"))}
+            )
+    };
+    ClassTabNavigation::DayFilter filter;
+    filter.selectedDays = {QStringLiteral("Wkend")};
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            filter
+            );
+
+    QCOMPARE(classIds(model), QList<int>({1, 2}));
+}
+
+void ClassTabNavigationTests::dayFilterUsesSelectedScheduleSource()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))},
+            {classTime(QStringLiteral("Friday"), QStringLiteral("10:00 AM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo"),
+            {classTime(QStringLiteral("Friday"), QStringLiteral("4:00 PM"))},
+            {classTime(QStringLiteral("Monday"), QStringLiteral("10:00 AM"))}
+            )
+    };
+    ClassTabNavigation::DayFilter regularFilter;
+    regularFilter.selectedDays = {QStringLiteral("Friday")};
+
+    const ClassTabNavigation::Model regularModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            regularFilter
+            );
+    QCOMPARE(classIds(regularModel), QList<int>({2}));
+
+    ClassTabNavigation::DayFilter intensiveFilter = regularFilter;
+    intensiveFilter.scheduleSource =
+        ClassTabNavigation::ScheduleSource::Intensive;
+
+    const ClassTabNavigation::Model intensiveModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            intensiveFilter
+            );
+    QCOMPARE(classIds(intensiveModel), QList<int>({1}));
+}
+
+void ClassTabNavigationTests::
+    activeScheduleScopeExcludesClassesWithoutSelectedSchedule()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E5"),
+            QStringLiteral("Apollo"),
+            {},
+            {classTime(QStringLiteral("Tuesday"), QStringLiteral("9:00 AM"))}
+            ),
+        classEntry(
+            3,
+            QStringLiteral("M1"),
+            QStringLiteral("Solis")
+            )
+    };
+
+    ClassTabNavigation::DayFilter activeRegular;
+    activeRegular.visibilityScope =
+        ClassTabNavigation::VisibilityScope::ActiveSchedule;
+
+    const ClassTabNavigation::Model regularModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            activeRegular
+            );
+    QCOMPARE(classIds(regularModel), QList<int>({1}));
+
+    ClassTabNavigation::DayFilter activeIntensive = activeRegular;
+    activeIntensive.scheduleSource =
+        ClassTabNavigation::ScheduleSource::Intensive;
+
+    const ClassTabNavigation::Model intensiveModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            activeIntensive
+            );
+    QCOMPARE(classIds(intensiveModel), QList<int>({2}));
+
+    activeIntensive.visibilityScope =
+        ClassTabNavigation::VisibilityScope::AllClasses;
+
+    const ClassTabNavigation::Model allClassesModel =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped,
+            activeIntensive
+            );
+    QCOMPARE(classIds(allClassesModel), QList<int>({1, 2, 3}));
 }
 
 void ClassTabNavigationTests::sidebarDefinesClassListAndClassesPage()

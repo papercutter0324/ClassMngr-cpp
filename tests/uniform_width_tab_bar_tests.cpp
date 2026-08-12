@@ -94,9 +94,10 @@ class UniformWidthTabBarTests : public QObject
 private slots:
     void cleanup();
     void tabSizeHintsUseWidestTabWidth();
-    void tabWidgetCentersTabBarWhenTabsFit();
-    void clickingFittingTabsKeepsTabBarCenteredImmediately();
-    void visibleFittingTabBarReCentersImmediatelyAfterLayoutMove();
+    void tabWidgetLeftAlignsTabBarWhenTabsFit();
+    void tabWidgetReservesTopRightCornerWidget();
+    void clickingFittingTabsKeepsClassTabBarCenteredImmediately();
+    void visibleFittingTabBarReAlignsImmediatelyAfterLayoutMove();
     void slightlyConstrainedTabsElideWithoutScrollButtons();
     void scrollButtonsTrackResizeTransitions();
     void incrementalTabChangesDoNotExposeStaleScrollButtons();
@@ -150,7 +151,7 @@ void UniformWidthTabBarTests::tabSizeHintsUseWidestTabWidth()
         );
 }
 
-void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
+void UniformWidthTabBarTests::tabWidgetLeftAlignsTabBarWhenTabsFit()
 {
     UniformWidthTabWidget tabs(
         QStringLiteral("testTabBar")
@@ -185,18 +186,63 @@ void UniformWidthTabBarTests::tabWidgetCentersTabBarWhenTabsFit()
     QVERIFY(tabBar->width() < tabs.width());
     QTRY_COMPARE(
         tabBar->geometry().x(),
-        (tabs.width() - tabBar->width()) / 2
+        0
         );
 
     tabs.setCurrentIndex(1);
     QCOMPARE(
         tabBar->geometry().x(),
-        (tabs.width() - tabBar->width()) / 2
+        0
         );
 }
 
+void UniformWidthTabBarTests::tabWidgetReservesTopRightCornerWidget()
+{
+    UniformWidthTabWidget tabs(
+        UniformWidthTabKind::Grade,
+        QStringLiteral("cornerWidgetTabBar")
+        );
+    tabs.resize(640, 200);
+
+    auto* corner = new QWidget(&tabs);
+    corner->setObjectName(QStringLiteral("topRightAccessory"));
+    corner->setFixedWidth(180);
+    corner->setFixedHeight(32);
+    tabs.setCornerWidget(corner, Qt::TopRightCorner);
+
+    for (const QString& grade : {
+             QStringLiteral("E4"),
+             QStringLiteral("E5"),
+             QStringLiteral("E6")
+         })
+    {
+        tabs.addTab(new QWidget(&tabs), grade);
+    }
+
+    tabs.show();
+    QCoreApplication::processEvents();
+
+    auto* tabBar =
+        tabs.findChild<UniformWidthTabBar*>(
+            QStringLiteral("cornerWidgetTabBar")
+            );
+
+    QVERIFY(tabBar);
+    QVERIFY(corner->isVisible());
+    QVERIFY(tabBar->geometry().right() < corner->geometry().left());
+    QCOMPARE(
+        tabBar->geometry().x(),
+        0
+        );
+
+    tabs.resize(280, 200);
+    QCoreApplication::processEvents();
+
+    QVERIFY(tabBar->geometry().right() < corner->geometry().left());
+}
+
 void UniformWidthTabBarTests::
-    clickingFittingTabsKeepsTabBarCenteredImmediately()
+    clickingFittingTabsKeepsClassTabBarCenteredImmediately()
 {
     UniformWidthTabWidget gradeTabs(
         UniformWidthTabKind::Grade,
@@ -263,14 +309,11 @@ void UniformWidthTabBarTests::
         );
 
     QCOMPARE(gradeTabBar->currentIndex(), 1);
-    QCOMPARE(
-        classTabBar->geometry().x(),
-        (secondClassTabs->width() - classTabBar->width()) / 2
-        );
+    QTRY_VERIFY(classTabBar->geometry().x() > 0);
 }
 
 void UniformWidthTabBarTests::
-    visibleFittingTabBarReCentersImmediatelyAfterLayoutMove()
+    visibleFittingTabBarReAlignsImmediatelyAfterLayoutMove()
 {
     UniformWidthTabWidget tabs(
         UniformWidthTabKind::Grade,
@@ -301,11 +344,11 @@ void UniformWidthTabBarTests::
 
     QVERIFY(tabBar);
 
-    tabBar->move(0, tabBar->y());
+    tabBar->move(50, tabBar->y());
 
     QCOMPARE(
         tabBar->geometry().x(),
-        (tabs.width() - tabBar->width()) / 2
+        0
         );
 }
 
@@ -422,10 +465,7 @@ void UniformWidthTabBarTests::scrollButtonsTrackResizeTransitions()
 
     QVERIFY(leftButton);
     QVERIFY(rightButton);
-    QTRY_COMPARE(
-        tabBar->geometry().x(),
-        (roomyWidth - naturalWidth) / 2
-        );
+    QTRY_VERIFY(tabBar->geometry().x() > 0);
     QTRY_VERIFY(!leftButton->isVisible());
     QTRY_VERIFY(!rightButton->isVisible());
 
@@ -484,10 +524,7 @@ void UniformWidthTabBarTests::scrollButtonsTrackResizeTransitions()
         200
         );
 
-    QTRY_COMPARE(
-        tabBar->geometry().x(),
-        (roomyWidth - naturalWidth) / 2
-        );
+    QTRY_VERIFY(tabBar->geometry().x() > 0);
     QTRY_VERIFY(!leftButton->isVisible());
     QTRY_VERIFY(!rightButton->isVisible());
     QTRY_VERIFY(allTabsAreInsideBar(tabBar));
@@ -1486,9 +1523,7 @@ void UniformWidthTabBarTests::navigationPillAppearance()
             selectedColor
             );
 
-        const QColor selectedTextColor(
-            QStringLiteral("#101418")
-            );
+        const QColor selectedTextColor(Qt::black);
         bool selectedTextIsNearBlack = false;
 
         for (

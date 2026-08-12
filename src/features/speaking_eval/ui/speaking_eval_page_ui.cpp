@@ -303,8 +303,12 @@ void SpeakingEvalPage::buildUi()
                 return;
             }
 
+            const int selectedClassId =
+                currentClassIdFromTabs(m_classTabs);
             activateEvaluation(
-                currentClassIdFromTabs(m_classTabs),
+                selectedClassId > 0
+                    ? selectedClassId
+                    : m_classroom.id,
                 currentEvaluationNameFromTabs()
                 );
         }

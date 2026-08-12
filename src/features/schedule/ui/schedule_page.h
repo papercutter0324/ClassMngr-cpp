@@ -1,5 +1,6 @@
 #pragma once
 
+#include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QString>
@@ -24,12 +25,16 @@ public:
     void refresh() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
+    [[nodiscard]] ScheduleDisplayMode displayMode() const;
     [[nodiscard]] PageOutputCapabilities
         outputCapabilities() const override;
     void printCurrentPage() override;
     void saveCurrentPageAs() override;
 
 signals:
+    void displayModeChanged(
+        ScheduleDisplayMode mode
+        );
     void classInfoSaved(
         int classId
         );

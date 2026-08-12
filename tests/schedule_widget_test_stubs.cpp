@@ -52,6 +52,7 @@ bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
 bool possibleImportedClasses = false;
 bool existingIntensiveHours = false;
+bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
 
 void reset()
@@ -71,6 +72,7 @@ void reset()
     matchImportedClasses = false;
     possibleImportedClasses = false;
     existingIntensiveHours = false;
+    distinctIntensiveDays = false;
     includeAlternativeMatchingClass = false;
 }
 
@@ -114,6 +116,13 @@ void setExistingIntensiveHours(
     )
 {
     existingIntensiveHours = exists;
+}
+
+void setDistinctIntensiveDays(
+    bool distinct
+    )
+{
+    distinctIntensiveDays = distinct;
 }
 
 void setIncludeAlternativeMatchingClass(
@@ -643,12 +652,52 @@ ClassInfo DataService::loadClassInfo(
     info.classTimes.append(meeting);
     if (ScheduleWidgetTestStubs::existingIntensiveHours)
     {
+        if (ScheduleWidgetTestStubs::distinctIntensiveDays)
+        {
+            meeting.day =
+                classId == 43
+                    ? QStringLiteral("Monday")
+                    : QStringLiteral("Friday");
+        }
+
         meeting.startTime = QStringLiteral("9:00 AM");
         meeting.endTime = QStringLiteral("9:50 AM");
         info.intensiveTimes.append(meeting);
     }
 
     return info;
+}
+
+bool DataService::saveClassInfo(
+    const ClassInfo& info
+    )
+{
+    Q_UNUSED(info);
+    return true;
+}
+
+bool DataService::saveClassNotes(
+    int classId,
+    const QString& notes,
+    const QString& timeFillerActivities
+    )
+{
+    Q_UNUSED(classId);
+    Q_UNUSED(notes);
+    Q_UNUSED(timeFillerActivities);
+    return true;
+}
+
+QList<ClassConflict> DataService::getClassTimeConflicts(
+    int classId,
+    const QList<ClassTime>& times,
+    ScheduleType type
+    )
+{
+    Q_UNUSED(classId);
+    Q_UNUSED(times);
+    Q_UNUSED(type);
+    return {};
 }
 
 Roster DataService::loadRoster(
@@ -809,6 +858,11 @@ int FontManager::adjustedPointSize(
     )
 {
     return baseSize;
+}
+
+int FontManager::sizeOffset()
+{
+    return 0;
 }
 
 void FontManager::setManagedRichText(

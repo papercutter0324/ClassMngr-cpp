@@ -4,6 +4,8 @@
 
 #include "domain/models/classroom.h"
 #include "domain/models/speaking_evaluation.h"
+#include "features/classes/models/class_tab_navigation_model.h"
+#include "features/schedule/ui/schedule_view_model.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 
 #include <QList>
@@ -42,6 +44,9 @@ public:
     void loadEvaluations(
         int selectedClassId = -1,
         const QString& selectedEvaluationName = QString()
+        );
+    void setScheduleDisplayMode(
+        ScheduleDisplayMode mode
         );
 
     void saveData() override;
@@ -87,6 +92,29 @@ private:
     void rebuildClassTabs(
         int selectedClassId
         );
+
+    void createDayFilterControls(
+        UniformWidthTabWidget* tabs
+        );
+
+    void setDayFilterEnabled(
+        const QString& key,
+        bool enabled
+        );
+
+    bool dayFilterEnabled(const QString& key) const;
+
+    void openNavigationSettings();
+
+    void setScheduleSource(
+        ClassTabNavigation::ScheduleSource source
+        );
+
+    void setVisibilityScope(
+        ClassTabNavigation::VisibilityScope visibilityScope
+        );
+
+    void setNavigationSelectionVisible(bool visible);
 
     void syncEvaluationTabFont();
 
@@ -172,6 +200,11 @@ private:
     bool m_restoringClassTabs = false;
     bool m_syncingEvaluationTabs = false;
     SaveMode m_saveMode = SaveMode::Automatic;
+    ClassTabNavigation::DayFilter m_dayFilter{
+        {},
+        ClassTabNavigation::ScheduleSource::Regular,
+        ClassTabNavigation::VisibilityScope::ActiveSchedule
+    };
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
