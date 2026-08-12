@@ -14,6 +14,8 @@
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
 
 #include <QAbstractItemModel>
 #include <QHeaderView>
@@ -91,11 +93,6 @@ void RosterEditorWidget::retranslateUi()
         m_removeColumnButton->setText(tr("Remove Column"));
     }
 
-    if (m_saveButton)
-    {
-        m_saveButton->setText(tr("Save Changes"));
-    }
-
     updateActions();
 }
 
@@ -106,15 +103,8 @@ void RosterEditorWidget::updateActions()
         return;
     }
 
-    const bool showSaveButton =
-        m_saveMode != SaveMode::Automatic;
-
-    m_saveButton->setVisible(showSaveButton);
-    m_saveButton->setEnabled(
-        showSaveButton
-        && hasUnsavedChanges()
-        && m_classroom.id > 0
-        );
+    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setSaveMode(m_autosave->saveMode());
 
     QString reason;
 
@@ -146,43 +136,19 @@ void RosterEditorWidget::buildUi()
             : UiConstants::Pages::Spacing
         );
 
-    m_titleLabel = new QLabel(tr("Class Roster"), this);
-    m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel = new QLabel(tr("No class selected"), this);
-    m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
+    m_pageHeader = new PageHeader(
+        tr("Class Roster"),
+        tr("No class selected"),
+        this
         );
 
     if (m_embedded)
     {
-        m_titleLabel->hide();
-        m_subtitleLabel->hide();
+        m_pageHeader->hide();
     }
     else
     {
-        auto* headerLayout = new QVBoxLayout;
-        headerLayout->setContentsMargins(
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin
-            );
-        headerLayout->setSpacing(
-            UiConstants::Pages::HeaderSpacing
-            );
-        headerLayout->addWidget(m_titleLabel);
-        headerLayout->addWidget(m_subtitleLabel);
-        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addWidget(m_pageHeader);
         contentLayout()->addSpacing(
             UiConstants::Pages::HeaderContentSpacing
             );
@@ -241,7 +207,6 @@ void RosterEditorWidget::buildUi()
 
     connect(m_addColumnButton, &QPushButton::clicked, this, &RosterEditorWidget::addColumn);
     connect(m_removeColumnButton, &QPushButton::clicked, this, &RosterEditorWidget::removeColumn);
-    connect(m_saveButton, &QPushButton::clicked, this, &RosterEditorWidget::saveData);
     connect(m_importButton, &QPushButton::clicked, this, &RosterEditorWidget::importScores);
     connect(
         m_koreanKeyboardButton,
@@ -334,11 +299,11 @@ void RosterEditorWidget::openKoreanKeyboard()
 
 void RosterEditorWidget::updateHeaderText()
 {
-    m_titleLabel->setText(tr("Class Roster"));
+    m_pageHeader->setTitle(tr("Class Roster"));
 
     if (m_classroom.id <= 0)
     {
-        m_subtitleLabel->setText(tr("No class selected"));
+        m_pageHeader->setSubtitle(tr("No class selected"));
         return;
     }
 
@@ -349,7 +314,7 @@ void RosterEditorWidget::updateHeaderText()
 
     if (!sidebarName.isEmpty())
     {
-        m_subtitleLabel->setText(sidebarName);
+        m_pageHeader->setSubtitle(sidebarName);
         return;
     }
 
@@ -358,5 +323,5 @@ void RosterEditorWidget::updateHeaderText()
             ? tr("Class %1").arg(m_classroom.id)
             : m_classroom.name.trimmed();
 
-    m_subtitleLabel->setText(className);
+    m_pageHeader->setSubtitle(className);
 }

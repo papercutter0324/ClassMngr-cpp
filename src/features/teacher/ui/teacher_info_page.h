@@ -3,14 +3,15 @@
 #include "ui/shared/pages/basepage.h"
 #include "domain/models/teacher.h"
 
-class QScrollArea;
+class AutosaveCoordinator;
+class PageHeader;
+class ScrollablePageBody;
 class QShowEvent;
 class QLabel;
 class QLineEdit;
 class QComboBox;
 class QTextEdit;
 class QPushButton;
-class QTimer;
 class TeacherSectionCard;
 
 class ApplicationServices;
@@ -63,8 +64,6 @@ private slots:
 
     void handleFieldChanged();
 
-    void autosaveTeacher();
-
 private:
 
     void buildUi();
@@ -101,9 +100,7 @@ private:
     // =====================================================
 
     Teacher m_teacher;
-    bool m_loading = false;
-    bool m_dirty = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
+    AutosaveCoordinator* m_autosave = nullptr;
 
 
 
@@ -111,10 +108,8 @@ private:
     // Widgets
     // =====================================================
 
-    QScrollArea* m_scroll = nullptr;
-
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    ScrollablePageBody* m_pageBody = nullptr;
+    PageHeader* m_pageHeader = nullptr;
 
     TeacherSectionCard* m_detailsCard = nullptr;
     TeacherSectionCard* m_connectivityCard = nullptr;
@@ -153,5 +148,4 @@ private:
     QTextEdit* m_notesEdit = nullptr;
 
     QPushButton* m_saveButton = nullptr;
-    QTimer* m_autosaveTimer = nullptr;
 };

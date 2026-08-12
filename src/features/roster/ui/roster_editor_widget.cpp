@@ -8,18 +8,11 @@
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 
 #include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
-#include <QTimer>
-
-namespace
-{
-
-inline constexpr int AutosaveDelayMs = 750;
-
-} // namespace
 
 RosterEditorWidget::RosterEditorWidget(
     ApplicationServices* services,
@@ -29,6 +22,7 @@ RosterEditorWidget::RosterEditorWidget(
     : BasePage(parent)
     , m_services(services)
     , m_embedded(embedded)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     setProperty("role", UiRoles::RosterEditorWidget);
 
@@ -38,22 +32,27 @@ RosterEditorWidget::RosterEditorWidget(
     }
 
     buildUi();
-
-    m_autosaveTimer = new QTimer(this);
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(AutosaveDelayMs);
-    connect(m_autosaveTimer, &QTimer::timeout, this, &RosterEditorWidget::autosave);
+    m_autosave->bindSaveButton(m_saveButton);
+    connect(
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
+        this,
+        [this](bool interactive) { saveRosterInternal(interactive); }
+        );
+    connect(
+        m_autosave,
+        &AutosaveCoordinator::dirtyChanged,
+        this,
+        &RosterEditorWidget::unsavedChangesChanged
+        );
+    updateActions();
 }
 
 void RosterEditorWidget::loadClass(
     const Classroom& classroom
     )
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
-
+    m_autosave->setLoading(true);
     m_classroom = classroom;
     updateHeaderText();
     m_loadingRoster = true;
@@ -79,6 +78,8 @@ void RosterEditorWidget::loadClass(
     m_model->clearDirty();
     m_widthsDirty = false;
     m_loadingRoster = false;
+    m_autosave->setLoading(false);
+    m_autosave->markClean();
     updateActions();
     emit outputCapabilitiesChanged();
 }
@@ -114,25 +115,19 @@ void RosterEditorWidget::saveData()
 
 bool RosterEditorWidget::saveChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     return !hasUnsavedChanges() || saveRosterInternal(true);
 }
 
 bool RosterEditorWidget::hasUnsavedChanges() const
 {
-    return m_widthsDirty || (m_model && m_model->isDirty());
+    return m_autosave->isDirty();
 }
 
 void RosterEditorWidget::discardChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     loadClass(m_classroom);
 }
@@ -151,26 +146,7 @@ void RosterEditorWidget::setSaveMode(
     SaveMode mode
     )
 {
-    if (m_saveMode == mode)
-    {
-        return;
-    }
-
-    m_saveMode = mode;
-    updateActions();
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (m_saveMode == SaveMode::Automatic && hasUnsavedChanges())
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setSaveMode(mode);
 }
 
 void RosterEditorWidget::setTestingClassMode(
@@ -234,6 +210,7 @@ bool RosterEditorWidget::saveRosterInternal(
     m_services->dataService()->saveRoster(m_classroom.id, currentRosterForSave());
     m_model->clearDirty();
     m_widthsDirty = false;
+    m_autosave->markClean();
     updateActions();
     return true;
 }
@@ -263,27 +240,15 @@ bool RosterEditorWidget::validateRosterBeforeSave(
     return false;
 }
 
-void RosterEditorWidget::autosave()
-{
-    if (hasUnsavedChanges())
-    {
-        saveRosterInternal(false);
-    }
-}
-
 void RosterEditorWidget::scheduleAutosave()
 {
-    if (
-        m_loadingRoster
-        || m_saveMode != SaveMode::Automatic
-        || !m_autosaveTimer
-        || m_classroom.id <= 0
-        )
-    {
-        return;
-    }
-
-    m_autosaveTimer->start();
+    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setValid(
+        !m_model || !m_model->hasDuplicateNameErrors()
+        );
+    m_autosave->setDirty(
+        m_widthsDirty || (m_model && m_model->isDirty())
+        );
 }
 
 Roster RosterEditorWidget::currentRosterForSave() const

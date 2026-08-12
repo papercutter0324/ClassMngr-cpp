@@ -1,4 +1,5 @@
 #include "personal_details_page.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
 #include "core/resource_paths.h"
@@ -259,20 +260,12 @@ bool PersonalDetailsPage::eventFilter(
 
 void PersonalDetailsPage::handleEditableChanged()
 {
-    if (m_loading)
+    if (m_autosave->isLoading())
     {
         return;
     }
 
-    m_dirty = true;
-
-    if (
-        m_autosaveTimer
-        && m_saveMode == SaveMode::Automatic
-        )
-    {
-        m_autosaveTimer->start();
-    }
+    m_autosave->markDirty();
 }
 void PersonalDetailsPage::handleZoomNotAvailableChanged(
     bool checked
@@ -282,15 +275,6 @@ void PersonalDetailsPage::handleZoomNotAvailableChanged(
 
     setZoomFieldsEnabled();
     handleEditableChanged();
-}
-void PersonalDetailsPage::autosave()
-{
-    if (!hasUnsavedChanges())
-    {
-        return;
-    }
-
-    saveMyInfoInternal();
 }
 void PersonalDetailsPage::chooseSignatureImage()
 {
@@ -681,16 +665,11 @@ void PersonalDetailsPage::buildSignatureSection()
 }
 void PersonalDetailsPage::loadPageData()
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     loadStoredSettings();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 void PersonalDetailsPage::loadStoredSettings()
@@ -792,10 +771,7 @@ bool PersonalDetailsPage::saveMyInfoInternal()
         return false;
     }
 
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     if (
         !m_zoomNotAvailableCheck
@@ -977,10 +953,5 @@ void PersonalDetailsPage::updateSignaturePreview()
 }
 void PersonalDetailsPage::clearDirty()
 {
-    m_dirty = false;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->markClean();
 }

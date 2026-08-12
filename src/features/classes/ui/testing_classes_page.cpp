@@ -12,6 +12,8 @@
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
 
 #include <algorithm>
 #include <utility>
@@ -35,7 +37,6 @@
 
 namespace
 {
-constexpr int AutosaveDelayMs = 750;
 constexpr int TeacherRoomRole = Qt::UserRole + 1;
 
 QString classListLabel(
@@ -83,17 +84,15 @@ TestingClassesPage::TestingClassesPage(
     )
     : BasePage(parent)
     , m_services(services)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     buildUi();
-    m_autosaveTimer =
-        new QTimer(this);
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(AutosaveDelayMs);
+    m_autosave->bindSaveButton(m_saveButton);
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &TestingClassesPage::autosave
+        [this](bool) { saveChanges(); }
         );
     populateTeachers();
     rebuildClassList();
@@ -163,22 +162,24 @@ void TestingClassesPage::refresh()
 
 void TestingClassesPage::clearDatabaseState()
 {
-    m_autosaveTimer->stop();
+    m_autosave->setLoading(true);
     m_currentClassId = -1;
     m_savedClass = {};
     m_pendingDay.clear();
     m_pendingStartTime.clear();
-    m_dirty = false;
+    m_editorDirty = false;
     m_classList->clear();
     loadEditorValue({});
     m_rosterEditor->clearDatabaseState();
+    m_autosave->setLoading(false);
+    m_autosave->markClean();
     updateActions();
 }
 
 void TestingClassesPage::retranslateUi()
 {
-    m_titleLabel->setText(tr("Testing Classes"));
-    m_subtitleLabel->setText(
+    m_pageHeader->setTitle(tr("Testing Classes"));
+    m_pageHeader->setSubtitle(
         tr("Create reusable classes for the weekly Testing layout.")
         );
     m_backButton->setText(tr("Back to Testing Schedule"));
@@ -250,7 +251,7 @@ bool TestingClassesPage::saveChanges()
         return false;
     }
 
-    if (!m_dirty)
+    if (!m_editorDirty)
     {
         return true;
     }
@@ -314,8 +315,8 @@ bool TestingClassesPage::saveChanges()
         testingClass;
     m_pendingDay.clear();
     m_pendingStartTime.clear();
-    m_dirty = false;
-    m_autosaveTimer->stop();
+    m_editorDirty = false;
+    m_autosave->markClean();
 
     Classroom classroom(
         testingClass.name,
@@ -330,7 +331,7 @@ bool TestingClassesPage::saveChanges()
 
 bool TestingClassesPage::hasUnsavedChanges() const
 {
-    return m_dirty
+    return m_editorDirty
         || (
             m_rosterEditor
             && m_rosterEditor->hasUnsavedChanges()
@@ -339,7 +340,7 @@ bool TestingClassesPage::hasUnsavedChanges() const
 
 void TestingClassesPage::discardChanges()
 {
-    m_autosaveTimer->stop();
+    m_autosave->cancelPendingSave();
     if (m_currentClassId > 0)
     {
         loadClass(m_currentClassId);
@@ -364,20 +365,8 @@ void TestingClassesPage::setSaveMode(
     SaveMode mode
     )
 {
-    m_saveMode = mode;
+    m_autosave->setSaveMode(mode);
     m_rosterEditor->setSaveMode(mode);
-    if (
-        mode == SaveMode::Automatic
-        && m_dirty
-        && m_currentClassId > 0
-        )
-    {
-        autosave();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
     updateActions();
 }
 
@@ -395,28 +384,12 @@ void TestingClassesPage::buildUi()
 
     auto* header =
         new QHBoxLayout;
-    auto* titles =
-        new QVBoxLayout;
-    m_titleLabel =
-        new QLabel(tr("Testing Classes"), this);
-    m_titleLabel->setObjectName(QStringLiteral("pageTitle"));
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
+    m_pageHeader = new PageHeader(
+        tr("Testing Classes"),
+        tr("Create reusable classes for the weekly Testing layout."),
+        this
         );
-    m_subtitleLabel =
-        new QLabel(
-            tr("Create reusable classes for the weekly Testing layout."),
-            this
-            );
-    m_subtitleLabel->setObjectName(
-        QStringLiteral("pageSubtitle")
-        );
-    titles->addWidget(m_titleLabel);
-    titles->addWidget(m_subtitleLabel);
-    header->addLayout(titles, 1);
+    header->addWidget(m_pageHeader, 1);
 
     m_backButton =
         new TextFitPushButton(
@@ -669,6 +642,12 @@ void TestingClassesPage::buildUi()
         this,
         &BasePage::outputCapabilitiesChanged
         );
+    connect(
+        m_rosterEditor,
+        &RosterEditorWidget::unsavedChangesChanged,
+        this,
+        [this](bool) { updateActions(); }
+        );
 
     auto* notesPage =
         new QWidget(m_tabs);
@@ -745,12 +724,6 @@ void TestingClassesPage::buildUi()
         &TestingClassesPage::deleteCurrentClass
         );
     connect(
-        m_saveButton,
-        &QPushButton::clicked,
-        this,
-        &TestingClassesPage::saveData
-        );
-    connect(
         m_gradeCombo,
         &QComboBox::currentTextChanged,
         this,
@@ -786,7 +759,7 @@ void TestingClassesPage::buildUi()
         this,
         [this]()
         {
-            if (m_loading)
+            if (m_autosave->isLoading())
             {
                 return;
             }
@@ -836,7 +809,7 @@ void TestingClassesPage::buildUi()
         this,
         [this](QListWidgetItem* current, QListWidgetItem* previous)
         {
-            if (m_loading || !current)
+            if (m_autosave->isLoading() || !current)
             {
                 return;
             }
@@ -1020,7 +993,7 @@ void TestingClassesPage::loadClass(
     int classId
     )
 {
-    m_autosaveTimer->stop();
+    m_autosave->setLoading(true);
     auto* dataService =
         m_services
             ? m_services->dataService()
@@ -1042,7 +1015,6 @@ void TestingClassesPage::loadClass(
         return;
     }
 
-    m_loading = true;
     m_currentClassId = classId;
     m_savedClass = *loaded;
     m_pendingDay.clear();
@@ -1054,8 +1026,9 @@ void TestingClassesPage::loadClass(
             loaded->classId
             )
         );
-    m_dirty = false;
-    m_loading = false;
+    m_editorDirty = false;
+    m_autosave->setLoading(false);
+    m_autosave->markClean();
     updateActions();
 }
 
@@ -1064,8 +1037,7 @@ void TestingClassesPage::beginNewClass(
     const QString& pendingStartTime
     )
 {
-    m_autosaveTimer->stop();
-    m_loading = true;
+    m_autosave->setLoading(true);
     m_currentClassId = -1;
     m_savedClass = {};
     m_savedClass.name =
@@ -1083,8 +1055,9 @@ void TestingClassesPage::beginNewClass(
     }
     loadEditorValue(m_savedClass);
     m_rosterEditor->loadClass({});
-    m_dirty = false;
-    m_loading = false;
+    m_editorDirty = false;
+    m_autosave->setLoading(false);
+    m_autosave->markClean();
     updateActions();
     m_nameEdit->setFocus();
 }
@@ -1144,47 +1117,12 @@ void TestingClassesPage::loadEditorValue(
 
 void TestingClassesPage::markDirty()
 {
-    if (m_loading)
+    if (m_autosave->isLoading())
     {
         return;
     }
-    m_dirty = true;
-    if (
-        m_saveMode == SaveMode::Automatic
-        && m_currentClassId > 0
-        )
-    {
-        const TestingClass testingClass =
-            editorValue();
-        if (
-            !testingClass.name.isEmpty()
-            && !testingClass.grade.isEmpty()
-            && !testingClass.level.isEmpty()
-            && !testingClass.room.isEmpty()
-            )
-        {
-            m_autosaveTimer->start();
-        }
-        else
-        {
-            m_autosaveTimer->stop();
-        }
-    }
+    m_editorDirty = true;
     updateActions();
-}
-
-void TestingClassesPage::autosave()
-{
-    if (
-        m_saveMode != SaveMode::Automatic
-        || m_currentClassId <= 0
-        || !m_dirty
-        )
-    {
-        return;
-    }
-
-    saveChanges();
 }
 
 void TestingClassesPage::updateActions()
@@ -1193,17 +1131,24 @@ void TestingClassesPage::updateActions()
         m_currentClassId > 0;
     m_deleteButton->setEnabled(hasClass);
     m_tabs->setTabEnabled(1, hasClass);
-    m_saveButton->setVisible(
-        m_saveMode != SaveMode::Automatic
-        || m_currentClassId <= 0
+    const TestingClass testingClass = editorValue();
+    m_autosave->setValid(
+        !testingClass.name.isEmpty()
+        && !testingClass.grade.isEmpty()
+        && !testingClass.level.isEmpty()
+        && !testingClass.room.isEmpty()
         );
-    m_saveButton->setEnabled(
-        m_dirty
+    m_autosave->setSaveAvailable(true);
+    m_autosave->setManualSaveRequired(m_currentClassId <= 0);
+    m_autosave->setDirty(
+        m_editorDirty
         || (
             m_rosterEditor
             && m_rosterEditor->hasUnsavedChanges()
-            )
+            ),
+        m_editorDirty
         );
+    m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
 void TestingClassesPage::updateColorButtons()

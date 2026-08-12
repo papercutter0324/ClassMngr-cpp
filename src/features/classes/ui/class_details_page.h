@@ -8,15 +8,15 @@
 #include <QString>
 
 class ApplicationServices;
+class AutosaveCoordinator;
+class PageHeader;
+class ScrollablePageBody;
 class TeacherInfoSection;
 class ClassDetailsSection;
 class ClassScheduleSection;
 
-class QLabel;
 class QPushButton;
-class QScrollArea;
 class SectionCard;
-class QTimer;
 class QVBoxLayout;
 class QWidget;
 
@@ -57,7 +57,6 @@ private:
         );
 
     void markDirty();
-    void autosave();
     void clearDirty();
     void updateActions();
     bool saveClassInfoInternal(
@@ -76,10 +75,8 @@ private:
 
     Classroom m_classroom;
 
-    bool m_loading{false};
-    bool m_dirty{false};
-    SaveMode m_saveMode{SaveMode::Automatic};
     bool m_embedded{false};
+    AutosaveCoordinator* m_autosave{nullptr};
 
     SectionCard* m_teacherCard{nullptr};
     SectionCard* m_detailsCard{nullptr};
@@ -89,13 +86,11 @@ private:
     ClassDetailsSection* m_detailsSection{nullptr};
     ClassScheduleSection* m_scheduleSection{nullptr};
 
-    QScrollArea* m_scrollArea{nullptr};
+    ScrollablePageBody* m_pageBody{nullptr};
     QWidget* m_scrollContent{nullptr};
     QVBoxLayout* m_scrollContentLayout{nullptr};
 
-    QLabel* m_titleLabel{nullptr};
-    QLabel* m_subtitleLabel{nullptr};
+    PageHeader* m_pageHeader{nullptr};
 
     QPushButton* m_saveButton{nullptr};
-    QTimer* m_autosaveTimer{nullptr};
 };

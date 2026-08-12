@@ -7,10 +7,7 @@ void SpeakingEvalPage::saveData()
 
 bool SpeakingEvalPage::saveChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     if (!hasUnsavedChanges())
     {
@@ -22,15 +19,12 @@ bool SpeakingEvalPage::saveChanges()
 
 bool SpeakingEvalPage::hasUnsavedChanges() const
 {
-    return m_model && m_model->isDirty();
+    return m_autosave->isDirty();
 }
 
 void SpeakingEvalPage::discardChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     loadEvaluation(
         m_classroom,
@@ -52,28 +46,7 @@ void SpeakingEvalPage::setSaveMode(
     SaveMode mode
     )
 {
-    if (m_saveMode == mode)
-    {
-        return;
-    }
-
-    m_saveMode = mode;
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (m_saveMode == SaveMode::Automatic && hasUnsavedChanges())
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setSaveMode(mode);
 }
 
 bool SpeakingEvalPage::saveEvaluationInternal(
@@ -96,6 +69,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 
     if (m_model->hasErrors())
     {
+        updateActions();
         if (showValidationMessages)
         {
             QMessageBox message(this);
@@ -140,6 +114,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     }
 
     m_model->markSaved();
+    m_autosave->markClean();
     updateActions();
 
     if (showSuccessMessage)

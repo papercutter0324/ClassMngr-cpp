@@ -1,9 +1,10 @@
 #include "class_notes_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
 
 #include "core/application_services.h"
-#include "core/fontmanager.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "data/data_service.h"
@@ -11,20 +12,13 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "core/utils/sidebar_node_naming.h"
 
-#include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QtAssert>
-
-namespace
-{
-constexpr int AutosaveDelayMs = 750;
-}
 
 ClassNotesPage::ClassNotesPage(
     ApplicationServices* services,
@@ -34,6 +28,7 @@ ClassNotesPage::ClassNotesPage(
     : BasePage(parent)
     , m_services(services)
     , m_embedded(embedded)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     Q_ASSERT(m_services);
 
@@ -43,33 +38,23 @@ ClassNotesPage::ClassNotesPage(
     }
 
     buildUi();
-
-    m_autosaveTimer =
-        new QTimer(this);
-
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(
-        AutosaveDelayMs
-        );
-
+    m_autosave->bindSaveButton(m_saveButton);
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &ClassNotesPage::autosave
+        [this](bool interactive) {
+            saveClassNotesInternal(interactive);
+        }
         );
+    updateActions();
 }
 
 void ClassNotesPage::loadClass(
     const Classroom& classroom
     )
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     m_classroom = classroom;
 
@@ -122,18 +107,13 @@ void ClassNotesPage::loadClass(
 
     updateHeaderText();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 
 void ClassNotesPage::clearDatabaseState()
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     m_classroom = {};
     m_savedNotes.clear();
@@ -143,7 +123,7 @@ void ClassNotesPage::clearDatabaseState()
     m_timeFillerActivitiesEdit->clear();
     updateHeaderText();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 
@@ -154,25 +134,19 @@ void ClassNotesPage::saveData()
 
 bool ClassNotesPage::saveChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     return saveClassNotesInternal(true);
 }
 
 bool ClassNotesPage::hasUnsavedChanges() const
 {
-    return m_dirty;
+    return m_autosave->isDirty();
 }
 
 void ClassNotesPage::discardChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     loadClass(m_classroom);
 }
@@ -181,37 +155,7 @@ void ClassNotesPage::setSaveMode(
     SaveMode mode
     )
 {
-    m_saveMode =
-        mode;
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (
-        m_saveMode == SaveMode::Automatic
-        && hasUnsavedChanges()
-        )
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
-}
-
-void ClassNotesPage::autosave()
-{
-    if (!hasUnsavedChanges())
-    {
-        return;
-    }
-
-    saveClassNotesInternal(false);
+    m_autosave->setSaveMode(mode);
 }
 
 bool ClassNotesPage::saveClassNotesInternal(
@@ -227,10 +171,7 @@ bool ClassNotesPage::saveClassNotesInternal(
         return false;
     }
 
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     const QString notes =
         m_notesEdit
@@ -309,38 +250,20 @@ void ClassNotesPage::retranslateUi()
 
 void ClassNotesPage::markDirty()
 {
-    if (m_loading)
+    if (m_autosave->isLoading())
     {
         return;
     }
 
-    m_dirty =
+    m_autosave->setDirty(
         m_notesEdit
         && m_timeFillerActivitiesEdit
         && (
             m_notesEdit->toPlainText().trimmed() != m_savedNotes
             || m_timeFillerActivitiesEdit->toPlainText().trimmed()
                 != m_savedTimeFillerActivities
-            );
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (
-        m_dirty
-        && m_saveMode == SaveMode::Automatic
-        )
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
+            )
+        );
 }
 
 void ClassNotesPage::buildUi()
@@ -358,54 +281,19 @@ void ClassNotesPage::buildUi()
             : UiConstants::Pages::Spacing
         );
 
-    m_titleLabel =
-        new QLabel(
-            tr("Class Notes"),
-            this
-            );
-
-    m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel =
-        new QLabel(
-            tr("No class selected"),
-            this
-            );
-
-    m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
+    m_pageHeader = new PageHeader(
+        tr("Class Notes"),
+        tr("No class selected"),
+        this
         );
 
     if (m_embedded)
     {
-        m_titleLabel->hide();
-        m_subtitleLabel->hide();
+        m_pageHeader->hide();
     }
     else
     {
-        auto* headerLayout = new QVBoxLayout;
-        headerLayout->setContentsMargins(
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin
-            );
-        headerLayout->setSpacing(
-            UiConstants::Pages::HeaderSpacing
-            );
-        headerLayout->addWidget(m_titleLabel);
-        headerLayout->addWidget(m_subtitleLabel);
-
-        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addWidget(m_pageHeader);
         contentLayout()->addSpacing(
             UiConstants::Pages::HeaderContentSpacing
             );
@@ -488,23 +376,13 @@ void ClassNotesPage::buildUi()
         &ClassNotesPage::markDirty
         );
 
-    connect(
-        m_saveButton,
-        &QPushButton::clicked,
-        this,
-        &ClassNotesPage::saveData
-        );
-
     updateActions();
 }
 
 void ClassNotesPage::updateHeaderText()
 {
-    m_titleLabel->setText(
-        tr("Class Notes")
-        );
-
-    m_subtitleLabel->setText(
+    m_pageHeader->setTitle(tr("Class Notes"));
+    m_pageHeader->setSubtitle(
         m_subtitleText.trimmed().isEmpty()
             ? tr("No class selected")
             : m_subtitleText
@@ -513,33 +391,12 @@ void ClassNotesPage::updateHeaderText()
 
 void ClassNotesPage::clearDirty()
 {
-    m_dirty = false;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
-
+    m_autosave->markClean();
     updateActions();
 }
 
 void ClassNotesPage::updateActions()
 {
-    if (!m_saveButton)
-    {
-        return;
-    }
-
-    const bool showSaveButton =
-        m_saveMode != SaveMode::Automatic;
-
-    m_saveButton->setVisible(
-        showSaveButton
-        );
-
-    m_saveButton->setEnabled(
-        showSaveButton
-        && m_dirty
-        && m_classroom.id > 0
-        );
+    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setSaveMode(m_autosave->saveMode());
 }

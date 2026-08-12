@@ -1,6 +1,9 @@
 #include "class_details_page.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
+#include "ui/shared/pages/scrollable_page_body.h"
 
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
@@ -8,7 +11,6 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 
 #include "core/application_services.h"
-#include "core/fontmanager.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
@@ -17,22 +19,15 @@
 #include "ui/shared/styles/roles.h"
 #include "core/utils/sidebar_node_naming.h"
 
-#include <QFont>
-#include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QFrame>
-#include <QScrollArea>
 #include <QStringList>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QtAssert>
 
 namespace
 {
-constexpr int AutosaveDelayMs = 750;
-
 SectionCard* addSectionCard(
     QVBoxLayout* layout,
     const QString& title,
@@ -59,6 +54,7 @@ ClassDetailsPage::ClassDetailsPage(
     : BasePage(parent)
     , m_services(services)
     , m_embedded(embedded)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     Q_ASSERT(m_services);
 
@@ -70,27 +66,14 @@ ClassDetailsPage::ClassDetailsPage(
     }
 
     buildUi();
-
-    m_autosaveTimer =
-        new QTimer(this);
-
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(
-        AutosaveDelayMs
-        );
-
+    m_autosave->bindSaveButton(m_saveButton);
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &ClassDetailsPage::autosave
-        );
-
-    connect(
-        m_saveButton,
-        &QPushButton::clicked,
-        this,
-        &ClassDetailsPage::saveData
+        [this](bool interactive) {
+            saveClassInfoInternal(interactive);
+        }
         );
 
     connect(
@@ -130,92 +113,40 @@ void ClassDetailsPage::buildUi()
             : UiConstants::Pages::Spacing
         );
 
-    m_titleLabel =
-        new QLabel(
-            tr("Class Information"),
-            this
-            );
-
-    m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel =
-        new QLabel(
-            tr("No class selected"),
-            this
-            );
-
-    m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
+    m_pageHeader = new PageHeader(
+        tr("Class Information"),
+        tr("No class selected"),
+        this
         );
 
     if (m_embedded)
     {
-        m_titleLabel->hide();
-        m_subtitleLabel->hide();
+        m_pageHeader->hide();
     }
     else
     {
-        auto* headerLayout =
-            new QVBoxLayout;
-
-        headerLayout->setContentsMargins(
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin,
-            UiConstants::Pages::HeaderMargin
-            );
-        headerLayout->setSpacing(
-            UiConstants::Pages::HeaderSpacing
-            );
-        headerLayout->addWidget(m_titleLabel);
-        headerLayout->addWidget(m_subtitleLabel);
-
-        contentLayout()->addLayout(headerLayout);
+        contentLayout()->addWidget(m_pageHeader);
         contentLayout()->addSpacing(
             UiConstants::Pages::HeaderContentSpacing
             );
     }
 
-    m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setWidgetResizable(true);
-    m_scrollArea->setFrameShape(QFrame::NoFrame);
-    m_scrollArea->setHorizontalScrollBarPolicy(
-        Qt::ScrollBarAsNeeded
-        );
-    m_scrollArea->setVerticalScrollBarPolicy(
-        Qt::ScrollBarAsNeeded
-        );
-
-    m_scrollContent = new QWidget(m_scrollArea);
-    m_scrollContentLayout = new QVBoxLayout(m_scrollContent);
-    m_scrollContentLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
-        );
-    m_scrollContentLayout->setSpacing(
+    m_pageBody = new ScrollablePageBody(
+        this,
+        QMargins(0, 0, 0, 0),
         UiConstants::ClassInfo::Page::ContentSpacing
         );
-    m_scrollContentLayout->setAlignment(
-        Qt::AlignTop
+    m_pageBody->setHorizontalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
         );
-
-    m_scrollArea->setWidget(
-        m_scrollContent
+    m_pageBody->setVerticalScrollBarPolicy(
+        Qt::ScrollBarAsNeeded
         );
+    m_scrollContent = m_pageBody->contentWidget();
+    m_scrollContentLayout = m_pageBody->contentLayout();
 
     contentLayout()->addWidget(
-        m_scrollArea
+        m_pageBody
         );
 
     m_teacherCard =
@@ -299,32 +230,17 @@ void ClassDetailsPage::updateScrollContentMinimumWidth()
 
 void ClassDetailsPage::markDirty()
 {
-    if (m_loading)
+    if (m_autosave->isLoading())
     {
         return;
     }
 
-    m_dirty = true;
-
-    updateActions();
-
-    if (
-        m_autosaveTimer
-        && m_saveMode == SaveMode::Automatic
-        )
-    {
-        m_autosaveTimer->start();
-    }
+    m_autosave->markDirty();
 }
 
 void ClassDetailsPage::clearDirty()
 {
-    m_dirty = false;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->markClean();
     updateActions();
 }
 
@@ -332,7 +248,7 @@ void ClassDetailsPage::loadClass(
     const Classroom& classroom
     )
 {
-    m_loading = true;
+    m_autosave->setLoading(true);
 
     refresh();
 
@@ -376,19 +292,14 @@ void ClassDetailsPage::loadClass(
 
     updateScrollContentMinimumWidth();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
 
     clearDirty();
 }
 
 void ClassDetailsPage::clearDatabaseState()
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     m_classroom = {};
     m_teacherSection->setTeachers({});
@@ -399,12 +310,12 @@ void ClassDetailsPage::clearDatabaseState()
         QList<ClassTime>{}
         );
     updateTitle({});
-    m_subtitleLabel->setText(
+    m_pageHeader->setSubtitle(
         tr("No class selected")
         );
     updateScrollContentMinimumWidth();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 
@@ -412,9 +323,7 @@ void ClassDetailsPage::updateTitle(
     const ClassInfo& info
     )
 {
-    m_titleLabel->setText(
-        tr("Class Information")
-        );
+    m_pageHeader->setTitle(tr("Class Information"));
 
     Teacher teacher;
 
@@ -439,7 +348,7 @@ void ClassDetailsPage::updateTitle(
             ? tr("Class %1").arg(m_classroom.id)
             : m_classroom.name.trimmed();
 
-    m_subtitleLabel->setText(
+    m_pageHeader->setSubtitle(
         displayName.trimmed().isEmpty()
             ? fallbackName
             : displayName
@@ -453,10 +362,7 @@ void ClassDetailsPage::saveData()
 
 bool ClassDetailsPage::saveChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     if (!hasUnsavedChanges())
     {
@@ -468,15 +374,12 @@ bool ClassDetailsPage::saveChanges()
 
 bool ClassDetailsPage::hasUnsavedChanges() const
 {
-    return m_dirty;
+    return m_autosave->isDirty();
 }
 
 void ClassDetailsPage::discardChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     loadClass(m_classroom);
 }
@@ -485,64 +388,13 @@ void ClassDetailsPage::setSaveMode(
     SaveMode mode
     )
 {
-    m_saveMode =
-        mode;
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (
-        m_saveMode == SaveMode::Automatic
-        && hasUnsavedChanges()
-        )
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
-}
-
-void ClassDetailsPage::autosave()
-{
-    if (!hasUnsavedChanges())
-    {
-        return;
-    }
-
-    saveClassInfoInternal(false);
+    m_autosave->setSaveMode(mode);
 }
 
 void ClassDetailsPage::updateActions()
 {
-    if (!m_saveButton)
-    {
-        return;
-    }
-
-    const bool showSaveButton =
-        m_saveMode != SaveMode::Automatic;
-
-    m_saveButton->setVisible(
-        showSaveButton
-        );
-
-    m_saveButton->setEnabled(
-        showSaveButton
-        && m_dirty
-        && m_classroom.id >= 0
-        );
-
-    m_saveButton->setText(
-        m_dirty
-            ? tr("Save Changes *")
-            : tr("Save Changes")
-        );
+    m_autosave->setSaveAvailable(m_classroom.id >= 0);
+    m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
 bool ClassDetailsPage::saveClassInfoInternal(
@@ -630,9 +482,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
 
     if (!saved)
     {
-        m_dirty = true;
-
-        updateActions();
+        m_autosave->markDirty(false);
 
         if (showMessages)
         {
@@ -685,13 +535,8 @@ void ClassDetailsPage::retranslateUi()
     }
     else
     {
-        m_titleLabel->setText(
-            tr("Class Information")
-            );
-
-        m_subtitleLabel->setText(
-            tr("No class selected")
-            );
+        m_pageHeader->setTitle(tr("Class Information"));
+        m_pageHeader->setSubtitle(tr("No class selected"));
     }
 
     if (m_teacherCard)

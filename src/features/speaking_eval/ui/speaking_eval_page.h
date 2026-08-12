@@ -13,11 +13,12 @@
 #include <QStringList>
 
 class ApplicationServices;
+class AutosaveCoordinator;
+class PageHeader;
 class QLabel;
 class QModelIndex;
 class QPushButton;
 class NavigationTabWidget;
-class QTimer;
 class QVBoxLayout;
 class QUndoStack;
 class QWidget;
@@ -76,8 +77,6 @@ private slots:
     void importNames();
 
     void openKoreanKeyboard();
-
-    void autosave();
 
     void updateActions();
 
@@ -198,15 +197,14 @@ private:
     bool m_rebuildingClassTabs = false;
     bool m_restoringClassTabs = false;
     bool m_syncingEvaluationTabs = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
+    AutosaveCoordinator* m_autosave = nullptr;
     ClassTabNavigation::DayFilter m_dayFilter{
         {},
         ClassTabNavigation::ScheduleSource::Regular,
         ClassTabNavigation::VisibilityScope::ActiveSchedule
     };
 
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    PageHeader* m_pageHeader = nullptr;
     QLabel* m_emptyLabel = nullptr;
     QWidget* m_tabsContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
@@ -224,5 +222,4 @@ private:
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QPushButton* m_saveButton = nullptr;
-    QTimer* m_autosaveTimer = nullptr;
 };

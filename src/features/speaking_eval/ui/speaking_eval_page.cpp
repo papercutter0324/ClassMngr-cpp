@@ -6,24 +6,21 @@ SpeakingEvalPage::SpeakingEvalPage(
     )
     : BasePage(parent)
     , m_services(services)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     setProperty("role", UiRoles::SpeakingEvals);
 
     buildUi();
-
-    m_autosaveTimer =
-        new QTimer(this);
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(
-        AutosaveDelayMs
-        );
-
+    m_autosave->bindSaveButton(m_saveButton);
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &SpeakingEvalPage::autosave
+        [this](bool interactive) {
+            saveEvaluationInternal(interactive, interactive);
+        }
         );
+    updateActions();
 }
 
 void SpeakingEvalPage::loadEvaluation(
@@ -145,11 +142,7 @@ void SpeakingEvalPage::loadEvaluationData(
     const QString& evaluationName
     )
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
-
+    m_autosave->setLoading(true);
     m_loadingEvaluation = true;
 
     m_classroom =
@@ -187,6 +180,9 @@ void SpeakingEvalPage::loadEvaluationData(
     updateActions();
 
     m_loadingEvaluation = false;
+    m_autosave->setLoading(false);
+    m_autosave->markClean();
+    updateActions();
 }
 
 void SpeakingEvalPage::rebuildClassTabs(

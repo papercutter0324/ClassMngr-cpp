@@ -6,11 +6,11 @@
 #include <QString>
 
 class ApplicationServices;
-class QLabel;
+class AutosaveCoordinator;
+class PageHeader;
 class QPushButton;
 class SectionCard;
 class QTextEdit;
-class QTimer;
 
 class ClassNotesPage : public BasePage
 {
@@ -40,7 +40,6 @@ public:
 
 private slots:
     void markDirty();
-    void autosave();
 
 private:
     void buildUi();
@@ -57,17 +56,13 @@ private:
     QString m_savedNotes;
     QString m_savedTimeFillerActivities;
     QString m_subtitleText;
-    bool m_loading = false;
-    bool m_dirty = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
     bool m_embedded = false;
 
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    AutosaveCoordinator* m_autosave = nullptr;
+    PageHeader* m_pageHeader = nullptr;
     SectionCard* m_notesCard = nullptr;
     QLabel* m_timeFillerActivitiesLabel = nullptr;
     QTextEdit* m_notesEdit = nullptr;
     QTextEdit* m_timeFillerActivitiesEdit = nullptr;
     QPushButton* m_saveButton = nullptr;
-    QTimer* m_autosaveTimer = nullptr;
 };

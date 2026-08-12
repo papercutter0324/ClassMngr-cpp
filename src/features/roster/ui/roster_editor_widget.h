@@ -8,11 +8,12 @@
 #include <QVector>
 
 class ApplicationServices;
+class AutosaveCoordinator;
+class PageHeader;
 class QLabel;
 class QModelIndex;
 class QPoint;
 class QPushButton;
-class QTimer;
 class RosterColumnLayoutController;
 class RosterHeaderView;
 class RosterItemDelegate;
@@ -61,6 +62,9 @@ public:
     void printCurrentPage() override;
     void saveCurrentPageAs() override;
 
+signals:
+    void unsavedChangesChanged(bool dirty);
+
 private slots:
     void addColumn();
 
@@ -74,8 +78,6 @@ private slots:
     void importScores();
 
     void openKoreanKeyboard();
-
-    void autosave();
 
     void updateActions();
 
@@ -150,12 +152,11 @@ private:
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;
     bool m_movingRosterRow = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
+    AutosaveCoordinator* m_autosave = nullptr;
     bool m_embedded = false;
     bool m_testingClassMode = false;
 
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    PageHeader* m_pageHeader = nullptr;
 
     RosterTableView* m_table = nullptr;
     RosterHeaderView* m_header = nullptr;
@@ -169,5 +170,4 @@ private:
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_saveButton = nullptr;
-    QTimer* m_autosaveTimer = nullptr;
 };

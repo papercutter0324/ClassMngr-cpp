@@ -1,21 +1,18 @@
 #include "personal_details_page.h"
 
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
+#include "ui/shared/pages/scrollable_page_body.h"
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QScrollBar>
 #include <QShowEvent>
 #include <QTimer>
-
-namespace
-{
-constexpr int AutosaveDelayMs = 750;
-}
 
 PersonalDetailsPage::PersonalDetailsPage(
     ApplicationServices* services,
@@ -23,19 +20,16 @@ PersonalDetailsPage::PersonalDetailsPage(
     )
     : BasePage(parent)
     , m_services(services)
+    , m_autosave(new AutosaveCoordinator(this))
 {
     setProperty("role", UiRoles::MyInfo);
     buildUi();
 
-    m_autosaveTimer = new QTimer(this);
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(AutosaveDelayMs);
-
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &PersonalDetailsPage::autosave
+        [this](bool) { saveMyInfoInternal(); }
         );
 
     loadPageData();
@@ -45,7 +39,7 @@ void PersonalDetailsPage::refresh()
 {
     BasePage::refresh();
 
-    if (isVisible() && !m_dirty)
+    if (isVisible() && !m_autosave->isDirty())
     {
         loadPageData();
     }
@@ -53,12 +47,7 @@ void PersonalDetailsPage::refresh()
 
 void PersonalDetailsPage::clearDatabaseState()
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     if (m_nameEdit)
     {
@@ -90,14 +79,14 @@ void PersonalDetailsPage::clearDatabaseState()
     updateMyInformationFieldWidths();
     updateSignaturePreview();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 
 void PersonalDetailsPage::retranslateUi()
 {
-    m_titleLabel->setText(tr("My Details"));
-    m_subtitleLabel->setText(
+    m_pageHeader->setTitle(tr("My Details"));
+    m_pageHeader->setSubtitle(
         tr("Manage your personal information and signature.")
         );
     m_myInformationHeading->setText(tr("My Information"));
@@ -127,33 +116,24 @@ void PersonalDetailsPage::saveData()
 
 bool PersonalDetailsPage::saveChanges()
 {
-    m_autosaveTimer->stop();
+    m_autosave->cancelPendingSave();
     return saveMyInfoInternal();
 }
 
 bool PersonalDetailsPage::hasUnsavedChanges() const
 {
-    return m_dirty;
+    return m_autosave->isDirty();
 }
 
 void PersonalDetailsPage::discardChanges()
 {
-    m_autosaveTimer->stop();
+    m_autosave->cancelPendingSave();
     loadPageData();
 }
 
 void PersonalDetailsPage::setSaveMode(SaveMode mode)
 {
-    m_saveMode = mode;
-
-    if (m_saveMode == SaveMode::Automatic && hasUnsavedChanges())
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setSaveMode(mode);
 }
 
 void PersonalDetailsPage::scrollToTop()
@@ -163,7 +143,7 @@ void PersonalDetailsPage::scrollToTop()
         this,
         [this]()
         {
-            if (auto* scrollBar = m_scrollArea->verticalScrollBar())
+            if (auto* scrollBar = m_pageBody->verticalScrollBar())
             {
                 scrollBar->setValue(scrollBar->minimum());
             }
@@ -175,7 +155,7 @@ void PersonalDetailsPage::showEvent(QShowEvent* event)
 {
     BasePage::showEvent(event);
 
-    if (!m_dirty)
+    if (!m_autosave->isDirty())
     {
         loadPageData();
     }

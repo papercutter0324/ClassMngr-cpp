@@ -9,6 +9,9 @@
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/teacher_section_card.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
+#include "ui/shared/pages/scrollable_page_body.h"
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QCalendarWidget>
@@ -16,7 +19,6 @@
 #include <QDate>
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QFont>
-#include <QFrame>
 #include <QGridLayout>
 #include <QInputDialog>
 #include <QKeyEvent>
@@ -26,7 +28,6 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QShowEvent>
 #include <QSignalBlocker>
 #include <QSizePolicy>
@@ -292,23 +293,18 @@ TeacherInfoPage::TeacherInfoPage(
     QWidget* parent
 )
     : BasePage(parent),
-      m_services(services)
+      m_services(services),
+      m_autosave(new AutosaveCoordinator(this))
 {
     setProperty("role", UiRoles::TeacherInfo);
 
     buildUi();
-
-    m_autosaveTimer =
-        new QTimer(this);
-
-    m_autosaveTimer->setSingleShot(true);
-    m_autosaveTimer->setInterval(750);
-
+    m_autosave->bindSaveButton(m_saveButton);
     connect(
-        m_autosaveTimer,
-        &QTimer::timeout,
+        m_autosave,
+        &AutosaveCoordinator::saveRequested,
         this,
-        &TeacherInfoPage::autosaveTeacher
+        [this](bool) { saveTeacherInternal(); }
         );
 }
 
@@ -318,69 +314,21 @@ void TeacherInfoPage::buildUi()
     // Scroll Area
     // =====================================================
 
-    m_scroll = new QScrollArea;
-    m_scroll->setWidgetResizable(true);
-    m_scroll->setFrameShape(QFrame::NoFrame);
-
-    auto* scrollContainer = new QWidget;
-
-    auto* scrollLayout = new QVBoxLayout(scrollContainer);
-
-    scrollLayout->setContentsMargins(
-        UiConstants::Pages::Margin,
-        UiConstants::Pages::Margin,
-        UiConstants::Pages::Margin,
-        UiConstants::Pages::Margin);
-
-    scrollLayout->setSpacing(
-        UiConstants::Pages::Spacing);
-
-    scrollLayout->setAlignment(Qt::AlignTop);
-
-    m_scroll->setWidget(scrollContainer);
-
-    contentLayout()->addWidget(m_scroll);
+    m_pageBody = new ScrollablePageBody(this);
+    auto* scrollContainer = m_pageBody->contentWidget();
+    auto* scrollLayout = m_pageBody->contentLayout();
+    contentLayout()->addWidget(m_pageBody);
 
     // =====================================================
     // Header
     // =====================================================
 
-    auto* headerLayout = new QVBoxLayout;
-    headerLayout->setContentsMargins(
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin
+    m_pageHeader = new PageHeader(
+        tr("Teacher Information"),
+        tr("View and manage teacher details."),
+        scrollContainer
         );
-    headerLayout->setSpacing(
-        UiConstants::Pages::HeaderSpacing
-        );
-
-    m_titleLabel = new QLabel(tr("Teacher Information"));
-    m_titleLabel->setObjectName("pageTitle");
-
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel =
-        new QLabel(tr("View and manage teacher details."));
-
-    m_subtitleLabel->setObjectName("pageSubtitle");
-
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
-        );
-
-    headerLayout->addWidget(m_titleLabel);
-    headerLayout->addWidget(m_subtitleLabel);
-
-    scrollLayout->addLayout(headerLayout);
+    scrollLayout->addWidget(m_pageHeader);
     scrollLayout->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
         );
@@ -727,12 +675,6 @@ void TeacherInfoPage::buildUi()
     m_saveButton =
         new TextFitPushButton(tr("Save Changes"));
 
-    connect(
-        m_saveButton,
-        &QPushButton::clicked,
-        this,
-        &TeacherInfoPage::saveTeacher);
-
     for (auto* edit : {
              m_teacherKrEdit,
              m_roomNumberEdit,
@@ -837,19 +779,14 @@ QLabel* TeacherInfoPage::createFieldLabel(
 void TeacherInfoPage::loadTeacher(
     const Teacher& teacher)
 {
-    m_loading = true;
-
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setLoading(true);
 
     m_teacher = teacher;
 
     QString displayName =
         SidebarNodeNaming::formatTeacherDisplayName(teacher);
 
-    m_titleLabel->setText(
+    m_pageHeader->setTitle(
         tr("Teacher Information for %1")
             .arg(displayName));
 
@@ -903,7 +840,7 @@ void TeacherInfoPage::loadTeacher(
 
     updateFieldWidths();
 
-    m_loading = false;
+    m_autosave->setLoading(false);
     clearDirty();
 }
 
@@ -925,7 +862,7 @@ void TeacherInfoPage::showEvent(QShowEvent* event)
 
 bool TeacherInfoPage::saveChanges()
 {
-    if (!m_dirty)
+    if (!m_autosave->isDirty())
     {
         return true;
     }
@@ -935,15 +872,12 @@ bool TeacherInfoPage::saveChanges()
 
 bool TeacherInfoPage::hasUnsavedChanges() const
 {
-    return m_dirty;
+    return m_autosave->isDirty();
 }
 
 void TeacherInfoPage::discardChanges()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     loadTeacher(m_teacher);
 }
@@ -962,31 +896,7 @@ void TeacherInfoPage::setSaveMode(
     SaveMode mode
     )
 {
-    if (m_saveMode == mode)
-    {
-        return;
-    }
-
-    m_saveMode = mode;
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (
-        m_saveMode == SaveMode::Automatic
-        && m_dirty
-        )
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->setSaveMode(mode);
 }
 
 void TeacherInfoPage::saveTeacher()
@@ -996,45 +906,12 @@ void TeacherInfoPage::saveTeacher()
 
 void TeacherInfoPage::handleFieldChanged()
 {
-    if (m_loading)
+    if (m_autosave->isLoading())
     {
         return;
     }
 
-    m_dirty =
-        formDiffersFromTeacher();
-
-    updateActions();
-
-    if (!m_autosaveTimer)
-    {
-        return;
-    }
-
-    if (
-        m_dirty
-        && m_saveMode == SaveMode::Automatic
-        )
-    {
-        m_autosaveTimer->start();
-    }
-    else
-    {
-        m_autosaveTimer->stop();
-    }
-}
-
-void TeacherInfoPage::autosaveTeacher()
-{
-    if (
-        !m_dirty
-        || m_teacher.id <= 0
-        )
-    {
-        return;
-    }
-
-    saveTeacherInternal();
+    m_autosave->setDirty(formDiffersFromTeacher());
 }
 
 Teacher TeacherInfoPage::teacherFromForm() const
@@ -1102,10 +979,7 @@ bool TeacherInfoPage::saveTeacherInternal()
         return false;
     }
 
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     auto* dataService = m_services->dataService();
 
@@ -1122,7 +996,7 @@ bool TeacherInfoPage::saveTeacherInternal()
     const QString displayName =
         SidebarNodeNaming::formatTeacherDisplayName(m_teacher);
 
-    m_titleLabel->setText(
+    m_pageHeader->setTitle(
         tr("Teacher Information for %1")
             .arg(displayName)
         );
@@ -1133,40 +1007,19 @@ bool TeacherInfoPage::saveTeacherInternal()
         m_teacher.id
         );
 
-    return !m_dirty;
+    return !m_autosave->isDirty();
 }
 
 void TeacherInfoPage::clearDirty()
 {
-    m_dirty = false;
+    m_autosave->markClean();
     updateActions();
 }
 
 void TeacherInfoPage::updateActions()
 {
-    if (!m_saveButton)
-    {
-        return;
-    }
-
-    const bool showSaveButton =
-        m_saveMode != SaveMode::Automatic;
-
-    m_saveButton->setVisible(
-        showSaveButton
-        );
-
-    m_saveButton->setEnabled(
-        showSaveButton
-        && m_dirty
-        && m_teacher.id > 0
-        );
-
-    m_saveButton->setText(
-        m_dirty
-            ? tr("Save Changes *")
-            : tr("Save Changes")
-        );
+    m_autosave->setSaveAvailable(m_teacher.id > 0);
+    m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
 void TeacherInfoPage::updateFieldWidths()
@@ -1263,7 +1116,7 @@ void TeacherInfoPage::updatePreferredNameChoices(
     m_preferredNameCombo->setEnabled(!choices.isEmpty());
 
     int selectedIndex =
-        m_loading
+        m_autosave->isLoading()
             ? choices.indexOf(m_teacher.preferredName.trimmed())
             : choices.indexOf(previousSelection);
 
@@ -1281,7 +1134,7 @@ void TeacherInfoPage::updatePreferredNameChoices(
     m_preferredNameCombo->setCurrentIndex(selectedIndex);
 
     if (
-        !m_loading
+        !m_autosave->isLoading()
         && promptForSelection
         && previousChoiceCount == 1
         && choices.size() == 2
@@ -1324,11 +1177,11 @@ void TeacherInfoPage::clearDatabaseState()
 
 void TeacherInfoPage::retranslateUi()
 {
-    if (m_titleLabel)
+    if (m_pageHeader)
     {
         if (m_teacher.id > 0)
         {
-            m_titleLabel->setText(
+            m_pageHeader->setTitle(
                 tr("Teacher Information for %1")
                     .arg(
                         SidebarNodeNaming::formatTeacherDisplayName(
@@ -1339,15 +1192,15 @@ void TeacherInfoPage::retranslateUi()
         }
         else
         {
-            m_titleLabel->setText(
+            m_pageHeader->setTitle(
                 tr("Teacher Information")
                 );
         }
     }
 
-    if (m_subtitleLabel)
+    if (m_pageHeader)
     {
-        m_subtitleLabel->setText(
+        m_pageHeader->setSubtitle(
             tr("View and manage teacher details.")
             );
     }

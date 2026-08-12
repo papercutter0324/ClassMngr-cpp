@@ -22,10 +22,7 @@ void SpeakingEvalPage::refresh()
 
 void SpeakingEvalPage::clearDatabaseState()
 {
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     if (m_undoStack)
     {
@@ -98,13 +95,6 @@ void SpeakingEvalPage::retranslateUi()
             );
         m_koreanKeyboardButton->setAccessibleName(
             tr("Korean Keyboard")
-            );
-    }
-
-    if (m_saveButton)
-    {
-        m_saveButton->setText(
-            tr("Save Changes")
             );
     }
 
@@ -193,16 +183,6 @@ void SpeakingEvalPage::importNames()
         );
 }
 
-void SpeakingEvalPage::autosave()
-{
-    if (!hasUnsavedChanges())
-    {
-        return;
-    }
-
-    saveEvaluationInternal(false, false);
-}
-
 void SpeakingEvalPage::openKoreanKeyboard()
 {
     if (m_onScreenKeyboard)
@@ -218,21 +198,15 @@ void SpeakingEvalPage::updateActions()
         return;
     }
 
-    const bool showSaveButton =
-        m_saveMode != SaveMode::Automatic;
-
     const bool hasActiveClass =
         m_classroom.id > 0;
-
-    m_saveButton->setVisible(
-        showSaveButton
+    m_autosave->setSaveAvailable(
+        hasActiveClass
+        && !m_evaluationName.trimmed().isEmpty()
         );
-
-    m_saveButton->setEnabled(
-        showSaveButton
-        && hasActiveClass
-        && !m_model->changedCells().isEmpty()
-        );
+    m_autosave->setValid(!m_model->hasErrors());
+    m_autosave->setDirty(m_model->isDirty());
+    m_autosave->setSaveMode(m_autosave->saveMode());
 
     if (m_importNamesButton)
     {

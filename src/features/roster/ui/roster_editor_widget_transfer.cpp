@@ -1,4 +1,5 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -241,16 +242,14 @@ void RosterEditorWidget::transferRosterRow(
         return;
     }
 
-    if (m_autosaveTimer)
-    {
-        m_autosaveTimer->stop();
-    }
+    m_autosave->cancelPendingSave();
 
     m_removingRosterRow = true;
     m_model->removeRosterRow(row);
     m_removingRosterRow = false;
     m_model->clearDirty();
     m_widthsDirty = false;
+    m_autosave->markClean();
 
     const int nextRow =
         row < m_model->rowCount()

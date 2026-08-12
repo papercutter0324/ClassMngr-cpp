@@ -6,6 +6,8 @@
 #include <QString>
 
 class ApplicationServices;
+class AutosaveCoordinator;
+class PageHeader;
 class ClickableColorPreview;
 class QComboBox;
 class QLabel;
@@ -14,7 +16,6 @@ class QListWidget;
 class QPushButton;
 class QTabWidget;
 class QTextEdit;
-class QTimer;
 class RosterEditorWidget;
 
 class TestingClassesPage : public BasePage
@@ -72,7 +73,6 @@ private:
     void loadEditorValue(
         const TestingClass& testingClass
         );
-    void autosave();
     void markDirty();
     void updateActions();
     void updateColorButtons();
@@ -83,14 +83,12 @@ private:
     ApplicationServices* m_services = nullptr;
     TestingClass m_savedClass;
     int m_currentClassId{-1};
-    bool m_loading = false;
-    bool m_dirty = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
+    bool m_editorDirty = false;
+    AutosaveCoordinator* m_autosave = nullptr;
     QString m_pendingDay;
     QString m_pendingStartTime;
 
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    PageHeader* m_pageHeader = nullptr;
     QLabel* m_nameLabel = nullptr;
     QLabel* m_gradeLevelLabel = nullptr;
     QLabel* m_roomLabel = nullptr;
@@ -99,7 +97,6 @@ private:
     QLabel* m_fontColorLabel = nullptr;
     QListWidget* m_classList = nullptr;
     QTabWidget* m_tabs = nullptr;
-    QTimer* m_autosaveTimer = nullptr;
     QLineEdit* m_nameEdit = nullptr;
     QComboBox* m_gradeCombo = nullptr;
     QComboBox* m_levelCombo = nullptr;

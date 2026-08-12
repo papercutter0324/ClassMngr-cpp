@@ -5,15 +5,16 @@
 #include <QByteArray>
 
 class ApplicationServices;
+class AutosaveCoordinator;
+class PageHeader;
+class ScrollablePageBody;
 class QCheckBox;
 class QComboBox;
 class QEvent;
 class QLabel;
 class QLineEdit;
 class QPushButton;
-class QScrollArea;
 class QShowEvent;
-class QTimer;
 class QVBoxLayout;
 class QWidget;
 
@@ -47,7 +48,6 @@ private slots:
     void handleZoomNotAvailableChanged(bool checked);
     void chooseSignatureImage();
     void removeSignatureImage();
-    void autosave();
 
 private:
     void buildUi();
@@ -73,16 +73,13 @@ private:
         ) const;
 
     ApplicationServices* m_services = nullptr;
-    bool m_loading = false;
-    bool m_dirty = false;
-    SaveMode m_saveMode = SaveMode::Automatic;
+    AutosaveCoordinator* m_autosave = nullptr;
 
-    QScrollArea* m_scrollArea = nullptr;
+    ScrollablePageBody* m_pageBody = nullptr;
     QWidget* m_scrollContent = nullptr;
     QVBoxLayout* m_scrollContentLayout = nullptr;
 
-    QLabel* m_titleLabel = nullptr;
-    QLabel* m_subtitleLabel = nullptr;
+    PageHeader* m_pageHeader = nullptr;
     QLabel* m_myInformationHeading = nullptr;
     QLabel* m_signatureHeading = nullptr;
     QLabel* m_nameLabel = nullptr;
@@ -102,5 +99,4 @@ private:
     QPushButton* m_removeSignatureButton = nullptr;
     QByteArray m_signatureImageData;
 
-    QTimer* m_autosaveTimer = nullptr;
 };

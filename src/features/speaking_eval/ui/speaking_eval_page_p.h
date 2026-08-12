@@ -2,6 +2,8 @@
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/pages/page_header.h"
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -52,7 +54,6 @@
 namespace
 {
 
-inline constexpr int AutosaveDelayMs = 750;
 constexpr int DayFilterSpacer = 16;
 
 struct DayFilterButtonDefinition

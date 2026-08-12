@@ -13,50 +13,12 @@ void SpeakingEvalPage::buildUi()
         UiConstants::Pages::Spacing
         );
 
-    auto* headerLayout =
-        new QVBoxLayout;
-
-    headerLayout->setContentsMargins(
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin,
-        UiConstants::Pages::HeaderMargin
+    m_pageHeader = new PageHeader(
+        tr("Speaking Evaluation"),
+        tr("No class selected"),
+        this
         );
-
-    headerLayout->setSpacing(
-        UiConstants::Pages::HeaderSpacing
-        );
-
-    m_titleLabel =
-        new QLabel(
-            tr("Speaking Evaluation"),
-            this
-            );
-
-    m_titleLabel->setObjectName("pageTitle");
-    m_titleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::TitleFontSize,
-            QFont::Bold
-            )
-        );
-
-    m_subtitleLabel =
-        new QLabel(
-            tr("No class selected"),
-            this
-            );
-
-    m_subtitleLabel->setObjectName("pageSubtitle");
-    m_subtitleLabel->setFont(
-        FontManager::getUiFont(
-            UiConstants::Pages::SubtitleFontSize
-            )
-        );
-
-    headerLayout->addWidget(m_titleLabel);
-    headerLayout->addWidget(m_subtitleLabel);
-    contentLayout()->addLayout(headerLayout);
+    contentLayout()->addWidget(m_pageHeader);
     contentLayout()->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
         );
@@ -279,13 +241,6 @@ void SpeakingEvalPage::buildUi()
         );
 
     connect(
-        m_saveButton,
-        &QPushButton::clicked,
-        this,
-        &SpeakingEvalPage::saveData
-        );
-
-    connect(
         m_evaluationTabs,
         &NavigationTabWidget::currentChanged,
         this,
@@ -377,18 +332,12 @@ void SpeakingEvalPage::buildUi()
 
 void SpeakingEvalPage::scheduleAutosave()
 {
-    if (
-        m_loadingEvaluation
-        || m_saveMode != SaveMode::Automatic
-        || !m_autosaveTimer
-        || m_classroom.id <= 0
-        || m_evaluationName.trimmed().isEmpty()
-        )
-    {
-        return;
-    }
-
-    m_autosaveTimer->start();
+    m_autosave->setSaveAvailable(
+        m_classroom.id > 0
+        && !m_evaluationName.trimmed().isEmpty()
+        );
+    m_autosave->setValid(!m_model || !m_model->hasErrors());
+    m_autosave->setDirty(m_model && m_model->isDirty());
 }
 
 void SpeakingEvalPage::setupTable()
@@ -421,12 +370,12 @@ void SpeakingEvalPage::setupTable()
 
 void SpeakingEvalPage::updateHeaderText()
 {
-    if (!m_titleLabel || !m_subtitleLabel)
+    if (!m_pageHeader)
     {
         return;
     }
 
-    m_titleLabel->setText(
+    m_pageHeader->setTitle(
         m_evaluationName.trimmed().isEmpty()
             ? tr("Speaking Evaluation")
             : tr("%1 Speaking Evaluation").arg(m_evaluationName)
@@ -434,7 +383,7 @@ void SpeakingEvalPage::updateHeaderText()
 
     if (m_classroom.id <= 0)
     {
-        m_subtitleLabel->setText(
+        m_pageHeader->setSubtitle(
             tr("No class selected")
             );
         return;
@@ -450,13 +399,13 @@ void SpeakingEvalPage::updateHeaderText()
 
     if (!sidebarName.isEmpty())
     {
-        m_subtitleLabel->setText(
+        m_pageHeader->setSubtitle(
             sidebarName
             );
         return;
     }
 
-    m_subtitleLabel->setText(
+    m_pageHeader->setSubtitle(
         m_classroom.name.trimmed().isEmpty()
             ? tr("Class %1").arg(m_classroom.id)
             : m_classroom.name.trimmed()

@@ -8,6 +8,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME PageComponents
+    SOURCES
+        tests/page_components_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
         NAME OnScreenKeyboard
         SOURCES
             tests/on_screen_keyboard_tests.cpp
