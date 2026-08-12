@@ -1,4 +1,5 @@
 #include "ui/shared/pages/basepage.h"
+#include "core/fontmanager.h"
 
 #include <QEvent>
 #include <QFrame>
@@ -66,57 +67,43 @@ public:
 
         if (qstrcmp(
                 sourceText,
-                "No Teacher Profile is open. Set up ClassMngr in this order:"
+                "— A guided setup to help you import or add your schedule, "
+                "classes, and co-teachers."
                 ) == 0)
         {
-            return QStringLiteral("Translated introduction");
+            return QStringLiteral("Translated setup description");
         }
 
-        if (qstrcmp(
-                sourceText,
-                "1. Create a new Teacher Profile, or open an existing one."
-                ) == 0)
+        if (qstrcmp(sourceText, "New Profile") == 0)
         {
-            return QStringLiteral("Translated first step");
+            return QStringLiteral("Translated new Profile");
         }
 
-        if (qstrcmp(
-                sourceText,
-                "2. Create or import your Korean teachers."
-                ) == 0)
-        {
-            return QStringLiteral("Translated second step");
-        }
-
-        if (qstrcmp(
-                sourceText,
-                "3. Create your classes and assign their teachers."
-                ) == 0)
-        {
-            return QStringLiteral("Translated third step");
-        }
-
-        if (qstrcmp(
-                sourceText,
-                "Next, add schedules and rosters, then fill in any other information you need."
-                ) == 0)
-        {
-            return QStringLiteral("Translated next steps");
-        }
-
-        if (qstrcmp(sourceText, "Open Teacher Profile...") == 0)
-        {
-            return QStringLiteral("Translated open Teacher Profile");
-        }
-
-        if (qstrcmp(sourceText, "New Teacher Profile...") == 0)
-        {
-            return QStringLiteral("Translated new Teacher Profile");
-        }
-
-        if (qstrcmp(sourceText, "Initial Setup...") == 0)
+        if (qstrcmp(sourceText, "Initial Setup") == 0)
         {
             return QStringLiteral("Translated initial setup");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "— Create a new Teacher Profile and manually enter your schedule, "
+                "classes, and co-teachers."
+                ) == 0)
+        {
+            return QStringLiteral("Translated new description");
+        }
+
+        if (qstrcmp(sourceText, "Open Profile") == 0)
+        {
+            return QStringLiteral("Translated open Profile");
+        }
+
+        if (qstrcmp(
+                sourceText,
+                "— Open an existing Teacher Profile file."
+                ) == 0)
+        {
+            return QStringLiteral("Translated open description");
         }
 
         return {};
@@ -132,6 +119,7 @@ private slots:
     void noDatabaseBannerOffsetsExistingLayout();
     void noDatabaseBannerFitsNarrowPage();
     void noDatabaseBannerRetranslatesOnLanguageChange();
+    void noDatabaseBannerScalesWithFontSize();
     void databaseStateClearHookIsDispatched();
     void outputContractDefaultsToUnsupportedAndSignalsDatabaseChanges();
 };
@@ -175,72 +163,51 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
             QStringLiteral("noDatabaseTitle")
             );
 
-    auto* message =
+    auto* setupDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseMessage")
+            QStringLiteral("noDatabaseSetupDescription")
             );
 
-    auto* stepOne =
+    auto* newDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepOne")
+            QStringLiteral("noDatabaseNewDescription")
             );
 
-    auto* stepTwo =
+    auto* openDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepTwo")
-            );
-
-    auto* stepThree =
-        page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepThree")
-            );
-
-    auto* nextSteps =
-        page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseNextSteps")
+            QStringLiteral("noDatabaseOpenDescription")
             );
 
     QVERIFY(title);
-    QVERIFY(message);
-    QVERIFY(stepOne);
-    QVERIFY(stepTwo);
-    QVERIFY(stepThree);
-    QVERIFY(nextSteps);
+    QVERIFY(setupDescription);
+    QVERIFY(newDescription);
+    QVERIFY(openDescription);
 
     QCOMPARE(title->text(), QStringLiteral("Getting Started"));
     QCOMPARE(
-        message->text(),
+        setupDescription->text(),
         QStringLiteral(
-            "No Teacher Profile is open. Set up ClassMngr in this order:"
+            "— A guided setup to help you import or add your schedule, "
+            "classes, and co-teachers."
             )
         );
+    QCOMPARE(newButton->text(), QStringLiteral("New Profile"));
     QCOMPARE(
-        stepOne->text(),
+        newDescription->text(),
         QStringLiteral(
-            "1. Create a new Teacher Profile, or open an existing one."
+            "— Create a new Teacher Profile and manually enter your schedule, "
+            "classes, and co-teachers."
             )
         );
+    QCOMPARE(openButton->text(), QStringLiteral("Open Profile"));
     QCOMPARE(
-        stepTwo->text(),
-        QStringLiteral(
-            "2. Create or import your Korean teachers."
-            )
+        openDescription->text(),
+        QStringLiteral("— Open an existing Teacher Profile file.")
         );
-    QCOMPARE(
-        stepThree->text(),
-        QStringLiteral(
-            "3. Create your classes and assign their teachers."
-            )
-        );
-    QCOMPARE(
-        nextSteps->text(),
-        QStringLiteral(
-            "Next, add schedules and rosters, then fill in any other information you need."
-            )
-        );
-    QCOMPARE(newButton->text(), QStringLiteral("New Teacher Profile..."));
-    QCOMPARE(openButton->text(), QStringLiteral("Open Teacher Profile..."));
-    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
+    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup"));
+    QVERIFY(setupButton->styleSheet().isEmpty());
+    QVERIFY(newButton->styleSheet().isEmpty());
+    QVERIFY(openButton->styleSheet().isEmpty());
 
     page.hide();
 
@@ -249,7 +216,15 @@ void BasePageTests::noDatabaseBannerVisibilityAndActions()
     QCoreApplication::processEvents();
 
     QVERIFY(banner->isVisible());
-    QVERIFY(newButton->geometry().left() < openButton->geometry().left());
+    QCOMPARE(setupButton->geometry().left(), newButton->geometry().left());
+    QCOMPARE(newButton->geometry().left(), openButton->geometry().left());
+    QCOMPARE(setupButton->width(), newButton->width());
+    QCOMPARE(newButton->width(), openButton->width());
+    QVERIFY(setupButton->geometry().top() < newButton->geometry().top());
+    QVERIFY(newButton->geometry().top() < openButton->geometry().top());
+    QVERIFY(setupDescription->geometry().left() > setupButton->geometry().right());
+    QVERIFY(newDescription->geometry().left() > newButton->geometry().right());
+    QVERIFY(openDescription->geometry().left() > openButton->geometry().right());
     QVERIFY(setupButton->isDefault());
 
     QSignalSpy setupSpy(
@@ -373,14 +348,12 @@ void BasePageTests::noDatabaseBannerFitsNarrowPage()
 
     const QStringList containedWidgetNames{
         QStringLiteral("noDatabaseTitle"),
-        QStringLiteral("noDatabaseMessage"),
-        QStringLiteral("noDatabaseStepOne"),
-        QStringLiteral("noDatabaseStepTwo"),
-        QStringLiteral("noDatabaseStepThree"),
-        QStringLiteral("noDatabaseNextSteps"),
         QStringLiteral("noDatabaseSetupButton"),
+        QStringLiteral("noDatabaseSetupDescription"),
         QStringLiteral("noDatabaseNewButton"),
-        QStringLiteral("noDatabaseOpenButton")
+        QStringLiteral("noDatabaseNewDescription"),
+        QStringLiteral("noDatabaseOpenButton"),
+        QStringLiteral("noDatabaseOpenDescription")
     };
 
     for (const QString& objectName : containedWidgetNames)
@@ -420,29 +393,19 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
             QStringLiteral("noDatabaseTitle")
             );
 
-    auto* message =
+    auto* setupDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseMessage")
+            QStringLiteral("noDatabaseSetupDescription")
             );
 
-    auto* stepOne =
+    auto* newDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepOne")
+            QStringLiteral("noDatabaseNewDescription")
             );
 
-    auto* stepTwo =
+    auto* openDescription =
         page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepTwo")
-            );
-
-    auto* stepThree =
-        page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseStepThree")
-            );
-
-    auto* nextSteps =
-        page.findChild<QLabel*>(
-            QStringLiteral("noDatabaseNextSteps")
+            QStringLiteral("noDatabaseOpenDescription")
             );
 
     auto* openButton =
@@ -462,11 +425,9 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
 
     QVERIFY(banner);
     QVERIFY(title);
-    QVERIFY(message);
-    QVERIFY(stepOne);
-    QVERIFY(stepTwo);
-    QVERIFY(stepThree);
-    QVERIFY(nextSteps);
+    QVERIFY(setupDescription);
+    QVERIFY(newDescription);
+    QVERIFY(openDescription);
     QVERIFY(openButton);
     QVERIFY(newButton);
     QVERIFY(setupButton);
@@ -479,26 +440,16 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
     QCoreApplication::processEvents();
 
     QCOMPARE(title->text(), QStringLiteral("Translated title"));
-    QCOMPARE(message->text(), QStringLiteral("Translated introduction"));
-    QCOMPARE(stepOne->text(), QStringLiteral("Translated first step"));
-    QCOMPARE(stepTwo->text(), QStringLiteral("Translated second step"));
-    QCOMPARE(stepThree->text(), QStringLiteral("Translated third step"));
-    QCOMPARE(nextSteps->text(), QStringLiteral("Translated next steps"));
-    QCOMPARE(openButton->text(), QStringLiteral("Translated open Teacher Profile"));
-    QCOMPARE(newButton->text(), QStringLiteral("Translated new Teacher Profile"));
+    QCOMPARE(setupDescription->text(), QStringLiteral("Translated setup description"));
+    QCOMPARE(newButton->text(), QStringLiteral("Translated new Profile"));
+    QCOMPARE(newDescription->text(), QStringLiteral("Translated new description"));
+    QCOMPARE(openButton->text(), QStringLiteral("Translated open Profile"));
+    QCOMPARE(openDescription->text(), QStringLiteral("Translated open description"));
     QCOMPARE(setupButton->text(), QStringLiteral("Translated initial setup"));
+    QCOMPARE(setupButton->width(), newButton->width());
+    QCOMPARE(newButton->width(), openButton->width());
 
-    for (QLabel* label : {
-             title,
-             message,
-             stepOne,
-             stepTwo,
-             stepThree,
-             nextSteps
-             })
-    {
-        QVERIFY(banner->rect().contains(label->geometry()));
-    }
+    QVERIFY(banner->rect().contains(title->geometry()));
 
     qApp->removeTranslator(&translator);
 
@@ -507,38 +458,108 @@ void BasePageTests::noDatabaseBannerRetranslatesOnLanguageChange()
 
     QCOMPARE(title->text(), QStringLiteral("Getting Started"));
     QCOMPARE(
-        message->text(),
+        setupDescription->text(),
         QStringLiteral(
-            "No Teacher Profile is open. Set up ClassMngr in this order:"
+            "— A guided setup to help you import or add your schedule, "
+            "classes, and co-teachers."
             )
         );
+    QCOMPARE(newButton->text(), QStringLiteral("New Profile"));
     QCOMPARE(
-        stepOne->text(),
+        newDescription->text(),
         QStringLiteral(
-            "1. Create a new Teacher Profile, or open an existing one."
+            "— Create a new Teacher Profile and manually enter your schedule, "
+            "classes, and co-teachers."
             )
         );
+    QCOMPARE(openButton->text(), QStringLiteral("Open Profile"));
     QCOMPARE(
-        stepTwo->text(),
-        QStringLiteral(
-            "2. Create or import your Korean teachers."
-            )
+        openDescription->text(),
+        QStringLiteral("— Open an existing Teacher Profile file.")
         );
+    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup"));
+}
+
+void BasePageTests::noDatabaseBannerScalesWithFontSize()
+{
+    TestPage page;
+    page.resize(800, 600);
+    page.setDatabaseOpen(false);
+    page.show();
+
+    auto* title =
+        page.findChild<QLabel*>(
+            QStringLiteral("noDatabaseTitle")
+            );
+
+    auto* setupButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseSetupButton")
+            );
+
+    auto* newButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseNewButton")
+            );
+
+    auto* openButton =
+        page.findChild<QPushButton*>(
+            QStringLiteral("noDatabaseOpenButton")
+            );
+
+    QVERIFY(title);
+    QVERIFY(setupButton);
+    QVERIFY(newButton);
+    QVERIFY(openButton);
+
+    QCoreApplication::processEvents();
+
+    const int originalFontSizeOffset =
+        FontManager::sizeOffset();
+
+    const QFont originalFont =
+        page.font();
+
+    const int standardFontSizeAtLarge =
+        originalFont.pointSize()
+        - originalFontSizeOffset
+        + fontSizeOffset(FontSize::Large);
+
+    const int titleFontSizeDifference =
+        20 - standardFontSizeAtLarge;
+
     QCOMPARE(
-        stepThree->text(),
-        QStringLiteral(
-            "3. Create your classes and assign their teachers."
-            )
+        title->font().pointSize(),
+        originalFont.pointSize() + titleFontSizeDifference
         );
-    QCOMPARE(
-        nextSteps->text(),
-        QStringLiteral(
-            "Next, add schedules and rosters, then fill in any other information you need."
-            )
+
+    const int normalButtonWidth =
+        setupButton->width();
+
+    QFont largeFont =
+        originalFont;
+
+    largeFont.setPointSize(
+        originalFont.pointSize()
+        - originalFontSizeOffset
+        + fontSizeOffset(FontSize::Large)
         );
-    QCOMPARE(openButton->text(), QStringLiteral("Open Teacher Profile..."));
-    QCOMPARE(newButton->text(), QStringLiteral("New Teacher Profile..."));
-    QCOMPARE(setupButton->text(), QStringLiteral("Initial Setup..."));
+
+    FontManager::setSizeOffset(
+        fontSizeOffset(FontSize::Large)
+        );
+
+    page.setFont(largeFont);
+    QCoreApplication::processEvents();
+
+    QCOMPARE(title->font().pointSize(), 20);
+    QVERIFY(setupButton->width() > normalButtonWidth);
+    QCOMPARE(setupButton->width(), newButton->width());
+    QCOMPARE(newButton->width(), openButton->width());
+
+    FontManager::setSizeOffset(originalFontSizeOffset);
+    page.setFont(originalFont);
+    QCoreApplication::processEvents();
 }
 
 void BasePageTests::databaseStateClearHookIsDispatched()

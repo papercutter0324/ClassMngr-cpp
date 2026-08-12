@@ -137,15 +137,11 @@ private:
 
     QLabel* m_noDatabaseTitle = nullptr;
 
-    QLabel* m_noDatabaseMessage = nullptr;
+    QLabel* m_initialSetupDescription = nullptr;
 
-    QLabel* m_noDatabaseStepOne = nullptr;
+    QLabel* m_newDatabaseDescription = nullptr;
 
-    QLabel* m_noDatabaseStepTwo = nullptr;
-
-    QLabel* m_noDatabaseStepThree = nullptr;
-
-    QLabel* m_noDatabaseNextSteps = nullptr;
+    QLabel* m_openDatabaseDescription = nullptr;
 
     QPushButton* m_openDatabaseButton = nullptr;
 
@@ -155,11 +151,19 @@ private:
 
     bool m_noDatabaseBannerEnabled = false;
 
+    bool m_noDatabaseBannerFontUpdateQueued = false;
+
     bool m_databaseOpen = false;
 
     void updateNoDatabaseBannerGeometry();
 
     void updateNoDatabaseBannerLayout();
+
+    void updateNoDatabaseBannerButtonWidths();
+
+    void updateNoDatabaseTitleFont();
+
+    void scheduleNoDatabaseBannerFontUpdate();
 };
 
 #endif // BASEPAGE_H

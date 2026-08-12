@@ -837,38 +837,33 @@
     </message>
     <message>
         <location line="+7"/>
-        <source>No Teacher Profile is open. Set up ClassMngr in this order:</source>
-        <translation>열려 있는 교사 프로필이 없습니다. 다음 순서로 ClassMngr를 설정하세요:</translation>
+        <source>Initial Setup</source>
+        <translation>초기 설정</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>1. Create a new Teacher Profile, or open an existing one.</source>
-        <translation>1. 새 교사 프로필을 만들거나 기존 교사 프로필을 여세요.</translation>
+        <source>— A guided setup to help you import or add your schedule, classes, and co-teachers.</source>
+        <translation>— 일정, 수업, 공동 교사 정보를 가져오거나 추가할 수 있도록 안내하는 설정입니다.</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>2. Create or import your Korean teachers.</source>
-        <translation>2. 한국인 교사를 만들거나 가져오세요.</translation>
+        <source>New Profile</source>
+        <translation>새 프로필</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>3. Create your classes and assign their teachers.</source>
-        <translation>3. 수업을 만들고 담당 교사를 지정하세요.</translation>
+        <source>— Create a new Teacher Profile and manually enter your schedule, classes, and co-teachers.</source>
+        <translation>— 새 교사 프로필을 만들고 일정, 수업, 공동 교사 정보를 직접 입력합니다.</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Next, add schedules and rosters, then fill in any other information you need.</source>
-        <translation>다음으로 일정과 명단을 추가한 후 필요한 기타 정보를 입력하세요.</translation>
+        <source>Open Profile</source>
+        <translation>프로필 열기</translation>
     </message>
     <message>
         <location line="+7"/>
-        <source>Open Teacher Profile...</source>
-        <translation>교사 프로필 열기...</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>New Teacher Profile...</source>
-        <translation>새 교사 프로필...</translation>
+        <source>— Open an existing Teacher Profile file.</source>
+        <translation>— 기존 교사 프로필 파일을 엽니다.</translation>
     </message>
 </context>
 <context>

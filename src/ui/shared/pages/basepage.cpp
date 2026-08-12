@@ -1,12 +1,15 @@
 #include "basepage.h"
-#include "ui/shared/widgets/text_fit_push_button.h"
+#include "core/fontmanager.h"
 
+#include <algorithm>
+#include <array>
 #include <QFrame>
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QSizePolicy>
 #include <QWidget>
@@ -14,6 +17,7 @@
 namespace
 {
 constexpr int NoDatabaseBannerSpacer = 8;
+constexpr int NoDatabaseBannerTitlePointSizeAtLarge = 20;
 }
 
 
@@ -125,85 +129,20 @@ BasePage::BasePage(
         m_noDatabaseTitle
         );
 
-    m_noDatabaseMessage =
-        new QLabel(m_noDatabaseBanner);
-
-    m_noDatabaseMessage->setObjectName(
-        QStringLiteral("noDatabaseMessage")
-        );
-
-    m_noDatabaseMessage->setWordWrap(true);
-
-    bannerLayout->addWidget(
-        m_noDatabaseMessage
-        );
-
-    m_noDatabaseStepOne =
-        new QLabel(m_noDatabaseBanner);
-
-    m_noDatabaseStepOne->setObjectName(
-        QStringLiteral("noDatabaseStepOne")
-        );
-
-    m_noDatabaseStepOne->setWordWrap(true);
-
-    bannerLayout->addWidget(
-        m_noDatabaseStepOne
-        );
-
-    m_noDatabaseStepTwo =
-        new QLabel(m_noDatabaseBanner);
-
-    m_noDatabaseStepTwo->setObjectName(
-        QStringLiteral("noDatabaseStepTwo")
-        );
-
-    m_noDatabaseStepTwo->setWordWrap(true);
-
-    bannerLayout->addWidget(
-        m_noDatabaseStepTwo
-        );
-
-    m_noDatabaseStepThree =
-        new QLabel(m_noDatabaseBanner);
-
-    m_noDatabaseStepThree->setObjectName(
-        QStringLiteral("noDatabaseStepThree")
-        );
-
-    m_noDatabaseStepThree->setWordWrap(true);
-
-    bannerLayout->addWidget(
-        m_noDatabaseStepThree
-        );
-
-    m_noDatabaseNextSteps =
-        new QLabel(m_noDatabaseBanner);
-
-    m_noDatabaseNextSteps->setObjectName(
-        QStringLiteral("noDatabaseNextSteps")
-        );
-
-    m_noDatabaseNextSteps->setWordWrap(true);
-
-    bannerLayout->addWidget(
-        m_noDatabaseNextSteps
-        );
-
-    auto* buttonLayout =
+    auto* initialSetupLayout =
         new QHBoxLayout;
 
-    buttonLayout->setContentsMargins(
+    initialSetupLayout->setContentsMargins(
         0,
         4,
         0,
         0
         );
 
-    buttonLayout->setSpacing(8);
+    initialSetupLayout->setSpacing(8);
 
     m_initialSetupButton =
-        new TextFitPushButton(m_noDatabaseBanner);
+        new QPushButton(m_noDatabaseBanner);
 
     m_initialSetupButton->setObjectName(
         QStringLiteral("noDatabaseSetupButton")
@@ -211,54 +150,123 @@ BasePage::BasePage(
 
     m_initialSetupButton->setDefault(true);
 
-    buttonLayout->addWidget(
+    initialSetupLayout->addWidget(
         m_initialSetupButton
         );
 
-    buttonLayout->addStretch();
+    m_initialSetupDescription =
+        new QLabel(m_noDatabaseBanner);
 
-    bannerLayout->addLayout(
-        buttonLayout
+    m_initialSetupDescription->setObjectName(
+        QStringLiteral("noDatabaseSetupDescription")
         );
 
-    auto* databaseButtonLayout =
+    m_initialSetupDescription->setWordWrap(true);
+
+    m_initialSetupDescription->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+
+    initialSetupLayout->addWidget(
+        m_initialSetupDescription,
+        1
+        );
+
+    bannerLayout->addLayout(
+        initialSetupLayout
+        );
+
+    auto* newProfileLayout =
         new QHBoxLayout;
 
-    databaseButtonLayout->setContentsMargins(
+    newProfileLayout->setContentsMargins(
         0,
         0,
         0,
         0
         );
 
-    databaseButtonLayout->setSpacing(8);
+    newProfileLayout->setSpacing(8);
 
     m_newDatabaseButton =
-        new TextFitPushButton(m_noDatabaseBanner);
+        new QPushButton(m_noDatabaseBanner);
 
     m_newDatabaseButton->setObjectName(
         QStringLiteral("noDatabaseNewButton")
         );
 
-    databaseButtonLayout->addWidget(
+    newProfileLayout->addWidget(
         m_newDatabaseButton
         );
 
+    m_newDatabaseDescription =
+        new QLabel(m_noDatabaseBanner);
+
+    m_newDatabaseDescription->setObjectName(
+        QStringLiteral("noDatabaseNewDescription")
+        );
+
+    m_newDatabaseDescription->setWordWrap(true);
+
+    m_newDatabaseDescription->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+
+    newProfileLayout->addWidget(
+        m_newDatabaseDescription,
+        1
+        );
+
+    bannerLayout->addLayout(
+        newProfileLayout
+        );
+
+    auto* openProfileLayout =
+        new QHBoxLayout;
+
+    openProfileLayout->setContentsMargins(
+        0,
+        0,
+        0,
+        0
+        );
+
+    openProfileLayout->setSpacing(8);
+
     m_openDatabaseButton =
-        new TextFitPushButton(m_noDatabaseBanner);
+        new QPushButton(m_noDatabaseBanner);
 
     m_openDatabaseButton->setObjectName(
         QStringLiteral("noDatabaseOpenButton")
         );
 
-    databaseButtonLayout->addWidget(
+    openProfileLayout->addWidget(
         m_openDatabaseButton
         );
 
-    databaseButtonLayout->addStretch();
+    m_openDatabaseDescription =
+        new QLabel(m_noDatabaseBanner);
+
+    m_openDatabaseDescription->setObjectName(
+        QStringLiteral("noDatabaseOpenDescription")
+        );
+
+    m_openDatabaseDescription->setWordWrap(true);
+
+    m_openDatabaseDescription->setSizePolicy(
+        QSizePolicy::Expanding,
+        QSizePolicy::Preferred
+        );
+
+    openProfileLayout->addWidget(
+        m_openDatabaseDescription,
+        1
+        );
 
     bannerLayout->addLayout(
-        databaseButtonLayout
+        openProfileLayout
         );
 
     connect(
@@ -355,61 +363,53 @@ void BasePage::retranslateUi()
             );
     }
 
-    if (m_noDatabaseMessage)
-    {
-        m_noDatabaseMessage->setText(
-            tr("No Teacher Profile is open. Set up ClassMngr in this order:")
-            );
-    }
-
-    if (m_noDatabaseStepOne)
-    {
-        m_noDatabaseStepOne->setText(
-            tr("1. Create a new Teacher Profile, or open an existing one.")
-            );
-    }
-
-    if (m_noDatabaseStepTwo)
-    {
-        m_noDatabaseStepTwo->setText(
-            tr("2. Create or import your Korean teachers.")
-            );
-    }
-
-    if (m_noDatabaseStepThree)
-    {
-        m_noDatabaseStepThree->setText(
-            tr("3. Create your classes and assign their teachers.")
-            );
-    }
-
-    if (m_noDatabaseNextSteps)
-    {
-        m_noDatabaseNextSteps->setText(
-            tr("Next, add schedules and rosters, then fill in any other information you need.")
-            );
-    }
-
-    if (m_openDatabaseButton)
-    {
-        m_openDatabaseButton->setText(
-            tr("Open Teacher Profile...")
-            );
-    }
+    updateNoDatabaseTitleFont();
 
     if (m_initialSetupButton)
     {
         m_initialSetupButton->setText(
-            tr("Initial Setup...")
+            tr("Initial Setup")
+            );
+    }
+
+    if (m_initialSetupDescription)
+    {
+        m_initialSetupDescription->setText(
+            tr("— A guided setup to help you import or add your schedule, "
+               "classes, and co-teachers.")
             );
     }
 
     if (m_newDatabaseButton)
     {
         m_newDatabaseButton->setText(
-            tr("New Teacher Profile...")
+            tr("New Profile")
             );
     }
+
+    if (m_newDatabaseDescription)
+    {
+        m_newDatabaseDescription->setText(
+            tr("— Create a new Teacher Profile and manually enter your schedule, "
+               "classes, and co-teachers.")
+            );
+    }
+
+    if (m_openDatabaseButton)
+    {
+        m_openDatabaseButton->setText(
+            tr("Open Profile")
+            );
+    }
+
+    if (m_openDatabaseDescription)
+    {
+        m_openDatabaseDescription->setText(
+            tr("— Open an existing Teacher Profile file.")
+            );
+    }
+
+    updateNoDatabaseBannerButtonWidths();
 }
 
 void BasePage::clearDatabaseState()
@@ -470,6 +470,16 @@ void BasePage::changeEvent(
         BasePage::retranslateUi();
         updateNoDatabaseBannerGeometry();
         updateNoDatabaseBannerLayout();
+
+        return;
+    }
+
+    if (
+        event->type() == QEvent::ApplicationFontChange
+        || event->type() == QEvent::FontChange
+        )
+    {
+        scheduleNoDatabaseBannerFontUpdate();
     }
 }
 
@@ -579,4 +589,100 @@ void BasePage::updateNoDatabaseBannerLayout()
     {
         m_mainLayout->setContentsMargins(margins);
     }
+}
+
+void BasePage::updateNoDatabaseBannerButtonWidths()
+{
+    const std::array<QPushButton*, 3> buttons{
+        m_initialSetupButton,
+        m_newDatabaseButton,
+        m_openDatabaseButton
+    };
+
+    int buttonWidth = 0;
+
+    for (QPushButton* button : buttons)
+    {
+        if (!button)
+        {
+            continue;
+        }
+
+        button->setMinimumWidth(0);
+        button->setMaximumWidth(QWIDGETSIZE_MAX);
+
+        buttonWidth = std::max(
+            buttonWidth,
+            button->sizeHint().width()
+            );
+    }
+
+    for (QPushButton* button : buttons)
+    {
+        if (button)
+        {
+            button->setFixedWidth(buttonWidth);
+        }
+    }
+}
+
+void BasePage::updateNoDatabaseTitleFont()
+{
+    if (!m_noDatabaseBanner || !m_noDatabaseTitle)
+    {
+        return;
+    }
+
+    QFont titleFont =
+        m_noDatabaseBanner->font();
+
+    const int standardFontSize =
+        titleFont.pointSize();
+
+    if (standardFontSize <= 0)
+    {
+        return;
+    }
+
+    const int standardFontSizeAtLarge =
+        standardFontSize
+        - FontManager::sizeOffset()
+        + fontSizeOffset(FontSize::Large);
+
+    const int titleFontSizeDifference =
+        NoDatabaseBannerTitlePointSizeAtLarge
+        - standardFontSizeAtLarge;
+
+    titleFont.setPointSize(
+        std::max(
+            1,
+            standardFontSize + titleFontSizeDifference
+            )
+        );
+
+    m_noDatabaseTitle->setFont(titleFont);
+}
+
+void BasePage::scheduleNoDatabaseBannerFontUpdate()
+{
+    if (m_noDatabaseBannerFontUpdateQueued)
+    {
+        return;
+    }
+
+    m_noDatabaseBannerFontUpdateQueued = true;
+
+    QTimer::singleShot(
+        0,
+        this,
+        [this]()
+        {
+            m_noDatabaseBannerFontUpdateQueued = false;
+
+            updateNoDatabaseTitleFont();
+            updateNoDatabaseBannerButtonWidths();
+            updateNoDatabaseBannerGeometry();
+            updateNoDatabaseBannerLayout();
+        }
+        );
 }

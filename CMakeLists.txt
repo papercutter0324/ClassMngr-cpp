@@ -1905,6 +1905,7 @@ if(BUILD_TESTING)
 
     qt_add_executable(ClassMngrBasePageTests
         tests/basepage_tests.cpp
+        src/core/fontmanager.cpp
         src/ui/shared/pages/basepage.cpp
     )
 
