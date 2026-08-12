@@ -296,6 +296,9 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
         QStringLiteral("icon_button")
         );
     QCOMPARE(settings->size(), QSize(42, 36));
+    QCOMPARE(settings->text(), QStringLiteral("\u2699"));
+    QCOMPARE(settings->font().pointSize(), 18);
+    QCOMPARE(settings->font().weight(), QFont::DemiBold);
     QVERIFY(settings->geometry().left() > weekend->geometry().right());
     auto* gradeTabBar =
         qobject_cast<UniformWidthTabBar*>(

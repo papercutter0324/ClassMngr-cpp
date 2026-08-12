@@ -654,11 +654,9 @@ void ClassesPage::createDayFilterControls(
     settingsButton->setObjectName(
         QStringLiteral("classesNavigationSettingsButton")
         );
-    settingsButton->setProperty(
-        "role",
-        QString::fromUtf8(UiRoles::IconButton)
+    UniformWidthTabWidget::configureNavigationSettingsButton(
+        settingsButton
         );
-    settingsButton->setFixedSize(42, 36);
     settingsButton->setAccessibleName(
         tr("Classes Settings")
         );

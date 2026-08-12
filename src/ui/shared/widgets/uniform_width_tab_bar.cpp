@@ -1,5 +1,6 @@
 #include "uniform_width_tab_bar.h"
 
+#include "core/fontmanager.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 
 #include <algorithm>
@@ -10,6 +11,7 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QProxyStyle>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QShowEvent>
 #include <QStyleOption>
@@ -935,6 +937,26 @@ void UniformWidthTabWidget::setTabAppearance(
 UniformWidthTabAlignment UniformWidthTabWidget::tabAlignment() const
 {
     return m_tabAlignment;
+}
+
+void UniformWidthTabWidget::configureNavigationSettingsButton(
+    QPushButton* button
+    )
+{
+    if (!button)
+    {
+        return;
+    }
+
+    button->setProperty("role", QStringLiteral("icon_button"));
+    button->setFixedSize(42, 36);
+    button->setText(QStringLiteral("\u2699"));
+    button->setFont(
+        FontManager::getUiFont(
+            18,
+            QFont::DemiBold
+            )
+        );
 }
 
 void UniformWidthTabWidget::setTabAlignment(

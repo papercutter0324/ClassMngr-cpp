@@ -674,11 +674,9 @@ void RostersPage::createDayFilterControls(
     settingsButton->setObjectName(
         QStringLiteral("rosterNavigationSettingsButton")
         );
-    settingsButton->setProperty(
-        "role",
-        QString::fromUtf8(UiRoles::IconButton)
+    UniformWidthTabWidget::configureNavigationSettingsButton(
+        settingsButton
         );
-    settingsButton->setFixedSize(42, 36);
     settingsButton->setAccessibleName(tr("Rosters Settings"));
     settingsButton->setToolTip(tr("Rosters Settings"));
     layout->addWidget(settingsButton);

@@ -11,6 +11,7 @@ class QEvent;
 class QMouseEvent;
 class QObject;
 class QPaintEvent;
+class QPushButton;
 class QToolButton;
 class QWheelEvent;
 
@@ -203,6 +204,10 @@ public:
 
     void setTabAlignment(
         UniformWidthTabAlignment alignment
+        );
+
+    static void configureNavigationSettingsButton(
+        QPushButton* button
         );
 
 protected:

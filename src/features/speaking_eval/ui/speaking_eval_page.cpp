@@ -502,11 +502,9 @@ void SpeakingEvalPage::createDayFilterControls(
     settingsButton->setObjectName(
         QStringLiteral("speakingEvalNavigationSettingsButton")
         );
-    settingsButton->setProperty(
-        "role",
-        QString::fromUtf8(UiRoles::IconButton)
+    UniformWidthTabWidget::configureNavigationSettingsButton(
+        settingsButton
         );
-    settingsButton->setFixedSize(42, 36);
     settingsButton->setAccessibleName(tr("Speaking Evaluation Settings"));
     settingsButton->setToolTip(tr("Speaking Evaluation Settings"));
     layout->addWidget(settingsButton);
