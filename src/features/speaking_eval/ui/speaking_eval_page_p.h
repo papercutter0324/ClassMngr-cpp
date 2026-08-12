@@ -25,7 +25,8 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QAbstractButton>
 #include <QDialog>
@@ -42,8 +43,6 @@
 #include <QSet>
 #include <QSizePolicy>
 #include <QTableView>
-#include <QTabBar>
-#include <QTabWidget>
 #include <QTimer>
 #include <QUndoStack>
 #include <QVBoxLayout>

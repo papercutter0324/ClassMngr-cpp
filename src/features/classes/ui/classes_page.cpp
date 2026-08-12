@@ -8,7 +8,6 @@
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_details_page.h"
-#include "features/classes/ui/classes_navigation_tabs.h"
 #include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
@@ -16,8 +15,8 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
-#include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <utility>
 
@@ -26,8 +25,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QStackedWidget>
-#include <QTabBar>
-#include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -390,8 +387,8 @@ void ClassesPage::buildUi()
     navigationLayout->addWidget(m_classTabsContainer);
 
     m_sectionTabs =
-        ClassesNavigationTabs::create(
-            UniformWidthTabKind::Section,
+        new NavigationTabWidget(
+            NavigationTabKind::Section,
             QStringLiteral("classesSectionTabBar"),
             m_navigationContainer
             );
@@ -419,7 +416,7 @@ void ClassesPage::buildUi()
 
     connect(
         m_sectionTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [this](int index)
         {
@@ -508,8 +505,8 @@ void ClassesPage::rebuildClassTabs(
             );
 
     auto* gradeTabs =
-        ClassesNavigationTabs::create(
-            UniformWidthTabKind::Grade,
+        new NavigationTabWidget(
+            NavigationTabKind::Grade,
             QStringLiteral("classesGradeTabBar"),
             m_classTabsContainer
             );
@@ -517,11 +514,11 @@ void ClassesPage::rebuildClassTabs(
     createDayFilterControls(gradeTabs);
 
     const auto connectClassTabs =
-        [this](QTabWidget* tabs)
+        [this](NavigationTabWidget* tabs)
         {
             connect(
                 tabs,
-                &QTabWidget::currentChanged,
+                &NavigationTabWidget::currentChanged,
                 this,
                 [this, tabs](int)
                 {
@@ -546,8 +543,8 @@ void ClassesPage::rebuildClassTabs(
         gradeLayout->setAlignment(Qt::AlignTop);
 
         auto* classTabs =
-            ClassesNavigationTabs::create(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("classesLevelTabBar"),
                 gradePage
                 );
@@ -569,7 +566,7 @@ void ClassesPage::rebuildClassTabs(
 
     connect(
         gradeTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [this, gradeTabs](int)
         {
@@ -590,7 +587,7 @@ void ClassesPage::rebuildClassTabs(
 }
 
 void ClassesPage::createDayFilterControls(
-    UniformWidthTabWidget* gradeTabs
+    NavigationTabWidget* gradeTabs
     )
 {
     if (!gradeTabs)
@@ -657,12 +654,9 @@ void ClassesPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new QPushButton(controls);
+    auto* settingsButton = new NavigationSettingsButton(controls);
     settingsButton->setObjectName(
         QStringLiteral("classesNavigationSettingsButton")
-        );
-    UniformWidthTabWidget::configureNavigationSettingsButton(
-        settingsButton
         );
     settingsButton->setAccessibleName(
         tr("Classes Settings")
@@ -671,10 +665,6 @@ void ClassesPage::createDayFilterControls(
         tr("Classes Settings")
         );
     layout->addWidget(settingsButton);
-    controls->setFixedHeight(
-        NavigationPillStyle::ControlHeight
-        );
-
     connect(
         settingsButton,
         &QPushButton::clicked,
@@ -682,10 +672,7 @@ void ClassesPage::createDayFilterControls(
         &ClassesPage::openNavigationSettings
         );
 
-    gradeTabs->setCornerWidget(
-        controls,
-        Qt::TopRightCorner
-        );
+    gradeTabs->setTrailingWidget(controls);
 }
 
 void ClassesPage::setDayFilterEnabled(
@@ -746,14 +733,14 @@ void ClassesPage::setNavigationSelectionVisible(
         return;
     }
 
-    const QList<UniformWidthTabBar*> tabBars =
-        m_classTabs->findChildren<UniformWidthTabBar*>();
+    const QList<NavigationTabStrip*> tabBars =
+        m_classTabs->findChildren<NavigationTabStrip*>();
 
-    for (UniformWidthTabBar* tabBar : tabBars)
+    for (NavigationTabStrip* tabBar : tabBars)
     {
         if (tabBar)
         {
-            tabBar->setCurrentSelectionVisible(visible);
+            tabBar->setSelectionVisible(visible);
         }
     }
 }
@@ -925,7 +912,7 @@ void ClassesPage::syncTabsToClass(
         QWidget* gradePage = m_classTabs->widget(gradeIndex);
         auto* classTabs =
             gradePage
-                ? gradePage->findChild<QTabWidget*>(
+                ? gradePage->findChild<NavigationTabWidget*>(
                     QStringLiteral("classesLevelTabs")
                     )
                 : nullptr;
@@ -966,7 +953,7 @@ void ClassesPage::syncTabsToClass(
         m_classTabs->setCurrentIndex(0);
 
         if (auto* classTabs =
-            m_classTabs->currentWidget()->findChild<QTabWidget*>(
+            m_classTabs->currentWidget()->findChild<NavigationTabWidget*>(
                 QStringLiteral("classesLevelTabs")
                 ))
         {
@@ -976,7 +963,7 @@ void ClassesPage::syncTabsToClass(
 }
 
 int ClassesPage::currentClassIdFromTabs(
-    QTabWidget* tabs
+    NavigationTabWidget* tabs
     ) const
 {
     if (
@@ -987,11 +974,7 @@ int ClassesPage::currentClassIdFromTabs(
         return -1;
     }
 
-    if (const auto* tabBar =
-            qobject_cast<const UniformWidthTabBar*>(
-                tabs->tabBar()
-                );
-        tabBar && !tabBar->currentSelectionVisible())
+    if (!tabs->selectionVisible())
     {
         return -1;
     }
@@ -1009,7 +992,7 @@ int ClassesPage::currentClassIdFromTabs(
 
     auto* classTabs =
         page
-            ? page->findChild<QTabWidget*>(
+            ? page->findChild<NavigationTabWidget*>(
                 QStringLiteral("classesLevelTabs")
                 )
             : nullptr;

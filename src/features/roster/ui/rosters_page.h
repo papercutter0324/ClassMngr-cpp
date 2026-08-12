@@ -9,10 +9,9 @@
 
 class ApplicationServices;
 class QLabel;
-class QTabWidget;
+class NavigationTabWidget;
 class QVBoxLayout;
 class RosterEditorWidget;
-class UniformWidthTabWidget;
 class QWidget;
 
 class RostersPage : public BasePage
@@ -57,7 +56,7 @@ private:
         int selectedClassId
         );
     void createDayFilterControls(
-        UniformWidthTabWidget* tabs
+        NavigationTabWidget* tabs
         );
     void setDayFilterEnabled(
         const QString& key,
@@ -77,11 +76,11 @@ private:
         );
     void restoreRosterTabSelection();
     void syncTabWidgetToClass(
-        QTabWidget* tabs,
+        NavigationTabWidget* tabs,
         int classId
         );
     int currentClassIdFromTabs(
-        QTabWidget* tabs
+        NavigationTabWidget* tabs
         ) const;
     Classroom classroomById(
         int classId
@@ -108,6 +107,6 @@ private:
     QLabel* m_emptyLabel = nullptr;
     QWidget* m_tabsContainer = nullptr;
     QVBoxLayout* m_tabsLayout = nullptr;
-    QTabWidget* m_rosterTabs = nullptr;
+    NavigationTabWidget* m_rosterTabs = nullptr;
     RosterEditorWidget* m_editor = nullptr;
 };

@@ -12,7 +12,7 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <algorithm>
 
@@ -22,7 +22,6 @@
 #include <QLineEdit>
 #include <QLayout>
 #include <QSizePolicy>
-#include <QTabWidget>
 #include <QTextEdit>
 #include <QVBoxLayout>
 
@@ -545,7 +544,7 @@ void MyClassesPage::rebuildClassInformation()
         };
 
     auto tabIndexForClass =
-        [](QTabWidget* tabs, int classId)
+        [](NavigationTabWidget* tabs, int classId)
         {
             if (!tabs)
             {
@@ -570,7 +569,7 @@ void MyClassesPage::rebuildClassInformation()
         };
 
     auto updateSelectedFromTabs =
-        [this](QTabWidget* tabs)
+        [this](NavigationTabWidget* tabs)
         {
             if (!tabs || tabs->currentIndex() < 0)
             {
@@ -884,8 +883,8 @@ void MyClassesPage::rebuildClassInformation()
     if (navigation.mode == ClassTabNavigation::Mode::Flat)
     {
         auto* tabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("myInfoClassTabBar"),
                 m_classInformationContent
                 );
@@ -913,7 +912,7 @@ void MyClassesPage::rebuildClassInformation()
 
         connect(
             tabs,
-            &QTabWidget::currentChanged,
+            &NavigationTabWidget::currentChanged,
             this,
             [tabs, updateSelectedFromTabs](int)
             {
@@ -947,8 +946,8 @@ void MyClassesPage::rebuildClassInformation()
     }
 
     auto* gradeTabs =
-        new UniformWidthTabWidget(
-            UniformWidthTabKind::Grade,
+        new NavigationTabWidget(
+            NavigationTabKind::Grade,
             QStringLiteral("myInfoGradeTabBar"),
             m_classInformationContent
             );
@@ -972,8 +971,8 @@ void MyClassesPage::rebuildClassInformation()
         gradeLayout->setAlignment(Qt::AlignTop);
 
         auto* classTabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("myInfoClassTabBar"),
                 gradePage
                 );
@@ -1009,7 +1008,7 @@ void MyClassesPage::rebuildClassInformation()
 
         connect(
             classTabs,
-            &QTabWidget::currentChanged,
+            &NavigationTabWidget::currentChanged,
             this,
             [classTabs, updateSelectedFromTabs](int)
             {
@@ -1029,7 +1028,7 @@ void MyClassesPage::rebuildClassInformation()
 
     connect(
         gradeTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [gradeTabs, updateSelectedFromTabs](int index)
         {
@@ -1038,7 +1037,7 @@ void MyClassesPage::rebuildClassInformation()
 
             auto* classTabs =
                 gradePage
-                    ? gradePage->findChild<QTabWidget*>(
+                    ? gradePage->findChild<NavigationTabWidget*>(
                         QStringLiteral("myInfoClassTabs"),
                         Qt::FindDirectChildrenOnly
                         )
@@ -1066,7 +1065,7 @@ void MyClassesPage::rebuildClassInformation()
 
         auto* selectedClassTabs =
             gradePage
-                ? gradePage->findChild<QTabWidget*>(
+                ? gradePage->findChild<NavigationTabWidget*>(
                     QStringLiteral("myInfoClassTabs"),
                     Qt::FindDirectChildrenOnly
                     )

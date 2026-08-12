@@ -285,11 +285,11 @@ void SpeakingEvalPage::rebuildClassTabs(
         };
 
     const auto connectClassTabs =
-        [this](QTabWidget* tabs)
+        [this](NavigationTabWidget* tabs)
         {
             connect(
                 tabs,
-                &QTabWidget::currentChanged,
+                &NavigationTabWidget::currentChanged,
                 this,
                 [this, tabs](int)
                 {
@@ -314,8 +314,8 @@ void SpeakingEvalPage::rebuildClassTabs(
     if (navigation.mode == ClassTabNavigation::Mode::Flat)
     {
         auto* tabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("speakingEvalClassTabBar"),
                 m_classTabsContainer
                 );
@@ -347,8 +347,8 @@ void SpeakingEvalPage::rebuildClassTabs(
     else
     {
         auto* gradeTabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Grade,
+            new NavigationTabWidget(
+                NavigationTabKind::Grade,
                 QStringLiteral("speakingEvalGradeTabBar"),
                 m_classTabsContainer
                 );
@@ -372,8 +372,8 @@ void SpeakingEvalPage::rebuildClassTabs(
             gradeLayout->setAlignment(Qt::AlignTop);
 
             auto* classTabs =
-                new UniformWidthTabWidget(
-                    UniformWidthTabKind::Class,
+                new NavigationTabWidget(
+                    NavigationTabKind::Class,
                     QStringLiteral("speakingEvalClassTabBar"),
                     gradePage
                     );
@@ -406,7 +406,7 @@ void SpeakingEvalPage::rebuildClassTabs(
 
         connect(
             gradeTabs,
-            &QTabWidget::currentChanged,
+            &NavigationTabWidget::currentChanged,
             this,
             [this, gradeTabs](int)
             {
@@ -447,7 +447,7 @@ void SpeakingEvalPage::rebuildClassTabs(
 }
 
 void SpeakingEvalPage::createDayFilterControls(
-    UniformWidthTabWidget* tabs
+    NavigationTabWidget* tabs
     )
 {
     if (!tabs)
@@ -504,20 +504,13 @@ void SpeakingEvalPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new QPushButton(controls);
+    auto* settingsButton = new NavigationSettingsButton(controls);
     settingsButton->setObjectName(
         QStringLiteral("speakingEvalNavigationSettingsButton")
-        );
-    UniformWidthTabWidget::configureNavigationSettingsButton(
-        settingsButton
         );
     settingsButton->setAccessibleName(tr("Speaking Evaluation Settings"));
     settingsButton->setToolTip(tr("Speaking Evaluation Settings"));
     layout->addWidget(settingsButton);
-    controls->setFixedHeight(
-        NavigationPillStyle::ControlHeight
-        );
-
     connect(
         settingsButton,
         &QPushButton::clicked,
@@ -525,7 +518,7 @@ void SpeakingEvalPage::createDayFilterControls(
         &SpeakingEvalPage::openNavigationSettings
         );
 
-    tabs->setCornerWidget(controls, Qt::TopRightCorner);
+    tabs->setTrailingWidget(controls);
 }
 
 void SpeakingEvalPage::setDayFilterEnabled(
@@ -642,36 +635,36 @@ void SpeakingEvalPage::setNavigationSelectionVisible(
         return;
     }
 
-    const QList<UniformWidthTabBar*> tabBars =
-        m_classTabs->findChildren<UniformWidthTabBar*>();
+    const QList<NavigationTabStrip*> tabBars =
+        m_classTabs->findChildren<NavigationTabStrip*>();
 
-    for (UniformWidthTabBar* tabBar : tabBars)
+    for (NavigationTabStrip* tabBar : tabBars)
     {
         if (tabBar)
         {
-            tabBar->setCurrentSelectionVisible(visible);
+            tabBar->setSelectionVisible(visible);
         }
     }
 }
 
 void SpeakingEvalPage::syncEvaluationTabFont()
 {
-    if (!m_evaluationTabs || !m_classTabs || !m_classTabs->tabBar())
+    if (!m_evaluationTabs || !m_classTabs || !m_classTabs->tabStrip())
     {
         return;
     }
 
     const QFont evaluationTabFont =
-        m_classTabs->tabBar()->font();
+        m_classTabs->tabStrip()->font();
 
     m_evaluationTabs->setFont(
         evaluationTabFont
         );
-    m_evaluationTabs->tabBar()->setFont(
+    m_evaluationTabs->tabStrip()->setFont(
         evaluationTabFont
         );
     m_evaluationTabs->updateGeometry();
-    m_evaluationTabs->tabBar()->updateGeometry();
+    m_evaluationTabs->tabStrip()->updateGeometry();
 }
 
 bool SpeakingEvalPage::activateEvaluation(
@@ -757,7 +750,7 @@ void SpeakingEvalPage::restoreEvaluationTabSelection()
 }
 
 void SpeakingEvalPage::syncTabWidgetToClass(
-    QTabWidget* tabs,
+    NavigationTabWidget* tabs,
     int classId
     )
 {
@@ -783,7 +776,7 @@ void SpeakingEvalPage::syncTabWidgetToClass(
 
         auto* nestedTabs =
             page
-                ? page->findChild<QTabWidget*>(
+                ? page->findChild<NavigationTabWidget*>(
                     QStringLiteral("speakingEvalClassTabs")
                     )
                 : nullptr;
@@ -824,7 +817,7 @@ void SpeakingEvalPage::syncTabWidgetToClass(
 
         auto* nestedTabs =
             tabs->currentWidget()
-                ? tabs->currentWidget()->findChild<QTabWidget*>(
+                ? tabs->currentWidget()->findChild<NavigationTabWidget*>(
                     QStringLiteral("speakingEvalClassTabs")
                     )
                 : nullptr;
@@ -837,7 +830,7 @@ void SpeakingEvalPage::syncTabWidgetToClass(
 }
 
 int SpeakingEvalPage::currentClassIdFromTabs(
-    QTabWidget* tabs
+    NavigationTabWidget* tabs
     ) const
 {
     if (!tabs || tabs->currentIndex() < 0)
@@ -845,8 +838,7 @@ int SpeakingEvalPage::currentClassIdFromTabs(
         return -1;
     }
 
-    if (const auto* tabBar = qobject_cast<const UniformWidthTabBar*>(tabs->tabBar());
-        tabBar && !tabBar->currentSelectionVisible())
+    if (!tabs->selectionVisible())
     {
         return -1;
     }
@@ -866,7 +858,7 @@ int SpeakingEvalPage::currentClassIdFromTabs(
 
     auto* nestedTabs =
         page
-            ? page->findChild<QTabWidget*>(
+            ? page->findChild<NavigationTabWidget*>(
                 QStringLiteral("speakingEvalClassTabs")
                 )
             : nullptr;

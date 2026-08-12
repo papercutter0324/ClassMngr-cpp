@@ -20,6 +20,7 @@ inline constexpr int HorizontalPadding = 14;
 inline constexpr int VerticalPadding = 6;
 inline constexpr int Gap = 6;
 inline constexpr int ControlHeight = 36;
+inline constexpr int RowBottomSpacing = 2;
 
 struct Colors
 {

@@ -5,6 +5,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QtTest>
 
@@ -21,8 +22,6 @@
 #include <QTextEdit>
 #include <QTemporaryDir>
 #include <QStandardPaths>
-#include <QTabBar>
-#include <QTabWidget>
 #include <QVBoxLayout>
 
 namespace ScheduleWidgetTestStubs
@@ -270,27 +269,27 @@ void SubPrepPageTests
         );
 
     auto* gradeTabs =
-        page.findChild<QTabWidget*>(
+        page.findChild<NavigationTabWidget*>(
             QStringLiteral("subPrepGradeTabs")
             );
     QVERIFY(gradeTabs);
     QCOMPARE(gradeTabs->count(), 1);
     QCOMPARE(
-        gradeTabs->tabBar()->objectName(),
+        gradeTabs->tabStrip()->objectName(),
         QStringLiteral("subPrepGradeTabBar")
         );
 
     auto* levelTabs =
         gradeTabs
             ->currentWidget()
-            ->findChild<QTabWidget*>(
+            ->findChild<NavigationTabWidget*>(
                 QStringLiteral("subPrepLevelTabs"),
                 Qt::FindDirectChildrenOnly
                 );
     QVERIFY(levelTabs);
     QCOMPARE(levelTabs->count(), 1);
     QCOMPARE(
-        levelTabs->tabBar()->objectName(),
+        levelTabs->tabStrip()->objectName(),
         QStringLiteral("subPrepLevelTabBar")
         );
     QCOMPARE(
@@ -400,7 +399,7 @@ void SubPrepPageTests
     SubPrepPage page(&services);
 
     auto* gradeTabs =
-        page.findChild<QTabWidget*>(
+        page.findChild<NavigationTabWidget*>(
             QStringLiteral("subPrepGradeTabs")
             );
     QVERIFY(gradeTabs);
@@ -423,7 +422,7 @@ void SubPrepPageTests
     auto* levelTabs =
         gradeTabs
             ->currentWidget()
-            ->findChild<QTabWidget*>(
+            ->findChild<NavigationTabWidget*>(
                 QStringLiteral("subPrepLevelTabs"),
                 Qt::FindDirectChildrenOnly
                 );
@@ -459,7 +458,7 @@ void SubPrepPageTests
         );
 
     gradeTabs =
-        page.findChild<QTabWidget*>(
+        page.findChild<NavigationTabWidget*>(
             QStringLiteral("subPrepGradeTabs")
             );
     QVERIFY(gradeTabs);
@@ -467,7 +466,7 @@ void SubPrepPageTests
     levelTabs =
         gradeTabs
             ->currentWidget()
-            ->findChild<QTabWidget*>(
+            ->findChild<NavigationTabWidget*>(
                 QStringLiteral("subPrepLevelTabs"),
                 Qt::FindDirectChildrenOnly
                 );

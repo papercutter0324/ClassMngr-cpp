@@ -5,7 +5,7 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QFrame>
 #include <QLabel>
@@ -14,7 +14,6 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QShowEvent>
-#include <QTabWidget>
 #include <QTimer>
 #include <QVBoxLayout>
 

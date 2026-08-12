@@ -83,15 +83,12 @@ void SpeakingEvalPage::buildUi()
     tabsLayout->addWidget(m_classTabsContainer);
 
     m_evaluationTabs =
-        new UniformWidthTabWidget(
-            UniformWidthTabKind::Section,
+        new NavigationTabWidget(
+            NavigationTabKind::Section,
             QStringLiteral("speakingEvalEvaluationTabBar"),
             m_tabsContainer
             );
     m_evaluationTabs->setObjectName("speakingEvalEvaluationTabs");
-    m_evaluationTabs->setTabAppearance(
-        UniformWidthTabAppearance::NavigationPill
-        );
     m_evaluationTabs->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Maximum
@@ -290,7 +287,7 @@ void SpeakingEvalPage::buildUi()
 
     connect(
         m_evaluationTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [this](int)
         {

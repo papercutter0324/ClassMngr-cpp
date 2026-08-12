@@ -6,7 +6,7 @@ class ApplicationServices;
 class QLabel;
 class QScrollArea;
 class QShowEvent;
-class QTabWidget;
+class NavigationTabWidget;
 class QTextEdit;
 class QVBoxLayout;
 class QWidget;
@@ -52,6 +52,6 @@ private:
     QLabel* m_subtitleLabel = nullptr;
     QWidget* m_classInformationContent = nullptr;
     QVBoxLayout* m_classInformationLayout = nullptr;
-    QTabWidget* m_classInformationTabs = nullptr;
+    NavigationTabWidget* m_classInformationTabs = nullptr;
     int m_selectedClassId = -1;
 };

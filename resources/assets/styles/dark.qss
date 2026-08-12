@@ -506,45 +506,13 @@ QTabBar::tab:selected {
     font-weight: 600;
 }
 
-QTabWidget#subPrepGradeTabs::pane,
-QTabWidget#subPrepClassTabs::pane,
-QTabWidget#myInfoGradeTabs::pane,
-QTabWidget#myInfoClassTabs::pane,
-QTabWidget[uniformTabKind="grade"]::pane,
-QTabWidget[uniformTabKind="class"]::pane,
-QTabWidget[uniformTabKind="section"]::pane {
+NavigationTabWidget,
+NavigationTabStrip,
+NavigationTabStrip QWidget#navigationTabContent,
+NavigationTabStrip QScrollArea#navigationTabViewport,
+NavigationTabStrip QScrollArea#navigationTabViewport QWidget#qt_scrollarea_viewport {
     border: 0;
     background: transparent;
-    margin-top: 8px;
-}
-
-QTabBar#subPrepGradeTabBar::tab,
-QTabBar#subPrepClassTabBar::tab,
-QTabBar#myInfoGradeTabBar::tab,
-QTabBar#myInfoClassTabBar::tab,
-QTabBar[uniformTabKind="grade"]::tab,
-QTabBar[uniformTabKind="class"]::tab,
-QTabBar[uniformTabKind="section"]::tab {
-    background-color: #303030;
-    color: #f0f0f0;
-    border: 1px solid #454545;
-    border-radius: 7px;
-    margin-right: 6px;
-}
-
-QTabBar#subPrepGradeTabBar,
-QTabBar#subPrepClassTabBar,
-QTabBar#myInfoGradeTabBar,
-QTabBar#myInfoClassTabBar,
-QTabBar[uniformTabKind="grade"],
-QTabBar[uniformTabKind="class"],
-QTabBar[uniformTabKind="section"] {
-    qproperty-drawBase: 0;
-    qproperty-navigationTabFillColor: #303030;
-    qproperty-navigationTabBorderColor: #454545;
-    qproperty-navigationTabHoverColor: #31363b;
-    qproperty-navigationTabSelectedColor: #3daee9;
-    qproperty-navigationTabTextColor: #f0f0f0;
 }
 
 NavigationPillButton {
@@ -555,64 +523,38 @@ NavigationPillButton {
     qproperty-navigationTabTextColor: #f0f0f0;
 }
 
-UniformWidthTabBar QToolButton#ScrollLeftButton,
-UniformWidthTabBar QToolButton#ScrollRightButton {
+NavigationTabStrip QToolButton#NavigationTabScrollLeftButton,
+NavigationTabStrip QToolButton#NavigationTabScrollRightButton {
     background-color: #3b3f43;
     color: #ffffff;
     border: 1px solid #737a80;
     border-radius: 6px;
 }
 
-UniformWidthTabBar QToolButton#ScrollLeftButton:hover,
-UniformWidthTabBar QToolButton#ScrollRightButton:hover {
+NavigationTabStrip QToolButton#NavigationTabScrollLeftButton:hover,
+NavigationTabStrip QToolButton#NavigationTabScrollRightButton:hover {
     background-color: #4b535a;
     border-color: #3daee9;
 }
 
-UniformWidthTabBar QToolButton#ScrollLeftButton:pressed,
-UniformWidthTabBar QToolButton#ScrollRightButton:pressed {
+NavigationTabStrip QToolButton#NavigationTabScrollLeftButton:pressed,
+NavigationTabStrip QToolButton#NavigationTabScrollRightButton:pressed {
     background-color: #202428;
     border-color: #75c8f2;
 }
 
-UniformWidthTabBar QToolButton#ScrollLeftButton:disabled,
-UniformWidthTabBar QToolButton#ScrollRightButton:disabled {
+NavigationTabStrip QToolButton#NavigationTabScrollLeftButton:disabled,
+NavigationTabStrip QToolButton#NavigationTabScrollRightButton:disabled {
     background-color: #292c2f;
     color: #8f969c;
     border-color: #4b5055;
 }
 
-QTabBar#subPrepGradeTabBar::tab,
-QTabBar#subPrepClassTabBar::tab,
-QTabBar#myInfoGradeTabBar::tab,
-QTabBar#myInfoClassTabBar::tab,
-QTabBar[uniformTabKind="grade"]::tab,
-QTabBar[uniformTabKind="class"]::tab,
-QTabBar[uniformTabKind="section"]::tab {
-    padding: 6px 14px;
-}
-
-QTabBar#subPrepGradeTabBar::tab:hover,
-QTabBar#subPrepClassTabBar::tab:hover,
-QTabBar#myInfoGradeTabBar::tab:hover,
-QTabBar#myInfoClassTabBar::tab:hover,
-QTabBar[uniformTabKind="grade"]::tab:hover,
-QTabBar[uniformTabKind="class"]::tab:hover,
-QTabBar[uniformTabKind="section"]::tab:hover {
-    background-color: #31363b;
-    border-color: #3daee9;
-}
-
-QTabBar#subPrepGradeTabBar::tab:selected,
-QTabBar#subPrepClassTabBar::tab:selected,
-QTabBar#myInfoGradeTabBar::tab:selected,
-QTabBar#myInfoClassTabBar::tab:selected,
-QTabBar[uniformTabKind="grade"]::tab:selected,
-QTabBar[uniformTabKind="class"]::tab:selected,
-QTabBar[uniformTabKind="section"]::tab:selected {
-    background-color: #3daee9;
-    color: #ffffff;
-    border-color: #3daee9;
+NavigationSettingsButton {
+    qproperty-navigationSettingsHoverColor: #31363b;
+    qproperty-navigationSettingsPressedColor: #202428;
+    qproperty-navigationSettingsTextColor: #f0f0f0;
+    qproperty-navigationSettingsFocusColor: #75c8f2;
 }
 
 QTableView,

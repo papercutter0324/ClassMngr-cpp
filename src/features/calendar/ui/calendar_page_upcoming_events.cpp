@@ -10,7 +10,7 @@
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/calendar_settings_keys.h"
 #include "ui/shared/widgets/marquee_label.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <array>
 
@@ -26,7 +26,6 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QTabBar>
-#include <QTabWidget>
 #include <QTimer>
 #include <QVariant>
 #include <QVariantMap>
@@ -323,16 +322,13 @@ void CalendarPage::buildUpcomingEventsPanel(
     }
 
     m_upcomingEventsTabs =
-        new UniformWidthTabWidget(
-            UniformWidthTabKind::Section,
+        new NavigationTabWidget(
+            NavigationTabKind::Section,
             QStringLiteral("calendarUpcomingTabBar"),
             parent
             );
     m_upcomingEventsTabs->setObjectName(
         QStringLiteral("calendarUpcomingTabs")
-        );
-    m_upcomingEventsTabs->setTabAppearance(
-        UniformWidthTabAppearance::NavigationPill
         );
     m_upcomingEventsTabs->setSizePolicy(
         QSizePolicy::Expanding,
@@ -363,7 +359,7 @@ void CalendarPage::buildUpcomingEventsPanel(
 
     connect(
         m_upcomingEventsTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [this](int)
         {
@@ -1066,16 +1062,16 @@ void CalendarPage::syncEventTypeFilterButtons()
             );
     }
 
-    if (m_upcomingEventsTabs && m_upcomingEventsTabs->tabBar())
+    if (m_upcomingEventsTabs && m_upcomingEventsTabs->tabStrip())
     {
         m_upcomingEventsTabs->setFont(
             navigationFont
             );
-        m_upcomingEventsTabs->tabBar()->setFont(
+        m_upcomingEventsTabs->tabStrip()->setFont(
             navigationFont
             );
         m_upcomingEventsTabs->updateGeometry();
-        m_upcomingEventsTabs->tabBar()->updateGeometry();
+        m_upcomingEventsTabs->tabStrip()->updateGeometry();
     }
 }
 void CalendarPage::syncCalendarEventTypeColors()

@@ -13,11 +13,10 @@ class ClassDetailsPage;
 class ClassNotesPage;
 class QLabel;
 class NavigationPillButton;
+class NavigationTabWidget;
 class QStackedWidget;
-class QTabWidget;
 class QVBoxLayout;
 class RosterEditorWidget;
-class UniformWidthTabWidget;
 class QWidget;
 
 enum class ClassesSection
@@ -68,7 +67,7 @@ signals:
 private:
     void buildUi();
     void rebuildClassTabs(int selectedClassId);
-    void createDayFilterControls(UniformWidthTabWidget* gradeTabs);
+    void createDayFilterControls(NavigationTabWidget* gradeTabs);
     void setDayFilterEnabled(
         const QString& key,
         bool enabled
@@ -88,7 +87,7 @@ private:
     void loadEditors(const Classroom& classroom);
     void restoreSelections();
     void syncTabsToClass(int classId);
-    int currentClassIdFromTabs(QTabWidget* tabs) const;
+    int currentClassIdFromTabs(NavigationTabWidget* tabs) const;
     int firstNavigationClassId() const;
     Classroom classroomById(int classId) const;
     BasePage* activeEditor() const;
@@ -117,8 +116,8 @@ private:
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
     QHash<QString, NavigationPillButton*> m_dayFilterButtons;
-    UniformWidthTabWidget* m_classTabs = nullptr;
-    UniformWidthTabWidget* m_sectionTabs = nullptr;
+    NavigationTabWidget* m_classTabs = nullptr;
+    NavigationTabWidget* m_sectionTabs = nullptr;
     QStackedWidget* m_editorStack = nullptr;
     ClassDetailsPage* m_detailsPage = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;

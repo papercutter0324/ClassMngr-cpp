@@ -16,7 +16,7 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <algorithm>
 #include <utility>
@@ -41,7 +41,6 @@
 #include <QSizePolicy>
 #include <QTextEdit>
 #include <QTimer>
-#include <QTabWidget>
 #include <QVariant>
 #include <QVBoxLayout>
 #include <QtAssert>

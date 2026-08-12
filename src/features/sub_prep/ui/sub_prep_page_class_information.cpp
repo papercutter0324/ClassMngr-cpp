@@ -79,8 +79,8 @@ void SubPrepPage::rebuildClassInformation()
             );
 
     auto* gradeTabs =
-        new UniformWidthTabWidget(
-            UniformWidthTabKind::Grade,
+        new NavigationTabWidget(
+            NavigationTabKind::Grade,
             QStringLiteral("subPrepGradeTabBar"),
             m_classInformationContent
             );
@@ -340,8 +340,8 @@ void SubPrepPage::rebuildClassInformation()
         gradeLayout->setAlignment(Qt::AlignTop);
 
         auto* levelTabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("subPrepLevelTabBar"),
                 gradePage
                 );
@@ -377,7 +377,7 @@ void SubPrepPage::rebuildClassInformation()
 
         connect(
             levelTabs,
-            &QTabWidget::currentChanged,
+            &NavigationTabWidget::currentChanged,
             this,
             [this](int)
             {
@@ -395,7 +395,7 @@ void SubPrepPage::rebuildClassInformation()
 
     connect(
         gradeTabs,
-        &QTabWidget::currentChanged,
+        &NavigationTabWidget::currentChanged,
         this,
         [this](int)
         {
@@ -417,7 +417,7 @@ void SubPrepPage::rebuildClassInformation()
         gradeTabs->currentWidget()
             ? gradeTabs
                 ->currentWidget()
-                ->findChild<QTabWidget*>(
+                ->findChild<NavigationTabWidget*>(
                     QStringLiteral("subPrepLevelTabs"),
                     Qt::FindDirectChildrenOnly
                     )
@@ -450,7 +450,7 @@ int SubPrepPage::currentClassInformationId() const
     auto* levelTabs =
         m_classInformationTabs
             ->currentWidget()
-            ->findChild<QTabWidget*>(
+            ->findChild<NavigationTabWidget*>(
                 QStringLiteral("subPrepLevelTabs"),
                 Qt::FindDirectChildrenOnly
                 );

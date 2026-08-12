@@ -4,16 +4,16 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QtTest>
 
 #include <QApplication>
+#include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QTabBar>
-#include <QTabWidget>
 #include <QTimer>
 
 namespace ScheduleWidgetTestStubs
@@ -38,7 +38,7 @@ void RosterEditorWidget::outputRosters(
 
 namespace
 {
-QPushButton* dayFilterButton(
+QAbstractButton* dayFilterButton(
     ClassesPage* page,
     const QString& objectName
     )
@@ -48,15 +48,15 @@ QPushButton* dayFilterButton(
         return nullptr;
     }
 
-    const QList<QPushButton*> buttons =
-        page->findChildren<QPushButton*>(objectName);
+    const QList<QAbstractButton*> buttons =
+        page->findChildren<QAbstractButton*>(objectName);
 
     return buttons.isEmpty()
         ? nullptr
         : buttons.last();
 }
 
-QTabWidget* gradeTabs(
+NavigationTabWidget* gradeTabs(
     ClassesPage* page
     )
 {
@@ -65,8 +65,8 @@ QTabWidget* gradeTabs(
         return nullptr;
     }
 
-    const QList<QTabWidget*> tabs =
-        page->findChildren<QTabWidget*>(
+    const QList<NavigationTabWidget*> tabs =
+        page->findChildren<NavigationTabWidget*>(
             QStringLiteral("classesGradeTabs")
             );
 
@@ -191,9 +191,7 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
     QCOMPARE(page.currentClassId(), 42);
     QCOMPARE(gradeTabs(&page)->count(), 1);
     QVERIFY(
-        !qobject_cast<UniformWidthTabBar*>(
-             gradeTabs(&page)->tabBar()
-             )->currentSelectionVisible()
+        !gradeTabs(&page)->selectionVisible()
         );
 }
 
@@ -214,9 +212,7 @@ void ClassesPageTests::
     QApplication::processEvents();
     QCOMPARE(gradeTabs(&page)->count(), 1);
     QVERIFY(
-        !qobject_cast<UniformWidthTabBar*>(
-             gradeTabs(&page)->tabBar()
-             )->currentSelectionVisible()
+        !gradeTabs(&page)->selectionVisible()
         );
 
     QVERIFY(page.openClass(42));
@@ -231,9 +227,7 @@ void ClassesPageTests::
         );
     QCOMPARE(gradeTabs(&page)->count(), 1);
     QVERIFY(
-        !qobject_cast<UniformWidthTabBar*>(
-             gradeTabs(&page)->tabBar()
-             )->currentSelectionVisible()
+        !gradeTabs(&page)->selectionVisible()
         );
 }
 
@@ -260,9 +254,7 @@ void ClassesPageTests::testingModeUsesRegularMeetingsForDayFiltering()
     QApplication::processEvents();
     QCOMPARE(gradeTabs(&page)->count(), 0);
     QVERIFY(
-        !qobject_cast<UniformWidthTabBar*>(
-             gradeTabs(&page)->tabBar()
-             )->currentSelectionVisible()
+        !gradeTabs(&page)->selectionVisible()
         );
 
     page.setScheduleDisplayMode(ScheduleDisplayMode::Testing);
@@ -292,19 +284,14 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
     QVERIFY(settings);
     QVERIFY(weekend->isCheckable());
     QVERIFY(!settings->isCheckable());
-    QCOMPARE(
-        settings->property("role").toString(),
-        QStringLiteral("icon_button")
-        );
+    QVERIFY(qobject_cast<NavigationSettingsButton*>(settings));
+    QVERIFY(settings->property("role").toString().isEmpty());
     QCOMPARE(settings->width(), 46);
     QCOMPARE(settings->text(), QStringLiteral("\u2699"));
     QCOMPARE(settings->font().pointSize(), 18);
     QCOMPARE(settings->font().weight(), QFont::DemiBold);
     QVERIFY(settings->geometry().left() > weekend->geometry().right());
-    auto* gradeTabBar =
-        qobject_cast<UniformWidthTabBar*>(
-            gradeTabs(&page)->tabBar()
-            );
+    auto* gradeTabBar = gradeTabs(&page)->tabStrip();
     QVERIFY(gradeTabBar);
     QCOMPARE(
         settings->height(),
@@ -313,23 +300,23 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
     QCOMPARE(settings->height(), weekend->height());
     QCOMPARE(
         weekend->height(),
-        gradeTabBar->tabRect(0).height()
+        gradeTabBar->tabButton(0)->height()
         );
     QCOMPARE(
         weekend->sizeHint().height(),
-        gradeTabBar->tabSizeHint(0).height()
+        gradeTabBar->tabButton(0)->sizeHint().height()
         );
-    const QList<UniformWidthTabBar*> classTabBars =
-        page.findChildren<UniformWidthTabBar*>(
+    const QList<NavigationTabStrip*> classTabBars =
+        page.findChildren<NavigationTabStrip*>(
             QStringLiteral("classesLevelTabBar")
             );
     QVERIFY(!classTabBars.isEmpty());
-    for (const UniformWidthTabBar* classTabBar : classTabBars)
+    for (const NavigationTabStrip* classTabBar : classTabBars)
     {
         if (classTabBar->count() > 0)
         {
             QCOMPARE(
-                classTabBar->tabSizeHint(0).height(),
+                classTabBar->tabButton(0)->height(),
                 NavigationPillStyle::ControlHeight
                 );
         }

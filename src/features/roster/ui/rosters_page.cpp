@@ -14,8 +14,8 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
-#include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QDialog>
 #include <QFont>
@@ -24,7 +24,6 @@
 #include <QLayoutItem>
 #include <QPushButton>
 #include <QSizePolicy>
-#include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -477,11 +476,11 @@ void RostersPage::rebuildRosterTabs(
         };
 
     const auto connectClassTabs =
-        [this](QTabWidget* tabs)
+        [this](NavigationTabWidget* tabs)
         {
             connect(
                 tabs,
-                &QTabWidget::currentChanged,
+                &NavigationTabWidget::currentChanged,
                 this,
                 [this, tabs](int)
                 {
@@ -501,8 +500,8 @@ void RostersPage::rebuildRosterTabs(
     if (navigation.mode == ClassTabNavigation::Mode::Flat)
     {
         auto* tabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Class,
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
                 QStringLiteral("rosterClassTabBar"),
                 m_tabsContainer
                 );
@@ -532,8 +531,8 @@ void RostersPage::rebuildRosterTabs(
     else
     {
         auto* gradeTabs =
-            new UniformWidthTabWidget(
-                UniformWidthTabKind::Grade,
+            new NavigationTabWidget(
+                NavigationTabKind::Grade,
                 QStringLiteral("rosterGradeTabBar"),
                 m_tabsContainer
                 );
@@ -556,8 +555,8 @@ void RostersPage::rebuildRosterTabs(
             gradeLayout->setAlignment(Qt::AlignTop);
 
             auto* classTabs =
-                new UniformWidthTabWidget(
-                    UniformWidthTabKind::Class,
+                new NavigationTabWidget(
+                    NavigationTabKind::Class,
                     QStringLiteral("rosterClassTabBar"),
                     gradePage
                     );
@@ -589,7 +588,7 @@ void RostersPage::rebuildRosterTabs(
 
         connect(
             gradeTabs,
-            &QTabWidget::currentChanged,
+            &NavigationTabWidget::currentChanged,
             this,
             [this, gradeTabs](int)
             {
@@ -620,7 +619,7 @@ void RostersPage::rebuildRosterTabs(
 }
 
 void RostersPage::createDayFilterControls(
-    UniformWidthTabWidget* tabs
+    NavigationTabWidget* tabs
     )
 {
     if (!tabs)
@@ -677,20 +676,13 @@ void RostersPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new QPushButton(controls);
+    auto* settingsButton = new NavigationSettingsButton(controls);
     settingsButton->setObjectName(
         QStringLiteral("rosterNavigationSettingsButton")
-        );
-    UniformWidthTabWidget::configureNavigationSettingsButton(
-        settingsButton
         );
     settingsButton->setAccessibleName(tr("Rosters Settings"));
     settingsButton->setToolTip(tr("Rosters Settings"));
     layout->addWidget(settingsButton);
-    controls->setFixedHeight(
-        NavigationPillStyle::ControlHeight
-        );
-
     connect(
         settingsButton,
         &QPushButton::clicked,
@@ -698,7 +690,7 @@ void RostersPage::createDayFilterControls(
         &RostersPage::openNavigationSettings
         );
 
-    tabs->setCornerWidget(controls, Qt::TopRightCorner);
+    tabs->setTrailingWidget(controls);
 }
 
 void RostersPage::setDayFilterEnabled(
@@ -815,14 +807,14 @@ void RostersPage::setNavigationSelectionVisible(
         return;
     }
 
-    const QList<UniformWidthTabBar*> tabBars =
-        m_rosterTabs->findChildren<UniformWidthTabBar*>();
+    const QList<NavigationTabStrip*> tabBars =
+        m_rosterTabs->findChildren<NavigationTabStrip*>();
 
-    for (UniformWidthTabBar* tabBar : tabBars)
+    for (NavigationTabStrip* tabBar : tabBars)
     {
         if (tabBar)
         {
-            tabBar->setCurrentSelectionVisible(visible);
+            tabBar->setSelectionVisible(visible);
         }
     }
 }
@@ -883,7 +875,7 @@ void RostersPage::restoreRosterTabSelection()
 }
 
 void RostersPage::syncTabWidgetToClass(
-    QTabWidget* tabs,
+    NavigationTabWidget* tabs,
     int classId
     )
 {
@@ -906,7 +898,7 @@ void RostersPage::syncTabWidgetToClass(
 
         auto* nestedTabs =
             page
-                ? page->findChild<QTabWidget*>(
+                ? page->findChild<NavigationTabWidget*>(
                     QStringLiteral("rosterClassTabs")
                     )
                 : nullptr;
@@ -947,7 +939,7 @@ void RostersPage::syncTabWidgetToClass(
 
         if (auto* nestedTabs =
                 tabs->currentWidget()
-                    ? tabs->currentWidget()->findChild<QTabWidget*>(
+                    ? tabs->currentWidget()->findChild<NavigationTabWidget*>(
                         QStringLiteral("rosterClassTabs")
                         )
                     : nullptr)
@@ -958,7 +950,7 @@ void RostersPage::syncTabWidgetToClass(
 }
 
 int RostersPage::currentClassIdFromTabs(
-    QTabWidget* tabs
+    NavigationTabWidget* tabs
     ) const
 {
     if (!tabs || tabs->currentIndex() < 0)
@@ -966,8 +958,7 @@ int RostersPage::currentClassIdFromTabs(
         return -1;
     }
 
-    if (const auto* tabBar = qobject_cast<const UniformWidthTabBar*>(tabs->tabBar());
-        tabBar && !tabBar->currentSelectionVisible())
+    if (!tabs->selectionVisible())
     {
         return -1;
     }
@@ -986,7 +977,7 @@ int RostersPage::currentClassIdFromTabs(
 
     auto* nestedTabs =
         page
-            ? page->findChild<QTabWidget*>(
+            ? page->findChild<NavigationTabWidget*>(
                 QStringLiteral("rosterClassTabs")
                 )
             : nullptr;

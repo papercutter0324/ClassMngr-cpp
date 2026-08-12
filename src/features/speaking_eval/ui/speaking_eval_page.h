@@ -16,12 +16,11 @@ class ApplicationServices;
 class QLabel;
 class QModelIndex;
 class QPushButton;
-class QTabWidget;
+class NavigationTabWidget;
 class QTimer;
 class QVBoxLayout;
 class QUndoStack;
 class QWidget;
-class UniformWidthTabWidget;
 class SpeakingEvalDelegate;
 class SpeakingEvalModel;
 class OnScreenKeyboard;
@@ -94,7 +93,7 @@ private:
         );
 
     void createDayFilterControls(
-        UniformWidthTabWidget* tabs
+        NavigationTabWidget* tabs
         );
 
     void setDayFilterEnabled(
@@ -126,12 +125,12 @@ private:
     void restoreEvaluationTabSelection();
 
     void syncTabWidgetToClass(
-        QTabWidget* tabs,
+        NavigationTabWidget* tabs,
         int classId
         );
 
     int currentClassIdFromTabs(
-        QTabWidget* tabs
+        NavigationTabWidget* tabs
         ) const;
 
     QString currentEvaluationNameFromTabs() const;
@@ -212,8 +211,8 @@ private:
     QWidget* m_tabsContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;
-    QTabWidget* m_classTabs = nullptr;
-    UniformWidthTabWidget* m_evaluationTabs = nullptr;
+    NavigationTabWidget* m_classTabs = nullptr;
+    NavigationTabWidget* m_evaluationTabs = nullptr;
 
     SpeakingEvalModel* m_model = nullptr;
     SpeakingEvalTableView* m_table = nullptr;

@@ -1695,8 +1695,6 @@ if(BUILD_TESTING)
         src/features/classes/models/class_tab_navigation_model.h
         src/features/classes/ui/class_details_page.cpp
         src/features/classes/ui/class_details_page.h
-        src/features/classes/ui/classes_navigation_tabs.cpp
-        src/features/classes/ui/classes_navigation_tabs.h
         src/features/classes/ui/classes_navigation_settings_dialog.cpp
         src/features/classes/ui/classes_navigation_settings_dialog.h
         src/features/classes/ui/classes_page.cpp
@@ -1732,6 +1730,10 @@ if(BUILD_TESTING)
         src/ui/shared/widgets/navigation_pill_button.h
         src/ui/shared/widgets/navigation_pill_style.cpp
         src/ui/shared/widgets/navigation_pill_style.h
+        src/ui/shared/widgets/navigation_settings_button.cpp
+        src/ui/shared/widgets/navigation_settings_button.h
+        src/ui/shared/widgets/navigation_tab_widget.cpp
+        src/ui/shared/widgets/navigation_tab_widget.h
         src/ui/shared/widgets/on_screen_keyboard.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.h
@@ -1743,8 +1745,6 @@ if(BUILD_TESTING)
         src/ui/shared/widgets/sections/class_schedule_section.h
         src/ui/shared/widgets/sections/teacher_info_section.cpp
         src/ui/shared/widgets/sections/teacher_info_section.h
-        src/ui/shared/widgets/uniform_width_tab_bar.cpp
-        src/ui/shared/widgets/uniform_width_tab_bar.h
     )
 
     target_compile_features(ClassMngrClassesPageTests
@@ -1873,10 +1873,12 @@ if(BUILD_TESTING)
         src/ui/shared/pages/basepage.h
         src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.h
+        src/ui/shared/widgets/navigation_pill_button.cpp
+        src/ui/shared/widgets/navigation_pill_button.h
         src/ui/shared/widgets/navigation_pill_style.cpp
         src/ui/shared/widgets/navigation_pill_style.h
-        src/ui/shared/widgets/uniform_width_tab_bar.cpp
-        src/ui/shared/widgets/uniform_width_tab_bar.h
+        src/ui/shared/widgets/navigation_tab_widget.cpp
+        src/ui/shared/widgets/navigation_tab_widget.h
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/ui/schedule_widget.cpp
@@ -1923,27 +1925,35 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
-    qt_add_executable(ClassMngrUniformWidthTabBarTests
-        tests/uniform_width_tab_bar_tests.cpp
+    qt_add_executable(ClassMngrNavigationTabWidgetTests
+        tests/navigation_tab_widget_tests.cpp
         src/core/fontmanager.cpp
-        src/features/classes/ui/classes_navigation_tabs.cpp
-        src/features/classes/ui/classes_navigation_tabs.h
+        src/ui/shared/widgets/navigation_pill_button.cpp
+        src/ui/shared/widgets/navigation_pill_button.h
         src/ui/shared/widgets/navigation_pill_style.cpp
         src/ui/shared/widgets/navigation_pill_style.h
-        src/ui/shared/widgets/uniform_width_tab_bar.cpp
+        src/ui/shared/widgets/navigation_settings_button.cpp
+        src/ui/shared/widgets/navigation_settings_button.h
+        src/ui/shared/widgets/navigation_tab_widget.cpp
+        src/ui/shared/widgets/navigation_tab_widget.h
     )
 
-    target_compile_features(ClassMngrUniformWidthTabBarTests
+    target_compile_features(ClassMngrNavigationTabWidgetTests
         PRIVATE
             cxx_std_23
     )
 
-    target_include_directories(ClassMngrUniformWidthTabBarTests
+    target_include_directories(ClassMngrNavigationTabWidgetTests
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src
     )
 
-    target_link_libraries(ClassMngrUniformWidthTabBarTests
+    target_compile_definitions(ClassMngrNavigationTabWidgetTests
+        PRIVATE
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
+    target_link_libraries(ClassMngrNavigationTabWidgetTests
         PRIVATE
             Qt6::Core
             Qt6::Gui
@@ -1952,12 +1962,12 @@ if(BUILD_TESTING)
     )
 
     add_test(
-        NAME ClassMngrUniformWidthTabBarTests
-        COMMAND ClassMngrUniformWidthTabBarTests
+        NAME ClassMngrNavigationTabWidgetTests
+        COMMAND ClassMngrNavigationTabWidgetTests
     )
 
     set_tests_properties(
-        ClassMngrUniformWidthTabBarTests
+        ClassMngrNavigationTabWidgetTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
@@ -2784,7 +2794,7 @@ if(BUILD_TESTING)
             ClassMngrTestingClassesPageTests
             ClassMngrScheduleImportDialogTests
             ClassMngrSubPrepPageTests
-            ClassMngrUniformWidthTabBarTests
+            ClassMngrNavigationTabWidgetTests
             ClassMngrSidebarStructureTests
             ClassMngrScheduleBuilderTests
             ClassMngrSchedulePrintModelTests

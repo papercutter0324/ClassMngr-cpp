@@ -1,12 +1,14 @@
 #include "navigation_pill_style.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <QFont>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QPen>
 #include <QStyle>
+#include <QTransform>
 #include <QWidget>
 
 namespace
@@ -153,12 +155,31 @@ void paint(
                 );
     }
 
+    const QTransform deviceTransform = painter->deviceTransform();
+    const qreal horizontalScale =
+        std::hypot(
+            deviceTransform.m11(),
+            deviceTransform.m12()
+            );
+    const qreal verticalScale =
+        std::hypot(
+            deviceTransform.m21(),
+            deviceTransform.m22()
+            );
+    const qreal horizontalInset =
+        horizontalScale > 0.0
+            ? BorderWidth / (2.0 * horizontalScale)
+            : BorderWidth / 2.0;
+    const qreal verticalInset =
+        verticalScale > 0.0
+            ? BorderWidth / (2.0 * verticalScale)
+            : BorderWidth / 2.0;
     const QRectF pillRect =
         QRectF(bounds.adjusted(0, 0, -trailingGap, 0)).adjusted(
-            BorderWidth / 2.0,
-            BorderWidth / 2.0,
-            -BorderWidth / 2.0,
-            -BorderWidth / 2.0
+            horizontalInset,
+            verticalInset,
+            -horizontalInset,
+            -verticalInset
             );
     const QRect contentRect =
         pillRect.toAlignedRect().adjusted(
@@ -173,7 +194,9 @@ void paint(
     painter->setRenderHint(QPainter::Antialiasing, true);
     painter->setFont(font);
     painter->setBrush(fillColor);
-    painter->setPen(QPen(borderColor, BorderWidth));
+    QPen borderPen(borderColor, BorderWidth);
+    borderPen.setCosmetic(true);
+    painter->setPen(borderPen);
     painter->drawRoundedRect(pillRect, Radius, Radius);
     painter->setPen(textColor);
 
