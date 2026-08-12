@@ -1,6 +1,6 @@
 #include "data_service.h"
 
-#include "data/database/database_schema_manager.h"
+#include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
@@ -22,13 +22,13 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QObject>
-#include <QSqlError>
 #include <QVariant>
 
 DataService::DataService(
     const QString &dbPath
     )
-    : m_dbPath(dbPath)
+    : m_initialDatabasePath(dbPath)
+    , m_session(std::make_unique<DatabaseSession>())
 {
 }
 
@@ -39,218 +39,62 @@ DataService::~DataService()
 
 bool DataService::open()
 {
-    if (m_dbPath.trimmed().isEmpty())
+    if (m_initialDatabasePath.trimmed().isEmpty())
     {
         return false;
     }
 
-    return openDatabase(m_dbPath).has_value();
+    return openDatabase(m_initialDatabasePath).has_value();
 }
 
 Status DataService::openDatabase(
     const QString& dbPath
     )
 {
-    if (dbPath.trimmed().isEmpty())
-    {
-        closeDatabase();
-        return std::unexpected(
-            QStringLiteral("No Teacher Profile path was provided.")
-            );
-    }
-
-    const QFileInfo databaseInfo(dbPath);
-    const QString normalizedPath =
-        databaseInfo.absoluteFilePath();
-
-    closeDatabase();
-
-    if (normalizedPath.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QStringLiteral("Teacher Profile path could not be resolved.")
-            );
-    }
-
-    if (
-        !databaseInfo.absolutePath().isEmpty()
-        && !QDir().mkpath(databaseInfo.absolutePath())
-        )
-    {
-        return std::unexpected(
-            QStringLiteral("Unable to create Teacher Profile directory:\n%1")
-                .arg(databaseInfo.absolutePath())
-            );
-    }
-
-    m_db =
-        QSqlDatabase::addDatabase("QSQLITE");
-
-    m_db.setDatabaseName(normalizedPath);
-
-    if (!m_db.open())
-    {
-        const QString openError =
-            m_db.lastError().text();
-
-        const QString connectionName =
-            m_db.connectionName();
-
-        m_db =
-            QSqlDatabase();
-
-        if (
-            !connectionName.isEmpty()
-            && QSqlDatabase::contains(connectionName)
-            )
-        {
-            QSqlDatabase::removeDatabase(connectionName);
-        }
-
-        return std::unexpected(
-            QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
-                .arg(normalizedPath, openError)
-            );
-    }
-
-    m_dbPath =
-        normalizedPath;
-
-    m_settingsRepository =
-        std::make_unique<SettingsRepository>(
-            m_db
-            );
-
-    m_campusRecordRepository =
-        std::make_unique<CampusRecordRepository>(
-            m_db
-            );
-
-    m_teacherRepository =
-        std::make_unique<TeacherRepository>(
-            m_db
-            );
-
-    m_nativeEnglishTeacherRepository =
-        std::make_unique<NativeEnglishTeacherRepository>(m_db);
-
-    m_gsTeamRepository =
-        std::make_unique<GsTeamRepository>(m_db);
-
-    m_teacherImportRepository =
-        std::make_unique<TeacherImportRepository>(m_db);
-
-    m_classRepository =
-        std::make_unique<ClassRepository>(
-            m_db
-            );
-
-    m_classTransferRepository =
-        std::make_unique<ClassTransferRepository>(
-            m_db
-            );
-
-    m_scheduleImportRepository =
-        std::make_unique<ScheduleImportRepository>(
-            m_db
-            );
-
-    m_classInfoRepository =
-        std::make_unique<ClassInfoRepository>(
-            m_db
-            );
-
-    m_intensiveSlotStateRepository =
-        std::make_unique<IntensiveSlotStateRepository>(
-            m_db
-            );
-
-    m_testingBlockRepository =
-        std::make_unique<TestingBlockRepository>(
-            m_db
-            );
-
-    m_testingClassRepository =
-        std::make_unique<TestingClassRepository>(
-            m_db
-            );
-
-    m_calendarEventRepository =
-        std::make_unique<CalendarEventRepository>(
-            m_db
-            );
-
-    m_rosterRepository =
-        std::make_unique<RosterRepository>(
-            m_db
-            );
-
-    m_speakingEvalRepository =
-        std::make_unique<SpeakingEvalRepository>(
-            m_db
-            );
-
-    DatabaseSchemaManager::ensureSchema(m_db);
-
-    return {};
+    const Status status = m_session->open(dbPath);
+    refreshRepositoryAdapters();
+    return status;
 }
 
 void DataService::closeDatabase()
 {
-    m_teacherImportRepository.reset();
-    m_gsTeamRepository.reset();
-    m_nativeEnglishTeacherRepository.reset();
-    m_settingsRepository.reset();
-    m_campusRecordRepository.reset();
-    m_teacherRepository.reset();
-    m_classRepository.reset();
-    m_classTransferRepository.reset();
-    m_scheduleImportRepository.reset();
-    m_classInfoRepository.reset();
-    m_intensiveSlotStateRepository.reset();
-    m_testingBlockRepository.reset();
-    m_testingClassRepository.reset();
-    m_calendarEventRepository.reset();
-    m_rosterRepository.reset();
-    m_speakingEvalRepository.reset();
-
-    if (!m_db.isValid())
-    {
-        m_dbPath.clear();
-        return;
-    }
-
-    const QString connectionName =
-        m_db.connectionName();
-
-    if (m_db.isOpen())
-    {
-        m_db.close();
-    }
-
-    m_db =
-        QSqlDatabase();
-
-    if (
-        !connectionName.isEmpty()
-        && QSqlDatabase::contains(connectionName)
-        )
-    {
-        QSqlDatabase::removeDatabase(connectionName);
-    }
-
-    m_dbPath.clear();
+    m_session->close();
+    refreshRepositoryAdapters();
 }
 
 bool DataService::isOpen() const
 {
-    return m_db.isValid()
-        && m_db.isOpen();
+    return m_session->isOpen();
 }
 
 QString DataService::currentDatabasePath() const
 {
-    return m_dbPath;
+    return m_session->databasePath();
+}
+
+DatabaseSession* DataService::databaseSession() const
+{
+    return m_session.get();
+}
+
+void DataService::refreshRepositoryAdapters()
+{
+    m_settingsRepository = m_session->settingsRepository();
+    m_campusRecordRepository = m_session->campusRecordRepository();
+    m_teacherRepository = m_session->teacherRepository();
+    m_nativeEnglishTeacherRepository = m_session->nativeEnglishTeacherRepository();
+    m_gsTeamRepository = m_session->gsTeamRepository();
+    m_teacherImportRepository = m_session->teacherImportRepository();
+    m_classRepository = m_session->classRepository();
+    m_classTransferRepository = m_session->classTransferRepository();
+    m_scheduleImportRepository = m_session->scheduleImportRepository();
+    m_classInfoRepository = m_session->classInfoRepository();
+    m_intensiveSlotStateRepository = m_session->intensiveSlotStateRepository();
+    m_testingBlockRepository = m_session->testingBlockRepository();
+    m_testingClassRepository = m_session->testingClassRepository();
+    m_calendarEventRepository = m_session->calendarEventRepository();
+    m_rosterRepository = m_session->rosterRepository();
+    m_speakingEvalRepository = m_session->speakingEvalRepository();
 }
 
 void DataService::saveSetting(
@@ -1157,7 +1001,7 @@ void DataService::save()
         return;
     }
 
-    m_db.commit();
+    m_session->database().commit();
 }
 
 Status DataService::saveAs(
@@ -1179,7 +1023,7 @@ Status DataService::saveAs(
     }
 
     const QString sourcePath =
-        QFileInfo(m_dbPath).absoluteFilePath();
+        QFileInfo(m_session->databasePath()).absoluteFilePath();
 
     const QFileInfo targetInfo(destinationPath);
     const QString targetPath =
@@ -1242,7 +1086,7 @@ Status DataService::exportAs(
     }
 
     const QString sourcePath =
-        QFileInfo(m_dbPath).absoluteFilePath();
+        QFileInfo(m_session->databasePath()).absoluteFilePath();
 
     const QFileInfo targetInfo(destinationPath);
     const QString targetPath =

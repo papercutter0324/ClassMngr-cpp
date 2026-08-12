@@ -105,7 +105,7 @@ void SpeakingEvalPage::importNames()
 {
     if (
         !m_services
-        || !m_services->dataService()
+        || !m_services->rosterService()
         || m_classroom.id <= 0
         )
     {
@@ -114,8 +114,8 @@ void SpeakingEvalPage::importNames()
 
     const Roster roster =
         m_services
-            ->dataService()
-            ->loadRoster(
+            ->rosterService()
+            ->roster(
                 m_classroom.id
                 );
 
@@ -298,14 +298,12 @@ void SpeakingEvalPage::showReports()
     ClassInfo classInfo;
     QByteArray signatureImage;
 
-    if (m_services && m_services->dataService())
+    if (m_services && m_services->classService())
     {
-        DataService* dataService =
-            m_services->dataService();
         classInfo =
-            dataService->loadClassInfo(m_classroom.id);
+            m_services->classService()->classInfo(m_classroom.id);
         signatureImage =
-            PersonalDetailsRepository(dataService)
+            PersonalDetailsRepository(m_services->settingsService())
                 .load()
                 .signatureImage;
     }
@@ -370,12 +368,12 @@ void SpeakingEvalPage::generateClassAiComments()
     }
 
     ClassInfo classInfo;
-    if (m_services && m_services->dataService())
+    if (m_services && m_services->classService())
     {
         classInfo =
             m_services
-                ->dataService()
-                ->loadClassInfo(
+                ->classService()
+                ->classInfo(
                     m_classroom.id
                     );
     }
@@ -441,14 +439,12 @@ void SpeakingEvalPage::outputReports(
 
     ClassInfo classInfo;
     QByteArray signatureImage;
-    if (m_services && m_services->dataService())
+    if (m_services && m_services->classService())
     {
-        DataService* dataService =
-            m_services->dataService();
         classInfo =
-            dataService->loadClassInfo(m_classroom.id);
+            m_services->classService()->classInfo(m_classroom.id);
         signatureImage =
-            PersonalDetailsRepository(dataService)
+            PersonalDetailsRepository(m_services->settingsService())
                 .load()
                 .signatureImage;
     }

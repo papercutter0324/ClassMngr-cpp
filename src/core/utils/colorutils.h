@@ -5,6 +5,7 @@
 #include <QStringList>
 
 class DataService;
+class SettingsService;
 class QWidget;
 
 class ColorUtils
@@ -41,6 +42,12 @@ public:
         const QString& title,
         DataService* ds
         );
+    static QColor getColor(
+        const QColor& initialColor,
+        QWidget* parent,
+        const QString& title,
+        SettingsService* settingsService
+        );
 
     // =====================================================
     // QColorDialog Custom Colors
@@ -53,4 +60,6 @@ public:
     static void saveCustomColors(
         DataService *ds
         );
+    static void loadCustomColors(SettingsService* settingsService);
+    static void saveCustomColors(SettingsService* settingsService);
 };

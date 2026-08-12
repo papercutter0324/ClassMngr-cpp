@@ -1,23 +1,25 @@
 #include "sidebar_controller_p.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 Teacher SidebarController::getTeacherById(int teacherId) const
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    return ds
-        ? ds->getTeacher(teacherId)
+    return teachers
+        ? teachers->teacher(teacherId)
         : Teacher();
 }
 
 void SidebarController::addTeacher()
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds)
+    if (!teachers)
     {
         return;
     }
@@ -25,14 +27,14 @@ void SidebarController::addTeacher()
     Teacher newTeacher;
 
     int teacherId =
-        ds->createTeacher(
+        teachers->create(
             newTeacher
             );
 
     refreshTeacherSidebar();
 
     Teacher teacher =
-        ds->getTeacher(
+        teachers->teacher(
             teacherId
             );
 
@@ -70,16 +72,16 @@ void SidebarController::deleteTeacher()
         }
     }
 
-    auto* ds =
-        openDataService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds)
+    if (!teachers)
     {
         return;
     }
 
     const Teacher teacher =
-        ds->getTeacher(
+        teachers->teacher(
             teacherId
             );
 
@@ -93,7 +95,7 @@ void SidebarController::deleteTeacher()
         return;
     }
 
-    ds->deleteTeacher(
+    teachers->remove(
         teacher.id
         );
 

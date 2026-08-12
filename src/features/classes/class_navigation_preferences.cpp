@@ -1,6 +1,7 @@
 #include "class_navigation_preferences.h"
 
 #include "data/data_service.h"
+#include "app/services/feature_services.h"
 
 namespace
 {
@@ -67,6 +68,27 @@ void save(
         VisibilityScopeKey,
         settingValue(visibilityScope)
         );
+}
+
+ClassTabNavigation::VisibilityScope load(SettingsService* settingsService)
+{
+    if (!settingsService || !settingsService->isAvailable())
+        return ClassTabNavigation::VisibilityScope::ActiveSchedule;
+
+    const QVariant storedScope = settingsService->load(VisibilityScopeKey);
+    const auto visibilityScope = scopeFromSetting(storedScope);
+    if (!storedScope.isValid())
+        save(settingsService, visibilityScope);
+    return visibilityScope;
+}
+
+void save(
+    SettingsService* settingsService,
+    ClassTabNavigation::VisibilityScope visibilityScope
+    )
+{
+    if (settingsService && settingsService->isAvailable())
+        settingsService->save(VisibilityScopeKey, settingValue(visibilityScope));
 }
 
 }

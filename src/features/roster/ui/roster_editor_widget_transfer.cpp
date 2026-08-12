@@ -2,8 +2,8 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 
@@ -28,20 +28,21 @@ struct TransferClassTarget
 };
 
 QString sidebarClassDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId
     )
 {
-    if (!dataService || !dataService->isOpen() || classId <= 0)
+    if (!classService || !teacherService || classId <= 0)
     {
         return {};
     }
 
-    const ClassInfo classInfo = dataService->loadClassInfo(classId);
+    const ClassInfo classInfo = classService->classInfo(classId);
     Teacher teacher;
     if (classInfo.teacherId > 0)
     {
-        teacher = dataService->getTeacher(classInfo.teacherId);
+        teacher = teacherService->teacher(classInfo.teacherId);
     }
 
     return SidebarNodeNaming::formatClassDisplayName(classInfo, teacher);
@@ -85,34 +86,40 @@ void RosterEditorWidget::showRosterContextMenu(
         transferMenu->setEnabled(canRemove);
     }
     QHash<QAction*, int> transferActions;
-    auto* dataService = m_services ? m_services->dataService() : nullptr;
+    auto* classService = m_services ? m_services->classService() : nullptr;
+    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
+    auto* rosterService = m_services ? m_services->rosterService() : nullptr;
 
     const QString currentGrade =
-        dataService && dataService->isOpen() && m_classroom.id > 0
-            ? dataService->loadClassInfo(m_classroom.id).classGrade.trimmed()
+        classService && m_classroom.id > 0
+            ? classService->classInfo(m_classroom.id).classGrade.trimmed()
             : QString();
     QList<TransferClassTarget> targets;
 
-    if (canRemove && dataService && dataService->isOpen() && !currentGrade.isEmpty())
+    if (canRemove && classService && rosterService && !currentGrade.isEmpty())
     {
-        for (const Classroom& classroom : dataService->getClasses())
+        for (const Classroom& classroom : classService->classes())
         {
             if (classroom.id <= 0 || classroom.id == m_classroom.id)
             {
                 continue;
             }
 
-            const ClassInfo targetInfo = dataService->loadClassInfo(classroom.id);
+            const ClassInfo targetInfo = classService->classInfo(classroom.id);
             if (targetInfo.classGrade.trimmed() != currentGrade)
             {
                 continue;
             }
 
             RosterModel targetModel;
-            targetModel.setRoster(dataService->loadRoster(classroom.id));
+            targetModel.setRoster(rosterService->roster(classroom.id));
             TransferClassTarget target;
             target.classId = classroom.id;
-            target.label = sidebarClassDisplayName(dataService, classroom.id);
+            target.label = sidebarClassDisplayName(
+                classService,
+                teacherService,
+                classroom.id
+                );
             if (target.label.trimmed().isEmpty())
             {
                 target.label = classroom.name.trimmed().isEmpty()
@@ -179,8 +186,7 @@ void RosterEditorWidget::transferRosterRow(
     if (
         !m_model
         || !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->rosterService()
         || m_classroom.id <= 0
         || targetClassId <= 0
         || targetClassId == m_classroom.id
@@ -200,10 +206,10 @@ void RosterEditorWidget::transferRosterRow(
         return;
     }
 
-    auto* dataService = m_services->dataService();
+    auto* rosterService = m_services->rosterService();
     const QStringList sourceColumns = m_model->columnNames();
     const QStringList sourceRow = m_model->rowValues(row);
-    const Roster targetSourceRoster = dataService->loadRoster(targetClassId);
+    const Roster targetSourceRoster = rosterService->roster(targetClassId);
     RosterModel targetModel;
     targetModel.setRoster(targetSourceRoster);
 
@@ -226,7 +232,7 @@ void RosterEditorWidget::transferRosterRow(
         targetRoster.columns
         );
     const Roster sourceRoster = rosterWithRowRemoved(row);
-    const bool saved = dataService->saveRosters(
+    const bool saved = rosterService->saveRosters(
         {
             qMakePair(m_classroom.id, sourceRoster),
             qMakePair(targetClassId, targetRoster)

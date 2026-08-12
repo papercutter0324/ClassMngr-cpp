@@ -5,9 +5,9 @@
 #include "ui/shared/pages/page_header.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
-#include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -58,12 +58,11 @@ void ClassNotesPage::loadClass(
 
     m_classroom = classroom;
 
-    auto* dataService =
-        m_services
-            ->dataService();
+    auto* classService = m_services->classService();
+    auto* teacherService = m_services->teacherService();
 
     const ClassInfo info =
-        dataService->loadClassInfo(
+        classService->classInfo(
             classroom.id
             );
 
@@ -72,7 +71,7 @@ void ClassNotesPage::loadClass(
     if (info.teacherId > 0)
     {
         teacher =
-            dataService->getTeacher(
+            teacherService->teacher(
                 info.teacherId
                 );
     }
@@ -164,7 +163,7 @@ bool ClassNotesPage::saveClassNotesInternal(
 {
     if (
         !m_services
-        || !m_services->dataService()
+        || !m_services->classService()
         || m_classroom.id <= 0
         )
     {
@@ -184,9 +183,7 @@ bool ClassNotesPage::saveClassNotesInternal(
             .trimmed();
 
     if (
-        !m_services
-            ->dataService()
-            ->saveClassNotes(
+        !m_services->classService()->saveClassNotes(
                 m_classroom.id,
                 notes,
                 timeFillerActivities

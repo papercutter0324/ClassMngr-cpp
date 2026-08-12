@@ -6,6 +6,7 @@
 #include "ui/shared/pages/page_header.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "core/utils/student_name_utils.h"
@@ -134,17 +135,18 @@ QString normalizedEvaluationName(
 }
 
 QString sidebarClassDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId
     )
 {
-    if (!dataService || !dataService->isOpen() || classId <= 0)
+    if (!classService || !teacherService || classId <= 0)
     {
         return {};
     }
 
     const ClassInfo classInfo =
-        dataService->loadClassInfo(
+        classService->classInfo(
             classId
             );
 
@@ -153,7 +155,7 @@ QString sidebarClassDisplayName(
     if (classInfo.teacherId > 0)
     {
         teacher =
-            dataService->getTeacher(
+            teacherService->teacher(
                 classInfo.teacherId
                 );
     }

@@ -56,7 +56,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 {
     if (
         !m_services
-        || !m_services->dataService()
+        || !m_services->speakingEvaluationService()
         || m_classroom.id <= 0
         || m_evaluationName.trimmed().isEmpty()
         )
@@ -91,8 +91,8 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 
     const bool saved =
         m_services
-            ->dataService()
-            ->saveSpeakingEval(
+            ->speakingEvaluationService()
+            ->saveEvaluation(
                 m_classroom.id,
                 m_evaluationName,
                 m_model->rows(),

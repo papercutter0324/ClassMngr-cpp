@@ -226,7 +226,9 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrDataServiceLifecycleTests
         tests/data_service_lifecycle_tests.cpp
+        src/app/services/feature_services.cpp
         src/data/data_service.cpp
+        src/data/database/database_session.cpp
         src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
         src/data/repositories/calendar_event_repository.cpp

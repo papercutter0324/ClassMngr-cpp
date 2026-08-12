@@ -2,8 +2,8 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/resource_paths.h"
-#include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
@@ -68,17 +68,17 @@ QStringList supportedImagePatterns()
     return patterns;
 }
 
-DataService* openDataService(
+SettingsService* openSettingsService(
     ApplicationServices* services
     )
 {
-    auto* dataService =
+    auto* settingsService =
         services
-            ? services->dataService()
+            ? services->settingsService()
             : nullptr;
 
-    return dataService && dataService->isOpen()
-        ? dataService
+    return settingsService && settingsService->isAvailable()
+        ? settingsService
         : nullptr;
 }
 
@@ -674,10 +674,9 @@ void PersonalDetailsPage::loadPageData()
 }
 void PersonalDetailsPage::loadStoredSettings()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService = openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return;
     }
@@ -689,7 +688,7 @@ void PersonalDetailsPage::loadStoredSettings()
     const QSignalBlocker checkBlocker(m_zoomNotAvailableCheck);
 
     const PersonalDetails details =
-        PersonalDetailsRepository(dataService).load();
+        PersonalDetailsRepository(settingsService).load();
 
     m_nameEdit->setText(details.name);
 
@@ -736,7 +735,7 @@ void PersonalDetailsPage::loadStoredSettings()
             ) != 0
         )
     {
-        PersonalDetailsRepository(dataService).saveCampus(
+        PersonalDetailsRepository(settingsService).saveCampus(
             m_campusCombo->currentText()
             );
     }
@@ -763,10 +762,9 @@ void PersonalDetailsPage::loadStoredSettings()
 }
 bool PersonalDetailsPage::saveMyInfoInternal()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService = openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return false;
     }
@@ -789,7 +787,7 @@ bool PersonalDetailsPage::saveMyInfoInternal()
     details.zoomNotAvailable = m_zoomNotAvailableCheck->isChecked();
     details.signatureImage = m_signatureImageData;
 
-    if (!PersonalDetailsRepository(dataService).save(details))
+    if (!PersonalDetailsRepository(settingsService).save(details))
     {
         return false;
     }

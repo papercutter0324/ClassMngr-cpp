@@ -1,8 +1,8 @@
 #include "roster_editor_widget.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/utils/student_name_utils.h"
-#include "data/data_service.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/services/roster_template_print_service.h"
@@ -13,7 +13,7 @@
 
 void RosterEditorWidget::importScores()
 {
-    if (!m_services || !m_services->dataService() || m_classroom.id <= 0)
+    if (!m_services || !m_services->speakingEvaluationService() || m_classroom.id <= 0)
     {
         return;
     }
@@ -61,7 +61,7 @@ void RosterEditorWidget::importScores()
         }
 
         const QList<SpeakingEvalScore> scores =
-            m_services->dataService()->buildRosterScoreImport(
+            m_services->speakingEvaluationService()->rosterScoreImport(
                 m_classroom.id,
                 evaluationName
                 );

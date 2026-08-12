@@ -1,7 +1,7 @@
 #include "roster_editor_widget.h"
 
 #include "core/application_services.h"
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_header_view.h"
@@ -58,9 +58,9 @@ void RosterEditorWidget::loadClass(
     m_loadingRoster = true;
 
     Roster roster;
-    if (m_services && m_services->dataService() && m_classroom.id > 0)
+    if (m_services && m_services->rosterService() && m_classroom.id > 0)
     {
-        roster = m_services->dataService()->loadRoster(m_classroom.id);
+        roster = m_services->rosterService()->roster(m_classroom.id);
     }
 
     m_model->setRoster(roster);
@@ -198,7 +198,7 @@ bool RosterEditorWidget::saveRosterInternal(
     bool showValidationMessages
     )
 {
-    if (!m_services || !m_services->dataService() || m_classroom.id <= 0)
+    if (!m_services || !m_services->rosterService() || m_classroom.id <= 0)
     {
         return false;
     }
@@ -207,7 +207,7 @@ bool RosterEditorWidget::saveRosterInternal(
         return false;
     }
 
-    m_services->dataService()->saveRoster(m_classroom.id, currentRosterForSave());
+    m_services->rosterService()->saveRoster(m_classroom.id, currentRosterForSave());
     m_model->clearDirty();
     m_widthsDirty = false;
     m_autosave->markClean();

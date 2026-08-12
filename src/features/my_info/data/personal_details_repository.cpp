@@ -1,6 +1,7 @@
 #include "personal_details_repository.h"
 
 #include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "signature_image_processor.h"
 
 #include <QVariant>
@@ -22,24 +23,24 @@ const QString LegacyZoomNotAvailableKey =
     QStringLiteral("subPrep/personalZoomNotAvailable");
 
 QVariant loadWithLegacyFallback(
-    DataService* dataService,
+    const PersonalDetailsRepository& repository,
     const QString& primaryKey,
     const QString& legacyKey,
     const QVariant& defaultValue
     )
 {
-    QVariant value = dataService->loadSetting(primaryKey, QVariant());
+    QVariant value = repository.loadSetting(primaryKey, QVariant());
 
     if (value.isValid())
     {
         return value;
     }
 
-    value = dataService->loadSetting(legacyKey, QVariant());
+    value = repository.loadSetting(legacyKey, QVariant());
 
     if (value.isValid())
     {
-        dataService->saveSetting(primaryKey, value);
+        repository.saveSetting(primaryKey, value);
         return value;
     }
 
@@ -52,31 +53,36 @@ PersonalDetailsRepository::PersonalDetailsRepository(DataService* dataService)
 {
 }
 
+PersonalDetailsRepository::PersonalDetailsRepository(SettingsService* settingsService)
+    : m_settingsService(settingsService)
+{
+}
+
 PersonalDetails PersonalDetailsRepository::load() const
 {
     PersonalDetails details;
 
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!isAvailable())
     {
         return details;
     }
 
-    details.name = m_dataService->loadSetting(NameKey, QString()).toString();
-    details.campus = m_dataService->loadSetting(CampusKey, QString()).toString();
+    details.name = loadSetting(NameKey, QString()).toString();
+    details.campus = loadSetting(CampusKey, QString()).toString();
     details.zoomLoginId = loadWithLegacyFallback(
-        m_dataService,
+        *this,
         ZoomLoginIdKey,
         LegacyZoomEmailKey,
         QStringLiteral("N/A")
         ).toString();
     details.zoomPassword = loadWithLegacyFallback(
-        m_dataService,
+        *this,
         ZoomPasswordKey,
         LegacyZoomPasswordKey,
         QStringLiteral("N/A")
         ).toString();
     details.zoomNotAvailable = loadWithLegacyFallback(
-        m_dataService,
+        *this,
         ZoomNotAvailableKey,
         LegacyZoomNotAvailableKey,
         true
@@ -84,8 +90,7 @@ PersonalDetails PersonalDetailsRepository::load() const
     details.signatureImage =
         SignatureImage::prepareForEmbedding(
             QByteArray::fromBase64(
-                m_dataService
-                    ->loadSetting(SignatureImageKey, QString())
+                loadSetting(SignatureImageKey, QString())
                     .toString()
                     .toLatin1()
                 )
@@ -95,20 +100,20 @@ PersonalDetails PersonalDetailsRepository::load() const
 
 bool PersonalDetailsRepository::save(const PersonalDetails& details) const
 {
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!isAvailable())
     {
         return false;
     }
 
-    m_dataService->saveSetting(NameKey, details.name);
-    m_dataService->saveSetting(CampusKey, details.campus);
-    m_dataService->saveSetting(ZoomLoginIdKey, details.zoomLoginId);
-    m_dataService->saveSetting(ZoomPasswordKey, details.zoomPassword);
-    m_dataService->saveSetting(
+    saveSetting(NameKey, details.name);
+    saveSetting(CampusKey, details.campus);
+    saveSetting(ZoomLoginIdKey, details.zoomLoginId);
+    saveSetting(ZoomPasswordKey, details.zoomPassword);
+    saveSetting(
         ZoomNotAvailableKey,
         details.zoomNotAvailable
         );
-    m_dataService->saveSetting(
+    saveSetting(
         SignatureImageKey,
         QString::fromLatin1(
             SignatureImage::prepareForEmbedding(
@@ -121,8 +126,37 @@ bool PersonalDetailsRepository::save(const PersonalDetails& details) const
 
 void PersonalDetailsRepository::saveCampus(const QString& campus) const
 {
-    if (m_dataService && m_dataService->isOpen())
+    if (isAvailable())
     {
-        m_dataService->saveSetting(CampusKey, campus);
+        saveSetting(CampusKey, campus);
     }
+}
+
+bool PersonalDetailsRepository::isAvailable() const
+{
+    return (m_dataService && m_dataService->isOpen())
+        || (m_settingsService && m_settingsService->isAvailable());
+}
+
+QVariant PersonalDetailsRepository::loadSetting(
+    const QString& key,
+    const QVariant& defaultValue
+    ) const
+{
+    return m_settingsService
+        ? m_settingsService->load(key, defaultValue)
+        : m_dataService
+            ? m_dataService->loadSetting(key, defaultValue)
+            : defaultValue;
+}
+
+void PersonalDetailsRepository::saveSetting(
+    const QString& key,
+    const QVariant& value
+    ) const
+{
+    if (m_settingsService)
+        m_settingsService->save(key, value);
+    else if (m_dataService)
+        m_dataService->saveSetting(key, value);
 }

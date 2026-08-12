@@ -39,12 +39,9 @@ void SpeakingEvalPage::loadEvaluations(
     const QString& selectedEvaluationName
     )
 {
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* classService = m_services ? m_services->classService() : nullptr;
 
-    if (!dataService || !dataService->isOpen())
+    if (!classService || !classService->isAvailable())
     {
         m_evaluationClasses.clear();
         rebuildClassTabs(-1);
@@ -62,15 +59,15 @@ void SpeakingEvalPage::loadEvaluations(
     }
 
     m_evaluationClasses =
-        dataService->getClasses();
+        classService->classes();
 
     setScheduleSource(
         scheduleSourceForMode(
-            ScheduleDisplayModePreferences::load(dataService)
+            ScheduleDisplayModePreferences::load(m_services->settingsService())
             )
         );
     setVisibilityScope(
-        ClassNavigationPreferences::load(dataService)
+        ClassNavigationPreferences::load(m_services->settingsService())
         );
 
     int classId =
@@ -155,14 +152,14 @@ void SpeakingEvalPage::loadEvaluationData(
 
     if (
         m_services
-        && m_services->dataService()
+        && m_services->speakingEvaluationService()
         && m_classroom.id > 0
         )
     {
         rows =
             m_services
-                ->dataService()
-                ->loadSpeakingEval(
+                ->speakingEvaluationService()
+                ->evaluation(
                     m_classroom.id,
                     m_evaluationName
                     );
@@ -208,14 +205,12 @@ void SpeakingEvalPage::rebuildClassTabs(
 
     m_classTabs = nullptr;
 
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* classService = m_services ? m_services->classService() : nullptr;
+    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
 
     QList<ClassTabNavigation::ClassEntry> entries;
 
-    if (dataService && dataService->isOpen())
+    if (classService && classService->isAvailable())
     {
         for (const Classroom& classroom : std::as_const(m_evaluationClasses))
         {
@@ -225,7 +220,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             }
 
             const ClassInfo info =
-                dataService->loadClassInfo(
+                classService->classInfo(
                     classroom.id
                     );
 
@@ -234,7 +229,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             if (info.teacherId > 0)
             {
                 teacher =
-                    dataService->getTeacher(
+                    teacherService->teacher(
                         info.teacherId
                         );
             }
@@ -580,7 +575,7 @@ void SpeakingEvalPage::openNavigationSettings()
 
     const ClassesNavigationSettingsValues values = dialog.values();
     ClassNavigationPreferences::save(
-        m_services ? m_services->dataService() : nullptr,
+        m_services ? m_services->settingsService() : nullptr,
         values.visibilityScope
         );
     setVisibilityScope(values.visibilityScope);

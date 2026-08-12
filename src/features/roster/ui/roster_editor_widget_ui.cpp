@@ -3,9 +3,9 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_header_view.h"
@@ -29,17 +29,18 @@ namespace
 {
 
 QString sidebarClassDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId
     )
 {
-    if (!dataService || !dataService->isOpen() || classId <= 0)
+    if (!classService || !teacherService || classId <= 0)
     {
         return {};
     }
 
     const ClassInfo classInfo =
-        dataService->loadClassInfo(
+        classService->classInfo(
             classId
             );
 
@@ -48,7 +49,7 @@ QString sidebarClassDisplayName(
     if (classInfo.teacherId > 0)
     {
         teacher =
-            dataService->getTeacher(
+            teacherService->teacher(
                 classInfo.teacherId
                 );
     }
@@ -308,7 +309,8 @@ void RosterEditorWidget::updateHeaderText()
     }
 
     const QString sidebarName = sidebarClassDisplayName(
-        m_services ? m_services->dataService() : nullptr,
+        m_services ? m_services->classService() : nullptr,
+        m_services ? m_services->teacherService() : nullptr,
         m_classroom.id
         );
 

@@ -1,4 +1,6 @@
 #include "data/data_service.h"
+#include "data/database/database_session.h"
+#include "app/services/feature_services.h"
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -202,10 +204,106 @@ class DataServiceLifecycleTests : public QObject
     Q_OBJECT
 
 private slots:
+    void databaseSessionOwnsRepositoryLifetime();
+    void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
+
+void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DatabaseSession session;
+    QVERIFY(!session.isOpen());
+    QVERIFY(session.teacherRepository() == nullptr);
+    QVERIFY(session.classRepository() == nullptr);
+
+    const QString path =
+        directory.filePath(QStringLiteral("session.db"));
+    QVERIFY(session.open(path).has_value());
+    QVERIFY(session.isOpen());
+    QCOMPARE(session.databasePath(), path);
+    QVERIFY(session.database().isOpen());
+    QVERIFY(session.teacherRepository() != nullptr);
+    QVERIFY(session.classRepository() != nullptr);
+    QVERIFY(session.rosterRepository() != nullptr);
+    QVERIFY(session.speakingEvalRepository() != nullptr);
+
+    session.close();
+    QVERIFY(!session.isOpen());
+    QVERIFY(session.databasePath().isEmpty());
+    QVERIFY(session.teacherRepository() == nullptr);
+    QVERIFY(session.classRepository() == nullptr);
+    QVERIFY(session.rosterRepository() == nullptr);
+    QVERIFY(session.speakingEvalRepository() == nullptr);
+}
+
+void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService dataService;
+    SettingsService settings(dataService.databaseSession(), &dataService);
+    TeacherService teachers(dataService.databaseSession(), &dataService);
+    ClassService classes(dataService.databaseSession(), &dataService);
+    ScheduleService schedule(dataService.databaseSession(), &dataService);
+    CalendarService calendar(dataService.databaseSession(), &dataService);
+    RosterService rosters(dataService.databaseSession(), &dataService);
+    SpeakingEvaluationService evaluations(
+        dataService.databaseSession(), &dataService);
+
+    QVERIFY(!settings.isAvailable());
+    QVERIFY(!teachers.isAvailable());
+    QVERIFY(!classes.isAvailable());
+
+    const QString path =
+        directory.filePath(QStringLiteral("feature-services.db"));
+    QVERIFY(dataService.openDatabase(path).has_value());
+
+    QVERIFY(settings.isAvailable());
+    QVERIFY(teachers.isAvailable());
+    QVERIFY(classes.isAvailable());
+    QVERIFY(schedule.isAvailable());
+    QVERIFY(calendar.isAvailable());
+    QVERIFY(rosters.isAvailable());
+    QVERIFY(evaluations.isAvailable());
+
+    settings.save(
+        QStringLiteral("feature-services/value"),
+        QStringLiteral("saved")
+        );
+    QCOMPARE(
+        settings.load(QStringLiteral("feature-services/value")).toString(),
+        QStringLiteral("saved")
+        );
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Narrow Teacher");
+    const int teacherId = teachers.create(teacher);
+    const int classId = classes.create(QStringLiteral("Narrow Class"));
+    QVERIFY(teacherId > 0);
+    QVERIFY(classId > 0);
+    QCOMPARE(teachers.teacher(teacherId).teacherEn,
+             QStringLiteral("Narrow Teacher"));
+    QCOMPARE(classes.classroom(classId).name,
+             QStringLiteral("Narrow Class"));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows.append(
+        {QStringLiteral("Student"), QStringLiteral("학생")}
+        );
+    rosters.saveRoster(classId, roster);
+    QCOMPARE(rosters.studentCount(classId), 1);
+
+    dataService.closeDatabase();
+    QVERIFY(!teachers.isAvailable());
+    QVERIFY(!classes.isAvailable());
+}
 
 void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
 {

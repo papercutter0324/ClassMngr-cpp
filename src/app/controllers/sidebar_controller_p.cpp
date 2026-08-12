@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+#include "app/services/feature_services.h"
+
 #include "sidebar_controller.h"
 
 #include "core/application_services.h"
@@ -49,6 +51,20 @@ DataService* openDataService(
 
     return dataService && dataService->isOpen()
         ? dataService
+        : nullptr;
+}
+
+TeacherService* openTeacherService(
+    ApplicationServices* services
+    )
+{
+    auto* teacherService =
+        services
+            ? services->teacherService()
+            : nullptr;
+
+    return teacherService && teacherService->isAvailable()
+        ? teacherService
         : nullptr;
 }
 

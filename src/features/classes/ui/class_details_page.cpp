@@ -11,10 +11,10 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
-#include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -254,16 +254,16 @@ void ClassDetailsPage::loadClass(
 
     m_classroom = classroom;
 
-    auto* dataService =
-        m_services
-            ->dataService();
+    auto* classService = m_services->classService();
+    auto* teacherService = m_services->teacherService();
+    auto* rosterService = m_services->rosterService();
 
     m_teacherSection->setTeachers(
-        dataService->getAllTeachers()
+        teacherService->teachers()
         );
 
     const ClassInfo info =
-        dataService->loadClassInfo(
+        classService->classInfo(
             classroom.id
             );
 
@@ -280,7 +280,7 @@ void ClassDetailsPage::loadClass(
         info.essayBook,
         info.classColor,
         info.fontColor,
-        dataService->getRosterStudentCount(
+        rosterService->studentCount(
             classroom.id
             )
         );
@@ -331,8 +331,8 @@ void ClassDetailsPage::updateTitle(
     {
         teacher =
             m_services
-                ->dataService()
-                ->getTeacher(
+                ->teacherService()
+                ->teacher(
                     info.teacherId
                     );
     }
@@ -406,13 +406,10 @@ bool ClassDetailsPage::saveClassInfoInternal(
         return true;
     }
 
-    auto* dataService =
-        m_services
-            ->dataService();
+    auto* classService = m_services->classService();
 
     const ClassInfo currentInfo =
-        dataService
-            ->loadClassInfo(
+        classService->classInfo(
                 m_classroom.id
                 );
 
@@ -478,7 +475,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
     }
 
     const bool saved =
-        dataService->saveClassInfo(info);
+        classService->saveClassInfo(info);
 
     if (!saved)
     {
@@ -523,14 +520,14 @@ void ClassDetailsPage::retranslateUi()
 {
     if (
         m_services
-        && m_services->dataService()
+        && m_services->classService()
         && m_classroom.id >= 0
         )
     {
         updateTitle(
             m_services
-                ->dataService()
-                ->loadClassInfo(m_classroom.id)
+                ->classService()
+                ->classInfo(m_classroom.id)
             );
     }
     else
@@ -588,8 +585,8 @@ bool ClassDetailsPage::showScheduleConflicts(
 {
     const QList<ClassConflict> conflicts =
         m_services
-            ->dataService()
-            ->getClassTimeConflicts(
+            ->classService()
+            ->conflicts(
                 m_classroom.id,
                 times,
                 type

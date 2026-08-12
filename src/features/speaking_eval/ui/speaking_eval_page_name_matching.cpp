@@ -482,7 +482,7 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
 
     if (
         !m_services
-        || !m_services->dataService()
+        || !m_services->rosterService()
         || !m_model
         || m_classroom.id <= 0
         )
@@ -492,8 +492,8 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
 
     const Roster roster =
         m_services
-            ->dataService()
-            ->loadRoster(
+            ->rosterService()
+            ->roster(
                 m_classroom.id
                 );
 

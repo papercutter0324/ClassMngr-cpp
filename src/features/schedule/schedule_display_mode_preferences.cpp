@@ -1,6 +1,7 @@
 #include "schedule_display_mode_preferences.h"
 
 #include "data/data_service.h"
+#include "app/services/feature_services.h"
 
 namespace
 {
@@ -135,6 +136,27 @@ void save(
         displayModeSettingKey(),
         settingValue(mode)
         );
+}
+
+ScheduleDisplayMode load(SettingsService* settingsService)
+{
+    if (!settingsService || !settingsService->isAvailable())
+        return ScheduleDisplayMode::Regular;
+
+    const QVariant storedMode = settingsService->load(displayModeSettingKey());
+    const ScheduleDisplayMode mode = modeFromSetting(
+        storedMode,
+        settingToBool(settingsService->load(LegacyShowIntensiveKey, false))
+        );
+    if (!storedMode.isValid())
+        save(settingsService, mode);
+    return mode;
+}
+
+void save(SettingsService* settingsService, ScheduleDisplayMode mode)
+{
+    if (settingsService && settingsService->isAvailable())
+        settingsService->save(displayModeSettingKey(), settingValue(mode));
 }
 
 }

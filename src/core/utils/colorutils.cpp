@@ -1,5 +1,6 @@
 #include "colorutils.h"
 #include "data/data_service.h"
+#include "app/services/feature_services.h"
 
 #include <algorithm>
 #include <array>
@@ -315,6 +316,26 @@ QColor ColorUtils::getColor(
     return dialog.selectedColor();
 }
 
+QColor ColorUtils::getColor(
+    const QColor& initialColor,
+    QWidget* parent,
+    const QString& title,
+    SettingsService* settingsService
+    )
+{
+    loadCustomColors(settingsService);
+    QColor startingColor = initialColor.isValid()
+        ? initialColor
+        : QColor(QStringLiteral("#FFFFFF"));
+    QColorDialog dialog(parent);
+    dialog.setWindowTitle(title);
+    dialog.setCurrentColor(startingColor);
+    dialog.setOption(QColorDialog::DontUseNativeDialog, true);
+    const int result = dialog.exec();
+    saveCustomColors(settingsService);
+    return result == QDialog::Accepted ? dialog.selectedColor() : QColor{};
+}
+
 // =====================================================
 // Load Custom Colors
 // =====================================================
@@ -372,6 +393,41 @@ void ColorUtils::saveCustomColors(
     }
 
     ds->saveSetting(
+        CustomColorsSettingKey,
+        serializeCustomColors(colors)
+        );
+}
+
+void ColorUtils::loadCustomColors(SettingsService* settingsService)
+{
+    QStringList colors = defaultCustomColors();
+    if (settingsService)
+    {
+        colors = normalizeCustomColors(
+            colorsFromSetting(
+                settingsService->load(CustomColorsSettingKey, QString())
+                )
+            );
+    }
+    applyCustomColors(colors);
+}
+
+void ColorUtils::saveCustomColors(SettingsService* settingsService)
+{
+    if (!settingsService)
+        return;
+
+    QStringList colors;
+    for (int index = 0; index < CUSTOM_COLOR_COUNT; ++index)
+    {
+        const QColor color = QColorDialog::customColor(index);
+        colors.append(
+            color.isValid()
+                ? color.name(QColor::HexRgb)
+                : DefaultCustomColors[index]
+            );
+    }
+    settingsService->save(
         CustomColorsSettingKey,
         serializeCustomColors(colors)
         );

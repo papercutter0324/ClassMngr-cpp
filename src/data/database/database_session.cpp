@@ -1,0 +1,178 @@
+#include "database_session.h"
+
+#include "data/database/database_schema_manager.h"
+#include "data/repositories/calendar_event_repository.h"
+#include "data/repositories/campus_record_repository.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/class_repository.h"
+#include "data/repositories/class_transfer_repository.h"
+#include "data/repositories/gs_team_repository.h"
+#include "data/repositories/intensive_slot_state_repository.h"
+#include "data/repositories/native_english_teacher_repository.h"
+#include "data/repositories/roster_repository.h"
+#include "data/repositories/schedule_import_repository.h"
+#include "data/repositories/settings_repository.h"
+#include "data/repositories/speaking_eval_repository.h"
+#include "data/repositories/teacher_import_repository.h"
+#include "data/repositories/teacher_repository.h"
+#include "data/repositories/testing_block_repository.h"
+#include "data/repositories/testing_class_repository.h"
+
+#include <QDir>
+#include <QFileInfo>
+#include <QSqlError>
+
+DatabaseSession::DatabaseSession()
+    : m_connectionName(
+        QStringLiteral("classmngr-session-%1")
+            .arg(reinterpret_cast<quintptr>(this), 0, 16)
+        )
+{
+}
+
+DatabaseSession::~DatabaseSession()
+{
+    close();
+}
+
+Status DatabaseSession::open(const QString& databasePath)
+{
+    if (databasePath.trimmed().isEmpty())
+    {
+        close();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile path was provided.")
+            );
+    }
+
+    const QFileInfo databaseInfo(databasePath);
+    const QString normalizedPath = databaseInfo.absoluteFilePath();
+    close();
+
+    if (normalizedPath.trimmed().isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Teacher Profile path could not be resolved.")
+            );
+    }
+
+    if (
+        !databaseInfo.absolutePath().isEmpty()
+        && !QDir().mkpath(databaseInfo.absolutePath())
+        )
+    {
+        return std::unexpected(
+            QStringLiteral("Unable to create Teacher Profile directory:\n%1")
+                .arg(databaseInfo.absolutePath())
+            );
+    }
+
+    m_database = QSqlDatabase::addDatabase(
+        QStringLiteral("QSQLITE"),
+        m_connectionName
+        );
+    m_database.setDatabaseName(normalizedPath);
+
+    if (!m_database.open())
+    {
+        const QString openError = m_database.lastError().text();
+        m_database = QSqlDatabase();
+        QSqlDatabase::removeDatabase(m_connectionName);
+        return std::unexpected(
+            QStringLiteral("Unable to open Teacher Profile:\n%1\n\n%2")
+                .arg(normalizedPath, openError)
+            );
+    }
+
+    m_databasePath = normalizedPath;
+    m_settingsRepository = std::make_unique<SettingsRepository>(m_database);
+    m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_database);
+    m_teacherRepository = std::make_unique<TeacherRepository>(m_database);
+    m_nativeEnglishTeacherRepository =
+        std::make_unique<NativeEnglishTeacherRepository>(m_database);
+    m_gsTeamRepository = std::make_unique<GsTeamRepository>(m_database);
+    m_teacherImportRepository = std::make_unique<TeacherImportRepository>(m_database);
+    m_classRepository = std::make_unique<ClassRepository>(m_database);
+    m_classTransferRepository = std::make_unique<ClassTransferRepository>(m_database);
+    m_scheduleImportRepository = std::make_unique<ScheduleImportRepository>(m_database);
+    m_classInfoRepository = std::make_unique<ClassInfoRepository>(m_database);
+    m_intensiveSlotStateRepository =
+        std::make_unique<IntensiveSlotStateRepository>(m_database);
+    m_testingBlockRepository = std::make_unique<TestingBlockRepository>(m_database);
+    m_testingClassRepository = std::make_unique<TestingClassRepository>(m_database);
+    m_calendarEventRepository = std::make_unique<CalendarEventRepository>(m_database);
+    m_rosterRepository = std::make_unique<RosterRepository>(m_database);
+    m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(m_database);
+
+    DatabaseSchemaManager::ensureSchema(m_database);
+    return {};
+}
+
+void DatabaseSession::close()
+{
+    m_teacherImportRepository.reset();
+    m_gsTeamRepository.reset();
+    m_nativeEnglishTeacherRepository.reset();
+    m_settingsRepository.reset();
+    m_campusRecordRepository.reset();
+    m_teacherRepository.reset();
+    m_classRepository.reset();
+    m_classTransferRepository.reset();
+    m_scheduleImportRepository.reset();
+    m_classInfoRepository.reset();
+    m_intensiveSlotStateRepository.reset();
+    m_testingBlockRepository.reset();
+    m_testingClassRepository.reset();
+    m_calendarEventRepository.reset();
+    m_rosterRepository.reset();
+    m_speakingEvalRepository.reset();
+
+    if (m_database.isOpen())
+    {
+        m_database.close();
+    }
+    m_database = QSqlDatabase();
+
+    if (QSqlDatabase::contains(m_connectionName))
+    {
+        QSqlDatabase::removeDatabase(m_connectionName);
+    }
+    m_databasePath.clear();
+}
+
+bool DatabaseSession::isOpen() const
+{
+    return m_database.isValid() && m_database.isOpen();
+}
+
+QString DatabaseSession::databasePath() const
+{
+    return m_databasePath;
+}
+
+QSqlDatabase DatabaseSession::database() const
+{
+    return m_database;
+}
+
+#define CLASSMNGR_REPOSITORY_ACCESSOR(Type, name, member) \
+    Type* DatabaseSession::name() const { return member.get(); }
+
+CLASSMNGR_REPOSITORY_ACCESSOR(SettingsRepository, settingsRepository, m_settingsRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(CampusRecordRepository, campusRecordRepository, m_campusRecordRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(TeacherRepository, teacherRepository, m_teacherRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(NativeEnglishTeacherRepository, nativeEnglishTeacherRepository, m_nativeEnglishTeacherRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(GsTeamRepository, gsTeamRepository, m_gsTeamRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(TeacherImportRepository, teacherImportRepository, m_teacherImportRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(ClassRepository, classRepository, m_classRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(ClassTransferRepository, classTransferRepository, m_classTransferRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(ScheduleImportRepository, scheduleImportRepository, m_scheduleImportRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(ClassInfoRepository, classInfoRepository, m_classInfoRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(IntensiveSlotStateRepository, intensiveSlotStateRepository, m_intensiveSlotStateRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(TestingBlockRepository, testingBlockRepository, m_testingBlockRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(TestingClassRepository, testingClassRepository, m_testingClassRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(CalendarEventRepository, calendarEventRepository, m_calendarEventRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(RosterRepository, rosterRepository, m_rosterRepository)
+CLASSMNGR_REPOSITORY_ACCESSOR(SpeakingEvalRepository, speakingEvalRepository, m_speakingEvalRepository)
+
+#undef CLASSMNGR_REPOSITORY_ACCESSOR

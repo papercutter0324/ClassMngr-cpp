@@ -1,9 +1,9 @@
 #include "testing_classes_page.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
-#include "data/data_service.h"
 #include "domain/models/classroom.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -256,11 +256,8 @@ bool TestingClassesPage::saveChanges()
         return true;
     }
 
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-    if (!dataService || !dataService->isOpen())
+    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
+    if (!scheduleService || !scheduleService->isAvailable())
     {
         return false;
     }
@@ -273,7 +270,7 @@ bool TestingClassesPage::saveChanges()
     if (m_currentClassId <= 0)
     {
         created =
-            dataService->createTestingClass(
+            scheduleService->createTestingClass(
                 testingClass,
                 m_pendingDay,
                 m_pendingStartTime
@@ -295,7 +292,7 @@ bool TestingClassesPage::saveChanges()
         testingClass.classId =
             m_currentClassId;
         const Status updated =
-            dataService->updateTestingClass(
+            scheduleService->updateTestingClass(
                 testingClass
                 );
         if (!updated)
@@ -845,13 +842,10 @@ void TestingClassesPage::populateTeachers()
         TeacherRoomRole
         );
 
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-    if (dataService && dataService->isOpen())
+    auto* teacherService = m_services ? m_services->teacherService() : nullptr;
+    if (teacherService && teacherService->isAvailable())
     {
-        for (const Teacher& teacher : dataService->getAllTeachers())
+        for (const Teacher& teacher : teacherService->teachers())
         {
             const QString label =
                 teacher.teacherKr.trimmed();
@@ -901,20 +895,17 @@ void TestingClassesPage::rebuildClassList(
     int preferredClassId
     )
 {
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
     const QSignalBlocker blocker(m_classList);
     m_classList->clear();
-    if (!dataService || !dataService->isOpen())
+    if (!scheduleService || !scheduleService->isAvailable())
     {
         updateActions();
         return;
     }
 
     const Result<QList<TestingClass>> loaded =
-        dataService->loadTestingClasses();
+        scheduleService->testingClasses();
     if (!loaded)
     {
         QMessageBox::warning(
@@ -994,17 +985,14 @@ void TestingClassesPage::loadClass(
     )
 {
     m_autosave->setLoading(true);
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-    if (!dataService || !dataService->isOpen() || classId <= 0)
+    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
+    if (!scheduleService || !scheduleService->isAvailable() || classId <= 0)
     {
         return;
     }
 
     const Result<TestingClass> loaded =
-        dataService->loadTestingClass(classId);
+        scheduleService->testingClass(classId);
     if (!loaded)
     {
         QMessageBox::warning(
@@ -1179,7 +1167,7 @@ void TestingClassesPage::chooseClassColor()
             this,
             tr("Choose Testing Class Color"),
             m_services
-                ? m_services->dataService()
+                ? m_services->settingsService()
                 : nullptr
             );
     if (!color.isValid())
@@ -1201,7 +1189,7 @@ void TestingClassesPage::chooseFontColor()
             this,
             tr("Choose Testing Class Font Color"),
             m_services
-                ? m_services->dataService()
+                ? m_services->settingsService()
                 : nullptr
             );
     if (!color.isValid())
@@ -1233,17 +1221,14 @@ void TestingClassesPage::deleteCurrentClass()
         return;
     }
 
-    auto* dataService =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
-    if (!dataService)
+    auto* scheduleService = m_services ? m_services->scheduleService() : nullptr;
+    if (!scheduleService)
     {
         return;
     }
 
     const Status deleted =
-        dataService->deleteTestingClass(
+        scheduleService->deleteTestingClass(
             m_currentClassId
             );
     if (!deleted)

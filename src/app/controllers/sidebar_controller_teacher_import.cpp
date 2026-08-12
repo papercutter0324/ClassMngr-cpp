@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 #include "features/teacher/ui/staff_directory_page.h"
@@ -9,8 +11,8 @@ using namespace SidebarControllerPrivate;
 
 void SidebarController::importTeachers()
 {
-    DataService* dataService = openDataService(m_services);
-    if (!dataService || !m_pages || !m_pages->confirmCurrentPageCanLeave())
+    TeacherService* teachers = openTeacherService(m_services);
+    if (!teachers || !m_pages || !m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
@@ -22,7 +24,7 @@ void SidebarController::importTeachers()
     }
 
     const TeacherImportPlan plan = dialog.importPlan();
-    const QDate previousDate = dataService->latestTeacherImportDate();
+    const QDate previousDate = teachers->latestImportDate();
     if (previousDate.isValid() && plan.sourceDate <= previousDate)
     {
         const bool versionsMatch = plan.sourceDate == previousDate;
@@ -49,7 +51,7 @@ void SidebarController::importTeachers()
     }
 
     const Result<TeacherImportSummary> imported =
-        dataService->importTeachers(plan);
+        teachers->importTeachers(plan);
     if (!imported)
     {
         QMessageBox::warning(

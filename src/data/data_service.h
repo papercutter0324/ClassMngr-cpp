@@ -29,6 +29,7 @@
 
 class CampusRecordRepository;
 class CalendarEventRepository;
+class DatabaseSession;
 class ClassInfoRepository;
 class ClassRepository;
 class ClassTransferRepository;
@@ -48,6 +49,9 @@ class TestingClassRepository;
 // Data Service
 // =========================================================
 
+// Compatibility facade retained while callers migrate to the feature services
+// exposed by ApplicationServices. New UI and controller code should depend on
+// those narrow services instead of adding operations here.
 class DataService
 {
 public:
@@ -75,6 +79,10 @@ public:
     [[nodiscard]] bool isOpen() const;
 
     [[nodiscard]] QString currentDatabasePath() const;
+
+    // Transitional access for constructing the narrow application services.
+    // UI and controllers must not use the session or its repositories directly.
+    [[nodiscard]] DatabaseSession* databaseSession() const;
 
     // =====================================================
     // Settings
@@ -436,25 +444,25 @@ public:
 
 private:
 
-    QString m_dbPath;
+    void refreshRepositoryAdapters();
 
-    QSqlDatabase m_db;
+    QString m_initialDatabasePath;
+    std::unique_ptr<DatabaseSession> m_session;
 
-    std::unique_ptr<SettingsRepository> m_settingsRepository;
-    std::unique_ptr<CampusRecordRepository> m_campusRecordRepository;
-    std::unique_ptr<TeacherRepository> m_teacherRepository;
-    std::unique_ptr<NativeEnglishTeacherRepository>
-        m_nativeEnglishTeacherRepository;
-    std::unique_ptr<GsTeamRepository> m_gsTeamRepository;
-    std::unique_ptr<TeacherImportRepository> m_teacherImportRepository;
-    std::unique_ptr<ClassRepository> m_classRepository;
-    std::unique_ptr<ClassTransferRepository> m_classTransferRepository;
-    std::unique_ptr<ScheduleImportRepository> m_scheduleImportRepository;
-    std::unique_ptr<ClassInfoRepository> m_classInfoRepository;
-    std::unique_ptr<IntensiveSlotStateRepository> m_intensiveSlotStateRepository;
-    std::unique_ptr<TestingBlockRepository> m_testingBlockRepository;
-    std::unique_ptr<TestingClassRepository> m_testingClassRepository;
-    std::unique_ptr<CalendarEventRepository> m_calendarEventRepository;
-    std::unique_ptr<RosterRepository> m_rosterRepository;
-    std::unique_ptr<SpeakingEvalRepository> m_speakingEvalRepository;
+    SettingsRepository* m_settingsRepository = nullptr;
+    CampusRecordRepository* m_campusRecordRepository = nullptr;
+    TeacherRepository* m_teacherRepository = nullptr;
+    NativeEnglishTeacherRepository* m_nativeEnglishTeacherRepository = nullptr;
+    GsTeamRepository* m_gsTeamRepository = nullptr;
+    TeacherImportRepository* m_teacherImportRepository = nullptr;
+    ClassRepository* m_classRepository = nullptr;
+    ClassTransferRepository* m_classTransferRepository = nullptr;
+    ScheduleImportRepository* m_scheduleImportRepository = nullptr;
+    ClassInfoRepository* m_classInfoRepository = nullptr;
+    IntensiveSlotStateRepository* m_intensiveSlotStateRepository = nullptr;
+    TestingBlockRepository* m_testingBlockRepository = nullptr;
+    TestingClassRepository* m_testingClassRepository = nullptr;
+    CalendarEventRepository* m_calendarEventRepository = nullptr;
+    RosterRepository* m_rosterRepository = nullptr;
+    SpeakingEvalRepository* m_speakingEvalRepository = nullptr;
 };

@@ -6,6 +6,7 @@
 #include <QVariant>
 
 class DataService;
+class SettingsService;
 
 namespace ScheduleDisplayModePreferences
 {
@@ -20,5 +21,8 @@ void save(
     DataService* dataService,
     ScheduleDisplayMode mode
     );
+
+[[nodiscard]] ScheduleDisplayMode load(SettingsService* settingsService);
+void save(SettingsService* settingsService, ScheduleDisplayMode mode);
 
 }

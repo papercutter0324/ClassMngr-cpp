@@ -1,9 +1,9 @@
 #include "teacher_info_page.h"
 
 #include "core/application_services.h"
+#include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/teacher.h"
-#include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -972,7 +972,7 @@ bool TeacherInfoPage::saveTeacherInternal()
 {
     if (
         !m_services
-        || !m_services->dataService()
+        || !m_services->teacherService()
         || m_teacher.id <= 0
         )
     {
@@ -981,15 +981,15 @@ bool TeacherInfoPage::saveTeacherInternal()
 
     m_autosave->cancelPendingSave();
 
-    auto* dataService = m_services->dataService();
+    auto* teacherService = m_services->teacherService();
 
     const Teacher updated =
         teacherFromForm();
 
-    dataService->updateTeacher(updated);
+    teacherService->update(updated);
 
     m_teacher =
-        dataService->getTeacher(
+        teacherService->teacher(
             m_teacher.id
             );
 

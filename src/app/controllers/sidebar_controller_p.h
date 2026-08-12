@@ -23,6 +23,7 @@
 
 class ApplicationServices;
 class DataService;
+class TeacherService;
 class QWidget;
 
 namespace SidebarControllerPrivate
@@ -37,6 +38,7 @@ struct SidebarClassNode
 };
 
 DataService* openDataService(ApplicationServices* services);
+TeacherService* openTeacherService(ApplicationServices* services);
 bool sidebarClassNodeLessThan(
     const SidebarClassNode& left,
     const SidebarClassNode& right

@@ -1,4 +1,5 @@
 #include "data/data_service.h"
+#include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
 #include "data/repositories/campus_record_repository.h"
 #include "data/repositories/class_info_repository.h"
