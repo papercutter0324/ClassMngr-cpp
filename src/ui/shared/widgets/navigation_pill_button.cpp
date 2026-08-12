@@ -15,6 +15,7 @@ NavigationPillButton::NavigationPillButton(
     : QPushButton(parent)
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedHeight(NavigationPillStyle::ControlHeight);
 
     connect(
         this,
@@ -102,12 +103,15 @@ QSize NavigationPillButton::sizeHint() const
             ? QSize()
             : icon().actualSize(QSize(iconExtent, iconExtent));
 
-    return NavigationPillStyle::sizeHint(
+    QSize hint = NavigationPillStyle::sizeHint(
         fontMetrics(),
         icon(),
         text(),
         effectiveIconSize
         );
+    hint.setHeight(NavigationPillStyle::ControlHeight);
+
+    return hint;
 }
 
 QSize NavigationPillButton::minimumSizeHint() const

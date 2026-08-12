@@ -3,6 +3,7 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QtTest>
@@ -295,7 +296,7 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
         settings->property("role").toString(),
         QStringLiteral("icon_button")
         );
-    QCOMPARE(settings->size(), QSize(42, 36));
+    QCOMPARE(settings->width(), 46);
     QCOMPARE(settings->text(), QStringLiteral("\u2699"));
     QCOMPARE(settings->font().pointSize(), 18);
     QCOMPARE(settings->font().weight(), QFont::DemiBold);
@@ -306,9 +307,33 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
             );
     QVERIFY(gradeTabBar);
     QCOMPARE(
+        settings->height(),
+        NavigationPillStyle::ControlHeight
+        );
+    QCOMPARE(settings->height(), weekend->height());
+    QCOMPARE(
+        weekend->height(),
+        gradeTabBar->tabRect(0).height()
+        );
+    QCOMPARE(
         weekend->sizeHint().height(),
         gradeTabBar->tabSizeHint(0).height()
         );
+    const QList<UniformWidthTabBar*> classTabBars =
+        page.findChildren<UniformWidthTabBar*>(
+            QStringLiteral("classesLevelTabBar")
+            );
+    QVERIFY(!classTabBars.isEmpty());
+    for (const UniformWidthTabBar* classTabBar : classTabBars)
+    {
+        if (classTabBar->count() > 0)
+        {
+            QCOMPARE(
+                classTabBar->tabSizeHint(0).height(),
+                NavigationPillStyle::ControlHeight
+                );
+        }
+    }
     QCOMPARE(
         ScheduleWidgetTestStubs::settingValue(
             QStringLiteral("classes_navigation_visibility_scope")

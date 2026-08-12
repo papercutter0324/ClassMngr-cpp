@@ -1,5 +1,6 @@
 #include "features/classes/ui/classes_navigation_tabs.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
 
 #include <QApplication>
 #include <QFile>
@@ -1702,8 +1703,12 @@ void UniformWidthTabBarTests::navigationTabsUseSharedTheme()
         classTabBar->tabSizeHint(1)
         );
     QCOMPARE(
-        gradeTabBar->tabSizeHint(1),
-        sectionTabBar->tabSizeHint(1)
+        gradeTabBar->tabSizeHint(1).height(),
+        NavigationPillStyle::ControlHeight
+        );
+    QCOMPARE(
+        gradeTabBar->tabSizeHint(1).width(),
+        sectionTabBar->tabSizeHint(1).width()
         );
     QCOMPARE(tabColor(gradeTabBar), expectedColor);
     QCOMPARE(tabColor(classTabBar), expectedColor);

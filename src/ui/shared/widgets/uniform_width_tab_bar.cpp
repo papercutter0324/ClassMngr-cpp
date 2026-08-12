@@ -24,6 +24,7 @@ namespace
 
 constexpr int ScrollButtonWidth = 28;
 constexpr int DragScrollStep = 48;
+constexpr int NavigationSettingsButtonWidth = 46;
 
 class EdgeAlignedTabBarStyle final : public QProxyStyle
 {
@@ -605,13 +606,16 @@ QSize UniformWidthTabBar::naturalTabSizeHint(
                 QSize(iconExtent, iconExtent)
                 );
 
-    return NavigationPillStyle::sizeHint(
+    QSize hint = NavigationPillStyle::sizeHint(
         fontMetrics(),
         icon,
         tabText(index),
         iconSize,
         NavigationPillStyle::Gap
         );
+    hint.setHeight(NavigationPillStyle::ControlHeight);
+
+    return hint;
 }
 
 void UniformWidthTabBar::paintNavigationPills()
@@ -949,7 +953,7 @@ void UniformWidthTabWidget::configureNavigationSettingsButton(
     }
 
     button->setProperty("role", QStringLiteral("icon_button"));
-    button->setFixedSize(42, 36);
+    button->setFixedWidth(NavigationSettingsButtonWidth);
     button->setText(QStringLiteral("\u2699"));
     button->setFont(
         FontManager::getUiFont(
@@ -957,6 +961,7 @@ void UniformWidthTabWidget::configureNavigationSettingsButton(
             QFont::DemiBold
             )
         );
+    button->setFixedHeight(NavigationPillStyle::ControlHeight);
 }
 
 void UniformWidthTabWidget::setTabAlignment(

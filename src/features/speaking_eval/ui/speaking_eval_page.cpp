@@ -460,7 +460,13 @@ void SpeakingEvalPage::createDayFilterControls(
         QStringLiteral("speakingEvalDayFilterControls")
         );
     auto* layout = new QHBoxLayout(controls);
-    layout->setContentsMargins(DayFilterSpacer, 0, 0, 0);
+    layout->setContentsMargins(
+        DayFilterSpacer,
+        0,
+        0,
+        0
+        );
+    layout->setAlignment(Qt::AlignTop);
     layout->setSpacing(6);
 
     for (const DayFilterButtonDefinition& definition
@@ -508,6 +514,9 @@ void SpeakingEvalPage::createDayFilterControls(
     settingsButton->setAccessibleName(tr("Speaking Evaluation Settings"));
     settingsButton->setToolTip(tr("Speaking Evaluation Settings"));
     layout->addWidget(settingsButton);
+    controls->setFixedHeight(
+        NavigationPillStyle::ControlHeight
+        );
 
     connect(
         settingsButton,

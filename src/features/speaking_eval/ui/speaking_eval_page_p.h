@@ -23,8 +23,9 @@
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
-#include "ui/shared/widgets/uniform_width_tab_bar.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
+#include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QAbstractButton>
 #include <QDialog>

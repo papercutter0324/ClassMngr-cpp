@@ -14,6 +14,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/uniform_width_tab_bar.h"
 
 #include <QDialog>
@@ -632,7 +633,13 @@ void RostersPage::createDayFilterControls(
         QStringLiteral("rosterDayFilterControls")
         );
     auto* layout = new QHBoxLayout(controls);
-    layout->setContentsMargins(DayFilterSpacer, 0, 0, 0);
+    layout->setContentsMargins(
+        DayFilterSpacer,
+        0,
+        0,
+        0
+        );
+    layout->setAlignment(Qt::AlignTop);
     layout->setSpacing(6);
 
     for (const DayFilterButtonDefinition& definition
@@ -680,6 +687,9 @@ void RostersPage::createDayFilterControls(
     settingsButton->setAccessibleName(tr("Rosters Settings"));
     settingsButton->setToolTip(tr("Rosters Settings"));
     layout->addWidget(settingsButton);
+    controls->setFixedHeight(
+        NavigationPillStyle::ControlHeight
+        );
 
     connect(
         settingsButton,
