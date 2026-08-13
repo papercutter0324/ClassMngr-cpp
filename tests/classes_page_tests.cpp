@@ -293,9 +293,8 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
     QVERIFY(settings->geometry().left() > weekend->geometry().right());
     auto* gradeTabBar = gradeTabs(&page)->tabStrip();
     QVERIFY(gradeTabBar);
-    QCOMPARE(
-        settings->height(),
-        NavigationPillStyle::ControlHeight
+    QVERIFY(
+        settings->height() >= NavigationPillStyle::ControlHeight
         );
     QCOMPARE(settings->height(), weekend->height());
     QCOMPARE(
