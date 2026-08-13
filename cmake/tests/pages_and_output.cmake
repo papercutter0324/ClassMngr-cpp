@@ -111,6 +111,10 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/schedule/ui/schedule_import_dialog.h
         src/features/schedule/ui/schedule_import_dialog_shared.cpp
         src/features/schedule/ui/schedule_import_dialog_shared.h
+        src/features/schedule/ui/schedule_import_review_presentation.cpp
+        src/features/schedule/ui/schedule_import_review_presentation.h
+        src/features/schedule/ui/schedule_import_resolution_controls.cpp
+        src/features/schedule/ui/schedule_import_resolution_controls.h
         src/features/schedule/ui/schedule_import_review_dialog.cpp
         src/features/schedule/ui/schedule_import_review_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
@@ -118,6 +122,10 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_time_formatter.h
+        src/features/schedule/ui/schedule_cell_widget_factory.cpp
+        src/features/schedule/ui/schedule_cell_widget_factory.h
+        src/features/schedule/ui/schedule_table_renderer.cpp
+        src/features/schedule/ui/schedule_table_renderer.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
         src/features/schedule/ui/testing_assignment_dialog.cpp
@@ -184,6 +192,8 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/sub_prep/ui/sub_prep_print_dialog.h
         src/features/sub_prep/services/sub_prep_package_service.cpp
         src/features/sub_prep/services/sub_prep_package_service.h
+        src/features/sub_prep/services/sub_prep_document_model.cpp
+        src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
         src/features/sub_prep/services/sub_prep_print_service.h
         src/ui/shared/pages/basepage.cpp
@@ -200,6 +210,10 @@ qt_add_executable(ClassMngrClassesPageTests
         src/ui/shared/widgets/navigation_tab_widget.h
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
+        src/features/schedule/ui/schedule_cell_widget_factory.cpp
+        src/features/schedule/ui/schedule_cell_widget_factory.h
+        src/features/schedule/ui/schedule_table_renderer.cpp
+        src/features/schedule/ui/schedule_table_renderer.h
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
         src/features/schedule/ui/testing_assignment_dialog.cpp

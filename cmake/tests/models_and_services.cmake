@@ -120,6 +120,8 @@ qt_add_executable(ClassMngrBasePageTests
         src/core/fontmanager.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
+        src/features/sub_prep/services/sub_prep_document_model.cpp
+        src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
     )
 
@@ -163,6 +165,8 @@ qt_add_executable(ClassMngrBasePageTests
         src/features/roster/services/roster_template_print_service.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
+        src/features/sub_prep/services/sub_prep_document_model.cpp
+        src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_package_service.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
     )

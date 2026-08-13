@@ -2,6 +2,7 @@
 
 #include "domain/models/schedule_import.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
+#include "features/schedule/ui/schedule_import_resolution_controls.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QList>
@@ -37,27 +38,14 @@ public:
     [[nodiscard]] bool prepare();
 
 private:
-    struct TeacherControl
-    {
-        QString teacherKey;
-        QComboBox* action = nullptr;
-        QComboBox* room = nullptr;
-    };
-
-    struct ClassControl
-    {
-        int candidateIndex = -1;
-        QString teacherKey;
-        QComboBox* action = nullptr;
-        QPushButton* colorButton = nullptr;
-        QString color;
-        QLabel* details = nullptr;
-    };
+    using TeacherControl =
+        ScheduleImportResolutionControls::TeacherControl;
+    using ClassControl =
+        ScheduleImportResolutionControls::ClassControl;
 
     void buildUi();
     void rebuildResolutionControls();
     void chooseClassColor(int candidateIndex);
-    void updateClassColorButton(ClassControl* control);
     void updateReviewState();
     void updateScheduleConflictWarning(
         const QStringList& conflicts

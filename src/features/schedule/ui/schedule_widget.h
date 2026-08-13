@@ -87,14 +87,9 @@ private:
     void loadSettings();
     void loadSchedule();
     void updateButtons();
-    void configureColumns(
-        const QStringList& days
-        );
-    void clearTableWidgets();
     void outputSchedule(
         bool print
         );
-    void updateTableMinimumHeight();
     void reloadSlotStates();
     void reloadTestingBlocks();
     void editTestingAssignment(
@@ -104,16 +99,6 @@ private:
         );
     ScheduleViewRequest buildScheduleViewRequest() const;
     ScheduleViewModel buildScheduleModel();
-    QWidget* createScheduleLabel(
-        const ScheduleEntry& entry
-        );
-    QWidget* createMultiScheduleLabel(
-        const QList<ScheduleEntry>& entries
-        );
-    QWidget* createSlotLabel(
-        const ScheduleCellView& cell
-        );
-
 private:
     ApplicationServices* m_services = nullptr;
     ScheduleMode m_mode = ScheduleMode::Interactive;

@@ -5,6 +5,7 @@
 #include "speaking_eval_report_asset_resolver.h"
 #include "speaking_eval_internal_pdf_renderer.h"
 #include "speaking_eval_powerpoint_automation.h"
+#include "speaking_eval_powerpoint_workspace.h"
 
 #include "core/resource_paths.h"
 #include "core/utils/file_name_utils.h"
@@ -27,12 +28,10 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
-#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTime>
 
 #include <algorithm>
-#include <memory>
 
 namespace SpeakingEvalBatchReportService
 {
@@ -41,171 +40,6 @@ namespace
 
 constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
 constexpr auto PowerPointCommentFontName = "Segoe UI Semibold";
-
-bool removeDirectory(
-    const QString& path
-    )
-{
-    if (path.trimmed().isEmpty())
-    {
-        return false;
-    }
-
-    QDir directory(path);
-    return !directory.exists() || directory.removeRecursively();
-}
-
-bool resetDirectory(
-    const QString& path
-    )
-{
-    return removeDirectory(path) && QDir().mkpath(path);
-}
-
-class PowerPointBatchWorkspace
-{
-public:
-    ~PowerPointBatchWorkspace()
-    {
-        cleanup();
-    }
-
-    bool prepare(
-        const QString& stagingDirectory,
-        QString* errorMessage
-        )
-    {
-#ifdef Q_OS_MACOS
-        Q_UNUSED(stagingDirectory);
-
-        m_automationDirectory =
-            QDir(
-                QStandardPaths::writableLocation(
-                    QStandardPaths::AppDataLocation
-                    )
-                ).filePath(QStringLiteral("PowerPointBatch"));
-        m_presentationDirectory =
-            QDir(
-                QStandardPaths::writableLocation(
-                    QStandardPaths::HomeLocation
-                    )
-                ).filePath(
-                    QStringLiteral(
-                        "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch"
-                        )
-                    );
-
-        m_cleanupAutomationDirectory = true;
-        if (!resetDirectory(m_automationDirectory))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "ClassMngr's PowerPoint workspace could not be prepared."
-                    );
-            }
-            cleanup();
-            return false;
-        }
-
-        m_cleanupPresentationDirectory = true;
-        if (!resetDirectory(m_presentationDirectory))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "PowerPoint's private workspace could not be prepared."
-                    );
-            }
-            cleanup();
-            return false;
-        }
-#else
-        m_temporaryDirectory =
-            std::make_unique<QTemporaryDir>(
-                QDir(stagingDirectory).filePath(
-                    QStringLiteral("powerpoint-batch-XXXXXX")
-                    )
-                );
-        if (!m_temporaryDirectory->isValid())
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "A temporary PowerPoint batch folder could not be created."
-                    );
-            }
-            return false;
-        }
-
-        m_automationDirectory = m_temporaryDirectory->path();
-        m_presentationDirectory = m_automationDirectory;
-#endif
-
-        return true;
-    }
-
-    [[nodiscard]] QString automationDirectory() const
-    {
-        return m_automationDirectory;
-    }
-
-    [[nodiscard]] QString presentationDirectory() const
-    {
-        return m_presentationDirectory;
-    }
-
-    [[nodiscard]] bool usesSeparatePresentationDirectory() const
-    {
-        return m_automationDirectory != m_presentationDirectory;
-    }
-
-    bool removePresentationDirectory(
-        QString* errorMessage
-        )
-    {
-#ifdef Q_OS_MACOS
-        if (m_cleanupPresentationDirectory
-            && !removeDirectory(m_presentationDirectory))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "PowerPoint's temporary report files could not be removed."
-                    );
-            }
-            return false;
-        }
-        m_cleanupPresentationDirectory = false;
-#else
-        Q_UNUSED(errorMessage);
-#endif
-        return true;
-    }
-
-private:
-    void cleanup()
-    {
-#ifdef Q_OS_MACOS
-        if (m_cleanupPresentationDirectory)
-        {
-            removeDirectory(m_presentationDirectory);
-            m_cleanupPresentationDirectory = false;
-        }
-        if (m_cleanupAutomationDirectory)
-        {
-            removeDirectory(m_automationDirectory);
-            m_cleanupAutomationDirectory = false;
-        }
-#endif
-    }
-
-    QString m_automationDirectory;
-    QString m_presentationDirectory;
-    std::unique_ptr<QTemporaryDir> m_temporaryDirectory;
-    bool m_cleanupAutomationDirectory = false;
-    bool m_cleanupPresentationDirectory = false;
-};
 
 QString powerPointText(const QString& value)
 {
@@ -1338,53 +1172,6 @@ PowerPointBatchStatus renderPowerPointBatch(
     }
 }
 
-bool copyPowerPointOutputFiles(
-    const PowerPointBatchJob& batch,
-    const QStringList& stagedPdfPaths,
-    QString* errorMessage
-    )
-{
-    if (batch.students.size() != stagedPdfPaths.size())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr(
-                "The PowerPoint batch output is incomplete."
-                );
-        }
-        return false;
-    }
-
-    for (int index = 0; index < batch.students.size(); ++index)
-    {
-        const PowerPointStudentJob& job =
-            batch.students.at(index);
-        const QString stagedPath =
-            stagedPdfPaths.at(index);
-        if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
-                job.pdfPath,
-                stagedPath,
-                QObject::tr(
-                    "The PowerPoint PDF for %1 could not be copied into ClassMngr's workspace."
-                    ).arg(job.displayName),
-                errorMessage
-                )
-            || !QFileInfo::exists(stagedPath)
-            || QFileInfo(stagedPath).size() <= 0)
-        {
-            if (errorMessage && errorMessage->isEmpty())
-            {
-                *errorMessage = QObject::tr(
-                    "The staged PowerPoint PDF for %1 is incomplete."
-                    ).arg(job.displayName);
-            }
-            return false;
-        }
-    }
-
-    return true;
-}
-
 bool powerPointReportsUseSingleTemplate(
     const QList<StudentReport>& reports
     )
@@ -1547,12 +1334,10 @@ Result exportReports(
 
     QStringList stagedPdfPaths;
     stagedPdfPaths.reserve(request.reports.size());
-    std::unique_ptr<PowerPointBatchWorkspace> powerPointWorkspace;
+    SpeakingEvalPowerPointWorkspace powerPointWorkspace;
     if (request.renderer == Renderer::PowerPoint)
     {
-        powerPointWorkspace =
-            std::make_unique<PowerPointBatchWorkspace>();
-        if (!powerPointWorkspace->prepare(
+        if (!powerPointWorkspace.prepare(
                 stagingDirectory.path(),
                 &errorMessage
                 ))
@@ -1569,12 +1354,12 @@ Result exportReports(
                     .arg(index, 6, 10, QLatin1Char('0'));
             stagedPdfPaths.append(
                 QDir(
-                    powerPointWorkspace->automationDirectory()
+                    powerPointWorkspace.automationDirectory()
                     ).filePath(fileName)
                 );
             powerPointPdfPaths.append(
                 QDir(
-                    powerPointWorkspace->presentationDirectory()
+                    powerPointWorkspace.presentationDirectory()
                     ).filePath(fileName)
                 );
         }
@@ -1583,13 +1368,13 @@ Result exportReports(
             powerPointBatchJob(
                 request.reports,
                 powerPointPdfPaths,
-                powerPointWorkspace->automationDirectory()
+                powerPointWorkspace.automationDirectory()
                 );
         const PowerPointBatchStatus powerPointStatus =
             renderPowerPointBatch(
                 batch,
-                powerPointWorkspace->automationDirectory(),
-                powerPointWorkspace->presentationDirectory(),
+                powerPointWorkspace.automationDirectory(),
+                powerPointWorkspace.presentationDirectory(),
                 request.progressCallback,
                 &errorMessage
                 );
@@ -1602,17 +1387,25 @@ Result exportReports(
             return failed(errorMessage);
         }
 
-        if (powerPointWorkspace->usesSeparatePresentationDirectory()
-            && !copyPowerPointOutputFiles(
-                batch,
+        QStringList displayNames;
+        displayNames.reserve(batch.students.size());
+        for (const PowerPointStudentJob& job : batch.students)
+        {
+            displayNames.append(job.displayName);
+        }
+
+        if (powerPointWorkspace.usesSeparatePresentationDirectory()
+            && !powerPointWorkspace.copyOutputFiles(
+                powerPointPdfPaths,
                 stagedPdfPaths,
+                displayNames,
                 &errorMessage
                 ))
         {
             return failed(errorMessage);
         }
 
-        if (!powerPointWorkspace->removePresentationDirectory(
+        if (!powerPointWorkspace.removePresentationDirectory(
                 &errorMessage
                 ))
         {
