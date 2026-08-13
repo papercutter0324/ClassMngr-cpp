@@ -1,9 +1,9 @@
 #include "class_import_dialog.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
 #include "domain/models/classroom.h"
-#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
@@ -140,7 +140,7 @@ ClassImportDialog::ClassImportDialog(
     const ClassImportPreview& preview,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("classImport"), parent)
     , m_dataService(dataService)
     , m_package(package)
 {
@@ -148,7 +148,7 @@ ClassImportDialog::ClassImportDialog(
     setModal(true);
     resize(820, 640);
 
-    auto* mainLayout = new QVBoxLayout(this);
+    auto* mainLayout = contentLayout();
     auto* description = new QLabel(
         tr("Review how package classes and teachers will be imported."), this);
     description->setWordWrap(true);
@@ -317,18 +317,11 @@ ClassImportDialog::ClassImportDialog(
     m_validationLabel->setWordWrap(true);
     mainLayout->addWidget(m_validationLabel);
 
-    auto* buttons = new TextFitDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto* buttons = addButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     m_importButton = buttons->button(QDialogButtonBox::Ok);
     m_importButton->setObjectName(QStringLiteral("importClassesButton"));
     m_importButton->setText(tr("Import"));
-    mainLayout->addWidget(buttons);
-
-    connect(buttons, &QDialogButtonBox::accepted,
-            this, &QDialog::accept);
-    connect(buttons, &QDialogButtonBox::rejected,
-            this, &QDialog::reject);
-
     updateImportEnabled();
 }
 

@@ -18,6 +18,16 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME DialogShell
+    SOURCES
+        tests/dialog_shell_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
         NAME OnScreenKeyboard
         SOURCES
             tests/on_screen_keyboard_tests.cpp

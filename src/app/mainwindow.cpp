@@ -27,16 +27,13 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/dialogs/about_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
-#include <QDialogButtonBox>
-#include <QFont>
 #include <QLayout>
-#include <QLabel>
 #include <QMenuBar>
 #include <QScreen>
 #include <QTimer>
-#include <QVBoxLayout>
 
 // =========================================================
 // Constructor
@@ -761,49 +758,12 @@ void MainWindow::updatePrintExportActions()
 
 void MainWindow::startInitialSetup()
 {
-    constexpr int profileFileDialogWidth = 530;
-
-    QDialog profileFileDialog(this);
-    profileFileDialog.setWindowTitle(tr("Create a Teacher Profile file"));
-    profileFileDialog.setModal(true);
-    profileFileDialog.setFixedWidth(profileFileDialogWidth);
-
-    auto* layout = new QVBoxLayout(&profileFileDialog);
-
-    auto* title = new QLabel(
+    DialogServices::showInformation(
+        this,
         tr("Create a Teacher Profile file"),
-        &profileFileDialog
+        tr("Choose a filename and select a location to save your Teacher Profile. It is recommended to use an iCloud, OneDrive, Google Drive, or other cloud storage folder to help avoid accidental data loss.\n\n"
+           "To replace an existing profile with new data, select its .tps file in the next dialog.")
         );
-    QFont titleFont = title->font();
-    titleFont.setBold(true);
-    title->setFont(titleFont);
-    layout->addWidget(title);
-
-    auto* description = new QLabel(
-        tr("Choose a filename and select a location to save your Teacher Profile. It is recommended to use an iClould, OneDrive, Google Drive, or other cloud storage folder to help avoid accidental data loss.\n\n"
-           "To replace an existing profile with new data, select its .tps file in the next dialog."),
-        &profileFileDialog
-        );
-    description->setWordWrap(true);
-    layout->addWidget(description);
-
-    auto* buttons = new QDialogButtonBox(
-        QDialogButtonBox::Ok,
-        &profileFileDialog
-        );
-    connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        &profileFileDialog,
-        &QDialog::accept
-        );
-    layout->addWidget(buttons);
-
-    layout->activate();
-    profileFileDialog.setFixedHeight(
-        layout->totalHeightForWidth(profileFileDialogWidth)
-        );
-    profileFileDialog.exec();
 
     if (
         !m_fileController

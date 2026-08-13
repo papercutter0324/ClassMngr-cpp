@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain/models/teacher_import.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QList>
 
 struct TeacherImportFileValidation;
@@ -18,7 +18,7 @@ class QScrollArea;
 class QVBoxLayout;
 class QWidget;
 
-class TeacherImportDialog final : public QDialog
+class TeacherImportDialog final : public DialogShell
 {
     Q_OBJECT
 

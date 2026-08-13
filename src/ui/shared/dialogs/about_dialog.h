@@ -1,9 +1,9 @@
 #pragma once
 
-#include <QDialog>
+#include "dialog_shell.h"
 #include <QString>
 
-class AboutDialog : public QDialog
+class AboutDialog : public DialogShell
 {
     Q_OBJECT
 

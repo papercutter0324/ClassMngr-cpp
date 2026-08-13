@@ -25,14 +25,14 @@
 #include <QtConcurrentRun>
 
 TeacherImportDialog::TeacherImportDialog(QWidget* parent)
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("teacherImport"), parent)
 {
     setWindowTitle(tr("Import Teachers"));
     setModal(true);
     setFixedWidth(460);
     resize(460, 680);
 
-    auto* mainLayout = new QVBoxLayout(this);
+    auto* mainLayout = contentLayout();
     auto* fileLabel = new QLabel(tr("File to import from:"), this);
     fileLabel->setObjectName(QStringLiteral("teacherImportFilePathLabel"));
     fileLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -111,16 +111,14 @@ TeacherImportDialog::TeacherImportDialog(QWidget* parent)
     m_candidateScrollArea->setWidget(checklistsHost);
     mainLayout->addWidget(m_candidateScrollArea, 1);
 
-    m_buttons =
-        new TextFitDialogButtonBox(QDialogButtonBox::Cancel, this);
+    m_buttons = addButtonBox(QDialogButtonBox::Cancel);
     m_importButton = m_buttons->addButton(tr("Import"), QDialogButtonBox::AcceptRole);
     m_importButton->setObjectName(QStringLiteral("teacherImportAcceptButton"));
     m_importButton->setEnabled(false);
-    mainLayout->addWidget(m_buttons);
+    m_importButton->setDefault(true);
+    m_importButton->setAutoDefault(true);
 
     connect(m_browseButton, &QPushButton::clicked, this, &TeacherImportDialog::browseForFile);
-    connect(m_buttons, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(m_buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
 void TeacherImportDialog::setFilePath(const QString& filePath)

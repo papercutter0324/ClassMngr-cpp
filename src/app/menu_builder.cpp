@@ -3,14 +3,13 @@
 #include "core/settingsmanager.h"
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
-#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -159,26 +158,39 @@ QVBoxLayout* pageLayout(
     return qobject_cast<QVBoxLayout*>(page->layout());
 }
 
-void showPreferencesDialog(
+void populatePreferencesDialog(
+    DialogShell* dialog,
+    MainWindow* window
+    );
+
+class PreferencesDialog final : public DialogShell
+{
+public:
+    explicit PreferencesDialog(MainWindow* window)
+        : DialogShell(QStringLiteral("preferences"), window)
+    {
+        populatePreferencesDialog(this, window);
+    }
+};
+
+void populatePreferencesDialog(
+    DialogShell* dialog,
     MainWindow* window
     )
 {
     auto& actions = window->actions();
 
-    QDialog dialog(window);
-    dialog.setObjectName(
+    dialog->setObjectName(
         QStringLiteral("preferencesDialog")
         );
-    dialog.setWindowTitle(
+    dialog->setWindowTitle(
         preferencesText("Preferences")
         );
-    dialog.resize(680, 560);
+    dialog->resize(680, 560);
 
-    auto* layout = new QVBoxLayout(&dialog);
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(10);
+    auto* layout = dialog->contentLayout();
 
-    auto* tabs = new QTabWidget(&dialog);
+    auto* tabs = new QTabWidget(dialog);
     tabs->setObjectName(
         QStringLiteral("preferencesTabs")
         );
@@ -565,19 +577,14 @@ void showPreferencesDialog(
         preferencesText("AI Comments")
         );
 
-    auto* buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Close,
-            &dialog
-            );
-    QObject::connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        &dialog,
-        &QDialog::reject
-        );
-    layout->addWidget(buttons);
+    dialog->addButtonBox(QDialogButtonBox::Close);
+}
 
+void showPreferencesDialog(
+    MainWindow* window
+    )
+{
+    PreferencesDialog dialog(window);
     dialog.exec();
 }
 

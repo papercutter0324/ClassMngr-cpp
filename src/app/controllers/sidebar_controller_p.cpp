@@ -13,27 +13,21 @@
 #include "domain/models/teacher.h"
 
 #include "ui/shared/actions/action_registry.h"
+#include "ui/shared/dialogs/record_selection_dialog.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
-#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/utils/sidebar_node_naming.h"
 
 #include <algorithm>
 
-#include <QComboBox>
-#include "ui/shared/widgets/no_wheel_combobox.h"
 #include <QDialog>
-#include <QDialogButtonBox>
 #include <QHash>
-#include <QLabel>
-#include <QPushButton>
 #include <QSet>
 #include <QTime>
-#include <QVBoxLayout>
 
 namespace SidebarControllerPrivate
 {
@@ -477,90 +471,18 @@ int chooseRecord(
     const QList<QPair<QString, int>>& records
     )
 {
-    QDialog dialog(parent);
-    dialog.setWindowTitle(title);
-
-    auto* layout =
-        new QVBoxLayout(&dialog);
-
-    auto* label =
-        new QLabel(
-            prompt,
-            &dialog
-            );
-
-    auto* combo =
-        new NoWheelComboBox(&dialog);
-
-    combo->addItem(
-        QString(),
-        -1
+    RecordSelectionDialog dialog(
+        title,
+        prompt,
+        records,
+        parent
         );
-
-    for (const auto& record : records)
-    {
-        combo->addItem(
-            record.first,
-            record.second
-            );
-    }
-
-    auto* buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-            &dialog
-            );
-
-    auto* okButton =
-        buttons->button(
-            QDialogButtonBox::Ok
-            );
-
-    if (okButton)
-    {
-        okButton->setEnabled(false);
-    }
-
-    QObject::connect(
-        combo,
-        &QComboBox::currentIndexChanged,
-        &dialog,
-        [combo, okButton]
-        {
-            if (!okButton)
-            {
-                return;
-            }
-
-            okButton->setEnabled(
-                combo->currentData().toInt() > 0
-                );
-        }
-        );
-
-    QObject::connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        &dialog,
-        &QDialog::accept
-        );
-
-    QObject::connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        &dialog,
-        &QDialog::reject
-        );
-
-    layout->addWidget(label);
-    layout->addWidget(combo);
-    layout->addWidget(buttons);
 
     if (dialog.exec() != QDialog::Accepted)
     {
         return -1;
     }
 
-    return combo->currentData().toInt();
+    return dialog.selectedRecordId();
 }
 }

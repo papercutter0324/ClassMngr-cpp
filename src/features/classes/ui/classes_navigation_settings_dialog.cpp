@@ -1,6 +1,6 @@
 #include "classes_navigation_settings_dialog.h"
-
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
+
 
 #include <QDialogButtonBox>
 #include <QGroupBox>
@@ -13,7 +13,7 @@ ClassesNavigationSettingsDialog::ClassesNavigationSettingsDialog(
     const ClassesNavigationSettingsValues& values,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("classesNavigationSettings"), parent)
     , m_initialValues(values)
 {
     setObjectName(QStringLiteral("classesNavigationSettingsDialog"));
@@ -34,35 +34,18 @@ ClassesNavigationSettingsValues ClassesNavigationSettingsDialog::values() const
 
 void ClassesNavigationSettingsDialog::buildUi()
 {
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(10);
+    auto* layout = contentLayout();
 
     auto* tabs = new QTabWidget(this);
     tabs->setObjectName(QStringLiteral("classesNavigationSettingsTabs"));
     tabs->addTab(buildDisplayTab(), tr("Display"));
     layout->addWidget(tabs, 1);
 
-    auto* buttons = new TextFitDialogButtonBox(
-        QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-        this
+    auto* buttons = addButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel
         );
     buttons->button(QDialogButtonBox::Save)->setText(tr("Save"));
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    layout->addWidget(buttons);
-
-    connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &QDialog::accept
-        );
-    connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
-        );
 }
 
 QWidget* ClassesNavigationSettingsDialog::buildDisplayTab()

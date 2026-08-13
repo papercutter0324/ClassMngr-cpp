@@ -1,13 +1,14 @@
 #pragma once
 
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
+
 #include <QList>
 
 class DataService;
 class QListWidget;
 class QPushButton;
 
-class ClassExportDialog : public QDialog
+class ClassExportDialog : public DialogShell
 {
     Q_OBJECT
 

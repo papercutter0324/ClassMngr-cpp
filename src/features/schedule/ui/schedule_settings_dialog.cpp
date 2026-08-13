@@ -1,8 +1,8 @@
 #include "schedule_settings_dialog.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "data/data_service.h"
-#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
@@ -17,7 +17,7 @@ ScheduleSettingsDialog::ScheduleSettingsDialog(
     const ScheduleSettingsValues& values,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("scheduleSettings"), parent)
     , m_dataService(dataService)
     , m_initialValues(values)
 {
@@ -46,10 +46,7 @@ ScheduleSettingsValues ScheduleSettingsDialog::values() const
 
 void ScheduleSettingsDialog::buildUi()
 {
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setContentsMargins(20, 20, 20, 20);
-    layout->setSpacing(14);
+    auto* layout = contentLayout();
 
     auto* tabs =
         new QTabWidget(this);
@@ -61,27 +58,11 @@ void ScheduleSettingsDialog::buildUi()
     tabs->addTab(buildTestingTab(), tr("Testing"));
     layout->addWidget(tabs);
 
-    auto* buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-            this
-            );
+    auto* buttons = addButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel
+        );
     buttons->button(QDialogButtonBox::Save)->setText(tr("Save"));
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    layout->addWidget(buttons);
-
-    connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &QDialog::accept
-        );
-    connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
-        );
 }
 
 QWidget* ScheduleSettingsDialog::buildDisplayTab()

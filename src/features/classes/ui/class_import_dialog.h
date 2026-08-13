@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain/models/class_transfer.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QList>
 #include <QString>
 
@@ -11,7 +11,7 @@ class QComboBox;
 class QLabel;
 class QPushButton;
 
-class ClassImportDialog : public QDialog
+class ClassImportDialog : public DialogShell
 {
     Q_OBJECT
 

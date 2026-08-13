@@ -1,4 +1,5 @@
 #include "about_dialog.h"
+#include "license_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -9,17 +10,16 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QFont>
-#include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QStringList>
-#include <QTextEdit>
 #include <QVBoxLayout>
 
 namespace
@@ -146,7 +146,7 @@ QString resolveLicensePath(
 AboutDialog::AboutDialog(
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("about"), parent)
 {
     buildUi();
 }
@@ -186,15 +186,7 @@ void AboutDialog::buildUi()
         );
     setMinimumWidth(560);
 
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setContentsMargins(
-        22,
-        22,
-        22,
-        22
-        );
-    layout->setSpacing(16);
+    auto* layout = contentLayout();
 
     auto* headerLayout =
         new QHBoxLayout;
@@ -391,24 +383,6 @@ void AboutDialog::buildUi()
     licenseButtonLayout->addWidget(justAnotherHandLicenseButton);
     licenseButtonLayout->addStretch();
 
-    auto* closeButton =
-        new TextFitPushButton(
-            tr("Close"),
-            this
-            );
-
-    connect(
-        closeButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::reject
-        );
-
-    auto* dialogButtonLayout =
-        new QHBoxLayout;
-    dialogButtonLayout->addStretch();
-    dialogButtonLayout->addWidget(closeButton);
-
     layout->addLayout(headerLayout);
     layout->setAlignment(headerLayout, Qt::AlignTop);
     layout->addWidget(description);
@@ -418,7 +392,7 @@ void AboutDialog::buildUi()
     layout->addWidget(acknowledgements);
     layout->addWidget(qtLicenseLink);
     layout->addLayout(licenseButtonLayout);
-    layout->addLayout(dialogButtonLayout);
+    addButtonBox(QDialogButtonBox::Close);
 
     const QMargins margins =
         layout->contentsMargins();
@@ -464,48 +438,10 @@ void AboutDialog::showLicense(
         return;
     }
 
-    QDialog dialog(this);
-    dialog.setWindowTitle(title);
-    dialog.setMinimumSize(640, 520);
-
-    auto* layout =
-        new QVBoxLayout(&dialog);
-
-    auto* textEdit =
-        new QTextEdit(&dialog);
-    textEdit->setReadOnly(true);
-    textEdit->setLineWrapMode(QTextEdit::NoWrap);
-    textEdit->setPlainText(
-        QString::fromUtf8(
-            file.readAll()
-            )
+    LicenseDialog dialog(
+        title,
+        QString::fromUtf8(file.readAll()),
+        this
         );
-    textEdit->setFont(
-        QFontDatabase::systemFont(
-            QFontDatabase::FixedFont
-            )
-        );
-
-    auto* closeButton =
-        new TextFitPushButton(
-            tr("Close"),
-            &dialog
-            );
-
-    connect(
-        closeButton,
-        &QPushButton::clicked,
-        &dialog,
-        &QDialog::reject
-        );
-
-    auto* dialogButtonLayout =
-        new QHBoxLayout;
-    dialogButtonLayout->addStretch();
-    dialogButtonLayout->addWidget(closeButton);
-
-    layout->addWidget(textEdit);
-    layout->addLayout(dialogButtonLayout);
-
     dialog.exec();
 }

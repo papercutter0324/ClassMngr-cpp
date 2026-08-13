@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class DataService;
 class QCheckBox;
@@ -14,7 +14,7 @@ struct ScheduleSettingsValues
     bool testingAffectsM1 = false;
 };
 
-class ScheduleSettingsDialog : public QDialog
+class ScheduleSettingsDialog : public DialogShell
 {
     Q_OBJECT
 

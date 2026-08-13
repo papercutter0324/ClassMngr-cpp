@@ -1,8 +1,8 @@
 #pragma once
 
 #include "features/classes/models/class_tab_navigation_model.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 
 class QRadioButton;
 class QWidget;
@@ -13,7 +13,7 @@ struct ClassesNavigationSettingsValues
         ClassTabNavigation::VisibilityScope::ActiveSchedule;
 };
 
-class ClassesNavigationSettingsDialog : public QDialog
+class ClassesNavigationSettingsDialog : public DialogShell
 {
     Q_OBJECT
 

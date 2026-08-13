@@ -1,11 +1,11 @@
 #include "class_export_dialog.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/utils/sidebar_node_naming.h"
 #include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
-#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QDialogButtonBox>
@@ -55,13 +55,13 @@ ClassExportDialog::ClassExportDialog(
     DataService* dataService,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("classExport"), parent)
 {
     setWindowTitle(tr("Export Classes"));
     setModal(true);
     resize(620, 480);
 
-    auto* layout = new QVBoxLayout(this);
+    auto* layout = contentLayout();
     auto* description = new QLabel(
         tr("Select the classes to include in the package."), this);
     description->setWordWrap(true);
@@ -117,12 +117,11 @@ ClassExportDialog::ClassExportDialog(
     selectionLayout->addStretch(1);
     layout->addLayout(selectionLayout);
 
-    auto* buttons = new TextFitDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto* buttons = addButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     m_exportButton = buttons->button(QDialogButtonBox::Ok);
     m_exportButton->setObjectName(QStringLiteral("exportClassesButton"));
     m_exportButton->setText(tr("Export"));
-    layout->addWidget(buttons);
 
     connect(selectAllButton, &QPushButton::clicked, this, [this]()
     {
@@ -134,11 +133,6 @@ ClassExportDialog::ClassExportDialog(
     });
     connect(m_classList, &QListWidget::itemChanged,
             this, &ClassExportDialog::updateExportEnabled);
-    connect(buttons, &QDialogButtonBox::accepted,
-            this, &QDialog::accept);
-    connect(buttons, &QDialogButtonBox::rejected,
-            this, &QDialog::reject);
-
     updateExportEnabled();
 }
 
