@@ -2,14 +2,19 @@
 
 #include "ui/shared/styles/file_dialog_icon_style.h"
 
+#include <QCheckBox>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QGridLayout>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QWidget>
 
 namespace
 {
+
+IFileDialogService* testFileDialogService = nullptr;
 
 QString purposeKey(
     FileDialogPurpose purpose
@@ -29,6 +34,10 @@ QString purposeKey(
             return QStringLiteral("signature-image");
         case FileDialogPurpose::GeneratedPdf:
             return QStringLiteral("generated-pdf");
+        case FileDialogPurpose::ClassTransfer:
+            return QStringLiteral("class-transfer");
+        case FileDialogPurpose::SubPrepPackage:
+            return QStringLiteral("sub-prep-package");
     }
 
     return QStringLiteral("general");
@@ -40,6 +49,21 @@ QString settingsKey(
 {
     return QStringLiteral("file-dialog/directories/%1")
         .arg(purposeKey(purpose));
+}
+
+QString defaultDirectory(
+    FileDialogPurpose purpose
+    )
+{
+    const QStandardPaths::StandardLocation location =
+        purpose == FileDialogPurpose::SignatureImage
+            ? QStandardPaths::PicturesLocation
+            : QStandardPaths::DocumentsLocation;
+    const QString directory =
+        QStandardPaths::writableLocation(location);
+    return directory.isEmpty()
+        ? QDir::homePath()
+        : directory;
 }
 
 QString normalizedExistingPath(
@@ -149,11 +173,19 @@ QString QtFileDialogService::initialDirectory(
 
     if (m_settings)
     {
-        return m_settings->value(settingsKey(purpose)).toString();
+        const QString remembered =
+            m_settings->value(settingsKey(purpose)).toString();
+        return remembered.isEmpty()
+            ? defaultDirectory(purpose)
+            : remembered;
     }
 
     QSettings settings;
-    return settings.value(settingsKey(purpose)).toString();
+    const QString remembered =
+        settings.value(settingsKey(purpose)).toString();
+    return remembered.isEmpty()
+        ? defaultDirectory(purpose)
+        : remembered;
 }
 
 void QtFileDialogService::rememberDirectory(
@@ -242,6 +274,17 @@ std::optional<QString> QtFileDialogService::saveFile(
     const SaveFileRequest& request
     )
 {
+    const std::optional<SaveFileSelection> selection =
+        saveFileWithOptions(request);
+    return selection
+        ? std::optional<QString>(selection->path)
+        : std::nullopt;
+}
+
+std::optional<SaveFileSelection> QtFileDialogService::saveFileWithOptions(
+    const SaveFileRequest& request
+    )
+{
     QString startingPath = initialDirectory(
         request.purpose,
         request.initialDirectory
@@ -258,7 +301,10 @@ std::optional<QString> QtFileDialogService::saveFile(
         request.title,
         startingPath
         );
-    applyQtDialogPolicy(dialog, usesNativeDialogs());
+    const bool useNativeDialog =
+        usesNativeDialogs()
+        && request.openAfterSavingText.isEmpty();
+    applyQtDialogPolicy(dialog, useNativeDialog);
     applyNameFilters(dialog, request.nameFilters);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
     dialog.setFileMode(QFileDialog::AnyFile);
@@ -267,6 +313,31 @@ std::optional<QString> QtFileDialogService::saveFile(
         QFileDialog::DontConfirmOverwrite,
         !request.confirmOverwrite
         );
+
+    QCheckBox* openAfterSavingCheck = nullptr;
+    if (
+        !request.openAfterSavingText.isEmpty()
+        && !useNativeDialog
+        )
+    {
+        openAfterSavingCheck = new QCheckBox(
+            request.openAfterSavingText,
+            &dialog
+            );
+        openAfterSavingCheck->setObjectName(
+            QStringLiteral("fileDialogOpenAfterSaving")
+            );
+        if (auto* layout = qobject_cast<QGridLayout*>(dialog.layout()))
+        {
+            layout->addWidget(
+                openAfterSavingCheck,
+                layout->rowCount(),
+                0,
+                1,
+                layout->columnCount()
+                );
+        }
+    }
 
     if (dialog.exec() != QDialog::Accepted)
     {
@@ -281,7 +352,10 @@ std::optional<QString> QtFileDialogService::saveFile(
 
     const QString selectedPath = normalizedOutputPath(selectedFiles.first());
     rememberDirectory(request.purpose, selectedPath, false);
-    return selectedPath;
+    return SaveFileSelection{
+        selectedPath,
+        openAfterSavingCheck && openAfterSavingCheck->isChecked()
+    };
 }
 
 std::optional<QString> QtFileDialogService::selectDirectory(
@@ -312,4 +386,22 @@ std::optional<QString> QtFileDialogService::selectDirectory(
     const QString selectedPath = normalizedExistingPath(selectedFiles.first());
     rememberDirectory(request.purpose, selectedPath, true);
     return selectedPath;
+}
+
+IFileDialogService& DialogServices::fileDialogs()
+{
+    if (testFileDialogService)
+    {
+        return *testFileDialogService;
+    }
+
+    static QtFileDialogService service;
+    return service;
+}
+
+void DialogServices::setFileDialogServiceForTesting(
+    IFileDialogService* service
+    )
+{
+    testFileDialogService = service;
 }

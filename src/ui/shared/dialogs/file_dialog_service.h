@@ -15,7 +15,9 @@ enum class FileDialogPurpose
     ImportWorkbook,
     ExportReport,
     SignatureImage,
-    GeneratedPdf
+    GeneratedPdf,
+    ClassTransfer,
+    SubPrepPackage
 };
 
 enum class FileDialogBackend
@@ -44,6 +46,13 @@ struct SaveFileRequest
     QStringList nameFilters;
     QString defaultSuffix;
     bool confirmOverwrite = true;
+    QString openAfterSavingText;
+};
+
+struct SaveFileSelection
+{
+    QString path;
+    bool openAfterSaving = false;
 };
 
 struct DirectoryRequest
@@ -68,6 +77,10 @@ public:
         ) = 0;
 
     [[nodiscard]] virtual std::optional<QString> saveFile(
+        const SaveFileRequest& request
+        ) = 0;
+
+    [[nodiscard]] virtual std::optional<SaveFileSelection> saveFileWithOptions(
         const SaveFileRequest& request
         ) = 0;
 
@@ -98,6 +111,10 @@ public:
         const SaveFileRequest& request
         ) override;
 
+    [[nodiscard]] std::optional<SaveFileSelection> saveFileWithOptions(
+        const SaveFileRequest& request
+        ) override;
+
     [[nodiscard]] std::optional<QString> selectDirectory(
         const DirectoryRequest& request
         ) override;
@@ -117,3 +134,14 @@ private:
     QSettings* m_settings = nullptr;
     FileDialogBackend m_backend = FileDialogBackend::PlatformDefault;
 };
+
+namespace DialogServices
+{
+
+[[nodiscard]] IFileDialogService& fileDialogs();
+
+void setFileDialogServiceForTesting(
+    IFileDialogService* service
+    );
+
+}

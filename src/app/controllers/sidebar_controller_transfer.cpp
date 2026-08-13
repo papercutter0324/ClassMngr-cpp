@@ -6,9 +6,9 @@ using namespace SidebarControllerPrivate;
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
 
@@ -114,16 +114,24 @@ void SidebarController::saveClassExport(
         return;
     }
 
-    const QString selectedPath = QFileDialog::getSaveFileName(
-        m_sidebar,
-        dialogTitle,
-        QDir(packageDirectory(dataService)).filePath(
-            FileNameUtils::filesystemSafeJsonFileName(
-                suggestedBaseName, tr("Classes"))),
-        tr("JSON Files (*.json)")
-        );
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = m_sidebar,
+                .title = dialogTitle,
+                .purpose = FileDialogPurpose::ClassTransfer,
+                .initialDirectory = packageDirectory(dataService),
+                .suggestedFileName =
+                    FileNameUtils::filesystemSafeJsonFileName(
+                        suggestedBaseName,
+                        tr("Classes")
+                        ),
+                .nameFilters = {tr("JSON Files (*.json)")},
+                .defaultSuffix = QStringLiteral("json")
+            }
+            );
 
-    if (selectedPath.isEmpty())
+    if (!selection)
     {
         return;
     }
@@ -138,7 +146,7 @@ void SidebarController::saveClassExport(
         return;
     }
 
-    const QString filePath = normalizedJsonPath(selectedPath);
+    const QString filePath = normalizedJsonPath(*selection);
     const Status saved = ClassTransferJsonCodec::saveFile(
         filePath, *package);
 
@@ -172,19 +180,23 @@ void SidebarController::importClasses()
         return;
     }
 
-    const QString filePath = QFileDialog::getOpenFileName(
-        m_sidebar,
-        tr("Import Classes"),
-        packageDirectory(dataService),
-        tr("JSON Files (*.json)")
-        );
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().openFile(
+            OpenFileRequest{
+                .parent = m_sidebar,
+                .title = tr("Import Classes"),
+                .purpose = FileDialogPurpose::ClassTransfer,
+                .initialDirectory = packageDirectory(dataService),
+                .nameFilters = {tr("JSON Files (*.json)")}
+            }
+            );
 
-    if (filePath.isEmpty())
+    if (!selection)
     {
         return;
     }
 
-    const auto package = ClassTransferJsonCodec::loadFile(filePath);
+    const auto package = ClassTransferJsonCodec::loadFile(*selection);
 
     if (!package)
     {

@@ -1,7 +1,7 @@
 #include "schedule_print_dialog.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
-#include <QFileDialog>
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -252,31 +252,24 @@ void SchedulePrintDialog::acceptPrint()
 
 void SchedulePrintDialog::chooseSavePath()
 {
-    QFileDialog dialog(
-        this,
-        tr("Save Schedule As"),
-        QString(),
-        tr("PDF Documents (*.pdf)")
-        );
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    dialog.setDefaultSuffix(QStringLiteral("pdf"));
-    dialog.selectFile(QStringLiteral("Schedule.pdf"));
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = this,
+                .title = tr("Save Schedule As"),
+                .purpose = FileDialogPurpose::ExportReport,
+                .suggestedFileName = QStringLiteral("Schedule.pdf"),
+                .nameFilters = {tr("PDF Documents (*.pdf)")},
+                .defaultSuffix = QStringLiteral("pdf")
+            }
+            );
 
-    if (dialog.exec() != QDialog::Accepted)
+    if (!selection)
     {
         return;
     }
 
-    const QStringList selectedFiles = dialog.selectedFiles();
-
-    if (selectedFiles.isEmpty())
-    {
-        return;
-    }
-
-    QString savePath = selectedFiles.first();
+    QString savePath = *selection;
 
     if (QFileInfo(savePath).suffix().isEmpty())
     {

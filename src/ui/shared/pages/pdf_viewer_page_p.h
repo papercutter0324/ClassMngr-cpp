@@ -5,21 +5,19 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/role_style_registry.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QApplication>
 #include <QBrush>
-#include <QCheckBox>
 #include <QColor>
 #include <QDesktopServices>
 #include <QEvent>
 #include <QIntValidator>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFontMetrics>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -192,4 +190,3 @@ void refreshStyle(
     widget->update();
 }
 }
-

@@ -1,4 +1,5 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "fakes/fake_file_dialog_service.h"
 
 #include <QCheckBox>
 #include <QCoreApplication>
@@ -16,9 +17,39 @@ class TeacherImportDialogTests : public QObject
     Q_OBJECT
 
 private slots:
+    void cleanup();
     void showsFilePromptAndInvalidStatus();
+    void browseUsesTypedFileDialogRequest();
     void suppliedWorkbookBuildsDynamicSelectionUi();
 };
+
+void TeacherImportDialogTests::cleanup()
+{
+    DialogServices::setFileDialogServiceForTesting(nullptr);
+}
+
+void TeacherImportDialogTests::browseUsesTypedFileDialogRequest()
+{
+    FakeFileDialogService fileDialogs;
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+    TeacherImportDialog dialog;
+
+    auto* browseButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("teacherImportBrowseButton")
+        );
+    QVERIFY(browseButton);
+    browseButton->click();
+
+    QCOMPARE(fileDialogs.openFileRequests.size(), 1);
+    const OpenFileRequest& request = fileDialogs.openFileRequests.first();
+    QCOMPARE(request.parent, &dialog);
+    QCOMPARE(request.title, QStringLiteral("Select Teacher Import File"));
+    QCOMPARE(request.purpose, FileDialogPurpose::ImportWorkbook);
+    QCOMPARE(
+        request.nameFilters,
+        QStringList({QStringLiteral("Excel Workbooks (*.xlsx)")})
+        );
+}
 
 void TeacherImportDialogTests::showsFilePromptAndInvalidStatus()
 {

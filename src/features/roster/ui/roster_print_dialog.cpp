@@ -8,6 +8,7 @@
 #include "domain/models/teacher.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QAbstractButton>
 #include <QApplication>
@@ -16,7 +17,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QEvent>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGroupBox>
@@ -237,44 +237,24 @@ void RosterPrintDialog::acceptPrint()
 
 void RosterPrintDialog::chooseSavePath()
 {
-    QFileDialog dialog(
-        this,
-        tr("Save Rosters As"),
-        QString(),
-        tr("PDF Documents (*.pdf)")
-        );
-    dialog.setAcceptMode(
-        QFileDialog::AcceptSave
-        );
-    dialog.setFileMode(
-        QFileDialog::AnyFile
-        );
-    dialog.setOption(
-        QFileDialog::DontUseNativeDialog,
-        true
-        );
-    dialog.setDefaultSuffix(
-        QStringLiteral("pdf")
-        );
-    dialog.selectFile(
-        QStringLiteral("Rosters.pdf")
-        );
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = this,
+                .title = tr("Save Rosters As"),
+                .purpose = FileDialogPurpose::ExportReport,
+                .suggestedFileName = QStringLiteral("Rosters.pdf"),
+                .nameFilters = {tr("PDF Documents (*.pdf)")},
+                .defaultSuffix = QStringLiteral("pdf")
+            }
+            );
 
-    if (dialog.exec() != QDialog::Accepted)
+    if (!selection)
     {
         return;
     }
 
-    const QStringList selectedFiles =
-        dialog.selectedFiles();
-
-    if (selectedFiles.isEmpty())
-    {
-        return;
-    }
-
-    QString savePath =
-        selectedFiles.first();
+    QString savePath = *selection;
 
     if (QFileInfo(savePath).suffix().isEmpty())
     {

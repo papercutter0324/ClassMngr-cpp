@@ -4,11 +4,11 @@
 
 #include "core/settingsmanager.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QDialogButtonBox>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGridLayout>
@@ -131,14 +131,21 @@ void TeacherImportDialog::setFilePath(const QString& filePath)
 
 void TeacherImportDialog::browseForFile()
 {
-    const QString selected = QFileDialog::getOpenFileName(
-        this,
-        tr("Select Teacher Import File"),
-        QFileInfo(m_fileEdit->text()).absolutePath(),
-        tr("Excel Workbooks (*.xlsx)"));
-    if (!selected.isEmpty())
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().openFile(
+            OpenFileRequest{
+                .parent = this,
+                .title = tr("Select Teacher Import File"),
+                .purpose = FileDialogPurpose::ImportWorkbook,
+                .initialDirectory = m_fileEdit->text().trimmed().isEmpty()
+                    ? QString()
+                    : QFileInfo(m_fileEdit->text()).absolutePath(),
+                .nameFilters = {tr("Excel Workbooks (*.xlsx)")}
+            }
+            );
+    if (selection)
     {
-        setFilePath(selected);
+        setFilePath(*selection);
     }
 }
 

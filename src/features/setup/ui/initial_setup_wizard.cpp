@@ -10,6 +10,7 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -22,7 +23,6 @@
 #include <QCoreApplication>
 #include <QEvent>
 #include <QFile>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QFrame>
 #include <QGridLayout>
@@ -324,17 +324,23 @@ public:
         connect(m_name, &QLineEdit::textChanged, this, &QWizardPage::completeChanged);
         connect(browse, &QPushButton::clicked, this, [this]()
         {
-            const QString path = QFileDialog::getOpenFileName(
-                this,
-                tr("Choose Signature Image"),
-                QString(),
-                tr("Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp)"));
-            if (path.isEmpty())
+            const std::optional<QString> selection =
+                DialogServices::fileDialogs().openFile(
+                    OpenFileRequest{
+                        .parent = this,
+                        .title = tr("Choose Signature Image"),
+                        .purpose = FileDialogPurpose::SignatureImage,
+                        .nameFilters = {
+                            tr("Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp)")
+                        }
+                    }
+                    );
+            if (!selection)
             {
                 return;
             }
 
-            QFile file(path);
+            QFile file(*selection);
             if (!file.open(QIODevice::ReadOnly))
             {
                 QMessageBox::warning(

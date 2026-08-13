@@ -7,6 +7,7 @@
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -16,7 +17,6 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGroupBox>
@@ -355,16 +355,21 @@ void ScheduleImportDialog::buildUi()
 
 void ScheduleImportDialog::browseForFile()
 {
-    const QString selected =
-        QFileDialog::getOpenFileName(
-            this,
-            tr("Select Schedule Import File"),
-            QFileInfo(m_fileEdit->text()).absolutePath(),
-            tr("Excel Workbooks (*.xlsx)")
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().openFile(
+            OpenFileRequest{
+                .parent = this,
+                .title = tr("Select Schedule Import File"),
+                .purpose = FileDialogPurpose::ImportWorkbook,
+                .initialDirectory = m_fileEdit->text().trimmed().isEmpty()
+                    ? QString()
+                    : QFileInfo(m_fileEdit->text()).absolutePath(),
+                .nameFilters = {tr("Excel Workbooks (*.xlsx)")}
+            }
             );
-    if (!selected.isEmpty())
+    if (selection)
     {
-        setFilePath(selected);
+        setFilePath(*selection);
     }
 }
 

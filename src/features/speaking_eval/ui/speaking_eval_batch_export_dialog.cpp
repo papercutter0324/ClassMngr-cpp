@@ -2,6 +2,7 @@
 
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
@@ -9,7 +10,6 @@
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -301,15 +301,19 @@ void SpeakingEvalBatchExportDialog::updateControls()
 
 void SpeakingEvalBatchExportDialog::chooseOutputDirectory()
 {
-    const QString directory = QFileDialog::getExistingDirectory(
-        this,
-        tr("Choose Output Folder"),
-        m_outputDirectoryEdit->text()
-        );
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().selectDirectory(
+            DirectoryRequest{
+                .parent = this,
+                .title = tr("Choose Output Folder"),
+                .purpose = FileDialogPurpose::ExportReport,
+                .initialDirectory = m_outputDirectoryEdit->text()
+            }
+            );
 
-    if (!directory.isEmpty())
+    if (selection)
     {
-        m_outputDirectoryEdit->setText(directory);
+        m_outputDirectoryEdit->setText(*selection);
     }
 }
 

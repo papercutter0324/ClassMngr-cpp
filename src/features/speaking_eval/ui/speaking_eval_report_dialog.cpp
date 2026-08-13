@@ -3,6 +3,7 @@
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "core/settingsmanager.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -13,7 +14,6 @@
 #include <QCoreApplication>
 #include <QDate>
 #include <QDesktopServices>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -21,7 +21,6 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QStandardPaths>
 #include <QVBoxLayout>
 
 #include <array>
@@ -1051,42 +1050,30 @@ void SpeakingEvalReportDialog::saveCurrentReportAsPdf()
         return;
     }
 
-    const QString documentsDirectory =
-        QStandardPaths::writableLocation(
-            QStandardPaths::DocumentsLocation
-            );
     const QString suggestedFileName =
         SpeakingEvalBatchReportService::safeFileName(
             selectedReport->report.englishName,
             selectedReport->report.koreanName
             );
 
-    QFileDialog dialog(
-        this,
-        tr("Save Speaking Evaluation Report As"),
-        documentsDirectory,
-        tr("PDF Documents (*.pdf)")
-        );
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setFileMode(QFileDialog::AnyFile);
-    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    dialog.setDefaultSuffix(QStringLiteral("pdf"));
-    dialog.selectFile(suggestedFileName);
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = this,
+                .title = tr("Save Speaking Evaluation Report As"),
+                .purpose = FileDialogPurpose::ExportReport,
+                .suggestedFileName = suggestedFileName,
+                .nameFilters = {tr("PDF Documents (*.pdf)")},
+                .defaultSuffix = QStringLiteral("pdf")
+            }
+            );
 
-    if (dialog.exec() != QDialog::Accepted)
+    if (!selection)
     {
         return;
     }
 
-    const QStringList selectedFiles =
-        dialog.selectedFiles();
-    if (selectedFiles.isEmpty())
-    {
-        return;
-    }
-
-    QString savePath =
-        selectedFiles.constFirst();
+    QString savePath = *selection;
     if (QFileInfo(savePath).suffix().isEmpty())
     {
         savePath += QStringLiteral(".pdf");

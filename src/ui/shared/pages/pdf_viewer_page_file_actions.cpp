@@ -28,83 +28,27 @@ void PdfViewerPage::exportFile()
                 exportFileName
                 );
 
-    QFileDialog dialog(
-        this,
-        tr("Export File"),
-        QFileInfo(suggestedPath).absolutePath(),
-        exportFileFilter(
-            sourceInfo.suffix()
-            )
-        );
-    dialog.setAcceptMode(
-        QFileDialog::AcceptSave
-        );
-    dialog.setFileMode(
-        QFileDialog::AnyFile
-        );
-    dialog.setOption(
-        QFileDialog::DontUseNativeDialog,
-        true
-        );
-    dialog.setDefaultSuffix(
-        sourceInfo.suffix()
-        );
-    dialog.setLabelText(
-        QFileDialog::LookIn,
-        tr("Look in:")
-        );
-    dialog.setLabelText(
-        QFileDialog::FileName,
-        tr("File name:")
-        );
-    dialog.setLabelText(
-        QFileDialog::FileType,
-        tr("Files of type:")
-        );
-    dialog.setLabelText(
-        QFileDialog::Accept,
-        tr("Save")
-        );
-    dialog.setLabelText(
-        QFileDialog::Reject,
-        tr("Cancel")
-        );
-    dialog.selectFile(
-        QFileInfo(suggestedPath).fileName()
-        );
-
-    auto* openAfterSavingCheck =
-        new QCheckBox(
-            tr("Open after saving"),
-            &dialog
+    const std::optional<SaveFileSelection> selection =
+        DialogServices::fileDialogs().saveFileWithOptions(
+            SaveFileRequest{
+                .parent = this,
+                .title = tr("Export File"),
+                .purpose = FileDialogPurpose::GeneratedPdf,
+                .initialDirectory = QFileInfo(suggestedPath).absolutePath(),
+                .suggestedFileName = QFileInfo(suggestedPath).fileName(),
+                .nameFilters = exportFileFilter(sourceInfo.suffix())
+                    .split(QStringLiteral(";;")),
+                .defaultSuffix = sourceInfo.suffix(),
+                .openAfterSavingText = tr("Open after saving")
+            }
             );
 
-    if (auto* gridLayout = qobject_cast<QGridLayout*>(dialog.layout()))
-    {
-        gridLayout->addWidget(
-            openAfterSavingCheck,
-            gridLayout->rowCount(),
-            0,
-            1,
-            gridLayout->columnCount()
-            );
-    }
-
-    if (dialog.exec() != QDialog::Accepted)
+    if (!selection)
     {
         return;
     }
 
-    const QStringList selectedFiles =
-        dialog.selectedFiles();
-
-    if (selectedFiles.isEmpty())
-    {
-        return;
-    }
-
-    QString targetPath =
-        selectedFiles.first();
+    QString targetPath = selection->path;
 
     if (
         !sourceInfo.suffix().isEmpty()
@@ -135,7 +79,7 @@ void PdfViewerPage::exportFile()
     }
 
     if (
-        openAfterSavingCheck->isChecked()
+        selection->openAfterSaving
         && !QDesktopServices::openUrl(
             QUrl::fromLocalFile(targetPath)
             )
@@ -200,4 +144,3 @@ void PdfViewerPage::printFile()
             );
     }
 }
-

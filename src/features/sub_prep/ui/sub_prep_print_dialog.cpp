@@ -4,13 +4,13 @@
 #include "data/data_service.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <algorithm>
 #include <utility>
 
 #include <QCheckBox>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -732,16 +732,19 @@ void SubPrepPrintDialog::chooseTargetRoot()
         startPath = parentPath;
     }
 
-    const QString selected =
-        QFileDialog::getExistingDirectory(
-            this,
-            tr("Select Folder"),
-            startPath
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().selectDirectory(
+            DirectoryRequest{
+                .parent = this,
+                .title = tr("Select Folder"),
+                .purpose = FileDialogPurpose::SubPrepPackage,
+                .initialDirectory = startPath
+            }
             );
 
-    if (!selected.isEmpty())
+    if (selection)
     {
-        m_targetRootEdit->setText(QDir::cleanPath(selected));
+        m_targetRootEdit->setText(QDir::cleanPath(*selection));
     }
 }
 

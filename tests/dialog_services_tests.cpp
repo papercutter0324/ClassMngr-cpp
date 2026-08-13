@@ -5,6 +5,7 @@
 #include "ui/shared/styles/file_dialog_icon_style.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -42,16 +43,24 @@ class DialogServicesTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void cleanup();
     void fakePromptServiceRecordsRequestsAndScriptsChoices();
     void fakeFileDialogServiceRecordsRequestsAndScriptsResults();
+    void applicationFileDialogAccessCanBeOverridden();
     void messageMapsSeverityDetailsAndParent_data();
     void messageMapsSeverityDetailsAndParent();
     void confirmationMapsButtonsAndResults_data();
     void confirmationMapsButtonsAndResults();
     void platformFileDialogPolicyIsExplicit();
     void qtFileDialogAppliesSharedPolicy();
+    void saveFileReturnsAccessoryChoice();
     void openFileCanonicalizesAndRemembersPurposeDirectory();
 };
+
+void DialogServicesTests::cleanup()
+{
+    DialogServices::setFileDialogServiceForTesting(nullptr);
+}
 
 void DialogServicesTests::fakePromptServiceRecordsRequestsAndScriptsChoices()
 {
@@ -114,6 +123,29 @@ void DialogServicesTests::fakeFileDialogServiceRecordsRequestsAndScriptsResults(
 
     QVERIFY(!service.saveFile(SaveFileRequest()).has_value());
     QCOMPARE(service.saveFileRequests.size(), 1);
+}
+
+void DialogServicesTests::applicationFileDialogAccessCanBeOverridden()
+{
+    FakeFileDialogService fake;
+    fake.scriptedDirectories.enqueue(QStringLiteral("/tmp/reports"));
+    DialogServices::setFileDialogServiceForTesting(&fake);
+
+    const std::optional<QString> result =
+        DialogServices::fileDialogs().selectDirectory(
+            DirectoryRequest{
+                .title = QStringLiteral("Choose Reports Folder"),
+                .purpose = FileDialogPurpose::ExportReport
+            }
+            );
+
+    QVERIFY(result.has_value());
+    QCOMPARE(*result, QStringLiteral("/tmp/reports"));
+    QCOMPARE(fake.directoryRequests.size(), 1);
+    QCOMPARE(
+        fake.directoryRequests.first().purpose,
+        FileDialogPurpose::ExportReport
+        );
 }
 
 void DialogServicesTests::messageMapsSeverityDetailsAndParent_data()
@@ -369,6 +401,58 @@ void DialogServicesTests::qtFileDialogAppliesSharedPolicy()
         );
     QVERIFY(observed.usesIconStyle);
     QVERIFY(!result.has_value());
+}
+
+void DialogServicesTests::saveFileReturnsAccessoryChoice()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    QSettings settings(
+        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
+        QSettings::IniFormat
+        );
+    QtFileDialogService service(&settings, FileDialogBackend::Qt);
+    const QString filePath = temporaryDirectory.filePath(
+        QStringLiteral("export.pdf")
+        );
+    QTimer::singleShot(
+        0,
+        [filePath]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            auto* openAfterSaving = dialog->findChild<QCheckBox*>(
+                QStringLiteral("fileDialogOpenAfterSaving")
+                );
+            QVERIFY(openAfterSaving);
+            openAfterSaving->setChecked(true);
+            dialog->selectFile(filePath);
+            static_cast<QDialog*>(dialog)->accept();
+        }
+        );
+
+    const std::optional<SaveFileSelection> selection =
+        service.saveFileWithOptions(
+            SaveFileRequest{
+                .title = QStringLiteral("Export"),
+                .purpose = FileDialogPurpose::GeneratedPdf,
+                .initialDirectory = temporaryDirectory.path(),
+                .suggestedFileName = QStringLiteral("export.pdf"),
+                .nameFilters = {QStringLiteral("PDF files (*.pdf)")},
+                .defaultSuffix = QStringLiteral("pdf"),
+                .openAfterSavingText = QStringLiteral("Open after saving")
+            }
+            );
+
+    QVERIFY(selection.has_value());
+    QCOMPARE(
+        selection->path,
+        QDir(QFileInfo(temporaryDirectory.path()).canonicalFilePath())
+            .filePath(QStringLiteral("export.pdf"))
+        );
+    QVERIFY(selection->openAfterSaving);
 }
 
 void DialogServicesTests::openFileCanonicalizesAndRemembersPurposeDirectory()

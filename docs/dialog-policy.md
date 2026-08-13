@@ -33,6 +33,8 @@ migrations happen in later phases.
 - Windows and Linux use Qt's non-native file dialog so
   `FileDialogIconStyle` and the common sidebar locations are available.
 - Tests may force the Qt backend on any host.
+- A save request with an embedded option such as `Open after saving` uses the
+  Qt backend because native dialogs do not expose a portable accessory area.
 - Every request has a typed purpose. A successful selection remembers the
   containing directory for that purpose only.
 - An explicit initial directory takes precedence over a remembered directory.
@@ -40,6 +42,11 @@ migrations happen in later phases.
   Save targets use a canonical parent directory and a cleaned filename.
 - Save requests opt into overwrite confirmation by default and carry an
   explicit default suffix.
+
+Phase 2 routes teacher profiles, class transfers, workbook imports, signature
+images, generated PDFs, report exports, and sub-prep packages through typed
+purpose keys. Feature code obtains the interface through
+`DialogServices::fileDialogs()`; tests can replace it with a recording fake.
 
 ## Testing seam
 

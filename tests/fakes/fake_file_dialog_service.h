@@ -38,6 +38,16 @@ public:
             : scriptedSaveFiles.dequeue();
     }
 
+    [[nodiscard]] std::optional<SaveFileSelection> saveFileWithOptions(
+        const SaveFileRequest& request
+        ) override
+    {
+        saveFileWithOptionsRequests.append(request);
+        return scriptedSaveFileSelections.isEmpty()
+            ? std::nullopt
+            : scriptedSaveFileSelections.dequeue();
+    }
+
     [[nodiscard]] std::optional<QString> selectDirectory(
         const DirectoryRequest& request
         ) override
@@ -51,9 +61,11 @@ public:
     QVector<OpenFileRequest> openFileRequests;
     QVector<OpenFileRequest> openFilesRequests;
     QVector<SaveFileRequest> saveFileRequests;
+    QVector<SaveFileRequest> saveFileWithOptionsRequests;
     QVector<DirectoryRequest> directoryRequests;
     QQueue<std::optional<QString>> scriptedOpenFiles;
     QQueue<QStringList> scriptedOpenFileLists;
     QQueue<std::optional<QString>> scriptedSaveFiles;
+    QQueue<std::optional<SaveFileSelection>> scriptedSaveFileSelections;
     QQueue<std::optional<QString>> scriptedDirectories;
 };

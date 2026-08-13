@@ -6,11 +6,11 @@
 #include "core/result.h"
 #include "core/settingsmanager.h"
 #include "data/data_service.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QAction>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QMenu>
 #include <QMessageBox>
@@ -187,34 +187,25 @@ bool FileController::createNewDatabaseInteractive(
     if (!confirmUnsavedChanges())
         return false;
 
-    QFileDialog fileDialog(
-        nullptr,
-        tr("New Teacher Profile"),
-        databaseDialogDirectory(),
-        tr("ClassMngr Teacher Profile (*.tps)")
-        );
-    fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setFileMode(QFileDialog::AnyFile);
-    fileDialog.setDefaultSuffix(QStringLiteral("tps"));
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = m_window,
+                .title = tr("New Teacher Profile"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = databaseDialogDirectory(),
+                .nameFilters = {
+                    tr("ClassMngr Teacher Profile (*.tps)")
+                },
+                .defaultSuffix = QStringLiteral("tps")
+            }
+            );
 
-    if (fileDialog.exec() != QDialog::Accepted)
-    {
-        return false;
-    }
-
-    const QStringList selectedFiles = fileDialog.selectedFiles();
-    if (selectedFiles.isEmpty())
-    {
-        return false;
-    }
-
-    const QString filePath = selectedFiles.constFirst();
-
-    if (filePath.isEmpty())
+    if (!selection)
         return false;
 
     const QString normalizedPath =
-        normalizeNativeOutputFilePath(filePath);
+        normalizeNativeOutputFilePath(*selection);
 
     if (forInitialSetup)
     {
@@ -438,20 +429,24 @@ void FileController::openFile()
     if (!confirmUnsavedChanges())
         return;
 
-    const QString filePath =
-        QFileDialog::getOpenFileName(
-            nullptr,
-            tr("Open Teacher Profile"),
-            databaseDialogDirectory(),
-            tr("ClassMngr Teacher Profile (*.tps)")
-                + QStringLiteral(";;")
-                + tr("Legacy Teacher Profile (*.db)")
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().openFile(
+            OpenFileRequest{
+                .parent = m_window,
+                .title = tr("Open Teacher Profile"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = databaseDialogDirectory(),
+                .nameFilters = {
+                    tr("ClassMngr Teacher Profile (*.tps)"),
+                    tr("Legacy Teacher Profile (*.db)")
+                }
+            }
             );
 
-    if (filePath.isEmpty())
+    if (!selection)
         return;
 
-    loadDatabase(filePath);
+    loadDatabase(*selection);
 }
 
 bool FileController::loadDatabase(
@@ -556,18 +551,24 @@ void FileController::saveAsFile()
         return;
     }
 
-    QString filePath =
-        QFileDialog::getSaveFileName(
-            nullptr,
-            tr("Save Teacher Profile"),
-            databaseDialogDirectory(),
-            tr("ClassMngr Teacher Profile (*.tps)")
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = m_window,
+                .title = tr("Save Teacher Profile"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = databaseDialogDirectory(),
+                .nameFilters = {
+                    tr("ClassMngr Teacher Profile (*.tps)")
+                },
+                .defaultSuffix = QStringLiteral("tps")
+            }
             );
 
-    if (filePath.isEmpty())
+    if (!selection)
         return;
 
-    saveDatabaseAs(filePath);
+    saveDatabaseAs(*selection);
 }
 
 void FileController::exportAsFile()
@@ -580,18 +581,24 @@ void FileController::exportAsFile()
         return;
     }
 
-    const QString filePath =
-        QFileDialog::getSaveFileName(
-            nullptr,
-            tr("Export Teacher Profile As"),
-            databaseDialogDirectory(),
-            tr("ClassMngr Teacher Profile (*.tps)")
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = m_window,
+                .title = tr("Export Teacher Profile As"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = databaseDialogDirectory(),
+                .nameFilters = {
+                    tr("ClassMngr Teacher Profile (*.tps)")
+                },
+                .defaultSuffix = QStringLiteral("tps")
+            }
             );
 
-    if (filePath.isEmpty())
+    if (!selection)
         return;
 
-    exportDatabaseAs(filePath);
+    exportDatabaseAs(*selection);
 }
 
 void FileController::closeFile()

@@ -8,6 +8,7 @@
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
@@ -16,7 +17,6 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QEvent>
-#include <QFileDialog>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -286,20 +286,22 @@ void PersonalDetailsPage::chooseSignatureImage()
             : tr("Supported Images (%1)")
                 .arg(patterns.join(QLatin1Char(' ')));
 
-    const QString filePath =
-        QFileDialog::getOpenFileName(
-            this,
-            tr("Choose Signature Image"),
-            QString(),
-            filter
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().openFile(
+            OpenFileRequest{
+                .parent = this,
+                .title = tr("Choose Signature Image"),
+                .purpose = FileDialogPurpose::SignatureImage,
+                .nameFilters = {filter}
+            }
             );
 
-    if (filePath.isEmpty())
+    if (!selection)
     {
         return;
     }
 
-    QImageReader reader(filePath);
+    QImageReader reader(*selection);
     reader.setAutoTransform(true);
 
     const QImage image =
