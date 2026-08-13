@@ -1,6 +1,7 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
 
@@ -26,10 +27,18 @@ void SidebarController::addTeacher()
 
     Teacher newTeacher;
 
-    int teacherId =
-        teachers->create(
-            newTeacher
+    const Result<int> created = teachers->create(newTeacher);
+    if (!created)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Teacher"),
+            tr("The teacher could not be created."),
+            created.error()
             );
+        return;
+    }
+    const int teacherId = *created;
 
     refreshTeacherSidebar();
 
@@ -95,9 +104,17 @@ void SidebarController::deleteTeacher()
         return;
     }
 
-    teachers->remove(
-        teacher.id
-        );
+    const Status removed = teachers->remove(teacher.id);
+    if (!removed)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Teacher"),
+            tr("The teacher could not be deleted."),
+            removed.error()
+            );
+        return;
+    }
 
     refreshTeacherSidebar();
     refreshClassSidebar();

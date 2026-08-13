@@ -43,10 +43,10 @@ DatabaseIds populateDatabase(
     teacher.notes = prefix + QStringLiteral(" Teacher Notes");
 
     DatabaseIds ids;
-    ids.teacherId = service.createTeacher(teacher);
+    ids.teacherId = service.createTeacher(teacher).value_or(-1);
     ids.classId = service.createClass(
         prefix + QStringLiteral(" Class")
-        );
+        ).value_or(-1);
 
     ClassInfo classInfo;
     classInfo.classId = ids.classId;
@@ -210,6 +210,9 @@ private slots:
     void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
+    void schemaFailureClosesDatabaseSession();
+    void classDeleteFailureRollsBackAllChanges();
+    void teacherDeleteFailureRollsBackClassAssignments();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
@@ -251,6 +254,145 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     services.closeDatabase();
     QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
     QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
+}
+
+void DataServiceLifecycleTests::schemaFailureClosesDatabaseSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString path =
+        directory.filePath(QStringLiteral("invalid-schema.db"));
+    const QString connectionName =
+        QStringLiteral("invalid-schema-seed");
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE VIEW campuses AS SELECT 1 AS id"
+            )));
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    DatabaseSession session;
+    const Status status = session.open(path);
+    QVERIFY(!status);
+    QVERIFY(status.error().contains(QStringLiteral("campuses")));
+    QVERIFY(!session.isOpen());
+    QVERIFY(session.databasePath().isEmpty());
+    QCOMPARE(session.settingsRepository(), nullptr);
+    QCOMPARE(session.campusRecordRepository(), nullptr);
+}
+
+void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("class-delete-rollback.db"))
+        ).has_value());
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Rollback Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    ClassInfo info;
+    info.classId = classId;
+    QVERIFY(service.saveClassInfo(info));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, 'English', 0, 180)"
+        ));
+    query.addBindValue(classId);
+    QVERIFY(query.exec());
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_class_info_delete "
+        "BEFORE DELETE ON class_info "
+        "WHEN OLD.class_id = %1 "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected class delete failure'); "
+        "END"
+        ).arg(classId)));
+
+    const Status deleted = service.deleteClass(classId);
+    QVERIFY(!deleted);
+    QVERIFY(deleted.error().contains(
+        QStringLiteral("Deleting class information")
+        ));
+    QVERIFY(deleted.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+
+    QCOMPARE(service.getClassById(classId).id, classId);
+    query.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM roster_columns WHERE class_id=?"
+        ));
+    query.addBindValue(classId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 1);
+}
+
+void DataServiceLifecycleTests
+    ::teacherDeleteFailureRollsBackClassAssignments()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("teacher-delete-rollback.db"))
+        ).has_value());
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Rollback Teacher");
+    const Result<int> createdTeacher = service.createTeacher(teacher);
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Assigned Class"));
+    QVERIFY(createdTeacher);
+    QVERIFY(createdClass);
+
+    ClassInfo info;
+    info.classId = *createdClass;
+    info.teacherId = *createdTeacher;
+    QVERIFY(service.saveClassInfo(info));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_teacher_delete "
+        "BEFORE DELETE ON teachers "
+        "WHEN OLD.id = %1 "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected teacher delete failure'); "
+        "END"
+        ).arg(*createdTeacher)));
+
+    const Status deleted = service.deleteTeacher(*createdTeacher);
+    QVERIFY(!deleted);
+    QVERIFY(deleted.error().contains(QStringLiteral("Deleting teacher")));
+    QVERIFY(deleted.error().contains(
+        QStringLiteral("teacher id %1").arg(*createdTeacher)
+        ));
+
+    QCOMPARE(service.getTeacher(*createdTeacher).id, *createdTeacher);
+    QCOMPARE(
+        service.loadClassInfo(*createdClass).teacherId,
+        *createdTeacher
+        );
 }
 
 void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
@@ -325,8 +467,13 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
 
     Teacher teacher;
     teacher.teacherEn = QStringLiteral("Narrow Teacher");
-    const int teacherId = teachers.create(teacher);
-    const int classId = classes.create(QStringLiteral("Narrow Class"));
+    const Result<int> createdTeacher = teachers.create(teacher);
+    const Result<int> createdClass =
+        classes.create(QStringLiteral("Narrow Class"));
+    QVERIFY(createdTeacher);
+    QVERIFY(createdClass);
+    const int teacherId = *createdTeacher;
+    const int classId = *createdClass;
     QVERIFY(teacherId > 0);
     QVERIFY(classId > 0);
     QCOMPARE(teachers.teacher(teacherId).teacherEn,
@@ -472,7 +619,7 @@ void DataServiceLifecycleTests
     teacher.preferredName = QStringLiteral("Legacy Teacher");
     teacher.birthday = QStringLiteral("12-31");
     teacher.phoneNumber = QStringLiteral("010-0000-0000");
-    service.updateTeacher(teacher);
+    QVERIFY(service.updateTeacher(teacher).has_value());
 
     const Teacher reloaded = service.getTeacher(teacher.id);
     QCOMPARE(

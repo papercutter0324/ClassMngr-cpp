@@ -76,7 +76,7 @@ private:
 
     bool formDiffersFromTeacher() const;
 
-    bool saveTeacherInternal();
+    bool saveTeacherInternal(bool showErrors = true);
 
     void clearDirty();
 

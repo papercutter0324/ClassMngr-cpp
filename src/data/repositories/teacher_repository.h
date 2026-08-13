@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/teacher.h"
 
 #include <QList>
@@ -12,15 +13,15 @@ public:
         QSqlDatabase& database
         );
 
-    int createTeacher(
+    [[nodiscard]] Result<int> createTeacher(
         const Teacher& teacher
         );
 
-    int saveTeacher(
+    [[nodiscard]] Result<int> saveTeacher(
         const Teacher& teacher
         );
 
-    void updateTeacher(
+    [[nodiscard]] Status updateTeacher(
         const Teacher& teacher
         );
 
@@ -30,7 +31,7 @@ public:
 
     QList<Teacher> getAllTeachers();
 
-    void deleteTeacher(
+    [[nodiscard]] Status deleteTeacher(
         int teacherId
         );
 

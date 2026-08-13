@@ -388,7 +388,7 @@ void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
@@ -430,7 +430,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         QSqlQuery seed(database);
         QVERIFY(seed.exec(R"(
@@ -549,7 +549,7 @@ void TeacherImportTests::sortsGsTeamPositions()
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         const QStringList positions{
             QStringLiteral("C1"),

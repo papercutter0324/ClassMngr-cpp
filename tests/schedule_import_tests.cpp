@@ -486,7 +486,7 @@ void ScheduleImportTests::appliesIntensiveSlotStatesSnapshot()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
         execOrFail(
             query,
@@ -914,7 +914,7 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         execOrFail(
@@ -1172,7 +1172,7 @@ void ScheduleImportTests::reportsScheduleInventoryStates()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         if (classExists)
@@ -1261,7 +1261,7 @@ void ScheduleImportTests::regularImportMatchesIntensiveOnlyClasses()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         execOrFail(
@@ -1394,7 +1394,7 @@ void ScheduleImportTests::intensiveModesPreserveOrReplaceAbsentHours()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         execOrFail(
@@ -1576,7 +1576,7 @@ void ScheduleImportTests::fullSnapshotPreservesUnrelatedData()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         execOrFail(
@@ -1825,7 +1825,7 @@ void ScheduleImportTests::skippedExactMatchPreservesItsSchedule()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
         QSqlQuery query(database);
 
         execOrFail(
@@ -1985,7 +1985,7 @@ void ScheduleImportTests::rejectsDuplicateExistingTargetsBeforeWrites()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         ScheduleImportPlan plan;
         plan.candidates = {
@@ -2031,7 +2031,7 @@ void ScheduleImportTests::conflictsRollBackBeforeWrites()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         const auto candidate =
             [](const QString& teacher, const QString& level)
@@ -2114,7 +2114,7 @@ void ScheduleImportTests::writeFailureRollsBackEveryChange()
                 );
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         QSqlQuery query(database);
         execOrFail(

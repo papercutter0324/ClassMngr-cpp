@@ -10,6 +10,7 @@
 #include "ui/shared/widgets/sectioncards/teacher_section_card.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/scrollable_page_body.h"
 #include "core/utils/sidebar_node_naming.h"
@@ -304,7 +305,7 @@ TeacherInfoPage::TeacherInfoPage(
         m_autosave,
         &AutosaveCoordinator::saveRequested,
         this,
-        [this](bool) { saveTeacherInternal(); }
+        [this](bool interactive) { saveTeacherInternal(interactive); }
         );
 }
 
@@ -968,7 +969,7 @@ bool TeacherInfoPage::formDiffersFromTeacher() const
         || updated.notes != m_teacher.notes.trimmed();
 }
 
-bool TeacherInfoPage::saveTeacherInternal()
+bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 {
     if (
         !m_services
@@ -986,7 +987,20 @@ bool TeacherInfoPage::saveTeacherInternal()
     const Teacher updated =
         teacherFromForm();
 
-    teacherService->update(updated);
+    const Status updatedStatus = teacherService->update(updated);
+    if (!updatedStatus)
+    {
+        if (showErrors)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Save Teacher Information"),
+                tr("The teacher information could not be saved."),
+                updatedStatus.error()
+                );
+        }
+        return false;
+    }
 
     m_teacher =
         teacherService->teacher(

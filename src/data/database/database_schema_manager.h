@@ -1,9 +1,11 @@
 #pragma once
 
+#include "core/result.h"
+
 class QSqlDatabase;
 
 class DatabaseSchemaManager
 {
 public:
-    static void ensureSchema(QSqlDatabase& database);
+    [[nodiscard]] static Status ensureSchema(QSqlDatabase& database);
 };

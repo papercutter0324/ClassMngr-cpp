@@ -1,35 +1,79 @@
 #include "database_schema_manager.h"
 
-#include <QDebug>
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
+#include <QObject>
+#include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
 
 namespace
 {
-bool tableHasColumn(
+struct SchemaStatement
+{
+    const char* sql;
+    const char* objectType;
+    const char* objectName;
+};
+
+struct SchemaColumn
+{
+    const char* tableName;
+    const char* columnName;
+    const char* definition;
+};
+
+Status executeSchemaStatement(
+    QSqlDatabase& database,
+    const SchemaStatement& statement
+    )
+{
+    const QString objectType = QString::fromLatin1(statement.objectType);
+    const QString objectName = QString::fromLatin1(statement.objectName);
+    const QString action = QObject::tr("Creating database %1")
+        .arg(objectType);
+    const QString identity = QObject::tr("%1 '%2'")
+        .arg(objectType, objectName);
+
+    QSqlQuery query(database);
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QString::fromLatin1(statement.sql),
+        action,
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    return {};
+}
+
+Result<bool> tableHasColumn(
     QSqlDatabase& database,
     const QString& tableName,
     const QString& columnName
     )
 {
+    const QString queryText = QStringLiteral("PRAGMA table_info(%1)")
+        .arg(tableName);
     QSqlQuery query(database);
-
-    if (!query.exec(
-            QString("PRAGMA table_info(%1)")
-                .arg(tableName)
-            ))
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        queryText,
+        QObject::tr("Inspecting database columns"),
+        QObject::tr("table '%1'").arg(tableName)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to inspect table columns for"
-            << tableName
-            << ":"
-            << query.lastError().text();
-        return false;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())
     {
-        if (query.value("name").toString() == columnName)
+        if (query.value(QStringLiteral("name")).toString() == columnName)
         {
             return true;
         }
@@ -38,100 +82,86 @@ bool tableHasColumn(
     return false;
 }
 
-void ensureTableColumn(
+Status ensureTableColumn(
     QSqlDatabase& database,
-    const QString& tableName,
-    const QString& columnName,
-    const QString& definition
+    const SchemaColumn& column
     )
 {
-    if (tableHasColumn(database, tableName, columnName))
+    const QString tableName = QString::fromLatin1(column.tableName);
+    const QString columnName = QString::fromLatin1(column.columnName);
+    const Result<bool> hasColumn = tableHasColumn(
+        database,
+        tableName,
+        columnName
+        );
+    if (!hasColumn)
     {
-        return;
+        return std::unexpected(hasColumn.error());
+    }
+    if (*hasColumn)
+    {
+        return {};
     }
 
+    const QString queryText = QStringLiteral(
+        "ALTER TABLE %1 ADD COLUMN %2 %3"
+        ).arg(
+            tableName,
+            columnName,
+            QString::fromLatin1(column.definition)
+            );
     QSqlQuery query(database);
-
-    if (!query.exec(
-            QString("ALTER TABLE %1 ADD COLUMN %2 %3")
-                .arg(tableName, columnName, definition)
-            ))
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        queryText,
+        QObject::tr("Adding database column"),
+        QObject::tr("column '%1.%2'").arg(tableName, columnName)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to add column"
-            << columnName
-            << "to"
-            << tableName
-            << ":"
-            << query.lastError().text();
+        return std::unexpected(executed.error().userMessage());
     }
+
+    return {};
 }
-} // namespace
 
-void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
-{
-    QSqlQuery query(database);
-
-    query.exec(R"(
+const SchemaStatement SchemaStatements[] = {
+    { R"(
         CREATE TABLE IF NOT EXISTS app_settings (
             key TEXT PRIMARY KEY,
             value TEXT
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "app_settings" },
+    { R"(
         CREATE TABLE IF NOT EXISTS roster_columns (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             class_id INTEGER,
-
             name TEXT,
-
             position INTEGER,
-
             width INTEGER
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "roster_columns" },
+    { R"(
         CREATE TABLE IF NOT EXISTS roster_data (
             class_id INTEGER,
-
             row_index INTEGER,
-
             col_index INTEGER,
-
             value TEXT,
-
-            PRIMARY KEY (
-                class_id,
-                row_index,
-                col_index
-            )
+            PRIMARY KEY (class_id, row_index, col_index)
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "roster_data" },
+    { R"(
         CREATE TABLE IF NOT EXISTS speaking_evaluations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             class_id INTEGER,
-
             evaluation_name TEXT,
-
-            UNIQUE(
-                class_id,
-                evaluation_name
-            )
+            UNIQUE(class_id, evaluation_name)
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "speaking_evaluations" },
+    { R"(
         CREATE TABLE IF NOT EXISTS speaking_eval_data (
             evaluation_id INTEGER,
-
             row_index INTEGER,
-
             col_0 TEXT,
             col_1 TEXT,
             col_2 TEXT,
@@ -143,201 +173,48 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             col_8 TEXT,
             col_9 TEXT,
             col_10 TEXT,
-
-            PRIMARY KEY (
-                evaluation_id,
-                row_index
-            )
+            PRIMARY KEY (evaluation_id, row_index)
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "speaking_eval_data" },
+    { R"(
         CREATE TABLE IF NOT EXISTS campuses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             name TEXT NOT NULL,
-
             building_name TEXT,
             address TEXT,
             phone_number TEXT,
             office_number TEXT,
-
             transit_steps TEXT,
             arrival_info TEXT,
-
             image_path TEXT,
-
             office_wifi TEXT,
             office_wifi_password TEXT,
-
             printer_name TEXT,
             printer_steps TEXT,
-
             photocopier_code TEXT,
-
             housing_locations TEXT
         )
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("building_name"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("address"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("phone_number"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("office_number"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("transit_steps"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("arrival_info"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("image_path"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("office_wifi"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("office_wifi_password"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("printer_name"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("printer_steps"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("photocopier_code"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("campuses"),
-        QStringLiteral("housing_locations"),
-        QStringLiteral("TEXT")
-        );
-
-    query.exec(R"(
+    )", "table", "campuses" },
+    { R"(
         CREATE TABLE IF NOT EXISTS teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             teacher_kr TEXT,
             teacher_en TEXT,
             preferred_romanization TEXT,
             preferred_name TEXT,
-
             room_number TEXT,
             birthday TEXT,
             phone_number TEXT,
-
             wifi_name TEXT,
             wifi_password TEXT,
             internet_type TEXT DEFAULT 'WiFi',
-
             zoom_id TEXT,
             zoom_password TEXT,
             projection_type TEXT DEFAULT 'HDMI',
-
             notes TEXT
         )
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("preferred_romanization"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("preferred_name"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("birthday"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("phone_number"),
-        QStringLiteral("TEXT")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("internet_type"),
-        QStringLiteral("TEXT DEFAULT 'WiFi'")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("teachers"),
-        QStringLiteral("projection_type"),
-        QStringLiteral("TEXT DEFAULT 'HDMI'")
-        );
-
-    query.exec(R"(
+    )", "table", "teachers" },
+    { R"(
         CREATE TABLE IF NOT EXISTS native_english_teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
@@ -347,16 +224,8 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             nationality TEXT,
             email TEXT
         )
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("native_english_teachers"),
-        QStringLiteral("email"),
-        QStringLiteral("TEXT")
-        );
-
-    query.exec(R"(
+    )", "table", "native_english_teachers" },
+    { R"(
         CREATE TABLE IF NOT EXISTS gs_team (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
@@ -365,117 +234,74 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             phone_number TEXT,
             birthday TEXT
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "gs_team" },
+    { R"(
         CREATE TABLE IF NOT EXISTS classes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             name TEXT
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "classes" },
+    { R"(
         CREATE TABLE IF NOT EXISTS class_info (
             class_id INTEGER PRIMARY KEY,
-
             teacher_id INTEGER,
-
             class_grade TEXT,
             class_level TEXT,
-
             reading_book TEXT,
             essay_book TEXT,
-
             class_color TEXT DEFAULT '#FFFFFF',
             font_color TEXT DEFAULT '#000000',
-
             notes TEXT,
             time_filler_activities TEXT
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "class_info" },
+    { R"(
         CREATE TABLE IF NOT EXISTS testing_classes (
             class_id INTEGER PRIMARY KEY,
             room TEXT NOT NULL
         )
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("class_info"),
-        QStringLiteral("time_filler_activities"),
-        QStringLiteral("TEXT")
-        );
-
-    query.exec(R"(
+    )", "table", "testing_classes" },
+    { R"(
         CREATE TABLE IF NOT EXISTS class_times (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             class_id INTEGER,
-
             day TEXT,
             start_time TEXT,
             end_time TEXT
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "class_times" },
+    { R"(
         CREATE TABLE IF NOT EXISTS class_intensive_times (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             class_id INTEGER,
-
             day TEXT,
             start_time TEXT,
             end_time TEXT,
-
             UNIQUE(day, start_time)
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "class_intensive_times" },
+    { R"(
         CREATE TABLE IF NOT EXISTS intensive_slot_states (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             day TEXT,
             start_time TEXT,
             state TEXT,
-
             UNIQUE(day, start_time)
         )
-    )");
-
-    query.exec(R"(
+    )", "table", "intensive_slot_states" },
+    { R"(
         CREATE TABLE IF NOT EXISTS schedule_testing_blocks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             day TEXT NOT NULL,
             start_time TEXT NOT NULL,
             room TEXT NOT NULL DEFAULT '',
             class_id INTEGER,
-
             UNIQUE(day, start_time)
         )
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("schedule_testing_blocks"),
-        QStringLiteral("class_id"),
-        QStringLiteral("INTEGER")
-        );
-
-    query.exec(R"(
-        CREATE INDEX IF NOT EXISTS idx_schedule_testing_blocks_class_id
-        ON schedule_testing_blocks (class_id)
-    )");
-
-    query.exec(R"(
+    )", "table", "schedule_testing_blocks" },
+    { R"(
         CREATE TABLE IF NOT EXISTS calendar_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-
             title TEXT NOT NULL,
             event_type TEXT DEFAULT 'Other',
             time_status TEXT DEFAULT 'Timed',
@@ -486,48 +312,110 @@ void DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             end_date TEXT,
             end_time TEXT
         )
-    )");
+    )", "table", "calendar_events" }
+};
 
-    query.exec(R"(
+const SchemaStatement SchemaIndexStatements[] = {
+    { R"(
+        CREATE INDEX IF NOT EXISTS idx_schedule_testing_blocks_class_id
+        ON schedule_testing_blocks (class_id)
+    )", "index", "idx_schedule_testing_blocks_class_id" },
+    { R"(
         CREATE INDEX IF NOT EXISTS idx_calendar_events_dates
         ON calendar_events (start_date, end_date, start_time, title)
-    )");
-
-    query.exec(R"(
+    )", "index", "idx_calendar_events_dates" },
+    { R"(
         CREATE INDEX IF NOT EXISTS idx_calendar_events_end_dates
         ON calendar_events (end_date, start_date, start_time, title)
-    )");
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("calendar_events"),
-        QStringLiteral("event_type"),
-        QStringLiteral("TEXT DEFAULT 'Other'")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("calendar_events"),
-        QStringLiteral("time_status"),
-        QStringLiteral("TEXT DEFAULT 'Timed'")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("calendar_events"),
-        QStringLiteral("all_day"),
-        QStringLiteral("INTEGER DEFAULT 0")
-        );
-
-    ensureTableColumn(
-        database,
-        QStringLiteral("calendar_events"),
-        QStringLiteral("repeat_series_id"),
-        QStringLiteral("TEXT")
-        );
-
-    query.exec(R"(
+    )", "index", "idx_calendar_events_end_dates" },
+    { R"(
         CREATE INDEX IF NOT EXISTS idx_calendar_events_repeat_series
         ON calendar_events (repeat_series_id, start_date, id)
-    )");
+    )", "index", "idx_calendar_events_repeat_series" }
+};
+
+const SchemaColumn SchemaColumns[] = {
+    { "campuses", "building_name", "TEXT" },
+    { "campuses", "address", "TEXT" },
+    { "campuses", "phone_number", "TEXT" },
+    { "campuses", "office_number", "TEXT" },
+    { "campuses", "transit_steps", "TEXT" },
+    { "campuses", "arrival_info", "TEXT" },
+    { "campuses", "image_path", "TEXT" },
+    { "campuses", "office_wifi", "TEXT" },
+    { "campuses", "office_wifi_password", "TEXT" },
+    { "campuses", "printer_name", "TEXT" },
+    { "campuses", "printer_steps", "TEXT" },
+    { "campuses", "photocopier_code", "TEXT" },
+    { "campuses", "housing_locations", "TEXT" },
+    { "teachers", "preferred_romanization", "TEXT" },
+    { "teachers", "preferred_name", "TEXT" },
+    { "teachers", "birthday", "TEXT" },
+    { "teachers", "phone_number", "TEXT" },
+    { "teachers", "internet_type", "TEXT DEFAULT 'WiFi'" },
+    { "teachers", "projection_type", "TEXT DEFAULT 'HDMI'" },
+    { "native_english_teachers", "email", "TEXT" },
+    { "class_info", "time_filler_activities", "TEXT" },
+    { "schedule_testing_blocks", "class_id", "INTEGER" },
+    { "calendar_events", "event_type", "TEXT DEFAULT 'Other'" },
+    { "calendar_events", "time_status", "TEXT DEFAULT 'Timed'" },
+    { "calendar_events", "all_day", "INTEGER DEFAULT 0" },
+    { "calendar_events", "repeat_series_id", "TEXT" }
+};
+} // namespace
+
+Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
+{
+    if (!database.isValid() || !database.isOpen())
+    {
+        return std::unexpected(
+            QObject::tr("Database schema setup requires an open database.")
+            );
+    }
+
+    DatabaseTransaction transaction(database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr("Starting database schema transaction failed: %1")
+                .arg(database.lastError().text())
+            );
+    }
+
+    for (const SchemaStatement& statement : SchemaStatements)
+    {
+        const Status status = executeSchemaStatement(database, statement);
+        if (!status)
+        {
+            return status;
+        }
+    }
+
+    for (const SchemaColumn& column : SchemaColumns)
+    {
+        const Status status = ensureTableColumn(database, column);
+        if (!status)
+        {
+            return status;
+        }
+    }
+
+    for (const SchemaStatement& statement : SchemaIndexStatements)
+    {
+        const Status status = executeSchemaStatement(database, statement);
+        if (!status)
+        {
+            return status;
+        }
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Committing database schema transaction failed: %1")
+                .arg(database.lastError().text())
+            );
+    }
+
+    return {};
 }

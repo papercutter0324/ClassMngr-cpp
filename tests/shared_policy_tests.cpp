@@ -1,6 +1,7 @@
 #include "core/network/http_request_policy.h"
 #include "core/utils/file_name_utils.h"
 #include "core/utils/student_name_utils.h"
+#include "data/database/database_schema_manager.h"
 #include "data/database/sql_query_utils.h"
 #include "domain/models/document_output_result.h"
 #include "domain/rules/schedule_value_parser.h"
@@ -22,6 +23,7 @@ private slots:
     void timeParsing();
     void sqlFailurePreservesContext_data();
     void sqlFailurePreservesContext();
+    void schemaFailureRollsBack();
     void allowedUrl_data();
     void allowedUrl();
     void successfulStatus_data();
@@ -115,12 +117,61 @@ void SharedPolicyTests::sqlFailurePreservesContext()
 
         QSqlQuery query(database);
         const QString action = QStringLiteral("Reading policy test data");
-        const auto result = SqlQueryUtils::execute(query, sql, action);
+        const QString identity = QStringLiteral("policy-test record 42");
+        const auto result = SqlQueryUtils::execute(
+            query,
+            sql,
+            action,
+            identity
+            );
         QVERIFY(!result);
         QCOMPARE(result.error().action, action);
         QCOMPARE(result.error().queryText, sql);
         QVERIFY(result.error().sqlError.isValid());
+        QCOMPARE(
+            result.error().driverError,
+            result.error().sqlError.driverText()
+            );
+        QCOMPARE(
+            result.error().databaseError,
+            result.error().sqlError.databaseText()
+            );
+        QCOMPARE(
+            result.error().nativeErrorCode,
+            result.error().sqlError.nativeErrorCode()
+            );
+        QCOMPARE(result.error().recordIdentity, identity);
         QVERIFY(result.error().userMessage().contains(action));
+        QVERIFY(result.error().userMessage().contains(identity));
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void SharedPolicyTests::schemaFailureRollsBack()
+{
+    const QString connectionName = QUuid::createUuid().toString();
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE VIEW campuses AS SELECT 1 AS id"
+            )));
+
+        const Status status = DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(!status);
+        QVERIFY(status.error().contains(QStringLiteral("campuses")));
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM sqlite_master "
+            "WHERE type='table' AND name='app_settings'"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
     }
     QSqlDatabase::removeDatabase(connectionName);
 }

@@ -37,6 +37,16 @@ Teacher completeTeacher(
     return teacher;
 }
 
+int createdTeacherId(DataService& service, const Teacher& teacher)
+{
+    return service.createTeacher(teacher).value_or(-1);
+}
+
+int createdClassId(DataService& service, const QString& name)
+{
+    return service.createClass(name).value_or(-1);
+}
+
 ClassInfo completeClassInfo(
     int classId,
     int teacherId,
@@ -116,7 +126,7 @@ int addCompleteClass(
     const QString& endTime = QStringLiteral("4:50 PM")
     )
 {
-    const int classId = service.createClass(storedName);
+    const int classId = createdClassId(service, storedName);
     const ClassInfo info = completeClassInfo(
         classId, teacherId, grade, level, day, startTime, endTime);
     if (!service.saveClassInfo(info))
@@ -280,7 +290,7 @@ void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
 
-    const int teacherId = service.createTeacher(completeTeacher());
+    const int teacherId = createdTeacherId(service, completeTeacher());
     const int firstClassId = addCompleteClass(
         service,
         teacherId,
@@ -350,7 +360,7 @@ void ClassTransferTests::previewMatchesCourseAndTeacherIgnoringSchedule()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -365,7 +375,7 @@ void ClassTransferTests::previewMatchesCourseAndTeacherIgnoringSchedule()
 
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("destination.db"))).has_value());
-    const int destinationTeacher = service.createTeacher(completeTeacher());
+    const int destinationTeacher = createdTeacherId(service, completeTeacher());
     const int destinationClass = addCompleteClass(
         service,
         destinationTeacher,
@@ -393,7 +403,7 @@ void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -411,7 +421,7 @@ void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
         directory.filePath(QStringLiteral("destination.db"))).has_value());
     Teacher localTeacher = completeTeacher();
     localTeacher.wifiPassword = QStringLiteral("local-password");
-    const int destinationTeacher = service.createTeacher(localTeacher);
+    const int destinationTeacher = createdTeacherId(service, localTeacher);
     const int destinationClass = addCompleteClass(
         service,
         destinationTeacher,
@@ -461,7 +471,7 @@ void ClassTransferTests::teacherReplacementImportsCompleteSnapshot()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -479,7 +489,7 @@ void ClassTransferTests::teacherReplacementImportsCompleteSnapshot()
     Teacher localTeacher = completeTeacher();
     localTeacher.wifiPassword = QStringLiteral("outdated");
     localTeacher.notes = QStringLiteral("Outdated notes");
-    const int destinationTeacher = service.createTeacher(localTeacher);
+    const int destinationTeacher = createdTeacherId(service, localTeacher);
     const int destinationClass = addCompleteClass(
         service,
         destinationTeacher,
@@ -520,8 +530,8 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(
-        completeTeacher(QStringLiteral("Source Teacher")));
+    const int sourceTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Source Teacher")));
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -536,8 +546,8 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
 
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("destination.db"))).has_value());
-    const int destinationTeacher = service.createTeacher(
-        completeTeacher(QStringLiteral("Destination Teacher")));
+    const int destinationTeacher = createdTeacherId(
+        service, completeTeacher(QStringLiteral("Destination Teacher")));
     const int destinationClass = addCompleteClass(
         service,
         destinationTeacher,
@@ -568,7 +578,7 @@ void ClassTransferTests::importedClassesConflictAtomically()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -606,7 +616,7 @@ void ClassTransferTests::databaseFailureRollsBackAllWrites()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
     const int sourceClass = addCompleteClass(
         service,
         sourceTeacher,
@@ -639,8 +649,8 @@ void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int teacherId = service.createTeacher(completeTeacher());
-    const int sourceClass = service.createClass(QString());
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int sourceClass = createdClassId(service, QString());
     ClassInfo sourceInfo;
     sourceInfo.classId = sourceClass;
     sourceInfo.teacherId = teacherId;
@@ -651,8 +661,8 @@ void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()
 
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("destination.db"))).has_value());
-    const int destinationTeacher = service.createTeacher(completeTeacher());
-    const int destinationClass = service.createClass(QString());
+    const int destinationTeacher = createdTeacherId(service, completeTeacher());
+    const int destinationClass = createdClassId(service, QString());
     ClassInfo destinationInfo;
     destinationInfo.classId = destinationClass;
     destinationInfo.teacherId = destinationTeacher;
@@ -708,9 +718,9 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("dialog.db"))).has_value());
-    const int zuluClass = service.createClass(QStringLiteral("Zulu"));
-    const int alphaClass = service.createClass(QStringLiteral("Alpha"));
-    const int mikeClass = service.createClass(QStringLiteral("Mike"));
+    const int zuluClass = createdClassId(service, QStringLiteral("Zulu"));
+    const int alphaClass = createdClassId(service, QStringLiteral("Alpha"));
+    const int mikeClass = createdClassId(service, QStringLiteral("Mike"));
 
     ClassInfo zuluInfo;
     zuluInfo.classId = zuluClass;
@@ -802,8 +812,8 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     DataService service;
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("source.db"))).has_value());
-    const int sourceTeacher = service.createTeacher(completeTeacher());
-    const int sourceClass = service.createClass(QString());
+    const int sourceTeacher = createdTeacherId(service, completeTeacher());
+    const int sourceClass = createdClassId(service, QString());
     ClassInfo sourceInfo;
     sourceInfo.classId = sourceClass;
     sourceInfo.teacherId = sourceTeacher;
@@ -815,8 +825,8 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
 
     QVERIFY(service.openDatabase(
         directory.filePath(QStringLiteral("destination.db"))).has_value());
-    QVERIFY(service.createTeacher(completeTeacher()) > 0);
-    QVERIFY(service.createTeacher(completeTeacher()) > 0);
+    QVERIFY(service.createTeacher(completeTeacher()).has_value());
+    QVERIFY(service.createTeacher(completeTeacher()).has_value());
     const auto preview = service.previewClassImport(*package);
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);

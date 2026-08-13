@@ -84,6 +84,18 @@ Status DatabaseSession::open(const QString& databasePath)
             );
     }
 
+    const Status schemaStatus =
+        DatabaseSchemaManager::ensureSchema(m_database);
+    if (!schemaStatus)
+    {
+        const QString schemaError = schemaStatus.error();
+        close();
+        return std::unexpected(
+            QStringLiteral("Unable to initialize Teacher Profile:\n%1\n\n%2")
+                .arg(normalizedPath, schemaError)
+            );
+    }
+
     m_databasePath = normalizedPath;
     m_settingsRepository = std::make_unique<SettingsRepository>(m_database);
     m_campusRecordRepository = std::make_unique<CampusRecordRepository>(m_database);
@@ -104,7 +116,6 @@ Status DatabaseSession::open(const QString& databasePath)
     m_rosterRepository = std::make_unique<RosterRepository>(m_database);
     m_speakingEvalRepository = std::make_unique<SpeakingEvalRepository>(m_database);
 
-    DatabaseSchemaManager::ensureSchema(m_database);
     return {};
 }
 

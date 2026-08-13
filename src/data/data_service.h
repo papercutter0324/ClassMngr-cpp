@@ -104,15 +104,15 @@ public:
     // Teachers
     // =====================================================
 
-    int createTeacher(
+    [[nodiscard]] Result<int> createTeacher(
         const Teacher& teacher
         );
 
-    int saveTeacher(
+    [[nodiscard]] Result<int> saveTeacher(
         const Teacher& teacher
         );
 
-    void updateTeacher(
+    [[nodiscard]] Status updateTeacher(
         const Teacher& teacher
         );
 
@@ -122,7 +122,7 @@ public:
         int teacherId
         );
 
-    void deleteTeacher(
+    [[nodiscard]] Status deleteTeacher(
         int teacherId
         );
 
@@ -152,7 +152,7 @@ public:
     // Classes
     // =====================================================
 
-    int createClass(
+    [[nodiscard]] Result<int> createClass(
         const QString& name
         );
 
@@ -162,12 +162,12 @@ public:
         int classId
         );
 
-    void updateClassName(
+    [[nodiscard]] Status updateClassName(
         int classId,
         const QString& name
         );
 
-    void deleteClass(
+    [[nodiscard]] Status deleteClass(
         int classId
         );
 

@@ -1,6 +1,10 @@
 #include "teacher_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
 #include <QDebug>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStringList>
@@ -91,6 +95,23 @@ Teacher teacherFromQuery(
 
     return teacher;
 }
+
+QString teacherIdentity(int teacherId)
+{
+    return QObject::tr("teacher id %1").arg(teacherId);
+}
+
+Status statusFromExecution(
+    const SqlQueryUtils::ExecutionResult& result
+    )
+{
+    if (!result)
+    {
+        return std::unexpected(result.error().userMessage());
+    }
+
+    return {};
+}
 }
 
 TeacherRepository::TeacherRepository(
@@ -100,7 +121,7 @@ TeacherRepository::TeacherRepository(
 {
 }
 
-int TeacherRepository::createTeacher(
+Result<int> TeacherRepository::createTeacher(
     const Teacher& teacher
     )
 {
@@ -143,18 +164,47 @@ int TeacherRepository::createTeacher(
         normalizedProjectionType(teacher.projectionType));
     query.addBindValue(teacher.notes);
 
-    query.exec();
+    const QString identity = QObject::tr("teacher '%1'")
+        .arg(
+            teacher.teacherEn.trimmed().isEmpty()
+                ? teacher.teacherKr.trimmed()
+                : teacher.teacherEn.trimmed()
+            );
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Creating teacher"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
 
-    return query.lastInsertId().toInt();
+    const int teacherId = query.lastInsertId().toInt();
+    if (teacherId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating %1 failed: the database did not return a valid "
+                "record id."
+                ).arg(identity)
+            );
+    }
+
+    return teacherId;
 }
 
-int TeacherRepository::saveTeacher(
+Result<int> TeacherRepository::saveTeacher(
     const Teacher& teacher
     )
 {
     if (teacher.id > 0)
     {
-        updateTeacher(teacher);
+        const Status updated = updateTeacher(teacher);
+        if (!updated)
+        {
+            return std::unexpected(updated.error());
+        }
 
         return teacher.id;
     }
@@ -162,7 +212,7 @@ int TeacherRepository::saveTeacher(
     return createTeacher(teacher);
 }
 
-void TeacherRepository::updateTeacher(
+Status TeacherRepository::updateTeacher(
     const Teacher& teacher
     )
 {
@@ -206,7 +256,13 @@ void TeacherRepository::updateTeacher(
     query.addBindValue(teacher.notes);
     query.addBindValue(teacher.id);
 
-    query.exec();
+    return statusFromExecution(
+        SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Updating teacher"),
+            teacherIdentity(teacher.id)
+            )
+        );
 }
 
 Teacher TeacherRepository::getTeacher(
@@ -271,10 +327,28 @@ QList<Teacher> TeacherRepository::getAllTeachers()
     return teachers;
 }
 
-void TeacherRepository::deleteTeacher(
+Status TeacherRepository::deleteTeacher(
     int teacherId
     )
 {
+    if (teacherId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Deleting teacher failed: invalid teacher id %1.")
+                .arg(teacherId)
+            );
+    }
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr("Starting teacher deletion transaction failed for %1: %2")
+                .arg(teacherIdentity(teacherId), m_database.lastError().text())
+            );
+    }
+
+    const QString identity = teacherIdentity(teacherId);
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -285,7 +359,17 @@ void TeacherRepository::deleteTeacher(
 
     query.addBindValue(teacherId);
 
-    query.exec();
+    Status status = statusFromExecution(
+        SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Removing teacher from classes"),
+            identity
+            )
+        );
+    if (!status)
+    {
+        return status;
+    }
 
     query.prepare(R"(
         DELETE FROM teachers
@@ -294,5 +378,25 @@ void TeacherRepository::deleteTeacher(
 
     query.addBindValue(teacherId);
 
-    query.exec();
+    status = statusFromExecution(
+        SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Deleting teacher"),
+            identity
+            )
+        );
+    if (!status)
+    {
+        return status;
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Committing teacher deletion failed for %1: %2")
+                .arg(identity, m_database.lastError().text())
+            );
+    }
+
+    return {};
 }

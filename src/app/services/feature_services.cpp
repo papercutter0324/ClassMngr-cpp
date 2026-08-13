@@ -82,34 +82,40 @@ QVariant SettingsService::load(
         : defaultValue;
 }
 
-int TeacherService::create(const Teacher& teacher) const
+Result<int> TeacherService::create(const Teacher& teacher) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
         return repository->createTeacher(teacher);
     }
-    return dataService() ? dataService()->createTeacher(teacher) : 0;
+    return dataService()
+        ? dataService()->createTeacher(teacher)
+        : Result<int>(std::unexpected(unavailableError()));
 }
 
-int TeacherService::save(const Teacher& teacher) const
+Result<int> TeacherService::save(const Teacher& teacher) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
         return repository->saveTeacher(teacher);
     }
-    return dataService() ? dataService()->saveTeacher(teacher) : 0;
+    return dataService()
+        ? dataService()->saveTeacher(teacher)
+        : Result<int>(std::unexpected(unavailableError()));
 }
 
-void TeacherService::update(const Teacher& teacher) const
+Status TeacherService::update(const Teacher& teacher) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        repository->updateTeacher(teacher);
+        return repository->updateTeacher(teacher);
     }
     else if (dataService())
     {
-        dataService()->updateTeacher(teacher);
+        return dataService()->updateTeacher(teacher);
     }
+
+    return std::unexpected(unavailableError());
 }
 
 Teacher TeacherService::teacher(int teacherId) const
@@ -130,16 +136,18 @@ QList<Teacher> TeacherService::teachers() const
     return dataService() ? dataService()->getAllTeachers() : QList<Teacher>{};
 }
 
-void TeacherService::remove(int teacherId) const
+Status TeacherService::remove(int teacherId) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        repository->deleteTeacher(teacherId);
+        return repository->deleteTeacher(teacherId);
     }
     else if (dataService())
     {
-        dataService()->deleteTeacher(teacherId);
+        return dataService()->deleteTeacher(teacherId);
     }
+
+    return std::unexpected(unavailableError());
 }
 
 QList<NativeEnglishTeacher> TeacherService::nativeEnglishTeachers() const
@@ -219,13 +227,15 @@ QDate TeacherService::latestImportDate() const
     return dataService() ? dataService()->latestTeacherImportDate() : QDate{};
 }
 
-int ClassService::create(const QString& name) const
+Result<int> ClassService::create(const QString& name) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
         return repository->createClass(name);
     }
-    return dataService() ? dataService()->createClass(name) : 0;
+    return dataService()
+        ? dataService()->createClass(name)
+        : Result<int>(std::unexpected(unavailableError()));
 }
 
 QList<Classroom> ClassService::classes() const
@@ -246,28 +256,32 @@ Classroom ClassService::classroom(int classId) const
     return dataService() ? dataService()->getClassById(classId) : Classroom{};
 }
 
-void ClassService::rename(int classId, const QString& name) const
+Status ClassService::rename(int classId, const QString& name) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        repository->updateClassName(classId, name);
+        return repository->updateClassName(classId, name);
     }
     else if (dataService())
     {
-        dataService()->updateClassName(classId, name);
+        return dataService()->updateClassName(classId, name);
     }
+
+    return std::unexpected(unavailableError());
 }
 
-void ClassService::remove(int classId) const
+Status ClassService::remove(int classId) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
-        repository->deleteClass(classId);
+        return repository->deleteClass(classId);
     }
     else if (dataService())
     {
-        dataService()->deleteClass(classId);
+        return dataService()->deleteClass(classId);
     }
+
+    return std::unexpected(unavailableError());
 }
 
 ClassInfo ClassService::classInfo(int classId) const

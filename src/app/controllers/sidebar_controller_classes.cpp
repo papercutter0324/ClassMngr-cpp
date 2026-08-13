@@ -1,6 +1,7 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
 
@@ -42,8 +43,18 @@ void SidebarController::addClass()
         return;
     }
 
-    int classId =
-        classes->create(QString());
+    const Result<int> created = classes->create(QString());
+    if (!created)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Class"),
+            tr("The class could not be created."),
+            created.error()
+            );
+        return;
+    }
+    const int classId = *created;
 
     refreshClassSidebar();
 
@@ -115,9 +126,17 @@ void SidebarController::deleteClass()
     const int selectedClassId =
         m_sidebar->getSelectedClassId();
 
-    classes->remove(
-        classroom.id
-        );
+    const Status removed = classes->remove(classroom.id);
+    if (!removed)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Class"),
+            tr("The class could not be deleted."),
+            removed.error()
+            );
+        return;
+    }
 
     refreshClassSidebar();
 

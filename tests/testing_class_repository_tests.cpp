@@ -135,10 +135,10 @@ void TestingClassRepositoryTests
         QVERIFY(createSchema(database));
 
         ClassRepository classRepository(database);
-        const int regularClassId =
-            classRepository.createClass(
-                QStringLiteral("Regular")
-                );
+        const Result<int> regularClass =
+            classRepository.createClass(QStringLiteral("Regular"));
+        QVERIFY(regularClass);
+        const int regularClassId = *regularClass;
 
         TestingClassRepository repository(database);
         TestingClass testingClass;

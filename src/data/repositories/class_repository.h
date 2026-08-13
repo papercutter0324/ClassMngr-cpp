@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/classroom.h"
 
 #include <QList>
@@ -13,7 +14,7 @@ public:
         QSqlDatabase& database
         );
 
-    int createClass(
+    [[nodiscard]] Result<int> createClass(
         const QString& name
         );
 
@@ -23,12 +24,12 @@ public:
         int classId
         );
 
-    void updateClassName(
+    [[nodiscard]] Status updateClassName(
         int classId,
         const QString& name
         );
 
-    void deleteClass(
+    [[nodiscard]] Status deleteClass(
         int classId
         );
 

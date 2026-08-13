@@ -6,8 +6,9 @@ DataService* ApplicationServices::dataService() const
     return nullptr;
 }
 
-void DataService::updateTeacher(const Teacher&)
+Status DataService::updateTeacher(const Teacher&)
 {
+    return {};
 }
 
 Teacher DataService::getTeacher(int)

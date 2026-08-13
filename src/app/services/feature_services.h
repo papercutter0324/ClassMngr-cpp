@@ -52,12 +52,12 @@ class TeacherService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    int create(const Teacher& teacher) const;
-    int save(const Teacher& teacher) const;
-    void update(const Teacher& teacher) const;
+    [[nodiscard]] Result<int> create(const Teacher& teacher) const;
+    [[nodiscard]] Result<int> save(const Teacher& teacher) const;
+    [[nodiscard]] Status update(const Teacher& teacher) const;
     Teacher teacher(int teacherId) const;
     QList<Teacher> teachers() const;
-    void remove(int teacherId) const;
+    [[nodiscard]] Status remove(int teacherId) const;
     QList<NativeEnglishTeacher> nativeEnglishTeachers() const;
     Status saveNativeEnglishTeacherDirectory(
         const QList<NativeEnglishTeacher>& teachers,
@@ -76,11 +76,11 @@ class ClassService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    int create(const QString& name) const;
+    [[nodiscard]] Result<int> create(const QString& name) const;
     QList<Classroom> classes() const;
     Classroom classroom(int classId) const;
-    void rename(int classId, const QString& name) const;
-    void remove(int classId) const;
+    [[nodiscard]] Status rename(int classId, const QString& name) const;
+    [[nodiscard]] Status remove(int classId) const;
     ClassInfo classInfo(int classId) const;
     bool saveClassInfo(const ClassInfo& info) const;
     bool saveClassNotes(

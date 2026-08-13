@@ -682,11 +682,14 @@ private:
         teacher.zoomId = m_zoomId->text().trimmed();
         teacher.zoomPassword = m_zoomPassword->text();
 
-        if (setup->teacherService()->create(teacher) <= 0)
+        const Result<int> created =
+            setup->teacherService()->create(teacher);
+        if (!created)
         {
             DialogServices::showWarning(
                 this, tr("Teacher Information"),
-                tr("The teacher could not be saved."));
+                tr("The teacher could not be saved."),
+                created.error());
             return false;
         }
 
@@ -964,7 +967,17 @@ public:
         int classId = setup->createdClassId();
         if (classId <= 0)
         {
-            classId = setup->classService()->create(QString());
+            const Result<int> created =
+                setup->classService()->create(QString());
+            if (!created)
+            {
+                DialogServices::showWarning(
+                    this, tr("Create Class"),
+                    tr("The class could not be created."),
+                    created.error());
+                return false;
+            }
+            classId = *created;
             setup->setCreatedClassId(classId);
         }
         if (classId <= 0)

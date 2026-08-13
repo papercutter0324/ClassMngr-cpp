@@ -362,7 +362,7 @@ void CalendarEventRepositoryTests::schemaCreatesEndDateIndex()
         database.setDatabaseName(QStringLiteral(":memory:"));
         QVERIFY(database.open());
 
-        DatabaseSchemaManager::ensureSchema(database);
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral("PRAGMA index_list(calendar_events)")));
