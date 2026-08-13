@@ -1,7 +1,9 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
+#include "core/application_services.h"
 
+#include <QFileInfo>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -205,11 +207,51 @@ class DataServiceLifecycleTests : public QObject
 
 private slots:
     void databaseSessionOwnsRepositoryLifetime();
+    void applicationServicesOwnDatabaseFileOperations();
     void featureServicesExposeNarrowOperations();
     void closeAndSwitchReleaseEveryRepository();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
+
+void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("source.db"));
+    const QString savedPath =
+        directory.filePath(QStringLiteral("saved.db"));
+    const QString exportedPath =
+        directory.filePath(QStringLiteral("exported.db"));
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(sourcePath).has_value());
+    services.settingsService()->save(
+        QStringLiteral("application-services/value"),
+        QStringLiteral("saved")
+        );
+    services.saveDatabase();
+
+    QVERIFY(services.saveDatabaseAs(savedPath).has_value());
+    QVERIFY(services.exportDatabaseAs(exportedPath).has_value());
+    QVERIFY(QFileInfo::exists(savedPath));
+    QVERIFY(QFileInfo::exists(exportedPath));
+
+    ApplicationServices copiedServices;
+    QVERIFY(copiedServices.openDatabase(savedPath).has_value());
+    QCOMPARE(
+        copiedServices.settingsService()
+            ->load(QStringLiteral("application-services/value"))
+            .toString(),
+        QStringLiteral("saved")
+        );
+
+    services.closeDatabase();
+    QVERIFY(!services.saveDatabaseAs(savedPath).has_value());
+    QVERIFY(!services.exportDatabaseAs(exportedPath).has_value());
+}
 
 void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
 {

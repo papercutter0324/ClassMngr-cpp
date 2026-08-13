@@ -3,7 +3,7 @@
 #include "domain/models/testing_block.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
-class DataService;
+class ScheduleService;
 class QComboBox;
 class QLabel;
 class QLineEdit;
@@ -24,7 +24,7 @@ public:
     };
 
     TestingAssignmentDialog(
-        DataService* dataService,
+        ScheduleService* scheduleService,
         const TestingAssignment* existingAssignment,
         QWidget* parent = nullptr
         );
@@ -39,7 +39,7 @@ private:
     void updateModeUi();
     void accept() override;
 
-    DataService* m_dataService = nullptr;
+    ScheduleService* m_scheduleService = nullptr;
     bool m_hasExistingAssignment = false;
     TestingAssignment m_existingAssignment;
     Action m_action = Action::SavePlainTesting;

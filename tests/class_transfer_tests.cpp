@@ -1,4 +1,5 @@
 #include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "core/utils/file_name_utils.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
@@ -726,7 +727,9 @@ void ClassTransferTests::exportDialogStartsClearAndSortsClassesAlphabetically()
     mikeInfo.classGrade = QStringLiteral("Mike");
     QVERIFY(service.saveClassInfo(mikeInfo));
 
-    ClassExportDialog dialog(&service);
+    ClassService classes(service.databaseSession(), &service);
+    TeacherService teachers(service.databaseSession(), &service);
+    ClassExportDialog dialog(&classes, &teachers);
     QCOMPARE(dialog.selectedClassIds(), QList<int>());
 
     auto* classList = dialog.findChild<QListWidget*>(
@@ -818,7 +821,10 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);
 
-    ClassImportDialog dialog(&service, *package, *preview);
+    ClassService classes(service.databaseSession(), &service);
+    TeacherService teachers(service.databaseSession(), &service);
+    ClassImportDialog dialog(
+        &classes, &teachers, *package, *preview);
     auto* importButton = dialog.findChild<QPushButton*>(
         QStringLiteral("importClassesButton"));
     auto* teacherChoice = dialog.findChild<QComboBox*>(

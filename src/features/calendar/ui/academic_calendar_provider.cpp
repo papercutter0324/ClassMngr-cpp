@@ -1,6 +1,6 @@
 #include "academic_calendar_provider.h"
 
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "features/calendar/calendar_settings_keys.h"
 
 #include <QDateTime>
@@ -65,11 +65,11 @@ int normalizedFirstDayOfWeek(const QVariant& value)
 }
 
 AcademicCalendarProvider::AcademicCalendarProvider(
-    DataService* dataService,
+    SettingsService* settingsService,
     QObject* parent
     )
     : QObject(parent)
-    , m_dataService(dataService)
+    , m_settingsService(settingsService)
 {
     reload();
 }
@@ -248,11 +248,11 @@ void AcademicCalendarProvider::reload()
     m_schedule.clear();
     loadOptions();
 
-    if (m_dataService && m_dataService->isOpen())
+    if (m_settingsService && m_settingsService->isAvailable())
     {
         const QByteArray json =
-            m_dataService
-                ->loadSetting(
+            m_settingsService
+                ->load(
                     AcademicCalendarSettingsKey,
                     QString()
                     )
@@ -282,9 +282,9 @@ void AcademicCalendarProvider::reload()
 void AcademicCalendarProvider::loadOptions()
 {
     m_firstDayOfWeek =
-        m_dataService && m_dataService->isOpen()
+        m_settingsService && m_settingsService->isAvailable()
             ? normalizedFirstDayOfWeek(
-                m_dataService->loadSetting(
+                m_settingsService->load(
                     CalendarSettingsKeys::FirstDayOfWeek,
                     defaultFirstDayOfWeek()
                     )
@@ -360,7 +360,7 @@ QString AcademicCalendarProvider::tooltipText(
 
 void AcademicCalendarProvider::persist()
 {
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_settingsService || !m_settingsService->isAvailable())
     {
         return;
     }
@@ -370,7 +370,7 @@ void AcademicCalendarProvider::persist()
             QJsonDocument(m_schedule.toJson())
                 .toJson(QJsonDocument::Compact)
             );
-    m_dataService->saveSetting(
+    m_settingsService->save(
         AcademicCalendarSettingsKey,
         json
         );
@@ -378,12 +378,12 @@ void AcademicCalendarProvider::persist()
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()
 {
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_settingsService || !m_settingsService->isAvailable())
     {
         return;
     }
 
-    m_dataService->saveSetting(
+    m_settingsService->save(
         CalendarSettingsKeys::FirstDayOfWeek,
         m_firstDayOfWeek
         );

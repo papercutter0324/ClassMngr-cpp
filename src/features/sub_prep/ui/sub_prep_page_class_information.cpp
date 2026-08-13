@@ -12,11 +12,10 @@ void SubPrepPage::refreshGeneratedContent()
 
 void SubPrepPage::rebuildClassInformation()
 {
-    auto* dataService =
-        openDataService(m_services);
-
     if (
-        !dataService
+        !openClassService(m_services)
+        || !openTeacherService(m_services)
+        || !openRosterService(m_services)
         || !m_scheduleWidget
         || !m_classInformationLayout
         )
@@ -484,32 +483,39 @@ SubPrepPage::buildClassInformation(
     const ScheduleViewModel& schedule
     ) const
 {
-    auto* dataService = openDataService(m_services);
+    auto* classService = openClassService(m_services);
+    auto* teacherService = openTeacherService(m_services);
+    auto* rosterService = openRosterService(m_services);
 
-    if (!dataService || !m_scheduleWidget)
+    if (
+        !classService
+        || !teacherService
+        || !rosterService
+        || !m_scheduleWidget
+        )
     {
         return {};
     }
 
     QList<SubPrepClassInformation::SourceClass> sources;
 
-    for (const Classroom& classroom : dataService->getClasses())
+    for (const Classroom& classroom : classService->classes())
     {
         SubPrepClassInformation::SourceClass source;
         source.classroom = classroom;
         source.info =
-            dataService->loadClassInfo(
+            classService->classInfo(
                 classroom.id
                 );
         source.studentCount =
-            dataService->getRosterStudentCount(
+            rosterService->studentCount(
                 classroom.id
                 );
 
         if (source.info.teacherId > 0)
         {
             source.teacher =
-                dataService->getTeacher(
+                teacherService->teacher(
                     source.info.teacherId
                     );
         }

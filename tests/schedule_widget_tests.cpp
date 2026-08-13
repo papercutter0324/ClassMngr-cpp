@@ -1,9 +1,12 @@
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/data_service.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "domain/models/testing_class.h"
 
@@ -56,7 +59,9 @@ class ScheduleWidgetTests : public QObject
 
 private slots:
     void init();
+    void cleanup();
     void persistsAndMirrorsEveryViewOption();
+    void clearTestingLayoutUsesScheduleService();
     void printUsesSelectedTeacherNameLanguage();
     void importButtonRequestsScheduleImport();
     void controlsUseTextFitButtons();
@@ -73,6 +78,11 @@ private slots:
 void ScheduleWidgetTests::init()
 {
     ScheduleWidgetTestStubs::reset();
+}
+
+void ScheduleWidgetTests::cleanup()
+{
+    DialogServices::setUserPromptServiceForTesting(nullptr);
 }
 
 void ScheduleWidgetTests
@@ -174,6 +184,58 @@ void ScheduleWidgetTests
         mirrored.visibleClassIds(),
         QSet<int>{42}
         );
+}
+
+void ScheduleWidgetTests::clearTestingLayoutUsesScheduleService()
+{
+    ScheduleWidgetTestStubs::setTestingBlock(
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Library")
+        );
+    TestingClass testingClass;
+    testingClass.classId = 100;
+    testingClass.name = QStringLiteral("Writing Lab");
+    ScheduleWidgetTestStubs::setTestingClassAssignment(
+        QStringLiteral("Tuesday"),
+        QStringLiteral("17:00"),
+        testingClass
+        );
+
+    ApplicationServices services;
+    auto* scheduleService = services.scheduleService();
+    QVERIFY(scheduleService);
+    const Result<QList<TestingAssignment>> before =
+        scheduleService->testingAssignments();
+    QVERIFY(before);
+    QCOMPARE(before->size(), 2);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ScheduleSettingsDialog dialog(
+        scheduleService,
+        ScheduleSettingsValues{}
+        );
+    QSignalSpy clearedSpy(
+        &dialog,
+        &ScheduleSettingsDialog::testingBlocksCleared
+        );
+    auto* clearButton =
+        dialog.findChild<QPushButton*>(
+            QStringLiteral("scheduleSettingsClearTestingLayout")
+            );
+    QVERIFY(clearButton);
+    clearButton->click();
+
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.confirmations.first().destructive);
+    QCOMPARE(clearedSpy.count(), 1);
+    const Result<QList<TestingAssignment>> after =
+        scheduleService->testingAssignments();
+    QVERIFY(after);
+    QVERIFY(after->isEmpty());
 }
 
 void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
@@ -429,7 +491,7 @@ void ScheduleWidgetTests
 
     ApplicationServices services;
     TestingAssignmentDialog assignDialog(
-        services.dataService(),
+        services.scheduleService(),
         nullptr
         );
     auto* mode =
@@ -508,8 +570,19 @@ void ScheduleWidgetTests
             );
     QVERIFY(manage);
     QVERIFY(manage->isVisibleTo(&assignDialog));
-    QCOMPARE(manage->geometry().top(), buttons->geometry().top());
-    QVERIFY(manage->geometry().right() < buttons->geometry().left());
+    const QRect manageGeometry(
+        manage->mapTo(&assignDialog, QPoint()),
+        manage->size()
+        );
+    auto* saveButton =
+        buttons->button(QDialogButtonBox::Save);
+    QVERIFY(saveButton);
+    const QRect saveGeometry(
+        saveButton->mapTo(&assignDialog, QPoint()),
+        saveButton->size()
+        );
+    QCOMPARE(manageGeometry.top(), buttons->geometry().top());
+    QVERIFY(!manageGeometry.intersects(saveGeometry));
     buttons->button(QDialogButtonBox::Save)->click();
     QCOMPARE(assignDialog.result(), QDialog::Accepted);
     QCOMPARE(
@@ -519,7 +592,7 @@ void ScheduleWidgetTests
     QCOMPARE(assignDialog.selectedClassId(), 100);
 
     TestingAssignmentDialog manageDialog(
-        services.dataService(),
+        services.scheduleService(),
         nullptr
         );
     mode =
@@ -544,7 +617,7 @@ void ScheduleWidgetTests
     existing.kind = TestingAssignmentKind::SpecialClass;
     existing.classId = 100;
     TestingAssignmentDialog editDialog(
-        services.dataService(),
+        services.scheduleService(),
         &existing
         );
     auto* removedEssayButton =
@@ -568,7 +641,7 @@ void ScheduleWidgetTests
         );
 
     TestingAssignmentDialog plainDialog(
-        services.dataService(),
+        services.scheduleService(),
         nullptr
         );
     auto* room =

@@ -6,7 +6,7 @@
 #include <QDateTime>
 #include <QVariantList>
 
-class DataService;
+class SettingsService;
 
 class AcademicCalendarProvider : public QObject
 {
@@ -16,7 +16,7 @@ class AcademicCalendarProvider : public QObject
 
 public:
     explicit AcademicCalendarProvider(
-        DataService* dataService,
+        SettingsService* settingsService,
         QObject* parent = nullptr
         );
 
@@ -64,7 +64,7 @@ private:
     void persist();
     void persistFirstDayOfWeek();
 
-    DataService* m_dataService = nullptr;
+    SettingsService* m_settingsService = nullptr;
     AcademicCalendarSchedule m_schedule;
     int m_revision = 0;
     int m_firstDayOfWeek = 0;

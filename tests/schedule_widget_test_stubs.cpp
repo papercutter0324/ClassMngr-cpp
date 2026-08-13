@@ -880,9 +880,9 @@ void FontManager::setManagedRichText(
 }
 
 ScheduleBuilder::ScheduleBuilder(
-    DataService* dataService
+    ClassService* classService
     )
-    : m_dataService(dataService)
+    : m_classService(classService)
 {
 }
 
@@ -894,7 +894,7 @@ ScheduleBuildResult ScheduleBuilder::build(
     ScheduleBuildResult result;
     result.days = visibleDays;
 
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_classService || !m_classService->isAvailable())
     {
         return result;
     }

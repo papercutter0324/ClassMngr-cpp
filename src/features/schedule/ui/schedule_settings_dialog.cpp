@@ -2,7 +2,7 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
@@ -13,12 +13,12 @@
 #include <QVBoxLayout>
 
 ScheduleSettingsDialog::ScheduleSettingsDialog(
-    DataService* dataService,
+    ScheduleService* scheduleService,
     const ScheduleSettingsValues& values,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("scheduleSettings"), parent)
-    , m_dataService(dataService)
+    , m_scheduleService(scheduleService)
     , m_initialValues(values)
 {
     setWindowTitle(tr("Schedule Settings"));
@@ -207,7 +207,7 @@ QWidget* ScheduleSettingsDialog::buildTestingTab()
 
 void ScheduleSettingsDialog::clearTestingLayout()
 {
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_scheduleService || !m_scheduleService->isAvailable())
     {
         DialogServices::showWarning(
             this,
@@ -233,7 +233,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
     }
 
     const Status result =
-        m_dataService->clearTestingAssignments();
+        m_scheduleService->clearTestingAssignments();
 
     if (!result)
     {

@@ -64,6 +64,34 @@ QString ApplicationServices::currentDatabasePath() const
         : QString();
 }
 
+void ApplicationServices::saveDatabase()
+{
+    if (m_dataService)
+    {
+        m_dataService->save();
+    }
+}
+
+Status ApplicationServices::saveDatabaseAs(
+    const QString& destinationPath
+    )
+{
+    return m_dataService
+        ? m_dataService->saveAs(destinationPath)
+        : Status(std::unexpected(
+            QStringLiteral("Data service is unavailable.")));
+}
+
+Status ApplicationServices::exportDatabaseAs(
+    const QString& destinationPath
+    )
+{
+    return m_dataService
+        ? m_dataService->exportAs(destinationPath)
+        : Status(std::unexpected(
+            QStringLiteral("Data service is unavailable.")));
+}
+
 DataService* ApplicationServices::dataService() const
 {
     return m_dataService.get();

@@ -677,7 +677,9 @@ void ClassDetailsSection::openColorPicker()
         currentColor,
         this,
         tr("Select Class Color"),
-        m_services->dataService()
+        m_services
+            ? m_services->settingsService()
+            : nullptr
         );
 
     if (!color.isValid())

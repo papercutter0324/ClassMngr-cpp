@@ -1,9 +1,9 @@
 #include "staff_directory_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "data/data_service.h"
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -288,8 +288,11 @@ void StaffDirectoryPage::buildUi()
 
 bool StaffDirectoryPage::loadDirectory()
 {
-    auto* dataService = m_services ? m_services->dataService() : nullptr;
-    if (!dataService || !dataService->isOpen())
+    auto* teacherService =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    if (!teacherService || !teacherService->isAvailable())
     {
         clearDatabaseState();
         return false;
@@ -302,7 +305,8 @@ bool StaffDirectoryPage::loadDirectory()
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
-        const QList<NativeEnglishTeacher> teachers = dataService->getNativeEnglishTeachers();
+        const QList<NativeEnglishTeacher> teachers =
+            teacherService->nativeEnglishTeachers();
         m_table->setRowCount(teachers.size());
         for (int row = 0; row < teachers.size(); ++row)
         {
@@ -317,7 +321,8 @@ bool StaffDirectoryPage::loadDirectory()
     }
     else
     {
-        const QList<GsTeamMember> members = dataService->getGsTeamMembers();
+        const QList<GsTeamMember> members =
+            teacherService->gsTeamMembers();
         m_table->setRowCount(members.size());
         for (int row = 0; row < members.size(); ++row)
         {
@@ -400,8 +405,11 @@ bool StaffDirectoryPage::validateBirthday(const QString& value) const
 
 bool StaffDirectoryPage::saveDirectory(bool showErrors)
 {
-    auto* dataService = m_services ? m_services->dataService() : nullptr;
-    if (!dataService || !dataService->isOpen()) return false;
+    auto* teacherService =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    if (!teacherService || !teacherService->isAvailable()) return false;
 
     Status status;
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
@@ -428,7 +436,11 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             names.insert(key);
             teachers.append(teacher);
         }
-        if (status) status = dataService->saveNativeEnglishTeacherDirectory(teachers, m_deletedIds);
+        if (status)
+        {
+            status = teacherService->saveNativeEnglishTeacherDirectory(
+                teachers, m_deletedIds);
+        }
     }
     else
     {
@@ -459,7 +471,11 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             if (!korean.isEmpty()) koreanNames.insert(korean);
             members.append(member);
         }
-        if (status) status = dataService->saveGsTeamDirectory(members, m_deletedIds);
+        if (status)
+        {
+            status = teacherService->saveGsTeamDirectory(
+                members, m_deletedIds);
+        }
     }
 
     if (!status)

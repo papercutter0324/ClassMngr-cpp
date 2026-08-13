@@ -1,6 +1,5 @@
 #include "schedule_display_mode_preferences.h"
 
-#include "data/data_service.h"
 #include "app/services/feature_services.h"
 
 namespace
@@ -87,55 +86,6 @@ namespace ScheduleDisplayModePreferences
 QString displayModeSettingKey()
 {
     return QStringLiteral("schedule_display_mode");
-}
-
-ScheduleDisplayMode load(
-    DataService* dataService
-    )
-{
-    if (!dataService || !dataService->isOpen())
-    {
-        return ScheduleDisplayMode::Regular;
-    }
-
-    const QVariant storedMode =
-        dataService->loadSetting(
-            displayModeSettingKey(),
-            QVariant()
-            );
-    const ScheduleDisplayMode mode =
-        modeFromSetting(
-            storedMode,
-            settingToBool(
-                dataService->loadSetting(
-                    LegacyShowIntensiveKey,
-                    QStringLiteral("false")
-                    )
-                )
-            );
-
-    if (!storedMode.isValid())
-    {
-        save(dataService, mode);
-    }
-
-    return mode;
-}
-
-void save(
-    DataService* dataService,
-    ScheduleDisplayMode mode
-    )
-{
-    if (!dataService || !dataService->isOpen())
-    {
-        return;
-    }
-
-    dataService->saveSetting(
-        displayModeSettingKey(),
-        settingValue(mode)
-        );
 }
 
 ScheduleDisplayMode load(SettingsService* settingsService)

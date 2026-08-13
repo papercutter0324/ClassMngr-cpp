@@ -110,15 +110,24 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
     print(f"Wrote {path}", flush=True)
 
 
-def test_summary(junit_path: Path) -> dict[str, int] | None:
+def test_summary(junit_path: Path) -> dict[str, Any] | None:
     if not junit_path.exists():
         return None
     root = ET.parse(junit_path).getroot()
+    failed_tests = []
+    for test_case in root.iter("testcase"):
+        if (
+            test_case.find("failure") is not None
+            or test_case.find("error") is not None
+        ):
+            failed_tests.append(test_case.attrib.get("name", "<unnamed>"))
+
     return {
         "total": int(root.attrib.get("tests", 0)),
         "failures": int(root.attrib.get("failures", 0)),
         "errors": int(root.attrib.get("errors", 0)),
         "skipped": int(root.attrib.get("skipped", root.attrib.get("disabled", 0))),
+        "failed_tests": failed_tests,
     }
 
 
@@ -134,11 +143,19 @@ def main() -> int:
         default=2,
         help="Maximum parallel build jobs (default: 2 for reproducible local baselines)",
     )
+    parser.add_argument(
+        "--test-timeout",
+        type=int,
+        default=120,
+        help="Maximum seconds allowed for each CTest test (default: 120)",
+    )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
     if args.parallel < 1:
         parser.error("--parallel must be at least 1")
+    if args.test_timeout < 1:
+        parser.error("--test-timeout must be at least 1")
 
     repository = Path(__file__).resolve().parents[1]
     build_dir = args.build_dir
@@ -153,13 +170,14 @@ def main() -> int:
     fingerprint_start = source_fingerprint(repository)
 
     configure_code, configure_seconds = run(
-        ["cmake", "--preset", args.configure_preset], repository
+        ["cmake", "--fresh", "--preset", args.configure_preset], repository
     )
     build_code = -1
     build_seconds = 0.0
     test_code = -1
     test_seconds = 0.0
     junit_path = build_dir / "Testing" / "refactoring-baseline.junit.xml"
+    junit_path.unlink(missing_ok=True)
 
     if configure_code == 0:
         build_code, build_seconds = run(
@@ -183,6 +201,8 @@ def main() -> int:
             "--output-on-failure",
             "--output-junit",
             str(junit_path),
+            "--timeout",
+            str(args.test_timeout),
         ]
         if args.configuration:
             test_command.extend(["--build-config", args.configuration])
@@ -211,6 +231,7 @@ def main() -> int:
         "preset": args.configure_preset,
         "configuration": args.configuration,
         "parallel_build_jobs": args.parallel,
+        "test_timeout_seconds": args.test_timeout,
         "results": {
             "configure_exit_code": configure_code,
             "build_exit_code": build_code,

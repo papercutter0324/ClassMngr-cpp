@@ -1,9 +1,9 @@
 #include "schedule_output_controller.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/theme_service.h"
-#include "data/data_service.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 
@@ -40,10 +40,13 @@ void ScheduleOutputController::execute(
     {
         request.currentTheme = services->themeService()->currentTheme();
     }
-    DataService* dataService = services ? services->dataService() : nullptr;
-    if (dataService && dataService->isOpen())
+    SettingsService* settingsService =
+        services
+            ? services->settingsService()
+            : nullptr;
+    if (settingsService && settingsService->isAvailable())
     {
-        request.userName = dataService->loadSetting(
+        request.userName = settingsService->load(
             QStringLiteral("myInfo/name"),
             QString()
             ).toString();

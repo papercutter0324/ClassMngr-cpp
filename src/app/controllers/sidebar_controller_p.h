@@ -5,7 +5,6 @@
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -21,7 +20,7 @@
 #include <QString>
 
 class ApplicationServices;
-class DataService;
+class ClassService;
 class TeacherService;
 class QWidget;
 
@@ -36,7 +35,7 @@ struct SidebarClassNode
     QString teacherKr;
 };
 
-DataService* openDataService(ApplicationServices* services);
+ClassService* openClassService(ApplicationServices* services);
 TeacherService* openTeacherService(ApplicationServices* services);
 bool sidebarClassNodeLessThan(
     const SidebarClassNode& left,

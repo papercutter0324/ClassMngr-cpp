@@ -6,7 +6,6 @@
 
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
-#include "data/data_service.h"
 
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
@@ -33,17 +32,17 @@ namespace SidebarControllerPrivate
 {
 constexpr int UnknownSidebarOrder = 1'000'000;
 
-DataService* openDataService(
+ClassService* openClassService(
     ApplicationServices* services
     )
 {
-    auto* dataService =
+    auto* classService =
         services
-            ? services->dataService()
+            ? services->classService()
             : nullptr;
 
-    return dataService && dataService->isOpen()
-        ? dataService
+    return classService && classService->isAvailable()
+        ? classService
         : nullptr;
 }
 

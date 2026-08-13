@@ -1,5 +1,7 @@
 #include "sidebar_controller_p.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 void SidebarController::refreshClassSidebar()
@@ -11,12 +13,12 @@ void SidebarController::refreshClassSidebar()
 
     m_sidebar->clearClasses();
 
-    auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* classes =
+        openClassService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds || !ds->isOpen())
+    if (!classes || !teachers)
     {
         updateActionStates();
         return;
@@ -24,10 +26,10 @@ void SidebarController::refreshClassSidebar()
 
     QList<SidebarClassNode> classNodes;
 
-    for (const Classroom& classroom : ds->getClasses())
+    for (const Classroom& classroom : classes->classes())
     {
         auto classInfo =
-            ds->loadClassInfo(
+            classes->classInfo(
                 classroom.id
                 );
 
@@ -36,7 +38,7 @@ void SidebarController::refreshClassSidebar()
         if (classInfo.teacherId > 0)
         {
             teacher =
-                ds->getTeacher(
+                teachers->teacher(
                     classInfo.teacherId
                     );
         }
@@ -90,19 +92,19 @@ void SidebarController::refreshTeacherSidebar()
 
     m_sidebar->clearTeachers();
 
-    auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* classes =
+        openClassService(m_services);
+    auto* teacherService =
+        openTeacherService(m_services);
 
-    if (!ds || !ds->isOpen())
+    if (!classes || !teacherService)
     {
         updateActionStates();
         return;
     }
 
     const QList<Teacher> teachers =
-        ds->getAllTeachers();
+        teacherService->teachers();
 
     QHash<int, Teacher> teachersById;
 
@@ -120,10 +122,10 @@ void SidebarController::refreshTeacherSidebar()
     QSet<int> myTeacherIds;
     QList<Teacher> myTeachers;
 
-    for (const Classroom& classroom : ds->getClasses())
+    for (const Classroom& classroom : classes->classes())
     {
         const ClassInfo classInfo =
-            ds->loadClassInfo(
+            classes->classInfo(
                 classroom.id
                 );
 

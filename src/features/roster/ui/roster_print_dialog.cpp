@@ -1,8 +1,8 @@
 #include "features/roster/ui/roster_print_dialog.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
@@ -435,14 +435,25 @@ void RosterPrintDialog::updateTemplateOptionsVisibility()
 
 void RosterPrintDialog::updateExtraInfoColumns()
 {
+    auto* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    auto* rosterService =
+        m_services
+            ? m_services->rosterService()
+            : nullptr;
+
     if (
         selectedTemplateId()
             != RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
         ||
         !m_extraColumnGridLayout
         || !m_extraColumnOptionsWidget
-        || !m_services
-        || !m_services->dataService()
+        || !classService
+        || !classService->isAvailable()
+        || !rosterService
+        || !rosterService->isAvailable()
         )
     {
         updatePreview();
@@ -453,7 +464,7 @@ void RosterPrintDialog::updateExtraInfoColumns()
         selectedExtraColumns();
 
     const QList<Classroom> classes =
-        m_services->dataService()->getClasses();
+        classService->classes();
     const QList<int> classIds =
         RosterTemplatePrintService::resolveClassIds(
             selectedScope(),
@@ -468,7 +479,7 @@ void RosterPrintDialog::updateExtraInfoColumns()
     {
         RosterTemplatePrintService::RosterClassData data;
         data.roster =
-            m_services->dataService()->loadRoster(classId);
+            rosterService->roster(classId);
         rosterClasses.append(data);
     }
 
@@ -1153,7 +1164,23 @@ void RosterPrintDialog::updateMinimumWidthForCurrentClassName()
 
 void RosterPrintDialog::loadClasses()
 {
-    if (!m_classList || !m_services || !m_services->dataService())
+    if (!m_classList || !m_services)
+    {
+        return;
+    }
+
+    auto* classService = m_services->classService();
+    auto* teacherService = m_services->teacherService();
+    auto* scheduleService = m_services->scheduleService();
+
+    if (
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
+        || !scheduleService
+        || !scheduleService->isAvailable()
+        )
     {
         return;
     }
@@ -1161,7 +1188,7 @@ void RosterPrintDialog::loadClasses()
     if (m_currentClassOnly)
     {
         const Result<TestingClass> testingClass =
-            m_services->dataService()->loadTestingClass(
+            scheduleService->testingClass(
                 m_currentClassId
                 );
         if (testingClass)
@@ -1192,11 +1219,11 @@ void RosterPrintDialog::loadClasses()
     }
 
     const QList<Classroom> classes =
-        m_services->dataService()->getClasses();
+        classService->classes();
     for (const Classroom& classroom : classes)
     {
         const ClassInfo classInfo =
-            m_services->dataService()->loadClassInfo(
+            classService->classInfo(
                 classroom.id
                 );
 
@@ -1205,7 +1232,7 @@ void RosterPrintDialog::loadClasses()
         if (classInfo.teacherId > 0)
         {
             teacher =
-                m_services->dataService()->getTeacher(
+                teacherService->teacher(
                     classInfo.teacherId
                     );
         }

@@ -2,8 +2,8 @@
 
 #include "ui/shared/dialogs/dialog_shell.h"
 
-class DataService;
 class QCheckBox;
+class ScheduleService;
 
 struct ScheduleSettingsValues
 {
@@ -20,7 +20,7 @@ class ScheduleSettingsDialog : public DialogShell
 
 public:
     ScheduleSettingsDialog(
-        DataService* dataService,
+        ScheduleService* scheduleService,
         const ScheduleSettingsValues& values,
         QWidget* parent = nullptr
         );
@@ -37,7 +37,7 @@ private:
     QWidget* buildTestingTab();
     void clearTestingLayout();
 
-    DataService* m_dataService = nullptr;
+    ScheduleService* m_scheduleService = nullptr;
     ScheduleSettingsValues m_initialValues;
     QCheckBox* m_use24HourCheck = nullptr;
     QCheckBox* m_showEnglishNamesCheck = nullptr;

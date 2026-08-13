@@ -1,9 +1,9 @@
 #include "calendar_settings_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "academic_calendar_provider.h"
 #include "core/fontmanager.h"
-#include "data/data_service.h"
 #include "features/calendar/calendar_event_import_service.h"
 #include "features/calendar/calendar_settings_keys.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
@@ -47,16 +47,18 @@ AcademicTerm academicTerm(int index)
 
 CalendarSettingsDialog::CalendarSettingsDialog(
     AcademicCalendarProvider* provider,
-    DataService* dataService,
+    CalendarService* calendarService,
+    SettingsService* settingsService,
     int termYear,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("calendarSettings"), parent)
     , m_provider(provider)
-    , m_dataService(dataService)
+    , m_calendarService(calendarService)
+    , m_settingsService(settingsService)
     , m_importService(
         new CalendarEventImportService(
-            dataService,
+            calendarService,
             this
             )
         )
@@ -172,7 +174,7 @@ void CalendarSettingsDialog::restoreDefaults()
 
 void CalendarSettingsDialog::resetCalendarEvents()
 {
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_calendarService || !m_calendarService->isAvailable())
     {
         return;
     }
@@ -192,7 +194,7 @@ void CalendarSettingsDialog::resetCalendarEvents()
         return;
     }
 
-    m_dataService->deleteAllCalendarEvents();
+    m_calendarService->deleteAllEvents();
     emit calendarEventsImported();
 
     if (m_importStatusLabel)
@@ -632,9 +634,9 @@ void CalendarSettingsDialog::loadOptions()
     if (m_showAllCampusesCheck)
     {
         m_showAllCampusesCheck->setChecked(
-            m_dataService && m_dataService->isOpen()
-                ? m_dataService
-                    ->loadSetting(
+            m_settingsService && m_settingsService->isAvailable()
+                ? m_settingsService
+                    ->load(
                         CalendarSettingsKeys::ShowEventsAtAllCampuses,
                         false
                         )
@@ -653,9 +655,9 @@ void CalendarSettingsDialog::loadOptions()
     if (m_hideStartOfTermEventsCheck)
     {
         m_hideStartOfTermEventsCheck->setChecked(
-            m_dataService && m_dataService->isOpen()
-                ? m_dataService
-                    ->loadSetting(
+            m_settingsService && m_settingsService->isAvailable()
+                ? m_settingsService
+                    ->load(
                         CalendarSettingsKeys::HideStartOfTermEvents,
                         false
                         )
@@ -668,24 +670,24 @@ void CalendarSettingsDialog::loadOptions()
 void CalendarSettingsDialog::saveOptions()
 {
     if (
-        m_dataService
-        && m_dataService->isOpen()
+        m_settingsService
+        && m_settingsService->isAvailable()
         && m_showAllCampusesCheck
         )
     {
-        m_dataService->saveSetting(
+        m_settingsService->save(
             CalendarSettingsKeys::ShowEventsAtAllCampuses,
             m_showAllCampusesCheck->isChecked()
             );
     }
 
     if (
-        m_dataService
-        && m_dataService->isOpen()
+        m_settingsService
+        && m_settingsService->isAvailable()
         && m_hideStartOfTermEventsCheck
         )
     {
-        m_dataService->saveSetting(
+        m_settingsService->save(
             CalendarSettingsKeys::HideStartOfTermEvents,
             m_hideStartOfTermEventsCheck->isChecked()
             );

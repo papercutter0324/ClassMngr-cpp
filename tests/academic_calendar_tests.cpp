@@ -1,6 +1,5 @@
 #include "features/calendar/academic_calendar_schedule.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
-#include "data/data_service.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -278,28 +277,5 @@ void AcademicCalendarTests::jsonRoundTripAndMalformedFallback()
 }
 
 QTEST_APPLESS_MAIN(AcademicCalendarTests)
-
-bool DataService::isOpen() const
-{
-    return false;
-}
-
-void DataService::saveSetting(
-    const QString& key,
-    const QVariant& value
-    )
-{
-    Q_UNUSED(key);
-    Q_UNUSED(value);
-}
-
-QVariant DataService::loadSetting(
-    const QString& key,
-    const QVariant& defaultValue
-    )
-{
-    Q_UNUSED(key);
-    return defaultValue;
-}
 
 #include "academic_calendar_tests.moc"

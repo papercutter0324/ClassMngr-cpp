@@ -5,7 +5,9 @@
 #include <QWizard>
 
 class ApplicationServices;
-class DataService;
+class ClassService;
+class SettingsService;
+class TeacherService;
 
 class InitialSetupWizard final : public QWizard
 {
@@ -30,7 +32,9 @@ public:
         );
 
     [[nodiscard]] ApplicationServices* services() const;
-    [[nodiscard]] DataService* dataService() const;
+    [[nodiscard]] SettingsService* settingsService() const;
+    [[nodiscard]] TeacherService* teacherService() const;
+    [[nodiscard]] ClassService* classService() const;
     [[nodiscard]] bool wantsTeacherImport() const;
     [[nodiscard]] bool wantsScheduleImport() const;
 

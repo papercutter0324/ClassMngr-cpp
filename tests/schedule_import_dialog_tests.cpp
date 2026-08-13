@@ -466,7 +466,7 @@ void ScheduleImportDialogTests::requiresFileAndScheduleKind()
         );
     QVERIFY(status->alignment().testFlag(Qt::AlignHCenter));
     QCOMPARE(status->parentWidget()->layout()->indexOf(status), 0);
-    QCOMPARE(status->parentWidget()->layout()->spacing(), 12);
+    QCOMPARE(status->parentWidget()->layout()->spacing(), 10);
     QCOMPARE(fileSection->title(), QStringLiteral("Choose a spreadsheet"));
     QVERIFY(scheduleTypeSection->isHidden());
 

@@ -1,4 +1,4 @@
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "features/schedule/ui/schedule_builder.h"
 
 #include <QtTest>
@@ -14,8 +14,8 @@ private slots:
 
 void ScheduleBuilderTests::intensiveModeAlwaysBuildsFullRange()
 {
-    DataService dataService;
-    const ScheduleBuilder builder(&dataService);
+    ClassService classService(nullptr);
+    const ScheduleBuilder builder(&classService);
 
     const ScheduleBuildResult result =
         builder.build(
@@ -32,8 +32,8 @@ void ScheduleBuilderTests::intensiveModeAlwaysBuildsFullRange()
 
 void ScheduleBuilderTests::regularModeRetainsDefaultRange()
 {
-    DataService dataService;
-    const ScheduleBuilder builder(&dataService);
+    ClassService classService(nullptr);
+    const ScheduleBuilder builder(&classService);
 
     const ScheduleBuildResult result =
         builder.build(

@@ -1806,8 +1806,34 @@ void SpeakingEvalBatchReportServiceTests::
         );
 
     bool previewFound = false;
+    bool promptEditFound = false;
+    bool promptWasReadOnly = false;
+    bool copyButtonFound = false;
+    bool clipboardMatched = false;
     bool promptWasAnonymous = false;
     QApplication::clipboard()->clear();
+    QTimer modalSafetyTimer(&dialog);
+    modalSafetyTimer.setSingleShot(true);
+    connect(
+        &modalSafetyTimer,
+        &QTimer::timeout,
+        &dialog,
+        [&dialog]()
+        {
+            if (
+                auto* preview =
+                    dialog.findChild<QDialog*>(
+                        QStringLiteral(
+                            "speakingEvalAiPromptPreviewDialog"
+                            )
+                        )
+                )
+            {
+                preview->reject();
+            }
+        }
+        );
+    modalSafetyTimer.start(2000);
     QTimer::singleShot(
         50,
         [&]()
@@ -1836,24 +1862,26 @@ void SpeakingEvalBatchReportServiceTests::
                         "speakingEvalAiPromptPreviewCopy"
                         )
                     );
-            QVERIFY(promptEdit);
-            QVERIFY(promptEdit->isReadOnly());
-            QVERIFY(copyButton);
+            promptEditFound = promptEdit != nullptr;
+            promptWasReadOnly =
+                promptEdit && promptEdit->isReadOnly();
+            copyButtonFound = copyButton != nullptr;
 
-            const QString prompt =
-                promptEdit->toPlainText();
-            promptWasAnonymous =
-                prompt.contains(QStringLiteral("STD_NAME"))
-                && !prompt.contains(QStringLiteral("Alice"))
-                && !prompt.contains(QStringLiteral("김민지"));
-            QTest::mouseClick(
-                copyButton,
-                Qt::LeftButton
-                );
-            QCOMPARE(
-                QApplication::clipboard()->text(),
-                prompt
-                );
+            if (promptEdit && copyButton)
+            {
+                const QString prompt =
+                    promptEdit->toPlainText();
+                promptWasAnonymous =
+                    prompt.contains(QStringLiteral("STD_NAME"))
+                    && !prompt.contains(QStringLiteral("Alice"))
+                    && !prompt.contains(QStringLiteral("김민지"));
+                QTest::mouseClick(
+                    copyButton,
+                    Qt::LeftButton
+                    );
+                clipboardMatched =
+                    QApplication::clipboard()->text() == prompt;
+            }
             preview->accept();
         }
         );
@@ -1862,7 +1890,12 @@ void SpeakingEvalBatchReportServiceTests::
         previewButton,
         Qt::LeftButton
         );
+    modalSafetyTimer.stop();
     QVERIFY(previewFound);
+    QVERIFY(promptEditFound);
+    QVERIFY(promptWasReadOnly);
+    QVERIFY(copyButtonFound);
+    QVERIFY(clipboardMatched);
     QVERIFY(promptWasAnonymous);
 }
 

@@ -1,6 +1,6 @@
 #include "schedule_builder.h"
 
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 
 #include <QTime>
 
@@ -39,9 +39,9 @@ ScheduleEntry toEntry(
 }
 
 ScheduleBuilder::ScheduleBuilder(
-    DataService* dataService
+    ClassService* classService
     )
-    : m_dataService(dataService)
+    : m_classService(classService)
 {
 }
 
@@ -54,8 +54,8 @@ ScheduleBuildResult ScheduleBuilder::build(
     result.days = visibleDays;
 
     if (
-        !m_dataService
-        || !m_dataService->isOpen()
+        !m_classService
+        || !m_classService->isAvailable()
         )
     {
         return result;
@@ -75,12 +75,12 @@ ScheduleBuildResult ScheduleBuilder::build(
     int scheduleOffset = 0;
 
     const QList<Classroom> classes =
-        m_dataService->getClasses();
+        m_classService->classes();
 
     for (const Classroom& classroom : classes)
     {
         const ClassInfo info =
-            m_dataService->loadClassInfo(
+            m_classService->classInfo(
                 classroom.id
                 );
 

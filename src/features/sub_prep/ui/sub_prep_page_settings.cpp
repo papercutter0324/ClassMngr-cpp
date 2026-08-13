@@ -20,10 +20,10 @@ void SubPrepPage::loadPageData()
 
 void SubPrepPage::loadStoredSettings()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return;
     }
@@ -34,8 +34,8 @@ void SubPrepPage::loadStoredSettings()
     const QSignalBlocker notesBlocker(m_subNotesEdit);
 
     m_classMaterialsEdit->setPlainText(
-        dataService
-            ->loadSetting(
+        settingsService
+            ->load(
                 SettingsKeys::ClassMaterials,
                 QString()
                 )
@@ -43,12 +43,12 @@ void SubPrepPage::loadStoredSettings()
         );
 
     const QVariant storedGrading =
-        dataService->loadSetting(
+        settingsService->load(
             SettingsKeys::BookReportGrading,
             QVariant()
             );
     const QVariant storedSpecial =
-        dataService->loadSetting(
+        settingsService->load(
             SettingsKeys::BookReportSpecialInstructions,
             QVariant()
             );
@@ -77,8 +77,8 @@ void SubPrepPage::loadStoredSettings()
     }
 
     m_subNotesEdit->setPlainText(
-        dataService
-            ->loadSetting(
+        settingsService
+            ->load(
                 SettingsKeys::SubNotes,
                 QString()
                 )
@@ -88,10 +88,10 @@ void SubPrepPage::loadStoredSettings()
 
 void SubPrepPage::loadPersonalZoomInformation()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return;
     }
@@ -101,7 +101,7 @@ void SubPrepPage::loadPersonalZoomInformation()
 
     const QString loginId =
         loadSettingWithLegacyFallback(
-            dataService,
+            settingsService,
             SettingsKeys::MyInfoZoomLoginId,
             SettingsKeys::LegacyZoomLoginId,
             NotAvailableText
@@ -109,7 +109,7 @@ void SubPrepPage::loadPersonalZoomInformation()
             .toString();
     const QString password =
         loadSettingWithLegacyFallback(
-            dataService,
+            settingsService,
             SettingsKeys::MyInfoZoomPassword,
             SettingsKeys::LegacyZoomPassword,
             NotAvailableText
@@ -117,7 +117,7 @@ void SubPrepPage::loadPersonalZoomInformation()
             .toString();
     const bool unavailable =
         loadSettingWithLegacyFallback(
-            dataService,
+            settingsService,
             SettingsKeys::MyInfoZoomNotAvailable,
             SettingsKeys::LegacyZoomNotAvailable,
             true
@@ -140,10 +140,10 @@ void SubPrepPage::loadPersonalZoomInformation()
 
 void SubPrepPage::loadCampuses()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return;
     }
@@ -156,8 +156,8 @@ void SubPrepPage::loadCampuses()
         campusRepository().loadCampuses();
 
     const QString savedCampus =
-        dataService
-            ->loadSetting(
+        settingsService
+            ->load(
                 SettingsKeys::MyInfoCampus,
                 QString()
                 )
@@ -279,10 +279,10 @@ void SubPrepPage::updateReadOnlyFieldWidths()
 
 bool SubPrepPage::saveSubPrepInternal()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return false;
     }
@@ -294,19 +294,19 @@ bool SubPrepPage::saveSubPrepInternal()
 
     restoreGradingDefaultIfNeeded();
 
-    dataService->saveSetting(
+    settingsService->save(
         SettingsKeys::ClassMaterials,
         m_classMaterialsEdit->toPlainText()
         );
-    dataService->saveSetting(
+    settingsService->save(
         SettingsKeys::BookReportGrading,
         m_gradingInstructionsEdit->toPlainText()
         );
-    dataService->saveSetting(
+    settingsService->save(
         SettingsKeys::BookReportSpecialInstructions,
         m_specialInstructionsEdit->toPlainText()
         );
-    dataService->saveSetting(
+    settingsService->save(
         SettingsKeys::SubNotes,
         m_subNotesEdit->toPlainText()
         );

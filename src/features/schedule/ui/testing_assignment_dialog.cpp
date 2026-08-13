@@ -1,7 +1,7 @@
 #include "testing_assignment_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
@@ -19,12 +19,12 @@ constexpr int EssayMode = 2;
 }
 
 TestingAssignmentDialog::TestingAssignmentDialog(
-    DataService* dataService,
+    ScheduleService* scheduleService,
     const TestingAssignment* existingAssignment,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("testingAssignment"), parent)
-    , m_dataService(dataService)
+    , m_scheduleService(scheduleService)
     , m_hasExistingAssignment(existingAssignment != nullptr)
 {
     if (existingAssignment)
@@ -177,7 +177,7 @@ void TestingAssignmentDialog::buildUi()
         [this]()
         {
             m_action = Action::ManageTestingClasses;
-            accept();
+            QDialog::accept();
         }
         );
 }
@@ -186,13 +186,13 @@ void TestingAssignmentDialog::loadTestingClasses()
 {
     m_classCombo->clear();
 
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_scheduleService || !m_scheduleService->isAvailable())
     {
         return;
     }
 
     const Result<QList<TestingClass>> testingClasses =
-        m_dataService->loadTestingClasses();
+        m_scheduleService->testingClasses();
     if (!testingClasses)
     {
         DialogServices::showWarning(

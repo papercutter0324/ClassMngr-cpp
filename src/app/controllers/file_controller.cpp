@@ -779,8 +779,7 @@ void FileController::saveDatabase()
     }
 
     m_services
-        ->dataService()
-        ->save();
+        ->saveDatabase();
 }
 
 bool FileController::saveDatabaseAs(
@@ -792,7 +791,6 @@ bool FileController::saveDatabaseAs(
 
     if (
         !m_services
-        || !m_services->dataService()
         )
     {
         return false;
@@ -800,8 +798,7 @@ bool FileController::saveDatabaseAs(
 
     const Status saved =
         m_services
-        ->dataService()
-        ->saveAs(normalized);
+        ->saveDatabaseAs(normalized);
 
     if (!saved)
     {
@@ -826,7 +823,6 @@ bool FileController::exportDatabaseAs(
 
     if (
         !m_services
-        || !m_services->dataService()
         )
     {
         return false;
@@ -834,8 +830,7 @@ bool FileController::exportDatabaseAs(
 
     const Status exported =
         m_services
-        ->dataService()
-        ->exportAs(normalized);
+        ->exportDatabaseAs(normalized);
 
     if (!exported)
     {

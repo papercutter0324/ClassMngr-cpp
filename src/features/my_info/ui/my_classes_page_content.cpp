@@ -1,9 +1,9 @@
 #include "my_classes_page.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -40,20 +40,6 @@ struct ClassSummary
     QString displayName;
     int studentCount = 0;
 };
-
-DataService* openDataService(
-    ApplicationServices* services
-    )
-{
-    auto* dataService =
-        services
-            ? services->dataService()
-            : nullptr;
-
-    return dataService && dataService->isOpen()
-        ? dataService
-        : nullptr;
-}
 
 QString valueOrNa(
     const QString& value
@@ -434,10 +420,28 @@ void MyClassesPage::refreshGeneratedContent()
 }
 void MyClassesPage::rebuildClassInformation()
 {
-    auto* dataService =
-        openDataService(m_services);
+    ClassService* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    TeacherService* teacherService =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    RosterService* rosterService =
+        m_services
+            ? m_services->rosterService()
+            : nullptr;
 
-    if (!dataService || !m_classInformationLayout)
+    if (
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
+        || !rosterService
+        || !rosterService->isAvailable()
+        || !m_classInformationLayout
+        )
     {
         return;
     }
@@ -448,25 +452,25 @@ void MyClassesPage::rebuildClassInformation()
     QList<ClassSummary> summaries;
 
     const QList<Classroom> classes =
-        dataService->getClasses();
+        classService->classes();
 
     for (const Classroom& classroom : classes)
     {
         ClassSummary summary;
         summary.classroom = classroom;
         summary.info =
-            dataService->loadClassInfo(
+            classService->classInfo(
                 classroom.id
                 );
         summary.studentCount =
-            dataService->getRosterStudentCount(
+            rosterService->studentCount(
                 classroom.id
                 );
 
         if (summary.info.teacherId > 0)
         {
             summary.teacher =
-                dataService->getTeacher(
+                teacherService->teacher(
                     summary.info.teacherId
                     );
         }

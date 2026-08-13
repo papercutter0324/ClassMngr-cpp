@@ -1,9 +1,9 @@
 #include "sub_prep_page.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
-#include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
@@ -82,17 +82,73 @@ const QString SubNotes =
     QStringLiteral("subPrep/subComments");
 }
 
-DataService* openDataService(
+SettingsService* openSettingsService(
     ApplicationServices* services
     )
 {
-    auto* dataService =
+    auto* service =
         services
-            ? services->dataService()
+            ? services->settingsService()
             : nullptr;
 
-    return dataService && dataService->isOpen()
-        ? dataService
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+ClassService* openClassService(
+    ApplicationServices* services
+    )
+{
+    auto* service =
+        services
+            ? services->classService()
+            : nullptr;
+
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+TeacherService* openTeacherService(
+    ApplicationServices* services
+    )
+{
+    auto* service =
+        services
+            ? services->teacherService()
+            : nullptr;
+
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+RosterService* openRosterService(
+    ApplicationServices* services
+    )
+{
+    auto* service =
+        services
+            ? services->rosterService()
+            : nullptr;
+
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+CalendarService* openCalendarService(
+    ApplicationServices* services
+    )
+{
+    auto* service =
+        services
+            ? services->calendarService()
+            : nullptr;
+
+    return service && service->isAvailable()
+        ? service
         : nullptr;
 }
 
@@ -125,19 +181,19 @@ QString valueOrNa(
 }
 
 QVariant loadSettingWithLegacyFallback(
-    DataService* dataService,
+    SettingsService* settingsService,
     const QString& primaryKey,
     const QString& legacyKey,
     const QVariant& defaultValue
     )
 {
-    if (!dataService)
+    if (!settingsService)
     {
         return defaultValue;
     }
 
     QVariant value =
-        dataService->loadSetting(
+        settingsService->load(
             primaryKey,
             QVariant()
             );
@@ -148,7 +204,7 @@ QVariant loadSettingWithLegacyFallback(
     }
 
     value =
-        dataService->loadSetting(
+        settingsService->load(
             legacyKey,
             QVariant()
             );
@@ -158,7 +214,7 @@ QVariant loadSettingWithLegacyFallback(
         return defaultValue;
     }
 
-    dataService->saveSetting(
+    settingsService->save(
         primaryKey,
         value
         );

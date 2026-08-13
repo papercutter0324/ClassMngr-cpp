@@ -1,12 +1,12 @@
 #include "calendar_page.h"
 
+#include "app/services/feature_services.h"
 #include "calendar_settings_dialog.h"
 #include "academic_calendar_provider.h"
 #include "calendar_event_cache.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
@@ -29,17 +29,17 @@ namespace
 {
 constexpr int UntitledCardTopMargin = 4;
 
-DataService* openDataService(
+CalendarService* openCalendarService(
     ApplicationServices* services
     )
 {
-    auto* dataService =
+    auto* calendarService =
         services
-            ? services->dataService()
+            ? services->calendarService()
             : nullptr;
 
-    return dataService && dataService->isOpen()
-        ? dataService
+    return calendarService && calendarService->isAvailable()
+        ? calendarService
         : nullptr;
 }
 
@@ -149,13 +149,13 @@ QString newRepeatSeriesId()
 }
 
 void saveRepeatSeriesFromDate(
-    DataService* dataService,
+    CalendarService* calendarService,
     const CalendarEvent& originalEvent,
     const CalendarEvent& editedEvent
     )
 {
     if (
-        !dataService
+        !calendarService
         || !isRepeatSeriesEvent(originalEvent)
         || !originalEvent.startDate.isValid()
         || !editedEvent.startDate.isValid()
@@ -176,7 +176,7 @@ void saveRepeatSeriesFromDate(
             editedEvent.endDate
             );
     const QList<CalendarEvent> seriesEvents =
-        dataService->loadCalendarEventsForRepeatSeriesFromDate(
+        calendarService->repeatSeriesFromDate(
             repeatSeriesId,
             originalEvent.startDate
             );
@@ -209,7 +209,7 @@ void saveRepeatSeriesFromDate(
                 durationDays
                 );
 
-        dataService->saveCalendarEvent(
+        calendarService->saveEvent(
             updatedEvent
             );
     }
@@ -246,16 +246,16 @@ void CalendarPage::handleCalendarEventActivated(
     int eventId
     )
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* calendarService =
+        openCalendarService(m_services);
 
-    if (!dataService || eventId <= 0)
+    if (!calendarService || eventId <= 0)
     {
         return;
     }
 
     const CalendarEvent event =
-        dataService->getCalendarEvent(
+        calendarService->event(
             eventId
             );
 
@@ -294,7 +294,10 @@ void CalendarPage::handleCalendarConfigureRequested(
 
     CalendarSettingsDialog dialog(
         m_academicCalendarProvider,
-        openDataService(m_services),
+        openCalendarService(m_services),
+        m_services
+            ? m_services->settingsService()
+            : nullptr,
         termYear,
         this
         );
@@ -395,7 +398,7 @@ void CalendarPage::buildCalendarContent()
     m_academicCalendarProvider =
         new AcademicCalendarProvider(
             m_services
-                ? m_services->dataService()
+                ? m_services->settingsService()
                 : nullptr,
             this
             );
@@ -514,11 +517,9 @@ void CalendarPage::refreshCalendarData()
         return;
     }
 
-    auto* dataService =
-        openDataService(m_services);
     const QString databasePath =
-        dataService
-            ? dataService->currentDatabasePath()
+        m_services
+            ? m_services->currentDatabasePath()
             : QString();
 
     m_calendarCache->setDatabasePath(databasePath);
@@ -708,10 +709,14 @@ void CalendarPage::openCalendarDialog(
     bool existingEvent
     )
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* calendarService =
+        openCalendarService(m_services);
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
 
-    if (!dataService)
+    if (!calendarService)
     {
         return;
     }
@@ -720,10 +725,12 @@ void CalendarPage::openCalendarDialog(
         event,
         existingEvent,
         settingToBool(
-            dataService->loadSetting(
+            settingsService
+                ? settingsService->load(
                 QStringLiteral("schedule_use_24h"),
                 QStringLiteral("false")
-                ),
+                )
+                : QVariant(QStringLiteral("false")),
             false
             ),
         this
@@ -746,14 +753,14 @@ void CalendarPage::openCalendarDialog(
     {
         if (thisAndFollowing)
         {
-            dataService->deleteCalendarEventsForRepeatSeriesFromDate(
+            calendarService->deleteRepeatSeriesFromDate(
                 event.repeatSeriesId,
                 event.startDate
                 );
         }
         else
         {
-            dataService->deleteCalendarEvent(
+            calendarService->deleteEvent(
                 event.id
                 );
         }
@@ -766,7 +773,7 @@ void CalendarPage::openCalendarDialog(
         if (thisAndFollowing)
         {
             saveRepeatSeriesFromDate(
-                dataService,
+                calendarService,
                 event,
                 savedEvent
                 );
@@ -794,7 +801,7 @@ void CalendarPage::openCalendarDialog(
 
             for (const CalendarEvent& eventToSave : eventsToSave)
             {
-                dataService->saveCalendarEvent(
+                calendarService->saveEvent(
                     eventToSave
                     );
             }

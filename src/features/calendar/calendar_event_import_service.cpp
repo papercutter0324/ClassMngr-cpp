@@ -1,9 +1,9 @@
 #include "calendar_event_import_service.h"
 
+#include "app/services/feature_services.h"
 #include "academic_calendar_event_parser.h"
 #include "calendar_workbook_reader.h"
 #include "core/resource_paths.h"
-#include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 
 #include <QDate>
@@ -46,11 +46,11 @@ QStringList campusCodesFromDirectory()
 }
 
 CalendarEventImportService::CalendarEventImportService(
-    DataService* dataService,
+    CalendarService* calendarService,
     QObject* parent
     )
     : QObject(parent)
-    , m_dataService(dataService)
+    , m_calendarService(calendarService)
     , m_network(new QNetworkAccessManager(this))
 {
     connect(
@@ -78,7 +78,7 @@ void CalendarEventImportService::importFromDefaultSource()
         return;
     }
 
-    if (!m_dataService || !m_dataService->isOpen())
+    if (!m_calendarService || !m_calendarService->isAvailable())
     {
         emit importFailed(
             tr("The calendar Teacher Profile is not available.")
@@ -156,7 +156,7 @@ void CalendarEventImportService::handleFinished(
 
     QSet<QString> existingSignatures;
     const QList<CalendarEvent> existingEvents =
-        m_dataService->loadCalendarEventsInRange(
+        m_calendarService->eventsInRange(
             firstDate,
             lastDate
             );
@@ -180,7 +180,7 @@ void CalendarEventImportService::handleFinished(
             continue;
         }
 
-        if (m_dataService->saveCalendarEvent(event) > 0)
+        if (m_calendarService->saveEvent(event) > 0)
         {
             ++importedCount;
             existingSignatures.insert(signature);

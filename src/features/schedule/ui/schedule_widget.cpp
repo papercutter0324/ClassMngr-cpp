@@ -7,10 +7,10 @@
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/theme_service.h"
-#include "data/data_service.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -79,20 +79,6 @@ const QString TestingAffectsM1 =
     QStringLiteral("schedule_testing_affects_m1");
 }
 
-DataService* openDataService(
-    ApplicationServices* services
-    )
-{
-    auto* dataService =
-        services
-            ? services->dataService()
-            : nullptr;
-
-    return dataService && dataService->isOpen()
-        ? dataService
-        : nullptr;
-}
-
 bool settingToBool(
     const QVariant& value,
     bool defaultValue
@@ -120,17 +106,17 @@ bool settingToBool(
 }
 
 void saveBoolSetting(
-    DataService* dataService,
+    SettingsService* settingsService,
     const QString& key,
     bool value
     )
 {
-    if (!dataService)
+    if (!settingsService || !settingsService->isAvailable())
     {
         return;
     }
 
-    dataService->saveSetting(
+    settingsService->save(
         key,
         value
             ? QStringLiteral("true")
@@ -294,7 +280,9 @@ void ScheduleWidget::setDisplayMode(
     m_displayMode = mode;
 
     ScheduleDisplayModePreferences::save(
-        openDataService(m_services),
+        m_services
+            ? m_services->settingsService()
+            : nullptr,
         m_displayMode
         );
 
@@ -314,7 +302,9 @@ void ScheduleWidget::openSettings()
     initial.testingAffectsM1 = m_testingAffectsM1;
 
     ScheduleSettingsDialog dialog(
-        openDataService(m_services),
+        m_services
+            ? m_services->scheduleService()
+            : nullptr,
         initial,
         this
         );
@@ -346,30 +336,35 @@ void ScheduleWidget::openSettings()
     m_testingAffectsM1 =
         values.testingAffectsM1;
 
-    if (auto* dataService = openDataService(m_services))
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
+
+    if (settingsService && settingsService->isAvailable())
     {
         saveBoolSetting(
-            dataService,
+            settingsService,
             SettingsKeys::Use24HourTime,
             m_use24h
             );
         saveBoolSetting(
-            dataService,
+            settingsService,
             SettingsKeys::ShowKoreanTeacherEnglishNames,
             m_showKoreanTeacherEnglishNames
             );
         saveBoolSetting(
-            dataService,
+            settingsService,
             SettingsKeys::ShowWeekends,
             m_showWeekends
             );
         saveBoolSetting(
-            dataService,
+            settingsService,
             SettingsKeys::ShowAllHoursV2,
             m_showAllHours
             );
         saveBoolSetting(
-            dataService,
+            settingsService,
             SettingsKeys::TestingAffectsM1,
             m_testingAffectsM1
             );
@@ -420,9 +415,14 @@ void ScheduleWidget::onCellClicked(
     }
     if (hit.command == ScheduleCellCommand::ToggleSlot)
     {
-        if (auto* dataService = openDataService(m_services))
+        auto* scheduleService =
+            m_services
+                ? m_services->scheduleService()
+                : nullptr;
+
+        if (scheduleService && scheduleService->isAvailable())
         {
-            dataService->saveIntensiveSlotState(
+            scheduleService->saveIntensiveSlotState(
                 hit.day,
                 hit.timeLabel,
                 hit.nextState,
@@ -459,10 +459,12 @@ void ScheduleWidget::editTestingAssignment(
     const TestingAssignment* existingAssignment
     )
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* scheduleService =
+        m_services
+            ? m_services->scheduleService()
+            : nullptr;
 
-    if (!dataService)
+    if (!scheduleService || !scheduleService->isAvailable())
     {
         DialogServices::showWarning(
             this,
@@ -473,7 +475,7 @@ void ScheduleWidget::editTestingAssignment(
     }
 
     TestingAssignmentDialog dialog(
-        dataService,
+        scheduleService,
         existingAssignment,
         this
         );
@@ -504,7 +506,7 @@ void ScheduleWidget::editTestingAssignment(
     {
     case TestingAssignmentDialog::Action::RemoveAssignment:
         result =
-            dataService->deleteTestingAssignment(
+            scheduleService->deleteTestingAssignment(
                 day,
                 timeLabel
                 );
@@ -512,7 +514,7 @@ void ScheduleWidget::editTestingAssignment(
 
     case TestingAssignmentDialog::Action::AssignTestingClass:
         result =
-            dataService->assignTestingClass(
+            scheduleService->assignTestingClass(
                 day,
                 timeLabel,
                 dialog.selectedClassId(),
@@ -522,7 +524,7 @@ void ScheduleWidget::editTestingAssignment(
 
     case TestingAssignmentDialog::Action::SavePlainTesting:
         result =
-            dataService->saveTestingBlock(
+            scheduleService->saveTestingBlock(
                 day,
                 timeLabel,
                 dialog.room(),
@@ -789,17 +791,19 @@ void ScheduleWidget::buildUi()
 
 void ScheduleWidget::loadSettings()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
 
-    if (!dataService)
+    if (!settingsService || !settingsService->isAvailable())
     {
         return;
     }
 
     m_use24h =
         settingToBool(
-            dataService->loadSetting(
+            settingsService->load(
                 SettingsKeys::Use24HourTime,
                 QStringLiteral("false")
                 ),
@@ -808,7 +812,7 @@ void ScheduleWidget::loadSettings()
 
     m_showWeekends =
         settingToBool(
-            dataService->loadSetting(
+            settingsService->load(
                 SettingsKeys::ShowWeekends,
                 QStringLiteral("false")
                 ),
@@ -817,7 +821,7 @@ void ScheduleWidget::loadSettings()
 
     m_showKoreanTeacherEnglishNames =
         settingToBool(
-            dataService->loadSetting(
+            settingsService->load(
                 SettingsKeys::ShowKoreanTeacherEnglishNames,
                 QStringLiteral("false")
                 ),
@@ -826,7 +830,7 @@ void ScheduleWidget::loadSettings()
 
     m_showAllHours =
         settingToBool(
-            dataService->loadSetting(
+            settingsService->load(
                 SettingsKeys::ShowAllHoursV2,
                 QStringLiteral("false")
                 ),
@@ -835,7 +839,7 @@ void ScheduleWidget::loadSettings()
 
     m_testingAffectsM1 =
         settingToBool(
-            dataService->loadSetting(
+            settingsService->load(
                 SettingsKeys::TestingAffectsM1,
                 QStringLiteral("false")
                 ),
@@ -844,7 +848,7 @@ void ScheduleWidget::loadSettings()
 
     m_displayMode =
         ScheduleDisplayModePreferences::load(
-            dataService
+            settingsService
             );
 }
 
@@ -1248,33 +1252,41 @@ void ScheduleWidget::updateTableMinimumHeight()
 
 void ScheduleWidget::reloadSlotStates()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* scheduleService =
+        m_services
+            ? m_services->scheduleService()
+            : nullptr;
 
-    if (!dataService)
+    if (!scheduleService || !scheduleService->isAvailable())
     {
         return;
     }
 
     const QList<IntensiveSlotState> states =
-        dataService->loadIntensiveSlotStates();
+        scheduleService->intensiveSlotStates();
 
     m_interactionState.setSlotStates(states);
 }
 
 void ScheduleWidget::reloadTestingBlocks()
 {
-    auto* dataService =
-        openDataService(m_services);
+    auto* scheduleService =
+        m_services
+            ? m_services->scheduleService()
+            : nullptr;
+    auto* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
 
-    if (!dataService)
+    if (!scheduleService || !scheduleService->isAvailable())
     {
         m_interactionState.clearTestingAssignments();
         return;
     }
 
     const Result<QList<TestingAssignment>> assignments =
-        dataService->loadTestingAssignments();
+        scheduleService->testingAssignments();
 
     if (!assignments)
     {
@@ -1301,8 +1313,13 @@ void ScheduleWidget::reloadTestingBlocks()
                 == TestingAssignmentKind::SpecialClass
             )
         {
+            if (!classService || !classService->isAvailable())
+            {
+                continue;
+            }
+
             const Result<TestingClass> testingClass =
-                dataService->loadTestingClass(
+                scheduleService->testingClass(
                     assignment.classId
                     );
 
@@ -1315,7 +1332,7 @@ void ScheduleWidget::reloadTestingBlocks()
             }
 
             const ClassInfo info =
-                dataService->loadClassInfo(
+                classService->classInfo(
                     assignment.classId
                     );
             ScheduleEntry entry;
@@ -1388,7 +1405,9 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
         buildScheduleViewRequest();
 
     ScheduleBuilder builder(
-        openDataService(m_services)
+        m_services
+            ? m_services->classService()
+            : nullptr
         );
 
     const ScheduleBuildResult result =

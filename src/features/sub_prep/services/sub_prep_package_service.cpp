@@ -1,8 +1,8 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -162,12 +162,27 @@ QList<PackageClass> loadPackageClasses(
 {
     QList<PackageClass> result;
 
-    DataService* dataService =
+    ClassService* classService =
         request.services
-            ? request.services->dataService()
+            ? request.services->classService()
+            : nullptr;
+    TeacherService* teacherService =
+        request.services
+            ? request.services->teacherService()
+            : nullptr;
+    RosterService* rosterService =
+        request.services
+            ? request.services->rosterService()
             : nullptr;
 
-    if (!dataService || !dataService->isOpen())
+    if (
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
+        || !rosterService
+        || !rosterService->isAvailable()
+        )
     {
         if (errorMessage)
         {
@@ -187,7 +202,7 @@ QList<PackageClass> loadPackageClasses(
 
         PackageClass packageClass;
         packageClass.rosterData.classroom =
-            dataService->getClassById(classId);
+            classService->classroom(classId);
 
         if (packageClass.rosterData.classroom.id <= 0)
         {
@@ -195,14 +210,14 @@ QList<PackageClass> loadPackageClasses(
         }
 
         packageClass.rosterData.info =
-            dataService->loadClassInfo(classId);
+            classService->classInfo(classId);
         packageClass.rosterData.roster =
-            dataService->loadRoster(classId);
+            rosterService->roster(classId);
 
         if (packageClass.rosterData.info.teacherId > 0)
         {
             packageClass.teacher =
-                dataService->getTeacher(
+                teacherService->teacher(
                     packageClass.rosterData.info.teacherId
                     );
         }

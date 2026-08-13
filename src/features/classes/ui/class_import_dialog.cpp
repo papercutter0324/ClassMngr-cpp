@@ -1,8 +1,8 @@
 #include "class_import_dialog.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
+#include "app/services/feature_services.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/classroom.h"
 
 #include <QComboBox>
@@ -67,17 +67,18 @@ QString packageClassDisplayName(
 }
 
 QString destinationClassDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId
     )
 {
-    const Classroom classroom = dataService->getClassById(classId);
-    const ClassInfo info = dataService->loadClassInfo(classId);
+    const Classroom classroom = classService->classroom(classId);
+    const ClassInfo info = classService->classInfo(classId);
     Teacher teacher;
 
     if (info.teacherId > 0)
     {
-        teacher = dataService->getTeacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId);
     }
 
     const QString display = SidebarNodeNaming::formatClassDisplayName(
@@ -97,11 +98,11 @@ QString destinationClassDisplayName(
 }
 
 QString destinationTeacherDisplayName(
-    DataService* dataService,
+    TeacherService* teacherService,
     int teacherId
     )
 {
-    const Teacher teacher = dataService->getTeacher(teacherId);
+    const Teacher teacher = teacherService->teacher(teacherId);
     const QString display =
         SidebarNodeNaming::formatTeacherDisplayName(teacher).trimmed();
 
@@ -135,13 +136,13 @@ QFrame* separator(
 }
 
 ClassImportDialog::ClassImportDialog(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     const ClassTransferPackage& package,
     const ClassImportPreview& preview,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("classImport"), parent)
-    , m_dataService(dataService)
     , m_package(package)
 {
     setWindowTitle(tr("Import Classes"));
@@ -193,7 +194,8 @@ ClassImportDialog::ClassImportDialog(
             addChoice(
                 combo,
                 tr("Replace: %1").arg(
-                    destinationClassDisplayName(dataService, classId)),
+                    destinationClassDisplayName(
+                        classService, teacherService, classId)),
                 static_cast<int>(ClassImportAction::Replace),
                 classId
                 );
@@ -248,7 +250,7 @@ ClassImportDialog::ClassImportDialog(
         {
             const int teacherId = teacherPreview.matchingTeacherIds.first();
             const QString localName = destinationTeacherDisplayName(
-                dataService, teacherId);
+                teacherService, teacherId);
             addChoice(
                 combo,
                 tr("Keep local: %1").arg(localName),
@@ -274,7 +276,7 @@ ClassImportDialog::ClassImportDialog(
             for (int teacherId : teacherPreview.matchingTeacherIds)
             {
                 const QString localName = destinationTeacherDisplayName(
-                    dataService, teacherId);
+                    teacherService, teacherId);
                 addChoice(
                     combo,
                     tr("Keep local: %1").arg(localName),

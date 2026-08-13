@@ -1,8 +1,8 @@
 #include "class_export_dialog.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
+#include "app/services/feature_services.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
@@ -22,16 +22,17 @@
 namespace
 {
 QString classDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     const Classroom& classroom
     )
 {
-    const ClassInfo info = dataService->loadClassInfo(classroom.id);
+    const ClassInfo info = classService->classInfo(classroom.id);
     Teacher teacher;
 
     if (info.teacherId > 0)
     {
-        teacher = dataService->getTeacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId);
     }
 
     const QString formatted =
@@ -52,7 +53,8 @@ QString classDisplayName(
 }
 
 ClassExportDialog::ClassExportDialog(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("classExport"), parent)
@@ -71,14 +73,14 @@ ClassExportDialog::ClassExportDialog(
     m_classList->setObjectName(QStringLiteral("classExportList"));
     layout->addWidget(m_classList, 1);
 
-    if (dataService)
+    if (classService && teacherService)
     {
         QList<QPair<QString, int>> classes;
 
-        for (const Classroom& classroom : dataService->getClasses())
+        for (const Classroom& classroom : classService->classes())
         {
             classes.append({
-                classDisplayName(dataService, classroom),
+                classDisplayName(classService, teacherService, classroom),
                 classroom.id
             });
         }

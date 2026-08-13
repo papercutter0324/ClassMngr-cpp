@@ -1,10 +1,10 @@
 #include "schedule_import_review_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/colorutils.h"
-#include "data/data_service.h"
 #include "domain/models/classroom.h"
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
@@ -488,15 +488,16 @@ QStringList projectedScheduleConflicts(
 }
 
 QString classLabel(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId,
     ScheduleImportKind kind
     )
 {
     const Classroom classroom =
-        dataService->getClassById(classId);
+        classService->classroom(classId);
     const ClassInfo info =
-        dataService->loadClassInfo(classId);
+        classService->classInfo(classId);
     const QString course =
         QStringLiteral("%1 %2")
             .arg(
@@ -512,7 +513,7 @@ QString classLabel(
                 ? classroom.name.trimmed()
                 : QObject::tr("Class %1").arg(classId);
     const Teacher teacher =
-        dataService->getTeacher(info.teacherId);
+        teacherService->teacher(info.teacherId);
     const bool importingIntensive =
         kind == ScheduleImportKind::Intensive;
     const QList<ClassTime>& preferredTimes =
@@ -559,7 +560,8 @@ QString classLabel(
 }
 
 QString classDifferences(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     const ScheduleImportClassCandidate& candidate,
     int targetClassId,
     ScheduleImportKind kind,
@@ -568,7 +570,7 @@ QString classDifferences(
     const QColor& changesHeadingColor
     )
 {
-    if (!dataService || targetClassId <= 0)
+    if (!classService || !teacherService || targetClassId <= 0)
     {
         return QObject::tr(
                    "A new class will be created with color %1."
@@ -605,9 +607,9 @@ QString classDifferences(
         };
 
     const ClassInfo existing =
-        dataService->loadClassInfo(targetClassId);
+        classService->classInfo(targetClassId);
     const Teacher existingTeacher =
-        dataService->getTeacher(existing.teacherId);
+        teacherService->teacher(existing.teacherId);
     const QList<ClassTime> existingTimes =
         kind == ScheduleImportKind::Intensive
             ? existing.intensiveTimes
@@ -1290,15 +1292,15 @@ bool ScheduleImportReviewDialog::prepare()
         return true;
     }
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
-    if (!dataService)
+    ScheduleService* scheduleService =
+        openScheduleImportService(m_services);
+    if (!scheduleService)
     {
         return false;
     }
 
     const auto preview =
-        dataService->previewScheduleImport(
+        scheduleService->previewImport(
             m_request.user,
             m_request.kind
             );
@@ -1359,9 +1361,20 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
         m_warningScrollArea = nullptr;
     }
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
-    if (!dataService)
+    ClassService* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    TeacherService* teacherService =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    if (
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
+        )
     {
         return;
     }
@@ -1467,7 +1480,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             const int teacherId =
                 preview.matchingTeacherIds.first();
             const Teacher existing =
-                dataService->getTeacher(teacherId);
+                teacherService->teacher(teacherId);
             const bool exactRoom =
                 preview.importedRooms.size() == 1
                 && existing.roomNumber.trimmed()
@@ -1523,7 +1536,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
             for (int teacherId : preview.matchingTeacherIds)
             {
                 const Teacher existing =
-                    dataService->getTeacher(teacherId);
+                    teacherService->teacher(teacherId);
                 addResolutionItem(
                     control.action,
                     tr("Use existing: %1")
@@ -1623,7 +1636,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
     m_teacherLayout->addStretch();
 
     const QList<Classroom> allClasses =
-        dataService->getClasses();
+        classService->classes();
     QList<ScheduleImportClassPreview> orderedClasses =
         m_preview.classes;
     std::stable_sort(
@@ -1702,7 +1715,8 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                     : tr("Update existing: %1"))
                     .arg(
                         classLabel(
-                            dataService,
+                            classService,
+                            teacherService,
                             classId,
                             m_request.kind
                             )
@@ -1721,7 +1735,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 continue;
             }
             const ClassInfo info =
-                dataService->loadClassInfo(classroom.id);
+                classService->classInfo(classroom.id);
             if (
                 !scheduleImportClassOptionIsEligible(
                     candidate,
@@ -1737,7 +1751,8 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 tr("Update existing: %1")
                     .arg(
                         classLabel(
-                            dataService,
+                            classService,
+                            teacherService,
                             classroom.id,
                             m_request.kind
                             )
@@ -1917,7 +1932,9 @@ void ScheduleImportReviewDialog::chooseClassColor(
                 QColor(control.color),
                 this,
                 tr("Select Imported Class Color"),
-                openScheduleImportDataService(m_services)
+                m_services
+                    ? m_services->settingsService()
+                    : nullptr
                 );
         if (!selected.isValid())
         {
@@ -2135,8 +2152,22 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
     }
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
+    ClassService* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    if (classService && !classService->isAvailable())
+    {
+        classService = nullptr;
+    }
+    TeacherService* teacherService =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    if (teacherService && !teacherService->isAvailable())
+    {
+        teacherService = nullptr;
+    }
     QSet<int> targets;
     QMap<int, QList<int>> candidateIndexesByTarget;
     QHash<int, int> classActions;
@@ -2204,7 +2235,8 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.details->setText(
                     classDifferences(
-                        openScheduleImportDataService(m_services),
+                        classService,
+                        teacherService,
                         m_preview.user.classes[
                             control.candidateIndex
                         ],
@@ -2231,7 +2263,8 @@ void ScheduleImportReviewDialog::updateReviewState()
             {
                 control.details->setText(
                     classDifferences(
-                        openScheduleImportDataService(m_services),
+                        classService,
+                        teacherService,
                         m_preview.user.classes[
                             control.candidateIndex
                         ],
@@ -2371,9 +2404,10 @@ void ScheduleImportReviewDialog::updateReviewState()
                 );
         }
         const QString targetLabel =
-            dataService
+            classService && teacherService
                 ? classLabel(
-                    dataService,
+                    classService,
+                    teacherService,
                     iterator.key(),
                     m_request.kind
                     )
@@ -2392,7 +2426,7 @@ void ScheduleImportReviewDialog::updateReviewState()
     projected.intensiveSlotStates =
         m_preview.user.intensiveSlotStates;
 
-    if (dataService)
+    if (classService && teacherService)
     {
         for (const ClassControl& control : m_classControls)
         {
@@ -2419,14 +2453,14 @@ void ScheduleImportReviewDialog::updateReviewState()
                 }
 
                 const ClassInfo info =
-                    dataService->loadClassInfo(target);
+                    classService->classInfo(target);
                 ScheduleImportClassCandidate preserved;
                 preserved.teacherKr =
-                    dataService->getTeacher(
+                    teacherService->teacher(
                         info.teacherId
                         ).teacherKr;
                 preserved.rooms = {
-                    dataService->getTeacher(
+                    teacherService->teacher(
                         info.teacherId
                         ).roomNumber
                 };
@@ -2472,7 +2506,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             {
                 room =
-                    dataService->getTeacher(
+                    teacherService->teacher(
                         teacherTargets.value(
                             candidate.teacherKey,
                             -1
@@ -2488,7 +2522,7 @@ void ScheduleImportReviewDialog::updateReviewState()
 
         if (preservesAbsentIntensiveClasses)
         {
-            for (const Classroom& classroom : dataService->getClasses())
+            for (const Classroom& classroom : classService->classes())
             {
                 if (targets.contains(classroom.id))
                 {
@@ -2496,7 +2530,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 }
 
                 const ClassInfo info =
-                    dataService->loadClassInfo(classroom.id);
+                    classService->classInfo(classroom.id);
                 if (info.intensiveTimes.isEmpty())
                 {
                     continue;
@@ -2504,7 +2538,7 @@ void ScheduleImportReviewDialog::updateReviewState()
 
                 ScheduleImportClassCandidate preserved;
                 const Teacher teacher =
-                    dataService->getTeacher(info.teacherId);
+                    teacherService->teacher(info.teacherId);
                 preserved.teacherKr = teacher.teacherKr;
                 preserved.rooms = {teacher.roomNumber};
                 preserved.classGrade = info.classGrade;
@@ -2568,12 +2602,12 @@ void ScheduleImportReviewDialog::updateReviewState()
     }
 
     int cleared = 0;
-    if (dataService && !preservesAbsentIntensiveClasses)
+    if (classService && !preservesAbsentIntensiveClasses)
     {
-        for (const Classroom& classroom : dataService->getClasses())
+        for (const Classroom& classroom : classService->classes())
         {
             const ClassInfo info =
-                dataService->loadClassInfo(classroom.id);
+                classService->classInfo(classroom.id);
             const bool hasSelectedTimes =
                 m_request.kind == ScheduleImportKind::Intensive
                     ? !info.intensiveTimes.isEmpty()
@@ -2821,11 +2855,11 @@ void ScheduleImportReviewDialog::applyImport()
         return;
     }
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
+    ScheduleService* scheduleService =
+        openScheduleImportService(m_services);
     const auto summary =
-        dataService
-            ? dataService->importSchedule(plan)
+        scheduleService
+            ? scheduleService->importSchedule(plan)
             : Result<ScheduleImportSummary>(
                 std::unexpected(
                     tr("No Teacher Profile is open.")

@@ -1,21 +1,23 @@
 #include "sidebar_controller_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 int SidebarController::promptForClassToDelete() const
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* classes =
+        openClassService(m_services);
 
-    if (!ds)
+    if (!classes)
     {
         return -1;
     }
 
     QList<QPair<QString, int>> records;
 
-    for (const Classroom& classroom : ds->getClasses())
+    for (const Classroom& classroom : classes->classes())
     {
         if (classroom.id <= 0)
         {
@@ -45,17 +47,17 @@ int SidebarController::promptForClassToDelete() const
 
 int SidebarController::promptForTeacherToDelete() const
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds)
+    if (!teachers)
     {
         return -1;
     }
 
     QList<QPair<QString, int>> records;
 
-    for (const Teacher& teacher : ds->getAllTeachers())
+    for (const Teacher& teacher : teachers->teachers())
     {
         if (teacher.id <= 0)
         {
@@ -89,10 +91,12 @@ QString SidebarController::classDisplayName(
     const Classroom& classroom
     ) const
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* classes =
+        openClassService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds)
+    if (!classes || !teachers)
     {
         return classroom.name.trimmed().isEmpty()
             ? tr("Class %1").arg(classroom.id)
@@ -100,7 +104,7 @@ QString SidebarController::classDisplayName(
     }
 
     const ClassInfo classInfo =
-        ds->loadClassInfo(
+        classes->classInfo(
             classroom.id
             );
 
@@ -109,7 +113,7 @@ QString SidebarController::classDisplayName(
     if (classInfo.teacherId > 0)
     {
         teacher =
-            ds->getTeacher(
+            teachers->teacher(
                 classInfo.teacherId
                 );
     }
@@ -179,12 +183,12 @@ void SidebarController::updateActionStates()
         return;
     }
 
-    auto* ds =
-        m_services
-            ? m_services->dataService()
-            : nullptr;
+    auto* classes =
+        openClassService(m_services);
+    auto* teachers =
+        openTeacherService(m_services);
 
-    if (!ds || !ds->isOpen())
+    if (!classes || !teachers)
     {
         if (m_actions->importClasses)
         {
@@ -227,21 +231,21 @@ void SidebarController::updateActionStates()
     if (m_actions->exportClasses)
     {
         m_actions->exportClasses->setEnabled(
-            !ds->getClasses().isEmpty()
+            !classes->classes().isEmpty()
             );
     }
 
     if (m_actions->deleteClass)
     {
         m_actions->deleteClass->setEnabled(
-            !ds->getClasses().isEmpty()
+            !classes->classes().isEmpty()
             );
     }
 
     if (m_actions->deleteTeacher)
     {
         m_actions->deleteTeacher->setEnabled(
-            !ds->getAllTeachers().isEmpty()
+            !teachers->teachers().isEmpty()
             );
     }
 }

@@ -1,5 +1,4 @@
 #include "colorutils.h"
-#include "data/data_service.h"
 #include "app/services/feature_services.h"
 
 #include <algorithm>
@@ -281,45 +280,6 @@ QColor ColorUtils::getColor(
     const QColor& initialColor,
     QWidget* parent,
     const QString& title,
-    DataService* ds
-    )
-{
-    loadCustomColors(ds);
-
-    QColor startingColor =
-        initialColor;
-
-    if (!startingColor.isValid())
-    {
-        startingColor = QColor("#FFFFFF");
-    }
-
-    QColorDialog dialog(parent);
-
-    dialog.setWindowTitle(title);
-    dialog.setCurrentColor(startingColor);
-    dialog.setOption(
-        QColorDialog::DontUseNativeDialog,
-        true
-        );
-
-    const int result =
-        dialog.exec();
-
-    saveCustomColors(ds);
-
-    if (result != QDialog::Accepted)
-    {
-        return {};
-    }
-
-    return dialog.selectedColor();
-}
-
-QColor ColorUtils::getColor(
-    const QColor& initialColor,
-    QWidget* parent,
-    const QString& title,
     SettingsService* settingsService
     )
 {
@@ -339,64 +299,6 @@ QColor ColorUtils::getColor(
 // =====================================================
 // Load Custom Colors
 // =====================================================
-
-void ColorUtils::loadCustomColors(
-    DataService *ds
-    )
-{
-    QStringList colors =
-        defaultCustomColors();
-
-    if (ds)
-    {
-        colors =
-            normalizeCustomColors(
-                colorsFromSetting(
-                    ds->loadSetting(
-                        CustomColorsSettingKey,
-                        QString()
-                        )
-                    )
-                );
-    }
-
-    applyCustomColors(colors);
-}
-
-// =====================================================
-// Save Custom Colors
-// =====================================================
-
-void ColorUtils::saveCustomColors(
-    DataService *ds
-    )
-{
-    if (!ds)
-    {
-        return;
-    }
-
-    QStringList colors;
-
-    for (int i = 0;
-         i < CUSTOM_COLOR_COUNT;
-         ++i)
-    {
-        const QColor color =
-            QColorDialog::customColor(i);
-
-        colors.append(
-            color.isValid()
-                ? color.name(QColor::HexRgb)
-                : DefaultCustomColors[i]
-            );
-    }
-
-    ds->saveSetting(
-        CustomColorsSettingKey,
-        serializeCustomColors(colors)
-        );
-}
 
 void ColorUtils::loadCustomColors(SettingsService* settingsService)
 {

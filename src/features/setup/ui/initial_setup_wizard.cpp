@@ -1,8 +1,8 @@
 #include "initial_setup_wizard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 #include "domain/models/teacher.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/my_info/data/personal_details_repository.h"
@@ -148,7 +148,7 @@ public:
         connect(importButton, &QPushButton::clicked, this, [this]()
         {
             auto* setup = setupWizard(this);
-            if (!setup || !setup->dataService())
+            if (!setup || !setup->teacherService())
             {
                 return;
             }
@@ -161,7 +161,7 @@ public:
             }
 
             const Result<TeacherImportSummary> imported =
-                setup->dataService()->importTeachers(dialog.importPlan());
+                setup->teacherService()->importTeachers(dialog.importPlan());
             if (!imported)
             {
                 DialogServices::showWarning(
@@ -369,13 +369,13 @@ public:
     void initializePage() override
     {
         auto* setup = setupWizard(this);
-        if (!setup || !setup->dataService())
+        if (!setup || !setup->settingsService())
         {
             return;
         }
 
         const PersonalDetails details =
-            PersonalDetailsRepository(setup->dataService()).load();
+            PersonalDetailsRepository(setup->settingsService()).load();
         if (m_name->text().trimmed().isEmpty())
         {
             m_name->setText(details.name);
@@ -400,20 +400,20 @@ public:
         }
 
         auto* setup = setupWizard(this);
-        if (!setup || !setup->dataService())
+        if (!setup || !setup->settingsService())
         {
             return false;
         }
 
         PersonalDetails details =
-            PersonalDetailsRepository(setup->dataService()).load();
+            PersonalDetailsRepository(setup->settingsService()).load();
         details.name = m_name->text().trimmed();
         if (!m_signature.isEmpty())
         {
             details.signatureImage = m_signature;
         }
 
-        if (!PersonalDetailsRepository(setup->dataService()).save(details))
+        if (!PersonalDetailsRepository(setup->settingsService()).save(details))
         {
             DialogServices::showWarning(
                 this, tr("Initial Setup"),
@@ -434,8 +434,8 @@ public:
         {
             return InitialSetupWizard::CompletionPage;
         }
-        if (!setup->dataService()
-            || setup->dataService()->getAllTeachers().isEmpty())
+        if (!setup->teacherService()
+            || setup->teacherService()->teachers().isEmpty())
         {
             return InitialSetupWizard::TeacherEntryPage;
         }
@@ -557,8 +557,8 @@ public:
         if (currentFieldsEmpty())
         {
             auto* setup = setupWizard(this);
-            if (setup && setup->dataService()
-                && !setup->dataService()->getAllTeachers().isEmpty())
+            if (setup && setup->teacherService()
+                && !setup->teacherService()->teachers().isEmpty())
             {
                 return true;
             }
@@ -656,7 +656,7 @@ private:
         }
 
         auto* setup = setupWizard(this);
-        if (!setup || !setup->dataService())
+        if (!setup || !setup->teacherService())
         {
             return false;
         }
@@ -682,7 +682,7 @@ private:
         teacher.zoomId = m_zoomId->text().trimmed();
         teacher.zoomPassword = m_zoomPassword->text();
 
-        if (setup->dataService()->createTeacher(teacher) <= 0)
+        if (setup->teacherService()->create(teacher) <= 0)
         {
             DialogServices::showWarning(
                 this, tr("Teacher Information"),
@@ -794,7 +794,7 @@ public:
                 QColor(m_color),
                 this,
                 tr("Choose Class Color"),
-                setup ? setup->dataService() : nullptr);
+                setup ? setup->settingsService() : nullptr);
             if (!color.isValid())
             {
                 return;
@@ -814,12 +814,12 @@ public:
     {
         auto* setup = setupWizard(this);
         m_teacher->clear();
-        if (!setup || !setup->dataService())
+        if (!setup || !setup->teacherService())
         {
             return;
         }
 
-        const QList<Teacher> teachers = setup->dataService()->getAllTeachers();
+        const QList<Teacher> teachers = setup->teacherService()->teachers();
         if (teachers.size() > 1)
         {
             m_teacher->addItem(tr("Select a teacher..."), -1);
@@ -952,7 +952,7 @@ public:
         }
 
         auto* setup = setupWizard(this);
-        if (!setup || !setup->dataService())
+        if (!setup || !setup->classService())
         {
             return false;
         }
@@ -964,7 +964,7 @@ public:
         int classId = setup->createdClassId();
         if (classId <= 0)
         {
-            classId = setup->dataService()->createClass(QString());
+            classId = setup->classService()->create(QString());
             setup->setCreatedClassId(classId);
         }
         if (classId <= 0)
@@ -976,7 +976,7 @@ public:
         }
 
         info.classId = classId;
-        if (!setup->dataService()->saveClassInfo(info))
+        if (!setup->classService()->saveClassInfo(info))
         {
             DialogServices::showWarning(
                 this, tr("Create Class"),
@@ -1123,9 +1123,37 @@ ApplicationServices* InitialSetupWizard::services() const
     return m_services;
 }
 
-DataService* InitialSetupWizard::dataService() const
+SettingsService* InitialSetupWizard::settingsService() const
 {
-    return m_services ? m_services->dataService() : nullptr;
+    SettingsService* service =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+TeacherService* InitialSetupWizard::teacherService() const
+{
+    TeacherService* service =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
+}
+
+ClassService* InitialSetupWizard::classService() const
+{
+    ClassService* service =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    return service && service->isAvailable()
+        ? service
+        : nullptr;
 }
 
 bool InitialSetupWizard::wantsTeacherImport() const

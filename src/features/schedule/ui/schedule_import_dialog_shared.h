@@ -5,7 +5,7 @@
 #include <QString>
 
 class ApplicationServices;
-class DataService;
+class ScheduleService;
 
 struct ScheduleImportReviewRequest
 {
@@ -15,6 +15,6 @@ struct ScheduleImportReviewRequest
     bool updateProfileName = false;
 };
 
-[[nodiscard]] DataService* openScheduleImportDataService(
+[[nodiscard]] ScheduleService* openScheduleImportService(
     ApplicationServices* services
     );

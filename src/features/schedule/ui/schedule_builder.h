@@ -8,7 +8,7 @@
 #include <QStringList>
 #include <QTime>
 
-class DataService;
+class ClassService;
 
 enum class ScheduleEntryKind
 {
@@ -50,7 +50,7 @@ class ScheduleBuilder
 {
 public:
     explicit ScheduleBuilder(
-        DataService* dataService
+        ClassService* classService
         );
 
     ScheduleBuildResult build(
@@ -77,5 +77,5 @@ private:
         ) const;
 
 private:
-    DataService* m_dataService = nullptr;
+    ClassService* m_classService = nullptr;
 };

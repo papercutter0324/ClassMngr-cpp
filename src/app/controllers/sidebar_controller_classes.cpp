@@ -1,14 +1,16 @@
 #include "sidebar_controller_p.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 Classroom SidebarController::getClassById(int classId) const
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* classes =
+        openClassService(m_services);
 
-    return ds
-        ? ds->getClassById(classId)
+    return classes
+        ? classes->classroom(classId)
         : Classroom();
 }
 
@@ -27,10 +29,10 @@ Classroom SidebarController::getSelectedClass() const
 
 void SidebarController::addClass()
 {
-    auto* ds =
-        openDataService(m_services);
+    auto* classes =
+        openClassService(m_services);
 
-    if (!ds)
+    if (!classes)
     {
         return;
     }
@@ -41,12 +43,12 @@ void SidebarController::addClass()
     }
 
     int classId =
-        ds->createClass("");
+        classes->create(QString());
 
     refreshClassSidebar();
 
     Classroom classroom =
-        ds->getClassById(
+        classes->classroom(
             classId
             );
 
@@ -85,16 +87,16 @@ void SidebarController::deleteClass()
         }
     }
 
-    auto* ds =
-        openDataService(m_services);
+    auto* classes =
+        openClassService(m_services);
 
-    if (!ds)
+    if (!classes)
     {
         return;
     }
 
     const Classroom classroom =
-        ds->getClassById(
+        classes->classroom(
             classId
             );
 
@@ -113,7 +115,7 @@ void SidebarController::deleteClass()
     const int selectedClassId =
         m_sidebar->getSelectedClassId();
 
-    ds->deleteClass(
+    classes->remove(
         classroom.id
         );
 

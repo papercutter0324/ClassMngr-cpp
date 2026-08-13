@@ -1,36 +1,36 @@
 #include "core/application_services.h"
-#include "data/data_service.h"
+#include "app/services/feature_services.h"
 
-DataService* ApplicationServices::dataService() const
+TeacherService* ApplicationServices::teacherService() const
 {
     return nullptr;
 }
 
-bool DataService::isOpen() const
+bool FeatureService::isAvailable() const
 {
     return false;
 }
 
-QList<NativeEnglishTeacher> DataService::getNativeEnglishTeachers()
+QList<NativeEnglishTeacher> TeacherService::nativeEnglishTeachers() const
 {
     return {};
 }
 
-Status DataService::saveNativeEnglishTeacherDirectory(
+Status TeacherService::saveNativeEnglishTeacherDirectory(
     const QList<NativeEnglishTeacher>&,
-    const QList<int>&)
+    const QList<int>&) const
 {
     return {};
 }
 
-QList<GsTeamMember> DataService::getGsTeamMembers()
+QList<GsTeamMember> TeacherService::gsTeamMembers() const
 {
     return {};
 }
 
-Status DataService::saveGsTeamDirectory(
+Status TeacherService::saveGsTeamDirectory(
     const QList<GsTeamMember>&,
-    const QList<int>&)
+    const QList<int>&) const
 {
     return {};
 }

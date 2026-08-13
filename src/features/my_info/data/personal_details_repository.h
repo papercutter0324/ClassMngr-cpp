@@ -4,7 +4,6 @@
 #include <QString>
 #include <QVariant>
 
-class DataService;
 class SettingsService;
 
 struct PersonalDetails
@@ -20,7 +19,6 @@ struct PersonalDetails
 class PersonalDetailsRepository
 {
 public:
-    explicit PersonalDetailsRepository(DataService* dataService);
     explicit PersonalDetailsRepository(SettingsService* settingsService);
 
     PersonalDetails load() const;
@@ -32,7 +30,5 @@ public:
     void saveSetting(const QString& key, const QVariant& value) const;
 
 private:
-    DataService* m_dataService = nullptr;
     SettingsService* m_settingsService = nullptr;
-
 };

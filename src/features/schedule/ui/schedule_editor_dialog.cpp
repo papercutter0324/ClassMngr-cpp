@@ -5,9 +5,9 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "features/classes/config/class_info_config.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "data/data_service.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 #include "core/utils/colorutils.h"
 
@@ -88,7 +88,7 @@ void ScheduleEditorDialog::chooseClassColor()
             QColor(m_classColor),
             this,
             tr("Choose Class Color"),
-            m_services->dataService()
+            m_services->settingsService()
             );
 
     if (!color.isValid())
@@ -107,7 +107,7 @@ void ScheduleEditorDialog::chooseFontColor()
             QColor(m_fontColor),
             this,
             tr("Choose Font Color"),
-            m_services->dataService()
+            m_services->settingsService()
             );
 
     if (!color.isValid())
@@ -121,7 +121,12 @@ void ScheduleEditorDialog::chooseFontColor()
 
 void ScheduleEditorDialog::saveChanges()
 {
-    if (!m_services || !m_services->dataService())
+    auto* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+
+    if (!classService || !classService->isAvailable())
     {
         return;
     }
@@ -150,7 +155,7 @@ void ScheduleEditorDialog::saveChanges()
         info.essayBook.clear();
     }
 
-    if (!m_services->dataService()->saveClassInfo(info))
+    if (!classService->saveClassInfo(info))
     {
         DialogServices::showWarning(
             this,
@@ -323,7 +328,12 @@ void ScheduleEditorDialog::buildUi()
 
 void ScheduleEditorDialog::loadData()
 {
-    if (!m_services || !m_services->dataService())
+    auto* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+
+    if (!classService || !classService->isAvailable())
     {
         return;
     }
@@ -331,9 +341,7 @@ void ScheduleEditorDialog::loadData()
     m_loadingData = true;
 
     m_cachedInfo =
-        m_services
-            ->dataService()
-            ->loadClassInfo(m_classId);
+        classService->classInfo(m_classId);
 
     m_originalGrade =
         m_cachedInfo.classGrade;

@@ -457,10 +457,10 @@ void SubPrepPage::generateSubPrep()
     QList<CalendarEvent> calendarEvents;
     const QDate currentDate = QDate::currentDate();
 
-    if (auto* dataService = openDataService(m_services))
+    if (auto* calendarService = openCalendarService(m_services))
     {
         calendarEvents =
-            dataService->loadCalendarEventsInRange(
+            calendarService->eventsInRange(
                 QDate(1, 1, 1),
                 QDate(9999, 12, 31)
                 );

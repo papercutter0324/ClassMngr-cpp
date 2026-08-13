@@ -1,8 +1,8 @@
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -270,11 +270,14 @@ SubPrepPrintDialog::SubPrepPrintDialog(
     , m_services(services)
     , m_schedule(schedule)
 {
-    if (m_services && m_services->dataService())
+    SettingsService* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
+    if (settingsService && settingsService->isAvailable())
     {
         m_storedUserName =
-            m_services->dataService()
-                ->loadSetting(
+            settingsService->load(
                     QStringLiteral("myInfo/name"),
                     QString()
                     )
@@ -784,13 +787,17 @@ void SubPrepPrintDialog::acceptGeneration()
         createFolder()
         && m_storedUserName.isEmpty()
         && m_services
-        && m_services->dataService()
         )
     {
-        m_services->dataService()->saveSetting(
-            QStringLiteral("myInfo/name"),
-            m_nameEdit->text().trimmed()
-            );
+        SettingsService* settingsService =
+            m_services->settingsService();
+        if (settingsService && settingsService->isAvailable())
+        {
+            settingsService->save(
+                QStringLiteral("myInfo/name"),
+                m_nameEdit->text().trimmed()
+                );
+        }
     }
 
     accept();

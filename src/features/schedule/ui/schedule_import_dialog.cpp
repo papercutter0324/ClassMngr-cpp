@@ -1,4 +1,6 @@
 #include "schedule_import_dialog.h"
+
+#include "app/services/feature_services.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
@@ -693,12 +695,14 @@ void ScheduleImportDialog::prepareUserSelection()
     m_userCombo->clear();
     m_nameConfirmation->setChecked(false);
 
-    DataService* dataService =
-        openScheduleImportDataService(m_services);
+    SettingsService* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
     m_profileName =
-        dataService
-            ? dataService
-                ->loadSetting(
+        settingsService && settingsService->isAvailable()
+            ? settingsService
+                ->load(
                     QStringLiteral("myInfo/name"),
                     QString()
                     )

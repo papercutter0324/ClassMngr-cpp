@@ -34,6 +34,16 @@ public:
 
     [[nodiscard]] QString currentDatabasePath() const;
 
+    void saveDatabase();
+
+    [[nodiscard]] Status saveDatabaseAs(
+        const QString& destinationPath
+        );
+
+    [[nodiscard]] Status exportDatabaseAs(
+        const QString& destinationPath
+        );
+
     [[nodiscard]] DataService* dataService() const;
     [[nodiscard]] SettingsService* settingsService() const;
     [[nodiscard]] TeacherService* teacherService() const;

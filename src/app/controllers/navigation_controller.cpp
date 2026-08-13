@@ -1,9 +1,8 @@
 #include "navigation_controller.h"
 
+#include "app/services/feature_services.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
-
-#include "data/data_service.h"
 
 #include "features/classes/ui/classes_page.h"
 #include "features/campus/ui/campus_dashboard_page.h"
@@ -88,21 +87,18 @@ void NavigationController::handleTeacher(
     const NavigationData& data
     )
 {
-    if (
-        !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
-        )
+    auto* teachers =
+        m_services
+            ? m_services->teacherService()
+            : nullptr;
+
+    if (!teachers || !teachers->isAvailable())
     {
         return;
     }
 
     Teacher teacher =
-        m_services
-            ->dataService()
-            ->getTeacher(
-                data.teacherId
-                );
+        teachers->teacher(data.teacherId);
 
     if (teacher.id < 0)
     {
@@ -172,8 +168,7 @@ void NavigationController::handleNavigation(
         {
             if (
                 !m_services
-                || !m_services->dataService()
-                || !m_services->dataService()->isOpen()
+                || !m_services->teacherService()->isAvailable()
                 || !m_pages->confirmCurrentPageCanLeave()
                 )
             {
@@ -214,8 +209,7 @@ void NavigationController::handleNavigation(
             if (
                 evaluationName.trimmed().isEmpty()
                 || !m_services
-                || !m_services->dataService()
-                || !m_services->dataService()->isOpen()
+                || !m_services->classService()->isAvailable()
                 )
             {
                 return;
@@ -223,8 +217,8 @@ void NavigationController::handleNavigation(
 
             const Classroom classroom =
                 m_services
-                    ->dataService()
-                    ->getClassById(data.classId);
+                    ->classService()
+                    ->classroom(data.classId);
 
             if (
                 classroom.id <= 0
@@ -267,8 +261,7 @@ void NavigationController::handleNavigation(
         {
             if (
                 !m_services
-                || !m_services->dataService()
-                || !m_services->dataService()->isOpen()
+                || !m_services->classService()->isAvailable()
                 )
             {
                 return;
@@ -327,8 +320,7 @@ void NavigationController::handleNavigation(
         {
             if (
                 !m_services
-                || !m_services->dataService()
-                || !m_services->dataService()->isOpen()
+                || !m_services->speakingEvaluationService()->isAvailable()
                 || !m_pages->confirmCurrentPageCanLeave()
                 )
             {
@@ -405,8 +397,7 @@ void NavigationController::handleSubPrep(
 {
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->hasOpenDatabase()
         )
     {
         return;
@@ -459,8 +450,7 @@ void NavigationController::handleMyInfo(
 {
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->hasOpenDatabase()
         )
     {
         return;
@@ -537,8 +527,7 @@ void NavigationController::handleRosters(
 
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->rosterService()->isAvailable()
         || !m_pages->confirmCurrentPageCanLeave()
         )
     {
@@ -645,8 +634,7 @@ void NavigationController::handleRoster(
 {
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->classService()->isAvailable()
         || data.classId <= 0
         )
     {
@@ -682,8 +670,7 @@ void NavigationController::handleNotes(
 {
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->classService()->isAvailable()
         || data.classId <= 0
         )
     {
@@ -719,8 +706,7 @@ void NavigationController::handleClass(
 {
     if (
         !m_services
-        || !m_services->dataService()
-        || !m_services->dataService()->isOpen()
+        || !m_services->classService()->isAvailable()
         )
     {
         return;

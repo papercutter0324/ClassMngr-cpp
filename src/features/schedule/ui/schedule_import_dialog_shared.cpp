@@ -1,17 +1,17 @@
 #include "schedule_import_dialog_shared.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 
-DataService* openScheduleImportDataService(
+ScheduleService* openScheduleImportService(
     ApplicationServices* services
     )
 {
-    DataService* dataService =
+    ScheduleService* scheduleService =
         services
-            ? services->dataService()
+            ? services->scheduleService()
             : nullptr;
-    return dataService && dataService->isOpen()
-        ? dataService
+    return scheduleService && scheduleService->isAvailable()
+        ? scheduleService
         : nullptr;
 }

@@ -62,13 +62,14 @@ QStringList daysWithValues(
 }
 
 QList<RosterClassData> loadRosterClassData(
-    DataService* dataService,
+    ClassService* classService,
+    RosterService* rosterService,
     const QList<int>& classIds
     )
 {
     QList<RosterClassData> result;
 
-    if (!dataService)
+    if (!classService || !rosterService)
     {
         return result;
     }
@@ -77,11 +78,11 @@ QList<RosterClassData> loadRosterClassData(
     {
         RosterClassData data;
         data.classroom =
-            dataService->getClassById(classId);
+            classService->classroom(classId);
         data.info =
-            dataService->loadClassInfo(classId);
+            classService->classInfo(classId);
         data.roster =
-            dataService->loadRoster(classId);
+            rosterService->roster(classId);
 
         if (data.classroom.id > 0)
         {
@@ -102,16 +103,18 @@ Result loadRosterClassesForRequest(
         return failed(QObject::tr("No Teacher Profile is open."));
     }
 
-    DataService* dataService =
-        request.services->dataService();
+    ClassService* classService =
+        request.services->classService();
+    RosterService* rosterService =
+        request.services->rosterService();
 
-    if (!dataService)
+    if (!classService || !rosterService)
     {
         return failed(QObject::tr("Roster data is not available."));
     }
 
     const QList<Classroom> classes =
-        dataService->getClasses();
+        classService->classes();
     const QList<int> classIds =
         resolveClassIds(
             request.scope,
@@ -129,7 +132,8 @@ Result loadRosterClassesForRequest(
     {
         *rosterClasses =
             loadRosterClassData(
-                dataService,
+                classService,
+                rosterService,
                 classIds
                 );
     }

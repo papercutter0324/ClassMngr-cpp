@@ -22,7 +22,7 @@
       "name": "qt-linux",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_PREFIX_PATH": "/home/papercutter0324/Qt/6.11.1/gcc_64"
+        "CMAKE_PREFIX_PATH": "$env{QT_LINUX_PREFIX}"
       }
     },
     {

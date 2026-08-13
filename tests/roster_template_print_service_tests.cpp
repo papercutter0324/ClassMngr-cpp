@@ -1,7 +1,7 @@
 #include "features/roster/services/roster_template_print_service.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "data/data_service.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QtTest>
@@ -22,7 +22,7 @@
 namespace
 {
 bool g_hasOpenDatabase = false;
-bool g_hasDataService = false;
+bool g_hasFeatureServices = false;
 QList<Classroom> g_classes;
 QHash<int, Classroom> g_classesById;
 QHash<int, ClassInfo> g_classInfo;
@@ -30,8 +30,10 @@ QHash<int, Roster> g_rosters;
 
 alignas(ApplicationServices) unsigned char
     g_fakeApplicationServicesStorage[sizeof(ApplicationServices)];
-alignas(DataService) unsigned char
-    g_fakeDataServiceStorage[sizeof(DataService)];
+alignas(ClassService) unsigned char
+    g_fakeClassServiceStorage[sizeof(ClassService)];
+alignas(RosterService) unsigned char
+    g_fakeRosterServiceStorage[sizeof(RosterService)];
 
 ApplicationServices* fakeApplicationServices()
 {
@@ -40,17 +42,24 @@ ApplicationServices* fakeApplicationServices()
         );
 }
 
-DataService* fakeDataService()
+ClassService* fakeClassService()
 {
-    return reinterpret_cast<DataService*>(
-        g_fakeDataServiceStorage
+    return reinterpret_cast<ClassService*>(
+        g_fakeClassServiceStorage
+        );
+}
+
+RosterService* fakeRosterService()
+{
+    return reinterpret_cast<RosterService*>(
+        g_fakeRosterServiceStorage
         );
 }
 
 void resetServiceStubs()
 {
     g_hasOpenDatabase = false;
-    g_hasDataService = false;
+    g_hasFeatureServices = false;
     g_classes.clear();
     g_classesById.clear();
     g_classInfo.clear();
@@ -63,21 +72,28 @@ bool ApplicationServices::hasOpenDatabase() const
     return g_hasOpenDatabase;
 }
 
-DataService* ApplicationServices::dataService() const
+ClassService* ApplicationServices::classService() const
 {
-    return g_hasDataService
-        ? fakeDataService()
+    return g_hasFeatureServices
+        ? fakeClassService()
         : nullptr;
 }
 
-QList<Classroom> DataService::getClasses()
+RosterService* ApplicationServices::rosterService() const
+{
+    return g_hasFeatureServices
+        ? fakeRosterService()
+        : nullptr;
+}
+
+QList<Classroom> ClassService::classes() const
 {
     return g_classes;
 }
 
-Classroom DataService::getClassById(
+Classroom ClassService::classroom(
     int classId
-    )
+    ) const
 {
     for (const Classroom& classroom : std::as_const(g_classes))
     {
@@ -97,9 +113,9 @@ Classroom DataService::getClassById(
     return classroom;
 }
 
-ClassInfo DataService::loadClassInfo(
+ClassInfo ClassService::classInfo(
     int classId
-    )
+    ) const
 {
     if (g_classInfo.contains(classId))
     {
@@ -111,9 +127,9 @@ ClassInfo DataService::loadClassInfo(
     return info;
 }
 
-Roster DataService::loadRoster(
+Roster RosterService::roster(
     int classId
-    )
+    ) const
 {
     return g_rosters.value(classId);
 }
@@ -818,7 +834,7 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedClassScop
 {
     resetServiceStubs();
     g_hasOpenDatabase = true;
-    g_hasDataService = true;
+    g_hasFeatureServices = true;
 
     Classroom currentClass;
     currentClass.id = 10;
@@ -1435,7 +1451,7 @@ void RosterTemplatePrintServiceTests::requestSaveRostersPdfUsesSelectedTemplate(
 {
     resetServiceStubs();
     g_hasOpenDatabase = true;
-    g_hasDataService = true;
+    g_hasFeatureServices = true;
 
     const RosterTemplatePrintService::RosterClassData selectedClass =
         sampleRosterClass(
@@ -1503,7 +1519,7 @@ void RosterTemplatePrintServiceTests
 {
     resetServiceStubs();
     g_hasOpenDatabase = true;
-    g_hasDataService = true;
+    g_hasFeatureServices = true;
 
     Classroom testingClass;
     testingClass.id = 50;

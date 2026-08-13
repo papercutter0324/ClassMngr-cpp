@@ -1,6 +1,5 @@
 #include "personal_details_repository.h"
 
-#include "data/data_service.h"
 #include "app/services/feature_services.h"
 #include "signature_image_processor.h"
 
@@ -47,11 +46,6 @@ QVariant loadWithLegacyFallback(
     return defaultValue;
 }
 } // namespace
-
-PersonalDetailsRepository::PersonalDetailsRepository(DataService* dataService)
-    : m_dataService(dataService)
-{
-}
 
 PersonalDetailsRepository::PersonalDetailsRepository(SettingsService* settingsService)
     : m_settingsService(settingsService)
@@ -134,8 +128,8 @@ void PersonalDetailsRepository::saveCampus(const QString& campus) const
 
 bool PersonalDetailsRepository::isAvailable() const
 {
-    return (m_dataService && m_dataService->isOpen())
-        || (m_settingsService && m_settingsService->isAvailable());
+    return m_settingsService
+        && m_settingsService->isAvailable();
 }
 
 QVariant PersonalDetailsRepository::loadSetting(
@@ -145,9 +139,7 @@ QVariant PersonalDetailsRepository::loadSetting(
 {
     return m_settingsService
         ? m_settingsService->load(key, defaultValue)
-        : m_dataService
-            ? m_dataService->loadSetting(key, defaultValue)
-            : defaultValue;
+        : defaultValue;
 }
 
 void PersonalDetailsRepository::saveSetting(
@@ -156,7 +148,7 @@ void PersonalDetailsRepository::saveSetting(
     ) const
 {
     if (m_settingsService)
+    {
         m_settingsService->save(key, value);
-    else if (m_dataService)
-        m_dataService->saveSetting(key, value);
+    }
 }

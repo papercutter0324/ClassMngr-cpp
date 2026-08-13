@@ -6,10 +6,11 @@
 #include <QList>
 #include <QString>
 
-class DataService;
+class ClassService;
 class QComboBox;
 class QLabel;
 class QPushButton;
+class TeacherService;
 
 class ClassImportDialog : public DialogShell
 {
@@ -17,7 +18,8 @@ class ClassImportDialog : public DialogShell
 
 public:
     explicit ClassImportDialog(
-        DataService* dataService,
+        ClassService* classService,
+        TeacherService* teacherService,
         const ClassTransferPackage& package,
         const ClassImportPreview& preview,
         QWidget* parent = nullptr
@@ -40,7 +42,6 @@ private:
 
     void updateImportEnabled();
 
-    DataService* m_dataService = nullptr;
     ClassTransferPackage m_package;
     QList<ClassRow> m_classRows;
     QList<TeacherRow> m_teacherRows;

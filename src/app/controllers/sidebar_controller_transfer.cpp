@@ -1,6 +1,8 @@
 #include "sidebar_controller_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "app/services/feature_services.h"
+
 using namespace SidebarControllerPrivate;
 
 #include "core/utils/file_name_utils.h"
@@ -17,11 +19,10 @@ namespace
 const QString JsonSuffix = QStringLiteral(".json");
 
 QString packageDirectory(
-    DataService* dataService
+    const QString& databasePath
     )
 {
-    const QFileInfo databaseInfo(
-        dataService ? dataService->currentDatabasePath() : QString());
+    const QFileInfo databaseInfo(databasePath);
 
     return databaseInfo.absolutePath();
 }
@@ -42,9 +43,10 @@ QString normalizedJsonPath(
 
 void SidebarController::exportClasses()
 {
-    auto* dataService = openDataService(m_services);
+    auto* classes = openClassService(m_services);
+    auto* teachers = openTeacherService(m_services);
 
-    if (!dataService || !m_pages || !m_sidebar)
+    if (!classes || !teachers || !m_pages || !m_sidebar)
     {
         return;
     }
@@ -55,7 +57,8 @@ void SidebarController::exportClasses()
     }
 
     ClassExportDialog dialog(
-        dataService,
+        classes,
+        teachers,
         m_sidebar
         );
 
@@ -75,9 +78,9 @@ void SidebarController::exportClass(
     int classId
     )
 {
-    auto* dataService = openDataService(m_services);
+    auto* classes = openClassService(m_services);
 
-    if (!dataService || !m_pages || !m_sidebar || classId <= 0)
+    if (!classes || !m_pages || !m_sidebar || classId <= 0)
     {
         return;
     }
@@ -87,7 +90,7 @@ void SidebarController::exportClass(
         return;
     }
 
-    const Classroom classroom = dataService->getClassById(classId);
+    const Classroom classroom = classes->classroom(classId);
 
     if (classroom.id <= 0)
     {
@@ -107,9 +110,9 @@ void SidebarController::saveClassExport(
     const QString& dialogTitle
     )
 {
-    auto* dataService = openDataService(m_services);
+    auto* classes = openClassService(m_services);
 
-    if (!dataService || !m_sidebar || classIds.isEmpty())
+    if (!classes || !m_sidebar || classIds.isEmpty())
     {
         return;
     }
@@ -120,7 +123,8 @@ void SidebarController::saveClassExport(
                 .parent = m_sidebar,
                 .title = dialogTitle,
                 .purpose = FileDialogPurpose::ClassTransfer,
-                .initialDirectory = packageDirectory(dataService),
+                .initialDirectory = packageDirectory(
+                    m_services->currentDatabasePath()),
                 .suggestedFileName =
                     FileNameUtils::filesystemSafeJsonFileName(
                         suggestedBaseName,
@@ -137,7 +141,7 @@ void SidebarController::saveClassExport(
     }
 
     const auto package =
-        dataService->buildClassTransferPackage(classIds);
+        classes->buildTransferPackage(classIds);
 
     if (!package)
     {
@@ -168,9 +172,10 @@ void SidebarController::saveClassExport(
 
 void SidebarController::importClasses()
 {
-    auto* dataService = openDataService(m_services);
+    auto* classes = openClassService(m_services);
+    auto* teachers = openTeacherService(m_services);
 
-    if (!dataService || !m_pages || !m_sidebar)
+    if (!classes || !teachers || !m_pages || !m_sidebar)
     {
         return;
     }
@@ -186,7 +191,8 @@ void SidebarController::importClasses()
                 .parent = m_sidebar,
                 .title = tr("Import Classes"),
                 .purpose = FileDialogPurpose::ClassTransfer,
-                .initialDirectory = packageDirectory(dataService),
+                .initialDirectory = packageDirectory(
+                    m_services->currentDatabasePath()),
                 .nameFilters = {tr("JSON Files (*.json)")}
             }
             );
@@ -205,7 +211,7 @@ void SidebarController::importClasses()
         return;
     }
 
-    const auto preview = dataService->previewClassImport(*package);
+    const auto preview = classes->previewImport(*package);
 
     if (!preview)
     {
@@ -215,7 +221,7 @@ void SidebarController::importClasses()
     }
 
     ClassImportDialog dialog(
-        dataService, *package, *preview, m_sidebar);
+        classes, teachers, *package, *preview, m_sidebar);
 
     if (dialog.exec() != QDialog::Accepted)
     {
@@ -224,7 +230,7 @@ void SidebarController::importClasses()
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
     const int selectedClassId = m_sidebar->getSelectedClassId();
-    const auto summary = dataService->importClasses(
+    const auto summary = classes->importClasses(
         *package, dialog.importPlan());
 
     if (!summary)

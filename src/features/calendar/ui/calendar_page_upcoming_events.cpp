@@ -1,11 +1,11 @@
 #include "calendar_page.h"
 
+#include "app/services/feature_services.h"
 #include "calendar_event_cache.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/resource_paths.h"
-#include "data/data_service.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/calendar_settings_keys.h"
@@ -98,17 +98,17 @@ int upcomingEventRowHeight(
         );
 }
 
-DataService* openDataService(
+SettingsService* openSettingsService(
     ApplicationServices* services
     )
 {
-    auto* dataService =
+    auto* settingsService =
         services
-            ? services->dataService()
+            ? services->settingsService()
             : nullptr;
 
-    return dataService && dataService->isOpen()
-        ? dataService
+    return settingsService && settingsService->isAvailable()
+        ? settingsService
         : nullptr;
 }
 
@@ -770,14 +770,14 @@ CalendarPage::calendarEventDisplayOptions() const
     options.activeTypes =
         activeCalendarEventTypes();
 
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (dataService)
+    if (settingsService)
     {
         options.showAllCampuses =
             settingToBool(
-                dataService->loadSetting(
+                settingsService->load(
                     CalendarSettingsKeys::ShowEventsAtAllCampuses,
                     false
                     ),
@@ -785,7 +785,7 @@ CalendarPage::calendarEventDisplayOptions() const
                 );
         options.hideStartOfTermEvents =
             settingToBool(
-                dataService->loadSetting(
+                settingsService->load(
                     CalendarSettingsKeys::HideStartOfTermEvents,
                     false
                     ),
@@ -793,7 +793,7 @@ CalendarPage::calendarEventDisplayOptions() const
                 );
         options.use24HourTime =
             settingToBool(
-                dataService->loadSetting(
+                settingsService->load(
                     QStringLiteral("schedule_use_24h"),
                     QStringLiteral("false")
                     ),
@@ -801,8 +801,8 @@ CalendarPage::calendarEventDisplayOptions() const
                 );
 
         const QString currentName =
-            dataService
-                ->loadSetting(
+            settingsService
+                ->load(
                     QStringLiteral("myInfo/campus"),
                     QString()
                     )
@@ -882,14 +882,14 @@ QColor CalendarPage::calendarEventTypeColor(
     const QString normalized =
         normalizedCalendarEventType(eventType);
 
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (dataService)
+    if (settingsService)
     {
         const QColor storedColor(
-            dataService
-                ->loadSetting(
+            settingsService
+                ->load(
                     calendarEventTypeColorSettingKey(normalized),
                     QString()
                     )
@@ -914,15 +914,15 @@ void CalendarPage::saveCalendarEventTypeColor(
         return;
     }
 
-    auto* dataService =
-        openDataService(m_services);
+    auto* settingsService =
+        openSettingsService(m_services);
 
-    if (!dataService)
+    if (!settingsService)
     {
         return;
     }
 
-    dataService->saveSetting(
+    settingsService->save(
         calendarEventTypeColorSettingKey(eventType),
         color.name(QColor::HexRgb)
         );

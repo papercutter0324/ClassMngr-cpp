@@ -1,9 +1,9 @@
 #include "rosters_page.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
@@ -63,17 +63,24 @@ ClassTabNavigation::ScheduleSource scheduleSourceForMode(
 }
 
 QString sidebarClassDisplayName(
-    DataService* dataService,
+    ClassService* classService,
+    TeacherService* teacherService,
     int classId
     )
 {
-    if (!dataService || !dataService->isOpen() || classId <= 0)
+    if (
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
+        || classId <= 0
+        )
     {
         return {};
     }
 
     const ClassInfo classInfo =
-        dataService->loadClassInfo(
+        classService->classInfo(
             classId
             );
 
@@ -82,7 +89,7 @@ QString sidebarClassDisplayName(
     if (classInfo.teacherId > 0)
     {
         teacher =
-            dataService->getTeacher(
+            teacherService->teacher(
                 classInfo.teacherId
                 );
     }
@@ -118,12 +125,16 @@ void RostersPage::loadRosters(
     int selectedClassId
     )
 {
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
+            : nullptr;
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
             : nullptr;
 
-    if (!dataService || !dataService->isOpen())
+    if (!classService || !classService->isAvailable())
     {
         m_rosterClasses.clear();
         m_currentClassroom = {};
@@ -135,15 +146,15 @@ void RostersPage::loadRosters(
     }
 
     m_rosterClasses =
-        dataService->getClasses();
+        classService->classes();
 
     setScheduleSource(
         scheduleSourceForMode(
-            ScheduleDisplayModePreferences::load(dataService)
+            ScheduleDisplayModePreferences::load(settingsService)
             )
         );
     setVisibilityScope(
-        ClassNavigationPreferences::load(dataService)
+        ClassNavigationPreferences::load(settingsService)
         );
 
     int classId =
@@ -414,13 +425,22 @@ void RostersPage::rebuildRosterTabs(
 
     m_rosterTabs = nullptr;
 
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
+            : nullptr;
+    auto* teacherService =
+        m_services
+            ? m_services->teacherService()
             : nullptr;
     QList<ClassTabNavigation::ClassEntry> entries;
 
-    if (dataService)
+    if (
+        classService
+        && classService->isAvailable()
+        && teacherService
+        && teacherService->isAvailable()
+        )
     {
         for (const Classroom& classroom : std::as_const(m_rosterClasses))
         {
@@ -430,7 +450,7 @@ void RostersPage::rebuildRosterTabs(
             }
 
             const ClassInfo info =
-                dataService->loadClassInfo(
+                classService->classInfo(
                     classroom.id
                     );
             Teacher teacher;
@@ -438,7 +458,7 @@ void RostersPage::rebuildRosterTabs(
             if (info.teacherId > 0)
             {
                 teacher =
-                    dataService->getTeacher(
+                    teacherService->teacher(
                         info.teacherId
                         );
             }
@@ -756,7 +776,7 @@ void RostersPage::openNavigationSettings()
 
     const ClassesNavigationSettingsValues values = dialog.values();
     ClassNavigationPreferences::save(
-        m_services ? m_services->dataService() : nullptr,
+        m_services ? m_services->settingsService() : nullptr,
         values.visibilityScope
         );
     setVisibilityScope(values.visibilityScope);
@@ -1065,9 +1085,8 @@ void RostersPage::updateHeaderText()
 
     const QString sidebarName =
         sidebarClassDisplayName(
-            m_services
-                ? m_services->dataService()
-                : nullptr,
+            m_services ? m_services->classService() : nullptr,
+            m_services ? m_services->teacherService() : nullptr,
             m_currentClassroom.id
             );
 

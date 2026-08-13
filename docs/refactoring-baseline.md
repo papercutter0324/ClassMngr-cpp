@@ -6,8 +6,9 @@ performance gates.
 
 ## Reproducing a baseline
 
-Run the recorder from a clean checkout. It configures the selected preset,
-performs a clean build, runs the complete CTest suite, and writes a JSON report.
+Run the recorder from a clean checkout. It runs a fresh configuration for the
+selected preset, performs a clean build, runs the complete CTest suite, and
+writes a JSON report.
 
 Windows x64:
 
@@ -22,6 +23,7 @@ python scripts/record_refactoring_baseline.py `
 Linux x64:
 
 ```bash
+export QT_LINUX_PREFIX="$HOME/Qt/6.11.1/gcc_64"
 python scripts/record_refactoring_baseline.py \
   --configure-preset linux-gcc-debug \
   --build-dir build/linux-gcc-debug \
@@ -45,7 +47,15 @@ CTest totals; and how often production source files appear in the compilation
 database. The last measurement will show whether later target work actually
 stops tests from recompiling production sources. It also fingerprints the source
 tree before and afterward and rejects a run if HEAD or source content changes
-while it is in progress.
+while it is in progress. Each test is limited to 120 seconds by default so a
+stuck UI test cannot consume the entire measurement job; use the same
+`--test-timeout` value for comparisons.
+
+The manually dispatched `Refactoring baseline` workflow runs the same command
+on Windows, Linux, and macOS and uploads the JSON report, JUnit report, and CTest
+logs for each platform. It is deliberately not a pull-request gate: the clean
+matrix is relatively expensive, and recorded failures are baseline evidence
+rather than an invitation to hide an existing failure.
 
 ## Characterization coverage
 
@@ -71,7 +81,8 @@ down the exact behavior being moved.
 
 | Platform | Commit | Configure | Clean build | Tests | Application size | Report |
 | --- | --- | ---: | ---: | --- | ---: | --- |
-| Windows 11 x64 Debug | `3a0ae33` | 7.803 s | 120.854 s | 48/49 passed | 89,211,392 bytes | `artifacts/baseline/windows-x64-debug.json` |
+| Windows 11 x64 Debug (pre-target refactor) | `3a0ae33` | 7.803 s | 120.854 s | 48/49 passed | 89,211,392 bytes | `artifacts/baseline/windows-x64-debug.json` |
+| Windows 11 x64 Debug (current local snapshot) | `5a3c128` | 64.775 s | 169.845 s | 53/53 passed in 88.716 s | 89,556,480 bytes | `artifacts/baseline/windows-x64-debug-current.json` |
 | Linux x64 Debug | Pending | Pending | Pending | Pending | Pending | `artifacts/baseline/linux-gcc-debug.json` |
 | macOS universal Debug | Pending | Pending | Pending | Pending | Pending | `artifacts/baseline/macos-clang-debug.json` |
 
@@ -87,6 +98,14 @@ with the offscreen platform plugin, the settings button is 26 px high and the
 weekend pill is 25 px high. This assertion comes from the concurrent tab-bar
 height work in `3a0ae33`; it is recorded here and is not hidden or counted as a
 Plan 1 regression.
+
+The current Windows snapshot used the same local CMake, Qt, Python, and job
+count at HEAD `5a3c128`, with the Phase 1 workflow, recorder, and focused
+characterization corrections present in the working tree. Its source
+fingerprint was unchanged throughout the run. The full 53-test suite passed.
+Visual Studio generators do not emit `compile_commands.json`, so the production
+compile-entry measurement is unavailable for this Windows row; the Linux and
+macOS Ninja reports provide that metric.
 
 ## Duplication report
 

@@ -6,8 +6,8 @@
 #include <array>
 
 class AcademicCalendarProvider;
+class CalendarService;
 class CalendarEventImportService;
-class DataService;
 class QCheckBox;
 class QDateEdit;
 class QDialogButtonBox;
@@ -16,6 +16,7 @@ class QLineEdit;
 class QPushButton;
 class QSpinBox;
 class QTabWidget;
+class SettingsService;
 
 class CalendarSettingsDialog : public DialogShell
 {
@@ -24,7 +25,8 @@ class CalendarSettingsDialog : public DialogShell
 public:
     explicit CalendarSettingsDialog(
         AcademicCalendarProvider* provider,
-        DataService* dataService,
+        CalendarService* calendarService,
+        SettingsService* settingsService,
         int termYear,
         QWidget* parent = nullptr
         );
@@ -65,7 +67,8 @@ private:
     [[nodiscard]] QString termName(int termIndex) const;
 
     AcademicCalendarProvider* m_provider = nullptr;
-    DataService* m_dataService = nullptr;
+    CalendarService* m_calendarService = nullptr;
+    SettingsService* m_settingsService = nullptr;
     CalendarEventImportService* m_importService = nullptr;
     int m_termYear = AcademicCalendarSchedule::FirstTermYear;
     bool m_refreshing = false;

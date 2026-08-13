@@ -2,7 +2,7 @@
 
 #include <QObject>
 
-class DataService;
+class CalendarService;
 class QNetworkAccessManager;
 class QNetworkReply;
 
@@ -12,7 +12,7 @@ class CalendarEventImportService : public QObject
 
 public:
     explicit CalendarEventImportService(
-        DataService* dataService,
+        CalendarService* calendarService,
         QObject* parent = nullptr
         );
 
@@ -36,7 +36,7 @@ private:
         QNetworkReply* reply
         );
 
-    DataService* m_dataService = nullptr;
+    CalendarService* m_calendarService = nullptr;
     QNetworkAccessManager* m_network = nullptr;
     bool m_importing = false;
 };

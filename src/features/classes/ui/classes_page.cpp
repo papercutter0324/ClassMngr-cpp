@@ -1,9 +1,9 @@
 #include "classes_page.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/utils/sidebar_node_naming.h"
-#include "data/data_service.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
@@ -119,12 +119,16 @@ bool ClassesPage::openClass(
     ClassesSection section
     )
 {
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
+            : nullptr;
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
             : nullptr;
 
-    if (!dataService || !dataService->isOpen())
+    if (!classService || !classService->isAvailable())
     {
         m_classes.clear();
         m_currentClassId = -1;
@@ -137,11 +141,11 @@ bool ClassesPage::openClass(
 
     setScheduleSource(
         scheduleSourceForMode(
-            ScheduleDisplayModePreferences::load(dataService)
+            ScheduleDisplayModePreferences::load(settingsService)
             )
         );
     setVisibilityScope(
-        ClassNavigationPreferences::load(dataService)
+        ClassNavigationPreferences::load(settingsService)
         );
 
     if (!commitActiveEditor())
@@ -150,7 +154,7 @@ bool ClassesPage::openClass(
         return false;
     }
 
-    m_classes = dataService->getClasses();
+    m_classes = classService->classes();
 
     int selectedClassId =
         classId > 0
@@ -459,14 +463,23 @@ void ClassesPage::rebuildClassTabs(
 
     m_classTabs = nullptr;
 
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
+            : nullptr;
+    auto* teacherService =
+        m_services
+            ? m_services->teacherService()
             : nullptr;
 
     QList<ClassTabNavigation::ClassEntry> entries;
 
-    if (dataService && dataService->isOpen())
+    if (
+        classService
+        && classService->isAvailable()
+        && teacherService
+        && teacherService->isAvailable()
+        )
     {
         for (const Classroom& classroom : std::as_const(m_classes))
         {
@@ -476,12 +489,12 @@ void ClassesPage::rebuildClassTabs(
             }
 
             const ClassInfo info =
-                dataService->loadClassInfo(classroom.id);
+                classService->classInfo(classroom.id);
             Teacher teacher;
 
             if (info.teacherId > 0)
             {
-                teacher = dataService->getTeacher(info.teacherId);
+                teacher = teacherService->teacher(info.teacherId);
             }
 
             ClassTabNavigation::ClassEntry entry;
@@ -759,12 +772,12 @@ void ClassesPage::openNavigationSettings()
 
     const ClassesNavigationSettingsValues values =
         dialog.values();
-    auto* dataService =
+    auto* settingsService =
         m_services
-            ? m_services->dataService()
+            ? m_services->settingsService()
             : nullptr;
     ClassNavigationPreferences::save(
-        dataService,
+        settingsService,
         values.visibilityScope
         );
     setVisibilityScope(values.visibilityScope);
@@ -1063,14 +1076,20 @@ void ClassesPage::updateHeaderText()
     m_titleLabel->setText(tr("Classes"));
 
     const Classroom classroom = classroomById(m_currentClassId);
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
+            : nullptr;
+    auto* teacherService =
+        m_services
+            ? m_services->teacherService()
             : nullptr;
 
     if (
-        !dataService
-        || !dataService->isOpen()
+        !classService
+        || !classService->isAvailable()
+        || !teacherService
+        || !teacherService->isAvailable()
         || classroom.id <= 0
         )
     {
@@ -1078,12 +1097,12 @@ void ClassesPage::updateHeaderText()
         return;
     }
 
-    const ClassInfo info = dataService->loadClassInfo(classroom.id);
+    const ClassInfo info = classService->classInfo(classroom.id);
     Teacher teacher;
 
     if (info.teacherId > 0)
     {
-        teacher = dataService->getTeacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId);
     }
 
     const QString displayName =
@@ -1111,14 +1130,14 @@ void ClassesPage::handleClassInfoSaved(
     int classId
     )
 {
-    auto* dataService =
+    auto* classService =
         m_services
-            ? m_services->dataService()
+            ? m_services->classService()
             : nullptr;
 
-    if (dataService && dataService->isOpen())
+    if (classService && classService->isAvailable())
     {
-        m_classes = dataService->getClasses();
+        m_classes = classService->classes();
         rebuildClassTabs(classId);
         restoreSelections();
         updateHeaderText();
