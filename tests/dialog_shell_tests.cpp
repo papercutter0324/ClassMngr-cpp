@@ -1,5 +1,8 @@
 #include "core/settingsmanager.h"
+#include "features/calendar/ui/calendar_event_dialog.h"
 #include "features/calendar/ui/calendar_settings_dialog.h"
+#include "features/roster/ui/roster_print_dialog.h"
+#include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
@@ -7,7 +10,11 @@
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "features/sub_prep/ui/sub_prep_print_dialog.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+#include "ui/shared/dialogs/update_dialog.h"
+#include "ui/shared/printing/pdf_print_dialog.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QDialogButtonBox>
@@ -21,13 +28,20 @@
 #include <type_traits>
 
 static_assert(std::is_base_of_v<DialogShell, CalendarSettingsDialog>);
+static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
+static_assert(std::is_base_of_v<DialogShell, ScheduleEditorDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportReviewDialog>);
 static_assert(std::is_base_of_v<DialogShell, SchedulePrintDialog>);
 static_assert(std::is_base_of_v<DialogShell, TestingAssignmentDialog>);
+static_assert(std::is_base_of_v<DialogShell, RosterPrintDialog>);
+static_assert(std::is_base_of_v<DialogShell, SubPrepPrintDialog>);
+static_assert(std::is_base_of_v<DialogShell, PdfPrintDialog>);
+static_assert(std::is_base_of_v<DialogShell, UpdateDialog>);
 static_assert(std::is_base_of_v<DialogShell, SpeakingEvalAiBatchDialog>);
 static_assert(std::is_base_of_v<DialogShell, SpeakingEvalBatchExportDialog>);
 static_assert(std::is_base_of_v<DialogShell, SpeakingEvalNotesDialog>);
+static_assert(std::is_base_of_v<DialogShell, SpeakingEvalReportDialog>);
 
 class AcceptTrackingDialogShell final : public DialogShell
 {

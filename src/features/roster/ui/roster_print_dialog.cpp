@@ -7,6 +7,7 @@
 #include "ui/shared/widgets/marquee_item_delegate.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
@@ -16,6 +17,7 @@
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDialogButtonBox>
 #include <QEvent>
 #include <QFileInfo>
 #include <QFrame>
@@ -86,7 +88,7 @@ RosterPrintDialog::RosterPrintDialog(
     QWidget* parent,
     bool currentClassOnly
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("rosterPrint"), parent)
     , m_services(services)
     , m_currentClassId(currentClassId)
     , m_defaultScope(defaultScope)
@@ -743,9 +745,7 @@ void RosterPrintDialog::buildUi()
     resize(DialogWidth, DialogExpandedHeight);
 
     auto* dialogLayout =
-        new QVBoxLayout(this);
-    dialogLayout->setContentsMargins(0, 0, 0, 0);
-    dialogLayout->setSpacing(0);
+        contentLayout();
 
     m_contentScrollArea = new QScrollArea(this);
     m_contentScrollArea->setObjectName(QStringLiteral("printRosterContentScrollArea"));
@@ -1006,27 +1006,13 @@ void RosterPrintDialog::buildUi()
         &RosterPrintDialog::updateExtraInfoColumns
         );
 
-    auto* buttonLayout =
-        new QHBoxLayout();
-    buttonLayout->setContentsMargins(
-        0,
-        0,
-        0,
-        0
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
+    auto* outputButton = buttons->addButton(
+        m_selectedAction == Action::Print
+            ? tr("Print")
+            : tr("Save As..."),
+        QDialogButtonBox::ActionRole
         );
-
-    auto* cancelButton =
-        new TextFitPushButton(
-            tr("Cancel"),
-            this
-            );
-    auto* outputButton =
-        new TextFitPushButton(
-            m_selectedAction == Action::Print
-                ? tr("Print")
-                : tr("Save As..."),
-            this
-            );
     outputButton->setObjectName(
         m_selectedAction == Action::Print
             ? QStringLiteral("rosterPrintButton")
@@ -1034,13 +1020,8 @@ void RosterPrintDialog::buildUi()
         );
     outputButton->setDefault(true);
 
-    buttonLayout->addWidget(cancelButton);
-    buttonLayout->addStretch(1);
-    buttonLayout->addWidget(outputButton);
-
     m_contentLayout->addWidget(templateGroupBox, 1);
     m_contentLayout->addWidget(scopeGroupBox);
-    m_contentLayout->addLayout(buttonLayout);
 
     connect(
         m_templateCombo,
@@ -1070,13 +1051,6 @@ void RosterPrintDialog::buildUi()
         m_selectedAction == Action::Print
             ? &RosterPrintDialog::acceptPrint
             : &RosterPrintDialog::chooseSavePath
-        );
-
-    connect(
-        cancelButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::reject
         );
 
     m_baseMinimumWidth = minimumWidth();
@@ -1377,4 +1351,9 @@ void RosterPrintDialog::retranslateUi()
     }
 
     updatePreview();
+}
+
+void RosterPrintDialog::retranslateDialog()
+{
+    retranslateUi();
 }

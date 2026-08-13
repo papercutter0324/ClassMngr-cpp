@@ -1,8 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class QDateEdit;
 class QDialogButtonBox;
@@ -26,7 +25,7 @@ enum class CalendarEventSeriesEditScope
     ThisAndFollowingEvents
 };
 
-class CalendarEventDialog : public QDialog
+class CalendarEventDialog : public DialogShell
 {
     Q_OBJECT
 

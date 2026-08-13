@@ -1,8 +1,8 @@
 #pragma once
 
+#include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
-#include <QDialog>
 #include <QList>
 #include <QPageLayout>
 #include <QPageSize>
@@ -35,7 +35,7 @@ using RenderFunction =
     std::function<PdfPrintService::Result(QPrinter&, const RenderOptions&)>;
 }
 
-class PdfPrintDialog : public QDialog
+class PdfPrintDialog : public DialogShell
 {
     Q_OBJECT
 

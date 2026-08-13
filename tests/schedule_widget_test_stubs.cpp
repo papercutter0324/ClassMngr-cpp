@@ -1221,7 +1221,7 @@ ScheduleEditorDialog::ScheduleEditorDialog(
     int classId,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
     , m_classId(classId)
 {

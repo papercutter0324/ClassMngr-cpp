@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
@@ -12,6 +13,7 @@
 
 #include <QCheckBox>
 #include <QDir>
+#include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -264,7 +266,7 @@ SubPrepPrintDialog::SubPrepPrintDialog(
     const QDate& referenceDate,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("subPrepPrint"), parent)
     , m_services(services)
     , m_schedule(schedule)
 {
@@ -313,8 +315,7 @@ void SubPrepPrintDialog::buildUi()
     setWindowTitle(tr("Generate Sub Prep"));
     setMinimumWidth(560);
 
-    auto* rootLayout = new QVBoxLayout(this);
-    rootLayout->setSpacing(12);
+    auto* rootLayout = contentLayout();
 
     auto* daysGroup = new QGroupBox(tr("Days to Include"), this);
     daysGroup->setObjectName(QStringLiteral("subPrepDaysGroup"));
@@ -501,16 +502,16 @@ void SubPrepPrintDialog::buildUi()
         );
     rootLayout->addWidget(m_validationLabel);
 
-    auto* buttonLayout = new QHBoxLayout;
-    auto* cancelButton = new TextFitPushButton(tr("Cancel"), this);
-    cancelButton->setObjectName(QStringLiteral("subPrepPrintCancelButton"));
-    m_okButton = new TextFitPushButton(tr("OK"), this);
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
+    buttons->button(QDialogButtonBox::Cancel)->setObjectName(
+        QStringLiteral("subPrepPrintCancelButton")
+        );
+    m_okButton = buttons->addButton(
+        tr("OK"),
+        QDialogButtonBox::ActionRole
+        );
     m_okButton->setObjectName(QStringLiteral("subPrepGenerateOkButton"));
     m_okButton->setDefault(true);
-    buttonLayout->addWidget(cancelButton);
-    buttonLayout->addStretch(1);
-    buttonLayout->addWidget(m_okButton);
-    rootLayout->addLayout(buttonLayout);
 
     connect(
         m_createFolderCheck,
@@ -554,7 +555,6 @@ void SubPrepPrintDialog::buildUi()
         this,
         &SubPrepPrintDialog::chooseTargetRoot
         );
-    connect(cancelButton, &QPushButton::clicked, this, &QDialog::reject);
     connect(
         m_okButton,
         &QPushButton::clicked,

@@ -23,7 +23,7 @@ UpdateDialog::UpdateDialog(
     QWidget* parent,
     const QString& skippedVersion
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("update"), parent)
     , m_service(service)
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
@@ -106,7 +106,7 @@ void UpdateDialog::closeEvent(
         m_downloader->pause();
     }
 
-    QDialog::closeEvent(event);
+    DialogShell::closeEvent(event);
 }
 
 void UpdateDialog::handleCheckStarted()
@@ -391,9 +391,7 @@ void UpdateDialog::buildUi()
     setMinimumWidth(560);
 
     auto* rootLayout =
-        new QVBoxLayout(this);
-    rootLayout->setContentsMargins(20, 20, 20, 20);
-    rootLayout->setSpacing(14);
+        contentLayout();
 
     auto* heading =
         new QLabel(

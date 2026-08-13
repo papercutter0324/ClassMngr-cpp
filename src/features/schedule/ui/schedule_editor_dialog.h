@@ -1,15 +1,14 @@
 #pragma once
 
 #include "domain/models/class_info.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class ApplicationServices;
 class ClickableColorPreview;
 class QComboBox;
 class QLineEdit;
 
-class ScheduleEditorDialog : public QDialog
+class ScheduleEditorDialog : public DialogShell
 {
     Q_OBJECT
 

@@ -2,8 +2,7 @@
 
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class QCloseEvent;
 class QFrame;
@@ -11,7 +10,7 @@ class QLabel;
 class QProgressBar;
 class QPushButton;
 
-class UpdateDialog : public QDialog
+class UpdateDialog : public DialogShell
 {
     Q_OBJECT
 

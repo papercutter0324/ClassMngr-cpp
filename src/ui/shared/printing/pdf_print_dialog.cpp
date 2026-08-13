@@ -19,7 +19,7 @@ PdfPrintDialog::PdfPrintDialog(
     std::optional<QPageSize::PageSizeId> preferredPageSize,
     bool lockPreferredPageSize
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("pdfPrint"), parent)
     , m_document(document)
     , m_documentPath(documentPath)
     , m_currentPageIndex(currentPageIndex)

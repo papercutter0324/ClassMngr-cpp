@@ -1,6 +1,7 @@
 #include "schedule_editor_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include "features/classes/config/class_info_config.h"
@@ -12,6 +13,7 @@
 
 #include <QComboBox>
 #include "ui/shared/widgets/no_wheel_combobox.h"
+#include <QDialogButtonBox>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -26,7 +28,7 @@ ScheduleEditorDialog::ScheduleEditorDialog(
     int classId,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("scheduleEditor"), parent)
     , m_services(services)
     , m_classId(classId)
 {
@@ -166,16 +168,7 @@ void ScheduleEditorDialog::saveChanges()
 void ScheduleEditorDialog::buildUi()
 {
     auto* mainLayout =
-        new QVBoxLayout(this);
-
-    mainLayout->setContentsMargins(
-        20,
-        20,
-        20,
-        20
-        );
-
-    mainLayout->setSpacing(16);
+        contentLayout();
 
     auto* title =
         new QLabel(
@@ -278,27 +271,12 @@ void ScheduleEditorDialog::buildUi()
     mainLayout->addLayout(form);
     mainLayout->addStretch();
 
-    auto* footerLayout =
-        new QHBoxLayout;
-
-    footerLayout->addStretch();
-
-    auto* cancelButton =
-        new TextFitPushButton(
-            tr("Cancel"),
-            this
-            );
-
-    auto* saveButton =
-        new TextFitPushButton(
-            tr("Save"),
-            this
-            );
-
-    footerLayout->addWidget(cancelButton);
-    footerLayout->addWidget(saveButton);
-
-    mainLayout->addLayout(footerLayout);
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
+    auto* saveButton = buttons->addButton(
+        tr("Save"),
+        QDialogButtonBox::ActionRole
+        );
+    saveButton->setDefault(true);
 
     connect(
         m_gradeCombo,
@@ -333,13 +311,6 @@ void ScheduleEditorDialog::buildUi()
         &ClickableColorPreview::clicked,
         this,
         &ScheduleEditorDialog::chooseFontColor
-        );
-
-    connect(
-        cancelButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::reject
         );
 
     connect(

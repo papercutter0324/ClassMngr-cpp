@@ -111,7 +111,7 @@ CalendarEventDialog::CalendarEventDialog(
     bool use24h,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("calendarEvent"), parent)
     , m_event(event)
     , m_existingEvent(existingEvent)
     , m_use24h(use24h)
@@ -316,18 +316,10 @@ void CalendarEventDialog::buildUi()
     setSizeGripEnabled(false);
 
     auto* mainLayout =
-        new QVBoxLayout(this);
+        contentLayout();
     mainLayout->setSizeConstraint(
         QLayout::SetFixedSize
         );
-
-    mainLayout->setContentsMargins(
-        20,
-        20,
-        20,
-        20
-        );
-    mainLayout->setSpacing(16);
 
     auto* title =
         new QLabel(
@@ -733,12 +725,10 @@ void CalendarEventDialog::buildUi()
 
     mainLayout->addLayout(eventTypeLayout);
 
-    m_buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Save
-            | QDialogButtonBox::Cancel,
-            this
-            );
+    m_buttons = addButtonBox(
+        QDialogButtonBox::Save
+        | QDialogButtonBox::Cancel
+        );
 
     if (m_existingEvent)
     {
@@ -755,18 +745,6 @@ void CalendarEventDialog::buildUi()
             );
     }
 
-    connect(
-        m_buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &CalendarEventDialog::accept
-        );
-    connect(
-        m_buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &CalendarEventDialog::reject
-        );
     connect(
         m_allDayCheck,
         &QCheckBox::toggled,
@@ -807,8 +785,6 @@ void CalendarEventDialog::buildUi()
             }
         }
         );
-
-    mainLayout->addWidget(m_buttons);
 }
 
 void CalendarEventDialog::loadEvent()

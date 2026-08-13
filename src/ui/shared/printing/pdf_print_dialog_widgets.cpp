@@ -69,14 +69,10 @@ void PdfPrintDialog::buildUi()
         );
 
     auto* rootLayout =
-        new QHBoxLayout(this);
-    rootLayout->setContentsMargins(
-        14,
-        14,
-        14,
-        14
-        );
+        new QHBoxLayout;
+    rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(14);
+    contentLayout()->addLayout(rootLayout, 1);
 
     auto* optionsPanel =
         new QFrame(this);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "features/roster/services/roster_template_print_service.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QList>
 #include <QStringList>
 
@@ -19,7 +19,7 @@ class QScrollArea;
 class QVBoxLayout;
 class QWidget;
 
-class RosterPrintDialog : public QDialog
+class RosterPrintDialog : public DialogShell
 {
     Q_OBJECT
 
@@ -49,6 +49,7 @@ public:
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
+    void retranslateDialog() override;
 
 private slots:
     void acceptPrint();

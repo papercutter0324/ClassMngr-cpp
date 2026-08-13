@@ -3,8 +3,7 @@
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class QComboBox;
 class QDate;
@@ -29,7 +28,7 @@ buildSpeakingEvalStudentReports(
     int sourceRow
     );
 
-class SpeakingEvalReportDialog : public QDialog
+class SpeakingEvalReportDialog : public DialogShell
 {
     Q_OBJECT
 

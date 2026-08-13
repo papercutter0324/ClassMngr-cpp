@@ -2,9 +2,9 @@
 
 #include "domain/models/calendar_event.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QDate>
-#include <QDialog>
 #include <QList>
 #include <QStringList>
 
@@ -15,7 +15,7 @@ class QLineEdit;
 class QPushButton;
 class QWidget;
 
-class SubPrepPrintDialog : public QDialog
+class SubPrepPrintDialog : public DialogShell
 {
     Q_OBJECT
 

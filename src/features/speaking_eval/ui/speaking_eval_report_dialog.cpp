@@ -7,6 +7,7 @@
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/state/option_state_keys.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QApplication>
@@ -15,6 +16,7 @@
 #include <QCoreApplication>
 #include <QDate>
 #include <QDesktopServices>
+#include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -141,18 +143,15 @@ void copyAiPromptAndOpenProvider(
     }
 }
 
-class SpeakingEvalAiPromptPreviewDialog final : public QDialog
+class SpeakingEvalAiPromptPreviewDialog final : public DialogShell
 {
 public:
     explicit SpeakingEvalAiPromptPreviewDialog(
         const QString& prompt,
         QWidget* parent = nullptr
         )
-        : QDialog(parent)
+        : DialogShell(QStringLiteral("speakingEvalAiPromptPreview"), parent)
     {
-        setObjectName(
-            QStringLiteral("speakingEvalAiPromptPreviewDialog")
-            );
         setWindowTitle(
             QCoreApplication::translate(
                 "SpeakingEvalReportDialog",
@@ -161,10 +160,7 @@ public:
             );
         resize(760, 660);
 
-        auto* layout =
-            new QVBoxLayout(this);
-        layout->setContentsMargins(18, 18, 18, 18);
-        layout->setSpacing(10);
+        auto* layout = contentLayout();
 
         auto* privacyLabel =
             new QLabel(
@@ -187,50 +183,32 @@ public:
         promptEdit->setReadOnly(true);
         layout->addWidget(promptEdit, 1);
 
-        auto* buttonLayout =
-            new QHBoxLayout;
-        auto* copyButton =
-            new TextFitPushButton(
-                QCoreApplication::translate(
-                    "SpeakingEvalReportDialog",
-                    "Copy Prompt"
-                    ),
-                this
-                );
+        auto* buttons = addButtonBox(QDialogButtonBox::Close);
+        auto* copyButton = buttons->addButton(
+            QCoreApplication::translate(
+                "SpeakingEvalReportDialog",
+                "Copy Prompt"
+                ),
+            QDialogButtonBox::ActionRole
+            );
         copyButton->setObjectName(
             QStringLiteral("speakingEvalAiPromptPreviewCopy")
             );
-        auto* copyOpenButton =
-            new TextFitPushButton(
-                QCoreApplication::translate(
-                    "SpeakingEvalReportDialog",
-                    "Copy Prompt and Open %1"
-                    )
-                    .arg(
-                        aiCommentProviderName(
-                            preferredAiCommentProvider()
-                            )
-                        ),
-                this
-                );
+        auto* copyOpenButton = buttons->addButton(
+            QCoreApplication::translate(
+                "SpeakingEvalReportDialog",
+                "Copy Prompt and Open %1"
+                )
+                .arg(
+                    aiCommentProviderName(
+                        preferredAiCommentProvider()
+                        )
+                    ),
+            QDialogButtonBox::ActionRole
+            );
         copyOpenButton->setObjectName(
             QStringLiteral("speakingEvalAiPromptPreviewCopyOpen")
             );
-        auto* closeButton =
-            new TextFitPushButton(
-                QCoreApplication::translate(
-                    "SpeakingEvalReportDialog",
-                    "Close"
-                    ),
-                this
-                );
-
-        buttonLayout->addWidget(copyButton);
-        buttonLayout->addWidget(copyOpenButton);
-        buttonLayout->addStretch();
-        buttonLayout->addWidget(closeButton);
-        layout->addLayout(buttonLayout);
-
         connect(
             copyButton,
             &QPushButton::clicked,
@@ -251,12 +229,6 @@ public:
                     prompt
                     );
             }
-            );
-        connect(
-            closeButton,
-            &QPushButton::clicked,
-            this,
-            &QDialog::accept
             );
     }
 };
@@ -483,18 +455,14 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     QWidget* parent,
     bool interactive
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("speakingEvalReport"), parent)
     , m_reports(reports)
     , m_interactive(interactive)
 {
     setWindowTitle(tr("Speaking Evaluation Reports"));
     resize(940, 900);
 
-    auto* layout =
-        new QVBoxLayout(this);
-
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(12);
+    auto* layout = contentLayout();
 
     auto* selectorLayout =
         new QHBoxLayout;
@@ -592,38 +560,22 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     scrollArea->setWidget(m_report);
     layout->addWidget(scrollArea, 1);
 
-    auto* buttonLayout =
-        new QHBoxLayout;
-
-    auto* printButton =
-        new TextFitPushButton(
-            tr("Print"),
-            this
-            );
+    auto* buttons = addButtonBox(QDialogButtonBox::Close);
+    auto* printButton = buttons->addButton(
+        tr("Print"),
+        QDialogButtonBox::ActionRole
+        );
     printButton->setObjectName(
         QStringLiteral("speakingEvalReportPrintButton")
         );
 
-    auto* saveAsPdfButton =
-        new TextFitPushButton(
-            tr("Save As PDF"),
-            this
-            );
+    auto* saveAsPdfButton = buttons->addButton(
+        tr("Save As PDF"),
+        QDialogButtonBox::ActionRole
+        );
     saveAsPdfButton->setObjectName(
         QStringLiteral("speakingEvalReportSaveAsPdfButton")
         );
-
-    auto* closeButton =
-        new TextFitPushButton(
-            tr("Close"),
-            this
-            );
-
-    buttonLayout->addWidget(printButton);
-    buttonLayout->addWidget(saveAsPdfButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(closeButton);
-    layout->addLayout(buttonLayout);
 
     for (int index = 0; index < m_reports.size(); ++index)
     {
@@ -772,13 +724,6 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
         this,
         &SpeakingEvalReportDialog::saveCurrentReportAsPdf
         );
-    connect(
-        closeButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::accept
-        );
-
     updateReport();
 }
 
