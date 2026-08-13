@@ -1,4 +1,10 @@
 #include "speaking_eval_batch_report_service.h"
+#include "speaking_eval_report_output_policy.h"
+#include "speaking_eval_report_output.h"
+#include "speaking_eval_report_data_assembler.h"
+#include "speaking_eval_report_asset_resolver.h"
+#include "speaking_eval_internal_pdf_renderer.h"
+#include "speaking_eval_powerpoint_automation.h"
 
 #include "core/resource_paths.h"
 #include "core/utils/file_name_utils.h"
@@ -7,11 +13,9 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
-#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
-#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -20,11 +24,9 @@
 #include <QPageSize>
 #include <QPainter>
 #include <QPdfWriter>
-#include <QProcess>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
-#include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTime>
@@ -37,7 +39,6 @@ namespace SpeakingEvalBatchReportService
 namespace
 {
 
-constexpr QSizeF ReportPageSizeInches(7.5, 10.833333);
 constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
 constexpr auto PowerPointCommentFontName = "Segoe UI Semibold";
 
@@ -206,56 +207,6 @@ private:
     bool m_cleanupPresentationDirectory = false;
 };
 
-QString safeFolderName(const QString& value, const QString& fallback)
-{
-    QString name = value.trimmed();
-    name.replace(
-        QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")),
-        QStringLiteral("-")
-        );
-    name = name.simplified();
-    return name.isEmpty() ? fallback : name;
-}
-
-QString shortDay(const QString& day)
-{
-    const QString normalized = day.trimmed().toLower();
-    if (normalized.startsWith(QStringLiteral("mon"))) return QStringLiteral("M");
-    if (normalized.startsWith(QStringLiteral("tue"))) return QStringLiteral("T");
-    if (normalized.startsWith(QStringLiteral("wed"))) return QStringLiteral("W");
-    if (normalized.startsWith(QStringLiteral("thu"))) return QStringLiteral("Th");
-    if (normalized.startsWith(QStringLiteral("fri"))) return QStringLiteral("F");
-    if (normalized.startsWith(QStringLiteral("sat"))) return QStringLiteral("Sa");
-    if (normalized.startsWith(QStringLiteral("sun"))) return QStringLiteral("Su");
-    return day.trimmed().left(2);
-}
-
-QString shortTime(const QString& value)
-{
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm")
-    };
-    for (const QString& format : formats)
-    {
-        const QTime time = QTime::fromString(value.trimmed(), format);
-        if (time.isValid())
-        {
-            QString result = time.toString(
-                time.minute() == 0
-                    ? QStringLiteral("hap")
-                    : QStringLiteral("h:mmap")
-                );
-            return result.toLower();
-        }
-    }
-    return value.trimmed().remove(QLatin1Char(' ')).toLower();
-}
-
 QString powerPointText(const QString& value)
 {
     // macOS input methods can supply Hangul as decomposed Jamo. PowerPoint
@@ -309,219 +260,6 @@ Result failed(
         {},
         {}
     };
-}
-
-QPageLayout reportPageLayout()
-{
-    return QPageLayout(
-        QPageSize(
-            ReportPageSizeInches,
-            QPageSize::Inch,
-            QStringLiteral("SpeakingEvaluation")
-            ),
-        QPageLayout::Portrait,
-        QMarginsF(),
-        QPageLayout::Inch
-        );
-}
-
-QRectF reportPageRect(
-    const QPdfWriter& writer
-    )
-{
-    const QRect pageRect =
-        writer.pageLayout().fullRectPixels(
-            std::max(1, writer.resolution())
-            );
-
-    if (!pageRect.isEmpty())
-    {
-        return QRectF(pageRect);
-    }
-
-    return QRectF(
-        0.0,
-        0.0,
-        writer.width(),
-        writer.height()
-        );
-}
-
-bool renderInternalPdf(
-    const SpeakingEvalReportData& data,
-    const QString& documentPath,
-    QString* errorMessage
-    )
-{
-    const SpeakingEvalTemplateAssets& assets =
-        speakingEvalTemplateAssets(
-            data.reportTemplate
-            );
-    if (!assets.valid)
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr(
-                    "The internal speaking-evaluation renderer is unavailable: %1"
-                    )
-                    .arg(assets.error);
-        }
-        return false;
-    }
-
-    QPdfWriter writer(documentPath);
-    writer.setCreator(QStringLiteral("ClassMngr"));
-    writer.setTitle(QObject::tr("Speaking Evaluation"));
-    writer.setResolution(
-        PdfPrintService::GeneratedPdfResolutionDpi
-        );
-
-    if (!writer.setPageLayout(reportPageLayout()))
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Unable to configure the report PDF page.");
-        }
-        return false;
-    }
-
-    QPainter painter;
-    if (!painter.begin(&writer))
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("Unable to create the report PDF.");
-        }
-        return false;
-    }
-
-    SpeakingEvalReportWidget report;
-    report.setReportData(data);
-    report.paintReport(
-        &painter,
-        reportPageRect(writer)
-        );
-
-    if (!painter.end())
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("The report PDF could not be completed.");
-        }
-        return false;
-    }
-
-    if (!QFileInfo::exists(documentPath)
-        || QFileInfo(documentPath).size() <= 0)
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("The report PDF was not created.");
-        }
-        return false;
-    }
-
-    return true;
-}
-
-QString overallGrade(
-    const std::array<QString, 6>& scores
-    )
-{
-    const QHash<QString, int> gradeValues{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-    const QStringList grades{
-        QStringLiteral("C"),
-        QStringLiteral("B"),
-        QStringLiteral("B+"),
-        QStringLiteral("A"),
-        QStringLiteral("A+")
-    };
-
-    int sum = 0;
-    for (const QString& score : scores)
-    {
-        if (!gradeValues.contains(score))
-        {
-            return QStringLiteral("N/A");
-        }
-
-        sum += gradeValues.value(score);
-    }
-
-    const double average =
-        static_cast<double>(sum) / scores.size();
-    int rounded = static_cast<int>(average);
-    if (average - rounded >= 0.4)
-    {
-        ++rounded;
-    }
-
-    return grades.value(
-        qBound(1, rounded, 5) - 1,
-        QStringLiteral("N/A")
-        );
-}
-
-bool copyResourceToFile(
-    const QString& resourcePath,
-    const QString& targetPath,
-    QString* errorMessage
-    )
-{
-    QFile source(resourcePath);
-    if (!source.open(QIODevice::ReadOnly))
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("The PowerPoint template could not be opened.");
-        }
-        return false;
-    }
-
-    QSaveFile target(targetPath);
-    if (!target.open(QIODevice::WriteOnly)
-        || target.write(source.readAll()) < 0
-        || !target.commit())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("A temporary PowerPoint template could not be created.");
-        }
-        return false;
-    }
-
-    return true;
-}
-
-bool copyFileReplacing(
-    const QString& sourcePath,
-    const QString& targetPath,
-    const QString& failureMessage,
-    QString* errorMessage
-    )
-{
-    if ((QFileInfo::exists(targetPath) && !QFile::remove(targetPath))
-        || !QFile::copy(sourcePath, targetPath))
-    {
-        if (errorMessage)
-        {
-            *errorMessage = failureMessage;
-        }
-        return false;
-    }
-
-    return true;
 }
 
 struct PowerPointTemplateProfile
@@ -661,7 +399,9 @@ PowerPointBatchJob powerPointBatchJob(
                     1.0
                     );
         }
-        job.overallGrade = powerPointText(overallGrade(data.scores));
+        job.overallGrade = powerPointText(
+            SpeakingEvalReportDataAssembler::overallGrade(data.scores)
+            );
         for (
             std::size_t scoreIndex = 0;
             scoreIndex < job.scores.size();
@@ -793,50 +533,6 @@ QJsonObject powerPointBatchJson(
     };
 }
 
-bool prepareSignatureImage(
-    const QByteArray& signatureImage,
-    const QString& directory,
-    QString* signaturePath,
-    QString* errorMessage
-    )
-{
-    if (!signaturePath)
-    {
-        return false;
-    }
-
-    signaturePath->clear();
-    if (signatureImage.isEmpty())
-    {
-        return true;
-    }
-
-    QImage signature;
-    if (!signature.loadFromData(signatureImage) || signature.isNull())
-    {
-        return true;
-    }
-
-    const QString path =
-        QDir(directory).filePath(
-            QStringLiteral("signature.png")
-            );
-    if (!signature.save(path, "PNG"))
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr(
-                    "The signature image could not be prepared for the report."
-                    );
-        }
-        return false;
-    }
-
-    *signaturePath = path;
-    return true;
-}
-
 bool writeUtf8File(
     const QString& path,
     const QByteArray& data,
@@ -859,26 +555,6 @@ bool writeUtf8File(
 }
 
 #ifdef Q_OS_WIN
-QString powerShellExecutable()
-{
-    for (const QString& candidate : {
-             QStringLiteral("powershell.exe"),
-             QStringLiteral("powershell"),
-             QStringLiteral("pwsh.exe"),
-             QStringLiteral("pwsh")
-             })
-    {
-        const QString executable =
-            QStandardPaths::findExecutable(candidate);
-        if (!executable.isEmpty())
-        {
-            return executable;
-        }
-    }
-
-    return {};
-}
-
 QString windowsPowerPointScript()
 {
     return QString::fromUtf8(R"PS(
@@ -1445,12 +1121,12 @@ PowerPointBatchStatus renderPowerPointBatch(
             );
 
     QString preparedSignaturePath;
-    if (!copyResourceToFile(
+    if (!SpeakingEvalReportAssetResolver::copyResourceToFile(
             batch.templateProfile.resourcePath,
             preparedPptxPath,
             errorMessage
             )
-        || !prepareSignatureImage(
+        || !SpeakingEvalReportAssetResolver::prepareSignatureImage(
             batch.signatureImage,
             automationDirectory,
             &preparedSignaturePath,
@@ -1463,7 +1139,7 @@ PowerPointBatchStatus renderPowerPointBatch(
     QString signaturePath = preparedSignaturePath;
     if (automationDirectory != presentationDirectory)
     {
-        if (!copyFileReplacing(
+        if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
                 preparedPptxPath,
                 pptxPath,
                 QObject::tr(
@@ -1482,7 +1158,7 @@ PowerPointBatchStatus renderPowerPointBatch(
                 presentation.filePath(
                     QStringLiteral("signature.png")
                     );
-            if (!copyFileReplacing(
+            if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
                     preparedSignaturePath,
                     signaturePath,
                     QObject::tr(
@@ -1496,22 +1172,11 @@ PowerPointBatchStatus renderPowerPointBatch(
         }
     }
 
-    const int total = batch.students.size();
-    if (progressCallback
-        && !progressCallback(
-            0,
-            total,
-            batch.students.constFirst().displayName
-            ))
-    {
-        return PowerPointBatchStatus::Canceled;
-    }
-
-    QProcess process;
-    process.setWorkingDirectory(automationDirectory);
+    QString executable;
+    QStringList arguments;
 
 #ifdef Q_OS_WIN
-    const QString executable = powerShellExecutable();
+    executable = SpeakingEvalPowerPointAutomation::executable();
     if (executable.isEmpty())
     {
         if (errorMessage)
@@ -1541,21 +1206,17 @@ PowerPointBatchStatus renderPowerPointBatch(
         return PowerPointBatchStatus::Failed;
     }
 
-    process.start(
-        executable,
-        {
-            QStringLiteral("-NoProfile"),
-            QStringLiteral("-NonInteractive"),
-            QStringLiteral("-ExecutionPolicy"),
-            QStringLiteral("Bypass"),
-            QStringLiteral("-File"),
-            scriptPath,
-            jobPath
-        }
-        );
+    arguments = {
+        QStringLiteral("-NoProfile"),
+        QStringLiteral("-NonInteractive"),
+        QStringLiteral("-ExecutionPolicy"),
+        QStringLiteral("Bypass"),
+        QStringLiteral("-File"),
+        scriptPath,
+        jobPath
+    };
 #elif defined(Q_OS_MACOS)
-    const QString executable =
-        QStandardPaths::findExecutable(QStringLiteral("osascript"));
+    executable = SpeakingEvalPowerPointAutomation::executable();
     if (executable.isEmpty())
     {
         if (errorMessage)
@@ -1576,7 +1237,7 @@ PowerPointBatchStatus renderPowerPointBatch(
 
     const PowerPointTemplateProfile& profile =
         batch.templateProfile;
-    QStringList arguments{
+    arguments = {
         scriptPath,
         pptxPath,
         profile.scoreTableOnMaster
@@ -1630,7 +1291,6 @@ PowerPointBatchStatus renderPowerPointBatch(
             }
             );
     }
-    process.start(executable, arguments);
 #else
     Q_UNUSED(jobPath);
     Q_UNUSED(scriptPath);
@@ -1642,124 +1302,40 @@ PowerPointBatchStatus renderPowerPointBatch(
     return PowerPointBatchStatus::Failed;
 #endif
 
-    if (!process.waitForStarted())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("PowerPoint could not be started.");
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-
-    bool cancellationRequested = false;
-    int completedCount = 0;
-    const auto requestCancellation =
-        [&cancelPath, &cancellationRequested]()
-    {
-        if (cancellationRequested)
-        {
-            return;
-        }
-        cancellationRequested = true;
-        writeUtf8File(cancelPath, {}, nullptr);
-    };
-    const auto updateProgress =
-        [&batch,
-         &progressCallback,
-         &requestCancellation,
-         &completedCount,
-         total]()
-    {
-        while (completedCount < total
-               && QFileInfo::exists(
-                   batch.students.at(completedCount).completionPath
-                   ))
-        {
-            ++completedCount;
-            const QString nextStudent =
-                completedCount < total
-                    ? batch.students.at(completedCount).displayName
-                    : QString();
-            if (progressCallback
-                && !progressCallback(
-                    completedCount,
-                    total,
-                    nextStudent
-                    ))
-            {
-                requestCancellation();
-            }
-        }
-    };
-
-    QElapsedTimer timer;
-    timer.start();
-    const qint64 timeout =
-        static_cast<qint64>(PowerPointTimeoutMs)
-        * std::max(1, total);
-    while (process.state() != QProcess::NotRunning)
-    {
-        process.waitForFinished(100);
-        updateProgress();
-        if (timer.elapsed() <= timeout)
-        {
-            continue;
-        }
-
-        writeUtf8File(cancelPath, {}, nullptr);
-        process.terminate();
-        if (!process.waitForFinished(5000))
-        {
-            process.kill();
-            process.waitForFinished();
-        }
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr(
-                "PowerPoint did not finish exporting the reports."
-                );
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-    updateProgress();
-
-    if (cancellationRequested)
-    {
-        return PowerPointBatchStatus::Canceled;
-    }
-
-    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
-    {
-        if (errorMessage)
-        {
-            const QString details =
-                (QString::fromUtf8(process.readAllStandardError())
-                 + QLatin1Char('\n')
-                 + QString::fromUtf8(process.readAllStandardOutput()))
-                    .trimmed();
-            *errorMessage = details.isEmpty()
-                ? QObject::tr("PowerPoint could not export the reports.")
-                : details;
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-
+    QList<SpeakingEvalPowerPointAutomation::ReportMarker> reports;
+    reports.reserve(batch.students.size());
     for (const PowerPointStudentJob& job : batch.students)
     {
-        if (!QFileInfo::exists(job.pdfPath)
-            || QFileInfo(job.pdfPath).size() <= 0)
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "PowerPoint did not create a PDF report for %1."
-                    ).arg(job.displayName);
-            }
-            return PowerPointBatchStatus::Failed;
-        }
+        reports.append({
+            job.displayName,
+            job.pdfPath,
+            job.completionPath
+        });
     }
 
-    return PowerPointBatchStatus::Completed;
+    const SpeakingEvalPowerPointAutomation::Status status =
+        SpeakingEvalPowerPointAutomation::run(
+            {
+                executable,
+                arguments,
+                automationDirectory,
+                cancelPath,
+                reports,
+                PowerPointTimeoutMs,
+                progressCallback
+            },
+            errorMessage
+            );
+    switch (status)
+    {
+    case SpeakingEvalPowerPointAutomation::Status::Completed:
+        return PowerPointBatchStatus::Completed;
+    case SpeakingEvalPowerPointAutomation::Status::Canceled:
+        return PowerPointBatchStatus::Canceled;
+    case SpeakingEvalPowerPointAutomation::Status::Failed:
+    default:
+        return PowerPointBatchStatus::Failed;
+    }
 }
 
 bool copyPowerPointOutputFiles(
@@ -1785,7 +1361,7 @@ bool copyPowerPointOutputFiles(
             batch.students.at(index);
         const QString stagedPath =
             stagedPdfPaths.at(index);
-        if (!copyFileReplacing(
+        if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
                 job.pdfPath,
                 stagedPath,
                 QObject::tr(
@@ -1830,227 +1406,6 @@ bool powerPointReportsUseSingleTemplate(
         );
 }
 
-bool targetFilePaths(
-    const Request& request,
-    bool saveIndividualPdfFiles,
-    QStringList* targetPaths,
-    QString* errorMessage
-    )
-{
-    if (!targetPaths)
-    {
-        return false;
-    }
-
-    if (!request.outputFilePath.trimmed().isEmpty())
-    {
-        if (request.reports.size() != 1)
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "An exact PDF file can be selected only for one report."
-                    );
-            }
-            return false;
-        }
-
-        const QFileInfo targetInfo(request.outputFilePath);
-        QDir targetDirectory(targetInfo.absolutePath());
-        if (!targetDirectory.exists()
-            && !QDir().mkpath(targetDirectory.path()))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr(
-                    "The selected PDF folder could not be created."
-                    );
-            }
-            return false;
-        }
-
-        const QString targetPath = targetInfo.absoluteFilePath();
-        if (!request.overwriteExisting && QFileInfo::exists(targetPath))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("A PDF named \"%1\" already exists.")
-                    .arg(targetInfo.fileName());
-            }
-            return false;
-        }
-
-        *targetPaths = { targetPath };
-        return true;
-    }
-
-    QDir outputDirectory(request.outputDirectory);
-    if (!outputDirectory.exists() && !QDir().mkpath(outputDirectory.path()))
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("The selected PDF folder could not be created.");
-        }
-        return false;
-    }
-
-    targetPaths->clear();
-    targetPaths->reserve(request.reports.size());
-    QSet<QString> seenPaths;
-    for (int index = 0; index < request.reports.size(); ++index)
-    {
-        const QString path = outputDirectory.filePath(
-            safeFileName(
-                request.reports.at(index).report.englishName,
-                request.reports.at(index).report.koreanName
-                )
-            );
-
-        if (seenPaths.contains(path))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("A PDF named \"%1\" already exists.")
-                    .arg(QFileInfo(path).fileName());
-            }
-            return false;
-        }
-        if (saveIndividualPdfFiles
-            && !request.overwriteExisting
-            && QFileInfo::exists(path))
-        {
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("A PDF named \"%1\" already exists.")
-                    .arg(QFileInfo(path).fileName());
-            }
-            return false;
-        }
-
-        seenPaths.insert(path);
-        targetPaths->append(path);
-    }
-
-    return true;
-}
-
-bool commitOutputFiles(
-    const QStringList& stagedPaths,
-    const QStringList& targetPaths,
-    bool overwriteExisting,
-    QString* errorMessage
-    )
-{
-    if (stagedPaths.size() != targetPaths.size())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("The staged output files are incomplete.");
-        }
-        return false;
-    }
-
-    QStringList backupTargets;
-    backupTargets.reserve(targetPaths.size());
-    for (const QString& targetPath : targetPaths)
-    {
-        if (!overwriteExisting || !QFileInfo::exists(targetPath))
-        {
-            backupTargets.append(QString());
-            continue;
-        }
-
-        const QString backupPath = targetPath + QStringLiteral(".classmngr-backup");
-        QFile::remove(backupPath);
-        if (!QFile::rename(targetPath, backupPath))
-        {
-            for (int index = 0; index < backupTargets.size(); ++index)
-            {
-                if (!backupTargets.at(index).isEmpty())
-                {
-                    QFile::rename(backupTargets.at(index), targetPaths.at(index));
-                }
-            }
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("An existing output file could not be prepared for replacement.");
-            }
-            return false;
-        }
-        backupTargets.append(backupPath);
-    }
-
-    QStringList temporaryTargets;
-    for (int index = 0; index < stagedPaths.size(); ++index)
-    {
-        const QString temporaryTarget =
-            targetPaths.at(index) + QStringLiteral(".classmngr-part");
-        QFile::remove(temporaryTarget);
-
-        if (!QFile::copy(stagedPaths.at(index), temporaryTarget))
-        {
-            for (const QString& createdPath : temporaryTargets)
-            {
-                QFile::remove(createdPath);
-            }
-            for (int backupIndex = 0; backupIndex < backupTargets.size(); ++backupIndex)
-            {
-                if (!backupTargets.at(backupIndex).isEmpty())
-                {
-                    QFile::rename(backupTargets.at(backupIndex), targetPaths.at(backupIndex));
-                }
-            }
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("An output file could not be copied to the selected folder.");
-            }
-            return false;
-        }
-
-        temporaryTargets.append(temporaryTarget);
-    }
-
-    QStringList committedTargets;
-    for (int index = 0; index < temporaryTargets.size(); ++index)
-    {
-        if (!QFile::rename(temporaryTargets.at(index), targetPaths.at(index)))
-        {
-            for (const QString& createdPath : temporaryTargets)
-            {
-                QFile::remove(createdPath);
-            }
-            for (const QString& committedPath : committedTargets)
-            {
-                QFile::remove(committedPath);
-            }
-            for (int backupIndex = 0; backupIndex < backupTargets.size(); ++backupIndex)
-            {
-                if (!backupTargets.at(backupIndex).isEmpty())
-                {
-                    QFile::rename(backupTargets.at(backupIndex), targetPaths.at(backupIndex));
-                }
-            }
-            if (errorMessage)
-            {
-                *errorMessage = QObject::tr("An output file could not be finalized in the selected folder.");
-            }
-            return false;
-        }
-
-        committedTargets.append(targetPaths.at(index));
-    }
-
-    for (const QString& backupPath : backupTargets)
-    {
-        if (!backupPath.isEmpty())
-        {
-            QFile::remove(backupPath);
-        }
-    }
-
-    return true;
-}
-
 } // namespace
 
 QString rendererDisplayName(
@@ -2074,56 +1429,10 @@ QString defaultOutputDirectory(
     const QString& documentsDirectory
     )
 {
-    QString className = QStringList{
-        classInfo.classGrade.trimmed(),
-        classInfo.classLevel.trimmed()
-    }.filter(QRegularExpression(QStringLiteral(".+"))).join(QLatin1Char(' '));
-    if (className.isEmpty())
-    {
-        className = QObject::tr("Speaking Evaluation");
-    }
-
-    QStringList days;
-    for (const ClassTime& classTime : classInfo.classTimes)
-    {
-        const QString day = shortDay(classTime.day);
-        if (!day.isEmpty() && !days.contains(day))
-        {
-            days.append(day);
-        }
-    }
-
-    QString schedule;
-    if (!classInfo.classTimes.isEmpty())
-    {
-        const QString time = shortTime(classInfo.classTimes.first().startTime);
-        if (!days.isEmpty() && !time.isEmpty())
-        {
-            schedule = QStringLiteral("%1 - %2")
-                .arg(days.join(QString()), time);
-        }
-        else
-        {
-            schedule = !days.isEmpty() ? days.join(QString()) : time;
-        }
-    }
-    if (!schedule.trimmed().isEmpty())
-    {
-        className += QStringLiteral(" (%1)").arg(schedule);
-    }
-
-    const QString root = documentsDirectory.trimmed().isEmpty()
-        ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-        : documentsDirectory;
-    QDir directory(root);
-    return QDir::cleanPath(
-        directory.filePath(
-            QStringLiteral("DYB/SpeakingEvals/%1/%2")
-                .arg(
-                    safeFolderName(className, QObject::tr("Speaking Evaluation")),
-                    safeFolderName(evaluationName, QObject::tr("Evaluation"))
-                    )
-            )
+    return SpeakingEvalReportOutputPolicy::defaultDirectory(
+        classInfo,
+        evaluationName,
+        documentsDirectory
         );
 }
 
@@ -2131,17 +1440,7 @@ QString batchArchivePath(
     const QString& outputDirectory
     )
 {
-    const QDir directory(
-        QDir::cleanPath(outputDirectory)
-        );
-    const QString archiveBaseName =
-        safeFolderName(
-            directory.dirName(),
-            QObject::tr("Speaking Evaluation Reports")
-            );
-    return directory.filePath(
-        archiveBaseName + QStringLiteral(".zip")
-        );
+    return SpeakingEvalReportOutputPolicy::batchArchivePath(outputDirectory);
 }
 
 QString safeFileName(
@@ -2149,63 +1448,20 @@ QString safeFileName(
     const QString& koreanName
     )
 {
-    QString baseName;
-    const QString english = englishName.trimmed();
-    const QString korean = koreanName.trimmed();
-    if (!english.isEmpty() && !korean.isEmpty())
-    {
-        baseName = QStringLiteral("%1 (%2)").arg(english, korean);
-    }
-    else
-    {
-        baseName = !english.isEmpty() ? english : korean;
-    }
-    baseName = baseName.simplified();
-
-    return FileNameUtils::filesystemSafeFileName(
-        baseName,
-        QStringLiteral(".pdf"),
-        QObject::tr("Student"),
-        QChar(u'-')
+    return SpeakingEvalReportOutputPolicy::studentFileName(
+        englishName,
+        koreanName
         );
 }
 
 bool isPowerPointRendererAvailable()
 {
-#ifdef Q_OS_WIN
-    QSettings powerPointRegistry(
-        QStringLiteral("HKEY_CLASSES_ROOT\\PowerPoint.Application"),
-        QSettings::NativeFormat
-        );
-    return !powerShellExecutable().isEmpty()
-        && (!powerPointRegistry.allKeys().isEmpty()
-            || !powerPointRegistry.childGroups().isEmpty());
-#elif defined(Q_OS_MACOS)
-    return QFileInfo::exists(
-        QStringLiteral("/Applications/Microsoft PowerPoint.app")
-        ) && !QStandardPaths::findExecutable(
-            QStringLiteral("osascript")
-            ).isEmpty();
-#else
-    return false;
-#endif
+    return SpeakingEvalPowerPointAutomation::isAvailable();
 }
 
 QString powerPointRendererAvailabilityMessage()
 {
-#ifdef Q_OS_WIN
-    return QObject::tr(
-        "PowerPoint export requires the installed desktop Microsoft PowerPoint application."
-        );
-#elif defined(Q_OS_MACOS)
-    return QObject::tr(
-        "PowerPoint export requires Microsoft PowerPoint in /Applications and macOS Automation permission."
-        );
-#else
-    return QObject::tr(
-        "PowerPoint template export is available only on Windows and macOS. Use the internal report on this platform."
-        );
-#endif
+    return SpeakingEvalPowerPointAutomation::availabilityMessage();
 }
 
 Result exportReports(
@@ -2256,7 +1512,7 @@ Result exportReports(
     QString targetArchivePath;
     QString errorMessage;
     if (request.savePdf
-        && !targetFilePaths(
+        && !SpeakingEvalReportOutput::targetFilePaths(
             request,
             savingIndividualPdfFiles,
             &targetPaths,
@@ -2387,7 +1643,7 @@ Result exportReports(
                     );
 
             const bool rendered =
-                renderInternalPdf(
+                SpeakingEvalInternalPdfRenderer::render(
                     student.report,
                     stagedPath,
                     &errorMessage
@@ -2458,7 +1714,7 @@ Result exportReports(
             targetOutputPaths.append(targetPaths);
         }
 
-        if (!commitOutputFiles(
+        if (!SpeakingEvalReportOutput::commitFiles(
                 stagedOutputPaths,
                 targetOutputPaths,
                 request.overwriteExisting,

@@ -8,6 +8,9 @@
 #include "domain/rules/schedule_import_rules.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
+#include "features/schedule/ui/schedule_import_resolution_view.h"
+#include "features/schedule/services/schedule_import_review_model.h"
+#include "features/schedule/services/schedule_import_review_summary.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -48,8 +51,7 @@
 
 namespace
 {
-constexpr int ActionRole = Qt::UserRole;
-constexpr int TargetRole = Qt::UserRole + 1;
+using namespace ScheduleImportResolutionView;
 constexpr int ReviewDialogHeight = 820;
 constexpr int MaximumReviewDialogWidth = 1180;
 constexpr int MaximumPreviewVisibleRows = 6;
@@ -791,118 +793,6 @@ bool importedClassLess(
             ) < 0;
     }
     return false;
-}
-
-void addResolutionItem(
-    QComboBox* combo,
-    const QString& text,
-    int action,
-    int target = -1
-    )
-{
-    combo->addItem(text);
-    const int index = combo->count() - 1;
-    combo->setItemData(index, action, ActionRole);
-    combo->setItemData(index, target, TargetRole);
-}
-
-void configureCompactActionCombo(
-    QComboBox* combo
-    )
-{
-    if (!combo)
-    {
-        return;
-    }
-
-    combo->setSizePolicy(
-        QSizePolicy::Expanding,
-        QSizePolicy::Fixed
-        );
-    combo->setSizeAdjustPolicy(
-        QComboBox::AdjustToMinimumContentsLengthWithIcon
-        );
-    combo->setMinimumContentsLength(14);
-}
-
-QFrame* createReconciliationCard(
-    QWidget* parent,
-    const QString& objectName
-    )
-{
-    auto* card =
-        new QFrame(parent);
-    card->setObjectName(objectName);
-    card->setFrameShape(QFrame::StyledPanel);
-    card->setSizePolicy(
-        QSizePolicy::Expanding,
-        QSizePolicy::Maximum
-        );
-    return card;
-}
-
-void addLabeledControlRow(
-    QVBoxLayout* layout,
-    const QString& labelText,
-    QWidget* control,
-    QWidget* parent
-    )
-{
-    auto* row =
-        new QHBoxLayout();
-    auto* label =
-        new QLabel(labelText, parent);
-    label->setMinimumWidth(label->sizeHint().width());
-    row->addWidget(label);
-    row->addWidget(control, 1);
-    layout->addLayout(row);
-}
-
-void clearLayout(
-    QLayout* layout
-    )
-{
-    if (!layout)
-    {
-        return;
-    }
-
-    while (QLayoutItem* item = layout->takeAt(0))
-    {
-        if (QWidget* widget = item->widget())
-        {
-            delete widget;
-        }
-        else if (QLayout* childLayout = item->layout())
-        {
-            clearLayout(childLayout);
-            delete childLayout;
-        }
-        delete item;
-    }
-}
-
-int findActionIndex(
-    QComboBox* combo,
-    int action,
-    int target = -2
-    )
-{
-    for (int index = 0; index < combo->count(); ++index)
-    {
-        if (combo->itemData(index, ActionRole).toInt() != action)
-        {
-            continue;
-        }
-        if (
-            target == -2
-            || combo->itemData(index, TargetRole).toInt() == target
-            )
-        {
-            return index;
-        }
-    }
-    return -1;
 }
 
 ScheduleViewModel previewModel(
@@ -2183,9 +2073,6 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<QString, int> teacherActions;
     QHash<QString, int> teacherTargets;
     QHash<QString, QString> teacherRooms;
-    int teacherCreates = 0;
-    int teacherUpdates = 0;
-    int teacherSkips = 0;
 
     for (const TeacherControl& control : m_teacherControls)
     {
@@ -2247,7 +2134,6 @@ void ScheduleImportReviewDialog::updateReviewState()
             skippedTeachers.insert(
                 control.teacherKey
                 );
-            ++teacherSkips;
         }
         else if (
             action == static_cast<int>(
@@ -2255,7 +2141,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            ++teacherCreates;
         }
         else if (
             action == static_cast<int>(
@@ -2263,7 +2148,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            ++teacherUpdates;
         }
     }
 
@@ -2274,9 +2158,6 @@ void ScheduleImportReviewDialog::updateReviewState()
     QHash<int, int> classActions;
     QHash<int, int> classTargets;
     QStringList scheduleConflicts;
-    int creates = 0;
-    int updates = 0;
-    int skips = 0;
 
     for (const ClassControl& control : m_classControls)
     {
@@ -2335,7 +2216,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 message =
                     tr("Choose an existing class to update.");
             }
-            ++updates;
             if (control.details)
             {
                 control.details->setText(
@@ -2363,7 +2243,6 @@ void ScheduleImportReviewDialog::updateReviewState()
                 )
             )
         {
-            ++creates;
             if (control.details)
             {
                 control.details->setText(
@@ -2387,7 +2266,6 @@ void ScheduleImportReviewDialog::updateReviewState()
         }
         else
         {
-            ++skips;
             if (control.details)
             {
                 control.details->setText(
@@ -2745,18 +2623,23 @@ void ScheduleImportReviewDialog::updateReviewState()
                 .arg(m_preview.user.name);
     }
 
+    const ScheduleImportReviewSummary summary =
+        ScheduleImportReviewSummaryBuilder::build(
+            importPlan(),
+            cleared
+            );
     m_reviewSummary->setText(
         tr("Proposed import: %1 teacher(s) created, %2 room update(s), %3 teacher group(s) skipped; "
            "%4 class(es) created, %5 updated, %6 skipped; %7 existing schedule(s) cleared; "
            "%8 occupied cell(s) acknowledged and ignored.%9%10")
-            .arg(teacherCreates)
-            .arg(teacherUpdates)
-            .arg(teacherSkips)
-            .arg(creates)
-            .arg(updates)
-            .arg(skips)
-            .arg(cleared)
-            .arg(m_preview.user.diagnostics.size())
+            .arg(summary.teachersCreated)
+            .arg(summary.teacherRoomsUpdated)
+            .arg(summary.teachersSkipped)
+            .arg(summary.classesCreated)
+            .arg(summary.classesUpdated)
+            .arg(summary.classesSkipped)
+            .arg(summary.schedulesCleared)
+            .arg(summary.ignoredCells)
             .arg(profileNameChange)
             .arg(
                 m_request.kind != ScheduleImportKind::Intensive
@@ -3004,29 +2887,30 @@ void ScheduleImportReviewDialog::applyImport()
 
 ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
 {
-    ScheduleImportPlan plan;
-    plan.kind = m_request.kind;
-    plan.intensiveMode =
+    ScheduleImportReviewContext context;
+    context.kind = m_request.kind;
+    context.intensiveMode =
         m_replaceIntensiveRadio
         && m_replaceIntensiveRadio->isChecked()
             ? ScheduleImportIntensiveMode::ReplaceWithNew
             : ScheduleImportIntensiveMode::UpdateExisting;
-    plan.selectedUserName =
+    context.selectedUserName =
         m_preview.user.name;
-    plan.saveProfileNameIfBlank =
+    context.saveProfileNameIfBlank =
         m_request.profileName.trimmed().isEmpty();
-    plan.updateProfileName =
+    context.updateProfileName =
         m_request.updateProfileName;
-    plan.unknownCellsAcknowledged =
+    context.unknownCellsAcknowledged =
         !m_warningAcknowledgement
         || m_warningAcknowledgement->isChecked();
-    plan.candidates =
+    context.candidates =
         m_preview.user.classes;
-    plan.intensiveSlotStates =
+    context.intensiveSlotStates =
         m_preview.user.intensiveSlotStates;
-    plan.diagnostics =
+    context.diagnostics =
         m_preview.user.diagnostics;
 
+    QList<ScheduleImportTeacherResolution> teachers;
     for (const TeacherControl& control : m_teacherControls)
     {
         ScheduleImportTeacherResolution resolution;
@@ -3044,9 +2928,10 @@ ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
                 ).toInt();
         resolution.selectedRoom =
             control.room->currentData().toString();
-        plan.teachers.append(resolution);
+        teachers.append(resolution);
     }
 
+    QList<ScheduleImportClassResolution> classes;
     for (const ClassControl& control : m_classControls)
     {
         ScheduleImportClassResolution resolution;
@@ -3068,8 +2953,12 @@ ScheduleImportPlan ScheduleImportReviewDialog::importPlan() const
             ColorUtils::getContrastingFontColor(
                 QColor(control.color)
                 );
-        plan.classes.append(resolution);
+        classes.append(resolution);
     }
 
-    return plan;
+    return ScheduleImportReviewModel::buildPlan(
+        context,
+        teachers,
+        classes
+        );
 }

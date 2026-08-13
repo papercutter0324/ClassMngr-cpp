@@ -1,8 +1,8 @@
 #pragma once
 
 #include "features/schedule/ui/schedule_view_model.h"
+#include "features/schedule/ui/schedule_interaction_state.h"
 
-#include <QMap>
 #include <QSet>
 #include <QWidget>
 
@@ -126,8 +126,7 @@ private:
         ScheduleDisplayMode::Regular;
     bool m_regularWeekdaySlotTogglingEnabled = false;
 
-    QMap<QString, QString> m_intensiveSlotStates;
-    QMap<QString, TestingAssignmentView> m_testingAssignments;
+    ScheduleInteractionState m_interactionState;
     ScheduleViewModel m_scheduleModel;
     ScheduleViewModel m_previewModel;
     bool m_hasPreviewModel = false;

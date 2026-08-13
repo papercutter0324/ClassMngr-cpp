@@ -1,4 +1,8 @@
 #include "schedule_widget.h"
+#include "schedule_cell_hit_test.h"
+#include "schedule_cell_renderer_policy.h"
+#include "schedule_widget_geometry.h"
+#include "schedule_widget_delegates.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -12,6 +16,7 @@
 #include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
+#include "features/schedule/services/schedule_output_controller.h"
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
@@ -44,6 +49,10 @@
 
 namespace
 {
+using ScheduleWidgetDelegates::CornerMarkerLabel;
+using ScheduleWidgetDelegates::TimeCellRole;
+using ScheduleWidgetDelegates::TimeColumnDelegate;
+using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
 constexpr int TimeColumnWidth = 90;
 constexpr int HeaderHeight = 42;
 constexpr int RowHeight = 48;
@@ -56,80 +65,6 @@ constexpr int CompactPreviewRowBaseHeight = 19;
 constexpr int CompactPreviewRowHeightPerEntry = 32;
 constexpr int PreviewFontSizeReduction = 4;
 constexpr int PreviewTimeFontSizeReduction = 2;
-constexpr int TimeCellRole = Qt::UserRole + 1;
-const QString TimeColumnDelegateObjectName =
-    QStringLiteral("scheduleTimeColumnDelegate");
-
-class TimeColumnDelegate final : public QStyledItemDelegate
-{
-public:
-    explicit TimeColumnDelegate(
-        QObject* parent
-        )
-        : QStyledItemDelegate(parent)
-    {
-        setObjectName(TimeColumnDelegateObjectName);
-    }
-
-    void paint(
-        QPainter* painter,
-        const QStyleOptionViewItem& option,
-        const QModelIndex& index
-        ) const override
-    {
-        if (!index.data(TimeCellRole).toBool())
-        {
-            QStyledItemDelegate::paint(
-                painter,
-                option,
-                index
-                );
-            return;
-        }
-
-        QStyleOptionViewItem timeOption(option);
-        timeOption.state &=
-            ~(QStyle::State_MouseOver | QStyle::State_Selected);
-        timeOption.state |=
-            QStyle::State_HasFocus;
-
-        QStyledItemDelegate::paint(
-            painter,
-            timeOption,
-            index
-            );
-    }
-};
-
-class CornerMarkerLabel final : public QLabel
-{
-public:
-    using QLabel::QLabel;
-
-protected:
-    void paintEvent(
-        QPaintEvent* event
-        ) override
-    {
-        QLabel::paintEvent(event);
-
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing, true);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(
-            palette().color(QPalette::Highlight)
-            );
-
-        constexpr int MarkerSize = 18;
-        QPolygon marker;
-        marker
-            << QPoint(width() - MarkerSize, 0)
-            << QPoint(width(), 0)
-            << QPoint(width(), MarkerSize);
-        painter.drawPolygon(marker);
-    }
-};
-
 namespace SettingsKeys
 {
 const QString Use24HourTime =
@@ -203,70 +138,6 @@ void saveBoolSetting(
         );
 }
 
-QString escaped(
-    const QString& text
-    )
-{
-    return text.toHtmlEscaped();
-}
-
-QString classCellStyle(
-    const QString& classColor,
-    const QString& fontColor,
-    qreal verticalPadding,
-    int horizontalPadding,
-    int borderRadius
-    )
-{
-    return QStringLiteral(
-        "QLabel {"
-        "background:%1;"
-        "color:%2;"
-        "padding:%3px %4px;"
-        "border-radius:%5px;"
-        "}"
-        )
-        .arg(
-            classColor.isEmpty()
-                ? QStringLiteral("#FFFFFF")
-                : classColor
-            )
-        .arg(
-            fontColor.isEmpty()
-                ? QStringLiteral("#000000")
-                : fontColor
-            )
-        .arg(verticalPadding)
-        .arg(horizontalPadding)
-        .arg(borderRadius
-            );
-}
-
-QString joinedEnglishLine(
-    const ScheduleEntry& entry
-    )
-{
-    QStringList parts;
-
-    if (!entry.classGrade.trimmed().isEmpty())
-    {
-        parts.append(
-            entry.classGrade.trimmed()
-            );
-    }
-
-    if (!entry.classLevel.trimmed().isEmpty())
-    {
-        parts.append(
-            entry.classLevel.trimmed()
-            );
-    }
-
-    return parts.join(
-        QStringLiteral(" - ")
-        );
-}
-
 }
 
 ScheduleWidget::ScheduleWidget(
@@ -302,8 +173,7 @@ void ScheduleWidget::clearDatabaseState()
     m_displayMode =
         ScheduleDisplayMode::Regular;
     m_regularWeekdaySlotTogglingEnabled = false;
-    m_intensiveSlotStates.clear();
-    m_testingAssignments.clear();
+    m_interactionState.clear();
     m_scheduleModel = {};
 
     updateButtons();
@@ -455,7 +325,7 @@ void ScheduleWidget::openSettings()
         this,
         [this]()
         {
-            m_testingAssignments.clear();
+            m_interactionState.clearTestingAssignments();
             loadSchedule();
         }
         );
@@ -524,124 +394,48 @@ void ScheduleWidget::onCellClicked(
         return;
     }
 
-    QWidget* widget =
-        m_table->cellWidget(
-            row,
-            column
-            );
-
-    if (!widget)
+    const ScheduleCellHit hit =
+        ScheduleCellHitTest::hit(m_table->cellWidget(row, column));
+    if (hit.command == ScheduleCellCommand::None)
     {
         return;
     }
-
-    if (widget->property("is_slot_cell").toBool())
+    if (hit.command == ScheduleCellCommand::EditTestingAssignment)
     {
-        const QString day =
-            widget->property("day").toString();
-
-        const QString timeLabel =
-            widget->property("time_label").toString();
-
-        const QString currentState =
-            widget->property("slot_state").toString();
-
-        if (currentState == scheduleTestingSlotState())
-        {
-            const auto assignment =
-                m_testingAssignments.constFind(
-                    scheduleSlotKey(day, timeLabel)
-                    );
-            if (assignment != m_testingAssignments.cend())
-            {
-                editTestingAssignment(
-                    day,
-                    timeLabel,
-                    &assignment->assignment
-                    );
-            }
-            return;
-        }
-
-        if (
-            widget
-                ->property("testing_block_creation_enabled")
-                .toBool()
-            )
+        const TestingAssignmentView* assignment =
+            m_interactionState.testingAssignment(hit.day, hit.timeLabel);
+        if (assignment)
         {
             editTestingAssignment(
-                day,
-                timeLabel,
-                nullptr
-                );
-            return;
-        }
-
-        if (!widget->property("slot_toggling_enabled").toBool())
-        {
-            return;
-        }
-
-        const QString defaultState =
-            widget->property("default_slot_state").toString();
-
-        const QString newState =
-            nextScheduleSlotState(
-                currentState
-                );
-
-        if (auto* dataService = openDataService(m_services))
-        {
-            dataService->saveIntensiveSlotState(
-                day,
-                timeLabel,
-                newState,
-                defaultState
-                );
-        }
-
-        loadSchedule();
-        return;
-    }
-
-    const int classId =
-        widget
-            ->property("class_id")
-            .toInt();
-
-    if (classId <= 0)
-    {
-        return;
-    }
-
-    if (
-        widget
-            ->property("testing_class_assignment")
-            .toBool()
-        )
-    {
-        const QString day =
-            widget->property("day").toString();
-        const QString timeLabel =
-            widget->property("time_label").toString();
-        const auto assignment =
-            m_testingAssignments.constFind(
-                scheduleSlotKey(day, timeLabel)
-                );
-        if (assignment != m_testingAssignments.cend())
-        {
-            editTestingAssignment(
-                day,
-                timeLabel,
+                hit.day,
+                hit.timeLabel,
                 &assignment->assignment
                 );
         }
+        else if (!hit.day.isEmpty() && !hit.timeLabel.isEmpty())
+        {
+            editTestingAssignment(hit.day, hit.timeLabel, nullptr);
+        }
+        return;
+    }
+    if (hit.command == ScheduleCellCommand::ToggleSlot)
+    {
+        if (auto* dataService = openDataService(m_services))
+        {
+            dataService->saveIntensiveSlotState(
+                hit.day,
+                hit.timeLabel,
+                hit.nextState,
+                hit.defaultState
+                );
+        }
+        loadSchedule();
         return;
     }
 
     ScheduleEditorDialog dialog(
         m_services,
-        classId,
+        hit.classId,
         this
         );
 
@@ -767,66 +561,15 @@ void ScheduleWidget::outputSchedule(
     bool print
     )
 {
-    const SchedulePrintDialog::Action action =
+    ScheduleOutputController::execute(
         print
-            ? SchedulePrintDialog::Action::Print
-            : SchedulePrintDialog::Action::SaveAs;
-    SchedulePrintDialog dialog(action, this);
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    SchedulePrintService::Request request;
-    request.parent = this;
-    request.model = buildScheduleModel();
-    request.showEnglishNames =
-        m_showKoreanTeacherEnglishNames;
-    request.style = dialog.selectedStyle();
-    request.pageOrientation = dialog.selectedOrientation();
-
-    if (m_services && m_services->themeService())
-    {
-        request.currentTheme =
-            m_services->themeService()->currentTheme();
-    }
-
-    if (auto* dataService = openDataService(m_services))
-    {
-        request.userName =
-            dataService
-                ->loadSetting(
-                    QStringLiteral("myInfo/name"),
-                    QString()
-                    )
-                .toString();
-    }
-
-    SchedulePrintService::Result result;
-
-    if (print)
-    {
-        result = SchedulePrintService::printSchedule(request);
-    }
-    else
-    {
-        result = SchedulePrintService::saveSchedulePdf(
-            request,
-            dialog.selectedSavePath()
-            );
-    }
-
-    if (result.status == SchedulePrintService::Status::Failed)
-    {
-        QMessageBox::warning(
-            this,
-            print
-                ? tr("Print Schedule")
-                : tr("Export Schedule"),
-            result.message
-            );
-    }
+            ? ScheduleOutputController::Action::Print
+            : ScheduleOutputController::Action::SaveAs,
+        this,
+        m_services,
+        buildScheduleModel(),
+        m_showKoreanTeacherEnglishNames
+        );
 }
 
 void ScheduleWidget::buildUi()
@@ -1487,50 +1230,24 @@ void ScheduleWidget::updateTableMinimumHeight()
         return;
     }
 
-    const int rowCount =
-        m_table->rowCount();
-    const bool hasHiddenRows =
-        m_maximumVisibleRows > 0
-        && rowCount > m_maximumVisibleRows;
-    const int visibleRowCount =
-        hasHiddenRows
-            ? m_maximumVisibleRows
-            : rowCount;
+    const ScheduleTableGeometry geometry =
+        ScheduleWidgetGeometry::tableGeometry(
+            m_table,
+            m_maximumVisibleRows
+            );
 
     m_table->setVerticalScrollBarPolicy(
-        hasHiddenRows
+        geometry.hasHiddenRows
             ? Qt::ScrollBarAsNeeded
             : Qt::ScrollBarAlwaysOff
         );
-
-    int tableHeight =
-        m_table->horizontalHeader()->height()
-        + (m_table->frameWidth() * 2);
-
-    for (int row = 0; row < visibleRowCount; ++row)
-    {
-        tableHeight +=
-            m_table->rowHeight(row);
-    }
-
-    if (auto* scrollBar = m_table->horizontalScrollBar())
-    {
-        if (scrollBar->isVisible())
-        {
-            tableHeight +=
-                scrollBar->sizeHint().height();
-        }
-    }
-
-    m_table->setMinimumHeight(tableHeight);
-    m_table->setMaximumHeight(tableHeight);
+    m_table->setMinimumHeight(geometry.height);
+    m_table->setMaximumHeight(geometry.height);
     updateGeometry();
 }
 
 void ScheduleWidget::reloadSlotStates()
 {
-    m_intensiveSlotStates.clear();
-
     auto* dataService =
         openDataService(m_services);
 
@@ -1542,16 +1259,7 @@ void ScheduleWidget::reloadSlotStates()
     const QList<IntensiveSlotState> states =
         dataService->loadIntensiveSlotStates();
 
-    for (const IntensiveSlotState& state : states)
-    {
-        m_intensiveSlotStates.insert(
-            scheduleSlotKey(
-                state.day,
-                state.startTime
-                ),
-            state.state
-            );
-    }
+    m_interactionState.setSlotStates(states);
 }
 
 void ScheduleWidget::reloadTestingBlocks()
@@ -1561,7 +1269,7 @@ void ScheduleWidget::reloadTestingBlocks()
 
     if (!dataService)
     {
-        m_testingAssignments.clear();
+        m_interactionState.clearTestingAssignments();
         return;
     }
 
@@ -1635,8 +1343,9 @@ void ScheduleWidget::reloadTestingBlocks()
             );
     }
 
-    m_testingAssignments =
-        std::move(loadedAssignments);
+    m_interactionState.setTestingAssignments(
+        std::move(loadedAssignments)
+        );
 }
 
 ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
@@ -1646,10 +1355,8 @@ ScheduleViewRequest ScheduleWidget::buildScheduleViewRequest() const
         visibleScheduleDays(
             m_showWeekends
             );
-    request.slotStateOverrides =
-        m_intensiveSlotStates;
-    request.testingAssignments =
-        m_testingAssignments;
+    request.slotStateOverrides = m_interactionState.slotStates();
+    request.testingAssignments = m_interactionState.testingAssignments();
     request.use24h =
         m_use24h;
     request.displayMode =
@@ -1719,7 +1426,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
         );
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setStyleSheet(
-        classCellStyle(
+        ScheduleCellRendererPolicy::classStyle(
             entry.classColor,
             entry.fontColor,
             m_compactPreview ? 2.4 : 3.2,
@@ -1735,7 +1442,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
             );
 
     const QString englishLine =
-        joinedEnglishLine(entry);
+        ScheduleCellRendererPolicy::englishLine(entry);
 
     if (entry.kind == ScheduleEntryKind::TestingClass)
     {
@@ -1789,14 +1496,14 @@ QWidget* ScheduleWidget::createScheduleLabel(
                         - (m_compactPreview ? PreviewFontSizeReduction : 0)
                         )
                     )
-                .arg(escaped(className))
+                .arg(ScheduleCellRendererPolicy::escaped(className))
                 .arg(
                     FontManager::adjustedPointSize(
                         11
                         - (m_compactPreview ? PreviewFontSizeReduction : 0)
                         )
                     )
-                .arg(escaped(englishLine))
+                .arg(ScheduleCellRendererPolicy::escaped(englishLine))
                 .arg(
                     FontManager::getKoreanFont()
                         .family()
@@ -1808,7 +1515,7 @@ QWidget* ScheduleWidget::createScheduleLabel(
                         - (m_compactPreview ? PreviewFontSizeReduction : 0)
                         )
                     )
-                .arg(escaped(roomLine))
+                .arg(ScheduleCellRendererPolicy::escaped(roomLine))
             );
         return label;
     }
@@ -1837,14 +1544,14 @@ QWidget* ScheduleWidget::createScheduleLabel(
                     - (m_compactPreview ? PreviewFontSizeReduction : 0)
                     ).pointSize()
                 )
-            .arg(escaped(teacherLine))
+            .arg(ScheduleCellRendererPolicy::escaped(teacherLine))
             .arg(
                 FontManager::adjustedPointSize(
                     14
                     - (m_compactPreview ? PreviewFontSizeReduction : 0)
                     )
                 )
-            .arg(escaped(englishLine))
+            .arg(ScheduleCellRendererPolicy::escaped(englishLine))
         );
 
     return label;
@@ -1870,7 +1577,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
             );
 
         label->setStyleSheet(
-            classCellStyle(
+            ScheduleCellRendererPolicy::classStyle(
                 entries.first().classColor,
                 entries.first().fontColor,
                 m_compactPreview ? 2.4 : 3.2,
@@ -1891,7 +1598,7 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
                 );
 
         const QString englishLine =
-            joinedEnglishLine(entry);
+            ScheduleCellRendererPolicy::englishLine(entry);
 
         const QString fontColor =
             entry.fontColor.isEmpty()
@@ -1917,14 +1624,14 @@ QWidget* ScheduleWidget::createMultiScheduleLabel(
                         - (m_compactPreview ? PreviewFontSizeReduction : 0)
                         ).pointSize()
                     )
-                .arg(escaped(teacherLine))
+                .arg(ScheduleCellRendererPolicy::escaped(teacherLine))
                 .arg(
                     FontManager::adjustedPointSize(
                         14
                         - (m_compactPreview ? PreviewFontSizeReduction : 0)
                         )
                     )
-                .arg(escaped(englishLine))
+                .arg(ScheduleCellRendererPolicy::escaped(englishLine))
                 .arg(m_compactPreview ? 4.8 : 6.4);
     }
 

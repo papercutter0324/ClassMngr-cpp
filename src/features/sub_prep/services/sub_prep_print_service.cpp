@@ -1,4 +1,5 @@
 #include "sub_prep_print_service.h"
+#include "sub_prep_document_model.h"
 
 #include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -101,11 +102,11 @@ bool isNotAvailable(
 }
 
 bool hasZoomInformation(
-    const SubPrepPrintService::Request& request
+    const SubPrepDocumentModel::Document& document
     )
 {
-    return !isNotAvailable(request.zoom.loginId)
-        || !isNotAvailable(request.zoom.password);
+    return !isNotAvailable(document.zoom.loginId)
+        || !isNotAvailable(document.zoom.password);
 }
 
 QString htmlText(
@@ -702,7 +703,7 @@ QString classInformationHtml(
 }
 
 QString documentHtml(
-    const Request& request,
+    const SubPrepDocumentModel::Document& document,
     const QSet<int>& pageBreakBeforeTeacherGroups = {},
     bool startSubNotesOnNewPage = false
     )
@@ -727,19 +728,19 @@ QString documentHtml(
                 {
                     {
                         translate("Office Number"),
-                        request.campus.officeNumber
+                        document.campus.officeNumber
                     },
                     {
                         translate("Office WiFi"),
-                        request.campus.officeWifi
+                        document.campus.officeWifi
                     },
                     {
                         translate("WiFi Password"),
-                        request.campus.officeWifiPassword
+                        document.campus.officeWifiPassword
                     },
                     {
                         translate("Photocopier Code"),
-                        request.campus.photocopierCode
+                        document.campus.photocopierCode
                     }
                 },
                 4,
@@ -747,18 +748,18 @@ QString documentHtml(
                 QStringLiteral(" campus-fact-value")
                 )
             )
-        + (hasZoomInformation(request)
+        + (hasZoomInformation(document)
                ? subsectionHtml(
                      translate("Personal Zoom Information"),
                      factsHtml(
                          {
                              {
                                  translate("Zoom Login ID"),
-                                 request.zoom.loginId
+                                 document.zoom.loginId
                              },
                              {
                                  translate("Zoom Password"),
-                                 request.zoom.password
+                                 document.zoom.password
                              }
                          }
                          )
@@ -768,13 +769,13 @@ QString documentHtml(
             translate("Class Materials & Lesson Notes"),
             noteHtml(
                 translate("Materials Location"),
-                request.classMaterials,
+                document.classMaterials,
                 QString(),
                 QStringLiteral(" compact-note")
                 )
             + noteHtml(
                 translate("Detailed Class & Lesson Notes"),
-                request.subNotes,
+                document.subNotes,
                 QString(),
                 QStringLiteral(" compact-note")
                 )
@@ -783,11 +784,11 @@ QString documentHtml(
             translate("Book Report Grading"),
             gradingNoteHtml(
                 translate("Grading Instructions"),
-                request.gradingInstructions
+                document.gradingInstructions
                 )
             + gradingNoteHtml(
                 translate("Special Instructions"),
-                request.specialInstructions
+                document.specialInstructions
                 )
             ),
         false,
@@ -796,15 +797,15 @@ QString documentHtml(
 
     html += sectionHtml(
         translate("Schedule"),
-        scheduleHtml(request.schedule)
+        scheduleHtml(document.schedule)
         );
     html += sectionHtml(
         translate("Class Information"),
         classInformationHtml(
-            request.classInformation,
+            document.classInformation,
             pageBreakBeforeTeacherGroups
             ),
-        !request.classInformation.isEmpty()
+        !document.classInformation.isEmpty()
         );
     html += sectionHtml(
         translate("Sub Notes"),
@@ -1324,6 +1325,9 @@ Result saveSubPrepPdf(
             );
     }
 
+    const SubPrepDocumentModel::Document documentModel =
+        SubPrepDocumentModel::build(request);
+
     QPdfWriter writer(documentPath);
     writer.setCreator(QStringLiteral("ClassMngr"));
     writer.setTitle(translate("Sub Prep"));
@@ -1375,24 +1379,28 @@ Result saveSubPrepPdf(
         scheduleTableLayout(
             body.width(),
             writer.resolution(),
-            request.schedule
+            documentModel.schedule
             );
 
     QSet<int> pageBreakBeforeTeacherGroups;
     bool startSubNotesOnNewPage = false;
 
-    for (int pass = 0; pass <= request.classInformation.size(); ++pass)
+    for (
+        int pass = 0;
+        pass <= documentModel.classInformation.size();
+        ++pass
+        )
     {
         document.setHtml(
             documentHtml(
-                request,
+                documentModel,
                 pageBreakBeforeTeacherGroups,
                 startSubNotesOnNewPage
                 )
             );
         applyScheduleTableLayout(
             document,
-            request.schedule,
+            documentModel.schedule,
             scheduleLayout
             );
 
@@ -1419,14 +1427,14 @@ Result saveSubPrepPdf(
 
     document.setHtml(
         documentHtml(
-            request,
+            documentModel,
             pageBreakBeforeTeacherGroups,
             startSubNotesOnNewPage
             )
         );
     applyScheduleTableLayout(
         document,
-        request.schedule,
+        documentModel.schedule,
         scheduleLayout
         );
     const std::optional<qreal> subNotesLineStart =
