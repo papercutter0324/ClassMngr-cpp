@@ -204,6 +204,25 @@ classmngr_add_qt_test(
     )
 
     classmngr_add_qt_test(
+        NAME DialogServices
+        SOURCES
+            tests/dialog_services_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
+    qt_add_resources(ClassMngrDialogServicesTests dialog_service_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            ${CLASSMNGR_FILE_DIALOG_ICONS}
+    )
+
+    classmngr_add_qt_test(
         NAME ClassTimeRow
         SOURCES
             tests/class_time_row_tests.cpp
