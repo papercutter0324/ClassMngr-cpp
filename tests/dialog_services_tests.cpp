@@ -342,6 +342,7 @@ void DialogServicesTests::confirmationMapsButtonsAndResults()
                 QStringLiteral("classmngrUserPrompt")
                 );
             QVERIFY(dialog);
+            QCOMPARE(dialog->parentWidget(), &parent);
 
             auto* acceptButton = dialog->findChild<QPushButton*>(
                 destructive
@@ -423,6 +424,7 @@ void DialogServicesTests::unsavedChangesMapsButtonsAndResults()
     QFETCH(QString, buttonObjectName);
     QFETCH(int, expectedChoice);
 
+    QWidget parent;
     QtUserPromptService service;
     bool inspected = false;
     QTimer::singleShot(
@@ -433,6 +435,7 @@ void DialogServicesTests::unsavedChangesMapsButtonsAndResults()
                 QStringLiteral("classmngrUserPrompt")
                 );
             QVERIFY(dialog);
+            QCOMPARE(dialog->parentWidget(), &parent);
             auto* saveButton = dialog->findChild<QPushButton*>(
                 QStringLiteral("promptSaveButton")
                 );
@@ -458,6 +461,7 @@ void DialogServicesTests::unsavedChangesMapsButtonsAndResults()
 
     const UnsavedChangesChoice choice = service.confirmUnsavedChanges(
         UnsavedChangesRequest{
+            .parent = &parent,
             .title = QStringLiteral("Unsaved Changes"),
             .message = QStringLiteral("This page has unsaved changes.")
         }
@@ -468,6 +472,7 @@ void DialogServicesTests::unsavedChangesMapsButtonsAndResults()
 
 void DialogServicesTests::actionPromptMapsRolesDefaultsAndResult()
 {
+    QWidget parent;
     QtUserPromptService service;
     bool inspected = false;
     QTimer::singleShot(
@@ -478,6 +483,7 @@ void DialogServicesTests::actionPromptMapsRolesDefaultsAndResult()
                 QStringLiteral("classmngrUserPrompt")
                 );
             QVERIFY(dialog);
+            QCOMPARE(dialog->parentWidget(), &parent);
             auto* applyButton = dialog->findChild<QPushButton*>(
                 QStringLiteral("promptAction_apply")
                 );
@@ -505,6 +511,7 @@ void DialogServicesTests::actionPromptMapsRolesDefaultsAndResult()
     const QString result = service.chooseAction(
         ActionPromptRequest{
             .prompt = PromptRequest{
+                .parent = &parent,
                 .title = QStringLiteral("Choose"),
                 .message = QStringLiteral("Choose an action."),
                 .severity = PromptSeverity::Warning

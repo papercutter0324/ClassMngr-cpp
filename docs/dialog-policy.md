@@ -58,6 +58,12 @@ destructive-confirmation, multi-action, and unsaved-changes prompts through
 `DialogServices::prompts()`. Direct `QMessageBox` construction is confined to
 `QtUserPromptService`; `QMessageBox::aboutQt()` remains the Qt-owned exception.
 
+CI runs `scripts/check_dialog_policy.py` for production-source changes. The
+check rejects `QMessageBox` and `QFileDialog` dependencies outside the prompt
+and file-dialog implementations and the two reviewed Qt integration points
+(`aboutQt()` and `FileDialogIconStyle`). Tests may use the Qt classes directly
+to inspect the policy implementations.
+
 ## Testing seam
 
 Features depend on `IUserPromptService` and `IFileDialogService`. Tests use the

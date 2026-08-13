@@ -23,6 +23,7 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTranslator>
 #include <QVBoxLayout>
 
 #include <type_traits>
@@ -56,6 +57,54 @@ public:
     bool acceptInvoked = false;
 };
 
+class RetranslationTrackingDialogShell final : public DialogShell
+{
+public:
+    using DialogShell::DialogShell;
+
+    int retranslationCount = 0;
+
+protected:
+    void retranslateDialog() override
+    {
+        ++retranslationCount;
+        setWindowTitle(QStringLiteral("Translated policy title"));
+        setHeader(
+            QStringLiteral("Translated heading"),
+            QStringLiteral("Translated supporting text")
+            );
+    }
+};
+
+class DialogPolicyTranslator final : public QTranslator
+{
+public:
+    QString translate(
+        const char* context,
+        const char* sourceText,
+        const char* disambiguation = nullptr,
+        int number = -1
+        ) const override
+    {
+        Q_UNUSED(disambiguation);
+        Q_UNUSED(number);
+
+        if (qstrcmp(context, "DialogShell") != 0)
+        {
+            return {};
+        }
+        if (qstrcmp(sourceText, "Dialog header") == 0)
+        {
+            return QStringLiteral("Translated dialog header");
+        }
+        if (qstrcmp(sourceText, "Dialog actions") == 0)
+        {
+            return QStringLiteral("Translated dialog actions");
+        }
+        return {};
+    }
+};
+
 class DialogShellTests : public QObject
 {
     Q_OBJECT
@@ -65,6 +114,8 @@ private slots:
     void appliesSharedLayoutHeaderAndAccessibilityPolicy();
     void standardButtonsProvideDefaultAndEscapeBehavior();
     void buttonRolesPreserveDialogValidation();
+    void retainsParentOwnershipAndModalContract();
+    void languageChangeRetranslatesShellAndDialog();
     void persistsGeometryByStableDialogKey();
 
 private:
@@ -151,6 +202,52 @@ void DialogShellTests::buttonRolesPreserveDialogValidation()
     QSignalSpy acceptedSpy(&workflowDialog, &QDialog::accepted);
     applyButton->click();
     QCOMPARE(acceptedSpy.count(), 0);
+}
+
+void DialogShellTests::retainsParentOwnershipAndModalContract()
+{
+    QWidget owner;
+    DialogShell dialog(QStringLiteral("ownedDialog"), &owner);
+
+    QCOMPARE(dialog.parentWidget(), &owner);
+    QVERIFY(dialog.isModal());
+}
+
+void DialogShellTests::languageChangeRetranslatesShellAndDialog()
+{
+    DialogPolicyTranslator translator;
+    QVERIFY(QCoreApplication::installTranslator(&translator));
+
+    RetranslationTrackingDialogShell dialog(
+        QStringLiteral("retranslationPolicy")
+        );
+    dialog.setWindowTitle(QStringLiteral("Original policy title"));
+    dialog.setHeader(
+        QStringLiteral("Original heading"),
+        QStringLiteral("Original supporting text")
+        );
+    auto* buttons = dialog.addButtonBox(QDialogButtonBox::Ok);
+
+    QEvent languageChange(QEvent::LanguageChange);
+    QVERIFY(QCoreApplication::sendEvent(&dialog, &languageChange));
+
+    QCOMPARE(dialog.retranslationCount, 1);
+    QCOMPARE(dialog.windowTitle(), QStringLiteral("Translated policy title"));
+    QCOMPARE(dialog.accessibleName(), QStringLiteral("Translated policy title"));
+    auto* header = dialog.findChild<QWidget*>(
+        QStringLiteral("retranslationPolicyHeader")
+        );
+    QVERIFY(header);
+    QCOMPARE(
+        header->accessibleName(),
+        QStringLiteral("Translated dialog header")
+        );
+    QCOMPARE(
+        buttons->accessibleName(),
+        QStringLiteral("Translated dialog actions")
+        );
+
+    QVERIFY(QCoreApplication::removeTranslator(&translator));
 }
 
 void DialogShellTests::persistsGeometryByStableDialogKey()
