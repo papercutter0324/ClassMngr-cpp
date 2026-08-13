@@ -1,4 +1,5 @@
 #include "class_notes_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -14,7 +15,6 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -192,7 +192,7 @@ bool ClassNotesPage::saveClassNotesInternal(
     {
         if (showErrorMessage)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Save Class Notes"),
                 tr("Class notes could not be saved.")

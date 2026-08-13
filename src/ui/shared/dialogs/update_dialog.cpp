@@ -1,4 +1,5 @@
 #include "update_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/updater/update_installer.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -10,7 +11,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLocale>
-#include <QMessageBox>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QTimer>
@@ -1168,20 +1168,22 @@ void UpdateDialog::installOrRevealUpdate()
         return;
     }
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         this,
         tr("Linux Update Downloaded"),
         tr("Extract the downloaded archive and replace your existing ClassMngr application directory when convenient.")
         );
 #else
-    const auto response =
-        QMessageBox::question(
+    const PromptChoice response =
+        DialogServices::confirm(
             this,
             tr("Install Update"),
-            tr("ClassMngr will close after opening the update package. Continue?")
+            tr("ClassMngr will close after opening the update package. Continue?"),
+            tr("Install"),
+            tr("Cancel")
             );
 
-    if (response != QMessageBox::Yes)
+    if (response != PromptChoice::Accepted)
     {
         return;
     }

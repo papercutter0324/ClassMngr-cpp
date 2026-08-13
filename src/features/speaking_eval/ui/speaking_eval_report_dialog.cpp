@@ -1,4 +1,5 @@
 #include "speaking_eval_report_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
@@ -17,7 +18,6 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
@@ -126,7 +126,7 @@ void copyAiPromptAndOpenProvider(
         || !QDesktopServices::openUrl(providerUrl)
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             parent,
             QCoreApplication::translate(
                 "SpeakingEvalReportDialog",
@@ -1033,7 +1033,7 @@ void SpeakingEvalReportDialog::printCurrentReport()
         || result.status
             == SpeakingEvalBatchReportService::Status::InternalRendererFailed)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Report Printing Failed"),
             result.message
@@ -1095,7 +1095,7 @@ void SpeakingEvalReportDialog::saveCurrentReportAsPdf()
         || result.status
             == SpeakingEvalBatchReportService::Status::InternalRendererFailed)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Save PDF Failed"),
             result.message

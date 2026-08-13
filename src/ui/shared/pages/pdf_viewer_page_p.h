@@ -22,7 +22,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QList>
-#include <QMessageBox>
 #include <QObject>
 #include <QPalette>
 #include <QPdfDocument>

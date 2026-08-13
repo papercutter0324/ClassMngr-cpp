@@ -1,4 +1,5 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
@@ -10,7 +11,6 @@
 #include <QAction>
 #include <QHash>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPair>
 #include <QTimer>
 
@@ -198,7 +198,7 @@ void RosterEditorWidget::transferRosterRow(
     QString reason;
     if (!m_model->canRemoveRow(row, &reason))
     {
-        QMessageBox::warning(this, tr("Cannot Transfer Student"), reason);
+        DialogServices::showWarning(this, tr("Cannot Transfer Student"), reason);
         return;
     }
     if (!validateRosterBeforeSave(true))
@@ -216,7 +216,7 @@ void RosterEditorWidget::transferRosterRow(
     reason.clear();
     if (!targetModel.insertTransferredRow(sourceColumns, sourceRow, &reason))
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Cannot Transfer Student"),
             reason.isEmpty()
@@ -240,7 +240,7 @@ void RosterEditorWidget::transferRosterRow(
         );
     if (!saved)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Cannot Transfer Student"),
             tr("The roster changes could not be saved.")

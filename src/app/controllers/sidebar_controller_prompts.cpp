@@ -1,4 +1,5 @@
 #include "sidebar_controller_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
 
@@ -140,15 +141,15 @@ bool SidebarController::confirmDeleteClass(
     const Classroom& classroom
     ) const
 {
-    const auto result =
-        QMessageBox::question(
-            m_sidebar,
-            tr("Delete Class"),
-            tr("Delete '%1'?")
-                .arg(classDisplayName(classroom))
-            );
-
-    return result == QMessageBox::Yes;
+    return DialogServices::confirm(
+        m_sidebar,
+        tr("Delete Class"),
+        tr("Delete '%1'?")
+            .arg(classDisplayName(classroom)),
+        tr("Delete"),
+        tr("Cancel"),
+        true
+        ) == PromptChoice::Destructive;
 }
 
 bool SidebarController::confirmDeleteTeacher(
@@ -160,15 +161,15 @@ bool SidebarController::confirmDeleteTeacher(
             teacher
             );
 
-    const auto result =
-        QMessageBox::question(
-            m_sidebar,
-            tr("Delete Teacher"),
-            tr("Delete '%1'?")
-                .arg(displayName)
-            );
-
-    return result == QMessageBox::Yes;
+    return DialogServices::confirm(
+        m_sidebar,
+        tr("Delete Teacher"),
+        tr("Delete '%1'?")
+            .arg(displayName),
+        tr("Delete"),
+        tr("Cancel"),
+        true
+        ) == PromptChoice::Destructive;
 }
 
 void SidebarController::updateActionStates()

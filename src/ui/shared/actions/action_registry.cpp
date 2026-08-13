@@ -1,4 +1,5 @@
 #include "action_registry.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "core/settingsmanager.h"
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -13,7 +14,6 @@
 #include <QIcon>
 #include <QInputDialog>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QStyle>
 #include <QWidget>
 
@@ -1043,7 +1043,7 @@ void ActionRegistry::createOptionActions()
                 aiCommentProviderState
                     ->action(previousProvider)
                     ->setChecked(true);
-                QMessageBox::warning(
+                DialogServices::showWarning(
                     qobject_cast<QWidget*>(parent()),
                     tr("Invalid AI Website"),
                     tr("Enter a valid HTTPS website URL.")

@@ -15,7 +15,7 @@
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
-#include "ui/shared/utils/unsaved_changes_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 
 
@@ -283,10 +283,12 @@ bool PageManager::confirmCurrentPageCanLeave(
     }
 
     const UnsavedChangesChoice choice =
-        showUnsavedChangesDialog(
-            this,
-            page->unsavedChangesTitle(),
-            page->unsavedChangesMessage()
+        DialogServices::prompts().confirmUnsavedChanges(
+            UnsavedChangesRequest{
+                .parent = this,
+                .title = page->unsavedChangesTitle(),
+                .message = page->unsavedChangesMessage()
+            }
             );
 
     switch (choice)

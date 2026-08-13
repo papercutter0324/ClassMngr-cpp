@@ -1,4 +1,5 @@
 #include "schedule_settings_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "data/data_service.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
@@ -7,7 +8,6 @@
 #include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -228,7 +228,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
 {
     if (!m_dataService || !m_dataService->isOpen())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Clear Testing Layout"),
             tr("No Teacher Profile is open.")
@@ -236,16 +236,17 @@ void ScheduleSettingsDialog::clearTestingLayout()
         return;
     }
 
-    const auto answer =
-        QMessageBox::warning(
+    const PromptChoice answer =
+        DialogServices::confirm(
             this,
             tr("Clear Testing Layout?"),
             tr("This removes every Oral Testing block and testing-class assignment. Saved testing classes and their rosters are preserved."),
-            QMessageBox::Reset | QMessageBox::Cancel,
-            QMessageBox::Cancel
+            tr("Clear Layout"),
+            tr("Cancel"),
+            true
             );
 
-    if (answer != QMessageBox::Reset)
+    if (answer != PromptChoice::Destructive)
     {
         return;
     }
@@ -255,7 +256,7 @@ void ScheduleSettingsDialog::clearTestingLayout()
 
     if (!result)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Clear Testing Layout"),
             result.error()

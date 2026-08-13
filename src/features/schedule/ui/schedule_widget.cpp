@@ -1,4 +1,5 @@
 #include "schedule_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "schedule_cell_hit_test.h"
 #include "schedule_cell_renderer_policy.h"
 #include "schedule_widget_geometry.h"
@@ -32,7 +33,6 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPalette>
@@ -464,7 +464,7 @@ void ScheduleWidget::editTestingAssignment(
 
     if (!dataService)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Assignment"),
             tr("No Teacher Profile is open.")
@@ -536,7 +536,7 @@ void ScheduleWidget::editTestingAssignment(
 
     if (!result)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Assignment"),
             result.error()
@@ -1281,7 +1281,7 @@ void ScheduleWidget::reloadTestingBlocks()
         qWarning()
             << "Failed to load testing blocks:"
             << assignments.error();
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Layout"),
             assignments.error()

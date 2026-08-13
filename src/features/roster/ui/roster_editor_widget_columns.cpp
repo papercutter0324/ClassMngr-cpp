@@ -1,4 +1,5 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_model.h"
@@ -6,7 +7,6 @@
 
 #include <QInputDialog>
 #include <QLineEdit>
-#include <QMessageBox>
 
 void RosterEditorWidget::addColumn()
 {
@@ -28,7 +28,7 @@ void RosterEditorWidget::addColumn()
     QString reason;
     if (!m_model->canAddColumn(name, &reason))
     {
-        QMessageBox::warning(this, tr("Cannot Add Column"), reason);
+        DialogServices::showWarning(this, tr("Cannot Add Column"), reason);
         return;
     }
 
@@ -55,18 +55,21 @@ void RosterEditorWidget::removeColumn()
 
     if (!m_model->canRemoveColumn(current.column(), &reason))
     {
-        QMessageBox::warning(this, tr("Cannot Remove Column"), reason);
+        DialogServices::showWarning(this, tr("Cannot Remove Column"), reason);
         return;
     }
 
     const QString columnName = m_model->columnName(current.column());
-    const QMessageBox::StandardButton response = QMessageBox::question(
+    const PromptChoice response = DialogServices::confirm(
         this,
         tr("Remove Column"),
-        tr("Remove the \"%1\" column?").arg(columnName)
+        tr("Remove the \"%1\" column?").arg(columnName),
+        tr("Remove"),
+        tr("Cancel"),
+        true
         );
 
-    if (response != QMessageBox::Yes)
+    if (response != PromptChoice::Destructive)
     {
         return;
     }

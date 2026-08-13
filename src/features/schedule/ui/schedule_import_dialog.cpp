@@ -1,4 +1,5 @@
 #include "schedule_import_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
@@ -24,7 +25,6 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
@@ -967,7 +967,7 @@ void ScheduleImportDialog::goNext()
     if (
         mismatch
         && !m_nameConfirmation->isChecked()
-        && QMessageBox::question(
+        && DialogServices::confirm(
             this,
             tr("Name Mismatch"),
             tr(
@@ -975,9 +975,9 @@ void ScheduleImportDialog::goNext()
                 "on the My Information page. "
                 "Do you want to continue anyway?"
                 ),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No
-            ) != QMessageBox::Yes
+            tr("Continue"),
+            tr("Cancel")
+            ) != PromptChoice::Accepted
         )
     {
         return;

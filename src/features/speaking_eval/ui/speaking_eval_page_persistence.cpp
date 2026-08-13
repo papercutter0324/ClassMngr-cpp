@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 void SpeakingEvalPage::saveData()
 {
@@ -72,18 +73,12 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         updateActions();
         if (showValidationMessages)
         {
-            QMessageBox message(this);
-            message.setIcon(QMessageBox::Warning);
-            message.setWindowTitle(
-                tr("Validation Errors")
-                );
-            message.setText(
-                tr("Fix validation errors before saving.")
-                );
-            message.setDetailedText(
+            DialogServices::showWarning(
+                this,
+                tr("Validation Errors"),
+                tr("Fix validation errors before saving."),
                 m_model->errorList().join(QLatin1Char('\n'))
                 );
-            message.exec();
         }
 
         return false;
@@ -103,7 +98,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     {
         if (showValidationMessages)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Save Failed"),
                 tr("The speaking evaluation could not be saved.")
@@ -119,7 +114,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 
     if (showSuccessMessage)
     {
-        QMessageBox::information(
+        DialogServices::showInformation(
             this,
             tr("Saved"),
             tr("Speaking evaluation saved.")
@@ -128,4 +123,3 @@ bool SpeakingEvalPage::saveEvaluationInternal(
 
     return true;
 }
-

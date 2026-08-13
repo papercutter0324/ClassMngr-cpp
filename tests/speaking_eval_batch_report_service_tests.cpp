@@ -2192,7 +2192,12 @@ void SpeakingEvalBatchReportServiceTests::
                         qobject_cast<QMessageBox*>(widget)
                     )
                 {
-                    messageBox->done(QMessageBox::Yes);
+                    auto* destructiveButton =
+                        messageBox->findChild<QPushButton*>(
+                            QStringLiteral("promptDestructiveButton")
+                            );
+                    QVERIFY(destructiveButton);
+                    destructiveButton->click();
                     return;
                 }
             }

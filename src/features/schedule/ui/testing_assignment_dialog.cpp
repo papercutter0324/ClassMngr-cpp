@@ -1,4 +1,5 @@
 #include "testing_assignment_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "data/data_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -9,7 +10,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -228,7 +228,7 @@ void TestingAssignmentDialog::loadTestingClasses()
         m_dataService->loadTestingClasses();
     if (!testingClasses)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Classes"),
             testingClasses.error()
@@ -272,7 +272,7 @@ void TestingAssignmentDialog::acceptSave()
     {
         if (selectedClassId() <= 0)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Testing Assignment"),
                 tr("Choose a testing class or manage your classes.")

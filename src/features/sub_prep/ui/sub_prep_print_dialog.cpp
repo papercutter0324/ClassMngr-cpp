@@ -1,4 +1,5 @@
 #include "features/sub_prep/ui/sub_prep_print_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "data/data_service.h"
@@ -17,7 +18,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
 #include <QSignalBlocker>
@@ -761,17 +761,18 @@ void SubPrepPrintDialog::acceptGeneration()
 
     if (createFolder() && QFileInfo::exists(directory))
     {
-        const QMessageBox::StandardButton answer =
-            QMessageBox::question(
+        const PromptChoice answer =
+            DialogServices::confirm(
                 this,
                 tr("Replace Existing Sub Prep Folder"),
                 tr("Replace the existing folder and all of its contents?\n\n%1")
                     .arg(directory),
-                QMessageBox::Yes | QMessageBox::No,
-                QMessageBox::No
+                tr("Replace"),
+                tr("Cancel"),
+                true
                 );
 
-        if (answer != QMessageBox::Yes)
+        if (answer != PromptChoice::Destructive)
         {
             return;
         }

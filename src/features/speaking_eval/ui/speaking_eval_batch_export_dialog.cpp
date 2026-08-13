@@ -1,4 +1,5 @@
 #include "speaking_eval_batch_export_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
@@ -15,7 +16,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QUrl>
@@ -364,7 +364,7 @@ void SpeakingEvalBatchExportDialog::exportReports()
             || (!outputDirectory.exists()
                 && !QDir().mkpath(request.outputDirectory)))
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Output Folder Unavailable"),
                 tr("The selected output folder does not exist and could not be created. Choose another folder and try again.")
@@ -408,15 +408,16 @@ void SpeakingEvalBatchExportDialog::exportReports()
 
         if (!existingFiles.isEmpty())
         {
-            const QMessageBox::StandardButton overwrite = QMessageBox::question(
+            const PromptChoice overwrite = DialogServices::confirm(
                 this,
                 tr("Overwrite Existing Output?"),
                 tr("%1 existing output file(s) will be replaced. Do you want to overwrite them?")
                     .arg(existingFiles.size()),
-                QMessageBox::Yes | QMessageBox::Cancel,
-                QMessageBox::Cancel
+                tr("Overwrite"),
+                tr("Cancel"),
+                true
                 );
-            if (overwrite != QMessageBox::Yes)
+            if (overwrite != PromptChoice::Destructive)
             {
                 return;
             }
@@ -467,16 +468,16 @@ void SpeakingEvalBatchExportDialog::exportReports()
         == SpeakingEvalBatchReportService::Status::InternalRendererFailed
         && SpeakingEvalBatchReportService::isPowerPointRendererAvailable())
     {
-        const QMessageBox::StandardButton retry =
-            QMessageBox::question(
+        const PromptChoice retry =
+            DialogServices::confirm(
                 this,
                 tr("Internal Export Failed"),
                 tr("The internal renderer could not create this batch. No PDFs were saved or printed.\n\n%1\n\nRetry the entire batch using the PowerPoint template?")
                     .arg(result.message),
-                QMessageBox::Yes | QMessageBox::No,
-                QMessageBox::Yes
+                tr("Retry with PowerPoint"),
+                tr("Cancel")
                 );
-        if (retry == QMessageBox::Yes)
+        if (retry == PromptChoice::Accepted)
         {
             if (!confirmPowerPointDataAccess())
             {
@@ -535,7 +536,7 @@ void SpeakingEvalBatchExportDialog::exportReports()
                             : QString()
                         );
         }
-        QMessageBox::information(
+        DialogServices::showInformation(
             this,
             tr("Reports Ready"),
             successMessage
@@ -555,7 +556,7 @@ void SpeakingEvalBatchExportDialog::exportReports()
         return;
     case SpeakingEvalBatchReportService::Status::Failed:
     case SpeakingEvalBatchReportService::Status::InternalRendererFailed:
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Report Export Failed"),
             result.message
@@ -573,28 +574,15 @@ bool SpeakingEvalBatchExportDialog::confirmPowerPointDataAccess()
         return true;
     }
 
-    QMessageBox notice(
-        QMessageBox::Information,
+    return DialogServices::confirm(
+        this,
         tr("PowerPoint Data Access"),
         tr(
             "To generate these reports, ClassMngr temporarily copies the PowerPoint template and signature into Microsoft PowerPoint's protected data folder. macOS may ask ClassMngr to access data from other apps.\n\nChoose Allow in the macOS prompt. Temporary files are deleted when the batch finishes."
             ),
-        QMessageBox::NoButton,
-        this
-        );
-    QPushButton* continueButton =
-        notice.addButton(
-            tr("Continue"),
-            QMessageBox::AcceptRole
-            );
-    QPushButton* cancelButton =
-        notice.addButton(
-            QMessageBox::Cancel
-            );
-    notice.setDefaultButton(continueButton);
-    notice.setEscapeButton(cancelButton);
-    notice.exec();
-    return notice.clickedButton() == continueButton;
+        tr("Continue"),
+        tr("Cancel")
+        ) == PromptChoice::Accepted;
 #else
     return true;
 #endif

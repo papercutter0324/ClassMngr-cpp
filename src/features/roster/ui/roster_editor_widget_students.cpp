@@ -1,10 +1,10 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
 
 #include <QAbstractButton>
-#include <QMessageBox>
 #include <QPushButton>
 
 void RosterEditorWidget::moveStudentRow(
@@ -104,41 +104,49 @@ void RosterEditorWidget::resolveDuplicateName(
     const int koreanColumn = m_model->koreanNameColumn();
     const QString suggestedName = m_model->suggestedKoreanNameWithSuffix(row);
 
-    QMessageBox dialog(this);
-    dialog.setIcon(QMessageBox::Warning);
-    dialog.setWindowTitle(tr("Duplicate Student Name"));
-    dialog.setText(tr("This English/Korean name combination already exists."));
-    dialog.setInformativeText(
-        tr("Duplicate row(s): %1").arg(duplicateRowLabels.join(QStringLiteral(", ")))
+    const QString action = DialogServices::prompts().chooseAction(
+        ActionPromptRequest{
+            .prompt = PromptRequest{
+                .parent = this,
+                .title = tr("Duplicate Student Name"),
+                .message = tr("This English/Korean name combination already exists."),
+                .severity = PromptSeverity::Warning
+            },
+            .informativeText = tr("Duplicate row(s): %1").arg(
+                duplicateRowLabels.join(QStringLiteral(", "))
+                ),
+            .actions = {
+                {
+                    QStringLiteral("suffix"),
+                    suggestedName.isEmpty()
+                        ? tr("No Suffix Available")
+                        : tr("Use %1").arg(suggestedName),
+                    PromptActionRole::Accept,
+                    !suggestedName.isEmpty()
+                },
+                {
+                    QStringLiteral("clear"),
+                    tr("Clear Edited Cell"),
+                    PromptActionRole::Destructive
+                },
+                {
+                    QStringLiteral("locate"),
+                    tr("Locate Duplicate"),
+                    PromptActionRole::Action
+                },
+                {
+                    QStringLiteral("keep"),
+                    tr("Keep As-Is"),
+                    PromptActionRole::Reject
+                }
+            },
+            .defaultActionId = suggestedName.isEmpty()
+                ? QStringLiteral("clear")
+                : QStringLiteral("suffix"),
+            .escapeActionId = QStringLiteral("keep")
+        }
         );
-
-    QPushButton* suffixButton = dialog.addButton(
-        suggestedName.isEmpty()
-            ? tr("No Suffix Available")
-            : tr("Use %1").arg(suggestedName),
-        QMessageBox::AcceptRole
-        );
-    suffixButton->setEnabled(!suggestedName.isEmpty());
-    QPushButton* clearButton = dialog.addButton(
-        tr("Clear Edited Cell"),
-        QMessageBox::DestructiveRole
-        );
-    QPushButton* locateButton = dialog.addButton(
-        tr("Locate Duplicate"),
-        QMessageBox::ActionRole
-        );
-    QPushButton* keepButton = dialog.addButton(
-        tr("Keep As-Is"),
-        QMessageBox::RejectRole
-        );
-
-    dialog.setDefaultButton(
-        suggestedName.isEmpty() ? clearButton : suffixButton
-        );
-    dialog.exec();
-
-    QAbstractButton* clickedButton = dialog.clickedButton();
-    if (clickedButton == suffixButton && !suggestedName.isEmpty())
+    if (action == QStringLiteral("suffix") && !suggestedName.isEmpty())
     {
         m_resolvingDuplicateName = true;
         m_model->setData(
@@ -149,7 +157,7 @@ void RosterEditorWidget::resolveDuplicateName(
         m_resolvingDuplicateName = false;
         selectRosterCell(row, koreanColumn);
     }
-    else if (clickedButton == clearButton)
+    else if (action == QStringLiteral("clear"))
     {
         m_resolvingDuplicateName = true;
         m_model->setData(
@@ -160,15 +168,10 @@ void RosterEditorWidget::resolveDuplicateName(
         m_resolvingDuplicateName = false;
         selectRosterCell(row, editedColumn);
     }
-    else if (clickedButton == locateButton)
+    else if (action == QStringLiteral("locate"))
     {
         selectRosterCell(duplicateRows.first(), m_model->englishNameColumn());
     }
-    else
-    {
-        Q_UNUSED(keepButton);
-    }
-
     m_table->viewport()->update();
     updateActions();
 }
@@ -205,7 +208,7 @@ bool RosterEditorWidget::removeRosterRow(
     QString reason;
     if (!m_model->canRemoveRow(row, &reason))
     {
-        QMessageBox::warning(this, tr("Cannot Remove Student"), reason);
+        DialogServices::showWarning(this, tr("Cannot Remove Student"), reason);
         return false;
     }
 
@@ -215,7 +218,16 @@ bool RosterEditorWidget::removeRosterRow(
             ? tr("Remove row %1 from the roster?").arg(row + 1)
             : tr("Remove %1 from the roster?").arg(label);
 
-    if (QMessageBox::question(this, tr("Remove Student"), message) != QMessageBox::Yes)
+    if (
+        DialogServices::confirm(
+            this,
+            tr("Remove Student"),
+            message,
+            tr("Remove"),
+            tr("Cancel"),
+            true
+            ) != PromptChoice::Destructive
+        )
     {
         return false;
     }

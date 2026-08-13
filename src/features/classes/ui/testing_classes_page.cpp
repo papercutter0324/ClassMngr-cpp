@@ -1,4 +1,5 @@
 #include "testing_classes_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
@@ -26,7 +27,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSplitter>
@@ -277,7 +277,7 @@ bool TestingClassesPage::saveChanges()
                 );
         if (!created)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Save Testing Class"),
                 created.error()
@@ -297,7 +297,7 @@ bool TestingClassesPage::saveChanges()
                 );
         if (!updated)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Save Testing Class"),
                 updated.error()
@@ -908,7 +908,7 @@ void TestingClassesPage::rebuildClassList(
         scheduleService->testingClasses();
     if (!loaded)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Classes"),
             loaded.error()
@@ -995,7 +995,7 @@ void TestingClassesPage::loadClass(
         scheduleService->testingClass(classId);
     if (!loaded)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Testing Classes"),
             loaded.error()
@@ -1208,15 +1208,16 @@ void TestingClassesPage::deleteCurrentClass()
         return;
     }
 
-    const auto answer =
-        QMessageBox::warning(
+    const PromptChoice answer =
+        DialogServices::confirm(
             this,
             tr("Delete Testing Class?"),
             tr("This permanently deletes the testing class, its roster, notes, and every schedule assignment."),
-            QMessageBox::Yes | QMessageBox::Cancel,
-            QMessageBox::Cancel
+            tr("Delete"),
+            tr("Cancel"),
+            true
             );
-    if (answer != QMessageBox::Yes)
+    if (answer != PromptChoice::Destructive)
     {
         return;
     }
@@ -1233,7 +1234,7 @@ void TestingClassesPage::deleteCurrentClass()
             );
     if (!deleted)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Delete Testing Class"),
             deleted.error()

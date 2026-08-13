@@ -1,4 +1,5 @@
 #include "about_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -454,7 +455,7 @@ void AboutDialog::showLicense(
 
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("License Not Available"),
             tr("The license file could not be opened:\n%1")

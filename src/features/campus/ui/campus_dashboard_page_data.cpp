@@ -1,4 +1,5 @@
 #include "campus_dashboard_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -17,7 +18,6 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -797,7 +797,7 @@ void CampusDashboardPage::openMapUrl(
             )
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Unable to Open Map"),
             tr("The map link could not be opened.")

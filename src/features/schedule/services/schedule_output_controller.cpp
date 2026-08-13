@@ -1,4 +1,5 @@
 #include "schedule_output_controller.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "core/theme_service.h"
@@ -7,7 +8,6 @@
 #include "features/schedule/ui/schedule_print_dialog.h"
 
 #include <QDialog>
-#include <QMessageBox>
 #include <QObject>
 
 void ScheduleOutputController::execute(
@@ -57,7 +57,7 @@ void ScheduleOutputController::execute(
             );
     if (result.status == SchedulePrintService::Status::Failed)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             parent,
             print
                 ? QObject::tr("Print Schedule")

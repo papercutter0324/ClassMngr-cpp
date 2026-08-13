@@ -1,4 +1,5 @@
 #include "sidebar_controller_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/services/feature_services.h"
 
@@ -7,7 +8,6 @@ using namespace SidebarControllerPrivate;
 #include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 
-#include <QMessageBox>
 
 void SidebarController::importTeachers()
 {
@@ -38,13 +38,14 @@ void SidebarController::importTeachers()
                       "    Current Version: %2"))
                 .arg(plan.sourceDate.toString(Qt::ISODate),
                      previousDate.toString(Qt::ISODate));
-        const auto answer = QMessageBox::question(
+        const PromptChoice answer = DialogServices::confirm(
             m_sidebar,
             tr("Import Teachers"),
             confirmationMessage,
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No);
-        if (answer != QMessageBox::Yes)
+            tr("Continue"),
+            tr("Cancel")
+            );
+        if (answer != PromptChoice::Accepted)
         {
             return;
         }
@@ -54,7 +55,7 @@ void SidebarController::importTeachers()
         teachers->importTeachers(plan);
     if (!imported)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar,
             tr("Import Teachers"),
             imported.error());
@@ -73,7 +74,7 @@ void SidebarController::importTeachers()
     updateActionStates();
 
     const TeacherImportSummary& summary = *imported;
-    QMessageBox::information(
+    DialogServices::showInformation(
         m_sidebar,
         tr("Import Teachers"),
         tr("Import complete.\n\n"

@@ -1,4 +1,5 @@
 #include "schedule_editor_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -16,7 +17,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QVBoxLayout>
@@ -150,7 +150,7 @@ void ScheduleEditorDialog::saveChanges()
 
     if (!m_services->dataService()->saveClassInfo(info))
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Could Not Save"),
             tr("The class information could not be saved.")

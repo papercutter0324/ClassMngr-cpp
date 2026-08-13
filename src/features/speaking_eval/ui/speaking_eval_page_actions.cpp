@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
@@ -121,7 +122,7 @@ void SpeakingEvalPage::importNames()
 
     if (roster.rows.isEmpty())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Import Names"),
             tr("No roster data found.")
@@ -140,7 +141,7 @@ void SpeakingEvalPage::importNames()
             ) < 0
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Import Names"),
             tr("Roster must contain 'English' and 'Korean' columns.")
@@ -156,7 +157,7 @@ void SpeakingEvalPage::importNames()
 
     if (changes.isEmpty())
     {
-        QMessageBox::information(
+        DialogServices::showInformation(
             this,
             tr("Import Names"),
             tr("Names are already up to date.")
@@ -176,7 +177,7 @@ void SpeakingEvalPage::importNames()
 
     updateActions();
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         this,
         tr("Import Names"),
         tr("Roster names imported successfully.")

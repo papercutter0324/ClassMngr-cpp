@@ -1,4 +1,5 @@
 #include "sidebar_controller_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
 
@@ -10,7 +11,6 @@ using namespace SidebarControllerPrivate;
 
 #include <QDir>
 #include <QFileInfo>
-#include <QMessageBox>
 
 namespace
 {
@@ -141,7 +141,7 @@ void SidebarController::saveClassExport(
 
     if (!package)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar, dialogTitle, package.error());
         return;
     }
@@ -152,12 +152,12 @@ void SidebarController::saveClassExport(
 
     if (!saved)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar, dialogTitle, saved.error());
         return;
     }
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         m_sidebar,
         dialogTitle,
         tr("Exported %1 class(es) to:\n%2")
@@ -200,7 +200,7 @@ void SidebarController::importClasses()
 
     if (!package)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar, tr("Import Classes"), package.error());
         return;
     }
@@ -209,7 +209,7 @@ void SidebarController::importClasses()
 
     if (!preview)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar, tr("Import Classes"), preview.error());
         return;
     }
@@ -229,7 +229,7 @@ void SidebarController::importClasses()
 
     if (!summary)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             m_sidebar, tr("Import Classes"), summary.error());
         return;
     }
@@ -260,7 +260,7 @@ void SidebarController::importClasses()
         m_sidebar->selectByKeys(selectedKeys, selectedClassId);
     }
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         m_sidebar,
         tr("Import Classes"),
         tr("Import complete. Created: %1, replaced: %2, skipped: %3.")

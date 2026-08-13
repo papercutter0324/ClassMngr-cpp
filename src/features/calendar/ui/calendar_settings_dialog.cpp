@@ -1,4 +1,5 @@
 #include "calendar_settings_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "academic_calendar_provider.h"
 #include "core/fontmanager.h"
@@ -17,7 +18,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSpinBox>
@@ -81,7 +81,7 @@ void CalendarSettingsDialog::accept()
     {
         if (!schedule.isValid())
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Invalid Academic Schedule"),
                 tr("Every term must start on a Monday and last between 1 and 53 weeks.")
@@ -110,7 +110,7 @@ void CalendarSettingsDialog::accept()
                 || days / 7 > MaximumTermWeeks
                 )
             {
-                QMessageBox::warning(
+                DialogServices::showWarning(
                     this,
                     tr("Invalid Winter Start"),
                     tr("Winter must begin 1 to 53 complete weeks after the preceding Fall term starts.")
@@ -122,17 +122,18 @@ void CalendarSettingsDialog::accept()
 
     if (m_provider->hasCustomYearAfter(m_termYear))
     {
-        const auto answer =
-            QMessageBox::warning(
+        const PromptChoice answer =
+            DialogServices::confirm(
                 this,
                 tr("Recalculate Later Years?"),
                 tr("Saving term year %1 will replace later custom schedules with predictions based on the default term durations.")
                     .arg(m_termYear),
-                QMessageBox::Save | QMessageBox::Cancel,
-                QMessageBox::Cancel
+                tr("Save"),
+                tr("Cancel"),
+                true
                 );
 
-        if (answer != QMessageBox::Save)
+        if (answer != PromptChoice::Destructive)
         {
             return;
         }
@@ -176,16 +177,17 @@ void CalendarSettingsDialog::resetCalendarEvents()
         return;
     }
 
-    const auto answer =
-        QMessageBox::warning(
+    const PromptChoice answer =
+        DialogServices::confirm(
             this,
             tr("Reset Calendar?"),
             tr("This will permanently delete all calendar events and restore the calendar event list to defaults. This cannot be undone."),
-            QMessageBox::Reset | QMessageBox::Cancel,
-            QMessageBox::Cancel
+            tr("Reset"),
+            tr("Cancel"),
+            true
             );
 
-    if (answer != QMessageBox::Reset)
+    if (answer != PromptChoice::Destructive)
     {
         return;
     }
@@ -761,7 +763,7 @@ void CalendarSettingsDialog::commitDate(
 
     if (edited.dayOfWeek() != Qt::Monday)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Monday Required"),
             tr("Academic terms must start on a Monday.")
@@ -790,7 +792,7 @@ void CalendarSettingsDialog::commitDate(
             || weeks > MaximumTermWeeks
             )
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Invalid Term Start"),
                 tr("The start must be 1 to 53 complete weeks after the preceding term starts.")

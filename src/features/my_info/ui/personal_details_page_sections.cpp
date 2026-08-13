@@ -1,4 +1,5 @@
 #include "personal_details_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
@@ -24,7 +25,6 @@
 #include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -309,7 +309,7 @@ void PersonalDetailsPage::chooseSignatureImage()
 
     if (image.isNull())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Unsupported Signature Image"),
             tr("The selected file is not a supported image.")
@@ -321,7 +321,7 @@ void PersonalDetailsPage::chooseSignatureImage()
         SignatureImage::prepareForEmbedding(image);
     if (encodedImage.isEmpty())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Signature Image Error"),
             tr("The signature image could not be prepared for embedding.")

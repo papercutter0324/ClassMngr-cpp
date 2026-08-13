@@ -45,12 +45,17 @@ class DialogServicesTests final : public QObject
 private slots:
     void cleanup();
     void fakePromptServiceRecordsRequestsAndScriptsChoices();
+    void applicationPromptAccessCanBeOverridden();
     void fakeFileDialogServiceRecordsRequestsAndScriptsResults();
     void applicationFileDialogAccessCanBeOverridden();
     void messageMapsSeverityDetailsAndParent_data();
     void messageMapsSeverityDetailsAndParent();
+    void asynchronousMessageUsesTypedPolicy();
     void confirmationMapsButtonsAndResults_data();
     void confirmationMapsButtonsAndResults();
+    void unsavedChangesMapsButtonsAndResults_data();
+    void unsavedChangesMapsButtonsAndResults();
+    void actionPromptMapsRolesDefaultsAndResult();
     void platformFileDialogPolicyIsExplicit();
     void qtFileDialogAppliesSharedPolicy();
     void saveFileReturnsAccessoryChoice();
@@ -59,6 +64,7 @@ private slots:
 
 void DialogServicesTests::cleanup()
 {
+    DialogServices::setUserPromptServiceForTesting(nullptr);
     DialogServices::setFileDialogServiceForTesting(nullptr);
 }
 
@@ -98,6 +104,59 @@ void DialogServicesTests::fakePromptServiceRecordsRequestsAndScriptsChoices()
         service.confirm(confirmation),
         PromptChoice::Rejected
         );
+
+    service.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    QCOMPARE(
+        service.confirmUnsavedChanges(
+            UnsavedChangesRequest{
+                .title = QStringLiteral("Unsaved")
+            }
+            ),
+        UnsavedChangesChoice::Discard
+        );
+    QCOMPARE(service.unsavedChangesConfirmations.size(), 1);
+
+    service.showMessageAsync(
+        PromptRequest{
+            .title = QStringLiteral("Background notice")
+        }
+        );
+    QCOMPARE(service.asynchronousMessages.size(), 1);
+
+    service.scriptedActionIds.enqueue(QStringLiteral("retry"));
+    QCOMPARE(
+        service.chooseAction(
+            ActionPromptRequest{
+                .actions = {
+                    {
+                        QStringLiteral("retry"),
+                        QStringLiteral("Retry"),
+                        PromptActionRole::Accept
+                    }
+                }
+            }
+            ),
+        QStringLiteral("retry")
+        );
+    QCOMPARE(service.actionPrompts.size(), 1);
+}
+
+void DialogServicesTests::applicationPromptAccessCanBeOverridden()
+{
+    FakeUserPromptService fake;
+    DialogServices::setUserPromptServiceForTesting(&fake);
+
+    DialogServices::prompts().showMessage(
+        PromptRequest{
+            .title = QStringLiteral("Saved"),
+            .message = QStringLiteral("Changes saved.")
+        }
+        );
+
+    QCOMPARE(fake.messages.size(), 1);
+    QCOMPARE(fake.messages.first().title, QStringLiteral("Saved"));
 }
 
 void DialogServicesTests::fakeFileDialogServiceRecordsRequestsAndScriptsResults()
@@ -216,6 +275,36 @@ void DialogServicesTests::messageMapsSeverityDetailsAndParent()
     QVERIFY(inspected);
 }
 
+void DialogServicesTests::asynchronousMessageUsesTypedPolicy()
+{
+    QWidget parent;
+    QtUserPromptService service;
+    service.showMessageAsync(
+        PromptRequest{
+            .parent = &parent,
+            .objectName = QStringLiteral("backgroundPrompt"),
+            .title = QStringLiteral("Background warning"),
+            .message = QStringLiteral("Review this warning."),
+            .severity = PromptSeverity::Warning
+        }
+        );
+    QApplication::processEvents();
+
+    auto* dialog = findServiceDialog<QMessageBox>(
+        QStringLiteral("backgroundPrompt")
+        );
+    QVERIFY(dialog);
+    QCOMPARE(dialog->parentWidget(), &parent);
+    QCOMPARE(dialog->windowModality(), Qt::WindowModal);
+    QCOMPARE(dialog->icon(), QMessageBox::Warning);
+    auto* acceptButton = dialog->findChild<QPushButton*>(
+        QStringLiteral("promptAcceptButton")
+        );
+    QVERIFY(acceptButton);
+    acceptButton->click();
+    QApplication::processEvents();
+}
+
 void DialogServicesTests::confirmationMapsButtonsAndResults_data()
 {
     QTest::addColumn<bool>("destructive");
@@ -311,6 +400,139 @@ void DialogServicesTests::confirmationMapsButtonsAndResults()
         );
     QVERIFY(inspected);
     QCOMPARE(static_cast<int>(choice), expectedChoice);
+}
+
+void DialogServicesTests::unsavedChangesMapsButtonsAndResults_data()
+{
+    QTest::addColumn<QString>("buttonObjectName");
+    QTest::addColumn<int>("expectedChoice");
+
+    QTest::newRow("save")
+        << QStringLiteral("promptSaveButton")
+        << static_cast<int>(UnsavedChangesChoice::Save);
+    QTest::newRow("discard")
+        << QStringLiteral("promptDiscardButton")
+        << static_cast<int>(UnsavedChangesChoice::Discard);
+    QTest::newRow("cancel")
+        << QStringLiteral("promptCancelButton")
+        << static_cast<int>(UnsavedChangesChoice::Cancel);
+}
+
+void DialogServicesTests::unsavedChangesMapsButtonsAndResults()
+{
+    QFETCH(QString, buttonObjectName);
+    QFETCH(int, expectedChoice);
+
+    QtUserPromptService service;
+    bool inspected = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* dialog = findServiceDialog<QMessageBox>(
+                QStringLiteral("classmngrUserPrompt")
+                );
+            QVERIFY(dialog);
+            auto* saveButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptSaveButton")
+                );
+            auto* discardButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptDiscardButton")
+                );
+            auto* cancelButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptCancelButton")
+                );
+            QVERIFY(saveButton);
+            QVERIFY(discardButton);
+            QVERIFY(cancelButton);
+            QCOMPARE(dialog->defaultButton(), cancelButton);
+            QCOMPARE(dialog->escapeButton(), cancelButton);
+            QCOMPARE(
+                dialog->buttonRole(discardButton),
+                QMessageBox::DestructiveRole
+                );
+            inspected = true;
+            dialog->findChild<QPushButton*>(buttonObjectName)->click();
+        }
+        );
+
+    const UnsavedChangesChoice choice = service.confirmUnsavedChanges(
+        UnsavedChangesRequest{
+            .title = QStringLiteral("Unsaved Changes"),
+            .message = QStringLiteral("This page has unsaved changes.")
+        }
+        );
+    QVERIFY(inspected);
+    QCOMPARE(static_cast<int>(choice), expectedChoice);
+}
+
+void DialogServicesTests::actionPromptMapsRolesDefaultsAndResult()
+{
+    QtUserPromptService service;
+    bool inspected = false;
+    QTimer::singleShot(
+        0,
+        [&]()
+        {
+            auto* dialog = findServiceDialog<QMessageBox>(
+                QStringLiteral("classmngrUserPrompt")
+                );
+            QVERIFY(dialog);
+            auto* applyButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptAction_apply")
+                );
+            auto* deleteButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptAction_delete")
+                );
+            auto* cancelButton = dialog->findChild<QPushButton*>(
+                QStringLiteral("promptAction_cancel")
+                );
+            QVERIFY(applyButton);
+            QVERIFY(deleteButton);
+            QVERIFY(cancelButton);
+            QVERIFY(!applyButton->isEnabled());
+            QCOMPARE(
+                dialog->buttonRole(deleteButton),
+                QMessageBox::DestructiveRole
+                );
+            QCOMPARE(dialog->defaultButton(), deleteButton);
+            QCOMPARE(dialog->escapeButton(), cancelButton);
+            inspected = true;
+            deleteButton->click();
+        }
+        );
+
+    const QString result = service.chooseAction(
+        ActionPromptRequest{
+            .prompt = PromptRequest{
+                .title = QStringLiteral("Choose"),
+                .message = QStringLiteral("Choose an action."),
+                .severity = PromptSeverity::Warning
+            },
+            .actions = {
+                {
+                    QStringLiteral("apply"),
+                    QStringLiteral("Apply"),
+                    PromptActionRole::Accept,
+                    false
+                },
+                {
+                    QStringLiteral("delete"),
+                    QStringLiteral("Delete"),
+                    PromptActionRole::Destructive
+                },
+                {
+                    QStringLiteral("cancel"),
+                    QStringLiteral("Cancel"),
+                    PromptActionRole::Reject
+                }
+            },
+            .defaultActionId = QStringLiteral("delete"),
+            .escapeActionId = QStringLiteral("cancel")
+        }
+        );
+    QVERIFY(inspected);
+    QCOMPARE(result, QStringLiteral("delete"));
 }
 
 void DialogServicesTests::platformFileDialogPolicyIsExplicit()

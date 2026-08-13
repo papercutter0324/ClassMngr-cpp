@@ -1,4 +1,5 @@
 #include "app/controllers/file_controller.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/mainwindow.h"
 #include "core/application_services.h"
@@ -13,7 +14,6 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMenu>
-#include <QMessageBox>
 #include <QStandardPaths>
 #include <QUuid>
 
@@ -225,8 +225,8 @@ bool FileController::createNewDatabaseInteractive(
         && !QFile::remove(normalizedPath)
         )
     {
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("New Teacher Profile"),
             tr("Unable to replace existing Teacher Profile file:\n%1")
                 .arg(normalizedPath)
@@ -241,8 +241,8 @@ bool FileController::createNewDatabaseInteractive(
 
     if (!opened)
     {
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("New Teacher Profile"),
             opened.error()
             );
@@ -288,8 +288,8 @@ bool FileController::createInitialSetupDatabase(
         m_initialSetupBackupPath = initialSetupBackupPath(filePath);
         if (!QFile::rename(filePath, m_initialSetupBackupPath))
         {
-            QMessageBox::warning(
-                nullptr,
+            DialogServices::showWarning(
+                m_window,
                 tr("New Teacher Profile"),
                 tr("Unable to preserve the existing Teacher Profile file:\n%1")
                     .arg(filePath)
@@ -308,8 +308,8 @@ bool FileController::createInitialSetupDatabase(
     {
         const QString error = opened.error();
         cancelInitialSetup();
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("New Teacher Profile"),
             error
             );
@@ -343,8 +343,8 @@ void FileController::finishInitialSetup()
         && !QFile::remove(m_initialSetupBackupPath)
         )
     {
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("Initial Setup"),
             tr("Setup is complete, but the replaced Teacher Profile could not be removed:\n%1")
                 .arg(m_initialSetupBackupPath)
@@ -376,8 +376,8 @@ void FileController::cancelInitialSetup()
         {
             if (QFile::exists(databasePath) && !QFile::remove(databasePath))
             {
-                QMessageBox::warning(
-                    nullptr,
+                DialogServices::showWarning(
+                    m_window,
                     tr("Initial Setup"),
                     tr("The incomplete Teacher Profile could not be removed:\n%1")
                         .arg(databasePath)
@@ -407,8 +407,8 @@ void FileController::cancelInitialSetup()
                     QFile::rename(incompletePath, databasePath);
                 }
 
-                QMessageBox::warning(
-                    nullptr,
+                DialogServices::showWarning(
+                    m_window,
                     tr("Initial Setup"),
                     tr("The original Teacher Profile could not be restored:\n%1")
                         .arg(backupPath)
@@ -464,8 +464,8 @@ bool FileController::loadDatabase(
 
         if (showErrorMessage)
         {
-            QMessageBox::warning(
-                nullptr,
+            DialogServices::showWarning(
+                m_window,
                 tr("Missing File"),
                 tr("File not found:\n%1")
                     .arg(normalizedPath)
@@ -494,8 +494,8 @@ bool FileController::loadDatabase(
     {
         if (showErrorMessage)
         {
-            QMessageBox::warning(
-                nullptr,
+            DialogServices::showWarning(
+                m_window,
                 tr("Open Teacher Profile"),
                 opened.error()
                 );
@@ -626,8 +626,8 @@ void FileController::openSpecificFile(
         pruneRecentFile(normalizedPath);
         populateRecentMenu();
 
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("Missing File"),
             tr("File not found:\n%1")
                 .arg(normalizedPath)
@@ -805,8 +805,8 @@ bool FileController::saveDatabaseAs(
 
     if (!saved)
     {
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("Save Teacher Profile"),
             saved.error()
             );
@@ -839,8 +839,8 @@ bool FileController::exportDatabaseAs(
 
     if (!exported)
     {
-        QMessageBox::warning(
-            nullptr,
+        DialogServices::showWarning(
+            m_window,
             tr("Export Teacher Profile"),
             exported.error()
             );

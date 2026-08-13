@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     const QStringList& rosterColumns,
@@ -237,74 +238,62 @@ void SpeakingEvalPage::resolveDuplicateName(
     const QList<QStringList> rosterCandidates =
         unmatchedRosterNamePairs();
 
-    QMessageBox dialog(this);
-    dialog.setIcon(QMessageBox::Warning);
-    dialog.setWindowTitle(
-        tr("Duplicate Student Name")
-        );
-    dialog.setText(
-        tr("This English/Korean name combination already exists.")
-        );
-    dialog.setInformativeText(
-        tr("Duplicate row(s): %1").arg(
-            duplicateRowLabels.join(QStringLiteral(", "))
-            )
-        );
-
-    QPushButton* suffixButton =
-        dialog.addButton(
+    QVector<PromptAction> actions{
+        {
+            QStringLiteral("suffix"),
             suggestedName.isEmpty()
                 ? tr("No Suffix Available")
                 : tr("Use %1").arg(suggestedName),
-            QMessageBox::AcceptRole
-            );
-
-    suffixButton->setEnabled(
-        !suggestedName.isEmpty()
-        );
-
-    QPushButton* clearButton =
-        dialog.addButton(
+            PromptActionRole::Accept,
+            !suggestedName.isEmpty()
+        },
+        {
+            QStringLiteral("clear"),
             tr("Clear Edited Cell"),
-            QMessageBox::DestructiveRole
-            );
-
-    QPushButton* locateButton =
-        dialog.addButton(
+            PromptActionRole::Destructive
+        },
+        {
+            QStringLiteral("locate"),
             tr("Locate Duplicate"),
-            QMessageBox::ActionRole
-            );
-
-    QPushButton* matchButton = nullptr;
-
+            PromptActionRole::Action
+        }
+    };
     if (!rosterCandidates.isEmpty())
     {
-        matchButton =
-            dialog.addButton(
+        actions.append(
+            {
+                QStringLiteral("match"),
                 tr("Use Roster Match..."),
-                QMessageBox::ActionRole
-                );
-    }
-
-    QPushButton* keepButton =
-        dialog.addButton(
-            tr("Keep As-Is"),
-            QMessageBox::RejectRole
+                PromptActionRole::Action
+            }
             );
-
-    if (!suggestedName.isEmpty())
-    {
-        dialog.setDefaultButton(suffixButton);
     }
-    else
-    {
-        dialog.setDefaultButton(clearButton);
-    }
+    actions.append(
+        {
+            QStringLiteral("keep"),
+            tr("Keep As-Is"),
+            PromptActionRole::Reject
+        }
+        );
 
-    dialog.exec();
-
-    QAbstractButton* clickedButton =
-        dialog.clickedButton();
+    const QString action = DialogServices::prompts().chooseAction(
+        ActionPromptRequest{
+            .prompt = PromptRequest{
+                .parent = this,
+                .title = tr("Duplicate Student Name"),
+                .message = tr("This English/Korean name combination already exists."),
+                .severity = PromptSeverity::Warning
+            },
+            .informativeText = tr("Duplicate row(s): %1").arg(
+                duplicateRowLabels.join(QStringLiteral(", "))
+                ),
+            .actions = actions,
+            .defaultActionId = suggestedName.isEmpty()
+                ? QStringLiteral("clear")
+                : QStringLiteral("suffix"),
+            .escapeActionId = QStringLiteral("keep")
+        }
+        );
 
     const auto applySingleChange =
         [this, row](int column, const QString& newValue, const QString& description)
@@ -343,7 +332,7 @@ void SpeakingEvalPage::resolveDuplicateName(
             m_resolvingDuplicateName = false;
         };
 
-    if (clickedButton == suffixButton && !suggestedName.isEmpty())
+    if (action == QStringLiteral("suffix") && !suggestedName.isEmpty())
     {
         applySingleChange(
             koreanColumn,
@@ -356,7 +345,7 @@ void SpeakingEvalPage::resolveDuplicateName(
             SpeakingEvalColumn::KoreanName
             );
     }
-    else if (clickedButton == clearButton)
+    else if (action == QStringLiteral("clear"))
     {
         applySingleChange(
             editedColumn,
@@ -369,14 +358,14 @@ void SpeakingEvalPage::resolveDuplicateName(
             SpeakingEval::columnFromInt(editedColumn)
             );
     }
-    else if (clickedButton == locateButton)
+    else if (action == QStringLiteral("locate"))
     {
         selectEvaluationCell(
             duplicateRows.first(),
             SpeakingEvalColumn::EnglishName
             );
     }
-    else if (matchButton && clickedButton == matchButton)
+    else if (action == QStringLiteral("match"))
     {
         QStringList options;
 
@@ -467,11 +456,6 @@ void SpeakingEvalPage::resolveDuplicateName(
                 );
         }
     }
-    else
-    {
-        Q_UNUSED(keepButton);
-    }
-
     m_table->viewport()->update();
     updateActions();
 }

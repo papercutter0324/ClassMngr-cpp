@@ -1,4 +1,5 @@
 #include "initial_setup_wizard.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "data/data_service.h"
@@ -30,7 +31,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPixmap>
 #include <QPushButton>
 #include <QScrollArea>
@@ -61,7 +61,7 @@ bool showMissingFields(
         return false;
     }
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         parent,
         title,
         QCoreApplication::translate(
@@ -164,7 +164,7 @@ public:
                 setup->dataService()->importTeachers(dialog.importPlan());
             if (!imported)
             {
-                QMessageBox::warning(
+                DialogServices::showWarning(
                     this, tr("Import Teachers"), imported.error());
                 return;
             }
@@ -343,7 +343,7 @@ public:
             QFile file(*selection);
             if (!file.open(QIODevice::ReadOnly))
             {
-                QMessageBox::warning(
+                DialogServices::showWarning(
                     this,
                     tr("Signature Image"),
                     tr("The selected signature image could not be opened."));
@@ -354,7 +354,7 @@ public:
                 SignatureImage::prepareForEmbedding(file.readAll());
             if (prepared.isEmpty())
             {
-                QMessageBox::warning(
+                DialogServices::showWarning(
                     this,
                     tr("Signature Image"),
                     tr("The selected file is not a supported signature image."));
@@ -415,7 +415,7 @@ public:
 
         if (!PersonalDetailsRepository(setup->dataService()).save(details))
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this, tr("Initial Setup"),
                 tr("Your personal information could not be saved."));
             return false;
@@ -646,7 +646,7 @@ private:
                 missingNames.append(tr("Preferred Spelling"));
             }
 
-            QMessageBox::information(
+            DialogServices::showInformation(
                 this,
                 tr("Teacher Information"),
                 tr("Complete at least %1 of the following fields before continuing:\n\n- %2")
@@ -684,7 +684,7 @@ private:
 
         if (setup->dataService()->createTeacher(teacher) <= 0)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this, tr("Teacher Information"),
                 tr("The teacher could not be saved."));
             return false;
@@ -692,7 +692,7 @@ private:
 
         if (addingAnother)
         {
-            QMessageBox::information(
+            DialogServices::showInformation(
                 this, tr("Teacher Information"),
                 tr("Teacher saved. You can enter another teacher or continue to the next step."));
         }
@@ -969,7 +969,7 @@ public:
         }
         if (classId <= 0)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this, tr("Create Class"),
                 tr("The class could not be created."));
             return false;
@@ -978,7 +978,7 @@ public:
         info.classId = classId;
         if (!setup->dataService()->saveClassInfo(info))
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this, tr("Create Class"),
                 tr("The class information could not be saved."));
             return false;

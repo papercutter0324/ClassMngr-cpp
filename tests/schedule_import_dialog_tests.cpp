@@ -588,7 +588,11 @@ void ScheduleImportDialogTests
                     )
             );
             mismatchWarningShown = true;
-            messageBox->button(QMessageBox::No)->click();
+            auto* rejectButton = messageBox->findChild<QPushButton*>(
+                QStringLiteral("promptRejectButton")
+                );
+            QVERIFY(rejectButton);
+            rejectButton->click();
         }
         );
     next->click();
@@ -608,7 +612,11 @@ void ScheduleImportDialogTests
                     );
             QVERIFY(messageBox);
             continueWarningShown = true;
-            messageBox->button(QMessageBox::Yes)->click();
+            auto* acceptButton = messageBox->findChild<QPushButton*>(
+                QStringLiteral("promptAcceptButton")
+                );
+            QVERIFY(acceptButton);
+            acceptButton->click();
         }
         );
     next->click();

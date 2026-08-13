@@ -1,4 +1,5 @@
 #include "sub_prep_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 SubPrepPage::SubPrepPage(
     ApplicationServices* services,
@@ -549,7 +550,7 @@ void SubPrepPage::generateSubPrep()
                 .arg(result.outputDirectory);
         }
 
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Generate Sub Prep"),
             message

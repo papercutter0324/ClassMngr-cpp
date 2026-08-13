@@ -1,4 +1,5 @@
 #include "speaking_eval_notes_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
@@ -9,7 +10,6 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QShowEvent>
@@ -181,17 +181,17 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
                 return;
             }
 
-            QMessageBox confirmation(
-                QMessageBox::Question,
+            const PromptChoice confirmation = DialogServices::confirm(
+                this,
                 tr("Clear text?"),
                 tr("Are you sure you want to clear the comment?"),
-                QMessageBox::Yes | QMessageBox::No,
-                this
+                tr("Clear"),
+                tr("Cancel"),
+                true
                 );
-            confirmation.setDefaultButton(QMessageBox::No);
             if (
-                confirmation.exec()
-                == QMessageBox::Yes
+                confirmation
+                == PromptChoice::Destructive
                 )
             {
                 m_commentEdit->clear();

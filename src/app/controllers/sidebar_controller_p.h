@@ -17,7 +17,6 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <QList>
-#include <QMessageBox>
 #include <QPair>
 #include <QString>
 

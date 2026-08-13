@@ -1,4 +1,5 @@
 #include "pdf_viewer_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 void PdfViewerPage::exportFile()
 {
@@ -7,7 +8,7 @@ void PdfViewerPage::exportFile()
 
     if (sourcePath.trimmed().isEmpty())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Export File"),
             tr("No file is available to export.")
@@ -70,7 +71,7 @@ void PdfViewerPage::exportFile()
             )
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Export File"),
             errorMessage
@@ -85,7 +86,7 @@ void PdfViewerPage::exportFile()
             )
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Open File"),
             tr("Unable to open the exported file:\n%1")
@@ -129,7 +130,7 @@ void PdfViewerPage::printFile()
 
     if (result.status == PdfPrintService::Status::Failed)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Print File"),
             result.message

@@ -1,4 +1,5 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
@@ -9,7 +10,6 @@
 
 #include <QDialog>
 #include <QHash>
-#include <QMessageBox>
 
 void RosterEditorWidget::importScores()
 {
@@ -36,7 +36,7 @@ void RosterEditorWidget::importScores()
     const int koreanColumn = findModelColumn(QStringLiteral("Korean"));
     if (englishColumn < 0 || koreanColumn < 0)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Import Scores"),
             tr("Roster must contain 'English' and 'Korean' columns.")
@@ -125,7 +125,7 @@ void RosterEditorWidget::importScores()
 
     if (changeCount == 0)
     {
-        QMessageBox::information(
+        DialogServices::showInformation(
             this,
             tr("Import Scores"),
             tr("Scores are already up to date.")
@@ -135,7 +135,7 @@ void RosterEditorWidget::importScores()
 
     updateActions();
     scheduleAutosave();
-    QMessageBox::information(
+    DialogServices::showInformation(
         this,
         tr("Import Scores"),
         tr("Scores imported successfully.")
@@ -197,6 +197,6 @@ void RosterEditorWidget::outputRosters(
 
     if (result.status == RosterTemplatePrintService::Status::Failed)
     {
-        QMessageBox::warning(this, tr("Print Rosters"), result.message);
+        DialogServices::showWarning(this, tr("Print Rosters"), result.message);
     }
 }

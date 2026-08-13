@@ -1,4 +1,5 @@
 #include "staff_directory_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -16,7 +17,6 @@
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
 #include <QComboBox>
@@ -358,15 +358,17 @@ void StaffDirectoryPage::deleteSelectedRows()
     {
         return;
     }
-    if (QMessageBox::question(
+    if (DialogServices::confirm(
             this,
             tr("Delete Directory Entries"),
             selected.size() == 1
                 ? tr("Delete the selected entry?")
                 : tr("Delete the selected %1 entries?")
                     .arg(selected.size()),
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No) != QMessageBox::Yes)
+            tr("Delete"),
+            tr("Cancel"),
+            true
+            ) != PromptChoice::Destructive)
     {
         return;
     }
@@ -464,7 +466,7 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     {
         if (showErrors)
         {
-            QMessageBox::warning(this, tr("Save Directory"), status.error());
+            DialogServices::showWarning(this, tr("Save Directory"), status.error());
         }
         return false;
     }

@@ -1,4 +1,5 @@
 #include "roster_editor_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
@@ -10,7 +11,6 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSignalBlocker>
 
@@ -226,16 +226,12 @@ bool RosterEditorWidget::validateRosterBeforeSave(
 
     if (showValidationMessages)
     {
-        QMessageBox message(this);
-        message.setIcon(QMessageBox::Warning);
-        message.setWindowTitle(tr("Duplicate Student Names"));
-        message.setText(
-            tr("Resolve duplicate English/Korean student name pairs before saving.")
-            );
-        message.setDetailedText(
+        DialogServices::showWarning(
+            this,
+            tr("Duplicate Student Names"),
+            tr("Resolve duplicate English/Korean student name pairs before saving."),
             m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
             );
-        message.exec();
     }
     return false;
 }

@@ -1,7 +1,7 @@
 # Dialog Policy
 
-This policy is the Phase 1 contract for the unified dialog system. Feature
-migrations happen in later phases.
+This policy is the contract for the unified dialog system and records the
+feature migrations completed through Phase 3.
 
 ## Ownership and modality
 
@@ -26,6 +26,11 @@ migrations happen in later phases.
   message.
 - Closing a confirmation without choosing a button returns `Canceled` rather
   than accepting or rejecting on the caller's behalf.
+- Unsaved changes use a typed `Save`, `Discard`, or `Cancel` result. Cancel is
+  both the default and escape action.
+- Bespoke message-box choices use typed action identifiers and semantic roles;
+  feature code interprets the selected identifier and retains domain behavior.
+- Non-blocking notices use the same typed request and policy as modal messages.
 
 ## File dialog behavior
 
@@ -47,6 +52,11 @@ Phase 2 routes teacher profiles, class transfers, workbook imports, signature
 images, generated PDFs, report exports, and sub-prep packages through typed
 purpose keys. Feature code obtains the interface through
 `DialogServices::fileDialogs()`; tests can replace it with a recording fake.
+
+Phase 3 routes production information, warning, error, confirmation,
+destructive-confirmation, multi-action, and unsaved-changes prompts through
+`DialogServices::prompts()`. Direct `QMessageBox` construction is confined to
+`QtUserPromptService`; `QMessageBox::aboutQt()` remains the Qt-owned exception.
 
 ## Testing seam
 

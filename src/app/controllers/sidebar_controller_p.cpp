@@ -30,7 +30,6 @@
 #include <QDialogButtonBox>
 #include <QHash>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QSet>
 #include <QTime>

@@ -1,4 +1,5 @@
 #include "class_details_page.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -19,7 +20,6 @@
 #include "ui/shared/styles/roles.h"
 #include "core/utils/sidebar_node_naming.h"
 
-#include <QMessageBox>
 #include <QPushButton>
 #include <QStringList>
 #include <QVBoxLayout>
@@ -483,7 +483,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
 
         if (showMessages)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Save Class Information"),
                 tr("Class information could not be saved.")
@@ -624,7 +624,7 @@ bool ClassDetailsPage::showScheduleConflicts(
             );
     }
 
-    QMessageBox::warning(
+    DialogServices::showWarning(
         this,
         title,
         tr("Please resolve these schedule conflicts before saving:\n\n%1")

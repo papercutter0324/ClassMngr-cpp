@@ -1,4 +1,5 @@
 #include "schedule_import_review_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
@@ -30,7 +31,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMap>
-#include <QMessageBox>
 #include <QPalette>
 #include <QPushButton>
 #include <QRadioButton>
@@ -1315,7 +1315,7 @@ bool ScheduleImportReviewDialog::prepare()
             );
     if (!preview)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Import Schedule"),
             preview.error()
@@ -2043,20 +2043,15 @@ void ScheduleImportReviewDialog::updateScheduleConflictWarning(
 
             m_lastWarnedScheduleConflictSignature =
                 m_pendingScheduleConflictSignature;
-            auto* warning =
-                new QMessageBox(
-                    QMessageBox::Warning,
-                    tr("Schedule Import Conflict"),
-                    m_pendingScheduleConflictMessage,
-                    QMessageBox::Ok,
-                    this
-                    );
-            warning->setObjectName(
-                QStringLiteral("scheduleImportConflictWarning")
+            DialogServices::prompts().showMessageAsync(
+                PromptRequest{
+                    .parent = this,
+                    .objectName = QStringLiteral("scheduleImportConflictWarning"),
+                    .title = tr("Schedule Import Conflict"),
+                    .message = m_pendingScheduleConflictMessage,
+                    .severity = PromptSeverity::Warning
+                }
                 );
-            warning->setAttribute(Qt::WA_DeleteOnClose);
-            warning->setModal(true);
-            warning->open();
         }
         );
 }
@@ -2825,13 +2820,13 @@ void ScheduleImportReviewDialog::applyImport()
         + tr("Is this schedule valid and ready to import?");
 
     if (
-        QMessageBox::question(
+        DialogServices::confirm(
             this,
             tr("Confirm Schedule Import"),
             confirmation,
-            QMessageBox::Yes | QMessageBox::No,
-            QMessageBox::No
-            ) != QMessageBox::Yes
+            tr("Import"),
+            tr("Cancel")
+            ) != PromptChoice::Accepted
         )
     {
         return;
@@ -2850,7 +2845,7 @@ void ScheduleImportReviewDialog::applyImport()
 
     if (!summary)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Import Schedule"),
             summary.error()
@@ -2858,7 +2853,7 @@ void ScheduleImportReviewDialog::applyImport()
         return;
     }
 
-    QMessageBox::information(
+    DialogServices::showInformation(
         this,
         tr("Import Schedule"),
         tr("Schedule imported successfully.\n"

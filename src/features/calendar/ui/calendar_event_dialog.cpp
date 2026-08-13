@@ -1,4 +1,5 @@
 #include "calendar_event_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -17,7 +18,6 @@
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QSignalBlocker>
@@ -233,7 +233,7 @@ void CalendarEventDialog::accept()
 
     if (event.title.trimmed().isEmpty())
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Missing Title"),
             tr("Enter a title for the calendar event.")
@@ -252,7 +252,7 @@ void CalendarEventDialog::accept()
 
     if (end < start)
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Invalid Time Range"),
             tr("The event end must be after the event start.")
@@ -270,7 +270,7 @@ void CalendarEventDialog::accept()
             || untilDate < event.startDate
             )
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Invalid Repeat Range"),
                 tr("The repeat end date must be on or after the event start date.")
@@ -287,7 +287,7 @@ void CalendarEventDialog::accept()
 
         if (occurrenceCount > MaximumRepeatOccurrences)
         {
-            QMessageBox::warning(
+            DialogServices::showWarning(
                 this,
                 tr("Too Many Events"),
                 tr("Choose a shorter repeat range. Repeating events can create up to %1 events at once.")

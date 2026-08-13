@@ -39,7 +39,6 @@
 #include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPainter>
 #include <QPalette>
 #include <QPushButton>

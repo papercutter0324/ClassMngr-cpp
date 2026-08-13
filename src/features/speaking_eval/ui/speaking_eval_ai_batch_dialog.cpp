@@ -1,4 +1,5 @@
 #include "speaking_eval_ai_batch_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/settingsmanager.h"
 #include "domain/models/speaking_evaluation.h"
@@ -16,7 +17,6 @@
 #include <QDialogButtonBox>
 #include <QHeaderView>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -795,7 +795,7 @@ void SpeakingEvalAiBatchDialog::copyPrompt(
         || !QDesktopServices::openUrl(url)
         )
     {
-        QMessageBox::warning(
+        DialogServices::showWarning(
             this,
             tr("Unable to Open AI Website"),
             tr(
@@ -1159,8 +1159,8 @@ void SpeakingEvalAiBatchDialog::applyComments()
 
     if (overwriteCount > 0)
     {
-        const QMessageBox::StandardButton answer =
-            QMessageBox::question(
+        const PromptChoice answer =
+            DialogServices::confirm(
                 this,
                 tr("Replace Existing Comments?"),
                 tr(
@@ -1168,10 +1168,11 @@ void SpeakingEvalAiBatchDialog::applyComments()
                     "Do you want to continue?"
                     )
                     .arg(overwriteCount),
-                QMessageBox::Yes | QMessageBox::Cancel,
-                QMessageBox::Cancel
+                tr("Replace"),
+                tr("Cancel"),
+                true
                 );
-        if (answer != QMessageBox::Yes)
+        if (answer != PromptChoice::Destructive)
         {
             return;
         }
