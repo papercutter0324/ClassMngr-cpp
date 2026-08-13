@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class QShowEvent;
 class SpeakingEvalCommentEdit;
 class SpeakingEvalPrivateNotesEditor;
 
-class SpeakingEvalNotesDialog final : public QDialog
+class SpeakingEvalNotesDialog final : public DialogShell
 {
     Q_OBJECT
 

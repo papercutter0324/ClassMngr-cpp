@@ -1246,7 +1246,7 @@ void ScheduleImportReviewDialog::buildUi()
     m_importButton =
         m_buttons->addButton(
             tr("Import"),
-            QDialogButtonBox::AcceptRole
+            QDialogButtonBox::ActionRole
             );
     m_backButton->setObjectName(
         QStringLiteral("scheduleImportBackButton")

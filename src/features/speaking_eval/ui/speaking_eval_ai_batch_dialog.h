@@ -1,8 +1,8 @@
 #pragma once
 
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QList>
 #include <QString>
 
@@ -19,7 +19,7 @@ struct SpeakingEvalAiBatchAcceptedComment
     QString newComment;
 };
 
-class SpeakingEvalAiBatchDialog final : public QDialog
+class SpeakingEvalAiBatchDialog final : public DialogShell
 {
     Q_OBJECT
 

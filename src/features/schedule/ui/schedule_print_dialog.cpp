@@ -1,11 +1,11 @@
 #include "schedule_print_dialog.h"
-#include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "ui/shared/dialogs/file_dialog_service.h"
+#include <QDialogButtonBox>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
-#include <QHBoxLayout>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QVBoxLayout>
@@ -30,7 +30,7 @@ SchedulePrintDialog::SchedulePrintDialog(
     Action action,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("schedulePrint"), parent)
     , m_selectedAction(action)
 {
     setWindowTitle(
@@ -39,16 +39,7 @@ SchedulePrintDialog::SchedulePrintDialog(
             : tr("Save Schedule As")
         );
 
-    auto* layout =
-        new QVBoxLayout(this);
-
-    layout->setContentsMargins(
-        18,
-        18,
-        18,
-        18
-        );
-    layout->setSpacing(10);
+    auto* layout = contentLayout();
 
     auto* styleGroup =
         new QGroupBox(
@@ -156,22 +147,16 @@ SchedulePrintDialog::SchedulePrintDialog(
     orientationLayout->addWidget(m_portraitButton);
     layout->addWidget(orientationGroup);
 
-    auto* buttonLayout = new QHBoxLayout;
-    auto* cancelButton =
-        new TextFitPushButton(
-            tr("Cancel"),
-            this
-            );
-    cancelButton->setObjectName(
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
+    buttons->button(QDialogButtonBox::Cancel)->setObjectName(
         QStringLiteral("schedulePrintCancelButton")
         );
-    auto* outputButton =
-        new TextFitPushButton(
-            action == Action::Print
-                ? tr("Print")
-                : tr("Save As..."),
-            this
-            );
+    auto* outputButton = buttons->addButton(
+        action == Action::Print
+            ? tr("Print")
+            : tr("Save As..."),
+        QDialogButtonBox::ActionRole
+        );
     outputButton->setObjectName(
         action == Action::Print
             ? QStringLiteral("schedulePrintButton")
@@ -179,16 +164,6 @@ SchedulePrintDialog::SchedulePrintDialog(
         );
     outputButton->setDefault(true);
 
-    buttonLayout->addWidget(cancelButton);
-    buttonLayout->addStretch(1);
-    buttonLayout->addWidget(outputButton);
-
-    connect(
-        cancelButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::reject
-        );
     connect(
         outputButton,
         &QPushButton::clicked,
@@ -198,7 +173,6 @@ SchedulePrintDialog::SchedulePrintDialog(
             : &SchedulePrintDialog::chooseSavePath
         );
 
-    layout->addLayout(buttonLayout);
     layout->activate();
     setFixedWidth(layout->minimumSize().width());
 }

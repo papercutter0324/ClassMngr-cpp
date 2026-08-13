@@ -8,7 +8,6 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QDialogButtonBox>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -70,7 +69,7 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
     const QString& englishName,
     const QString& koreanName
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("speakingEvalNotes"), parent)
     , m_originalNotes(notes)
     , m_originalComment(comment)
     , m_initialSection(initialSection)
@@ -83,10 +82,7 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
         );
     resize(780, 600);
 
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(10);
+    auto* layout = contentLayout();
 
     layout->addWidget(
         new QLabel(
@@ -200,30 +196,13 @@ SpeakingEvalNotesDialog::SpeakingEvalNotesDialog(
         );
     syncCommentUi();
 
-    auto* buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-            this
-            );
-    connect(
-        buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &QDialog::accept
+    auto* buttons = addButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel
         );
-    connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
+    buttons->addButton(
+        clearCommentButton,
+        QDialogButtonBox::ActionRole
         );
-
-    auto* buttonLayout =
-        new QHBoxLayout;
-    buttonLayout->addWidget(clearCommentButton);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(buttons);
-    layout->addLayout(buttonLayout);
 }
 
 QString SpeakingEvalNotesDialog::notes() const
@@ -261,7 +240,7 @@ void SpeakingEvalNotesDialog::showEvent(
     QShowEvent* event
     )
 {
-    QDialog::showEvent(event);
+    DialogShell::showEvent(event);
 
     if (m_initialFocusApplied)
     {

@@ -2,12 +2,10 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "data/data_service.h"
-#include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QComboBox>
 #include <QDialogButtonBox>
-#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -25,7 +23,7 @@ TestingAssignmentDialog::TestingAssignmentDialog(
     const TestingAssignment* existingAssignment,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("testingAssignment"), parent)
     , m_dataService(dataService)
     , m_hasExistingAssignment(existingAssignment != nullptr)
 {
@@ -94,10 +92,7 @@ int TestingAssignmentDialog::selectedClassId() const
 
 void TestingAssignmentDialog::buildUi()
 {
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setContentsMargins(20, 20, 20, 20);
-    layout->setSpacing(12);
+    auto* layout = contentLayout();
     layout->setAlignment(Qt::AlignTop);
 
     auto* modeLabel =
@@ -156,34 +151,18 @@ void TestingAssignmentDialog::buildUi()
     classSectionLayout->addWidget(m_classCombo);
     layout->addWidget(m_classSection);
 
-    auto* footerRow =
-        new QWidget(this);
-    auto* footerLayout =
-        new QHBoxLayout(footerRow);
-    footerLayout->setContentsMargins(0, 0, 0, 0);
-    footerLayout->setSpacing(8);
-
-    m_manageClassesButton =
-        new TextFitPushButton(
-            tr("Manage Classes"),
-            footerRow
-            );
+    auto* footer = addButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel
+        );
+    m_manageClassesButton = footer->addButton(
+        tr("Manage Classes"),
+        QDialogButtonBox::ActionRole
+        );
     m_manageClassesButton->setObjectName(
         QStringLiteral("testingAssignmentManageClassesButton")
         );
-    footerLayout->addWidget(m_manageClassesButton);
-    footerLayout->addStretch(1);
-
-    auto* footer =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-            footerRow
-            );
     footer->button(QDialogButtonBox::Save)->setText(tr("Save"));
     footer->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-
-    footerLayout->addWidget(footer);
-    layout->addWidget(footerRow);
 
     connect(
         m_modeCombo,
@@ -200,18 +179,6 @@ void TestingAssignmentDialog::buildUi()
             m_action = Action::ManageTestingClasses;
             accept();
         }
-        );
-    connect(
-        footer,
-        &QDialogButtonBox::accepted,
-        this,
-        &TestingAssignmentDialog::acceptSave
-        );
-    connect(
-        footer,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
         );
 }
 
@@ -263,7 +230,7 @@ void TestingAssignmentDialog::updateModeUi()
     m_manageClassesButton->setVisible(testingClassMode);
 }
 
-void TestingAssignmentDialog::acceptSave()
+void TestingAssignmentDialog::accept()
 {
     const int mode =
         m_modeCombo->currentIndex();
@@ -290,5 +257,5 @@ void TestingAssignmentDialog::acceptSave()
         m_action = Action::SavePlainTesting;
     }
 
-    accept();
+    QDialog::accept();
 }

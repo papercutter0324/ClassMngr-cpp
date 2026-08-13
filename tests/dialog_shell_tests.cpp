@@ -2,7 +2,11 @@
 #include "features/calendar/ui/calendar_settings_dialog.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "features/schedule/ui/schedule_print_dialog.h"
+#include "features/schedule/ui/testing_assignment_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
@@ -19,7 +23,24 @@
 static_assert(std::is_base_of_v<DialogShell, CalendarSettingsDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportReviewDialog>);
+static_assert(std::is_base_of_v<DialogShell, SchedulePrintDialog>);
+static_assert(std::is_base_of_v<DialogShell, TestingAssignmentDialog>);
+static_assert(std::is_base_of_v<DialogShell, SpeakingEvalAiBatchDialog>);
 static_assert(std::is_base_of_v<DialogShell, SpeakingEvalBatchExportDialog>);
+static_assert(std::is_base_of_v<DialogShell, SpeakingEvalNotesDialog>);
+
+class AcceptTrackingDialogShell final : public DialogShell
+{
+public:
+    using DialogShell::DialogShell;
+
+    void accept() override
+    {
+        acceptInvoked = true;
+    }
+
+    bool acceptInvoked = false;
+};
 
 class DialogShellTests : public QObject
 {
@@ -29,6 +50,7 @@ private slots:
     void initTestCase();
     void appliesSharedLayoutHeaderAndAccessibilityPolicy();
     void standardButtonsProvideDefaultAndEscapeBehavior();
+    void buttonRolesPreserveDialogValidation();
     void persistsGeometryByStableDialogKey();
 
 private:
@@ -91,6 +113,30 @@ void DialogShellTests::standardButtonsProvideDefaultAndEscapeBehavior()
     dialog.show();
     QTest::keyClick(&dialog, Qt::Key_Escape);
     QCOMPARE(rejectedSpy.count(), 1);
+}
+
+void DialogShellTests::buttonRolesPreserveDialogValidation()
+{
+    AcceptTrackingDialogShell validatingDialog(
+        QStringLiteral("validationPolicy")
+        );
+    auto* standardButtons = validatingDialog.addButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel
+        );
+    standardButtons->button(QDialogButtonBox::Save)->click();
+    QVERIFY(validatingDialog.acceptInvoked);
+
+    DialogShell workflowDialog(QStringLiteral("workflowPolicy"));
+    auto* workflowButtons = workflowDialog.addButtonBox(
+        QDialogButtonBox::Cancel
+        );
+    auto* applyButton = workflowButtons->addButton(
+        QStringLiteral("Apply"),
+        QDialogButtonBox::ActionRole
+        );
+    QSignalSpy acceptedSpy(&workflowDialog, &QDialog::accepted);
+    applyButton->click();
+    QCOMPARE(acceptedSpy.count(), 0);
 }
 
 void DialogShellTests::persistsGeometryByStableDialogKey()

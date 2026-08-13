@@ -1,8 +1,7 @@
 #pragma once
 
 #include "domain/models/testing_block.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class DataService;
 class QComboBox;
@@ -11,7 +10,7 @@ class QLineEdit;
 class QPushButton;
 class QWidget;
 
-class TestingAssignmentDialog : public QDialog
+class TestingAssignmentDialog : public DialogShell
 {
     Q_OBJECT
 
@@ -38,7 +37,7 @@ private:
     void buildUi();
     void loadTestingClasses();
     void updateModeUi();
-    void acceptSave();
+    void accept() override;
 
     DataService* m_dataService = nullptr;
     bool m_hasExistingAssignment = false;

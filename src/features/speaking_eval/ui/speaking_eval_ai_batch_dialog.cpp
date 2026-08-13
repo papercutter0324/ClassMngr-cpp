@@ -246,7 +246,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("speakingEvalAiBatch"), parent)
     , m_reports(reports)
 {
     setObjectName(
@@ -257,10 +257,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         );
     resize(1100, 820);
 
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(10);
+    auto* layout = contentLayout();
 
     auto* tabs =
         new QTabWidget(this);
@@ -546,11 +543,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         tr("2. Paste and Review")
         );
 
-    auto* buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Cancel,
-            this
-            );
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
     m_applyButton =
         new TextFitPushButton(
             tr("Apply Selected Comments"),
@@ -561,9 +554,10 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         );
     buttons->addButton(
         m_applyButton,
-        QDialogButtonBox::AcceptRole
+        QDialogButtonBox::ActionRole
         );
-    layout->addWidget(buttons);
+    m_applyButton->setDefault(true);
+    m_applyButton->setAutoDefault(true);
 
     connect(
         m_selectionTable,
@@ -649,13 +643,6 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
         this,
         &SpeakingEvalAiBatchDialog::applyComments
         );
-    connect(
-        buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
-        );
-
     updateCreatePromptButton();
     resetGeneratedContent();
 }

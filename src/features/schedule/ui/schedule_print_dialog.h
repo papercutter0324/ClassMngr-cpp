@@ -1,14 +1,14 @@
 #pragma once
 
 #include "features/schedule/ui/schedule_print_style.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QPageLayout>
 #include <QString>
 
 class QRadioButton;
 
-class SchedulePrintDialog : public QDialog
+class SchedulePrintDialog : public DialogShell
 {
     Q_OBJECT
 

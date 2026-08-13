@@ -1247,7 +1247,7 @@ SchedulePrintDialog::SchedulePrintDialog(
     Action action,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("schedulePrint"), parent)
 {
     Q_UNUSED(action);
     QTimer::singleShot(
