@@ -1016,7 +1016,7 @@ ScheduleImportReviewDialog::ScheduleImportReviewDialog(
     ScheduleImportReviewRequest request,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("scheduleImportReview"), parent)
     , m_services(services)
     , m_request(std::move(request))
 {
@@ -1027,8 +1027,7 @@ ScheduleImportReviewDialog::ScheduleImportReviewDialog(
 
 void ScheduleImportReviewDialog::buildUi()
 {
-    auto* outerLayout =
-        new QVBoxLayout(this);
+    auto* outerLayout = contentLayout();
     m_reviewPage =
         new QWidget(this);
     m_reviewPage->setSizePolicy(
@@ -1238,11 +1237,7 @@ void ScheduleImportReviewDialog::buildUi()
     layout->addWidget(m_reviewSummary);
     outerLayout->addWidget(m_reviewPage, 1);
 
-    m_buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Cancel,
-            this
-            );
+    m_buttons = addButtonBox(QDialogButtonBox::Cancel);
     m_backButton =
         m_buttons->addButton(
             tr("Back"),
@@ -1260,14 +1255,8 @@ void ScheduleImportReviewDialog::buildUi()
         QStringLiteral("scheduleImportAcceptButton")
         );
     m_importButton->setEnabled(false);
-    outerLayout->addWidget(m_buttons);
-
-    connect(
-        m_buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
-        );
+    m_importButton->setDefault(true);
+    m_importButton->setAutoDefault(true);
     connect(
         m_backButton,
         &QPushButton::clicked,

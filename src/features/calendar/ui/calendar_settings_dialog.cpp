@@ -51,7 +51,7 @@ CalendarSettingsDialog::CalendarSettingsDialog(
     int termYear,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("calendarSettings"), parent)
     , m_provider(provider)
     , m_dataService(dataService)
     , m_importService(
@@ -281,10 +281,7 @@ void CalendarSettingsDialog::buildUi()
     setWindowTitle(tr("Academic Calendar Settings"));
     setMinimumWidth(820);
 
-    auto* mainLayout =
-        new QVBoxLayout(this);
-    mainLayout->setContentsMargins(20, 20, 20, 20);
-    mainLayout->setSpacing(14);
+    auto* mainLayout = contentLayout();
 
     auto* title =
         new QLabel(
@@ -314,11 +311,9 @@ void CalendarSettingsDialog::buildUi()
         );
     mainLayout->addWidget(tabs);
 
-    m_buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Save | QDialogButtonBox::Cancel,
-            this
-            );
+    m_buttons = addButtonBox(
+        QDialogButtonBox::Save | QDialogButtonBox::Cancel
+        );
 
     m_buttons->button(
         QDialogButtonBox::Save
@@ -332,20 +327,6 @@ void CalendarSettingsDialog::buildUi()
             tr("Cancel")
             );
 
-    connect(
-        m_buttons,
-        &QDialogButtonBox::accepted,
-        this,
-        &CalendarSettingsDialog::accept
-        );
-    connect(
-        m_buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &CalendarSettingsDialog::reject
-        );
-
-    mainLayout->addWidget(m_buttons);
 }
 
 QWidget* CalendarSettingsDialog::buildOptionsTab()

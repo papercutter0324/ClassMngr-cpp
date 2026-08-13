@@ -4,12 +4,14 @@
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
+#include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDesktopServices>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -39,7 +41,7 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     Mode mode,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("speakingEvalBatchExport"), parent)
     , m_reports(reports)
     , m_currentStudentIndex(currentStudentIndex)
     , m_mode(mode)
@@ -51,9 +53,7 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
             : tr("Print Speaking Reports")
         );
 
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(18, 18, 18, 18);
-    layout->setSpacing(12);
+    auto* layout = contentLayout();
 
     auto* introduction = new QLabel(
         saving
@@ -144,18 +144,17 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     layout->addLayout(formLayout);
     layout->addSpacing(16);
 
-    auto* buttons = new QHBoxLayout;
-    m_previewButton = new TextFitPushButton(tr("Preview Reports"), this);
-    buttons->addWidget(m_previewButton);
-    buttons->addStretch();
-    m_exportButton = new TextFitPushButton(
-        saving ? tr("Save As...") : tr("Print"),
-        this
+    auto* buttons = addButtonBox(QDialogButtonBox::Cancel);
+    m_previewButton = buttons->addButton(
+        tr("Preview Reports"),
+        QDialogButtonBox::ActionRole
         );
-    auto* cancelButton = new TextFitPushButton(tr("Cancel"), this);
-    buttons->addWidget(m_exportButton);
-    buttons->addWidget(cancelButton);
-    layout->addLayout(buttons);
+    m_exportButton = buttons->addButton(
+        saving ? tr("Save As...") : tr("Print"),
+        QDialogButtonBox::ActionRole
+        );
+    m_exportButton->setDefault(true);
+    m_exportButton->setAutoDefault(true);
 
     connect(
         m_scopeSelector,
@@ -211,13 +210,6 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
         this,
         &SpeakingEvalBatchExportDialog::exportReports
         );
-    connect(
-        cancelButton,
-        &QPushButton::clicked,
-        this,
-        &QDialog::reject
-        );
-
     updateControls();
 
     const int dialogWidth =

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "domain/models/schedule_import.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QPointer>
 #include <QString>
 
@@ -18,7 +18,7 @@ class QPushButton;
 class QRadioButton;
 class ScheduleImportReviewDialog;
 
-class ScheduleImportDialog final : public QDialog
+class ScheduleImportDialog final : public DialogShell
 {
     Q_OBJECT
 

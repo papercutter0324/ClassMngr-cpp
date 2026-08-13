@@ -1,4 +1,8 @@
 #include "core/settingsmanager.h"
+#include "features/calendar/ui/calendar_settings_dialog.h"
+#include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
@@ -9,6 +13,13 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QVBoxLayout>
+
+#include <type_traits>
+
+static_assert(std::is_base_of_v<DialogShell, CalendarSettingsDialog>);
+static_assert(std::is_base_of_v<DialogShell, ScheduleImportDialog>);
+static_assert(std::is_base_of_v<DialogShell, ScheduleImportReviewDialog>);
+static_assert(std::is_base_of_v<DialogShell, SpeakingEvalBatchExportDialog>);
 
 class DialogShellTests : public QObject
 {

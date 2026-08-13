@@ -1,8 +1,7 @@
 #pragma once
 
 #include "features/calendar/academic_calendar_schedule.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 #include <array>
 
@@ -18,7 +17,7 @@ class QPushButton;
 class QSpinBox;
 class QTabWidget;
 
-class CalendarSettingsDialog : public QDialog
+class CalendarSettingsDialog : public DialogShell
 {
     Q_OBJECT
 

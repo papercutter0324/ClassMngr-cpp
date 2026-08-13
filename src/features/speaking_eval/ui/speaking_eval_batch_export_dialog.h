@@ -1,8 +1,7 @@
 #pragma once
 
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
-
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 
 class QCheckBox;
 class QComboBox;
@@ -10,7 +9,7 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 
-class SpeakingEvalBatchExportDialog : public QDialog
+class SpeakingEvalBatchExportDialog : public DialogShell
 {
     Q_OBJECT
 

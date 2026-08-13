@@ -2,8 +2,8 @@
 
 #include "domain/models/schedule_import.h"
 #include "features/schedule/ui/schedule_import_dialog_shared.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
-#include <QDialog>
 #include <QList>
 #include <QString>
 #include <QStringList>
@@ -23,7 +23,7 @@ class QTabWidget;
 class QVBoxLayout;
 class ScheduleWidget;
 
-class ScheduleImportReviewDialog final : public QDialog
+class ScheduleImportReviewDialog final : public DialogShell
 {
     Q_OBJECT
 

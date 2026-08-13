@@ -56,7 +56,7 @@ ScheduleImportDialog::ScheduleImportDialog(
     ApplicationServices* services,
     QWidget* parent
     )
-    : QDialog(parent)
+    : DialogShell(QStringLiteral("scheduleImport"), parent)
     , m_services(services)
 {
     setWindowTitle(tr("Import Schedule"));
@@ -90,9 +90,7 @@ void ScheduleImportDialog::setFilePath(
 
 void ScheduleImportDialog::buildUi()
 {
-    auto* layout =
-        new QVBoxLayout(this);
-    layout->setSpacing(12);
+    auto* layout = contentLayout();
 
     m_sourceStatus =
         new QLabel(
@@ -267,11 +265,7 @@ void ScheduleImportDialog::buildUi()
     layout->addWidget(m_progressBar);
     layout->addStretch();
 
-    m_buttons =
-        new TextFitDialogButtonBox(
-            QDialogButtonBox::Cancel,
-            this
-            );
+    m_buttons = addButtonBox(QDialogButtonBox::Cancel);
     m_nextButton =
         m_buttons->addButton(
             tr("Load"),
@@ -280,14 +274,8 @@ void ScheduleImportDialog::buildUi()
     m_nextButton->setObjectName(
         QStringLiteral("scheduleImportNextButton")
         );
-    layout->addWidget(m_buttons);
-
-    connect(
-        m_buttons,
-        &QDialogButtonBox::rejected,
-        this,
-        &QDialog::reject
-        );
+    m_nextButton->setDefault(true);
+    m_nextButton->setAutoDefault(true);
     connect(
         m_nextButton,
         &QPushButton::clicked,
