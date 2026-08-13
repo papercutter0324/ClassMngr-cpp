@@ -115,6 +115,7 @@ private:
         const QDate& firstEventDate
         );
     void refreshUpcomingEvents();
+    void syncCalendarTheme();
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,

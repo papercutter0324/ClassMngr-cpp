@@ -7,6 +7,7 @@
 #include <QWidget>
 
 class ApplicationServices;
+class NavigationSettingsButton;
 class QButtonGroup;
 class QLabel;
 class QPushButton;
@@ -139,7 +140,7 @@ private:
     QPushButton* m_regularModeButton = nullptr;
     QPushButton* m_intensiveModeButton = nullptr;
     QPushButton* m_testingModeButton = nullptr;
-    QPushButton* m_settingsButton = nullptr;
+    NavigationSettingsButton* m_settingsButton = nullptr;
     QPushButton* m_testingClassesButton = nullptr;
     QPushButton* m_importButton = nullptr;
     QLabel* m_testingBanner = nullptr;

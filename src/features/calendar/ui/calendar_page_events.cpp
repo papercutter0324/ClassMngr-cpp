@@ -7,6 +7,7 @@
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
+#include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 
@@ -445,6 +446,7 @@ void CalendarPage::buildCalendarContent()
 
     if (auto* root = m_calendarView->rootObject())
     {
+        syncCalendarTheme();
         syncCalendarFontSize();
         syncCalendarEventTypeColors();
 
@@ -471,6 +473,19 @@ void CalendarPage::buildCalendarContent()
             SIGNAL(displayedMonthChanged(int,int)),
             this,
             SLOT(handleCalendarDisplayedMonthChanged(int,int))
+        );
+    }
+
+    if (auto* themeService =
+            m_services
+                ? m_services->themeService()
+                : nullptr)
+    {
+        connect(
+            themeService,
+            QOverload<Theme>::of(&ThemeService::themeChanged),
+            this,
+            &CalendarPage::syncCalendarTheme
             );
     }
 
@@ -676,6 +691,34 @@ void CalendarPage::handleNextEventMonthFound(
         CalendarEventCache::Priority::Background
         );
 }
+void CalendarPage::syncCalendarTheme()
+{
+    if (!m_calendarView)
+    {
+        return;
+    }
+
+    auto* root =
+        m_calendarView->rootObject();
+
+    if (!root)
+    {
+        return;
+    }
+
+    const Theme theme =
+        m_services && m_services->themeService()
+            ? m_services->themeService()->currentTheme()
+            : Theme::Light;
+
+    root->setProperty(
+        "navigationSettingsGlyphColor",
+        theme == Theme::Dark
+            ? QColor(QStringLiteral("#f0f0f0"))
+            : QColor(QStringLiteral("#27313a"))
+        );
+}
+
 void CalendarPage::syncCalendarFontSize()
 {
     if (!m_calendarView)

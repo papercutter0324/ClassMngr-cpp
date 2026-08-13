@@ -19,6 +19,7 @@ Item {
     property date shownDate: new Date()
     property color toolbarColor: "#536f8a"
     property color toolbarTextColor: "#fbfaf7"
+    property color navigationSettingsGlyphColor: "#27313a"
     property color textColor: "#27313a"
     property color mutedTextColor: "#66727a"
     property color inactiveTextColor: "transparent"
@@ -279,7 +280,7 @@ Item {
 
                     text: "\u2699"
                     font.pixelSize: toolbar.font.pixelSize * 1.65
-                    palette.buttonText: root.toolbarTextColor
+                    palette.buttonText: root.navigationSettingsGlyphColor
 
                     Layout.preferredWidth: 48
                     Layout.fillHeight: true

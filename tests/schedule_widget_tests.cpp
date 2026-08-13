@@ -8,10 +8,12 @@
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
 #include "domain/models/testing_class.h"
 
 #include <QtTest>
 
+#include <QAbstractButton>
 #include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QCheckBox>
@@ -96,7 +98,7 @@ void ScheduleWidgetTests
             QStringLiteral("scheduleIntensiveModeButton")
             );
     auto* settings =
-        interactive.findChild<QPushButton*>(
+        interactive.findChild<NavigationSettingsButton*>(
             QStringLiteral("scheduleSettingsButton")
             );
     QVERIFY(intensive);
@@ -701,14 +703,14 @@ void ScheduleWidgetTests
         );
 
     const auto buttons =
-        controls->findChildren<QPushButton*>();
+        controls->findChildren<QAbstractButton*>();
     QVERIFY(controls->findChildren<QCheckBox*>().isEmpty());
     QCOMPARE(buttons.size(), 6);
     QVERIFY(
         std::any_of(
             buttons.cbegin(),
             buttons.cend(),
-            [](const QPushButton* button)
+            [](const QAbstractButton* button)
             {
                 return button->text()
                     == QStringLiteral("Import");
@@ -716,7 +718,7 @@ void ScheduleWidgetTests
             )
         );
 
-    for (const QPushButton* button : buttons)
+    for (const QAbstractButton* button : buttons)
     {
         QVERIFY(!button->isVisibleTo(&widget));
     }

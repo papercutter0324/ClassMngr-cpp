@@ -6,6 +6,7 @@
 #include "schedule_widget_delegates.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/navigation_settings_button.h"
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
@@ -665,15 +666,10 @@ void ScheduleWidget::buildUi()
     controlsLayout->addWidget(m_importButton);
 
     m_settingsButton =
-        new QPushButton(this);
+        new NavigationSettingsButton(this);
     m_settingsButton->setObjectName(
         QStringLiteral("scheduleSettingsButton")
         );
-    m_settingsButton->setProperty(
-        "role",
-        QStringLiteral("icon_button")
-        );
-    m_settingsButton->setFixedSize(42, 36);
     m_settingsButton->setAccessibleName(
         tr("Schedule Settings")
         );
@@ -766,7 +762,7 @@ void ScheduleWidget::buildUi()
 
     connect(
         m_settingsButton,
-        &QPushButton::clicked,
+        &NavigationSettingsButton::clicked,
         this,
         &ScheduleWidget::openSettings
         );
