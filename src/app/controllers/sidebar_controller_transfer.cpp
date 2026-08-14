@@ -90,16 +90,22 @@ void SidebarController::exportClass(
         return;
     }
 
-    const Classroom classroom = classes->classroom(classId);
+    const Result<Classroom> classroom = classes->classroom(classId);
 
-    if (classroom.id <= 0)
+    if (!classroom)
     {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Export Class"),
+            tr("The class could not be loaded."),
+            classroom.error()
+            );
         return;
     }
 
     saveClassExport(
         {classId},
-        classDisplayName(classroom),
+        classDisplayName(*classroom),
         tr("Export Class")
         );
 }

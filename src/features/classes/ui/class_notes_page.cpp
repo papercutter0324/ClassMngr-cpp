@@ -70,10 +70,8 @@ void ClassNotesPage::loadClass(
 
     if (info.teacherId > 0)
     {
-        teacher =
-            teacherService->teacher(
-                info.teacherId
-                );
+        teacher = teacherService->teacher(info.teacherId)
+            .value_or(Teacher{});
     }
 
     m_subtitleText =
@@ -182,20 +180,19 @@ bool ClassNotesPage::saveClassNotesInternal(
             ->toPlainText()
             .trimmed();
 
-    if (
-        !m_services->classService()->saveClassNotes(
-                m_classroom.id,
-                notes,
-                timeFillerActivities
-                )
-        )
+    const Status saved = m_services->classService()->saveClassNotes(
+        m_classroom.id,
+        notes,
+        timeFillerActivities
+        );
+    if (!saved)
     {
         if (showErrorMessage)
         {
             DialogServices::showWarning(
                 this,
                 tr("Save Class Notes"),
-                tr("Class notes could not be saved.")
+                saved.error()
                 );
         }
 

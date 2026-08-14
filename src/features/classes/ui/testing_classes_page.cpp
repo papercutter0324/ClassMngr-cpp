@@ -845,7 +845,18 @@ void TestingClassesPage::populateTeachers()
     auto* teacherService = m_services ? m_services->teacherService() : nullptr;
     if (teacherService && teacherService->isAvailable())
     {
-        for (const Teacher& teacher : teacherService->teachers())
+        const Result<QList<Teacher>> teachers = teacherService->teachers();
+        if (!teachers)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Teachers"),
+                tr("Teachers could not be loaded."),
+                teachers.error()
+                );
+            return;
+        }
+        for (const Teacher& teacher : *teachers)
         {
             const QString label =
                 teacher.teacherKr.trimmed();

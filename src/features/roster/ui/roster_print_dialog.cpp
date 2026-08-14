@@ -10,6 +10,7 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QAbstractButton>
 #include <QApplication>
@@ -463,14 +464,25 @@ void RosterPrintDialog::updateExtraInfoColumns()
     QStringList previouslyChecked =
         selectedExtraColumns();
 
-    const QList<Classroom> classes =
+    const Result<QList<Classroom>> classes =
         classService->classes();
+    if (!classes)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Print Rosters"),
+            tr("Classes could not be loaded."),
+            classes.error()
+            );
+        updatePreview();
+        return;
+    }
     const QList<int> classIds =
         RosterTemplatePrintService::resolveClassIds(
             selectedScope(),
             m_currentClassId,
             selectedClassIds(),
-            classes
+            *classes
             );
     QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
     rosterClasses.reserve(classIds.size());
@@ -1218,9 +1230,19 @@ void RosterPrintDialog::loadClasses()
         return;
     }
 
-    const QList<Classroom> classes =
+    const Result<QList<Classroom>> classes =
         classService->classes();
-    for (const Classroom& classroom : classes)
+    if (!classes)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Print Rosters"),
+            tr("Classes could not be loaded."),
+            classes.error()
+            );
+        return;
+    }
+    for (const Classroom& classroom : *classes)
     {
         const ClassInfo classInfo =
             classService->classInfo(
@@ -1231,10 +1253,8 @@ void RosterPrintDialog::loadClasses()
 
         if (classInfo.teacherId > 0)
         {
-            teacher =
-                teacherService->teacher(
-                    classInfo.teacherId
-                    );
+            teacher = teacherService->teacher(classInfo.teacherId)
+                .value_or(Teacher{});
         }
 
         const QString displayName =

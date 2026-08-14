@@ -88,9 +88,13 @@ public:
     // Settings
     // =====================================================
 
-    void saveSetting(
+    Status saveSetting(
         const QString &key,
         const QVariant &value
+        );
+
+    [[nodiscard]] Status saveSettings(
+        const QVariantMap& values
         );
 
     QVariant loadSetting(
@@ -116,9 +120,9 @@ public:
         const Teacher& teacher
         );
 
-    QList<Teacher> getAllTeachers();
+    [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
 
-    Teacher getTeacher(
+    [[nodiscard]] Result<Teacher> getTeacher(
         int teacherId
         );
 
@@ -156,9 +160,9 @@ public:
         const QString& name
         );
 
-    QList<Classroom> getClasses();
+    [[nodiscard]] Result<QList<Classroom>> getClasses();
 
-    Classroom getClassById(
+    [[nodiscard]] Result<Classroom> getClassById(
         int classId
         );
 
@@ -199,11 +203,11 @@ public:
     // Class Info
     // =====================================================
 
-    [[nodiscard]] bool saveClassInfo(
+    [[nodiscard]] Status saveClassInfo(
         const ClassInfo& info
         );
 
-    [[nodiscard]] bool saveClassNotes(
+    [[nodiscard]] Status saveClassNotes(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
@@ -225,7 +229,7 @@ public:
 
     QList<IntensiveSlotState> loadIntensiveSlotStates();
 
-    void saveIntensiveSlotState(
+    [[nodiscard]] Status saveIntensiveSlotState(
         const QString& day,
         const QString& startTime,
         const QString& state,
@@ -326,20 +330,24 @@ public:
         const QDate& startDate
         );
 
-    int saveCalendarEvent(
+    [[nodiscard]] Result<int> saveCalendarEvent(
         const CalendarEvent& event
         );
 
-    void deleteCalendarEvent(
+    [[nodiscard]] Result<QList<int>> saveCalendarEvents(
+        const QList<CalendarEvent>& events
+        );
+
+    [[nodiscard]] Status deleteCalendarEvent(
         int eventId
         );
 
-    void deleteCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] Status deleteCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );
 
-    void deleteAllCalendarEvents();
+    [[nodiscard]] Status deleteAllCalendarEvents();
 
 
 
@@ -347,7 +355,7 @@ public:
     // Conflict Detection
     // =====================================================
 
-    QList<ClassConflict> getClassTimeConflicts(
+    [[nodiscard]] Result<QList<ClassConflict>> getClassTimeConflicts(
         int classId,
         const QList<ClassTime>& times,
         ScheduleType type
@@ -362,12 +370,12 @@ public:
     // Roster
     // =====================================================
 
-    void saveRoster(
+    [[nodiscard]] Status saveRoster(
         int classId,
         const Roster& roster
         );
 
-    [[nodiscard]] bool saveRosters(
+    [[nodiscard]] Status saveRosters(
         const QList<QPair<int, Roster>>& rosters
         );
 
@@ -387,7 +395,7 @@ public:
     // Speaking Evaluations
     // =====================================================
 
-    [[nodiscard]] bool saveSpeakingEval(
+    [[nodiscard]] Status saveSpeakingEval(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,
@@ -410,17 +418,17 @@ public:
     // Campuses
     // =====================================================
 
-    int saveCampus(
+    [[nodiscard]] Result<int> saveCampus(
         const CampusRecord &campus
         );
 
-    CampusRecord getCampus(
+    [[nodiscard]] Result<CampusRecord> getCampus(
         int campusId
         );
 
-    QList<CampusRecord> getAllCampuses();
+    [[nodiscard]] Result<QList<CampusRecord>> getAllCampuses();
 
-    void deleteCampus(
+    [[nodiscard]] Status deleteCampus(
         int campusId
         );
 

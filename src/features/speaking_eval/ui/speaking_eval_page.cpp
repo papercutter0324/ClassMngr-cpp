@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 SpeakingEvalPage::SpeakingEvalPage(
     ApplicationServices* services,
@@ -58,8 +59,20 @@ void SpeakingEvalPage::loadEvaluations(
         return;
     }
 
-    m_evaluationClasses =
-        classService->classes();
+    const Result<QList<Classroom>> loadedClasses = classService->classes();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Speaking Evaluations"),
+            tr("Classes could not be loaded."),
+            loadedClasses.error()
+            );
+        m_evaluationClasses.clear();
+        setEvaluationEditorAvailable(false);
+        return;
+    }
+    m_evaluationClasses = *loadedClasses;
 
     setScheduleSource(
         scheduleSourceForMode(
@@ -228,10 +241,8 @@ void SpeakingEvalPage::rebuildClassTabs(
 
             if (info.teacherId > 0)
             {
-                teacher =
-                    teacherService->teacher(
-                        info.teacherId
-                        );
+                teacher = teacherService->teacher(info.teacherId)
+                    .value_or(Teacher{});
             }
 
             ClassTabNavigation::ClassEntry entry;

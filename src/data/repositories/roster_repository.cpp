@@ -1,6 +1,10 @@
 #include "roster_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
 #include <QDebug>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -11,112 +15,96 @@ RosterRepository::RosterRepository(
 {
 }
 
-void RosterRepository::saveRoster(
+Status RosterRepository::saveRoster(
     int classId,
     const Roster& roster
     )
 {
     if (classId <= 0)
     {
-        return;
+        return std::unexpected(
+            QObject::tr("Saving roster failed: invalid class id %1.")
+                .arg(classId)
+            );
     }
 
-    if (!m_database.transaction())
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
     {
-        qWarning()
-            << "Failed to start roster save transaction:"
-            << m_database.lastError().text();
-
-        return;
+        return std::unexpected(
+            QObject::tr("Starting roster save transaction failed for class id %1: %2")
+                .arg(classId)
+                .arg(m_database.lastError().text())
+            );
     }
 
-    if (!writeRoster(classId, roster))
+    const Status saved = writeRoster(classId, roster);
+    if (!saved)
     {
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back roster save transaction:"
-                << m_database.lastError().text();
-        }
-
-        return;
+        return saved;
     }
 
-    if (!m_database.commit())
+    if (!transaction.commit())
     {
-        qWarning()
-            << "Failed to commit roster save transaction:"
-            << m_database.lastError().text();
-
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back failed roster save commit:"
-                << m_database.lastError().text();
-        }
+        return std::unexpected(
+            QObject::tr("Committing roster save failed for class id %1: %2")
+                .arg(classId)
+                .arg(m_database.lastError().text())
+            );
     }
+
+    return {};
 }
 
-bool RosterRepository::saveRosters(
+Status RosterRepository::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     )
 {
     if (rosters.isEmpty())
     {
-        return true;
+        return {};
     }
 
-    if (!m_database.transaction())
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
     {
-        qWarning()
-            << "Failed to start roster batch save transaction:"
-            << m_database.lastError().text();
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Starting roster batch save transaction failed: %1")
+                .arg(m_database.lastError().text())
+            );
     }
 
     for (const auto& roster : rosters)
     {
-        if (!writeRoster(roster.first, roster.second))
+        const Status saved = writeRoster(roster.first, roster.second);
+        if (!saved)
         {
-            if (!m_database.rollback())
-            {
-                qWarning()
-                    << "Failed to roll back roster batch save transaction:"
-                    << m_database.lastError().text();
-            }
-
-            return false;
+            return saved;
         }
     }
 
-    if (!m_database.commit())
+    if (!transaction.commit())
     {
-        qWarning()
-            << "Failed to commit roster batch save transaction:"
-            << m_database.lastError().text();
-
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back failed roster batch save commit:"
-                << m_database.lastError().text();
-        }
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Committing roster batch save failed: %1")
+                .arg(m_database.lastError().text())
+            );
     }
 
-    return true;
+    return {};
 }
 
-bool RosterRepository::writeRoster(
+Status RosterRepository::writeRoster(
     int classId,
     const Roster& roster
     )
 {
     if (classId <= 0)
     {
-        return false;
+        return std::unexpected(
+            QObject::tr("Saving roster failed: invalid class id %1.")
+                .arg(classId)
+            );
     }
 
     QSqlQuery query(m_database);
@@ -127,13 +115,20 @@ bool RosterRepository::writeRoster(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    auto execute = [&](const QString& action) -> Status
     {
-        qWarning()
-            << "Deleting roster_columns failed while saving roster:"
-            << query.lastError().text();
+        const auto result = SqlQueryUtils::executePrepared(
+            query, action, identity);
+        return result
+            ? Status{}
+            : Status(std::unexpected(result.error().userMessage()));
+    };
 
-        return false;
+    Status statement = execute(QObject::tr("Deleting roster columns"));
+    if (!statement)
+    {
+        return statement;
     }
 
     query.prepare(
@@ -142,13 +137,10 @@ bool RosterRepository::writeRoster(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    statement = execute(QObject::tr("Deleting roster data"));
+    if (!statement)
     {
-        qWarning()
-            << "Deleting roster_data failed while saving roster:"
-            << query.lastError().text();
-
-        return false;
+        return statement;
     }
 
     for (int column = 0; column < roster.columns.size(); ++column)
@@ -173,13 +165,10 @@ bool RosterRepository::writeRoster(
         query.addBindValue(column);
         query.addBindValue(width);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Inserting roster column"));
+        if (!statement)
         {
-            qWarning()
-                << "Inserting roster_columns failed while saving roster:"
-                << query.lastError().text();
-
-            return false;
+            return statement;
         }
     }
 
@@ -215,18 +204,15 @@ bool RosterRepository::writeRoster(
             query.addBindValue(column);
             query.addBindValue(value);
 
-            if (!query.exec())
+            statement = execute(QObject::tr("Inserting roster data"));
+            if (!statement)
             {
-                qWarning()
-                    << "Inserting roster_data failed while saving roster:"
-                    << query.lastError().text();
-
-                return false;
+                return statement;
             }
         }
     }
 
-    return true;
+    return {};
 }
 
 Roster RosterRepository::loadRoster(

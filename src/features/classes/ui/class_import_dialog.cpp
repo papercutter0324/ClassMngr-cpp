@@ -72,13 +72,15 @@ QString destinationClassDisplayName(
     int classId
     )
 {
-    const Classroom classroom = classService->classroom(classId);
+    const Classroom classroom = classService->classroom(classId)
+        .value_or(Classroom{});
     const ClassInfo info = classService->classInfo(classId);
     Teacher teacher;
 
     if (info.teacherId > 0)
     {
-        teacher = teacherService->teacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId)
+            .value_or(Teacher{});
     }
 
     const QString display = SidebarNodeNaming::formatClassDisplayName(
@@ -102,7 +104,8 @@ QString destinationTeacherDisplayName(
     int teacherId
     )
 {
-    const Teacher teacher = teacherService->teacher(teacherId);
+    const Teacher teacher = teacherService->teacher(teacherId)
+        .value_or(Teacher{});
     const QString display =
         SidebarNodeNaming::formatTeacherDisplayName(teacher).trimmed();
 

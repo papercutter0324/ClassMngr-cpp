@@ -1,8 +1,11 @@
 #include "class_info_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
 #include "domain/models/classroom.h"
 
 #include <QDebug>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStringList>
@@ -218,13 +221,11 @@ QString normalizedProjectionType(
         );
 }
 
-Classroom loadClassById(
+Result<Classroom> loadClassById(
     QSqlDatabase& database,
     int classId
     )
 {
-    Classroom classroom;
-
     QSqlQuery query(database);
 
     query.prepare(R"(
@@ -235,13 +236,27 @@ Classroom loadClassById(
 
     query.addBindValue(classId);
 
-    query.exec();
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class for conflict detection"),
+        QObject::tr("class id %1").arg(classId)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
 
     if (!query.next())
     {
-        return classroom;
+        return std::unexpected(
+            QObject::tr(
+                "Loading class for conflict detection failed for class id "
+                "%1: no matching record exists."
+                ).arg(classId)
+            );
     }
 
+    Classroom classroom;
     classroom.id =
         query.value("id").toInt();
 
@@ -259,38 +274,40 @@ ClassInfoRepository::ClassInfoRepository(
 {
 }
 
-bool ClassInfoRepository::saveClassInfo(
+Status ClassInfoRepository::saveClassInfo(
     const ClassInfo& info
     )
 {
-    if (!m_database.transaction())
+    if (info.classId <= 0)
     {
-        qWarning()
-            << "Failed to start class info save transaction:"
-            << m_database.lastError().text();
+        return std::unexpected(
+            QObject::tr("Saving class information failed: invalid class id %1.")
+                .arg(info.classId)
+            );
+    }
 
-        return false;
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Starting class information save transaction failed for "
+                "class id %1: %2"
+                ).arg(info.classId)
+                 .arg(m_database.lastError().text())
+            );
     }
 
     QSqlQuery query(m_database);
-
-    auto rollbackOnFailure =
-        [this, &query](const QString& operation)
-        {
-            qWarning()
-                << operation
-                << "failed while saving class info:"
-                << query.lastError().text();
-
-            if (!m_database.rollback())
-            {
-                qWarning()
-                    << "Failed to roll back class info save transaction:"
-                    << m_database.lastError().text();
-            }
-
-            return false;
-        };
+    const QString identity = QObject::tr("class id %1").arg(info.classId);
+    auto execute = [&](const QString& action) -> Status
+    {
+        const auto result = SqlQueryUtils::executePrepared(
+            query, action, identity);
+        return result
+            ? Status{}
+            : Status(std::unexpected(result.error().userMessage()));
+    };
 
     query.prepare(R"(
         INSERT INTO class_info (
@@ -331,11 +348,10 @@ bool ClassInfoRepository::saveClassInfo(
     query.addBindValue(info.notes);
     query.addBindValue(info.timeFillerActivities);
 
-    if (!query.exec())
+    Status statement = execute(QObject::tr("Saving class information"));
+    if (!statement)
     {
-        return rollbackOnFailure(
-            "Upserting class_info"
-            );
+        return statement;
     }
 
     query.prepare(
@@ -343,11 +359,10 @@ bool ClassInfoRepository::saveClassInfo(
         );
 
     query.addBindValue(info.classId);
-    if (!query.exec())
+    statement = execute(QObject::tr("Deleting regular class times"));
+    if (!statement)
     {
-        return rollbackOnFailure(
-            "Deleting class_times"
-            );
+        return statement;
     }
 
     for (const ClassTime& time : info.classTimes)
@@ -367,11 +382,10 @@ bool ClassInfoRepository::saveClassInfo(
         query.addBindValue(time.startTime);
         query.addBindValue(time.endTime);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Inserting regular class time"));
+        if (!statement)
         {
-            return rollbackOnFailure(
-                "Inserting class_times"
-                );
+            return statement;
         }
     }
 
@@ -380,11 +394,10 @@ bool ClassInfoRepository::saveClassInfo(
         );
 
     query.addBindValue(info.classId);
-    if (!query.exec())
+    statement = execute(QObject::tr("Deleting intensive class times"));
+    if (!statement)
     {
-        return rollbackOnFailure(
-            "Deleting class_intensive_times"
-            );
+        return statement;
     }
 
     for (const ClassTime& time : info.intensiveTimes)
@@ -404,34 +417,25 @@ bool ClassInfoRepository::saveClassInfo(
         query.addBindValue(time.startTime);
         query.addBindValue(time.endTime);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Inserting intensive class time"));
+        if (!statement)
         {
-            return rollbackOnFailure(
-                "Inserting class_intensive_times"
-                );
+            return statement;
         }
     }
 
-    if (!m_database.commit())
+    if (!transaction.commit())
     {
-        qWarning()
-            << "Failed to commit class info save transaction:"
-            << m_database.lastError().text();
-
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back failed class info save commit:"
-                << m_database.lastError().text();
-        }
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Committing class information failed for %1: %2")
+                .arg(identity, m_database.lastError().text())
+            );
     }
 
-    return true;
+    return {};
 }
 
-bool ClassInfoRepository::saveClassNotes(
+Status ClassInfoRepository::saveClassNotes(
     int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -439,7 +443,10 @@ bool ClassInfoRepository::saveClassNotes(
 {
     if (classId <= 0)
     {
-        return false;
+        return std::unexpected(
+            QObject::tr("Saving class notes failed: invalid class id %1.")
+                .arg(classId)
+            );
     }
 
     QSqlQuery query(m_database);
@@ -462,16 +469,17 @@ bool ClassInfoRepository::saveClassNotes(
     query.addBindValue(notes);
     query.addBindValue(timeFillerActivities);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Saving class notes"),
+        QObject::tr("class id %1").arg(classId)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to save class notes:"
-            << query.lastError().text();
-
-        return false;
+        return std::unexpected(executed.error().userMessage());
     }
 
-    return true;
+    return {};
 }
 
 ClassInfo ClassInfoRepository::loadClassInfo(
@@ -625,7 +633,7 @@ ClassInfo ClassInfoRepository::loadClassInfo(
     return info;
 }
 
-QList<ClassConflict> ClassInfoRepository::getClassTimeConflicts(
+Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
     int classId,
     const QList<ClassTime>& times,
     ScheduleType type
@@ -633,15 +641,19 @@ QList<ClassConflict> ClassInfoRepository::getClassTimeConflicts(
 {
     QList<ClassConflict> conflicts;
 
-    const Classroom currentClass =
+    const Result<Classroom> currentClass =
         loadClassById(
             m_database,
             classId
             );
+    if (!currentClass)
+    {
+        return std::unexpected(currentClass.error());
+    }
 
     const QString currentClassName =
         classDisplayName(
-            currentClass.name,
+            currentClass->name,
             classId
             );
 
@@ -720,13 +732,14 @@ QList<ClassConflict> ClassInfoRepository::getClassTimeConflicts(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class time conflicts"),
+        QObject::tr("class id %1").arg(classId)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load class time conflicts:"
-            << query.lastError().text();
-
-        return conflicts;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())

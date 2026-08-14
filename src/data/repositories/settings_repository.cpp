@@ -1,5 +1,10 @@
 #include "settings_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
+#include <QObject>
+#include <QSqlError>
 #include <QSqlQuery>
 
 SettingsRepository::SettingsRepository(
@@ -9,7 +14,7 @@ SettingsRepository::SettingsRepository(
 {
 }
 
-void SettingsRepository::saveSetting(
+Status SettingsRepository::saveSetting(
     const QString& key,
     const QVariant& value
     )
@@ -31,7 +36,55 @@ void SettingsRepository::saveSetting(
     query.addBindValue(key);
     query.addBindValue(value);
 
-    query.exec();
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Saving application setting"),
+        QObject::tr("setting key '%1'").arg(key)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    return {};
+}
+
+Status SettingsRepository::saveSettings(
+    const QVariantMap& values
+    )
+{
+    if (values.isEmpty())
+    {
+        return {};
+    }
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr("Starting application settings transaction failed: %1")
+                .arg(m_database.lastError().text())
+            );
+    }
+
+    for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
+    {
+        const Status saved = saveSetting(setting.key(), setting.value());
+        if (!saved)
+        {
+            return saved;
+        }
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Committing application settings failed: %1")
+                .arg(m_database.lastError().text())
+            );
+    }
+
+    return {};
 }
 
 QVariant SettingsRepository::loadSetting(

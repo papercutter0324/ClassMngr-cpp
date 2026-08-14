@@ -11,7 +11,7 @@ Classroom SidebarController::getClassById(int classId) const
         openClassService(m_services);
 
     return classes
-        ? classes->classroom(classId)
+        ? classes->classroom(classId).value_or(Classroom{})
         : Classroom();
 }
 
@@ -58,18 +58,24 @@ void SidebarController::addClass()
 
     refreshClassSidebar();
 
-    Classroom classroom =
+    const Result<Classroom> classroom =
         classes->classroom(
             classId
             );
 
-    if (classroom.id == 0)
+    if (!classroom)
     {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Class"),
+            tr("The created class could not be loaded."),
+            classroom.error()
+            );
         return;
     }
 
     m_pages->classesPage()->openClass(
-        classroom.id,
+        classroom->id,
         ClassesSection::Details
         );
 
@@ -106,12 +112,23 @@ void SidebarController::deleteClass()
         return;
     }
 
-    const Classroom classroom =
+    const Result<Classroom> classroom =
         classes->classroom(
             classId
             );
 
-    if (!confirmDeleteClass(classroom))
+    if (!classroom)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Class"),
+            tr("The class could not be loaded."),
+            classroom.error()
+            );
+        return;
+    }
+
+    if (!confirmDeleteClass(*classroom))
     {
         return;
     }
@@ -126,7 +143,7 @@ void SidebarController::deleteClass()
     const int selectedClassId =
         m_sidebar->getSelectedClassId();
 
-    const Status removed = classes->remove(classroom.id);
+    const Status removed = classes->remove(classroom->id);
     if (!removed)
     {
         DialogServices::showWarning(
@@ -142,7 +159,7 @@ void SidebarController::deleteClass()
 
     m_pages->classesPage()->loadClasses();
 
-    if (selectedClassId == classroom.id)
+    if (selectedClassId == classroom->id)
     {
         m_sidebar->selectByKeys(
             {QStringLiteral("classes")}
@@ -156,4 +173,3 @@ void SidebarController::deleteClass()
             );
     }
 }
-

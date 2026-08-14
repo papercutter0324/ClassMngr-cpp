@@ -13,6 +13,7 @@
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <algorithm>
 
@@ -451,10 +452,20 @@ void MyClassesPage::rebuildClassInformation()
 
     QList<ClassSummary> summaries;
 
-    const QList<Classroom> classes =
+    const Result<QList<Classroom>> classes =
         classService->classes();
+    if (!classes)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Classes"),
+            tr("Class information could not be loaded."),
+            classes.error()
+            );
+        return;
+    }
 
-    for (const Classroom& classroom : classes)
+    for (const Classroom& classroom : *classes)
     {
         ClassSummary summary;
         summary.classroom = classroom;
@@ -469,10 +480,9 @@ void MyClassesPage::rebuildClassInformation()
 
         if (summary.info.teacherId > 0)
         {
-            summary.teacher =
-                teacherService->teacher(
-                    summary.info.teacherId
-                    );
+            summary.teacher = teacherService
+                ->teacher(summary.info.teacherId)
+                .value_or(Teacher{});
         }
 
         summary.displayName =

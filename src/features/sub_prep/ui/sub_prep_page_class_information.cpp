@@ -1,4 +1,5 @@
 #include "sub_prep_page_p.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 void SubPrepPage::refreshGeneratedContent()
 {
@@ -498,8 +499,19 @@ SubPrepPage::buildClassInformation(
     }
 
     QList<SubPrepClassInformation::SourceClass> sources;
+    const Result<QList<Classroom>> classes = classService->classes();
+    if (!classes)
+    {
+        DialogServices::showWarning(
+            const_cast<SubPrepPage*>(this),
+            tr("Load Class Information"),
+            tr("Classes could not be loaded."),
+            classes.error()
+            );
+        return {};
+    }
 
-    for (const Classroom& classroom : classService->classes())
+    for (const Classroom& classroom : *classes)
     {
         SubPrepClassInformation::SourceClass source;
         source.classroom = classroom;
@@ -514,10 +526,8 @@ SubPrepPage::buildClassInformation(
 
         if (source.info.teacherId > 0)
         {
-            source.teacher =
-                teacherService->teacher(
-                    source.info.teacherId
-                    );
+            source.teacher = teacherService->teacher(source.info.teacherId)
+                .value_or(Teacher{});
         }
 
         sources.append(source);

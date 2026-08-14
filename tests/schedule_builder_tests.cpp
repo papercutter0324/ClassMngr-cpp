@@ -17,17 +17,18 @@ void ScheduleBuilderTests::intensiveModeAlwaysBuildsFullRange()
     ClassService classService(nullptr);
     const ScheduleBuilder builder(&classService);
 
-    const ScheduleBuildResult result =
+    const Result<ScheduleBuildResult> result =
         builder.build(
             true,
             {QStringLiteral("Monday")}
             );
 
-    QCOMPARE(result.rows.size(), 13);
-    QCOMPARE(result.rows.first().label, QStringLiteral("09:00"));
-    QCOMPARE(result.rows.last().label, QStringLiteral("21:00"));
-    QCOMPARE(result.scheduleOffset, 0);
-    QVERIFY(!result.uses55Endings);
+    QVERIFY(result);
+    QCOMPARE(result->rows.size(), 13);
+    QCOMPARE(result->rows.first().label, QStringLiteral("09:00"));
+    QCOMPARE(result->rows.last().label, QStringLiteral("21:00"));
+    QCOMPARE(result->scheduleOffset, 0);
+    QVERIFY(!result->uses55Endings);
 }
 
 void ScheduleBuilderTests::regularModeRetainsDefaultRange()
@@ -35,15 +36,16 @@ void ScheduleBuilderTests::regularModeRetainsDefaultRange()
     ClassService classService(nullptr);
     const ScheduleBuilder builder(&classService);
 
-    const ScheduleBuildResult result =
+    const Result<ScheduleBuildResult> result =
         builder.build(
             false,
             {QStringLiteral("Monday")}
             );
 
-    QCOMPARE(result.rows.size(), 6);
-    QCOMPARE(result.rows.first().label, QStringLiteral("16:00"));
-    QCOMPARE(result.rows.last().label, QStringLiteral("21:00"));
+    QVERIFY(result);
+    QCOMPARE(result->rows.size(), 6);
+    QCOMPARE(result->rows.first().label, QStringLiteral("16:00"));
+    QCOMPARE(result->rows.last().label, QStringLiteral("21:00"));
 }
 
 QTEST_APPLESS_MAIN(ScheduleBuilderTests)

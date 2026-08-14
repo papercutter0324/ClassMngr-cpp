@@ -82,6 +82,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrIntensiveSlotStateRepositoryTests
         tests/intensive_slot_state_repository_tests.cpp
+        src/data/database/sql_query_utils.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
     )
 
@@ -168,6 +169,8 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
     qt_add_executable(ClassMngrCalendarEventRepositoryTests
         tests/calendar_event_repository_tests.cpp
         src/data/database/database_schema_manager.cpp
+        src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
     )
 
@@ -195,6 +198,8 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrCalendarEventCacheTests
         tests/calendar_event_cache_tests.cpp
+        src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
         src/features/calendar/ui/calendar_event_cache.cpp
@@ -231,6 +236,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         src/data/database/database_session.cpp
         src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp
         src/data/repositories/campus_record_repository.cpp
         src/data/repositories/class_info_repository.cpp

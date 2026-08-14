@@ -45,7 +45,7 @@ ScheduleBuilder::ScheduleBuilder(
 {
 }
 
-ScheduleBuildResult ScheduleBuilder::build(
+Result<ScheduleBuildResult> ScheduleBuilder::build(
     bool useIntensive,
     const QStringList& visibleDays
     ) const
@@ -74,10 +74,14 @@ ScheduleBuildResult ScheduleBuilder::build(
     int earliestHour = 0;
     int scheduleOffset = 0;
 
-    const QList<Classroom> classes =
+    const Result<QList<Classroom>> classes =
         m_classService->classes();
+    if (!classes)
+    {
+        return std::unexpected(classes.error());
+    }
 
-    for (const Classroom& classroom : classes)
+    for (const Classroom& classroom : *classes)
     {
         const ClassInfo info =
             m_classService->classInfo(

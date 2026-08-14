@@ -168,7 +168,7 @@ void CalendarEventImportService::handleFinished(
             );
     }
 
-    int importedCount = 0;
+    QList<CalendarEvent> eventsToSave;
     for (const CalendarEvent& event : parsed.events)
     {
         const QString signature =
@@ -180,19 +180,20 @@ void CalendarEventImportService::handleFinished(
             continue;
         }
 
-        if (m_calendarService->saveEvent(event) > 0)
-        {
-            ++importedCount;
-            existingSignatures.insert(signature);
-        }
-        else
-        {
-            ++parsed.skippedCount;
-        }
+        eventsToSave.append(event);
+        existingSignatures.insert(signature);
+    }
+
+    const Result<QList<int>> saved =
+        m_calendarService->saveEvents(eventsToSave);
+    if (!saved)
+    {
+        emit importFailed(saved.error());
+        return;
     }
 
     emit importFinished(
-        importedCount,
+        saved->size(),
         parsed.skippedCount
         );
 }

@@ -44,7 +44,13 @@ class SettingsService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    void save(const QString& key, const QVariant& value) const;
+    Status save(
+        const QString& key,
+        const QVariant& value
+        ) const;
+    [[nodiscard]] Status saveAll(
+        const QVariantMap& values
+        ) const;
     QVariant load(const QString& key, const QVariant& defaultValue = {}) const;
 };
 
@@ -55,8 +61,8 @@ public:
     [[nodiscard]] Result<int> create(const Teacher& teacher) const;
     [[nodiscard]] Result<int> save(const Teacher& teacher) const;
     [[nodiscard]] Status update(const Teacher& teacher) const;
-    Teacher teacher(int teacherId) const;
-    QList<Teacher> teachers() const;
+    [[nodiscard]] Result<Teacher> teacher(int teacherId) const;
+    [[nodiscard]] Result<QList<Teacher>> teachers() const;
     [[nodiscard]] Status remove(int teacherId) const;
     QList<NativeEnglishTeacher> nativeEnglishTeachers() const;
     Status saveNativeEnglishTeacherDirectory(
@@ -77,18 +83,18 @@ class ClassService final : public FeatureService
 public:
     using FeatureService::FeatureService;
     [[nodiscard]] Result<int> create(const QString& name) const;
-    QList<Classroom> classes() const;
-    Classroom classroom(int classId) const;
+    [[nodiscard]] Result<QList<Classroom>> classes() const;
+    [[nodiscard]] Result<Classroom> classroom(int classId) const;
     [[nodiscard]] Status rename(int classId, const QString& name) const;
     [[nodiscard]] Status remove(int classId) const;
     ClassInfo classInfo(int classId) const;
-    bool saveClassInfo(const ClassInfo& info) const;
-    bool saveClassNotes(
+    [[nodiscard]] Status saveClassInfo(const ClassInfo& info) const;
+    [[nodiscard]] Status saveClassNotes(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
         ) const;
-    QList<ClassConflict> conflicts(
+    [[nodiscard]] Result<QList<ClassConflict>> conflicts(
         int classId,
         const QList<ClassTime>& times,
         ScheduleType type
@@ -111,7 +117,7 @@ public:
         ) const;
     Result<ScheduleImportSummary> importSchedule(const ScheduleImportPlan& plan) const;
     QList<IntensiveSlotState> intensiveSlotStates() const;
-    void saveIntensiveSlotState(
+    [[nodiscard]] Status saveIntensiveSlotState(
         const QString& day,
         const QString& startTime,
         const QString& state,
@@ -159,21 +165,26 @@ public:
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
-    int saveEvent(const CalendarEvent& event) const;
-    void deleteEvent(int eventId) const;
-    void deleteRepeatSeriesFromDate(
+    [[nodiscard]] Result<int> saveEvent(const CalendarEvent& event) const;
+    [[nodiscard]] Result<QList<int>> saveEvents(
+        const QList<CalendarEvent>& events
+        ) const;
+    [[nodiscard]] Status deleteEvent(int eventId) const;
+    [[nodiscard]] Status deleteRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
-    void deleteAllEvents() const;
+    [[nodiscard]] Status deleteAllEvents() const;
 };
 
 class RosterService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    void saveRoster(int classId, const Roster& roster) const;
-    bool saveRosters(const QList<QPair<int, Roster>>& rosters) const;
+    [[nodiscard]] Status saveRoster(int classId, const Roster& roster) const;
+    [[nodiscard]] Status saveRosters(
+        const QList<QPair<int, Roster>>& rosters
+        ) const;
     Roster roster(int classId) const;
     int studentCount(int classId) const;
 };
@@ -182,7 +193,7 @@ class SpeakingEvaluationService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    bool saveEvaluation(
+    [[nodiscard]] Status saveEvaluation(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,

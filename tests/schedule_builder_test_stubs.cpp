@@ -9,7 +9,7 @@ bool FeatureService::isAvailable() const
     return true;
 }
 
-QList<Classroom> ClassService::classes() const
+Result<QList<Classroom>> ClassService::classes() const
 {
     return {};
 }

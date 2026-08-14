@@ -56,16 +56,37 @@ DataService* FeatureService::dataService() const
     return m_legacyDataService;
 }
 
-void SettingsService::save(const QString& key, const QVariant& value) const
+Status SettingsService::save(
+    const QString& key,
+    const QVariant& value
+    ) const
 {
     if (auto* repository = session() ? session()->settingsRepository() : nullptr)
     {
-        repository->saveSetting(key, value);
+        return repository->saveSetting(key, value);
     }
-    else if (dataService())
+    if (dataService())
     {
-        dataService()->saveSetting(key, value);
+        return dataService()->saveSetting(key, value);
     }
+
+    return std::unexpected(unavailableError());
+}
+
+Status SettingsService::saveAll(
+    const QVariantMap& values
+    ) const
+{
+    if (auto* repository = session() ? session()->settingsRepository() : nullptr)
+    {
+        return repository->saveSettings(values);
+    }
+    if (dataService())
+    {
+        return dataService()->saveSettings(values);
+    }
+
+    return std::unexpected(unavailableError());
 }
 
 QVariant SettingsService::load(
@@ -118,22 +139,26 @@ Status TeacherService::update(const Teacher& teacher) const
     return std::unexpected(unavailableError());
 }
 
-Teacher TeacherService::teacher(int teacherId) const
+Result<Teacher> TeacherService::teacher(int teacherId) const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
         return repository->getTeacher(teacherId);
     }
-    return dataService() ? dataService()->getTeacher(teacherId) : Teacher{};
+    return dataService()
+        ? dataService()->getTeacher(teacherId)
+        : Result<Teacher>(std::unexpected(unavailableError()));
 }
 
-QList<Teacher> TeacherService::teachers() const
+Result<QList<Teacher>> TeacherService::teachers() const
 {
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
         return repository->getAllTeachers();
     }
-    return dataService() ? dataService()->getAllTeachers() : QList<Teacher>{};
+    return dataService()
+        ? dataService()->getAllTeachers()
+        : Result<QList<Teacher>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::remove(int teacherId) const
@@ -238,22 +263,26 @@ Result<int> ClassService::create(const QString& name) const
         : Result<int>(std::unexpected(unavailableError()));
 }
 
-QList<Classroom> ClassService::classes() const
+Result<QList<Classroom>> ClassService::classes() const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
         return repository->getClasses();
     }
-    return dataService() ? dataService()->getClasses() : QList<Classroom>{};
+    return dataService()
+        ? dataService()->getClasses()
+        : Result<QList<Classroom>>(std::unexpected(unavailableError()));
 }
 
-Classroom ClassService::classroom(int classId) const
+Result<Classroom> ClassService::classroom(int classId) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)
     {
         return repository->getClassById(classId);
     }
-    return dataService() ? dataService()->getClassById(classId) : Classroom{};
+    return dataService()
+        ? dataService()->getClassById(classId)
+        : Result<Classroom>(std::unexpected(unavailableError()));
 }
 
 Status ClassService::rename(int classId, const QString& name) const
@@ -299,16 +328,18 @@ ClassInfo ClassService::classInfo(int classId) const
     return info;
 }
 
-bool ClassService::saveClassInfo(const ClassInfo& info) const
+Status ClassService::saveClassInfo(const ClassInfo& info) const
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
         return repository->saveClassInfo(info);
     }
-    return dataService() && dataService()->saveClassInfo(info);
+    return dataService()
+        ? dataService()->saveClassInfo(info)
+        : Status(std::unexpected(unavailableError()));
 }
 
-bool ClassService::saveClassNotes(
+Status ClassService::saveClassNotes(
     int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -320,11 +351,12 @@ bool ClassService::saveClassNotes(
             classId, notes, timeFillerActivities);
     }
     return dataService()
-        && dataService()->saveClassNotes(
-            classId, notes, timeFillerActivities);
+        ? dataService()->saveClassNotes(
+            classId, notes, timeFillerActivities)
+        : Status(std::unexpected(unavailableError()));
 }
 
-QList<ClassConflict> ClassService::conflicts(
+Result<QList<ClassConflict>> ClassService::conflicts(
     int classId,
     const QList<ClassTime>& times,
     ScheduleType type
@@ -336,7 +368,9 @@ QList<ClassConflict> ClassService::conflicts(
     }
     return dataService()
         ? dataService()->getClassTimeConflicts(classId, times, type)
-        : QList<ClassConflict>{};
+        : Result<QList<ClassConflict>>(
+            std::unexpected(unavailableError())
+            );
 }
 
 Result<ClassTransferPackage> ClassService::buildTransferPackage(
@@ -423,7 +457,7 @@ QList<IntensiveSlotState> ScheduleService::intensiveSlotStates() const
         : QList<IntensiveSlotState>{};
 }
 
-void ScheduleService::saveIntensiveSlotState(
+Status ScheduleService::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
     const QString& state,
@@ -433,14 +467,16 @@ void ScheduleService::saveIntensiveSlotState(
     if (auto* repository = session()
             ? session()->intensiveSlotStateRepository() : nullptr)
     {
-        repository->saveIntensiveSlotState(
+        return repository->saveIntensiveSlotState(
             day, startTime, state, defaultState);
     }
-    else if (dataService())
+    if (dataService())
     {
-        dataService()->saveIntensiveSlotState(
+        return dataService()->saveIntensiveSlotState(
             day, startTime, state, defaultState);
     }
+
+    return std::unexpected(unavailableError());
 }
 
 Result<QList<TestingAssignment>> ScheduleService::testingAssignments() const
@@ -708,30 +744,48 @@ QList<CalendarEvent> CalendarService::repeatSeriesFromDate(
         : QList<CalendarEvent>{};
 }
 
-int CalendarService::saveEvent(const CalendarEvent& event) const
+Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
 {
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
         return repository->saveCalendarEvent(event);
     }
-    return dataService() ? dataService()->saveCalendarEvent(event) : -1;
+    return dataService()
+        ? dataService()->saveCalendarEvent(event)
+        : Result<int>(std::unexpected(unavailableError()));
 }
 
-void CalendarService::deleteEvent(int eventId) const
+Result<QList<int>> CalendarService::saveEvents(
+    const QList<CalendarEvent>& events
+    ) const
 {
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        repository->deleteCalendarEvent(eventId);
+        return repository->saveCalendarEvents(events);
     }
-    else if (dataService())
-    {
-        dataService()->deleteCalendarEvent(eventId);
-    }
+    return dataService()
+        ? dataService()->saveCalendarEvents(events)
+        : Result<QList<int>>(std::unexpected(unavailableError()));
 }
 
-void CalendarService::deleteRepeatSeriesFromDate(
+Status CalendarService::deleteEvent(int eventId) const
+{
+    if (auto* repository = session()
+            ? session()->calendarEventRepository() : nullptr)
+    {
+        return repository->deleteCalendarEvent(eventId);
+    }
+    if (dataService())
+    {
+        return dataService()->deleteCalendarEvent(eventId);
+    }
+
+    return std::unexpected(unavailableError());
+}
+
+Status CalendarService::deleteRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     ) const
@@ -739,42 +793,48 @@ void CalendarService::deleteRepeatSeriesFromDate(
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        repository->deleteCalendarEventsForRepeatSeriesFromDate(
+        return repository->deleteCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId, startDate);
     }
-    else if (dataService())
+    if (dataService())
     {
-        dataService()->deleteCalendarEventsForRepeatSeriesFromDate(
+        return dataService()->deleteCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId, startDate);
     }
+
+    return std::unexpected(unavailableError());
 }
 
-void CalendarService::deleteAllEvents() const
+Status CalendarService::deleteAllEvents() const
 {
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        repository->deleteAllCalendarEvents();
+        return repository->deleteAllCalendarEvents();
     }
-    else if (dataService())
+    if (dataService())
     {
-        dataService()->deleteAllCalendarEvents();
+        return dataService()->deleteAllCalendarEvents();
     }
+
+    return std::unexpected(unavailableError());
 }
 
-void RosterService::saveRoster(int classId, const Roster& roster) const
+Status RosterService::saveRoster(int classId, const Roster& roster) const
 {
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        repository->saveRoster(classId, roster);
+        return repository->saveRoster(classId, roster);
     }
-    else if (dataService())
+    if (dataService())
     {
-        dataService()->saveRoster(classId, roster);
+        return dataService()->saveRoster(classId, roster);
     }
+
+    return std::unexpected(unavailableError());
 }
 
-bool RosterService::saveRosters(
+Status RosterService::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     ) const
 {
@@ -782,7 +842,9 @@ bool RosterService::saveRosters(
     {
         return repository->saveRosters(rosters);
     }
-    return dataService() && dataService()->saveRosters(rosters);
+    return dataService()
+        ? dataService()->saveRosters(rosters)
+        : Status(std::unexpected(unavailableError()));
 }
 
 Roster RosterService::roster(int classId) const
@@ -803,7 +865,7 @@ int RosterService::studentCount(int classId) const
     return dataService() ? dataService()->getRosterStudentCount(classId) : 0;
 }
 
-bool SpeakingEvaluationService::saveEvaluation(
+Status SpeakingEvaluationService::saveEvaluation(
     int classId,
     const QString& evaluationName,
     const SpeakingEvalRows& rows,
@@ -817,8 +879,9 @@ bool SpeakingEvaluationService::saveEvaluation(
             classId, evaluationName, rows, dirtyCells);
     }
     return dataService()
-        && dataService()->saveSpeakingEval(
-            classId, evaluationName, rows, dirtyCells);
+        ? dataService()->saveSpeakingEval(
+            classId, evaluationName, rows, dirtyCells)
+        : Status(std::unexpected(unavailableError()));
 }
 
 SpeakingEvalRows SpeakingEvaluationService::evaluation(

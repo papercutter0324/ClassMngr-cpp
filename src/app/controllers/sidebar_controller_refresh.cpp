@@ -1,6 +1,7 @@
 #include "sidebar_controller_p.h"
 
 #include "app/services/feature_services.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 using namespace SidebarControllerPrivate;
 
@@ -25,8 +26,20 @@ void SidebarController::refreshClassSidebar()
     }
 
     QList<SidebarClassNode> classNodes;
+    const Result<QList<Classroom>> loadedClasses = classes->classes();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Load Classes"),
+            tr("Classes could not be loaded."),
+            loadedClasses.error()
+            );
+        updateActionStates();
+        return;
+    }
 
-    for (const Classroom& classroom : classes->classes())
+    for (const Classroom& classroom : *loadedClasses)
     {
         auto classInfo =
             classes->classInfo(
@@ -37,10 +50,20 @@ void SidebarController::refreshClassSidebar()
 
         if (classInfo.teacherId > 0)
         {
-            teacher =
-                teachers->teacher(
-                    classInfo.teacherId
+            const Result<Teacher> loadedTeacher =
+                teachers->teacher(classInfo.teacherId);
+            if (!loadedTeacher)
+            {
+                DialogServices::showWarning(
+                    m_sidebar,
+                    tr("Load Classes"),
+                    tr("A class teacher could not be loaded."),
+                    loadedTeacher.error()
                     );
+                updateActionStates();
+                return;
+            }
+            teacher = *loadedTeacher;
         }
 
         QString displayName =
@@ -103,12 +126,24 @@ void SidebarController::refreshTeacherSidebar()
         return;
     }
 
-    const QList<Teacher> teachers =
+    const Result<QList<Teacher>> teachers =
         teacherService->teachers();
+    const Result<QList<Classroom>> loadedClasses = classes->classes();
+    if (!teachers || !loadedClasses)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Load Teachers"),
+            tr("Teachers and their classes could not be loaded."),
+            !teachers ? teachers.error() : loadedClasses.error()
+            );
+        updateActionStates();
+        return;
+    }
 
     QHash<int, Teacher> teachersById;
 
-    for (const Teacher& teacher : teachers)
+    for (const Teacher& teacher : *teachers)
     {
         if (teacher.id > 0)
         {
@@ -122,7 +157,7 @@ void SidebarController::refreshTeacherSidebar()
     QSet<int> myTeacherIds;
     QList<Teacher> myTeachers;
 
-    for (const Classroom& classroom : classes->classes())
+    for (const Classroom& classroom : *loadedClasses)
     {
         const ClassInfo classInfo =
             classes->classInfo(
@@ -163,7 +198,7 @@ void SidebarController::refreshTeacherSidebar()
             );
     }
 
-    for (const Teacher& teacher : sortedTeachers(teachers))
+    for (const Teacher& teacher : sortedTeachers(*teachers))
     {
         const QString displayName =
             SidebarNodeNaming::formatTeacherDisplayName(

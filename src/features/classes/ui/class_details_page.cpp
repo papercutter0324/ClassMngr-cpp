@@ -258,9 +258,20 @@ void ClassDetailsPage::loadClass(
     auto* teacherService = m_services->teacherService();
     auto* rosterService = m_services->rosterService();
 
-    m_teacherSection->setTeachers(
-        teacherService->teachers()
-        );
+    const Result<QList<Teacher>> teachers = teacherService->teachers();
+    if (!teachers)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Class"),
+            tr("Teachers could not be loaded."),
+            teachers.error()
+            );
+        m_autosave->setLoading(false);
+        clearDatabaseState();
+        return;
+    }
+    m_teacherSection->setTeachers(*teachers);
 
     const ClassInfo info =
         classService->classInfo(
@@ -329,12 +340,10 @@ void ClassDetailsPage::updateTitle(
 
     if (info.teacherId > 0)
     {
-        teacher =
-            m_services
-                ->teacherService()
-                ->teacher(
-                    info.teacherId
-                    );
+        teacher = m_services
+            ->teacherService()
+            ->teacher(info.teacherId)
+            .value_or(Teacher{});
     }
 
     const QString displayName =
@@ -474,7 +483,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
         return false;
     }
 
-    const bool saved =
+    const Status saved =
         classService->saveClassInfo(info);
 
     if (!saved)
@@ -486,7 +495,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Class Information"),
-                tr("Class information could not be saved.")
+                saved.error()
                 );
         }
 
@@ -583,7 +592,7 @@ bool ClassDetailsPage::showScheduleConflicts(
     bool showMessage
     )
 {
-    const QList<ClassConflict> conflicts =
+    const Result<QList<ClassConflict>> loadedConflicts =
         m_services
             ->classService()
             ->conflicts(
@@ -591,6 +600,22 @@ bool ClassDetailsPage::showScheduleConflicts(
                 times,
                 type
                 );
+
+    if (!loadedConflicts)
+    {
+        if (showMessage)
+        {
+            DialogServices::showWarning(
+                this,
+                title,
+                loadedConflicts.error()
+                );
+        }
+
+        return true;
+    }
+
+    const QList<ClassConflict>& conflicts = *loadedConflicts;
 
     if (conflicts.isEmpty())
     {

@@ -97,10 +97,10 @@ void NavigationController::handleTeacher(
         return;
     }
 
-    Teacher teacher =
+    const Result<Teacher> teacher =
         teachers->teacher(data.teacherId);
 
-    if (teacher.id < 0)
+    if (!teacher)
     {
         return;
     }
@@ -112,7 +112,7 @@ void NavigationController::handleTeacher(
 
     m_pages->teacherPage()
         ->loadTeacher(
-            teacher
+            *teacher
             );
 
     m_pages->showPage(
@@ -215,13 +215,13 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            const Classroom classroom =
+            const Result<Classroom> classroom =
                 m_services
                     ->classService()
                     ->classroom(data.classId);
 
             if (
-                classroom.id <= 0
+                !classroom
                 || !m_pages->confirmCurrentPageCanLeave()
                 )
             {
@@ -229,7 +229,7 @@ void NavigationController::handleNavigation(
             }
 
             m_pages->speakingPage()->loadEvaluation(
-                classroom,
+                *classroom,
                 evaluationName
                 );
             m_pages->showPage(PageType::SpeakingEval);

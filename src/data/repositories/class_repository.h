@@ -18,9 +18,9 @@ public:
         const QString& name
         );
 
-    QList<Classroom> getClasses();
+    [[nodiscard]] Result<QList<Classroom>> getClasses();
 
-    Classroom getClassById(
+    [[nodiscard]] Result<Classroom> getClassById(
         int classId
         );
 

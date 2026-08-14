@@ -25,11 +25,11 @@ public:
         const Teacher& teacher
         );
 
-    Teacher getTeacher(
+    [[nodiscard]] Result<Teacher> getTeacher(
         int teacherId
         );
 
-    QList<Teacher> getAllTeachers();
+    [[nodiscard]] Result<QList<Teacher>> getAllTeachers();
 
     [[nodiscard]] Status deleteTeacher(
         int teacherId

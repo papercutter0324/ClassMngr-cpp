@@ -198,13 +198,22 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     TeacherRepository teacherRepository(m_database);
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
-    const QList<Teacher> teachers =
+    const Result<QList<Teacher>> teachers =
         teacherRepository.getAllTeachers();
-    const QList<Classroom> classrooms =
+    if (!teachers)
+    {
+        return std::unexpected(teachers.error());
+    }
+
+    const Result<QList<Classroom>> classrooms =
         classRepository.getClasses();
+    if (!classrooms)
+    {
+        return std::unexpected(classrooms.error());
+    }
 
     QHash<int, ClassInfo> classInfo;
-    for (const Classroom& classroom : classrooms)
+    for (const Classroom& classroom : *classrooms)
     {
         classInfo.insert(
             classroom.id,
@@ -215,8 +224,8 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     return ScheduleImportMatcher::preview(
         user,
         kind,
-        teachers,
-        classrooms,
+        *teachers,
+        *classrooms,
         classInfo
         );
 }
@@ -256,13 +265,22 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     TeacherRepository teacherRepository(m_database);
     ClassRepository classRepository(m_database);
     ClassInfoRepository classInfoRepository(m_database);
-    const QList<Teacher> existingTeachers =
+    const Result<QList<Teacher>> existingTeachers =
         teacherRepository.getAllTeachers();
-    const QList<Classroom> existingClasses =
+    if (!existingTeachers)
+    {
+        return std::unexpected(existingTeachers.error());
+    }
+
+    const Result<QList<Classroom>> existingClasses =
         classRepository.getClasses();
+    if (!existingClasses)
+    {
+        return std::unexpected(existingClasses.error());
+    }
 
     QHash<int, ClassInfo> existingInfo;
-    for (const Classroom& classroom : existingClasses)
+    for (const Classroom& classroom : *existingClasses)
     {
         existingInfo.insert(
             classroom.id,
@@ -273,8 +291,8 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     const Status currentState = ScheduleImportStateValidator::validate(
         plan,
         *validatedPlan,
-        existingTeachers,
-        existingClasses,
+        *existingTeachers,
+        *existingClasses,
         existingInfo
         );
     if (!currentState)
@@ -535,7 +553,7 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
 
     if (!preservesAbsentIntensiveClasses)
     {
-        for (const Classroom& classroom : existingClasses)
+        for (const Classroom& classroom : *existingClasses)
         {
             const bool hadTimes =
                 !selectedTimes(

@@ -84,7 +84,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         return false;
     }
 
-    const bool saved =
+    const Status saved =
         m_services
             ->speakingEvaluationService()
             ->saveEvaluation(
@@ -101,7 +101,7 @@ bool SpeakingEvalPage::saveEvaluationInternal(
             DialogServices::showWarning(
                 this,
                 tr("Save Failed"),
-                tr("The speaking evaluation could not be saved.")
+                saved.error()
                 );
         }
 

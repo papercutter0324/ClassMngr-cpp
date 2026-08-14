@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/schedule_import.h"
 
 #include <QList>
@@ -56,7 +57,7 @@ struct BuildResult
     QList<ClassControl> classControls;
 };
 
-[[nodiscard]] BuildResult build(
+[[nodiscard]] Result<BuildResult> build(
     const BuildRequest& request
     );
 

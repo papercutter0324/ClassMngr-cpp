@@ -201,7 +201,7 @@ bool DataService::isOpen() const
     return ScheduleWidgetTestStubs::databaseOpen;
 }
 
-void DataService::saveSetting(
+Status DataService::saveSetting(
     const QString& key,
     const QVariant& value
     )
@@ -210,6 +210,21 @@ void DataService::saveSetting(
         key,
         value
         );
+    return {};
+}
+
+Status DataService::saveSettings(
+    const QVariantMap& values
+    )
+{
+    for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
+    {
+        ScheduleWidgetTestStubs::settings.insert(
+            setting.key(),
+            setting.value()
+            );
+    }
+    return {};
 }
 
 QVariant DataService::loadSetting(
@@ -231,7 +246,8 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     ScheduleImportPreview preview;
     preview.kind = kind;
     preview.user = user;
-    const QList<Classroom> classrooms = getClasses();
+    const QList<Classroom> classrooms = getClasses().value_or(
+        QList<Classroom>{});
     preview.inventory.classCount = classrooms.size();
     for (const Classroom& classroom : classrooms)
     {
@@ -320,7 +336,7 @@ QList<CalendarEvent> DataService::loadCalendarEventsInRange(
     return {};
 }
 
-void DataService::saveIntensiveSlotState(
+Status DataService::saveIntensiveSlotState(
     const QString&,
     const QString&,
     const QString&,
@@ -328,6 +344,7 @@ void DataService::saveIntensiveSlotState(
     )
 {
     ++ScheduleWidgetTestStubs::savedSlotStates;
+    return {};
 }
 
 Result<QList<TestingBlock>> DataService::loadTestingBlocks()
@@ -551,7 +568,7 @@ Result<bool> DataService::isTestingClass(
     return ScheduleWidgetTestStubs::testingClasses.contains(classId);
 }
 
-QList<Classroom> DataService::getClasses()
+Result<QList<Classroom>> DataService::getClasses()
 {
     Classroom classroom;
     classroom.id = 42;
@@ -578,11 +595,12 @@ QList<Classroom> DataService::getClasses()
     return classrooms;
 }
 
-Classroom DataService::getClassById(
+Result<Classroom> DataService::getClassById(
     int classId
     )
 {
-    for (const Classroom& classroom : getClasses())
+    for (const Classroom& classroom : getClasses().value_or(
+             QList<Classroom>{}))
     {
         if (classroom.id == classId)
         {
@@ -590,7 +608,7 @@ Classroom DataService::getClassById(
         }
     }
 
-    return {};
+    return std::unexpected(QStringLiteral("Class not found."));
 }
 
 ClassInfo DataService::loadClassInfo(
@@ -608,8 +626,8 @@ ClassInfo DataService::loadClassInfo(
         info.classLevel = testingClass.level;
         if (testingClass.teacherId > 0)
         {
-            const Teacher teacher =
-                getTeacher(testingClass.teacherId);
+            const Teacher teacher = getTeacher(testingClass.teacherId)
+                .value_or(Teacher{});
             info.teacherKr = teacher.teacherKr;
             info.teacherEn = teacher.teacherEn;
             info.teacherPreferredName =
@@ -670,15 +688,15 @@ ClassInfo DataService::loadClassInfo(
     return info;
 }
 
-bool DataService::saveClassInfo(
+Status DataService::saveClassInfo(
     const ClassInfo& info
     )
 {
     Q_UNUSED(info);
-    return true;
+    return {};
 }
 
-bool DataService::saveClassNotes(
+Status DataService::saveClassNotes(
     int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -687,10 +705,10 @@ bool DataService::saveClassNotes(
     Q_UNUSED(classId);
     Q_UNUSED(notes);
     Q_UNUSED(timeFillerActivities);
-    return true;
+    return {};
 }
 
-QList<ClassConflict> DataService::getClassTimeConflicts(
+Result<QList<ClassConflict>> DataService::getClassTimeConflicts(
     int classId,
     const QList<ClassTime>& times,
     ScheduleType type
@@ -723,7 +741,7 @@ Roster DataService::loadRoster(
     return roster;
 }
 
-void DataService::saveRoster(
+Status DataService::saveRoster(
     int classId,
     const Roster& roster
     )
@@ -732,18 +750,23 @@ void DataService::saveRoster(
         classId,
         roster
         );
+    return {};
 }
 
-bool DataService::saveRosters(
+Status DataService::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     )
 {
     for (const auto& [classId, roster] : rosters)
     {
-        saveRoster(classId, roster);
+        const Status saved = saveRoster(classId, roster);
+        if (!saved)
+        {
+            return saved;
+        }
     }
 
-    return true;
+    return {};
 }
 
 int DataService::getRosterStudentCount(
@@ -760,7 +783,7 @@ int DataService::getRosterStudentCount(
         : 0;
 }
 
-Teacher DataService::getTeacher(
+Result<Teacher> DataService::getTeacher(
     int teacherId
     )
 {
@@ -797,11 +820,11 @@ Teacher DataService::getTeacher(
     return teacher;
 }
 
-QList<Teacher> DataService::getAllTeachers()
+Result<QList<Teacher>> DataService::getAllTeachers()
 {
-    return {
-        getTeacher(7),
-        getTeacher(8)
+    return QList<Teacher>{
+        getTeacher(7).value_or(Teacher{}),
+        getTeacher(8).value_or(Teacher{})
     };
 }
 
@@ -886,7 +909,7 @@ ScheduleBuilder::ScheduleBuilder(
 {
 }
 
-ScheduleBuildResult ScheduleBuilder::build(
+Result<ScheduleBuildResult> ScheduleBuilder::build(
     bool,
     const QStringList& visibleDays
     ) const

@@ -11,7 +11,7 @@ Status DataService::updateTeacher(const Teacher&)
     return {};
 }
 
-Teacher DataService::getTeacher(int)
+Result<Teacher> DataService::getTeacher(int)
 {
     return {};
 }

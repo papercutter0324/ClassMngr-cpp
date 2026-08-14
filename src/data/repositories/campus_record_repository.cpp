@@ -1,5 +1,8 @@
 #include "campus_record_repository.h"
 
+#include "data/database/sql_query_utils.h"
+
+#include <QObject>
 #include <QSqlQuery>
 
 namespace
@@ -43,6 +46,16 @@ CampusRecord campusFromQuery(
 
     return campus;
 }
+
+QString campusIdentity(const CampusRecord& campus)
+{
+    if (campus.id > 0)
+    {
+        return QObject::tr("campus id %1").arg(campus.id);
+    }
+
+    return QObject::tr("campus '%1'").arg(campus.name.trimmed());
+}
 }
 
 CampusRecordRepository::CampusRecordRepository(
@@ -52,7 +65,7 @@ CampusRecordRepository::CampusRecordRepository(
 {
 }
 
-int CampusRecordRepository::saveCampus(
+Result<int> CampusRecordRepository::saveCampus(
     const CampusRecord& campus
     )
 {
@@ -96,7 +109,23 @@ int CampusRecordRepository::saveCampus(
         query.addBindValue(campus.housingLocations);
         query.addBindValue(campus.id);
 
-        query.exec();
+        const auto executed = SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Updating campus"),
+            campusIdentity(campus)
+            );
+        if (!executed)
+        {
+            return std::unexpected(executed.error().userMessage());
+        }
+
+        if (query.numRowsAffected() == 0)
+        {
+            return std::unexpected(
+                QObject::tr("Updating %1 failed: no matching record exists.")
+                    .arg(campusIdentity(campus))
+                );
+        }
 
         return campus.id;
     }
@@ -136,42 +165,89 @@ int CampusRecordRepository::saveCampus(
     query.addBindValue(campus.photocopierCode);
     query.addBindValue(campus.housingLocations);
 
-    query.exec();
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Creating campus"),
+        campusIdentity(campus)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
 
-    return query.lastInsertId().toInt();
+    const int campusId = query.lastInsertId().toInt();
+    if (campusId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating %1 failed: the database did not return a valid "
+                "record id."
+                ).arg(campusIdentity(campus))
+            );
+    }
+
+    return campusId;
 }
 
-CampusRecord CampusRecordRepository::getCampus(
+Result<CampusRecord> CampusRecordRepository::getCampus(
     int campusId
     )
 {
-    CampusRecord campus;
+    if (campusId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading campus failed: invalid campus id %1.")
+                .arg(campusId)
+            );
+    }
 
     QSqlQuery query(m_database);
 
     query.prepare("SELECT * FROM campuses WHERE id=?");
     query.addBindValue(campusId);
-    query.exec();
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading campus"),
+        QObject::tr("campus id %1").arg(campusId)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
 
     if (!query.next())
     {
-        return campus;
+        return std::unexpected(
+            QObject::tr(
+                "Loading campus failed for campus id %1: no matching "
+                "record exists."
+                ).arg(campusId)
+            );
     }
 
     return campusFromQuery(query);
 }
 
-QList<CampusRecord> CampusRecordRepository::getAllCampuses()
+Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
 {
     QList<CampusRecord> campuses;
 
     QSqlQuery query(m_database);
 
-    query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT *
         FROM campuses
         ORDER BY name
-    )");
+    )"),
+        QObject::tr("Loading campuses")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
 
     while (query.next())
     {
@@ -183,10 +259,18 @@ QList<CampusRecord> CampusRecordRepository::getAllCampuses()
     return campuses;
 }
 
-void CampusRecordRepository::deleteCampus(
+Status CampusRecordRepository::deleteCampus(
     int campusId
     )
 {
+    if (campusId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Deleting campus failed: invalid campus id %1.")
+                .arg(campusId)
+            );
+    }
+
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -196,5 +280,15 @@ void CampusRecordRepository::deleteCampus(
 
     query.addBindValue(campusId);
 
-    query.exec();
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Deleting campus"),
+        QObject::tr("campus id %1").arg(campusId)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    return {};
 }

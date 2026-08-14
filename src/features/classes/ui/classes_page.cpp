@@ -17,6 +17,7 @@
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <utility>
 
@@ -154,7 +155,23 @@ bool ClassesPage::openClass(
         return false;
     }
 
-    m_classes = classService->classes();
+    const Result<QList<Classroom>> loadedClasses = classService->classes();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Classes"),
+            tr("Classes could not be loaded."),
+            loadedClasses.error()
+            );
+        m_classes.clear();
+        m_currentClassId = -1;
+        rebuildClassTabs(-1);
+        setEditorAvailable(false);
+        updateHeaderText();
+        return false;
+    }
+    m_classes = *loadedClasses;
 
     int selectedClassId =
         classId > 0
@@ -494,7 +511,8 @@ void ClassesPage::rebuildClassTabs(
 
             if (info.teacherId > 0)
             {
-                teacher = teacherService->teacher(info.teacherId);
+                teacher = teacherService->teacher(info.teacherId)
+                    .value_or(Teacher{});
             }
 
             ClassTabNavigation::ClassEntry entry;
@@ -1102,7 +1120,8 @@ void ClassesPage::updateHeaderText()
 
     if (info.teacherId > 0)
     {
-        teacher = teacherService->teacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId)
+            .value_or(Teacher{});
     }
 
     const QString displayName =
@@ -1137,7 +1156,19 @@ void ClassesPage::handleClassInfoSaved(
 
     if (classService && classService->isAvailable())
     {
-        m_classes = classService->classes();
+        const Result<QList<Classroom>> loadedClasses =
+            classService->classes();
+        if (!loadedClasses)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Classes"),
+                tr("Classes could not be reloaded after saving."),
+                loadedClasses.error()
+                );
+            return;
+        }
+        m_classes = *loadedClasses;
         rebuildClassTabs(classId);
         restoreSelections();
         updateHeaderText();

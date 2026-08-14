@@ -207,7 +207,23 @@ bool RosterEditorWidget::saveRosterInternal(
         return false;
     }
 
-    m_services->rosterService()->saveRoster(m_classroom.id, currentRosterForSave());
+    const Status saved = m_services->rosterService()->saveRoster(
+        m_classroom.id,
+        currentRosterForSave()
+        );
+    if (!saved)
+    {
+        if (showValidationMessages)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Save Roster"),
+                saved.error()
+                );
+        }
+        return false;
+    }
+
     m_model->clearDirty();
     m_widthsDirty = false;
     m_autosave->markClean();

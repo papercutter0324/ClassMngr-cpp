@@ -201,8 +201,17 @@ QList<PackageClass> loadPackageClasses(
         }
 
         PackageClass packageClass;
-        packageClass.rosterData.classroom =
+        const ::Result<Classroom> classroom =
             classService->classroom(classId);
+        if (!classroom)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = classroom.error();
+            }
+            return {};
+        }
+        packageClass.rosterData.classroom = *classroom;
 
         if (packageClass.rosterData.classroom.id <= 0)
         {
@@ -216,10 +225,17 @@ QList<PackageClass> loadPackageClasses(
 
         if (packageClass.rosterData.info.teacherId > 0)
         {
-            packageClass.teacher =
-                teacherService->teacher(
-                    packageClass.rosterData.info.teacherId
-                    );
+            const ::Result<Teacher> teacher = teacherService->teacher(
+                packageClass.rosterData.info.teacherId);
+            if (!teacher)
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = teacher.error();
+                }
+                return {};
+            }
+            packageClass.teacher = *teacher;
         }
 
         const QList<ClassTime>& sourceTimes =

@@ -77,26 +77,27 @@ Result<int> ClassRepository::createClass(
     return classId;
 }
 
-QList<Classroom> ClassRepository::getClasses()
+Result<QList<Classroom>> ClassRepository::getClasses()
 {
     QList<Classroom> classes;
 
     QSqlQuery query(m_database);
 
-    if (!query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT c.*
         FROM classes c
         LEFT JOIN testing_classes tc
         ON tc.class_id = c.id
         WHERE tc.class_id IS NULL
         ORDER BY c.name
-    )"))
+    )"),
+        QObject::tr("Loading classes")
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load classes:"
-            << query.lastError().text();
-
-        return classes;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())
@@ -115,11 +116,17 @@ QList<Classroom> ClassRepository::getClasses()
     return classes;
 }
 
-Classroom ClassRepository::getClassById(
+Result<Classroom> ClassRepository::getClassById(
     int classId
     )
 {
-    Classroom classroom;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
 
     QSqlQuery query(m_database);
 
@@ -131,19 +138,26 @@ Classroom ClassRepository::getClassById(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class"),
+        classIdentity(classId)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load class:"
-            << query.lastError().text();
-        return classroom;
+        return std::unexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
-        return classroom;
+        return std::unexpected(
+            QObject::tr(
+                "Loading class failed for %1: no matching record exists."
+                ).arg(classIdentity(classId))
+            );
     }
 
+    Classroom classroom;
     classroom.id =
         query.value("id").toInt();
 

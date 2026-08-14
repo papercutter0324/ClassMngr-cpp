@@ -458,7 +458,7 @@ QString classLabel(
     )
 {
     const Classroom classroom =
-        classService->classroom(classId);
+        classService->classroom(classId).value_or(Classroom{});
     const ClassInfo info =
         classService->classInfo(classId);
     const QString course =
@@ -476,7 +476,7 @@ QString classLabel(
                 ? classroom.name.trimmed()
                 : QObject::tr("Class %1").arg(classId);
     const Teacher teacher =
-        teacherService->teacher(info.teacherId);
+        teacherService->teacher(info.teacherId).value_or(Teacher{});
     const bool importingIntensive =
         kind == ScheduleImportKind::Intensive;
     const QList<ClassTime>& preferredTimes =
@@ -572,7 +572,7 @@ QString classDifferences(
     const ClassInfo existing =
         classService->classInfo(targetClassId);
     const Teacher existingTeacher =
-        teacherService->teacher(existing.teacherId);
+        teacherService->teacher(existing.teacherId).value_or(Teacher{});
     const QList<ClassTime> existingTimes =
         kind == ScheduleImportKind::Intensive
             ? existing.intensiveTimes

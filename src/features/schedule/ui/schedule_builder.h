@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/class_info.h"
 
 #include <QList>
@@ -53,7 +54,7 @@ public:
         ClassService* classService
         );
 
-    ScheduleBuildResult build(
+    [[nodiscard]] Result<ScheduleBuildResult> build(
         bool useIntensive,
         const QStringList& visibleDays
         ) const;

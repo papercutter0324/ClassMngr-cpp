@@ -194,7 +194,17 @@ void CalendarSettingsDialog::resetCalendarEvents()
         return;
     }
 
-    m_calendarService->deleteAllEvents();
+    const Status deleted = m_calendarService->deleteAllEvents();
+    if (!deleted)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Reset Calendar"),
+            deleted.error()
+            );
+        return;
+    }
+
     emit calendarEventsImported();
 
     if (m_importStatusLabel)

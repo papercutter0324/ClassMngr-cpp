@@ -294,24 +294,29 @@ bool SubPrepPage::saveSubPrepInternal()
 
     restoreGradingDefaultIfNeeded();
 
-    settingsService->save(
-        SettingsKeys::ClassMaterials,
-        m_classMaterialsEdit->toPlainText()
-        );
-    settingsService->save(
-        SettingsKeys::BookReportGrading,
-        m_gradingInstructionsEdit->toPlainText()
-        );
-    settingsService->save(
-        SettingsKeys::BookReportSpecialInstructions,
-        m_specialInstructionsEdit->toPlainText()
-        );
-    settingsService->save(
-        SettingsKeys::SubNotes,
-        m_subNotesEdit->toPlainText()
-        );
+    const Status saved = settingsService->saveAll({
+        {
+            SettingsKeys::ClassMaterials,
+            m_classMaterialsEdit->toPlainText()
+        },
+        {
+            SettingsKeys::BookReportGrading,
+            m_gradingInstructionsEdit->toPlainText()
+        },
+        {
+            SettingsKeys::BookReportSpecialInstructions,
+            m_specialInstructionsEdit->toPlainText()
+        },
+        {
+            SettingsKeys::SubNotes,
+            m_subNotesEdit->toPlainText()
+        }
+    });
+    if (!saved)
+    {
+        return false;
+    }
 
     clearDirty();
     return true;
 }
-

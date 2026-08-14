@@ -435,7 +435,8 @@ public:
             return InitialSetupWizard::CompletionPage;
         }
         if (!setup->teacherService()
-            || setup->teacherService()->teachers().isEmpty())
+            || setup->teacherService()->teachers()
+                .value_or(QList<Teacher>{}).isEmpty())
         {
             return InitialSetupWizard::TeacherEntryPage;
         }
@@ -558,7 +559,8 @@ public:
         {
             auto* setup = setupWizard(this);
             if (setup && setup->teacherService()
-                && !setup->teacherService()->teachers().isEmpty())
+                && !setup->teacherService()->teachers()
+                    .value_or(QList<Teacher>{}).isEmpty())
             {
                 return true;
             }
@@ -822,16 +824,27 @@ public:
             return;
         }
 
-        const QList<Teacher> teachers = setup->teacherService()->teachers();
-        if (teachers.size() > 1)
+        const Result<QList<Teacher>> teachers =
+            setup->teacherService()->teachers();
+        if (!teachers)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Teachers"),
+                tr("Teachers could not be loaded."),
+                teachers.error()
+                );
+            return;
+        }
+        if (teachers->size() > 1)
         {
             m_teacher->addItem(tr("Select a teacher..."), -1);
         }
-        for (const Teacher& teacher : teachers)
+        for (const Teacher& teacher : *teachers)
         {
             m_teacher->addItem(teacher.preferredDisplayName(), teacher.id);
         }
-        if (teachers.size() == 1)
+        if (teachers->size() == 1)
         {
             m_teacher->setCurrentIndex(0);
         }

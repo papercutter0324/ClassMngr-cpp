@@ -86,12 +86,12 @@ RosterService* ApplicationServices::rosterService() const
         : nullptr;
 }
 
-QList<Classroom> ClassService::classes() const
+Result<QList<Classroom>> ClassService::classes() const
 {
     return g_classes;
 }
 
-Classroom ClassService::classroom(
+Result<Classroom> ClassService::classroom(
     int classId
     ) const
 {

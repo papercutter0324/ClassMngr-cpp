@@ -484,7 +484,7 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
     }
 
 
-    const ScheduleImportResolutionControls::BuildResult controls =
+    const Result<ScheduleImportResolutionControls::BuildResult> controls =
         ScheduleImportResolutionControls::build(
             {
                 this,
@@ -506,8 +506,18 @@ void ScheduleImportReviewDialog::rebuildResolutionControls()
                 }
             }
             );
-    m_teacherControls = controls.teacherControls;
-    m_classControls = controls.classControls;
+    if (!controls)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Review Schedule Import"),
+            tr("Import resolution data could not be loaded."),
+            controls.error()
+            );
+        return;
+    }
+    m_teacherControls = controls->teacherControls;
+    m_classControls = controls->classControls;
 }
 
 void ScheduleImportReviewDialog::chooseClassColor(
@@ -718,6 +728,31 @@ void ScheduleImportReviewDialog::updateReviewState()
     if (teacherService && !teacherService->isAvailable())
     {
         teacherService = nullptr;
+    }
+    QList<Classroom> availableClasses;
+    QHash<int, Teacher> teachersById;
+    if (classService && teacherService)
+    {
+        const Result<QList<Classroom>> classes = classService->classes();
+        const Result<QList<Teacher>> teachers = teacherService->teachers();
+        if (!classes || !teachers)
+        {
+            valid = false;
+            if (message.isEmpty())
+            {
+                message = !classes ? classes.error() : teachers.error();
+            }
+            classService = nullptr;
+            teacherService = nullptr;
+        }
+        else
+        {
+            availableClasses = *classes;
+            for (const Teacher& teacher : *teachers)
+            {
+                teachersById.insert(teacher.id, teacher);
+            }
+        }
     }
     QSet<int> targets;
     QMap<int, QList<int>> candidateIndexesByTarget;
@@ -1006,14 +1041,11 @@ void ScheduleImportReviewDialog::updateReviewState()
                 const ClassInfo info =
                     classService->classInfo(target);
                 ScheduleImportClassCandidate preserved;
-                preserved.teacherKr =
-                    teacherService->teacher(
-                        info.teacherId
-                        ).teacherKr;
+                const Teacher preservedTeacher =
+                    teachersById.value(info.teacherId);
+                preserved.teacherKr = preservedTeacher.teacherKr;
                 preserved.rooms = {
-                    teacherService->teacher(
-                        info.teacherId
-                        ).roomNumber
+                    preservedTeacher.roomNumber
                 };
                 preserved.classGrade = info.classGrade;
                 preserved.classLevel = info.classLevel;
@@ -1056,13 +1088,9 @@ void ScheduleImportReviewDialog::updateReviewState()
                     )
                 )
             {
-                room =
-                    teacherService->teacher(
-                        teacherTargets.value(
-                            candidate.teacherKey,
-                            -1
-                            )
-                        ).roomNumber;
+                room = teachersById.value(
+                    teacherTargets.value(candidate.teacherKey, -1)
+                    ).roomNumber;
             }
             candidate.rooms =
                 room.trimmed().isEmpty()
@@ -1073,7 +1101,7 @@ void ScheduleImportReviewDialog::updateReviewState()
 
         if (preservesAbsentIntensiveClasses)
         {
-            for (const Classroom& classroom : classService->classes())
+            for (const Classroom& classroom : availableClasses)
             {
                 if (targets.contains(classroom.id))
                 {
@@ -1088,8 +1116,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 }
 
                 ScheduleImportClassCandidate preserved;
-                const Teacher teacher =
-                    teacherService->teacher(info.teacherId);
+                const Teacher teacher = teachersById.value(info.teacherId);
                 preserved.teacherKr = teacher.teacherKr;
                 preserved.rooms = {teacher.roomNumber};
                 preserved.classGrade = info.classGrade;
@@ -1155,7 +1182,7 @@ void ScheduleImportReviewDialog::updateReviewState()
     int cleared = 0;
     if (classService && !preservesAbsentIntensiveClasses)
     {
-        for (const Classroom& classroom : classService->classes())
+        for (const Classroom& classroom : availableClasses)
         {
             const ClassInfo info =
                 classService->classInfo(classroom.id);

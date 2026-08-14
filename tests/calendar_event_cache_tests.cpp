@@ -48,7 +48,9 @@ void saveEvent(
     event.endTime = QTime(10, 0);
 
     CalendarEventRepository repository(database);
-    QVERIFY(repository.saveCalendarEvent(event) > 0);
+    const Result<int> saved = repository.saveCalendarEvent(event);
+    QVERIFY(saved);
+    QVERIFY(*saved > 0);
 }
 
 void createDatabase(

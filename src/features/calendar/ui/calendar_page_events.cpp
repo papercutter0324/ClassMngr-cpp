@@ -9,6 +9,7 @@
 #include "core/application_services.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
 
 #include <QDate>
@@ -149,7 +150,7 @@ QString newRepeatSeriesId()
         );
 }
 
-void saveRepeatSeriesFromDate(
+Status saveRepeatSeriesFromDate(
     CalendarService* calendarService,
     const CalendarEvent& originalEvent,
     const CalendarEvent& editedEvent
@@ -163,7 +164,9 @@ void saveRepeatSeriesFromDate(
         || !editedEvent.endDate.isValid()
         )
     {
-        return;
+        return std::unexpected(
+            QObject::tr("The calendar repeat series is invalid.")
+            );
     }
 
     const QString repeatSeriesId =
@@ -182,6 +185,8 @@ void saveRepeatSeriesFromDate(
             originalEvent.startDate
             );
 
+    QList<CalendarEvent> updatedEvents;
+    updatedEvents.reserve(seriesEvents.size());
     for (const CalendarEvent& seriesEvent : seriesEvents)
     {
         CalendarEvent updatedEvent =
@@ -210,10 +215,17 @@ void saveRepeatSeriesFromDate(
                 durationDays
                 );
 
-        calendarService->saveEvent(
-            updatedEvent
-            );
+        updatedEvents.append(updatedEvent);
     }
+
+    const Result<QList<int>> saved =
+        calendarService->saveEvents(updatedEvents);
+    if (!saved)
+    {
+        return std::unexpected(saved.error());
+    }
+
+    return {};
 }
 }
 
@@ -794,18 +806,29 @@ void CalendarPage::openCalendarDialog(
 
     if (dialog.deleteRequested())
     {
+        Status deleted;
         if (thisAndFollowing)
         {
-            calendarService->deleteRepeatSeriesFromDate(
+            deleted = calendarService->deleteRepeatSeriesFromDate(
                 event.repeatSeriesId,
                 event.startDate
                 );
         }
         else
         {
-            calendarService->deleteEvent(
+            deleted = calendarService->deleteEvent(
                 event.id
                 );
+        }
+
+        if (!deleted)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Delete Calendar Event"),
+                deleted.error()
+                );
+            return;
         }
     }
     else
@@ -815,11 +838,20 @@ void CalendarPage::openCalendarDialog(
 
         if (thisAndFollowing)
         {
-            saveRepeatSeriesFromDate(
+            const Status saved = saveRepeatSeriesFromDate(
                 calendarService,
                 event,
                 savedEvent
                 );
+            if (!saved)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Calendar Event"),
+                    saved.error()
+                    );
+                return;
+            }
         }
         else
         {
@@ -842,11 +874,16 @@ void CalendarPage::openCalendarDialog(
                         )
                     : QList<CalendarEvent>{savedEvent};
 
-            for (const CalendarEvent& eventToSave : eventsToSave)
+            const Result<QList<int>> saved =
+                calendarService->saveEvents(eventsToSave);
+            if (!saved)
             {
-                calendarService->saveEvent(
-                    eventToSave
+                DialogServices::showWarning(
+                    this,
+                    tr("Save Calendar Event"),
+                    saved.error()
                     );
+                return;
             }
         }
     }

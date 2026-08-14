@@ -17,7 +17,11 @@ struct DatabaseIds
     int classId = -1;
     int eventId = -1;
     int campusId = -1;
+    bool settingSaved = false;
+    bool intensiveSlotStateSaved = false;
     bool testingBlockSaved = false;
+    bool rosterSaved = false;
+    bool speakingEvaluationSaved = false;
 };
 
 DatabaseIds populateDatabase(
@@ -25,11 +29,6 @@ DatabaseIds populateDatabase(
     const QString& prefix
     )
 {
-    service.saveSetting(
-        QStringLiteral("lifecycle/value"),
-        prefix
-        );
-
     Teacher teacher;
     teacher.teacherEn = prefix + QStringLiteral(" Teacher");
     teacher.teacherKr = prefix + QStringLiteral(" Korean Teacher");
@@ -43,6 +42,10 @@ DatabaseIds populateDatabase(
     teacher.notes = prefix + QStringLiteral(" Teacher Notes");
 
     DatabaseIds ids;
+    ids.settingSaved = service.saveSetting(
+        QStringLiteral("lifecycle/value"),
+        prefix
+        ).has_value();
     ids.teacherId = service.createTeacher(teacher).value_or(-1);
     ids.classId = service.createClass(
         prefix + QStringLiteral(" Class")
@@ -62,15 +65,15 @@ DatabaseIds populateDatabase(
         }
         );
     const bool classInfoSaved =
-        service.saveClassInfo(classInfo);
+        service.saveClassInfo(classInfo).has_value();
     Q_UNUSED(classInfoSaved);
 
-    service.saveIntensiveSlotState(
+    ids.intensiveSlotStateSaved = service.saveIntensiveSlotState(
         QStringLiteral("Tuesday"),
         QStringLiteral("10:00 AM"),
         QStringLiteral("lunch"),
         QStringLiteral("essay")
-        );
+        ).has_value();
     ids.testingBlockSaved =
         service.saveTestingBlock(
             QStringLiteral("Wednesday"),
@@ -84,7 +87,7 @@ DatabaseIds populateDatabase(
     event.endDate = event.startDate;
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
-    ids.eventId = service.saveCalendarEvent(event);
+    ids.eventId = service.saveCalendarEvent(event).value_or(-1);
 
     Roster roster;
     roster.columns = Roster::BaseColumns;
@@ -94,25 +97,26 @@ DatabaseIds populateDatabase(
             prefix + QStringLiteral(" 학생")
         }
         );
-    service.saveRoster(ids.classId, roster);
+    ids.rosterSaved = service.saveRoster(
+        ids.classId,
+        roster
+        ).has_value();
 
     SpeakingEvalRows evaluation =
         SpeakingEval::emptyRows();
     evaluation[0][SpeakingEval::toInt(
         SpeakingEvalColumn::EnglishName
         )] = prefix + QStringLiteral(" Student");
-    const bool evaluationSaved =
-        service.saveSpeakingEval(
+    ids.speakingEvaluationSaved = service.saveSpeakingEval(
             ids.classId,
             QStringLiteral("First Semester"),
             evaluation
-        );
-    Q_UNUSED(evaluationSaved);
+        ).has_value();
 
     CampusRecord campus;
     campus.name = prefix + QStringLiteral(" Campus");
     campus.officeNumber = prefix + QStringLiteral(" Office");
-    ids.campusId = service.saveCampus(campus);
+    ids.campusId = service.saveCampus(campus).value_or(-1);
 
     return ids;
 }
@@ -124,27 +128,34 @@ void verifyDatabase(
     )
 {
     QVERIFY(ids.testingBlockSaved);
+    QVERIFY(ids.settingSaved);
+    QVERIFY(ids.intensiveSlotStateSaved);
+    QVERIFY(ids.rosterSaved);
+    QVERIFY(ids.speakingEvaluationSaved);
     QCOMPARE(
         service.loadSetting(
             QStringLiteral("lifecycle/value")
             ).toString(),
         prefix
         );
-    const Teacher teacher = service.getTeacher(ids.teacherId);
-    QCOMPARE(teacher.teacherEn, prefix + QStringLiteral(" Teacher"));
+    const Result<Teacher> teacher = service.getTeacher(ids.teacherId);
+    QVERIFY(teacher);
+    QCOMPARE(teacher->teacherEn, prefix + QStringLiteral(" Teacher"));
     QCOMPARE(
-        teacher.preferredRomanization,
+        teacher->preferredRomanization,
         prefix + QStringLiteral(" Romanization")
         );
     QCOMPARE(
-        teacher.preferredName,
+        teacher->preferredName,
         prefix + QStringLiteral(" Preferred Name")
         );
-    QCOMPARE(teacher.roomNumber, prefix + QStringLiteral(" Room"));
-    QCOMPARE(teacher.birthday, QStringLiteral("02-29"));
-    QCOMPARE(teacher.phoneNumber, prefix + QStringLiteral(" Phone"));
+    QCOMPARE(teacher->roomNumber, prefix + QStringLiteral(" Room"));
+    QCOMPARE(teacher->birthday, QStringLiteral("02-29"));
+    QCOMPARE(teacher->phoneNumber, prefix + QStringLiteral(" Phone"));
+    const Result<Classroom> classroom = service.getClassById(ids.classId);
+    QVERIFY(classroom);
     QCOMPARE(
-        service.getClassById(ids.classId).name,
+        classroom->name,
         prefix + QStringLiteral(" Class")
         );
     QCOMPARE(
@@ -194,10 +205,9 @@ void verifyDatabase(
                 )],
         prefix + QStringLiteral(" Student")
         );
-    QCOMPARE(
-        service.getCampus(ids.campusId).name,
-        prefix + QStringLiteral(" Campus")
-        );
+    const Result<CampusRecord> campus = service.getCampus(ids.campusId);
+    QVERIFY(campus);
+    QCOMPARE(campus->name, prefix + QStringLiteral(" Campus"));
 }
 }
 
@@ -213,6 +223,9 @@ private slots:
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
+    void repositoryWriteFailuresAreObservable();
+    void coreLookupReadFailuresAreObservable();
+    void legacyRepositoryWriteFailuresRollBack();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
@@ -231,10 +244,10 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
 
     ApplicationServices services;
     QVERIFY(services.openDatabase(sourcePath).has_value());
-    services.settingsService()->save(
+    QVERIFY(services.settingsService()->save(
         QStringLiteral("application-services/value"),
         QStringLiteral("saved")
-        );
+        ).has_value());
     services.saveDatabase();
 
     QVERIFY(services.saveDatabaseAs(savedPath).has_value());
@@ -336,7 +349,9 @@ void DataServiceLifecycleTests::classDeleteFailureRollsBackAllChanges()
         QStringLiteral("class id %1").arg(classId)
         ));
 
-    QCOMPARE(service.getClassById(classId).id, classId);
+    const Result<Classroom> rolledBackClass = service.getClassById(classId);
+    QVERIFY(rolledBackClass);
+    QCOMPARE(rolledBackClass->id, classId);
     query.prepare(QStringLiteral(
         "SELECT COUNT(*) FROM roster_columns WHERE class_id=?"
         ));
@@ -388,11 +403,496 @@ void DataServiceLifecycleTests
         QStringLiteral("teacher id %1").arg(*createdTeacher)
         ));
 
-    QCOMPARE(service.getTeacher(*createdTeacher).id, *createdTeacher);
+    const Result<Teacher> rolledBackTeacher =
+        service.getTeacher(*createdTeacher);
+    QVERIFY(rolledBackTeacher);
+    QCOMPARE(rolledBackTeacher->id, *createdTeacher);
     QCOMPARE(
         service.loadClassInfo(*createdClass).teacherId,
         *createdTeacher
         );
+}
+
+void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
+{
+    DataService unavailableService;
+    QVERIFY(!unavailableService.getTeacher(1));
+    QVERIFY(!unavailableService.getAllTeachers());
+    QVERIFY(!unavailableService.getClassById(1));
+    QVERIFY(!unavailableService.getClasses());
+    QVERIFY(!unavailableService.saveSetting(
+        QStringLiteral("unavailable"),
+        QStringLiteral("value")
+        ));
+    QVERIFY(!unavailableService.saveIntensiveSlotState(
+        QStringLiteral("Monday"),
+        QStringLiteral("09:00"),
+        QStringLiteral("lunch")
+        ));
+    QVERIFY(!unavailableService.saveCampus(CampusRecord{}));
+    QVERIFY(!unavailableService.getCampus(1));
+    QVERIFY(!unavailableService.getAllCampuses());
+    QVERIFY(!unavailableService.deleteCampus(1));
+    QVERIFY(!unavailableService.saveCalendarEvent(CalendarEvent{}));
+    QVERIFY(!unavailableService.saveCalendarEvents({CalendarEvent{}}));
+    QVERIFY(!unavailableService.deleteCalendarEvent(1));
+    QVERIFY(!unavailableService.deleteCalendarEventsForRepeatSeriesFromDate(
+        QStringLiteral("series"),
+        QDate(2026, 8, 1)
+        ));
+    QVERIFY(!unavailableService.deleteAllCalendarEvents());
+    QVERIFY(!unavailableService.getClassTimeConflicts(
+        1,
+        {},
+        ScheduleType::Regular
+        ));
+    QVERIFY(!unavailableService.saveClassInfo(ClassInfo{}));
+    QVERIFY(!unavailableService.saveClassNotes(
+        1,
+        QStringLiteral("notes"),
+        QStringLiteral("activities")
+        ));
+    QVERIFY(!unavailableService.saveRoster(1, Roster{}));
+    QVERIFY(!unavailableService.saveRosters({qMakePair(1, Roster{})}));
+    QVERIFY(!unavailableService.saveSpeakingEval(
+        1,
+        QStringLiteral("Evaluation"),
+        SpeakingEval::emptyRows()
+        ));
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("write-failures.db"))
+        ).has_value());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_setting_write "
+        "BEFORE INSERT ON app_settings "
+        "WHEN NEW.key = 'failure/key' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected setting failure'); "
+        "END"
+        )));
+    const Status settingSaved = service.saveSetting(
+        QStringLiteral("failure/key"),
+        QStringLiteral("value")
+        );
+    QVERIFY(!settingSaved);
+    QVERIFY(settingSaved.error().contains(
+        QStringLiteral("Saving application setting")
+        ));
+    QVERIFY(settingSaved.error().contains(QStringLiteral("failure/key")));
+
+    const Status settingsSaved = service.saveSettings({
+        {
+            QStringLiteral("failure/first"),
+            QStringLiteral("must roll back")
+        },
+        {
+            QStringLiteral("failure/key"),
+            QStringLiteral("must fail")
+        }
+    });
+    QVERIFY(!settingsSaved);
+    QVERIFY(!service.loadSetting(
+        QStringLiteral("failure/first"),
+        QVariant()
+        ).isValid());
+
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_slot_write "
+        "BEFORE INSERT ON intensive_slot_states "
+        "WHEN NEW.day = 'Failureday' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected slot failure'); "
+        "END"
+        )));
+    const Status slotSaved = service.saveIntensiveSlotState(
+        QStringLiteral("Failureday"),
+        QStringLiteral("09:00"),
+        QStringLiteral("lunch")
+        );
+    QVERIFY(!slotSaved);
+    QVERIFY(slotSaved.error().contains(
+        QStringLiteral("Saving intensive slot state")
+        ));
+    QVERIFY(slotSaved.error().contains(
+        QStringLiteral("Failureday at 09:00")
+        ));
+
+    CampusRecord campus;
+    campus.name = QStringLiteral("Failure Campus");
+    const Result<int> campusCreated = service.saveCampus(campus);
+    QVERIFY(campusCreated);
+    campus.id = *campusCreated;
+    campus.officeNumber = QStringLiteral("Changed");
+
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_campus_update "
+        "BEFORE UPDATE ON campuses "
+        "WHEN OLD.id = %1 "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected campus update failure'); "
+        "END"
+        ).arg(campus.id)));
+    const Result<int> campusUpdated = service.saveCampus(campus);
+    QVERIFY(!campusUpdated);
+    QVERIFY(campusUpdated.error().contains(QStringLiteral("Updating campus")));
+    QVERIFY(campusUpdated.error().contains(
+        QStringLiteral("campus id %1").arg(campus.id)
+        ));
+    const Result<CampusRecord> campusAfterFailedUpdate =
+        service.getCampus(campus.id);
+    QVERIFY(campusAfterFailedUpdate);
+    QCOMPARE(campusAfterFailedUpdate->officeNumber, QString());
+
+    QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_campus_update")));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_campus_delete "
+        "BEFORE DELETE ON campuses "
+        "WHEN OLD.id = %1 "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected campus delete failure'); "
+        "END"
+        ).arg(campus.id)));
+    const Status campusDeleted = service.deleteCampus(campus.id);
+    QVERIFY(!campusDeleted);
+    QVERIFY(campusDeleted.error().contains(QStringLiteral("Deleting campus")));
+    QVERIFY(campusDeleted.error().contains(
+        QStringLiteral("campus id %1").arg(campus.id)
+        ));
+    const Result<CampusRecord> campusAfterFailedDelete =
+        service.getCampus(campus.id);
+    QVERIFY(campusAfterFailedDelete);
+    QCOMPARE(campusAfterFailedDelete->id, campus.id);
+
+    const Result<CampusRecord> missingCampus =
+        service.getCampus(campus.id + 1000);
+    QVERIFY(!missingCampus);
+    QVERIFY(missingCampus.error().contains(
+        QStringLiteral("no matching record exists")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE campuses")));
+
+    const Result<CampusRecord> failedCampusRead =
+        service.getCampus(campus.id);
+    QVERIFY(!failedCampusRead);
+    QVERIFY(failedCampusRead.error().contains(
+        QStringLiteral("Loading campus")
+        ));
+    QVERIFY(failedCampusRead.error().contains(
+        QStringLiteral("campus id %1").arg(campus.id)
+        ));
+
+    const Result<QList<CampusRecord>> failedCampusList =
+        service.getAllCampuses();
+    QVERIFY(!failedCampusList);
+    QVERIFY(failedCampusList.error().contains(
+        QStringLiteral("Loading campuses")
+        ));
+}
+
+void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("core-read-failures.db"))
+        ).has_value());
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Readable Teacher");
+    const Result<int> teacherId = service.createTeacher(teacher);
+    const Result<int> classId = service.createClass(
+        QStringLiteral("Readable Class")
+        );
+    QVERIFY(teacherId);
+    QVERIFY(classId);
+
+    const Result<Teacher> loadedTeacher = service.getTeacher(*teacherId);
+    const Result<Classroom> loadedClass = service.getClassById(*classId);
+    const Result<QList<Teacher>> loadedTeachers = service.getAllTeachers();
+    const Result<QList<Classroom>> loadedClasses = service.getClasses();
+    QVERIFY(loadedTeacher);
+    QVERIFY(loadedClass);
+    QVERIFY(loadedTeachers);
+    QVERIFY(loadedClasses);
+    QCOMPARE(loadedTeacher->teacherEn, QStringLiteral("Readable Teacher"));
+    QCOMPARE(loadedClass->name, QStringLiteral("Readable Class"));
+    QCOMPARE(loadedTeachers->size(), 1);
+    QCOMPARE(loadedClasses->size(), 1);
+
+    const Result<Teacher> missingTeacher =
+        service.getTeacher(*teacherId + 1000);
+    const Result<Classroom> missingClass =
+        service.getClassById(*classId + 1000);
+    QVERIFY(!missingTeacher);
+    QVERIFY(!missingClass);
+    QVERIFY(missingTeacher.error().contains(
+        QStringLiteral("no matching record exists")
+        ));
+    QVERIFY(missingTeacher.error().contains(
+        QStringLiteral("teacher id %1").arg(*teacherId + 1000)
+        ));
+    QVERIFY(missingClass.error().contains(
+        QStringLiteral("no matching record exists")
+        ));
+    QVERIFY(missingClass.error().contains(
+        QStringLiteral("class id %1").arg(*classId + 1000)
+        ));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE classes")));
+
+    const Result<Classroom> failedClass = service.getClassById(*classId);
+    const Result<QList<Classroom>> failedClasses = service.getClasses();
+    QVERIFY(!failedClass);
+    QVERIFY(!failedClasses);
+    QVERIFY(failedClass.error().contains(QStringLiteral("Loading class")));
+    QVERIFY(failedClass.error().contains(
+        QStringLiteral("class id %1").arg(*classId)
+        ));
+    QVERIFY(failedClasses.error().contains(QStringLiteral("Loading classes")));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE teachers")));
+
+    const Result<Teacher> failedTeacher = service.getTeacher(*teacherId);
+    const Result<QList<Teacher>> failedTeachers = service.getAllTeachers();
+    QVERIFY(!failedTeacher);
+    QVERIFY(!failedTeachers);
+    QVERIFY(failedTeacher.error().contains(QStringLiteral("Loading teacher")));
+    QVERIFY(failedTeacher.error().contains(
+        QStringLiteral("teacher id %1").arg(*teacherId)
+        ));
+    QVERIFY(failedTeachers.error().contains(
+        QStringLiteral("Loading teachers")
+        ));
+}
+
+void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("legacy-write-rollbacks.db"))
+        ).has_value());
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Rollback Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    ClassInfo originalInfo;
+    originalInfo.classId = classId;
+    originalInfo.notes = QStringLiteral("Original notes");
+    originalInfo.classTimes.append({
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    });
+    QVERIFY(service.saveClassInfo(originalInfo));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_intensive_time_insert "
+        "BEFORE INSERT ON class_intensive_times "
+        "WHEN NEW.class_id = %1 "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected class info failure'); "
+        "END"
+        ).arg(classId)));
+
+    ClassInfo changedInfo = originalInfo;
+    changedInfo.notes = QStringLiteral("Changed notes");
+    changedInfo.classTimes = {{
+        QStringLiteral("Tuesday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:50 AM")
+    }};
+    changedInfo.intensiveTimes.append({
+        QStringLiteral("Wednesday"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("11:50 AM")
+    });
+    const Status classInfoSaved = service.saveClassInfo(changedInfo);
+    QVERIFY(!classInfoSaved);
+    QVERIFY(classInfoSaved.error().contains(
+        QStringLiteral("Inserting intensive class time")
+        ));
+    QVERIFY(classInfoSaved.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+    const ClassInfo rolledBackInfo = service.loadClassInfo(classId);
+    QCOMPARE(rolledBackInfo.notes, QStringLiteral("Original notes"));
+    QCOMPARE(rolledBackInfo.classTimes.size(), 1);
+    QCOMPARE(rolledBackInfo.classTimes.first().day, QStringLiteral("Monday"));
+    QVERIFY(rolledBackInfo.intensiveTimes.isEmpty());
+
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_class_notes_update "
+        "BEFORE UPDATE OF notes ON class_info "
+        "WHEN NEW.notes = 'Reject notes' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected class notes failure'); "
+        "END"
+        )));
+    const Status notesSaved = service.saveClassNotes(
+        classId,
+        QStringLiteral("Reject notes"),
+        QStringLiteral("Changed activities")
+        );
+    QVERIFY(!notesSaved);
+    QVERIFY(notesSaved.error().contains(QStringLiteral("Saving class notes")));
+    QVERIFY(notesSaved.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+    QCOMPARE(service.loadClassInfo(classId).notes,
+             QStringLiteral("Original notes"));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_intensive_time_insert")));
+    Roster originalRoster;
+    originalRoster.columns = Roster::BaseColumns;
+    originalRoster.rows.append({
+        QStringLiteral("Original Student"),
+        QStringLiteral("학생")
+    });
+    QVERIFY(service.saveRoster(classId, originalRoster));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_roster_data_insert "
+        "BEFORE INSERT ON roster_data "
+        "WHEN NEW.value = 'Reject' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected roster failure'); "
+        "END"
+        )));
+
+    Roster changedRoster = originalRoster;
+    changedRoster.rows[0][0] = QStringLiteral("Reject");
+    const Status rosterSaved = service.saveRoster(classId, changedRoster);
+    QVERIFY(!rosterSaved);
+    QVERIFY(rosterSaved.error().contains(QStringLiteral("Inserting roster data")));
+    QVERIFY(rosterSaved.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+    QCOMPARE(service.loadRoster(classId).rows.first().first(),
+             QStringLiteral("Original Student"));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_roster_data_insert")));
+    const Result<int> secondClass =
+        service.createClass(QStringLiteral("Second Rollback Class"));
+    QVERIFY(secondClass);
+    Roster secondOriginalRoster = originalRoster;
+    secondOriginalRoster.rows[0][0] = QStringLiteral("Second Original");
+    QVERIFY(service.saveRoster(*secondClass, secondOriginalRoster));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_roster_batch_insert "
+        "BEFORE INSERT ON roster_data "
+        "WHEN NEW.value = 'Batch Reject' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected roster batch failure'); "
+        "END"
+        )));
+    Roster firstBatchRoster = originalRoster;
+    firstBatchRoster.rows[0][0] = QStringLiteral("First Changed");
+    Roster secondBatchRoster = secondOriginalRoster;
+    secondBatchRoster.rows[0][0] = QStringLiteral("Batch Reject");
+    const Status rostersSaved = service.saveRosters({
+        qMakePair(classId, firstBatchRoster),
+        qMakePair(*secondClass, secondBatchRoster)
+    });
+    QVERIFY(!rostersSaved);
+    QCOMPARE(service.loadRoster(classId).rows.first().first(),
+             QStringLiteral("Original Student"));
+    QCOMPARE(service.loadRoster(*secondClass).rows.first().first(),
+             QStringLiteral("Second Original"));
+
+    SpeakingEvalRows originalEvaluation = SpeakingEval::emptyRows();
+    originalEvaluation[0][0] = QStringLiteral("Original A");
+    originalEvaluation[1][0] = QStringLiteral("Original B");
+    QVERIFY(service.saveSpeakingEval(
+        classId,
+        QStringLiteral("Rollback Evaluation"),
+        originalEvaluation
+        ));
+    QVERIFY(query.exec(QStringLiteral(
+        "CREATE TRIGGER reject_speaking_eval_update "
+        "BEFORE UPDATE OF col_0 ON speaking_eval_data "
+        "WHEN NEW.row_index = 1 AND NEW.col_0 = 'Reject' "
+        "BEGIN "
+        "SELECT RAISE(ABORT, 'injected speaking evaluation failure'); "
+        "END"
+        )));
+
+    SpeakingEvalRows changedEvaluation = originalEvaluation;
+    changedEvaluation[0][0] = QStringLiteral("Changed A");
+    changedEvaluation[1][0] = QStringLiteral("Reject");
+    const Status evaluationSaved = service.saveSpeakingEval(
+        classId,
+        QStringLiteral("Rollback Evaluation"),
+        changedEvaluation,
+        {{0, 0}, {1, 0}}
+        );
+    QVERIFY(!evaluationSaved);
+    QVERIFY(evaluationSaved.error().contains(
+        QStringLiteral("Updating speaking evaluation cell")
+        ));
+    QVERIFY(evaluationSaved.error().contains(
+        QStringLiteral("Rollback Evaluation")
+        ));
+    const SpeakingEvalRows rolledBackEvaluation = service.loadSpeakingEval(
+        classId,
+        QStringLiteral("Rollback Evaluation")
+        );
+    QCOMPARE(rolledBackEvaluation[0][0], QStringLiteral("Original A"));
+    QCOMPARE(rolledBackEvaluation[1][0], QStringLiteral("Original B"));
+
+    const Result<QList<ClassConflict>> noConflicts =
+        service.getClassTimeConflicts(
+            classId,
+            {},
+            ScheduleType::Regular
+            );
+    QVERIFY(noConflicts);
+    QVERIFY(noConflicts->isEmpty());
+
+    const Result<QList<ClassConflict>> missingClassConflicts =
+        service.getClassTimeConflicts(
+            classId + 1000,
+            {},
+            ScheduleType::Regular
+            );
+    QVERIFY(!missingClassConflicts);
+    QVERIFY(missingClassConflicts.error().contains(
+        QStringLiteral("no matching record exists")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
+    const Result<QList<ClassConflict>> failedConflictRead =
+        service.getClassTimeConflicts(
+            classId,
+            {},
+            ScheduleType::Regular
+            );
+    QVERIFY(!failedConflictRead);
+    QVERIFY(failedConflictRead.error().contains(
+        QStringLiteral("Loading class time conflicts")
+        ));
+    QVERIFY(failedConflictRead.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
 }
 
 void DataServiceLifecycleTests::databaseSessionOwnsRepositoryLifetime()
@@ -456,10 +956,10 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
     QVERIFY(rosters.isAvailable());
     QVERIFY(evaluations.isAvailable());
 
-    settings.save(
+    QVERIFY(settings.save(
         QStringLiteral("feature-services/value"),
         QStringLiteral("saved")
-        );
+        ).has_value());
     QCOMPARE(
         settings.load(QStringLiteral("feature-services/value")).toString(),
         QStringLiteral("saved")
@@ -474,11 +974,22 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
     QVERIFY(createdClass);
     const int teacherId = *createdTeacher;
     const int classId = *createdClass;
+    const Result<QList<ClassConflict>> conflicts = classes.conflicts(
+        classId,
+        {},
+        ScheduleType::Regular
+        );
+    QVERIFY(conflicts);
+    QVERIFY(conflicts->isEmpty());
     QVERIFY(teacherId > 0);
     QVERIFY(classId > 0);
-    QCOMPARE(teachers.teacher(teacherId).teacherEn,
+    const Result<Teacher> loadedTeacher = teachers.teacher(teacherId);
+    const Result<Classroom> loadedClass = classes.classroom(classId);
+    QVERIFY(loadedTeacher);
+    QVERIFY(loadedClass);
+    QCOMPARE(loadedTeacher->teacherEn,
              QStringLiteral("Narrow Teacher"));
-    QCOMPARE(classes.classroom(classId).name,
+    QCOMPARE(loadedClass->name,
              QStringLiteral("Narrow Class"));
 
     Roster roster;
@@ -486,7 +997,7 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
     roster.rows.append(
         {QStringLiteral("Student"), QStringLiteral("학생")}
         );
-    rosters.saveRoster(classId, roster);
+    QVERIFY(rosters.saveRoster(classId, roster).has_value());
     QCOMPARE(rosters.studentCount(classId), 1);
 
     dataService.closeDatabase();
@@ -511,8 +1022,12 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     verifyDatabase(service, QStringLiteral("Database A"), idsA);
 
     QVERIFY(service.openDatabase(databaseB).has_value());
-    QVERIFY(service.getAllTeachers().isEmpty());
-    QVERIFY(service.getClasses().isEmpty());
+    const Result<QList<Teacher>> emptyTeachers = service.getAllTeachers();
+    const Result<QList<Classroom>> emptyClasses = service.getClasses();
+    QVERIFY(emptyTeachers);
+    QVERIFY(emptyTeachers->isEmpty());
+    QVERIFY(emptyClasses);
+    QVERIFY(emptyClasses->isEmpty());
     QVERIFY(service.loadIntensiveSlotStates().isEmpty());
     const Result<QList<TestingBlock>> emptyTestingBlocks =
         service.loadTestingBlocks();
@@ -523,7 +1038,10 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
             QDate(2026, 7, 17)
             ).isEmpty()
         );
-    QVERIFY(service.getAllCampuses().isEmpty());
+    const Result<QList<CampusRecord>> emptyCampuses =
+        service.getAllCampuses();
+    QVERIFY(emptyCampuses);
+    QVERIFY(emptyCampuses->isEmpty());
     QCOMPARE(
         service.loadSetting(
             QStringLiteral("lifecycle/value"),
@@ -544,11 +1062,11 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     service.closeDatabase();
     QVERIFY(!service.isOpen());
     QVERIFY(service.currentDatabasePath().isEmpty());
-    QVERIFY(service.getAllTeachers().isEmpty());
-    QVERIFY(service.getClasses().isEmpty());
+    QVERIFY(!service.getAllTeachers());
+    QVERIFY(!service.getClasses());
     QVERIFY(service.loadIntensiveSlotStates().isEmpty());
     QVERIFY(!service.loadTestingBlocks());
-    QVERIFY(service.getAllCampuses().isEmpty());
+    QVERIFY(!service.getAllCampuses());
     QVERIFY(service.loadRoster(idsA.classId).rows.isEmpty());
     QVERIFY(
         service.loadSpeakingEval(
@@ -606,10 +1124,11 @@ void DataServiceLifecycleTests
     DataService service;
     QVERIFY(service.openDatabase(path).has_value());
 
-    const QList<Teacher> teachers = service.getAllTeachers();
-    QCOMPARE(teachers.size(), 1);
+    const Result<QList<Teacher>> teachers = service.getAllTeachers();
+    QVERIFY(teachers);
+    QCOMPARE(teachers->size(), 1);
 
-    Teacher teacher = teachers.first();
+    Teacher teacher = teachers->first();
     QVERIFY(teacher.preferredRomanization.isEmpty());
     QVERIFY(teacher.preferredName.isEmpty());
     QVERIFY(teacher.birthday.isEmpty());
@@ -621,14 +1140,15 @@ void DataServiceLifecycleTests
     teacher.phoneNumber = QStringLiteral("010-0000-0000");
     QVERIFY(service.updateTeacher(teacher).has_value());
 
-    const Teacher reloaded = service.getTeacher(teacher.id);
+    const Result<Teacher> reloaded = service.getTeacher(teacher.id);
+    QVERIFY(reloaded);
     QCOMPARE(
-        reloaded.preferredRomanization,
+        reloaded->preferredRomanization,
         QStringLiteral("Legacy Teacheo")
         );
-    QCOMPARE(reloaded.preferredName, QStringLiteral("Legacy Teacher"));
-    QCOMPARE(reloaded.birthday, QStringLiteral("12-31"));
-    QCOMPARE(reloaded.phoneNumber, QStringLiteral("010-0000-0000"));
+    QCOMPARE(reloaded->preferredName, QStringLiteral("Legacy Teacher"));
+    QCOMPARE(reloaded->birthday, QStringLiteral("12-31"));
+    QCOMPARE(reloaded->phoneNumber, QStringLiteral("010-0000-0000"));
 
     QVERIFY(
         service.saveTestingBlock(

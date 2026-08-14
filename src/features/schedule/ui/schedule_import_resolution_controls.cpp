@@ -80,7 +80,7 @@ void connectColorRequested(
 }
 }
 
-BuildResult build(
+Result<BuildResult> build(
     const BuildRequest& request
     )
 {
@@ -139,11 +139,15 @@ BuildResult build(
         {
             const int teacherId =
                 preview.matchingTeacherIds.first();
-            const Teacher existing =
+            const Result<Teacher> existing =
                 teacherService->teacher(teacherId);
+            if (!existing)
+            {
+                return std::unexpected(existing.error());
+            }
             const bool exactRoom =
                 preview.importedRooms.size() == 1
-                && existing.roomNumber.trimmed()
+                && existing->roomNumber.trimmed()
                     == preview.importedRooms.first().trimmed();
 
             if (!exactRoom)
@@ -157,7 +161,7 @@ BuildResult build(
             addResolutionItem(
                 control.action,
                 translate("Keep existing: %1")
-                    .arg(teacherLabel(existing)),
+                    .arg(teacherLabel(*existing)),
                 static_cast<int>(
                     ScheduleImportTeacherAction::Reuse
                     ),
@@ -195,12 +199,16 @@ BuildResult build(
             }
             for (int teacherId : preview.matchingTeacherIds)
             {
-                const Teacher existing =
+                const Result<Teacher> existing =
                     teacherService->teacher(teacherId);
+                if (!existing)
+                {
+                    return std::unexpected(existing.error());
+                }
                 addResolutionItem(
                     control.action,
                     translate("Use existing: %1")
-                        .arg(teacherLabel(existing)),
+                        .arg(teacherLabel(*existing)),
                     static_cast<int>(
                         ScheduleImportTeacherAction::Reuse
                         ),
@@ -209,7 +217,7 @@ BuildResult build(
                 addResolutionItem(
                     control.action,
                     translate("Update existing room: %1")
-                        .arg(teacherLabel(existing)),
+                        .arg(teacherLabel(*existing)),
                     static_cast<int>(
                         ScheduleImportTeacherAction::UpdateRoom
                         ),
@@ -285,8 +293,12 @@ BuildResult build(
     }
     request.teacherLayout->addStretch();
 
-    const QList<Classroom> allClasses =
+    const Result<QList<Classroom>> allClasses =
         classService->classes();
+    if (!allClasses)
+    {
+        return std::unexpected(allClasses.error());
+    }
     QList<ScheduleImportClassPreview> orderedClasses =
         request.preview->classes;
     std::stable_sort(
@@ -378,7 +390,7 @@ BuildResult build(
                 );
             addedTargets.insert(classId);
         }
-        for (const Classroom& classroom : allClasses)
+        for (const Classroom& classroom : *allClasses)
         {
             if (addedTargets.contains(classroom.id))
             {

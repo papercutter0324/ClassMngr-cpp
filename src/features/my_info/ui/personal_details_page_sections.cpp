@@ -737,9 +737,10 @@ void PersonalDetailsPage::loadStoredSettings()
             ) != 0
         )
     {
-        PersonalDetailsRepository(settingsService).saveCampus(
-            m_campusCombo->currentText()
-            );
+        [[maybe_unused]] const Status campusSaved =
+            PersonalDetailsRepository(settingsService).saveCampus(
+                m_campusCombo->currentText()
+                );
     }
 
     const QString loginId = details.zoomLoginId;

@@ -148,12 +148,12 @@ bool DataService::isOpen() const
     return true;
 }
 
-QList<Classroom> DataService::getClasses()
+Result<QList<Classroom>> DataService::getClasses()
 {
     return g_classes;
 }
 
-Classroom DataService::getClassById(
+Result<Classroom> DataService::getClassById(
     int classId
     )
 {
@@ -164,7 +164,7 @@ Classroom DataService::getClassById(
             return classroom;
         }
     }
-    return {};
+    return std::unexpected(QStringLiteral("Class not found."));
 }
 
 ClassInfo DataService::loadClassInfo(
@@ -181,7 +181,7 @@ Roster DataService::loadRoster(
     return g_rosters.value(classId);
 }
 
-Teacher DataService::getTeacher(
+Result<Teacher> DataService::getTeacher(
     int teacherId
     )
 {

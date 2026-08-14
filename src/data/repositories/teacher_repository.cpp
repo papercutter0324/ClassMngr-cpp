@@ -265,11 +265,17 @@ Status TeacherRepository::updateTeacher(
         );
 }
 
-Teacher TeacherRepository::getTeacher(
+Result<Teacher> TeacherRepository::getTeacher(
     int teacherId
     )
 {
-    Teacher teacher;
+    if (teacherId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading teacher failed: invalid teacher id %1.")
+                .arg(teacherId)
+            );
+    }
 
     QSqlQuery query(m_database);
 
@@ -281,40 +287,46 @@ Teacher TeacherRepository::getTeacher(
 
     query.addBindValue(teacherId);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading teacher"),
+        teacherIdentity(teacherId)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load teacher:"
-            << query.lastError().text();
-
-        return teacher;
+        return std::unexpected(executed.error().userMessage());
     }
 
     if (!query.next())
     {
-        return teacher;
+        return std::unexpected(
+            QObject::tr(
+                "Loading teacher failed for %1: no matching record exists."
+                ).arg(teacherIdentity(teacherId))
+            );
     }
 
     return teacherFromQuery(query);
 }
 
-QList<Teacher> TeacherRepository::getAllTeachers()
+Result<QList<Teacher>> TeacherRepository::getAllTeachers()
 {
     QList<Teacher> teachers;
 
     QSqlQuery query(m_database);
 
-    if (!query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT *
         FROM teachers
         ORDER BY teacher_en
-    )"))
+    )"),
+        QObject::tr("Loading teachers")
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load teachers:"
-            << query.lastError().text();
-
-        return teachers;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())

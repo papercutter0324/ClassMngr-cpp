@@ -16,8 +16,19 @@ int SidebarController::promptForClassToDelete() const
     }
 
     QList<QPair<QString, int>> records;
+    const Result<QList<Classroom>> loadedClasses = classes->classes();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Class"),
+            tr("Classes could not be loaded."),
+            loadedClasses.error()
+            );
+        return -1;
+    }
 
-    for (const Classroom& classroom : classes->classes())
+    for (const Classroom& classroom : *loadedClasses)
     {
         if (classroom.id <= 0)
         {
@@ -56,8 +67,19 @@ int SidebarController::promptForTeacherToDelete() const
     }
 
     QList<QPair<QString, int>> records;
+    const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
+    if (!loadedTeachers)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Teacher"),
+            tr("Teachers could not be loaded."),
+            loadedTeachers.error()
+            );
+        return -1;
+    }
 
-    for (const Teacher& teacher : teachers->teachers())
+    for (const Teacher& teacher : *loadedTeachers)
     {
         if (teacher.id <= 0)
         {
@@ -112,10 +134,8 @@ QString SidebarController::classDisplayName(
 
     if (classInfo.teacherId > 0)
     {
-        teacher =
-            teachers->teacher(
-                classInfo.teacherId
-                );
+        teacher = teachers->teacher(classInfo.teacherId)
+            .value_or(Teacher{});
     }
 
     QString displayName =
@@ -228,24 +248,27 @@ void SidebarController::updateActionStates()
         m_actions->importTeachers->setEnabled(true);
     }
 
+    const Result<QList<Classroom>> loadedClasses = classes->classes();
+    const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
+
     if (m_actions->exportClasses)
     {
         m_actions->exportClasses->setEnabled(
-            !classes->classes().isEmpty()
+            loadedClasses && !loadedClasses->isEmpty()
             );
     }
 
     if (m_actions->deleteClass)
     {
         m_actions->deleteClass->setEnabled(
-            !classes->classes().isEmpty()
+            loadedClasses && !loadedClasses->isEmpty()
             );
     }
 
     if (m_actions->deleteTeacher)
     {
         m_actions->deleteTeacher->setEnabled(
-            !teachers->teachers().isEmpty()
+            loadedTeachers && !loadedTeachers->isEmpty()
             );
     }
 }

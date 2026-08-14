@@ -131,10 +131,10 @@ void TestingClassesPageTests
     ::rosterEditorOmitsRemoveButtonAndKeepsContextAction()
 {
     ApplicationServices services;
-    services.dataService()->saveRoster(
+    QVERIFY(services.dataService()->saveRoster(
         42,
         rosterWithEvaluation()
-        );
+        ).has_value());
 
     RosterEditorWidget editor(
         &services,
@@ -441,10 +441,10 @@ void TestingClassesPageTests
                 )
             );
     QVERIFY(created);
-    services.dataService()->saveRoster(
+    QVERIFY(services.dataService()->saveRoster(
         *created,
         rosterWithEvaluation()
-        );
+        ).has_value());
 
     TestingClassesPage page(&services);
     page.resize(1000, 700);

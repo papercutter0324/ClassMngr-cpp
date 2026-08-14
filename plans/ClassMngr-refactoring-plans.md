@@ -483,8 +483,8 @@ every production custom dialog surface.
 
 # Plan 3 — Data and Input Validation
 
-Status: in progress as of 2026-08-14; Phase 1 has started with schema and
-database-open failure observability.
+Status: in progress as of 2026-08-14; Phase 1 mutation contracts are complete
+and read-contract failure observability is in progress.
 
 Plan 1 has supplied several prerequisites (`Result`/`Status`, `SqlQueryUtils`,
 `DatabaseTransaction`, `StudentNameUtils`, and `ScheduleValueParser`). They do
@@ -496,14 +496,17 @@ or migration requirements.
 1. Validation is concentrated in a few UI models rather than applied consistently at every boundary.
 2. Roster and speaking evaluation now share `StudentNameUtils`, but validation still returns feature-local results rather than common structured, field-addressed issues.
 3. `CalendarEventDialog::accept()` contains important date/time validation that can be bypassed by non-dialog callers.
-4. `TeacherInfoPage` trims and saves form data but does not validate the teacher object before calling a repository method that returns `void`.
+4. `TeacherInfoPage` trims and saves form data but still lacks the domain validator planned for Phase 3.
 5. `ClassDetailsPage` checks schedule conflicts but does not run one complete `ClassInfo` validator.
-6. Repository contracts vary between `void`, `bool`, integer sentinels, default objects, `Status`, and `Result<T>`.
+6. Repository mutation contracts now use `Status`/`Result<T>`, but read
+   contracts still vary between default objects, empty collections, and
+   `Result<T>`.
 7. Schema setup failures are now observable and transactional, but legacy
    column evolution remains ad hoc until Phase 5 introduces numbered
    migrations.
 8. The schema has few foreign keys and `CHECK` constraints, and foreign-key enforcement is not enabled explicitly.
-9. Multi-table deletion in `ClassRepository::deleteClass()` is not transactional and ignores each execution result.
+9. Repository writes are checked, but several read paths still execute SQL
+   without exposing query failure separately from a missing or empty result.
 
 ## Validation Model
 
@@ -600,8 +603,68 @@ mutation to checked `Status`/`Result<int>` contracts and propagates those
 contracts through `DataService`, `ClassService`, and `TeacherService` to the
 production callers. Class and teacher compound deletes now use
 `DatabaseTransaction`; injected failures verify that earlier roster deletions
-and teacher-assignment changes roll back. Campus, calendar-event, settings, and
-intensive-slot-state repository mutations remain for the next slices.
+and teacher-assignment changes roll back.
+
+The third slice converts campus-record, settings, and intensive-slot-state
+mutations to checked `Status`/`Result<int>` contracts and propagates failures
+through `DataService` and the narrow settings/schedule services. Campus updates
+no longer report success for missing records, schedule slot toggles keep their
+current display and report failed persistence, and grouped settings writes use
+one `DatabaseTransaction` so personal-details and Sub Prep saves cannot commit
+partially. Injected SQL failures cover setting rollback, both intensive-slot
+write branches, campus update/delete identity, and unavailable-service paths.
+`CalendarEventRepository` was the remaining named repository for the next
+Phase 1 slice.
+
+The fourth slice converts all calendar-event mutations to checked contracts.
+Single writes return `Result<int>`; single, repeat-series, and full-calendar
+deletes return `Status`; and multi-event recurrence creation, recurrence edits,
+and workbook imports use one transactional batch save. Calendar UI workflows
+now report persistence errors and withhold refresh/reset-success signals after
+failure. Trigger-driven tests cover contextual insert/update/delete errors and
+prove a mid-batch failure rolls back earlier occurrences. The initial named
+repositories are complete; Phase 1 continues with the remaining legacy write
+contracts in `ClassInfoRepository`, `RosterRepository`, and
+`SpeakingEvalRepository`.
+
+The fifth slice converts the remaining `ClassInfoRepository`,
+`RosterRepository`, and `SpeakingEvalRepository` mutations to checked `Status`
+contracts. Class information, single and batch roster saves, and speaking
+evaluation saves now use `DatabaseTransaction` and contextual checked SQL.
+Their service and UI callers propagate failures; notably, the roster editor no
+longer clears its dirty state after a failed save. Trigger-driven regression
+tests prove rollback after failures partway through class-time replacement,
+single and batch roster replacement, and speaking-evaluation cell updates. A
+repository-header and SQL-call audit finds no remaining legacy mutation
+contract or unchecked SQL write. Phase 1 continues with read contracts that
+still conflate query failure with missing/default data.
+
+The sixth slice starts read-contract migration with `CampusRecordRepository`.
+Single-campus and campus-list reads now return `Result<T>` through
+`DataService`; a missing campus, an unavailable profile, and a failed query are
+observable errors, while a successful empty list remains distinct. The reads
+also use contextual checked SQL, eliminating two previously unchecked query
+executions. Class-time conflict detection now follows the same contract through
+`ClassService`; failure to load the current class or comparison rows blocks a
+save and is shown instead of being logged and treated as "no conflicts." This
+removes the final bare `query.exec()` call from repository code. Lifecycle
+coverage exercises successful-empty, missing-record, unavailable-session, and
+failed-query outcomes. The next read slice should convert the core class and
+teacher lookup contracts before the more structurally complex class-info,
+roster, and speaking-evaluation loads.
+
+The seventh slice converts the core class and teacher singleton/list reads to
+`Result<T>` across their repositories, `DataService`, and narrow feature
+services. Checked SQL now distinguishes successful empty lists, missing ids,
+unavailable profiles, and query failures with record identity. Class transfer
+and schedule import propagate those failures; schedule construction and import
+resolution controls also return checked results. Navigation and destructive
+actions fail closed, primary page/list loads display contextual errors, and
+output/package workflows abort instead of rendering from fabricated empty
+records. Regression coverage now includes each success and failure category.
+The next read slice is the structurally compound class-info, roster, and
+speaking-evaluation loads, followed by remaining settings/calendar collection
+reads.
 
 ### Phase 2. Shared Validation Types and Core Rules
 
@@ -671,8 +734,8 @@ Status: not started beyond existing characterization tests.
 
 Current execution status: sequence items 2, 3, 7–9, 12, and 13 are complete.
 Items 1, 4, and 5 are partially complete. Items 6 and 10–11 are the remaining
-validation/persistence stream. The immediate next step is the remaining Plan 3
-Phase 1 repository-contract and compound-transaction work.
+validation/persistence stream. The immediate next step is the Plan 3 Phase 1
+compound class-info, roster, and speaking-evaluation read-contract work.
 
 1. Add characterization tests and measurements; no behavior change.
 2. Introduce CMake target/test helpers and split CMake modules.

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/roster.h"
 
 #include <QList>
@@ -13,12 +14,12 @@ public:
         QSqlDatabase& database
         );
 
-    void saveRoster(
+    [[nodiscard]] Status saveRoster(
         int classId,
         const Roster& roster
         );
 
-    bool saveRosters(
+    [[nodiscard]] Status saveRosters(
         const QList<QPair<int, Roster>>& rosters
         );
 
@@ -31,7 +32,7 @@ public:
         );
 
 private:
-    bool writeRoster(
+    [[nodiscard]] Status writeRoster(
         int classId,
         const Roster& roster
         );

@@ -39,7 +39,8 @@ QVariant loadWithLegacyFallback(
 
     if (value.isValid())
     {
-        repository.saveSetting(primaryKey, value);
+        [[maybe_unused]] const Status migrated =
+            repository.saveSetting(primaryKey, value);
         return value;
     }
 
@@ -99,31 +100,35 @@ bool PersonalDetailsRepository::save(const PersonalDetails& details) const
         return false;
     }
 
-    saveSetting(NameKey, details.name);
-    saveSetting(CampusKey, details.campus);
-    saveSetting(ZoomLoginIdKey, details.zoomLoginId);
-    saveSetting(ZoomPasswordKey, details.zoomPassword);
-    saveSetting(
-        ZoomNotAvailableKey,
-        details.zoomNotAvailable
-        );
-    saveSetting(
-        SignatureImageKey,
-        QString::fromLatin1(
-            SignatureImage::prepareForEmbedding(
-                details.signatureImage
-                ).toBase64()
-            )
-        );
-    return true;
+    const QVariantMap settings = {
+        {NameKey, details.name},
+        {CampusKey, details.campus},
+        {ZoomLoginIdKey, details.zoomLoginId},
+        {ZoomPasswordKey, details.zoomPassword},
+        {ZoomNotAvailableKey, details.zoomNotAvailable},
+        {
+            SignatureImageKey,
+            QString::fromLatin1(
+                SignatureImage::prepareForEmbedding(
+                    details.signatureImage
+                    ).toBase64()
+                )
+        }
+    };
+
+    return m_settingsService->saveAll(settings).has_value();
 }
 
-void PersonalDetailsRepository::saveCampus(const QString& campus) const
+Status PersonalDetailsRepository::saveCampus(const QString& campus) const
 {
-    if (isAvailable())
+    if (!isAvailable())
     {
-        saveSetting(CampusKey, campus);
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile service is available.")
+            );
     }
+
+    return saveSetting(CampusKey, campus);
 }
 
 bool PersonalDetailsRepository::isAvailable() const
@@ -142,13 +147,17 @@ QVariant PersonalDetailsRepository::loadSetting(
         : defaultValue;
 }
 
-void PersonalDetailsRepository::saveSetting(
+Status PersonalDetailsRepository::saveSetting(
     const QString& key,
     const QVariant& value
     ) const
 {
-    if (m_settingsService)
+    if (!m_settingsService)
     {
-        m_settingsService->save(key, value);
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile service is available.")
+            );
     }
+
+    return m_settingsService->save(key, value);
 }

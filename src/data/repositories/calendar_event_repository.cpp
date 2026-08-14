@@ -1,6 +1,10 @@
 #include "calendar_event_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
 #include <QDebug>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QVariant>
@@ -51,6 +55,17 @@ CalendarEvent eventFromQuery(
             );
 
     return event;
+}
+
+QString eventIdentity(const CalendarEvent& event)
+{
+    if (event.id > 0)
+    {
+        return QObject::tr("calendar event id %1").arg(event.id);
+    }
+
+    return QObject::tr("calendar event '%1' on %2")
+        .arg(event.title.trimmed(), event.startDate.toString(Qt::ISODate));
 }
 }
 
@@ -388,7 +403,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForRepeatSeriesF
     return events;
 }
 
-int CalendarEventRepository::saveCalendarEvent(
+Result<int> CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
@@ -438,13 +453,21 @@ int CalendarEventRepository::saveCalendarEvent(
         query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
         query.addBindValue(event.id);
 
-        if (!query.exec())
+        const auto executed = SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Updating calendar event"),
+            eventIdentity(event)
+            );
+        if (!executed)
         {
-            qWarning()
-                << "Failed to update calendar event:"
-                << query.lastError().text();
-
-            return -1;
+            return std::unexpected(executed.error().userMessage());
+        }
+        if (query.numRowsAffected() == 0)
+        {
+            return std::unexpected(
+                QObject::tr("Updating %1 failed: no matching record exists.")
+                    .arg(eventIdentity(event))
+                );
         }
 
         return event.id;
@@ -475,25 +498,81 @@ int CalendarEventRepository::saveCalendarEvent(
     query.addBindValue(event.endDate.toString(Qt::ISODate));
     query.addBindValue(event.endTime.toString(QStringLiteral("HH:mm")));
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Creating calendar event"),
+        eventIdentity(event)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to save calendar event:"
-            << query.lastError().text();
-
-        return -1;
+        return std::unexpected(executed.error().userMessage());
     }
 
-    return query.lastInsertId().toInt();
+    const int eventId = query.lastInsertId().toInt();
+    if (eventId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating %1 failed: the database did not return a valid "
+                "record id."
+                ).arg(eventIdentity(event))
+            );
+    }
+
+    return eventId;
 }
 
-void CalendarEventRepository::deleteCalendarEvent(
+Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
+    const QList<CalendarEvent>& events
+    )
+{
+    if (events.isEmpty())
+    {
+        return QList<int>{};
+    }
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr("Starting calendar event save transaction failed: %1")
+                .arg(m_database.lastError().text())
+            );
+    }
+
+    QList<int> eventIds;
+    eventIds.reserve(events.size());
+    for (const CalendarEvent& event : events)
+    {
+        const Result<int> saved = saveCalendarEvent(event);
+        if (!saved)
+        {
+            return std::unexpected(saved.error());
+        }
+        eventIds.append(*saved);
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Committing calendar event saves failed: %1")
+                .arg(m_database.lastError().text())
+            );
+    }
+
+    return eventIds;
+}
+
+Status CalendarEventRepository::deleteCalendarEvent(
     int eventId
     )
 {
     if (eventId <= 0)
     {
-        return;
+        return std::unexpected(
+            QObject::tr("Deleting calendar event failed: invalid event id %1.")
+                .arg(eventId)
+            );
     }
 
     QSqlQuery query(m_database);
@@ -505,15 +584,20 @@ void CalendarEventRepository::deleteCalendarEvent(
 
     query.addBindValue(eventId);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Deleting calendar event"),
+        QObject::tr("calendar event id %1").arg(eventId)
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to delete calendar event:"
-            << query.lastError().text();
+        return std::unexpected(executed.error().userMessage());
     }
+
+    return {};
 }
 
-void CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
+Status CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     )
@@ -526,7 +610,12 @@ void CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
         || !startDate.isValid()
         )
     {
-        return;
+        return std::unexpected(
+            QObject::tr(
+                "Deleting calendar repeat series failed: invalid series or "
+                "start date."
+                )
+            );
     }
 
     QSqlQuery query(m_database);
@@ -542,22 +631,34 @@ void CalendarEventRepository::deleteCalendarEventsForRepeatSeriesFromDate(
         startDate.toString(Qt::ISODate)
         );
 
-    if (!query.exec())
+    const QString identity = QObject::tr("repeat series '%1' from %2")
+        .arg(normalizedRepeatSeriesId, startDate.toString(Qt::ISODate));
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Deleting calendar repeat series events"),
+        identity
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to delete calendar repeat series events:"
-            << query.lastError().text();
+        return std::unexpected(executed.error().userMessage());
     }
+
+    return {};
 }
 
-void CalendarEventRepository::deleteAllCalendarEvents()
+Status CalendarEventRepository::deleteAllCalendarEvents()
 {
     QSqlQuery query(m_database);
 
-    if (!query.exec(QStringLiteral("DELETE FROM calendar_events")))
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral("DELETE FROM calendar_events"),
+        QObject::tr("Deleting all calendar events")
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to delete calendar events:"
-            << query.lastError().text();
+        return std::unexpected(executed.error().userMessage());
     }
+
+    return {};
 }

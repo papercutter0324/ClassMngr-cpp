@@ -61,7 +61,7 @@ QStringList daysWithValues(
     return days;
 }
 
-QList<RosterClassData> loadRosterClassData(
+::Result<QList<RosterClassData>> loadRosterClassData(
     ClassService* classService,
     RosterService* rosterService,
     const QList<int>& classIds
@@ -77,8 +77,13 @@ QList<RosterClassData> loadRosterClassData(
     for (int classId : classIds)
     {
         RosterClassData data;
-        data.classroom =
+        const ::Result<Classroom> classroom =
             classService->classroom(classId);
+        if (!classroom)
+        {
+            return std::unexpected(classroom.error());
+        }
+        data.classroom = *classroom;
         data.info =
             classService->classInfo(classId);
         data.roster =
@@ -113,14 +118,18 @@ Result loadRosterClassesForRequest(
         return failed(QObject::tr("Roster data is not available."));
     }
 
-    const QList<Classroom> classes =
+    const ::Result<QList<Classroom>> classes =
         classService->classes();
+    if (!classes)
+    {
+        return failed(classes.error());
+    }
     const QList<int> classIds =
         resolveClassIds(
             request.scope,
             request.currentClassId,
             request.selectedClassIds,
-            classes
+            *classes
             );
 
     if (classIds.isEmpty())
@@ -130,12 +139,13 @@ Result loadRosterClassesForRequest(
 
     if (rosterClasses)
     {
-        *rosterClasses =
-            loadRosterClassData(
-                classService,
-                rosterService,
-                classIds
-                );
+        const ::Result<QList<RosterClassData>> loadedRosterClasses =
+            loadRosterClassData(classService, rosterService, classIds);
+        if (!loadedRosterClasses)
+        {
+            return failed(loadedRosterClasses.error());
+        }
+        *rosterClasses = *loadedRosterClasses;
     }
 
     return sent();

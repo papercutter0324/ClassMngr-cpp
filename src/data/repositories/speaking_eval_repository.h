@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/speaking_evaluation.h"
 
 #include <QList>
@@ -13,7 +14,7 @@ public:
         QSqlDatabase& database
         );
 
-    bool saveSpeakingEval(
+    [[nodiscard]] Status saveSpeakingEval(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,

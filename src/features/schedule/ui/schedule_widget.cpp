@@ -401,12 +401,21 @@ void ScheduleWidget::onCellClicked(
 
         if (scheduleService && scheduleService->isAvailable())
         {
-            scheduleService->saveIntensiveSlotState(
+            const Status saved = scheduleService->saveIntensiveSlotState(
                 hit.day,
                 hit.timeLabel,
                 hit.nextState,
                 hit.defaultState
                 );
+            if (!saved)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Update Schedule"),
+                    saved.error()
+                    );
+                return;
+            }
         }
         loadSchedule();
         return;
@@ -1087,7 +1096,7 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
             : nullptr
         );
 
-    const ScheduleBuildResult result =
+    const Result<ScheduleBuildResult> result =
         builder.build(
             scheduleModeUsesIntensiveTimes(
                 request.displayMode
@@ -1095,8 +1104,17 @@ ScheduleViewModel ScheduleWidget::buildScheduleModel()
             request.days
             );
 
+    if (!result)
+    {
+        qWarning() << result.error();
+        return buildScheduleViewModel(
+            ScheduleBuildResult{.days = request.days},
+            request
+            );
+    }
+
     return buildScheduleViewModel(
-        result,
+        *result,
         request
         );
 }

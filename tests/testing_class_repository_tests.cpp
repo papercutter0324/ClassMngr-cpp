@@ -156,10 +156,11 @@ void TestingClassRepositoryTests
         QVERIFY(created);
         QVERIFY(*created > regularClassId);
 
-        const QList<Classroom> regularClasses =
+        const Result<QList<Classroom>> regularClasses =
             classRepository.getClasses();
-        QCOMPARE(regularClasses.size(), 1);
-        QCOMPARE(regularClasses.first().id, regularClassId);
+        QVERIFY(regularClasses);
+        QCOMPARE(regularClasses->size(), 1);
+        QCOMPARE(regularClasses->first().id, regularClassId);
 
         auto loaded =
             repository.loadTestingClass(*created);

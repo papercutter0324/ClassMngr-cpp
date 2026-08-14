@@ -97,18 +97,33 @@ void DataService::refreshRepositoryAdapters()
     m_speakingEvalRepository = m_session->speakingEvalRepository();
 }
 
-void DataService::saveSetting(
+Status DataService::saveSetting(
     const QString &key,
     const QVariant &value
     )
 {
-    if (m_settingsRepository)
+    if (!m_settingsRepository)
     {
-        m_settingsRepository->saveSetting(
-            key,
-            value
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
+
+    return m_settingsRepository->saveSetting(key, value);
+}
+
+Status DataService::saveSettings(
+    const QVariantMap& values
+    )
+{
+    if (!m_settingsRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_settingsRepository->saveSettings(values);
 }
 
 QVariant DataService::loadSetting(
@@ -167,13 +182,15 @@ Status DataService::updateTeacher(
     return m_teacherRepository->updateTeacher(teacher);
 }
 
-Teacher DataService::getTeacher(
+Result<Teacher> DataService::getTeacher(
     int teacherId
     )
 {
     if (!m_teacherRepository)
     {
-        return Teacher();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_teacherRepository->getTeacher(
@@ -181,11 +198,13 @@ Teacher DataService::getTeacher(
         );
 }
 
-QList<Teacher> DataService::getAllTeachers()
+Result<QList<Teacher>> DataService::getAllTeachers()
 {
     if (!m_teacherRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_teacherRepository->getAllTeachers();
@@ -275,23 +294,27 @@ Result<int> DataService::createClass(
         );
 }
 
-QList<Classroom> DataService::getClasses()
+Result<QList<Classroom>> DataService::getClasses()
 {
     if (!m_classRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classRepository->getClasses();
 }
 
-Classroom DataService::getClassById(
+Result<Classroom> DataService::getClassById(
     int classId
     )
 {
     if (!m_classRepository)
     {
-        return Classroom();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classRepository->getClassById(
@@ -399,13 +422,15 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     return m_scheduleImportRepository->apply(plan);
 }
 
-bool DataService::saveClassInfo(
+Status DataService::saveClassInfo(
     const ClassInfo& info
     )
 {
     if (!m_classInfoRepository)
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classInfoRepository->saveClassInfo(
@@ -413,7 +438,7 @@ bool DataService::saveClassInfo(
         );
 }
 
-bool DataService::saveClassNotes(
+Status DataService::saveClassNotes(
     int classId,
     const QString& notes,
     const QString& timeFillerActivities
@@ -421,7 +446,9 @@ bool DataService::saveClassNotes(
 {
     if (!m_classInfoRepository)
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classInfoRepository->saveClassNotes(
@@ -458,22 +485,26 @@ QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()
     return m_intensiveSlotStateRepository->loadIntensiveSlotStates();
 }
 
-void DataService::saveIntensiveSlotState(
+Status DataService::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
     const QString& state,
     const QString& defaultState
     )
 {
-    if (m_intensiveSlotStateRepository)
+    if (!m_intensiveSlotStateRepository)
     {
-        m_intensiveSlotStateRepository->saveIntensiveSlotState(
-            day,
-            startTime,
-            state,
-            defaultState
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
+
+    return m_intensiveSlotStateRepository->saveIntensiveSlotState(
+        day,
+        startTime,
+        state,
+        defaultState
+        );
 }
 
 Result<QList<TestingBlock>> DataService::loadTestingBlocks()
@@ -769,13 +800,15 @@ QList<CalendarEvent> DataService::loadCalendarEventsForRepeatSeriesFromDate(
         );
 }
 
-int DataService::saveCalendarEvent(
+Result<int> DataService::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
     if (!m_calendarEventRepository)
     {
-        return -1;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->saveCalendarEvent(
@@ -783,41 +816,66 @@ int DataService::saveCalendarEvent(
         );
 }
 
-void DataService::deleteCalendarEvent(
+Result<QList<int>> DataService::saveCalendarEvents(
+    const QList<CalendarEvent>& events
+    )
+{
+    if (!m_calendarEventRepository)
+    {
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_calendarEventRepository->saveCalendarEvents(events);
+}
+
+Status DataService::deleteCalendarEvent(
     int eventId
     )
 {
-    if (m_calendarEventRepository)
+    if (!m_calendarEventRepository)
     {
-        m_calendarEventRepository->deleteCalendarEvent(
-            eventId
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
+
+    return m_calendarEventRepository->deleteCalendarEvent(eventId);
 }
 
-void DataService::deleteCalendarEventsForRepeatSeriesFromDate(
+Status DataService::deleteCalendarEventsForRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     )
 {
-    if (m_calendarEventRepository)
+    if (!m_calendarEventRepository)
     {
-        m_calendarEventRepository->deleteCalendarEventsForRepeatSeriesFromDate(
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
+    }
+
+    return m_calendarEventRepository
+        ->deleteCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId,
             startDate
             );
-    }
 }
 
-void DataService::deleteAllCalendarEvents()
+Status DataService::deleteAllCalendarEvents()
 {
-    if (m_calendarEventRepository)
+    if (!m_calendarEventRepository)
     {
-        m_calendarEventRepository->deleteAllCalendarEvents();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
+
+    return m_calendarEventRepository->deleteAllCalendarEvents();
 }
 
-QList<ClassConflict> DataService::getClassTimeConflicts(
+Result<QList<ClassConflict>> DataService::getClassTimeConflicts(
     int classId,
     const QList<ClassTime>& times,
     ScheduleType type
@@ -825,7 +883,9 @@ QList<ClassConflict> DataService::getClassTimeConflicts(
 {
     if (!m_classInfoRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classInfoRepository->getClassTimeConflicts(
@@ -835,27 +895,30 @@ QList<ClassConflict> DataService::getClassTimeConflicts(
         );
 }
 
-void DataService::saveRoster(
+Status DataService::saveRoster(
     int classId,
     const Roster& roster
     )
 {
-    if (m_rosterRepository)
+    if (!m_rosterRepository)
     {
-        m_rosterRepository->saveRoster(
-            classId,
-            roster
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
+
+    return m_rosterRepository->saveRoster(classId, roster);
 }
 
-bool DataService::saveRosters(
+Status DataService::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     )
 {
     if (!m_rosterRepository)
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_rosterRepository->saveRosters(
@@ -891,7 +954,7 @@ int DataService::getRosterStudentCount(
         );
 }
 
-bool DataService::saveSpeakingEval(
+Status DataService::saveSpeakingEval(
     int classId,
     const QString& evaluationName,
     const SpeakingEvalRows& rows,
@@ -900,7 +963,9 @@ bool DataService::saveSpeakingEval(
 {
     if (!m_speakingEvalRepository)
     {
-        return false;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_speakingEvalRepository->saveSpeakingEval(
@@ -943,13 +1008,15 @@ QList<SpeakingEvalScore> DataService::buildRosterScoreImport(
         );
 }
 
-int DataService::saveCampus(
+Result<int> DataService::saveCampus(
     const CampusRecord &campus
     )
 {
     if (!m_campusRecordRepository)
     {
-        return 0;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_campusRecordRepository->saveCampus(
@@ -957,13 +1024,15 @@ int DataService::saveCampus(
         );
 }
 
-CampusRecord DataService::getCampus(
+Result<CampusRecord> DataService::getCampus(
     int campusId
     )
 {
     if (!m_campusRecordRepository)
     {
-        return CampusRecord();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_campusRecordRepository->getCampus(
@@ -971,26 +1040,30 @@ CampusRecord DataService::getCampus(
         );
 }
 
-QList<CampusRecord> DataService::getAllCampuses()
+Result<QList<CampusRecord>> DataService::getAllCampuses()
 {
     if (!m_campusRecordRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_campusRecordRepository->getAllCampuses();
 }
 
-void DataService::deleteCampus(
+Status DataService::deleteCampus(
     int campusId
     )
 {
-    if (m_campusRecordRepository)
+    if (!m_campusRecordRepository)
     {
-        m_campusRecordRepository->deleteCampus(
-            campusId
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
             );
     }
+
+    return m_campusRecordRepository->deleteCampus(campusId);
 }
 
 void DataService::save()

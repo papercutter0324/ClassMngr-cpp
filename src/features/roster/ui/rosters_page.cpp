@@ -16,6 +16,7 @@
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
 #include <QFont>
@@ -88,10 +89,8 @@ QString sidebarClassDisplayName(
 
     if (classInfo.teacherId > 0)
     {
-        teacher =
-            teacherService->teacher(
-                classInfo.teacherId
-                );
+        teacher = teacherService->teacher(classInfo.teacherId)
+            .value_or(Teacher{});
     }
 
     return SidebarNodeNaming::formatClassDisplayName(
@@ -145,8 +144,24 @@ void RostersPage::loadRosters(
         return;
     }
 
-    m_rosterClasses =
-        classService->classes();
+    const Result<QList<Classroom>> loadedClasses = classService->classes();
+    if (!loadedClasses)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Load Rosters"),
+            tr("Classes could not be loaded."),
+            loadedClasses.error()
+            );
+        m_rosterClasses.clear();
+        m_currentClassroom = {};
+        rebuildRosterTabs(-1);
+        m_editor->loadClass({});
+        setRosterEditorAvailable(false);
+        updateHeaderText();
+        return;
+    }
+    m_rosterClasses = *loadedClasses;
 
     setScheduleSource(
         scheduleSourceForMode(
@@ -457,10 +472,8 @@ void RostersPage::rebuildRosterTabs(
 
             if (info.teacherId > 0)
             {
-                teacher =
-                    teacherService->teacher(
-                        info.teacherId
-                        );
+                teacher = teacherService->teacher(info.teacherId)
+                    .value_or(Teacher{});
             }
 
             ClassTabNavigation::ClassEntry entry;

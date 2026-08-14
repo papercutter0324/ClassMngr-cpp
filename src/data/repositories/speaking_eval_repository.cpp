@@ -1,7 +1,11 @@
 #include "speaking_eval_repository.h"
 
+#include "data/database/database_transaction.h"
+#include "data/database/sql_query_utils.h"
+
 #include <QDebug>
 #include <QHash>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QtGlobal>
@@ -13,7 +17,7 @@ SpeakingEvalRepository::SpeakingEvalRepository(
 {
 }
 
-bool SpeakingEvalRepository::saveSpeakingEval(
+Status SpeakingEvalRepository::saveSpeakingEval(
     int classId,
     const QString& evaluationName,
     const SpeakingEvalRows& rows,
@@ -22,37 +26,36 @@ bool SpeakingEvalRepository::saveSpeakingEval(
 {
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return false;
+        return std::unexpected(
+            QObject::tr(
+                "Saving speaking evaluation failed: invalid class id or "
+                "evaluation name."
+                )
+            );
     }
 
-    if (!m_database.transaction())
+    const QString normalizedEvaluationName = evaluationName.trimmed();
+    const QString identity = QObject::tr("evaluation '%1' for class id %2")
+        .arg(normalizedEvaluationName)
+        .arg(classId);
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
     {
-        qWarning()
-            << "Failed to start speaking eval save transaction:"
-            << m_database.lastError().text();
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Starting speaking evaluation transaction failed for %1: %2")
+                .arg(identity, m_database.lastError().text())
+            );
     }
 
     QSqlQuery query(m_database);
-
-    auto rollbackOnFailure =
-        [this, &query](const QString& operation)
-        {
-            qWarning()
-                << operation
-                << "failed while saving speaking eval:"
-                << query.lastError().text();
-
-            if (!m_database.rollback())
-            {
-                qWarning()
-                    << "Failed to roll back speaking eval save transaction:"
-                    << m_database.lastError().text();
-            }
-
-            return false;
-        };
+    auto execute = [&](const QString& action) -> Status
+    {
+        const auto result = SqlQueryUtils::executePrepared(
+            query, action, identity);
+        return result
+            ? Status{}
+            : Status(std::unexpected(result.error().userMessage()));
+    };
 
     int evaluationId = -1;
 
@@ -63,13 +66,12 @@ bool SpeakingEvalRepository::saveSpeakingEval(
     )");
 
     query.addBindValue(classId);
-    query.addBindValue(evaluationName);
+    query.addBindValue(normalizedEvaluationName);
 
-    if (!query.exec())
+    Status statement = execute(QObject::tr("Loading speaking evaluation"));
+    if (!statement)
     {
-        return rollbackOnFailure(
-            "Selecting speaking_evaluations"
-            );
+        return statement;
     }
 
     if (query.next())
@@ -88,17 +90,26 @@ bool SpeakingEvalRepository::saveSpeakingEval(
         )");
 
         query.addBindValue(classId);
-        query.addBindValue(evaluationName);
+        query.addBindValue(normalizedEvaluationName);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Creating speaking evaluation"));
+        if (!statement)
         {
-            return rollbackOnFailure(
-                "Inserting speaking_evaluations"
-                );
+            return statement;
         }
 
         evaluationId =
             query.lastInsertId().toInt();
+
+        if (evaluationId <= 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Creating %1 failed: the database did not return a valid "
+                    "record id."
+                    ).arg(identity)
+                );
+        }
     }
 
     for (int row = 0; row < SpeakingEval::RowCount; ++row)
@@ -114,11 +125,10 @@ bool SpeakingEvalRepository::saveSpeakingEval(
         query.addBindValue(evaluationId);
         query.addBindValue(row);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Ensuring speaking evaluation row"));
+        if (!statement)
         {
-            return rollbackOnFailure(
-                "Ensuring speaking_eval_data rows"
-                );
+            return statement;
         }
     }
 
@@ -130,11 +140,10 @@ bool SpeakingEvalRepository::saveSpeakingEval(
 
     query.addBindValue(evaluationId);
 
-    if (!query.exec())
+    statement = execute(QObject::tr("Loading speaking evaluation rows"));
+    if (!statement)
     {
-        return rollbackOnFailure(
-            "Selecting speaking_eval_data"
-            );
+        return statement;
     }
 
     QHash<int, QStringList> existingRows;
@@ -216,31 +225,22 @@ bool SpeakingEvalRepository::saveSpeakingEval(
         query.addBindValue(evaluationId);
         query.addBindValue(cell.row);
 
-        if (!query.exec())
+        statement = execute(QObject::tr("Updating speaking evaluation cell"));
+        if (!statement)
         {
-            return rollbackOnFailure(
-                "Updating speaking_eval_data"
-                );
+            return statement;
         }
     }
 
-    if (!m_database.commit())
+    if (!transaction.commit())
     {
-        qWarning()
-            << "Failed to commit speaking eval save transaction:"
-            << m_database.lastError().text();
-
-        if (!m_database.rollback())
-        {
-            qWarning()
-                << "Failed to roll back failed speaking eval commit:"
-                << m_database.lastError().text();
-        }
-
-        return false;
+        return std::unexpected(
+            QObject::tr("Committing speaking evaluation failed for %1: %2")
+                .arg(identity, m_database.lastError().text())
+            );
     }
 
-    return true;
+    return {};
 }
 
 SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(

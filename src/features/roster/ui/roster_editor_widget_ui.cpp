@@ -48,10 +48,8 @@ QString sidebarClassDisplayName(
 
     if (classInfo.teacherId > 0)
     {
-        teacher =
-            teacherService->teacher(
-                classInfo.teacherId
-                );
+        teacher = teacherService->teacher(classInfo.teacherId)
+            .value_or(Teacher{});
     }
 
     return SidebarNodeNaming::formatClassDisplayName(

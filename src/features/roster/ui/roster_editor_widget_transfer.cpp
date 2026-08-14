@@ -42,7 +42,8 @@ QString sidebarClassDisplayName(
     Teacher teacher;
     if (classInfo.teacherId > 0)
     {
-        teacher = teacherService->teacher(classInfo.teacherId);
+        teacher = teacherService->teacher(classInfo.teacherId)
+            .value_or(Teacher{});
     }
 
     return SidebarNodeNaming::formatClassDisplayName(classInfo, teacher);
@@ -98,7 +99,19 @@ void RosterEditorWidget::showRosterContextMenu(
 
     if (canRemove && classService && rosterService && !currentGrade.isEmpty())
     {
-        for (const Classroom& classroom : classService->classes())
+        const Result<QList<Classroom>> classes = classService->classes();
+        if (!classes)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Transfer Student"),
+                tr("Transfer classes could not be loaded."),
+                classes.error()
+                );
+            transferMenu->setEnabled(false);
+        }
+        for (const Classroom& classroom : classes.value_or(
+                 QList<Classroom>{}))
         {
             if (classroom.id <= 0 || classroom.id == m_classroom.id)
             {
@@ -232,7 +245,7 @@ void RosterEditorWidget::transferRosterRow(
         targetRoster.columns
         );
     const Roster sourceRoster = rosterWithRowRemoved(row);
-    const bool saved = rosterService->saveRosters(
+    const Status saved = rosterService->saveRosters(
         {
             qMakePair(m_classroom.id, sourceRoster),
             qMakePair(targetClassId, targetRoster)
@@ -243,7 +256,7 @@ void RosterEditorWidget::transferRosterRow(
         DialogServices::showWarning(
             this,
             tr("Cannot Transfer Student"),
-            tr("The roster changes could not be saved.")
+            saved.error()
             );
         return;
     }

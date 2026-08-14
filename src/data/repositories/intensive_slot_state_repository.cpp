@@ -1,6 +1,9 @@
 #include "intensive_slot_state_repository.h"
 
+#include "data/database/sql_query_utils.h"
+
 #include <QDebug>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -52,7 +55,7 @@ QList<IntensiveSlotState> IntensiveSlotStateRepository::loadIntensiveSlotStates(
     return states;
 }
 
-void IntensiveSlotStateRepository::saveIntensiveSlotState(
+Status IntensiveSlotStateRepository::saveIntensiveSlotState(
     const QString& day,
     const QString& startTime,
     const QString& state,
@@ -60,6 +63,8 @@ void IntensiveSlotStateRepository::saveIntensiveSlotState(
     )
 {
     QSqlQuery query(m_database);
+    const QString identity = QObject::tr("intensive slot %1 at %2")
+        .arg(day, startTime);
 
     if (state == defaultState)
     {
@@ -72,14 +77,17 @@ void IntensiveSlotStateRepository::saveIntensiveSlotState(
         query.addBindValue(day);
         query.addBindValue(startTime);
 
-        if (!query.exec())
+        const auto executed = SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Deleting intensive slot state"),
+            identity
+            );
+        if (!executed)
         {
-            qWarning()
-                << "Failed to delete intensive slot state:"
-                << query.lastError().text();
+            return std::unexpected(executed.error().userMessage());
         }
 
-        return;
+        return {};
     }
 
     query.prepare(R"(
@@ -99,10 +107,15 @@ void IntensiveSlotStateRepository::saveIntensiveSlotState(
     query.addBindValue(startTime);
     query.addBindValue(state);
 
-    if (!query.exec())
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Saving intensive slot state"),
+        identity
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to save intensive slot state:"
-            << query.lastError().text();
+        return std::unexpected(executed.error().userMessage());
     }
+
+    return {};
 }

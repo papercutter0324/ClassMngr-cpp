@@ -134,7 +134,10 @@ int addCompleteClass(
         return -1;
     }
 
-    service.saveRoster(classId, completeRoster(studentName));
+    if (!service.saveRoster(classId, completeRoster(studentName)))
+    {
+        return -1;
+    }
 
     if (!service.saveSpeakingEval(
             classId,
@@ -327,7 +330,7 @@ void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
              summary ? "" : qPrintable(summary.error()));
     QCOMPARE(summary->createdClassIds.size(), 2);
     QCOMPARE(summary->replacedClassIds.size(), 0);
-    QCOMPARE(service.getAllTeachers().size(), 1);
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(), 1);
 
     const int importedFirstId = summary->createdClassIds.first();
     const int importedSecondId = summary->createdClassIds.last();
@@ -339,9 +342,11 @@ void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
     QCOMPARE(importedFirst.teacherId, importedSecond.teacherId);
     QCOMPARE(importedFirst.notes, QStringLiteral("수업 노트\nSecond line"));
     QCOMPARE(importedFirst.classColor, QStringLiteral("#123456"));
-    QCOMPARE(service.getTeacher(importedFirst.teacherId).wifiPassword,
+    QCOMPARE(service.getTeacher(importedFirst.teacherId)
+                 .value_or(Teacher{}).wifiPassword,
              QStringLiteral("wifi-password"));
-    QCOMPARE(service.getTeacher(importedFirst.teacherId).birthday,
+    QCOMPARE(service.getTeacher(importedFirst.teacherId)
+                 .value_or(Teacher{}).birthday,
              QStringLiteral("02-29"));
     QCOMPARE(service.loadRoster(importedFirstId).rows.first().first(),
              QStringLiteral("Jamie"));
@@ -447,8 +452,9 @@ void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
              summary ? "" : qPrintable(summary.error()));
     QCOMPARE(summary->replacedClassIds,
              QList<int>({destinationClass}));
-    QCOMPARE(service.getClasses().size(), 1);
-    QCOMPARE(service.getClassById(destinationClass).name,
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(), 1);
+    QCOMPARE(service.getClassById(destinationClass)
+                 .value_or(Classroom{}).name,
              QStringLiteral("Imported Stored Name"));
     QCOMPARE(service.loadClassInfo(destinationClass).classTimes.first().day,
              QStringLiteral("Monday"));
@@ -460,7 +466,8 @@ void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
     QVERIFY(!service.loadSpeakingEval(
         destinationClass,
         QStringLiteral("Imported Evaluation")).isEmpty());
-    QCOMPARE(service.getTeacher(destinationTeacher).wifiPassword,
+    QCOMPARE(service.getTeacher(destinationTeacher)
+                 .value_or(Teacher{}).wifiPassword,
              QStringLiteral("local-password"));
 }
 
@@ -511,15 +518,19 @@ void ClassTransferTests::teacherReplacementImportsCompleteSnapshot()
     const auto summary = service.importClasses(*package, plan);
     QVERIFY2(summary.has_value(),
              summary ? "" : qPrintable(summary.error()));
-    QCOMPARE(service.getTeacher(destinationTeacher).wifiPassword,
+    QCOMPARE(service.getTeacher(destinationTeacher)
+                 .value_or(Teacher{}).wifiPassword,
              QStringLiteral("wifi-password"));
     QCOMPARE(
-        service.getTeacher(destinationTeacher).preferredRomanization,
+        service.getTeacher(destinationTeacher)
+            .value_or(Teacher{}).preferredRomanization,
         QStringLiteral("Gim Allekseu")
         );
-    QCOMPARE(service.getTeacher(destinationTeacher).phoneNumber,
+    QCOMPARE(service.getTeacher(destinationTeacher)
+                 .value_or(Teacher{}).phoneNumber,
              QStringLiteral("010-1234-5678"));
-    QCOMPARE(service.getTeacher(destinationTeacher).notes,
+    QCOMPARE(service.getTeacher(destinationTeacher)
+                 .value_or(Teacher{}).notes,
              QStringLiteral("Teacher notes\nwith a second line."));
 }
 
@@ -558,15 +569,19 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
         QStringLiteral("Destination Student")
         );
     QVERIFY(destinationClass > 0);
-    const int teachersBefore = service.getAllTeachers().size();
-    const int classesBefore = service.getClasses().size();
+    const int teachersBefore = service.getAllTeachers()
+        .value_or(QList<Teacher>{}).size();
+    const int classesBefore = service.getClasses()
+        .value_or(QList<Classroom>{}).size();
 
     const auto result = service.importClasses(
         *package, createAllPlan(*package));
     QVERIFY(!result.has_value());
     QVERIFY(result.error().contains(QStringLiteral("Schedule conflicts")));
-    QCOMPARE(service.getAllTeachers().size(), teachersBefore);
-    QCOMPARE(service.getClasses().size(), classesBefore);
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
     QCOMPARE(service.loadRoster(destinationClass).rows.first().first(),
              QStringLiteral("Destination Student"));
 }
@@ -605,8 +620,8 @@ void ClassTransferTests::importedClassesConflictAtomically()
         package, createAllPlan(package));
     QVERIFY(!result.has_value());
     QVERIFY(result.error().contains(QStringLiteral("Schedule conflicts")));
-    QVERIFY(service.getClasses().isEmpty());
-    QVERIFY(service.getAllTeachers().isEmpty());
+    QVERIFY(service.getClasses().value_or(QList<Classroom>{}).isEmpty());
+    QVERIFY(service.getAllTeachers().value_or(QList<Teacher>{}).isEmpty());
 }
 
 void ClassTransferTests::databaseFailureRollsBackAllWrites()
@@ -638,8 +653,8 @@ void ClassTransferTests::databaseFailureRollsBackAllWrites()
     const auto result = service.importClasses(
         package, createAllPlan(package));
     QVERIFY(!result.has_value());
-    QVERIFY(service.getClasses().isEmpty());
-    QVERIFY(service.getAllTeachers().isEmpty());
+    QVERIFY(service.getClasses().value_or(QList<Classroom>{}).isEmpty());
+    QVERIFY(service.getAllTeachers().value_or(QList<Teacher>{}).isEmpty());
 }
 
 void ClassTransferTests::incompleteCourseSignatureDoesNotMatch()

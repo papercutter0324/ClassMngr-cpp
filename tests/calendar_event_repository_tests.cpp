@@ -80,6 +80,7 @@ private slots:
     void savesAndLoadsRepeatSeriesId();
     void repeatSeriesQueryLoadsSelectedAndFollowingOnly();
     void repeatSeriesDeleteRemovesSelectedAndFollowingOnly();
+    void writeFailuresAreReturnedAndBatchRollsBack();
 };
 
 void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
@@ -405,7 +406,7 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        const int eventId =
+        const Result<int> savedEvent =
             repository.saveCalendarEvent(
                 makeEvent(
                     QStringLiteral("Series Event"),
@@ -417,6 +418,8 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
                     QStringLiteral("series-1")
                     )
                 );
+        QVERIFY(savedEvent);
+        const int eventId = *savedEvent;
 
         const CalendarEvent loaded =
             repository.getCalendarEvent(eventId);
@@ -600,10 +603,10 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 )
             );
 
-        repository.deleteCalendarEventsForRepeatSeriesFromDate(
+        QVERIFY(repository.deleteCalendarEventsForRepeatSeriesFromDate(
             QStringLiteral("series-1"),
             QDate(2026, 7, 8)
-            );
+            ).has_value());
 
         QCOMPARE(
             titles(
@@ -618,6 +621,127 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("Standalone")
             })
             );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER reject_calendar_insert "
+            "BEFORE INSERT ON calendar_events "
+            "WHEN NEW.title = 'Reject' "
+            "BEGIN "
+            "SELECT RAISE(ABORT, 'injected calendar insert failure'); "
+            "END"
+            )));
+
+        CalendarEventRepository repository(database);
+        const Result<QList<int>> batchSaved = repository.saveCalendarEvents({
+            makeEvent(
+                QStringLiteral("Must Roll Back"),
+                QDate(2026, 8, 1),
+                QTime(9, 0),
+                QDate(2026, 8, 1),
+                QTime(10, 0)
+                ),
+            makeEvent(
+                QStringLiteral("Reject"),
+                QDate(2026, 8, 2),
+                QTime(9, 0),
+                QDate(2026, 8, 2),
+                QTime(10, 0)
+                )
+        });
+        QVERIFY(!batchSaved);
+        QVERIFY(batchSaved.error().contains(
+            QStringLiteral("Creating calendar event")
+            ));
+        QVERIFY(batchSaved.error().contains(QStringLiteral("Reject")));
+        QVERIFY(repository.loadCalendarEventsInRange(
+            QDate(2026, 8, 1),
+            QDate(2026, 8, 31)
+            ).isEmpty());
+
+        QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_calendar_insert")));
+        CalendarEvent existing = makeEvent(
+            QStringLiteral("Existing"),
+            QDate(2026, 8, 3),
+            QTime(9, 0),
+            QDate(2026, 8, 3),
+            QTime(10, 0),
+            QStringLiteral("Other"),
+            QStringLiteral("failure-series")
+            );
+        const Result<int> created = repository.saveCalendarEvent(existing);
+        QVERIFY(created);
+        existing.id = *created;
+        existing.title = QStringLiteral("Changed");
+
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER reject_calendar_update "
+            "BEFORE UPDATE ON calendar_events "
+            "WHEN OLD.id = %1 "
+            "BEGIN "
+            "SELECT RAISE(ABORT, 'injected calendar update failure'); "
+            "END"
+            ).arg(existing.id)));
+        const Result<int> updated = repository.saveCalendarEvent(existing);
+        QVERIFY(!updated);
+        QVERIFY(updated.error().contains(
+            QStringLiteral("Updating calendar event")
+            ));
+        QVERIFY(updated.error().contains(
+            QStringLiteral("calendar event id %1").arg(existing.id)
+            ));
+        QCOMPARE(repository.getCalendarEvent(existing.id).title,
+                 QStringLiteral("Existing"));
+
+        QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_calendar_update")));
+        QVERIFY(query.exec(QStringLiteral(
+            "CREATE TRIGGER reject_calendar_delete "
+            "BEFORE DELETE ON calendar_events "
+            "BEGIN "
+            "SELECT RAISE(ABORT, 'injected calendar delete failure'); "
+            "END"
+            )));
+
+        const Status eventDeleted = repository.deleteCalendarEvent(existing.id);
+        QVERIFY(!eventDeleted);
+        QVERIFY(eventDeleted.error().contains(
+            QStringLiteral("Deleting calendar event")
+            ));
+
+        const Status seriesDeleted =
+            repository.deleteCalendarEventsForRepeatSeriesFromDate(
+                QStringLiteral("failure-series"),
+                QDate(2026, 8, 3)
+                );
+        QVERIFY(!seriesDeleted);
+        QVERIFY(seriesDeleted.error().contains(
+            QStringLiteral("Deleting calendar repeat series events")
+            ));
+
+        const Status allDeleted = repository.deleteAllCalendarEvents();
+        QVERIFY(!allDeleted);
+        QVERIFY(allDeleted.error().contains(
+            QStringLiteral("Deleting all calendar events")
+            ));
+        QCOMPARE(repository.getCalendarEvent(existing.id).id, existing.id);
     }
 
     QSqlDatabase::removeDatabase(connectionName);

@@ -11,7 +11,7 @@ Teacher SidebarController::getTeacherById(int teacherId) const
         openTeacherService(m_services);
 
     return teachers
-        ? teachers->teacher(teacherId)
+        ? teachers->teacher(teacherId).value_or(Teacher{})
         : Teacher();
 }
 
@@ -42,13 +42,19 @@ void SidebarController::addTeacher()
 
     refreshTeacherSidebar();
 
-    Teacher teacher =
+    const Result<Teacher> teacher =
         teachers->teacher(
             teacherId
             );
 
-    if (teacher.id == 0)
+    if (!teacher)
     {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Teacher"),
+            tr("The created teacher could not be loaded."),
+            teacher.error()
+            );
         return;
     }
 
@@ -57,7 +63,7 @@ void SidebarController::addTeacher()
         );
 
     m_pages->teacherPage()->loadTeacher(
-        teacher
+            *teacher
         );
 
     m_pages->showPage(
@@ -89,22 +95,28 @@ void SidebarController::deleteTeacher()
         return;
     }
 
-    const Teacher teacher =
+    const Result<Teacher> teacher =
         teachers->teacher(
             teacherId
             );
 
-    if (teacher.id <= 0)
+    if (!teacher)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Delete Teacher"),
+            tr("The teacher could not be loaded."),
+            teacher.error()
+            );
+        return;
+    }
+
+    if (!confirmDeleteTeacher(*teacher))
     {
         return;
     }
 
-    if (!confirmDeleteTeacher(teacher))
-    {
-        return;
-    }
-
-    const Status removed = teachers->remove(teacher.id);
+    const Status removed = teachers->remove(teacher->id);
     if (!removed)
     {
         DialogServices::showWarning(
@@ -119,4 +131,3 @@ void SidebarController::deleteTeacher()
     refreshTeacherSidebar();
     refreshClassSidebar();
 }
-

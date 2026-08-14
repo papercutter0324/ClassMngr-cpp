@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/result.h"
 #include "domain/models/calendar_event.h"
 
 #include <QList>
@@ -39,20 +40,24 @@ public:
         const QDate& startDate
         );
 
-    int saveCalendarEvent(
+    [[nodiscard]] Result<int> saveCalendarEvent(
         const CalendarEvent& event
         );
 
-    void deleteCalendarEvent(
+    [[nodiscard]] Result<QList<int>> saveCalendarEvents(
+        const QList<CalendarEvent>& events
+        );
+
+    [[nodiscard]] Status deleteCalendarEvent(
         int eventId
         );
 
-    void deleteCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] Status deleteCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );
 
-    void deleteAllCalendarEvents();
+    [[nodiscard]] Status deleteAllCalendarEvents();
 
 private:
     QSqlDatabase& m_database;

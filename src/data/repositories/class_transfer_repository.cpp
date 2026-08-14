@@ -421,10 +421,19 @@ Result<ClassImportPreview> buildPreview(
     ClassRepository classRepository(database);
     ClassInfoRepository classInfoRepository(database);
 
-    const QList<Teacher> destinationTeachers =
+    const Result<QList<Teacher>> destinationTeachers =
         teacherRepository.getAllTeachers();
-    const QList<Classroom> destinationClasses =
+    if (!destinationTeachers)
+    {
+        return std::unexpected(destinationTeachers.error());
+    }
+
+    const Result<QList<Classroom>> destinationClasses =
         classRepository.getClasses();
+    if (!destinationClasses)
+    {
+        return std::unexpected(destinationClasses.error());
+    }
 
     ClassImportPreview preview;
 
@@ -433,7 +442,7 @@ Result<ClassImportPreview> buildPreview(
         ClassImportTeacherPreview teacherPreview;
         teacherPreview.teacherKey = packageEntry.key;
 
-        for (const Teacher& destination : destinationTeachers)
+        for (const Teacher& destination : *destinationTeachers)
         {
             if (teacherMatches(packageEntry.teacher, destination))
             {
@@ -462,7 +471,7 @@ Result<ClassImportPreview> buildPreview(
         const ClassTransferTeacher* sourceTeacher =
             packageTeacher(package, source.teacherKey);
 
-        for (const Classroom& destination : destinationClasses)
+        for (const Classroom& destination : *destinationClasses)
         {
             const ClassInfo destinationInfo =
                 classInfoRepository.loadClassInfo(destination.id);
@@ -481,9 +490,16 @@ Result<ClassImportPreview> buildPreview(
             }
             else if (destinationInfo.teacherId > 0)
             {
+                const Result<Teacher> destinationTeacher =
+                    teacherRepository.getTeacher(destinationInfo.teacherId);
+                if (!destinationTeacher)
+                {
+                    return std::unexpected(destinationTeacher.error());
+                }
+
                 sameTeacher = teacherMatches(
                     sourceTeacher->teacher,
-                    teacherRepository.getTeacher(destinationInfo.teacherId)
+                    *destinationTeacher
                     );
             }
 
@@ -698,7 +714,14 @@ Status preflightSchedules(
     QList<ScheduledTime> existingRegular;
     QList<ScheduledTime> existingIntensive;
 
-    for (const Classroom& classroom : classRepository.getClasses())
+    const Result<QList<Classroom>> destinationClasses =
+        classRepository.getClasses();
+    if (!destinationClasses)
+    {
+        return std::unexpected(destinationClasses.error());
+    }
+
+    for (const Classroom& classroom : *destinationClasses)
     {
         if (replacedClassIds.contains(classroom.id))
         {
@@ -1129,19 +1152,17 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
                 );
         }
 
-        const Classroom classroom = classRepository.getClassById(classId);
-
-        if (classroom.id <= 0)
+        const Result<Classroom> classroom =
+            classRepository.getClassById(classId);
+        if (!classroom)
         {
-            return std::unexpected(
-                QObject::tr("Class %1 no longer exists.").arg(classId)
-                );
+            return std::unexpected(classroom.error());
         }
 
         seenClasses.insert(classId);
         ClassTransferClass transferClass;
         transferClass.key = QStringLiteral("class-%1").arg(index + 1);
-        transferClass.name = classroom.name;
+        transferClass.name = classroom->name;
         transferClass.info = classInfoRepository.loadClassInfo(classId);
         transferClass.roster = rosterRepository.loadRoster(classId);
 
@@ -1151,20 +1172,17 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
 
             if (!teacherKeys.contains(teacherId))
             {
-                const Teacher teacher = teacherRepository.getTeacher(teacherId);
-
-                if (teacher.id <= 0)
+                const Result<Teacher> teacher =
+                    teacherRepository.getTeacher(teacherId);
+                if (!teacher)
                 {
-                    return std::unexpected(
-                        QObject::tr("The assigned teacher for %1 no longer exists.")
-                            .arg(transferClassLabel(transferClass))
-                        );
+                    return std::unexpected(teacher.error());
                 }
 
                 const QString key =
                     QStringLiteral("teacher-%1").arg(teacherKeys.size() + 1);
                 teacherKeys.insert(teacherId, key);
-                package.teachers.append({key, teacher});
+                package.teachers.append({key, *teacher});
             }
 
             transferClass.teacherKey = teacherKeys.value(teacherId);

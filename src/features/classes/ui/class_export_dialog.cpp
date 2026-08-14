@@ -6,6 +6,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QDialogButtonBox>
@@ -32,7 +33,8 @@ QString classDisplayName(
 
     if (info.teacherId > 0)
     {
-        teacher = teacherService->teacher(info.teacherId);
+        teacher = teacherService->teacher(info.teacherId)
+            .value_or(Teacher{});
     }
 
     const QString formatted =
@@ -76,8 +78,20 @@ ClassExportDialog::ClassExportDialog(
     if (classService && teacherService)
     {
         QList<QPair<QString, int>> classes;
+        const Result<QList<Classroom>> loadedClasses =
+            classService->classes();
+        if (!loadedClasses)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Export Classes"),
+                tr("Classes could not be loaded."),
+                loadedClasses.error()
+                );
+        }
 
-        for (const Classroom& classroom : classService->classes())
+        for (const Classroom& classroom : loadedClasses.value_or(
+                 QList<Classroom>{}))
         {
             classes.append({
                 classDisplayName(classService, teacherService, classroom),

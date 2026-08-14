@@ -1002,10 +1002,24 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
         return false;
     }
 
-    m_teacher =
+    const Result<Teacher> reloadedTeacher =
         teacherService->teacher(
             m_teacher.id
             );
+    if (!reloadedTeacher)
+    {
+        if (showErrors)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Save Teacher Information"),
+                tr("The saved teacher information could not be reloaded."),
+                reloadedTeacher.error()
+                );
+        }
+        return false;
+    }
+    m_teacher = *reloadedTeacher;
 
     const QString displayName =
         SidebarNodeNaming::formatTeacherDisplayName(m_teacher);
