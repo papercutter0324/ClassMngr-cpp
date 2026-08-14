@@ -2,7 +2,7 @@
 
 Repository reviewed: [`papercutter0324/ClassMngr-cpp`](https://github.com/papercutter0324/ClassMngr-cpp)  
 Baseline commit: [`1a626b7bb8c07d6a4b4036928afe3443c4068ff7`](https://github.com/papercutter0324/ClassMngr-cpp/commit/1a626b7bb8c07d6a4b4036928afe3443c4068ff7) (`main`, 2026-08-12)  
-Current status reviewed: `0ad3289` plus the active Phase 4 dialog batch (`main`, 2026-08-13)
+Current status reviewed: `a74d744` plus the active macOS Phase 1 baseline batch (`main`, 2026-08-14)
 
 ## Executive Assessment
 
@@ -41,10 +41,11 @@ Do not create helpers for every short clone. Consolidate code when the copies re
   `Result<int>`, with transactional compound deletes. The remaining repository
   write contracts and validation boundaries remain mixed.
 
-The latest production build and focused dialog suites pass. The macOS
-`ClassMngrScheduleWidgetTests` target still cannot link because its test stubs
-duplicate symbols from `ClassMngrRuntime`; Apple’s current linker ignores the
-target’s obsolete `-multiply_defined suppress` workaround.
+The latest native macOS universal Debug build and all 54 tests pass. Tests that
+provide focused production overrides use a macOS-only flat-namespace shared
+test runtime assembled from the existing production objects; this replaces the
+obsolete `-multiply_defined suppress` workaround without recompiling production
+sources.
 
 ---
 
@@ -92,7 +93,7 @@ src/
 
 ### Phase 1. Characterization and Build Baseline
 
-Status: partially complete as of 2026-08-13.
+Status: partially complete as of 2026-08-14.
 
 - Record clean build and test results on Windows, Linux, and macOS.
 - Add a duplication-report CI job using a fixed configuration, but use it as guidance rather than a hard percentage target.
@@ -104,13 +105,17 @@ Exit criteria: current behavior is protected, and baseline build/test/size measu
 Focused characterization coverage has expanded throughout the refactor. The
 fixed duplication report and baseline recorder are in place, including a
 manually dispatched Windows/Linux/macOS artifact workflow. Pre- and post-target
-Windows measurements are recorded; Linux and macOS measurements remain pending
-until that workflow is run on their native hosted runners.
+Windows measurements and the native macOS measurement are recorded; Linux
+remains pending until that workflow is run on its native hosted runner.
 
 The current Windows snapshot configures in 64.775 seconds, clean-builds in
 169.845 seconds with two jobs, produces an 89,556,480-byte Debug executable,
-and passes all 53 tests in 88.716 seconds. Completing this phase now requires
-only the native Linux/macOS workflow artifacts and their measurements.
+and passes all 53 tests in 88.716 seconds. The current macOS universal snapshot
+configures in 9.215 seconds, clean-builds in 391.841 seconds with two jobs,
+produces a 159,974,232-byte Debug executable, and passes all 54 tests in 56.647
+seconds. Its compilation database contains 270 production entries for 270
+unique sources, with no production source recompiled. Completing this phase now
+requires only the native Linux workflow artifact and its measurements.
 
 ### Phase 2. CMake and Compilation Bloat
 

@@ -76,6 +76,31 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrBuildSettings
 )
 
+# macOS test doubles cannot override symbols from a static archive with the
+# current Apple linker. A flat-namespace shared runtime reuses the production
+# object files while allowing the executable's focused test doubles to
+# interpose those definitions at load time.
+if(APPLE AND BUILD_TESTING)
+    add_library(ClassMngrTestRuntime SHARED
+        $<TARGET_OBJECTS:ClassMngrCore>
+        $<TARGET_OBJECTS:ClassMngrData>
+        $<TARGET_OBJECTS:ClassMngrDomain>
+        $<TARGET_OBJECTS:ClassMngrUiShared>
+        $<TARGET_OBJECTS:ClassMngrFeatures>
+        $<TARGET_OBJECTS:ClassMngrAppServices>
+    )
+
+    target_link_libraries(ClassMngrTestRuntime
+        PUBLIC
+            ClassMngrBuildSettings
+    )
+
+    target_link_options(ClassMngrTestRuntime
+        PRIVATE
+            LINKER:-flat_namespace
+    )
+endif()
+
 if(WIN32)
     target_link_libraries(ClassMngrRuntime
         PUBLIC

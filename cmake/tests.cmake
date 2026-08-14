@@ -156,19 +156,30 @@ function(classmngr_finalize_test_targets)
         endforeach()
 
         set_property(TARGET "${test_name}" PROPERTY SOURCES "${test_sources}")
-        target_link_libraries("${test_name}" PRIVATE ClassMngrRuntime)
 
-        # Several UI tests deliberately provide lightweight definitions for
-        # production service methods. Preserve that symbol-interposition seam
-        # while linking the single compiled runtime.
-        if(has_production_overrides)
-            if(MSVC)
-                target_link_options("${test_name}" PRIVATE /FORCE:MULTIPLE)
-            elseif(APPLE)
-                target_link_options("${test_name}" PRIVATE
-                    LINKER:-multiply_defined,suppress
+        # Apple's current linker no longer honors -multiply_defined suppress.
+        # Use the flat-namespace shared runtime for the few tests that provide
+        # focused production overrides; their executable definitions can then
+        # interpose the shared definitions without recompiling production.
+        if(APPLE AND has_production_overrides)
+            get_target_property(test_libraries "${test_name}" LINK_LIBRARIES)
+            if(test_libraries)
+                list(REMOVE_ITEM test_libraries ClassMngrRuntime)
+                set_property(
+                    TARGET "${test_name}"
+                    PROPERTY LINK_LIBRARIES "${test_libraries}"
                 )
-            elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            endif()
+            target_link_libraries("${test_name}" PRIVATE ClassMngrTestRuntime)
+        else()
+            target_link_libraries("${test_name}" PRIVATE ClassMngrRuntime)
+
+            if(has_production_overrides AND MSVC)
+                target_link_options("${test_name}" PRIVATE /FORCE:MULTIPLE)
+            elseif(
+                has_production_overrides
+                AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"
+                )
                 target_link_options("${test_name}" PRIVATE
                     LINKER:--allow-multiple-definition
                 )

@@ -4,7 +4,9 @@
 #include "data/data_service.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/no_wheel_combobox.h"
 
 #include <QApplication>
@@ -390,6 +392,7 @@ bool loadSourceSelections(
 void ScheduleImportDialogTests::cleanup()
 {
     ScheduleWidgetTestStubs::reset();
+    DialogServices::setUserPromptServiceForTesting(nullptr);
 }
 
 void ScheduleImportDialogTests::selectsHighestContrastFontColor()
@@ -566,61 +569,29 @@ void ScheduleImportDialogTests
         );
     QVERIFY(next->isEnabled());
 
-    bool mismatchWarningShown = false;
-    QTimer::singleShot(
-        0,
-        [&mismatchWarningShown]()
-        {
-            auto* messageBox =
-                qobject_cast<QMessageBox*>(
-                    QApplication::activeModalWidget()
-                    );
-            QVERIFY(messageBox);
-            QCOMPARE(
-                messageBox->windowTitle(),
-                QStringLiteral("Name Mismatch")
-                );
-            QCOMPARE(
-                messageBox->text(),
-                QStringLiteral(
-                    "The selected name does not match the name entered "
-                    "on the My Information page. Do you want to continue anyway?"
-                    )
-            );
-            mismatchWarningShown = true;
-            auto* rejectButton = messageBox->findChild<QPushButton*>(
-                QStringLiteral("promptRejectButton")
-                );
-            QVERIFY(rejectButton);
-            rejectButton->click();
-        }
-        );
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
     next->click();
-    QVERIFY(mismatchWarningShown);
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(
+        prompts.confirmations.constFirst().title,
+        QStringLiteral("Name Mismatch")
+        );
+    QCOMPARE(
+        prompts.confirmations.constFirst().message,
+        QStringLiteral(
+            "The selected name does not match the name entered "
+            "on the My Information page. Do you want to continue anyway?"
+            )
+        );
     QVERIFY(
         !dialog.findChild<ScheduleImportReviewDialog*>()
         );
 
-    bool continueWarningShown = false;
-    QTimer::singleShot(
-        0,
-        [&continueWarningShown]()
-        {
-            auto* messageBox =
-                qobject_cast<QMessageBox*>(
-                    QApplication::activeModalWidget()
-                    );
-            QVERIFY(messageBox);
-            continueWarningShown = true;
-            auto* acceptButton = messageBox->findChild<QPushButton*>(
-                QStringLiteral("promptAcceptButton")
-                );
-            QVERIFY(acceptButton);
-            acceptButton->click();
-        }
-        );
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     next->click();
-    QVERIFY(continueWarningShown);
+    QCOMPARE(prompts.confirmations.size(), 2);
     auto* continueReview =
         dialog.findChild<ScheduleImportReviewDialog*>();
     QVERIFY(continueReview);

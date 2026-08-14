@@ -1481,7 +1481,7 @@ void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
             Qt::ISODate
             );
     const QDateTime oldTimestamp =
-        now.addDays(-30).addMSecs(-1);
+        now.addDays(-30).addSecs(-1);
 
     QFile orphan(
         QDir(directory.path()).filePath(
@@ -1490,6 +1490,8 @@ void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
         );
     QVERIFY(orphan.open(QIODevice::WriteOnly));
     orphan.write("orphan");
+    orphan.close();
+    QVERIFY(orphan.open(QIODevice::ReadOnly));
     QVERIFY(
         orphan.setFileTime(
             oldTimestamp,
@@ -1505,6 +1507,8 @@ void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
         );
     QVERIFY(exactBoundary.open(QIODevice::WriteOnly));
     exactBoundary.write("keep");
+    exactBoundary.close();
+    QVERIFY(exactBoundary.open(QIODevice::ReadOnly));
     QVERIFY(
         exactBoundary.setFileTime(
             now.addDays(-30),
@@ -1520,9 +1524,11 @@ void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
         );
     QVERIFY(freshOrphan.open(QIODevice::WriteOnly));
     freshOrphan.write("keep");
+    freshOrphan.close();
+    QVERIFY(freshOrphan.open(QIODevice::ReadOnly));
     QVERIFY(
         freshOrphan.setFileTime(
-            now.addDays(-30).addMSecs(1),
+            now.addDays(-30).addSecs(1),
             QFileDevice::FileModificationTime
             )
         );
@@ -1535,6 +1541,8 @@ void UpdaterTests::cleanupKeepsCurrentAndRemovesObsoleteUpdaterFiles()
         );
     QVERIFY(unrelated.open(QIODevice::WriteOnly));
     unrelated.write("keep");
+    unrelated.close();
+    QVERIFY(unrelated.open(QIODevice::ReadOnly));
     QVERIFY(
         unrelated.setFileTime(
             oldTimestamp,

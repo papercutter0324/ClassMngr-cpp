@@ -84,7 +84,7 @@ down the exact behavior being moved.
 | Windows 11 x64 Debug (pre-target refactor) | `3a0ae33` | 7.803 s | 120.854 s | 48/49 passed | 89,211,392 bytes | `artifacts/baseline/windows-x64-debug.json` |
 | Windows 11 x64 Debug (current local snapshot) | `5a3c128` | 64.775 s | 169.845 s | 53/53 passed in 88.716 s | 89,556,480 bytes | `artifacts/baseline/windows-x64-debug-current.json` |
 | Linux x64 Debug | Pending | Pending | Pending | Pending | Pending | `artifacts/baseline/linux-gcc-debug.json` |
-| macOS universal Debug | Pending | Pending | Pending | Pending | Pending | `artifacts/baseline/macos-clang-debug.json` |
+| macOS 26.6.1 universal Debug (arm64 host) | `a74d744` | 9.215 s | 391.841 s | 54/54 passed in 56.647 s | 159,974,232 bytes | `artifacts/baseline/macos-clang-debug.json` |
 
 Platform results must come from that platform. Do not copy a Windows result into
 the Linux or macOS rows.
@@ -106,6 +106,14 @@ fingerprint was unchanged throughout the run. The full 53-test suite passed.
 Visual Studio generators do not emit `compile_commands.json`, so the production
 compile-entry measurement is unavailable for this Windows row; the Linux and
 macOS Ninja reports provide that metric.
+
+The macOS run used macOS 26.6.1 on an arm64 host, AppleClang 21.0.0, CMake
+4.3.3, Qt 6.11.1, Python 3.14.4, and two build jobs. HEAD was `a74d744`; the
+working tree contained the macOS test-runtime and characterization-test fixes
+from this Phase 1 slice. The source fingerprint was unchanged throughout the
+run. The universal arm64/x86_64 build passed all 54 tests, and its Ninja
+compilation database recorded 270 production entries for 270 unique sources,
+with zero recompiled production sources.
 
 ## Duplication report
 
