@@ -165,7 +165,7 @@ void ClassAnalyticsPage::buildUi()
     body->installEventFilter(this);
 
     m_shapeCard = new SectionCard(tr("Class Shape"), chartsRow);
-    m_shapeCard->setMinimumWidth(400);
+    m_shapeCard->setMinimumWidth(300);
     auto* shapeLayout = m_shapeCard->contentLayout();
     shapeLayout->setContentsMargins(14, 6, 14, 14);
     m_histogram = new GradeHistogram(m_shapeCard);
@@ -371,8 +371,10 @@ void ClassAnalyticsPage::applyChartsRowLayout()
         auto* row = new QHBoxLayout(m_chartsRow);
         row->setContentsMargins(0, 0, 0, 0);
         row->setSpacing(kSectionSpacing);
-        row->addWidget(m_criteriaCard);
-        row->addWidget(m_shapeCard);
+        // By Criterion targets ~70% of the row width; Class Shape keeps the
+        // remaining ~30%, floored at its 300px minimum width.
+        row->addWidget(m_criteriaCard, 7);
+        row->addWidget(m_shapeCard, 3);
     }
     else
     {
