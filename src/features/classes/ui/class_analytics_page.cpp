@@ -2,6 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/theme_service.h"
 #include "app/services/feature_services.h"
 #include "features/classes/ui/class_analytics_charts.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -15,6 +16,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLayoutItem>
+#include <QPalette>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -83,10 +85,9 @@ void ClassAnalyticsPage::buildUi()
     topLayout->setContentsMargins(0, 0, 0, 0);
     topLayout->setSpacing(12);
 
-    auto* heading = new QLabel(tr("Speaking analytics"), topBar);
-    heading->setFont(FontManager::getUiFont(18));
-    heading->setStyleSheet(QStringLiteral("color:#1f2937;"));
-    topLayout->addWidget(heading);
+    m_heading = new QLabel(tr("Speaking analytics"), topBar);
+    m_heading->setFont(FontManager::getUiFont(18));
+    topLayout->addWidget(m_heading);
     topLayout->addStretch(1);
 
     auto* selectorLabel = new QLabel(tr("Evaluation"), topBar);
@@ -118,7 +119,6 @@ void ClassAnalyticsPage::buildUi()
         cl->setContentsMargins(14, 2, 14, 14);
         auto* value = new QLabel(QStringLiteral("—"), card);
         value->setFont(FontManager::getUiFont(20));
-        value->setStyleSheet(QStringLiteral("color:#1f2937;"));
         value->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         value->setMinimumHeight(34);
         value->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -133,7 +133,6 @@ void ClassAnalyticsPage::buildUi()
         cl->setContentsMargins(14, 2, 14, 14);
         m_avgValue = new QLabel(QStringLiteral("—"), card);
         m_avgValue->setFont(FontManager::getUiFont(26));
-        m_avgValue->setStyleSheet(QStringLiteral("color:#1f2937;"));
         m_avgValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         cl->addWidget(m_avgValue);
         m_avgLetter = new QLabel(QString(), card);
@@ -187,12 +186,26 @@ void ClassAnalyticsPage::buildUi()
     // Empty state.
     m_emptyLabel = new QLabel(this);
     m_emptyLabel->setAlignment(Qt::AlignCenter);
-    m_emptyLabel->setStyleSheet(QStringLiteral("color:#8A8F98; padding:24px;"));
     m_emptyLabel->setWordWrap(true);
     m_emptyLabel->hide();
     scroll->addWidget(m_emptyLabel);
 
     scroll->addStretch(1);
+
+    // Apply theme-aware colors to the labels above (their hardcoded light
+    // theme colors were removed) and keep them in sync on theme switches.
+    syncThemeStyles();
+
+    if (auto* themeService =
+            m_services ? m_services->themeService() : nullptr)
+    {
+        connect(
+            themeService,
+            QOverload<Theme>::of(&ThemeService::themeChanged),
+            this,
+            &ClassAnalyticsPage::syncThemeStyles
+            );
+    }
 }
 
 
@@ -261,6 +274,49 @@ void ClassAnalyticsPage::showEmpty(bool empty)
     m_criteriaContainer->parentWidget()->setVisible(!empty);
     m_rankingTable->parentWidget()->setVisible(!empty);
     m_emptyLabel->setVisible(empty);
+}
+
+void ClassAnalyticsPage::syncThemeStyles()
+{
+    // Same dark-theme check the schedule widgets use. The light values below
+    // are the original hardcoded colors, so the light theme keeps its look;
+    // the dark values follow dark.qss (#f5f5f5 primary, #a8b0bd secondary).
+    const bool dark =
+        palette()
+            .color(QPalette::Window)
+            .lightness() < 128;
+
+    const QString primaryText =
+        dark ? QStringLiteral("#f5f5f5") : QStringLiteral("#1f2937");
+    const QString mutedText =
+        dark ? QStringLiteral("#a8b0bd") : QStringLiteral("#8A8F98");
+
+    if (m_heading)
+    {
+        m_heading->setStyleSheet(
+            QStringLiteral("color:") + primaryText + QStringLiteral(";")
+            );
+    }
+
+    const QList<QLabel*> statValues =
+        { m_avgValue, m_assessedValue, m_strongestValue, m_focusValue };
+    for (QLabel* value : statValues)
+    {
+        if (value)
+        {
+            value->setStyleSheet(
+                QStringLiteral("color:") + primaryText + QStringLiteral(";")
+                );
+        }
+    }
+
+    if (m_emptyLabel)
+    {
+        m_emptyLabel->setStyleSheet(
+            QStringLiteral("color:") + mutedText
+            + QStringLiteral("; padding:24px;")
+            );
+    }
 }
 
 

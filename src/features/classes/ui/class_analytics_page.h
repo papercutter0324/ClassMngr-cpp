@@ -42,6 +42,7 @@ public:
 
 private slots:
     void onEvaluationChanged();
+    void syncThemeStyles();
 
 private:
     void buildUi();
@@ -53,6 +54,7 @@ private:
     int m_classId = -1;
 
     PageHeader* m_header = nullptr;
+    QLabel* m_heading = nullptr;
     QComboBox* m_evaluationCombo = nullptr;
 
     // Stat-card value labels (populated by rebuild()).

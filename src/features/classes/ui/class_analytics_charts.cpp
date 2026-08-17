@@ -7,8 +7,27 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPalette>
 #include <QRectF>
 #include <QSize>
+
+namespace
+{
+
+// Mirrors the dark-theme check used by the schedule widgets: the palette
+// follows the application theme, so this stays correct on theme switches
+// (ThemeService repaints every widget after applying a theme).
+[[nodiscard]] bool isDarkTheme(
+    QWidget* widget
+    )
+{
+    return widget
+        && widget->palette()
+               .color(QPalette::Window)
+               .lightness() < 128;
+}
+
+} // namespace
 
 namespace AnalyticsCharts
 {
@@ -79,7 +98,13 @@ void GradeHistogram::paintEvent(QPaintEvent*)
     const QFont countFont = FontManager::getUiFont(11);
     const QFont gradeFont = FontManager::getUiFont(12);
 
-    painter.setPen(QPen(QColor(0, 0, 0, 40), 1.0));
+    // Pick light/dark theme colors; the light values are unchanged from the
+    // original hard-coded palette so the light theme keeps its look.
+    const bool dark = isDarkTheme(this);
+
+    painter.setPen(
+        QPen(dark ? QColor(255, 255, 255, 46) : QColor(0, 0, 0, 40), 1.0)
+        );
     painter.drawLine(
         QPointF(frame.left(), baselineY),
         QPointF(frame.right(), baselineY)
@@ -96,13 +121,14 @@ void GradeHistogram::paintEvent(QPaintEvent*)
         painter.setPen(Qt::NoPen);
         painter.setBrush((count > 0)
                              ? AnalyticsCharts::gradeColor(grade)
-                             : QColor(0, 0, 0, 20));
+                             : (dark ? QColor(255, 255, 255, 30)
+                                    : QColor(0, 0, 0, 20)));
         painter.drawRect(bar);
 
         if (count > 0)
         {
             painter.setFont(countFont);
-            painter.setPen(QColor(70, 70, 70));
+            painter.setPen(dark ? QColor(216, 220, 226) : QColor(70, 70, 70));
             painter.drawText(
                 QRectF(x - 8, baselineY - h - 20, barW + 16, 18),
                 Qt::AlignHCenter | Qt::AlignBottom,
@@ -111,7 +137,7 @@ void GradeHistogram::paintEvent(QPaintEvent*)
         }
 
         painter.setFont(gradeFont);
-        painter.setPen(QColor(95, 95, 95));
+        painter.setPen(dark ? QColor(168, 176, 189) : QColor(95, 95, 95));
         painter.drawText(
             QRectF(x - 8, baselineY + 4, barW + 16, 18),
             Qt::AlignHCenter | Qt::AlignTop,
@@ -155,12 +181,16 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
+    // Pick light/dark theme colors; the light values are unchanged from the
+    // original hard-coded palette so the light theme keeps its look.
+    const bool dark = isDarkTheme(this);
+
     const int h = height();
     const int labelW = 120;
     const int avgW = 60;
 
     // label (left)
-    painter.setPen(QColor(55, 55, 55));
+    painter.setPen(dark ? QColor(229, 233, 238) : QColor(55, 55, 55));
     QFont labelFont = FontManager::getUiFont(11);
     painter.setFont(labelFont);
     const QFontMetricsF lf(labelFont);
@@ -175,7 +205,7 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
     QFont avgFont = FontManager::getUiFont(12);
     avgFont.setBold(true);
     painter.setFont(avgFont);
-    painter.setPen(QColor(30, 30, 30));
+    painter.setPen(dark ? QColor(245, 245, 245) : QColor(30, 30, 30));
     painter.drawText(
         QRectF(width() - avgW, 0, avgW, h),
         Qt::AlignVCenter | Qt::AlignRight,
@@ -194,7 +224,7 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
 
     // track background
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(0, 0, 0, 22));
+    painter.setBrush(dark ? QColor(255, 255, 255, 34) : QColor(0, 0, 0, 22));
     painter.drawRoundedRect(bar, barH / 2.0, barH / 2.0);
 
     if (total > 0 && barW > 0)
