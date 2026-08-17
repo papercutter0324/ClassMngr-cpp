@@ -43,8 +43,8 @@ private:
 };
 
 // A single horizontal, stacked bar showing one criterion's grade distribution
-// coloured by grade, with the criterion label on the left and its average on
-// the right.
+// coloured by grade, with the student count centered in each segment in
+// white, the criterion label on the left and its average on the right.
 class CriterionDistributionBar : public QWidget
 {
     Q_OBJECT

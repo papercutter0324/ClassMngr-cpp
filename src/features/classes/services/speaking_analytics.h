@@ -53,6 +53,7 @@ struct StudentRank
     QString koreanName;
     double overall3 = 0.0;
     QString overallLetter;
+    QList<QString> criterionLetters; // 6 entries, empty when unscored
 };
 
 struct Snapshot

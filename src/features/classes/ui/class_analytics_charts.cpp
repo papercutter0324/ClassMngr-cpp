@@ -214,7 +214,8 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
 
     const int barX = labelW + 12;
     const int barW = qMax(0, width() - barX - avgW - 12);
-    const int barH = qMax(14, h - 18);
+    // Bar is 4px taller than the 12px average font used by this row.
+    const int barH = 16;
     const int barY = (h - barH) / 2;
     const QRectF bar(barX, barY, barW, barH);
 
@@ -235,6 +236,8 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
         painter.save();
         painter.setClipPath(clipPath);
 
+        QFont countFont = FontManager::getUiFont(11);
+        const QFontMetricsF countMetrics(countFont);
         double x = bar.left();
         for (const QString& grade : AnalyticsCharts::gradeOrder())
         {
@@ -245,6 +248,19 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
             painter.setPen(Qt::NoPen);
             painter.setBrush(AnalyticsCharts::gradeColor(grade));
             painter.drawRect(QRectF(x, barY, segW, barH));
+
+            // Student count, centered in the segment, white in every theme.
+            const QString countText = QString::number(count);
+            if (countMetrics.horizontalAdvance(countText) + 4.0 <= segW)
+            {
+                painter.setFont(countFont);
+                painter.setPen(Qt::white);
+                painter.drawText(
+                    QRectF(x, barY, segW, barH),
+                    Qt::AlignCenter,
+                    countText
+                    );
+            }
             x += segW;
         }
         painter.restore();

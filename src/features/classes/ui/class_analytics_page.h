@@ -11,6 +11,7 @@ class ApplicationServices;
 class CriterionDistributionBar;
 class GradeHistogram;
 class PageHeader;
+class SectionCard;
 class QComboBox;
 class QLabel;
 class QTableWidget;
@@ -40,6 +41,8 @@ public:
     void refresh() override;
     void retranslateUi() override;
 
+    bool eventFilter(QObject* obj, QEvent* event) override;
+
 private slots:
     void onEvaluationChanged();
     void syncThemeStyles();
@@ -48,6 +51,7 @@ private:
     void buildUi();
     void rebuild();
     void showEmpty(bool empty);
+    void applyChartsRowLayout();
 
     ApplicationServices* m_services = nullptr;
     bool m_embedded = false;
@@ -63,6 +67,11 @@ private:
     QLabel* m_assessedValue = nullptr;
     QLabel* m_strongestValue = nullptr;
     QLabel* m_focusValue = nullptr;
+
+    QWidget* m_chartsRow = nullptr;
+    SectionCard* m_shapeCard = nullptr;
+    SectionCard* m_criteriaCard = nullptr;
+    bool m_chartsRowHorizontal = false;
 
     GradeHistogram* m_histogram = nullptr;
     QWidget* m_criteriaContainer = nullptr;

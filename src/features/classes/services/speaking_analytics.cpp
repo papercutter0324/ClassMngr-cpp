@@ -265,6 +265,7 @@ Snapshot compute(
         sr.koreanName = pr.koreanName;
         sr.overall3 = pr.overall3;
         sr.overallLetter = pr.overallLetter;
+        sr.criterionLetters = pr.criterionLetters;
         ranks.append(sr);
     }
     std::sort(

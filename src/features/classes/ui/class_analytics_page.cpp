@@ -12,6 +12,7 @@
 
 #include <QAbstractItemView>
 #include <QComboBox>
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -22,6 +23,13 @@
 
 namespace
 {
+
+// Page width at which "Class Shape" and "By Criterion" sit side by side
+// (Class Shape on the right); below it they stack vertically.
+constexpr int kChartsRowBreakpoint = 840;
+
+// Spacer between the sections, same as between the stat cards.
+constexpr int kSectionSpacing = 20;
 
 QList<QString> evaluationNames()
 {
@@ -85,7 +93,7 @@ void ClassAnalyticsPage::buildUi()
     topLayout->setContentsMargins(0, 0, 0, 0);
     topLayout->setSpacing(12);
 
-    m_heading = new QLabel(tr("Speaking analytics"), topBar);
+    m_heading = new QLabel(tr("Class Analytics"), topBar);
     m_heading->setFont(FontManager::getUiFont(18));
     topLayout->addWidget(m_heading);
     topLayout->addStretch(1);
@@ -111,7 +119,7 @@ void ClassAnalyticsPage::buildUi()
     auto* statRow = new QWidget(this);
     auto* statLayout = new QHBoxLayout(statRow);
     statLayout->setContentsMargins(0, 0, 0, 0);
-    statLayout->setSpacing(12);
+    statLayout->setSpacing(kSectionSpacing);
 
     auto addStatCard = [this, statRow, statLayout](const QString& title) -> QLabel* {
         auto* card = new SectionCard(title, statRow);
@@ -128,7 +136,7 @@ void ClassAnalyticsPage::buildUi()
     };
 
     {
-        auto* card = new SectionCard(tr("Class average"), statRow);
+        auto* card = new SectionCard(tr("Class Average"), statRow);
         auto* cl = card->contentLayout();
         cl->setContentsMargins(14, 2, 14, 14);
         m_avgValue = new QLabel(QStringLiteral("—"), card);
@@ -141,35 +149,46 @@ void ClassAnalyticsPage::buildUi()
         statLayout->addWidget(card, 1);
     }
 
-    m_assessedValue = addStatCard(tr("Assessed"));
-    m_strongestValue = addStatCard(tr("Strongest area"));
-    m_focusValue = addStatCard(tr("Focus area"));
+    m_assessedValue = addStatCard(tr("Students Assessed"));
+    m_strongestValue = addStatCard(tr("Strongest Area"));
+    m_focusValue = addStatCard(tr("Focus Area"));
     scroll->addWidget(statRow);
 
-    // "Class shape" histogram.
-    auto* shapeCard = new SectionCard(tr("Class shape"), this);
-    auto* shapeLayout = shapeCard->contentLayout();
-    shapeLayout->setContentsMargins(14, 6, 14, 14);
-    m_histogram = new GradeHistogram(shapeCard);
-    shapeLayout->addWidget(m_histogram);
-    scroll->addWidget(shapeCard, 0, Qt::AlignTop);
+    // "Class Shape" histogram + "By Criterion" bars in one row.  When the
+    // page is at least kChartsRowBreakpoint px wide the cards sit side by
+    // side (Class Shape on the right) with the same 20px spacer as the stat
+    // cards; below that they stack vertically.  applyChartsRowLayout()
+    // re-lays the row out on every body resize event.
+    auto* chartsRow = new QWidget(this);
+    chartsRow->setObjectName("analyticsChartsRow");
+    m_chartsRow = chartsRow;
+    body->installEventFilter(this);
 
-    // Per-criterion stacked bars.
-    auto* criteriaCard = new SectionCard(tr("By criterion"), this);
-    auto* criteriaOuter = criteriaCard->contentLayout();
+    m_shapeCard = new SectionCard(tr("Class Shape"), chartsRow);
+    m_shapeCard->setMinimumWidth(400);
+    auto* shapeLayout = m_shapeCard->contentLayout();
+    shapeLayout->setContentsMargins(14, 6, 14, 14);
+    m_histogram = new GradeHistogram(m_shapeCard);
+    shapeLayout->addWidget(m_histogram);
+
+    m_criteriaCard = new SectionCard(tr("By Criterion"), chartsRow);
+    m_criteriaCard->setMinimumWidth(400);
+    auto* criteriaOuter = m_criteriaCard->contentLayout();
     criteriaOuter->setContentsMargins(14, 6, 14, 14);
-    m_criteriaContainer = new QWidget(criteriaCard);
+    m_criteriaContainer = new QWidget(m_criteriaCard);
     m_criteriaLayout = new QVBoxLayout(m_criteriaContainer);
     m_criteriaLayout->setContentsMargins(0, 0, 0, 0);
     m_criteriaLayout->setSpacing(10);
     criteriaOuter->addWidget(m_criteriaContainer);
-    scroll->addWidget(criteriaCard, 0, Qt::AlignTop);
+
+    scroll->addWidget(chartsRow, 0, Qt::AlignTop);
+    applyChartsRowLayout();
 
     // Student ranking table.
-    auto* rankCard = new SectionCard(tr("Student ranking"), this);
+    auto* rankCard = new SectionCard(tr("Student Ranking"), this);
     auto* rankLayout = rankCard->contentLayout();
     rankLayout->setContentsMargins(14, 6, 14, 14);
-    m_rankingTable = new QTableWidget(0, 5, rankCard);
+    m_rankingTable = new QTableWidget(0, 10, rankCard);
     m_rankingTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_rankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_rankingTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -177,7 +196,16 @@ void ClassAnalyticsPage::buildUi()
     m_rankingTable->horizontalHeader()->setHighlightSections(false);
     m_rankingTable->horizontalHeader()->setStretchLastSection(true);
     m_rankingTable->setHorizontalHeaderLabels(
-        { tr("#"), tr("English"), tr("Korean"), tr("Average"), tr("Grade") }
+        { tr("#"),
+          tr("English"),
+          tr("Korean"),
+          tr("Average"),
+          tr("Grammar"),
+          tr("Pronunciation"),
+          tr("Fluency"),
+          tr("Manner"),
+          tr("Content"),
+          tr("Effort") }
         );
     m_rankingTable->setColumnWidth(0, 40);
     rankLayout->addWidget(m_rankingTable);
@@ -230,6 +258,7 @@ void ClassAnalyticsPage::clearDatabaseState()
     for (CriterionDistributionBar* bar : m_criterionBars)
         bar->setData({});
     m_rankingTable->setRowCount(0);
+    m_rankingTable->setMinimumHeight(0);
 
     showEmpty(true);
 }
@@ -320,6 +349,49 @@ void ClassAnalyticsPage::syncThemeStyles()
 }
 
 
+// Re-lays out the "Class Shape" / "By Criterion" row when the page width
+// crosses the 840px breakpoint: side by side (Class Shape on the right) at
+// or above it, stacked vertically below it.
+void ClassAnalyticsPage::applyChartsRowLayout()
+{
+    if (!m_chartsRow)
+        return;
+
+    const bool horizontal = m_chartsRow->width() >= kChartsRowBreakpoint;
+    if (horizontal == m_chartsRowHorizontal)
+        return;
+    m_chartsRowHorizontal = horizontal;
+
+    if (m_chartsRow->layout())
+        m_chartsRow->layout()->setEnabled(false);
+    delete m_chartsRow->layout();
+
+    if (horizontal)
+    {
+        auto* row = new QHBoxLayout(m_chartsRow);
+        row->setContentsMargins(0, 0, 0, 0);
+        row->setSpacing(kSectionSpacing);
+        row->addWidget(m_criteriaCard);
+        row->addWidget(m_shapeCard);
+    }
+    else
+    {
+        auto* row = new QVBoxLayout(m_chartsRow);
+        row->setContentsMargins(0, 0, 0, 0);
+        row->setSpacing(kSectionSpacing);
+        row->addWidget(m_shapeCard);
+        row->addWidget(m_criteriaCard);
+    }
+}
+
+bool ClassAnalyticsPage::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Resize)
+        applyChartsRowLayout();
+    return BasePage::eventFilter(obj, event);
+}
+
+
 void ClassAnalyticsPage::rebuild()
 {
     m_rebuilding = true;
@@ -404,26 +476,54 @@ void ClassAnalyticsPage::rebuild()
             m_criterionBars.append(bar);
         }
 
-        // Ranking table.
+        // Ranking table: average shown as "Letter (numeric)", then one
+        // centered column per criterion.
         m_rankingTable->setRowCount(snap.rankings.size());
+        // Section keeps three times the table's natural height.
+        m_rankingTable->setMinimumHeight(
+            3 * m_rankingTable->sizeHint().height());
         for (int r = 0; r < snap.rankings.size(); ++r)
         {
             const SpeakingAnalytics::StudentRank& rk = snap.rankings.at(r);
-            auto* gradeItem = new QTableWidgetItem(rk.overallLetter);
-            gradeItem->setForeground(AnalyticsCharts::gradeColor(rk.overallLetter));
-            m_rankingTable->setItem(r, 0, new QTableWidgetItem(QString::number(r + 1)));
-            m_rankingTable->setItem(r, 1, new QTableWidgetItem(rk.englishName));
-            m_rankingTable->setItem(r, 2, new QTableWidgetItem(rk.koreanName));
-            m_rankingTable->setItem(
-                r, 3,
-                new QTableWidgetItem(SpeakingAnalytics::formatAverage(rk.overall3)));
-            m_rankingTable->setItem(r, 4, gradeItem);
+
+            auto setCentered = [this, r](int column, const QString& text) {
+                auto* item = new QTableWidgetItem(text);
+                item->setTextAlignment(Qt::AlignCenter);
+                m_rankingTable->setItem(r, column, item);
+            };
+
+            const QString average =
+                (rk.overallLetter.isEmpty()
+                     ? SpeakingAnalytics::formatAverage(rk.overall3)
+                     : rk.overallLetter
+                         + QStringLiteral(" (")
+                         + SpeakingAnalytics::formatAverage(rk.overall3)
+                         + QStringLiteral(")"));
+            auto* avgItem = new QTableWidgetItem(average);
+            avgItem->setTextAlignment(Qt::AlignCenter);
+            if (!rk.overallLetter.isEmpty())
+                avgItem->setForeground(
+                    AnalyticsCharts::gradeColor(rk.overallLetter));
+            m_rankingTable->setItem(r, 3, avgItem);
+
+            setCentered(0, QString::number(r + 1));
+            setCentered(1, rk.englishName);
+            setCentered(2, rk.koreanName);
+            for (int c = 0; c < 6; ++c)
+            {
+                const QString letter =
+                    rk.criterionLetters.size() > c
+                        ? rk.criterionLetters.at(c).trimmed()
+                        : QString();
+                setCentered(4 + c, letter);
+            }
         }
     }
     else
     {
         m_histogram->setData({});
         m_rankingTable->setRowCount(0);
+        m_rankingTable->setMinimumHeight(0);
     }
 
     m_rebuilding = false;
