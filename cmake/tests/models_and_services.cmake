@@ -378,3 +378,30 @@ qt_add_executable(ClassMngrBasePageTests
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
         )
     endif()
+
+    qt_add_executable(ClassMngrSpeakingAnalyticsTests
+        tests/speaking_analytics_tests.cpp
+        src/features/classes/services/speaking_analytics.cpp
+    )
+
+    target_compile_features(ClassMngrSpeakingAnalyticsTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrSpeakingAnalyticsTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrSpeakingAnalyticsTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrSpeakingAnalyticsTests
+        COMMAND ClassMngrSpeakingAnalyticsTests
+    )

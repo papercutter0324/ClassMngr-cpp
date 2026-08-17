@@ -11,6 +11,7 @@
 class ApplicationServices;
 class ClassDetailsPage;
 class ClassNotesPage;
+class ClassAnalyticsPage;
 class QLabel;
 class NavigationPillButton;
 class NavigationTabWidget;
@@ -23,6 +24,7 @@ enum class ClassesSection
 {
     Details,
     Roster,
+    Analytics,
     Notes
 };
 
@@ -121,5 +123,6 @@ private:
     QStackedWidget* m_editorStack = nullptr;
     ClassDetailsPage* m_detailsPage = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;
+    ClassAnalyticsPage* m_analyticsPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
 };

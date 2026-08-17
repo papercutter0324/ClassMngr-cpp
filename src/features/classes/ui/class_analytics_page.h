@@ -1,0 +1,74 @@
+#pragma once
+
+#include "domain/models/classroom.h"
+#include "features/classes/services/speaking_analytics.h"
+#include "ui/shared/pages/basepage.h"
+
+#include <QList>
+#include <QString>
+
+class ApplicationServices;
+class CriterionDistributionBar;
+class GradeHistogram;
+class PageHeader;
+class QComboBox;
+class QLabel;
+class QTableWidget;
+class QVBoxLayout;
+
+// Read-only "Analytics" editor for a Class: speaking-evaluation statistics,
+// grade distributions, per-criterion breakdowns and student rankings.
+//
+// Computed entirely from existing data via SpeakingEvaluationService::
+// analytics(); it never writes to the database.
+class ClassAnalyticsPage : public BasePage
+{
+    Q_OBJECT
+
+public:
+    explicit ClassAnalyticsPage(
+        ApplicationServices* services,
+        bool embedded = false,
+        QWidget* parent = nullptr
+        );
+
+    void loadClass(
+        const Classroom& classroom
+        );
+
+    void clearDatabaseState() override;
+    void refresh() override;
+    void retranslateUi() override;
+
+private slots:
+    void onEvaluationChanged();
+
+private:
+    void buildUi();
+    void rebuild();
+    void showEmpty(bool empty);
+
+    ApplicationServices* m_services = nullptr;
+    bool m_embedded = false;
+    int m_classId = -1;
+
+    PageHeader* m_header = nullptr;
+    QComboBox* m_evaluationCombo = nullptr;
+
+    // Stat-card value labels (populated by rebuild()).
+    QLabel* m_avgValue = nullptr;
+    QLabel* m_avgLetter = nullptr;
+    QLabel* m_assessedValue = nullptr;
+    QLabel* m_strongestValue = nullptr;
+    QLabel* m_focusValue = nullptr;
+
+    GradeHistogram* m_histogram = nullptr;
+    QWidget* m_criteriaContainer = nullptr;
+    QVBoxLayout* m_criteriaLayout = nullptr;
+    QList<CriterionDistributionBar*> m_criterionBars;
+
+    QTableWidget* m_rankingTable = nullptr;
+    QLabel* m_emptyLabel = nullptr;
+
+    bool m_rebuilding = false;
+};

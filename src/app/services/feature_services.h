@@ -17,6 +17,7 @@
 #include "domain/models/teacher_import.h"
 #include "domain/models/testing_block.h"
 #include "domain/models/testing_class.h"
+#include "features/classes/services/speaking_analytics.h"
 
 #include <QPair>
 #include <QVariant>
@@ -200,6 +201,10 @@ public:
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         ) const;
     SpeakingEvalRows evaluation(int classId, const QString& evaluationName) const;
+    SpeakingAnalytics::Snapshot analytics(
+        int classId,
+        const QString& evaluationName
+    ) const;
     QList<SpeakingEvalScore> rosterScoreImport(
         int classId,
         const QString& evaluationName

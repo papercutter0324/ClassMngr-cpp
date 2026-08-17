@@ -38,6 +38,9 @@ inline constexpr auto RostersPage =
 inline constexpr auto SpeakingEvals =
     "speaking_evals";
 
+inline constexpr auto Analytics =
+    "analytics";
+
 inline constexpr auto SubPrep =
     "sub_prep";
 
