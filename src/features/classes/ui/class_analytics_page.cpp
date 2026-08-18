@@ -5,6 +5,7 @@
 #include "core/theme_service.h"
 #include "app/services/feature_services.h"
 #include "features/classes/ui/class_analytics_charts.h"
+#include "features/classes/ui/class_analytics_ranking_header.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/pages/scrollable_page_body.h"
 #include "ui/shared/styles/roles.h"
@@ -13,6 +14,7 @@
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QEvent>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -38,6 +40,45 @@ QList<QString> evaluationNames()
              QStringLiteral("Speech Contest"),
              QStringLiteral("Summer"),
              QStringLiteral("Fall") };
+}
+
+// Fit a name column (1 = English, 2 = Korean) to its content: the widest
+// text in the column (body names and the header label) plus a third of the
+// padding the column has at its base width. The base width is the Speaking
+// Evaluations table's name column width (180px), matching the fixed width
+// the column gets in buildUi().
+int fittedNameColumnWidth(QTableWidget* table, int column)
+{
+    // The Korean name column is drawn with the Korean font (see rebuild());
+    // the English column uses the table font.
+    const QFontMetrics bodyMetrics(
+        column == 2 ? FontManager::getKoreanFont() : table->font()
+        );
+
+    int widest = 0;
+    for (int r = 0; r < table->rowCount(); ++r)
+    {
+        if (const QTableWidgetItem* item = table->item(r, column))
+            widest = qMax(widest, bodyMetrics.horizontalAdvance(item->text()));
+    }
+
+    if (const QTableWidgetItem* header =
+            table->horizontalHeaderItem(column))
+    {
+        // Header text is drawn with the same font as the eval table header.
+        widest = qMax(
+            widest,
+            QFontMetrics(
+                FontManager::getUiFont(14, QFont::DemiBold)
+                ).horizontalAdvance(header->text())
+            );
+    }
+
+    const int base =
+        SpeakingEval::columnWidth(SpeakingEvalColumn::EnglishName);
+    // "Widest text plus a third of the current padding"; never shrink the
+    // column below its widest text.
+    return qMax(widest, widest + (base - widest) / 3);
 }
 
 } // namespace
@@ -193,10 +234,11 @@ void ClassAnalyticsPage::buildUi()
     m_rankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_rankingTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_rankingTable->verticalHeader()->setVisible(false);
-    m_rankingTable->horizontalHeader()->setHighlightSections(false);
-    m_rankingTable->horizontalHeader()->setStretchLastSection(true);
+    m_rankingTable->setHorizontalHeader(
+        new ClassAnalyticsRankingHeader(Qt::Horizontal, m_rankingTable));
+    // The "#" header cell shows nothing (column 0 label is empty).
     m_rankingTable->setHorizontalHeaderLabels(
-        { tr("#"),
+        { QString(),
           tr("English"),
           tr("Korean"),
           tr("Average"),
@@ -207,7 +249,21 @@ void ClassAnalyticsPage::buildUi()
           tr("Content"),
           tr("Effort") }
         );
-    m_rankingTable->setColumnWidth(0, 40);
+    // Columns 0-2 are fixed at the same widths as the Speaking Evaluations
+    // table (# 40, names 180); columns 3-9 share the remaining space equally
+    // and resize with the window (see the ranking header for width-driven
+    // abbreviated labels).
+    auto* rankHeader = m_rankingTable->horizontalHeader();
+    for (int c = 0; c < 10; ++c)
+    {
+        rankHeader->setSectionResizeMode(
+            c,
+            c < 3 ? QHeaderView::Fixed : QHeaderView::Stretch
+            );
+    }
+    rankHeader->resizeSection(0, 40);
+    rankHeader->resizeSection(1, 180);
+    rankHeader->resizeSection(2, 180);
     rankLayout->addWidget(m_rankingTable);
     scroll->addWidget(rankCard, 0, Qt::AlignTop);
 
@@ -491,6 +547,19 @@ void ClassAnalyticsPage::rebuild()
             auto setCentered = [this, r](int column, const QString& text) {
                 auto* item = new QTableWidgetItem(text);
                 item->setTextAlignment(Qt::AlignCenter);
+
+                // Same per-column shading as the Speaking Evaluations table.
+                const QColor background =
+                    ClassAnalyticsRankingHeader::colorForColumn(column);
+                item->setBackground(background);
+                item->setForeground(
+                    SpeakingEval::contrastTextColor(background)
+                    );
+
+                // Korean names use the same font as the eval table.
+                if (column == 2)
+                    item->setFont(FontManager::getKoreanFont());
+
                 m_rankingTable->setItem(r, column, item);
             };
 
@@ -503,9 +572,16 @@ void ClassAnalyticsPage::rebuild()
                          + QStringLiteral(")"));
             auto* avgItem = new QTableWidgetItem(average);
             avgItem->setTextAlignment(Qt::AlignCenter);
+            const QColor avgBackground =
+                ClassAnalyticsRankingHeader::colorForColumn(3);
+            avgItem->setBackground(avgBackground);
             if (!rk.overallLetter.isEmpty())
                 avgItem->setForeground(
                     AnalyticsCharts::gradeColor(rk.overallLetter));
+            else
+                avgItem->setForeground(
+                    SpeakingEval::contrastTextColor(avgBackground)
+                    );
             m_rankingTable->setItem(r, 3, avgItem);
 
             setCentered(0, QString::number(r + 1));
@@ -520,12 +596,27 @@ void ClassAnalyticsPage::rebuild()
                 setCentered(4 + c, letter);
             }
         }
+
+        // Fit the English/Korean columns to their content (widest text plus
+        // a third of the base-width padding); the other columns keep
+        // Stretch.
+        m_rankingTable->horizontalHeader()->resizeSection(
+            1,
+            fittedNameColumnWidth(m_rankingTable, 1));
+        m_rankingTable->horizontalHeader()->resizeSection(
+            2,
+            fittedNameColumnWidth(m_rankingTable, 2));
     }
     else
     {
         m_histogram->setData({});
         m_rankingTable->setRowCount(0);
         m_rankingTable->setMinimumHeight(0);
+        // Back to the base width while the table is empty.
+        const int nameBaseWidth =
+            SpeakingEval::columnWidth(SpeakingEvalColumn::EnglishName);
+        m_rankingTable->horizontalHeader()->resizeSection(1, nameBaseWidth);
+        m_rankingTable->horizontalHeader()->resizeSection(2, nameBaseWidth);
     }
 
     m_rebuilding = false;
