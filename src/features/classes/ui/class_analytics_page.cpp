@@ -22,6 +22,7 @@
 #include <QLayoutItem>
 #include <QPalette>
 #include <QSizePolicy>
+#include <QStringList>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -34,6 +35,47 @@ constexpr int kChartsRowBreakpoint = 840;
 
 // Spacer between the sections, same as between the stat cards.
 constexpr int kSectionSpacing = 20;
+
+// Horizontal inset of a stat card's content: 14px layout margin (set in
+// addStatCard) plus the 2px sectionCard border from the theme stylesheet.
+constexpr int kStatCardLabelPadding = 16;
+
+// Wraps stat-card value text (one metric per line) into a single label
+// string: metrics stay on a line while they fit in maxWidth, and break to
+// their own line otherwise.  Measured with the label's current font so the
+// result stays correct across font-size changes.
+QString wrapStatValue(
+    const QStringList& values,
+    const QFontMetrics& metrics,
+    int maxWidth
+    )
+{
+    QStringList lines;
+    QString line;
+    for (const QString& v : values)
+    {
+        const int vWidth = metrics.horizontalAdvance(v);
+        if (line.isEmpty())
+        {
+            line = v;
+        }
+        else if (metrics.horizontalAdvance(line)
+                 + metrics.horizontalAdvance(QLatin1Char(' '))
+                 + vWidth <= maxWidth)
+        {
+            line += QLatin1Char(' ');
+            line += v;
+        }
+        else
+        {
+            lines << line;
+            line = v;
+        }
+    }
+    if (!line.isEmpty())
+        lines << line;
+    return lines.join(QLatin1Char('\n'));
+}
 
 QList<QString> evaluationNames()
 {
@@ -189,7 +231,9 @@ void ClassAnalyticsPage::buildUi()
         auto* cl = avgCard->contentLayout();
         cl->setContentsMargins(14, 2, 14, 14);
         m_avgValue = new QLabel(QStringLiteral("—"), avgCard);
-        m_avgValue->setFont(FontManager::getUiFont(26));
+        // Same value size as the "Students Assessed" card (20) so all
+        // stat-card values share one font size; the letter is colored.
+        m_avgValue->setFont(FontManager::getUiFont(20));
         m_avgValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         cl->addWidget(m_avgValue);
         m_avgLetter = new QLabel(QString(), avgCard);
@@ -203,23 +247,27 @@ void ClassAnalyticsPage::buildUi()
     auto* strongestCard = addStatCard(tr("Strongest Area"), m_strongestValue);
     auto* focusCard = addStatCard(tr("Focus Area"), m_focusValue);
 
-    // Equal-width stat cards: every card can expand and none is narrower
-    // than the widest card's natural width.
-    const QList<QWidget*> statCards =
-    {
-        avgCard,
-        assessedCard,
-        strongestCard,
-        focusCard
-    };
-    int widestCard = 0;
-    for (QWidget* card : statCards)
-    {
+    m_statRow = statRow;
+    m_avgCard = avgCard;
+    m_assessedCard = assessedCard;
+    m_strongestCard = strongestCard;
+    m_focusCard = focusCard;
+    m_statTitleLabel =
+        assessedCard ? assessedCard->findChild<QLabel*>(
+                           QStringLiteral("sectionTitle"),
+                           Qt::FindDirectChildrenOnly
+                       )
+                     : nullptr;
+
+    // Stat-card widths are driven by the widest title label ("Students
+    // Assessed"); keep them in sync when the global font changes.
+    if (m_statTitleLabel)
+        m_statTitleLabel->installEventFilter(this);
+
+    for (SectionCard* card : { avgCard, assessedCard, strongestCard, focusCard })
         card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        widestCard = qMax(widestCard, card->sizeHint().width());
-    }
-    for (QWidget* card : statCards)
-        card->setMinimumWidth(widestCard);
+
+    layoutStatCards();
 
     scroll->addWidget(statRow);
 
@@ -342,6 +390,10 @@ void ClassAnalyticsPage::clearDatabaseState()
     m_assessedValue->setText(QStringLiteral("—"));
     m_strongestValue->setText(QStringLiteral("—"));
     m_focusValue->setText(QStringLiteral("—"));
+    if (m_strongestCard)
+        m_strongestCard->setTitle(tr("Strongest Area"));
+    if (m_focusCard)
+        m_focusCard->setTitle(tr("Focus Area"));
 
     m_histogram->setData({});
     for (CriterionDistributionBar* bar : m_criterionBars)
@@ -478,8 +530,89 @@ void ClassAnalyticsPage::applyChartsRowLayout()
 bool ClassAnalyticsPage::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::Resize)
+    {
         applyChartsRowLayout();
+    }
+    else if (event->type() == QEvent::FontChange && obj == m_statTitleLabel)
+    {
+        // A Preferences dialog font-size change makes FontManager call
+        // setFont() on every widget.  Re-derive the stat card widths from
+        // the new label width, and re-wrap the strongest/focus values so
+        // their grades never get clipped.
+        layoutStatCards();
+        if (m_classId >= 0 && !m_rebuilding)
+            rebuild();
+    }
     return BasePage::eventFilter(obj, event);
+}
+
+
+// Sizes all stat cards from the widest card label ("Students Assessed")
+// plus kStatCardLabelPadding on each side.  Called at build time and again
+// whenever the title label font changes.
+void ClassAnalyticsPage::layoutStatCards()
+{
+    if (!m_statTitleLabel)
+        return;
+
+    // The stylesheet renders card titles bold (font-weight: 700); measure
+    // with the same weight so the width holds at larger sizes too.
+    QFont font = m_statTitleLabel->font();
+    font.setWeight(QFont::Bold);
+
+    const int width =
+        QFontMetrics(font).horizontalAdvance(tr("Students Assessed"))
+        + 2 * kStatCardLabelPadding;
+    for (QWidget* card : { m_avgCard,
+                           m_assessedCard,
+                           m_strongestCard,
+                           m_focusCard })
+        card->setMinimumWidth(width);
+}
+
+// Usable text width of a stat value label: the card's minimum width minus
+// the content margins (14px per side) and the card borders (2px per side).
+// The stat row can only stretch the cards beyond their minimum, so wrapping
+// at this width guarantees nothing gets clipped at any window size.
+int ClassAnalyticsPage::statValueWidth() const
+{
+    if (m_assessedCard && m_assessedCard->minimumWidth() > 0)
+        return qMax(60, m_assessedCard->minimumWidth() - 32);
+    return 120;
+}
+
+// Sets the area card title ("Strongest Area" / "Strongest Areas") and the
+// value text: one metric per line, with the "(grade)" on its own line when
+// it does not fit next to the metric name.
+void ClassAnalyticsPage::applyAreaValue(
+    SectionCard* card,
+    const QString& singularTitle,
+    const QString& pluralTitle,
+    const QList<QString>& names,
+    const QList<QString>& labels,
+    QLabel* value
+    )
+{
+    const int count = names.isEmpty() ? labels.size() : names.size();
+
+    if (card)
+        card->setTitle(count >= 2 ? pluralTitle : singularTitle);
+    if (!value)
+        return;
+
+    if (count == 0)
+    {
+        value->setText(QStringLiteral("—"));
+        return;
+    }
+
+    value->setText(
+        wrapStatValue(
+            names.isEmpty() ? labels : names,
+            QFontMetrics(value->font()),
+            statValueWidth()
+            )
+        );
 }
 
 
@@ -533,20 +666,22 @@ void ClassAnalyticsPage::rebuild()
         m_assessedValue->setText(assessed);
 
         // Strongest / focus areas carry their grade letter: "Grammar (B+)".
-        m_strongestValue->setText(
-            snap.strongestNames.isEmpty()
-                ? tr("—")
-                : (snap.strongestLabels.isEmpty()
-                       ? snap.strongestNames.join(QStringLiteral(", "))
-                       : snap.strongestLabels.join(QStringLiteral(", ")))
-            );
-        m_focusValue->setText(
-            snap.focusNames.isEmpty()
-                ? tr("—")
-                : (snap.focusLabels.isEmpty()
-                       ? snap.focusNames.join(QStringLiteral(", "))
-                       : snap.focusLabels.join(QStringLiteral(", ")))
-            );
+        // One metric per line; the card title switches to the plural form
+        // when there is more than one.
+        applyAreaValue(
+            m_strongestCard,
+            tr("Strongest Area"),
+            tr("Strongest Areas"),
+            snap.strongestNames,
+            snap.strongestLabels,
+            m_strongestValue);
+        applyAreaValue(
+            m_focusCard,
+            tr("Focus Area"),
+            tr("Focus Areas"),
+            snap.focusNames,
+            snap.focusLabels,
+            m_focusValue);
 
         // Class shape histogram: count each student's overall letter.
         QMap<QString, int> dist;

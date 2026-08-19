@@ -53,6 +53,23 @@ private:
     void showEmpty(bool empty);
     void applyChartsRowLayout();
 
+    // Stat-card sizing: every card is as wide as the widest title label
+    // ("Students Assessed").  Recomputed when the font changes so the
+    // cards stay proportional at any font size.  statValueWidth() reports
+    // the width available for value text; applyAreaValue() fills the
+    // strongest/focus cards (pluralizing the title and wrapping one
+    // metric per line).
+    void layoutStatCards();
+    int statValueWidth() const;
+    void applyAreaValue(
+        SectionCard* card,
+        const QString& singularTitle,
+        const QString& pluralTitle,
+        const QList<QString>& names,
+        const QList<QString>& labels,
+        QLabel* value
+        );
+
     ApplicationServices* m_services = nullptr;
     bool m_embedded = false;
     int m_classId = -1;
@@ -67,6 +84,16 @@ private:
     QLabel* m_assessedValue = nullptr;
     QLabel* m_strongestValue = nullptr;
     QLabel* m_focusValue = nullptr;
+
+    // Stat-card container and the card/title pieces it depends on.  The
+    // card widths are derived from the widest title (e.g. "Students
+    // Assessed") and recomputed on font changes (see layoutStatCards()).
+    QWidget* m_statRow = nullptr;
+    QLabel* m_statTitleLabel = nullptr;
+    SectionCard* m_avgCard = nullptr;
+    SectionCard* m_assessedCard = nullptr;
+    SectionCard* m_strongestCard = nullptr;
+    SectionCard* m_focusCard = nullptr;
 
     QWidget* m_chartsRow = nullptr;
     SectionCard* m_shapeCard = nullptr;
