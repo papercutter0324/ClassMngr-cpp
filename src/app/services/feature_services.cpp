@@ -930,6 +930,32 @@ SpeakingAnalytics::Snapshot SpeakingEvaluationService::analytics(
             matrices.append(one);
     }
 
+    // Averages are calculated against the class roster only: when a specific
+    // evaluation is selected, keep the evaluation rows for roster students
+    // (matched by name) before computing.
+    if (name.compare(QStringLiteral("All"), Qt::CaseInsensitive) != 0)
+    {
+        Roster roster;
+        if (auto* repository = session()
+                ? session()->rosterRepository() : nullptr)
+        {
+            roster = repository->loadRoster(classId);
+        }
+        else if (dataService())
+        {
+            roster = dataService()->loadRoster(classId);
+        }
+
+        if (!roster.rows.isEmpty())
+        {
+            for (int i = 0; i < matrices.size(); ++i)
+            {
+                matrices[i] =
+                    SpeakingAnalytics::filterMatrixByRoster(matrices.at(i), roster);
+            }
+        }
+    }
+
     const int rosterCount =
         dataService() ? dataService()->getRosterStudentCount(classId) : 0;
 

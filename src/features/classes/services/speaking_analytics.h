@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
 
 #include <QList>
@@ -66,6 +67,9 @@ struct Snapshot
     QList<CriterionSlice> criteria;
     QList<QString> strongestNames;
     QList<QString> focusNames;
+    // Same areas formatted for display as "Name (Letter)".
+    QList<QString> strongestLabels;
+    QList<QString> focusLabels;
     QList<QString> overallLetters; // one entry per student (for Class Shape)
     QList<StudentRank> rankings;
 };
@@ -77,6 +81,14 @@ struct Snapshot
 [[nodiscard]] int roundAverageToGrade(double average);
 [[nodiscard]] QList<int> strongestIndices(const QList<double>& averages3);
 [[nodiscard]] QList<int> focusIndices(const QList<double>& averages3);
+
+// Keeps the evaluation rows whose student is in the class roster, matching
+// on the (normalized) English or Korean name.  An empty roster, or a roster
+// without name columns, keeps the matrix untouched.
+[[nodiscard]] SpeakingEvalRows filterMatrixByRoster(
+    const SpeakingEvalRows& matrix,
+    const Roster& roster
+);
 
 [[nodiscard]] Snapshot compute(
     const QList<SpeakingEvalRows>& matrices,

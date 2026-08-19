@@ -21,6 +21,7 @@
 #include <QLabel>
 #include <QLayoutItem>
 #include <QPalette>
+#include <QSizePolicy>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -166,37 +167,60 @@ void ClassAnalyticsPage::buildUi()
     statLayout->setContentsMargins(0, 0, 0, 0);
     statLayout->setSpacing(kSectionSpacing);
 
-    auto addStatCard = [this, statRow, statLayout](const QString& title) -> QLabel* {
+    auto addStatCard = [this, statRow, statLayout](
+        const QString& title,
+        QLabel*& value
+        ) -> SectionCard* {
         auto* card = new SectionCard(title, statRow);
         auto* cl = card->contentLayout();
         cl->setContentsMargins(14, 2, 14, 14);
-        auto* value = new QLabel(QStringLiteral("—"), card);
+        value = new QLabel(QStringLiteral("—"), card);
         value->setFont(FontManager::getUiFont(20));
         value->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         value->setMinimumHeight(34);
         value->setTextInteractionFlags(Qt::TextSelectableByMouse);
         cl->addWidget(value);
         statLayout->addWidget(card, 1);
-        return value;
+        return card;
     };
 
+    auto* avgCard = new SectionCard(tr("Class Average"), statRow);
     {
-        auto* card = new SectionCard(tr("Class Average"), statRow);
-        auto* cl = card->contentLayout();
+        auto* cl = avgCard->contentLayout();
         cl->setContentsMargins(14, 2, 14, 14);
-        m_avgValue = new QLabel(QStringLiteral("—"), card);
+        m_avgValue = new QLabel(QStringLiteral("—"), avgCard);
         m_avgValue->setFont(FontManager::getUiFont(26));
         m_avgValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         cl->addWidget(m_avgValue);
-        m_avgLetter = new QLabel(QString(), card);
+        m_avgLetter = new QLabel(QString(), avgCard);
         m_avgLetter->setFont(FontManager::getUiFont(13));
+        m_avgLetter->setStyleSheet(QStringLiteral("color:#8A94A6;"));
         cl->addWidget(m_avgLetter);
-        statLayout->addWidget(card, 1);
+        statLayout->addWidget(avgCard, 1);
     }
 
-    m_assessedValue = addStatCard(tr("Students Assessed"));
-    m_strongestValue = addStatCard(tr("Strongest Area"));
-    m_focusValue = addStatCard(tr("Focus Area"));
+    auto* assessedCard = addStatCard(tr("Students Assessed"), m_assessedValue);
+    auto* strongestCard = addStatCard(tr("Strongest Area"), m_strongestValue);
+    auto* focusCard = addStatCard(tr("Focus Area"), m_focusValue);
+
+    // Equal-width stat cards: every card can expand and none is narrower
+    // than the widest card's natural width.
+    const QList<QWidget*> statCards =
+    {
+        avgCard,
+        assessedCard,
+        strongestCard,
+        focusCard
+    };
+    int widestCard = 0;
+    for (QWidget* card : statCards)
+    {
+        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        widestCard = qMax(widestCard, card->sizeHint().width());
+    }
+    for (QWidget* card : statCards)
+        card->setMinimumWidth(widestCard);
+
     scroll->addWidget(statRow);
 
     // "Class Shape" histogram + "By Criterion" bars in one row.  When the
@@ -479,22 +503,26 @@ void ClassAnalyticsPage::rebuild()
 
     if (hasData)
     {
-        // Stat cards.
-        m_avgValue->setText(
-            snap.classAverage3 > 0.0 ? SpeakingAnalytics::formatAverage(snap.classAverage3)
-                                     : QStringLiteral("—")
-            );
-        if (!snap.classAverageLetter.isEmpty())
+        // Stat cards.  Class average is shown as "Letter (numeric)"
+        // (e.g. "A (3.8)"), colored by the grade letter.
+        if (snap.classAverage3 > 0.0)
         {
-            m_avgLetter->setText(snap.classAverageLetter);
-            m_avgLetter->setStyleSheet(
-                QStringLiteral("color:")
-                + AnalyticsCharts::gradeColor(snap.classAverageLetter).name()
-                + QStringLiteral("; font-weight:bold;")
+            m_avgValue->setText(
+                snap.classAverageLetter.isEmpty()
+                    ? SpeakingAnalytics::formatAverage(snap.classAverage3)
+                    : QStringLiteral("%1 (%2)")
+                          .arg(
+                              snap.classAverageLetter,
+                              SpeakingAnalytics::formatAverage(snap.classAverage3)
+                              )
                 );
-        }
-        else
-        {
+            m_avgValue->setStyleSheet(
+                snap.classAverageLetter.isEmpty()
+                    ? QString()
+                    : QStringLiteral("color:")
+                          + AnalyticsCharts::gradeColor(snap.classAverageLetter).name()
+                          + QStringLiteral("; font-weight:bold;")
+                );
             m_avgLetter->clear();
             m_avgLetter->setStyleSheet(QString());
         }
@@ -504,13 +532,20 @@ void ClassAnalyticsPage::rebuild()
             assessed += QStringLiteral(" / ") + QString::number(snap.rosterStudentCount);
         m_assessedValue->setText(assessed);
 
+        // Strongest / focus areas carry their grade letter: "Grammar (B+)".
         m_strongestValue->setText(
-            snap.strongestNames.isEmpty() ? tr("—")
-                                          : snap.strongestNames.join(QStringLiteral(", "))
+            snap.strongestNames.isEmpty()
+                ? tr("—")
+                : (snap.strongestLabels.isEmpty()
+                       ? snap.strongestNames.join(QStringLiteral(", "))
+                       : snap.strongestLabels.join(QStringLiteral(", ")))
             );
         m_focusValue->setText(
-            snap.focusNames.isEmpty() ? tr("—")
-                                     : snap.focusNames.join(QStringLiteral(", "))
+            snap.focusNames.isEmpty()
+                ? tr("—")
+                : (snap.focusLabels.isEmpty()
+                       ? snap.focusNames.join(QStringLiteral(", "))
+                       : snap.focusLabels.join(QStringLiteral(", ")))
             );
 
         // Class shape histogram: count each student's overall letter.

@@ -1,5 +1,7 @@
 #include "features/classes/services/speaking_analytics.h"
 
+#include "core/utils/student_name_utils.h"
+
 #include <algorithm>
 #include <QLocale>
 #include <QMap>
@@ -90,6 +92,22 @@ QList<int> focusIndices(const QList<double>& averages3)
             result.append(i);
     return result;
 }
+
+namespace
+{
+
+// "Grammar (B+)" display form of a per-criterion slice.
+QString areaLabel(const CriterionSlice& slice)
+{
+    if (!slice.hasData)
+        return slice.name;
+    return slice.name
+        + QStringLiteral(" (")
+        + numberToGrade(roundAverageToGrade(slice.average3))
+        + QStringLiteral(")");
+}
+
+} // namespace
 
 Snapshot compute(
     const QList<SpeakingEvalRows>& matrices,
@@ -244,9 +262,15 @@ Snapshot compute(
         {
             const double avg = snap.criteria.at(ci).average3;
             if (qAbs(avg - best) < 1e-9)
+            {
                 snap.strongestNames.append(snap.criteria.at(ci).name);
+                snap.strongestLabels.append(areaLabel(snap.criteria.at(ci)));
+            }
             if (qAbs(avg - worst) < 1e-9)
+            {
                 snap.focusNames.append(snap.criteria.at(ci).name);
+                snap.focusLabels.append(areaLabel(snap.criteria.at(ci)));
+            }
         }
     }
 
@@ -279,6 +303,96 @@ Snapshot compute(
         });
     snap.rankings = ranks;
     return snap;
+}
+
+SpeakingEvalRows filterMatrixByRoster(
+    const SpeakingEvalRows& matrix,
+    const Roster& roster
+    )
+{
+    const int englishColumn = roster.columns.indexOf(QStringLiteral("English"));
+    const int koreanColumn = roster.columns.indexOf(QStringLiteral("Korean"));
+    if (englishColumn < 0 && koreanColumn < 0)
+        return matrix;
+
+    auto rosterNames = [](
+        const Roster& roster,
+        int column
+        )
+    {
+        QStringList names;
+        for (const QStringList& row : roster.rows)
+        {
+            if (column < row.size())
+                names.append(row.at(column).trimmed());
+        }
+        return names;
+    };
+    const QStringList rosterEnglish = rosterNames(roster, englishColumn);
+    const QStringList rosterKorean = rosterNames(roster, koreanColumn);
+    if (rosterEnglish.isEmpty() && rosterKorean.isEmpty())
+        return matrix;
+
+    // Name-tolerant matching: normalize both sides the same way
+    // (StudentNameUtils) and compare case-insensitively for English names;
+    // Korean names use the base name so an "(A)" group suffix still matches.
+    const auto matchesEnglish = [](
+        const QString& value,
+        const QStringList& rosterEnglish
+        )
+    {
+        if (value.isEmpty() || rosterEnglish.isEmpty())
+            return false;
+        const QString normalized =
+            StudentNameUtils::normalizeEnglishName(value).toLower();
+        for (const QString& rosterName : rosterEnglish)
+        {
+            if (
+                StudentNameUtils::normalizeEnglishName(rosterName).toLower()
+                == normalized
+                )
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    const auto matchesKorean = [](
+        const QString& value,
+        const QStringList& rosterKorean
+        )
+    {
+        if (value.isEmpty() || rosterKorean.isEmpty())
+            return false;
+        const QString base = StudentNameUtils::baseKoreanName(value);
+        for (const QString& rosterName : rosterKorean)
+        {
+            if (StudentNameUtils::baseKoreanName(rosterName) == base)
+                return true;
+        }
+        return false;
+    };
+
+    SpeakingEvalRows result;
+    result.reserve(matrix.size());
+    for (const QStringList& row : matrix)
+    {
+        if (
+            matchesEnglish(
+                row.value(SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+                rosterEnglish
+                )
+            || matchesKorean(
+                row.value(SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+                rosterKorean
+                )
+            )
+        {
+            result.append(row);
+        }
+    }
+    return result;
 }
 
 } // namespace SpeakingAnalytics

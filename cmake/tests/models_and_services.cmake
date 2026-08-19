@@ -381,6 +381,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrSpeakingAnalyticsTests
         tests/speaking_analytics_tests.cpp
+        src/core/utils/student_name_utils.cpp
         src/features/classes/services/speaking_analytics.cpp
     )
 

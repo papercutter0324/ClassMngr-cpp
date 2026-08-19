@@ -47,6 +47,10 @@ private slots:
     void computeFullMatrix();
     void computePartialCriterion();
     void computeEmpty();
+    void filterKeepsRosterStudents();
+    void filterIsNameTolerant();
+    void filterKeepsUnknownWhenRosterEmpty();
+    void strongestAndFocusLabelsCarryGradeLetters();
 };
 
 void SpeakingAnalyticsTests::gradeNumberRoundTrip()
@@ -295,6 +299,156 @@ void SpeakingAnalyticsTests::computeEmpty()
     const auto anon = SpeakingAnalytics::compute(matrices, 1);
     QCOMPARE(anon.hasData, false);
     QCOMPARE(anon.rankings.size(), 0);
+}
+
+void SpeakingAnalyticsTests::filterKeepsRosterStudents()
+{
+    // Only the evaluation rows of enrolled (roster) students are kept.
+    Roster roster;
+    roster.columns =
+    {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows.append(
+        { QStringLiteral("Avery"), QStringLiteral("에버리") });
+    roster.rows.append(
+        { QStringLiteral("Dan"), QStringLiteral("댄") });
+
+    SpeakingEvalRows matrix;
+    matrix.append(
+        makeRow(
+            QStringLiteral("Avery"),
+            QStringLiteral("에버리"),
+            QStringLiteral("B+"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B+"),
+            QStringLiteral("A")));
+    matrix.append(
+        makeRow(
+            QStringLiteral("Celine"),
+            QStringLiteral("시린"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B")));
+
+    const auto kept =
+        SpeakingAnalytics::filterMatrixByRoster(matrix, roster);
+    QCOMPARE(kept.size(), 1);
+    QCOMPARE(kept.first().value(1), QStringLiteral("Avery"));
+}
+
+void SpeakingAnalyticsTests::filterIsNameTolerant()
+{
+    // Matching is name-tolerant: English names compare after normalization
+    // (case/whitespace), Korean names by base name so an "(A)" group suffix
+    // on either side still matches.
+    Roster roster;
+    roster.columns =
+    {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows.append(
+        { QStringLiteral("JOHN SMITH"), QStringLiteral("에버리(A)") });
+
+    SpeakingEvalRows matrix;
+    matrix.append(
+        makeRow(
+            QStringLiteral("john  smith"), // English-normalized match
+            QStringLiteral("이브"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B")));
+    matrix.append(
+        makeRow(
+            QStringLiteral("Avery"), // Korean base-name match
+            QStringLiteral("에버리"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A")));
+    matrix.append(
+        makeRow(
+            QStringLiteral("Jill"), // No match at all
+            QStringLiteral("지일"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A")));
+
+    const auto kept =
+        SpeakingAnalytics::filterMatrixByRoster(matrix, roster);
+    QCOMPARE(kept.size(), 2);
+    QCOMPARE(kept.at(0).value(1), QStringLiteral("john  smith"));
+    QCOMPARE(kept.at(1).value(1), QStringLiteral("Avery"));
+}
+
+void SpeakingAnalyticsTests::filterKeepsUnknownWhenRosterEmpty()
+{
+    // Without name columns (or with empty name cells) the roster cannot be
+    // used to tell students apart, so the matrix stays untouched.
+    const Roster emptyRoster;
+
+    SpeakingEvalRows matrix;
+    matrix.append(
+        makeRow(
+            QStringLiteral("Avery"),
+            QStringLiteral("에버리"),
+            QStringLiteral("B+"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B+"),
+            QStringLiteral("A")));
+
+    const auto kept =
+        SpeakingAnalytics::filterMatrixByRoster(matrix, emptyRoster);
+    QCOMPARE(kept, matrix);
+}
+
+void SpeakingAnalyticsTests::strongestAndFocusLabelsCarryGradeLetters()
+{
+    // One fully-scored student.  Grammar, Fluency and Content tie for
+    // strongest (4.0 -> A); Pronunciation, Manner and Overall Effort tie
+    // for focus (2.0 -> B).  Labels carry the rounded grade letter.
+    SpeakingEvalRows matrix;
+    matrix.append(
+        makeRow(
+            QStringLiteral("Avery"),
+            QStringLiteral("에버리"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B"),
+            QStringLiteral("A"),
+            QStringLiteral("B")));
+
+    const QList<SpeakingEvalRows> matrices{matrix};
+    const auto snap = SpeakingAnalytics::compute(matrices, 1);
+
+    QCOMPARE(snap.strongestLabels, (QStringList{
+        QStringLiteral("Grammar (A)"),
+        QStringLiteral("Fluency (A)"),
+        QStringLiteral("Content (A)")
+        }));
+    QCOMPARE(snap.focusLabels, (QStringList{
+        QStringLiteral("Pronunciation (B)"),
+        QStringLiteral("Manner (B)"),
+        QStringLiteral("Overall Effort (B)")
+        }));
 }
 
 QTEST_MAIN(SpeakingAnalyticsTests)
