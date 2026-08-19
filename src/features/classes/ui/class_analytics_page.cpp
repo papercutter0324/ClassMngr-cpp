@@ -5,6 +5,7 @@
 #include "core/theme_service.h"
 #include "app/services/feature_services.h"
 #include "features/classes/ui/class_analytics_charts.h"
+#include "features/classes/ui/class_analytics_ranking_delegate.h"
 #include "features/classes/ui/class_analytics_ranking_header.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/pages/scrollable_page_body.h"
@@ -49,10 +50,13 @@ QList<QString> evaluationNames()
 // the column gets in buildUi().
 int fittedNameColumnWidth(QTableWidget* table, int column)
 {
-    // The Korean name column is drawn with the Korean font (see rebuild());
-    // the English column uses the table font.
+    // Measure with the same fonts the body delegate actually paints
+    // with: the Korean font for the Korean column, the standard 12pt UI
+    // font for the English column (see ClassAnalyticsRankingDelegate).
     const QFontMetrics bodyMetrics(
-        column == 2 ? FontManager::getKoreanFont() : table->font()
+        column == 2
+            ? FontManager::getKoreanFont()
+            : FontManager::getUiFont(12)
         );
 
     int widest = 0;
@@ -236,6 +240,11 @@ void ClassAnalyticsPage::buildUi()
     m_rankingTable->verticalHeader()->setVisible(false);
     m_rankingTable->setHorizontalHeader(
         new ClassAnalyticsRankingHeader(Qt::Horizontal, m_rankingTable));
+    // Body cells are shaded by the delegate (like the Speaking
+    // Evaluations table): the app-wide stylesheet suppresses per-item
+    // background brushes, so fillRect in paint() is the reliable path.
+    m_rankingTable->setItemDelegate(
+        new ClassAnalyticsRankingDelegate(m_rankingTable));
     // The "#" header cell shows nothing (column 0 label is empty).
     m_rankingTable->setHorizontalHeaderLabels(
         { QString(),
