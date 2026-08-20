@@ -21,7 +21,7 @@ Do not create helpers for every short clone. Consolidate code when the copies re
 
 ## Current Implementation Snapshot
 
-- **Plan 1:** Phases 2–6 are complete. The root `CMakeLists.txt` has fallen from
+- **Plan 1:** Phases 1–6 are complete. The root `CMakeLists.txt` has fallen from
   2,803 to 190 lines; production libraries, modular CMake files, and
   `classmngr_add_qt_test()` are in use. Shared schedule, SQL, network, filename,
   student-name, and document-output policies exist. `PageHeader`,
@@ -93,7 +93,7 @@ src/
 
 ### Phase 1. Characterization and Build Baseline
 
-Status: partially complete as of 2026-08-14.
+Status: completed on 2026-08-21.
 
 - Record clean build and test results on Windows, Linux, and macOS.
 - Add a duplication-report CI job using a fixed configuration, but use it as guidance rather than a hard percentage target.
@@ -105,8 +105,8 @@ Exit criteria: current behavior is protected, and baseline build/test/size measu
 Focused characterization coverage has expanded throughout the refactor. The
 fixed duplication report and baseline recorder are in place, including a
 manually dispatched Windows/Linux/macOS artifact workflow. Pre- and post-target
-Windows measurements and the native macOS measurement are recorded; Linux
-remains pending until that workflow is run on its native hosted runner.
+Windows measurements, a native macOS measurement, and the native Linux hosted
+workflow measurement are recorded.
 
 The current Windows snapshot configures in 64.775 seconds, clean-builds in
 169.845 seconds with two jobs, produces an 89,556,480-byte Debug executable,
@@ -114,8 +114,11 @@ and passes all 53 tests in 88.716 seconds. The current macOS universal snapshot
 configures in 9.215 seconds, clean-builds in 391.841 seconds with two jobs,
 produces a 159,974,232-byte Debug executable, and passes all 54 tests in 56.647
 seconds. Its compilation database contains 270 production entries for 270
-unique sources, with no production source recompiled. Completing this phase now
-requires only the native Linux workflow artifact and its measurements.
+unique sources, with no production source recompiled. The GitHub-hosted Linux
+snapshot configures in 20.572 seconds, clean-builds in 718.911 seconds with two
+jobs, produces a 204,297,376-byte Debug executable, and passes all 54 tests in
+21.535 seconds. Its compilation database contains 274 production entries for
+274 unique sources, with no production source recompiled.
 
 ### Phase 2. CMake and Compilation Bloat
 
