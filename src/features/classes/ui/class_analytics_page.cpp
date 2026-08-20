@@ -536,7 +536,7 @@ void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapsh
         auto* bar = new CriterionDistributionBar(m_criteriaContainer);
         bar->setLabel(slice.name);
         bar->setAverageText(slice.hasData
-            ? QStringLiteral("%1 · %2")
+            ? QStringLiteral("%1  -  %2")
                   .arg(SpeakingAnalytics::numberToGrade(
                            SpeakingAnalytics::roundAverageToGrade(slice.average3)),
                        SpeakingAnalytics::formatAverage(slice.average3))

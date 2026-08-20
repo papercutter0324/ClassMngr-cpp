@@ -436,18 +436,19 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
         const QColor color = m_insight == AnalyticsCharts::CriterionInsight::Strongest
             ? QColor(QStringLiteral("#159447"))
             : QColor(QStringLiteral("#c07b08"));
-        const qreal badgeWidth = QFontMetricsF(FontManager::getUiFont(9))
-            .horizontalAdvance(text) + 14.0;
-        const qreal labelTextWidth = labelMetrics.horizontalAdvance(m_label);
+        const QFont badgeFont = FontManager::getUiFont(9);
+        const qreal badgeWidth = QFontMetricsF(badgeFont).horizontalAdvance(text) + 14.0;
+        const qreal averageTextWidth = QFontMetricsF(FontManager::getUiFont(10))
+            .horizontalAdvance(m_averageText);
         const QRectF badge(
-            qMin(labelArea.right() - badgeWidth, labelTextWidth + 7.0),
-            4.0,
+            averageArea.left() + averageTextWidth + 20.0,
+            averageArea.center().y() - 8.5,
             badgeWidth,
             17.0);
         painter.setPen(QPen(color, 1.0));
         painter.setBrush(color.lighter(isDarkTheme(this) ? 120 : 185));
         painter.drawRoundedRect(badge, 8.5, 8.5);
-        painter.setFont(FontManager::getUiFont(9));
+        painter.setFont(badgeFont);
         painter.setPen(Qt::white);
         painter.drawText(badge, Qt::AlignCenter, text);
     }
