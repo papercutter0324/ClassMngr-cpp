@@ -1,5 +1,7 @@
 #pragma once
 
+#include "features/classes/services/speaking_analytics.h"
+
 #include <QColor>
 #include <QMap>
 #include <QString>
@@ -37,6 +39,26 @@ protected:
 
 private:
     QMap<QString, int> m_distribution;
+};
+
+// Compact 1–5 trend chart for completed evaluation averages.  It has no
+// student-count concept: every point is identified by its evaluation and
+// grade/one-decimal class average.
+class YearToDateChart : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit YearToDateChart(QWidget* parent = nullptr);
+
+    void setData(const QList<SpeakingAnalytics::YearToDatePoint>& points);
+    [[nodiscard]] QSize sizeHint() const override;
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
+private:
+    QList<SpeakingAnalytics::YearToDatePoint> m_points;
 };
 
 // One criterion row: label, rounded grade/average, optional insight badge,

@@ -52,6 +52,8 @@ private slots:
     void filterIsNameTolerant();
     void filterKeepsUnknownWhenRosterEmpty();
     void strongestAndFocusLabelsCarryGradeLetters();
+    void yearToDatePointUsesFullyScoredStudentsOnly();
+    void yearToDatePointOmitsUnscoredAndPartialOnlyEvaluations();
 };
 
 void SpeakingAnalyticsTests::gradeNumberRoundTrip()
@@ -489,6 +491,76 @@ void SpeakingAnalyticsTests::strongestAndFocusLabelsCarryGradeLetters()
         QStringLiteral("Manner (B)"),
         QStringLiteral("Overall Effort (B)")
         }));
+}
+
+void SpeakingAnalyticsTests::yearToDatePointUsesFullyScoredStudentsOnly()
+{
+    // The trend takes an equally weighted mean of each fully scored student's
+    // six-rubric average.  The partial A+ record must not change the result.
+    SpeakingEvalRows matrix;
+    matrix.append(makeRow(
+        QStringLiteral("Avery"), QStringLiteral("에버리"),
+        QStringLiteral("A+"), QStringLiteral("A+"),
+        QStringLiteral("A+"), QStringLiteral("A+"),
+        QStringLiteral("A+"), QStringLiteral("A+")));
+    matrix.append(makeRow(
+        QStringLiteral("Ben"), QStringLiteral("벤"),
+        QStringLiteral("C"), QStringLiteral("C"),
+        QStringLiteral("C"), QStringLiteral("C"),
+        QStringLiteral("C"), QStringLiteral("C")));
+    matrix.append(makeRow(
+        QStringLiteral("Cara"), QStringLiteral("카라"),
+        QStringLiteral("A+"), QStringLiteral("A+"),
+        QStringLiteral("A+"), QStringLiteral("A+"),
+        QStringLiteral("A+"), QString()));
+
+    const auto snapshot = SpeakingAnalytics::compute({ matrix }, 3);
+    // Existing dashboard behavior still includes the partial record.
+    QCOMPARE(snapshot.classAverage3, 3.667);
+    QCOMPARE(snapshot.fullyScoredCount, 2);
+
+    const auto point = SpeakingAnalytics::yearToDatePoint(
+        QStringLiteral("Winter"), snapshot);
+    QVERIFY(point.has_value());
+    QCOMPARE(point->evaluationName, QStringLiteral("Winter"));
+    QCOMPARE(point->classAverage3, 3.0);
+    QCOMPARE(point->classAverageLetter, QStringLiteral("B+"));
+}
+
+void SpeakingAnalyticsTests::yearToDatePointOmitsUnscoredAndPartialOnlyEvaluations()
+{
+    const auto blank = SpeakingAnalytics::compute({}, 2);
+    QVERIFY(!SpeakingAnalytics::yearToDatePoint(
+        QStringLiteral("Winter"), blank).has_value());
+
+    SpeakingEvalRows partialOnly;
+    partialOnly.append(makeRow(
+        QStringLiteral("Avery"), QStringLiteral("에버리"),
+        QStringLiteral("A"), QStringLiteral("A"),
+        QStringLiteral("A"), QStringLiteral("A"),
+        QStringLiteral("A"), QString()));
+    const auto partial = SpeakingAnalytics::compute({ partialOnly }, 1);
+    QCOMPARE(partial.fullyScoredCount, 0);
+    QVERIFY(!SpeakingAnalytics::yearToDatePoint(
+        QStringLiteral("Speech Contest"), partial).has_value());
+
+    // The point applies the existing grade-rounding rule after averaging the
+    // fully scored students: (4.0 + 3.0) / 2 = 3.5, which rounds to A.
+    SpeakingEvalRows rounded;
+    rounded.append(makeRow(
+        QStringLiteral("Dan"), QStringLiteral("댄"),
+        QStringLiteral("A"), QStringLiteral("A"), QStringLiteral("A"),
+        QStringLiteral("A"), QStringLiteral("A"), QStringLiteral("A")));
+    rounded.append(makeRow(
+        QStringLiteral("Eve"), QStringLiteral("이브"),
+        QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+"),
+        QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+")));
+    const auto roundedSnapshot = SpeakingAnalytics::compute({ rounded }, 2);
+    const auto point = SpeakingAnalytics::yearToDatePoint(
+        QStringLiteral("Summer"), roundedSnapshot);
+    QVERIFY(point.has_value());
+    QCOMPARE(point->classAverage3, 3.5);
+    QCOMPARE(point->classAverageLetter, QStringLiteral("A"));
 }
 
 QTEST_MAIN(SpeakingAnalyticsTests)

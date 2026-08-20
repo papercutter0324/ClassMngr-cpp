@@ -406,3 +406,26 @@ qt_add_executable(ClassMngrBasePageTests
         NAME ClassMngrSpeakingAnalyticsTests
         COMMAND ClassMngrSpeakingAnalyticsTests
     )
+
+    classmngr_add_qt_test(
+        NAME SpeakingEvaluationService
+        SOURCES
+            tests/speaking_evaluation_service_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Sql
+            Qt6::Test
+        OFFSCREEN
+    )
+
+    classmngr_add_qt_test(
+        NAME YearToDateChart
+        SOURCES
+            tests/year_to_date_chart_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )

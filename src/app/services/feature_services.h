@@ -25,6 +25,17 @@
 class DataService;
 class DatabaseSession;
 
+// The distinct views required by the Class Analytics dashboard.  The selected
+// snapshot keeps the existing current-roster policy; the Class Shape snapshot
+// may instead be the latest completed named evaluation when All is selected.
+struct SpeakingEvaluationDashboard
+{
+    SpeakingAnalytics::Snapshot selectedSnapshot;
+    QString classShapeEvaluationName;
+    SpeakingAnalytics::Snapshot classShapeSnapshot;
+    QList<SpeakingAnalytics::YearToDatePoint> yearToDatePoints;
+};
+
 class FeatureService
 {
 public:
@@ -202,6 +213,10 @@ public:
         ) const;
     SpeakingEvalRows evaluation(int classId, const QString& evaluationName) const;
     SpeakingAnalytics::Snapshot analytics(
+        int classId,
+        const QString& evaluationName
+    ) const;
+    [[nodiscard]] SpeakingEvaluationDashboard analyticsDashboard(
         int classId,
         const QString& evaluationName
     ) const;

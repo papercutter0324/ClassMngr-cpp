@@ -904,7 +904,17 @@ SpeakingAnalytics::Snapshot SpeakingEvaluationService::analytics(
     const QString& evaluationName
     ) const
 {
+    return analyticsDashboard(classId, evaluationName).selectedSnapshot;
+}
+
+SpeakingEvaluationDashboard SpeakingEvaluationService::analyticsDashboard(
+    int classId,
+    const QString& evaluationName
+    ) const
+{
     const QString name = evaluationName.trimmed();
+    const bool allEvaluations = name.isEmpty()
+        || name.compare(QStringLiteral("All"), Qt::CaseInsensitive) == 0;
     Roster roster;
     if (auto* repository = session()
             ? session()->rosterRepository() : nullptr)
@@ -916,43 +926,91 @@ SpeakingAnalytics::Snapshot SpeakingEvaluationService::analytics(
         roster = dataService()->loadRoster(classId);
     }
 
-    QList<SpeakingEvalRows> matrices;
-
-    if (name.isEmpty() || name.compare(QStringLiteral("All"), Qt::CaseInsensitive) == 0)
-    {
-        for (const QString& n : SpeakingAnalytics::evaluationNames())
-        {
-            const SpeakingEvalRows one = evaluation(classId, n);
-            if (!one.isEmpty())
-                matrices.append(one);
-        }
-    }
-    else
-    {
-        const SpeakingEvalRows one = evaluation(classId, name);
-        if (!one.isEmpty())
-            matrices.append(one);
-    }
-
-    // Always restrict analytics to the current class roster.  Applying this
-    // to the all-evaluations view is essential: historical rows for students
-    // who have left the class must not change the current class shape.
-    if (!roster.rows.isEmpty())
-    {
-        for (int i = 0; i < matrices.size(); ++i)
-        {
-            matrices[i] =
-                SpeakingAnalytics::filterMatrixByRoster(matrices.at(i), roster);
-        }
-    }
-
     // Repository-backed sessions do not necessarily expose a DataService.
     // The loaded roster is therefore the authoritative denominator here.
     const int rosterCount = !roster.rows.isEmpty()
         ? roster.rows.size()
         : (dataService() ? dataService()->getRosterStudentCount(classId) : 0);
 
-    return SpeakingAnalytics::compute(matrices, rosterCount);
+    struct EvaluationView
+    {
+        QString name;
+        SpeakingAnalytics::Snapshot filteredSnapshot;
+        SpeakingAnalytics::Snapshot historicalSnapshot;
+    };
+
+    QList<EvaluationView> evaluations;
+    QList<SpeakingEvalRows> filteredMatrices;
+    for (const QString& evaluationName : SpeakingAnalytics::evaluationNames())
+    {
+        // Load every canonical evaluation exactly once.  The two snapshots
+        // deliberately have different scopes: the dashboard remains about
+        // today's roster, while YTD must retain each historical cohort.
+        const SpeakingEvalRows raw = evaluation(classId, evaluationName);
+        const SpeakingEvalRows filtered = !roster.rows.isEmpty()
+            ? SpeakingAnalytics::filterMatrixByRoster(raw, roster)
+            : raw;
+
+        EvaluationView view;
+        view.name = evaluationName;
+        view.filteredSnapshot =
+            SpeakingAnalytics::compute({ filtered }, rosterCount);
+        view.historicalSnapshot =
+            SpeakingAnalytics::compute({ raw }, rosterCount);
+        evaluations.append(view);
+
+        if (!raw.isEmpty())
+            filteredMatrices.append(filtered);
+    }
+
+    SpeakingEvaluationDashboard dashboard;
+    if (allEvaluations)
+    {
+        // Preserve the existing cross-evaluation dashboard behavior.  It
+        // consolidates current-roster students across all named evaluations.
+        dashboard.selectedSnapshot =
+            SpeakingAnalytics::compute(filteredMatrices, rosterCount);
+    }
+    else
+    {
+        for (const EvaluationView& view : evaluations)
+        {
+            if (view.name == name)
+            {
+                dashboard.selectedSnapshot = view.filteredSnapshot;
+                dashboard.classShapeEvaluationName = view.name;
+                dashboard.classShapeSnapshot = view.filteredSnapshot;
+                break;
+            }
+        }
+    }
+
+    if (allEvaluations)
+    {
+        // The all-evaluations histogram is intentionally not the aggregate.
+        // It must be captioned with the exact completed current-class
+        // evaluation whose distribution it plots.
+        for (auto it = evaluations.crbegin(); it != evaluations.crend(); ++it)
+        {
+            if (it->filteredSnapshot.fullyScoredCount <= 0)
+                continue;
+
+            dashboard.classShapeEvaluationName = it->name;
+            dashboard.classShapeSnapshot = it->filteredSnapshot;
+            break;
+        }
+    }
+
+    for (const EvaluationView& view : evaluations)
+    {
+        if (const auto point = SpeakingAnalytics::yearToDatePoint(
+                view.name, view.historicalSnapshot))
+        {
+            dashboard.yearToDatePoints.append(*point);
+        }
+    }
+
+    return dashboard;
 }
 
 QList<SpeakingEvalScore> SpeakingEvaluationService::rosterScoreImport(

@@ -233,9 +233,25 @@ void ClassAnalyticsPage::buildUi()
 
     m_shapeCard = new SectionCard(QString(), m_chartsContainer);
     m_shapeCard->setMinimumWidth(270);
-    m_shapeCard->contentLayout()->setContentsMargins(16, 8, 16, 16);
+    auto* shapeLayout = m_shapeCard->contentLayout();
+    shapeLayout->setContentsMargins(16, 8, 16, 16);
+    shapeLayout->setSpacing(8);
+    m_histogramCaption = new QLabel(m_shapeCard);
+    m_histogramCaption->setObjectName(
+        QStringLiteral("analyticsClassShapeEvaluationCaption"));
+    m_histogramCaption->setFont(FontManager::getUiFont(11, QFont::DemiBold));
+    m_histogramCaption->setAlignment(Qt::AlignCenter);
+    shapeLayout->addWidget(m_histogramCaption);
     m_histogram = new GradeHistogram(m_shapeCard);
-    m_shapeCard->contentLayout()->addWidget(m_histogram);
+    shapeLayout->addWidget(m_histogram);
+    m_yearToDateHeading = new QLabel(m_shapeCard);
+    m_yearToDateHeading->setObjectName(
+        QStringLiteral("analyticsYearToDateHeading"));
+    m_yearToDateHeading->setFont(FontManager::getUiFont(13, QFont::DemiBold));
+    m_yearToDateHeading->setAlignment(Qt::AlignCenter);
+    shapeLayout->addWidget(m_yearToDateHeading);
+    m_yearToDateChart = new YearToDateChart(m_shapeCard);
+    shapeLayout->addWidget(m_yearToDateChart);
     content->addWidget(m_chartsContainer);
 
     m_rankingCard = new SectionCard(QString(), body);
@@ -314,6 +330,12 @@ void ClassAnalyticsPage::retranslateUi()
     m_focusCard->setTitle(tr("Focus Area"));
     m_criteriaCard->setTitle(tr("By Criterion"));
     m_shapeCard->setTitle(tr("Class Shape"));
+    m_histogramCaption->setText(tr("Evaluation: %1").arg(
+        m_classShapeEvaluationName.isEmpty()
+            ? QStringLiteral("—")
+            : m_classShapeEvaluationName));
+    m_yearToDateHeading->setText(tr("Year to Date"));
+    m_yearToDateChart->update();
     m_rankingCard->setTitle(tr("Student Ranking"));
     m_emptyLabel->setText(
         tr("No scored speaking evaluations have been recorded for this class yet."));
@@ -380,7 +402,10 @@ void ClassAnalyticsPage::clearDisplay()
     m_focusValue->setText(QStringLiteral("—"));
     m_strongestLabels.clear();
     m_focusLabels.clear();
+    m_classShapeEvaluationName.clear();
+    m_histogramCaption->setText(tr("Evaluation: %1").arg(QStringLiteral("—")));
     m_histogram->setData({});
+    m_yearToDateChart->setData({});
     clearLayout(m_criteriaLayout);
     m_criterionBars.clear();
     m_rankingTable->setRowCount(0);
@@ -438,17 +463,53 @@ void ClassAnalyticsPage::rebuild()
     m_rebuilding = true;
     clearDisplay();
 
-    SpeakingAnalytics::Snapshot snapshot;
+    SpeakingEvaluationDashboard dashboard;
     if (m_services && m_classId >= 0)
     {
         if (const auto* service = m_services->speakingEvaluationService())
-            snapshot = service->analytics(m_classId, selectedEvaluationName());
+        {
+            dashboard = service->analyticsDashboard(
+                m_classId, selectedEvaluationName());
+        }
     }
 
-    showEmpty(!snapshot.hasData);
-    if (snapshot.hasData)
-        applySnapshot(snapshot);
+    const bool hasDashboardData = dashboard.selectedSnapshot.hasData
+        || !dashboard.yearToDatePoints.isEmpty();
+    showEmpty(!hasDashboardData);
+    if (hasDashboardData)
+        applyDashboard(dashboard);
     m_rebuilding = false;
+}
+
+void ClassAnalyticsPage::applyDashboard(
+    const SpeakingEvaluationDashboard& dashboard
+)
+{
+    if (dashboard.selectedSnapshot.hasData)
+        applySnapshot(dashboard.selectedSnapshot);
+
+    applyClassShape(
+        dashboard.classShapeSnapshot,
+        dashboard.classShapeEvaluationName);
+    m_yearToDateChart->setData(dashboard.yearToDatePoints);
+}
+
+void ClassAnalyticsPage::applyClassShape(
+    const SpeakingAnalytics::Snapshot& snapshot,
+    const QString& evaluationName
+)
+{
+    m_classShapeEvaluationName = evaluationName;
+    m_histogramCaption->setText(tr("Evaluation: %1").arg(
+        evaluationName.isEmpty() ? QStringLiteral("—") : evaluationName));
+
+    QMap<QString, int> shapeDistribution;
+    for (const QString& grade : snapshot.overallLetters)
+    {
+        if (!grade.isEmpty())
+            ++shapeDistribution[grade];
+    }
+    m_histogram->setData(shapeDistribution);
 }
 
 void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapshot)
@@ -469,14 +530,6 @@ void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapsh
     m_strongestLabels = snapshot.strongestLabels;
     m_focusLabels = snapshot.focusLabels;
     refreshAreaValueTexts();
-
-    QMap<QString, int> shapeDistribution;
-    for (const QString& grade : snapshot.overallLetters)
-    {
-        if (!grade.isEmpty())
-            ++shapeDistribution[grade];
-    }
-    m_histogram->setData(shapeDistribution);
 
     for (const SpeakingAnalytics::CriterionSlice& slice : snapshot.criteria)
     {
@@ -580,8 +633,10 @@ void ClassAnalyticsPage::layoutChartCards(bool horizontal)
     {
         m_chartsLayout->addWidget(m_criteriaCard, 0, 0);
         m_chartsLayout->addWidget(m_shapeCard, 0, 1);
-        m_chartsLayout->setColumnStretch(0, 7);
-        m_chartsLayout->setColumnStretch(1, 3);
+        m_chartsLayout->setColumnStretch(0, 6);
+        m_chartsLayout->setColumnStretch(1, 4);
+        m_chartsLayout->setRowStretch(0, 1);
+        m_chartsLayout->setRowStretch(1, 0);
     }
     else
     {
@@ -589,6 +644,8 @@ void ClassAnalyticsPage::layoutChartCards(bool horizontal)
         m_chartsLayout->addWidget(m_shapeCard, 1, 0);
         m_chartsLayout->setColumnStretch(0, 1);
         m_chartsLayout->setColumnStretch(1, 0);
+        m_chartsLayout->setRowStretch(0, 0);
+        m_chartsLayout->setRowStretch(1, 0);
     }
 }
 

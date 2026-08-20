@@ -338,6 +338,36 @@ Snapshot compute(
     return snapshot;
 }
 
+std::optional<YearToDatePoint> yearToDatePoint(
+    const QString& evaluationName,
+    const Snapshot& snapshot
+)
+{
+    if (snapshot.fullyScoredCount <= 0)
+        return std::nullopt;
+
+    double sum = 0.0;
+    int count = 0;
+    for (const StudentRank& rank : snapshot.rankings)
+    {
+        if (!rank.fullyScored)
+            continue;
+
+        sum += rank.overall3;
+        ++count;
+    }
+
+    if (count == 0)
+        return std::nullopt;
+
+    YearToDatePoint point;
+    point.evaluationName = evaluationName;
+    point.classAverage3 = roundTo3(sum / count);
+    point.classAverageLetter =
+        numberToGrade(roundAverageToGrade(point.classAverage3));
+    return point;
+}
+
 SpeakingEvalRows filterMatrixByRoster(
     const SpeakingEvalRows& matrix,
     const Roster& roster

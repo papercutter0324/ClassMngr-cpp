@@ -10,6 +10,7 @@
 class ApplicationServices;
 class CriterionDistributionBar;
 class GradeHistogram;
+class YearToDateChart;
 class QComboBox;
 class QEvent;
 class QGridLayout;
@@ -18,6 +19,7 @@ class QShowEvent;
 class QTableWidget;
 class SectionCard;
 class QWidget;
+struct SpeakingEvaluationDashboard;
 
 // Read-only dashboard for speaking-evaluation results in a class.
 class ClassAnalyticsPage : public BasePage
@@ -51,6 +53,11 @@ private:
     void clearDisplay();
     void showEmpty(bool empty);
     void applySnapshot(const SpeakingAnalytics::Snapshot& snapshot);
+    void applyDashboard(const SpeakingEvaluationDashboard& dashboard);
+    void applyClassShape(
+        const SpeakingAnalytics::Snapshot& snapshot,
+        const QString& evaluationName
+    );
     void applyResponsiveLayout();
     void layoutSummaryCards(int columns);
     void layoutChartCards(bool horizontal);
@@ -96,7 +103,11 @@ private:
     QWidget* m_criteriaContainer = nullptr;
     QGridLayout* m_criteriaLayout = nullptr;
     QList<CriterionDistributionBar*> m_criterionBars;
+    QLabel* m_histogramCaption = nullptr;
     GradeHistogram* m_histogram = nullptr;
+    QLabel* m_yearToDateHeading = nullptr;
+    YearToDateChart* m_yearToDateChart = nullptr;
+    QString m_classShapeEvaluationName;
     int m_chartsHorizontal = -1;
 
     SectionCard* m_rankingCard = nullptr;

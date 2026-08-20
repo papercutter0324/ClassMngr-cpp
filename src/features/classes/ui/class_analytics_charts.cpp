@@ -8,6 +8,8 @@
 #include <QPalette>
 #include <QSizePolicy>
 
+#include <algorithm>
+
 namespace
 {
 
@@ -60,7 +62,8 @@ QColor gradeColor(const QString& grade)
 GradeHistogram::GradeHistogram(QWidget* parent)
     : QWidget(parent)
 {
-    setMinimumHeight(220);
+    setObjectName(QStringLiteral("analyticsGradeHistogram"));
+    setMinimumHeight(165);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
@@ -72,7 +75,7 @@ void GradeHistogram::setData(const QMap<QString, int>& distribution)
 
 QSize GradeHistogram::sizeHint() const
 {
-    return { 300, 260 };
+    return { 300, 195 };
 }
 
 void GradeHistogram::paintEvent(QPaintEvent*)
@@ -131,6 +134,237 @@ void GradeHistogram::paintEvent(QPaintEvent*)
             QRectF(center - slotWidth / 2.0, baseline + 6.0, slotWidth, 20.0),
             Qt::AlignCenter,
             grade);
+    }
+}
+
+YearToDateChart::YearToDateChart(QWidget* parent)
+    : QWidget(parent)
+{
+    setObjectName(QStringLiteral("analyticsYearToDateChart"));
+    setMinimumHeight(190);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+}
+
+void YearToDateChart::setData(
+    const QList<SpeakingAnalytics::YearToDatePoint>& points
+)
+{
+    m_points = points;
+    update();
+}
+
+QSize YearToDateChart::sizeHint() const
+{
+    return { 300, 190 };
+}
+
+void YearToDateChart::paintEvent(QPaintEvent*)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    const QColor foreground = isDarkTheme(this)
+        ? QColor(QStringLiteral("#f5f5f5"))
+        : QColor(QStringLiteral("#31363b"));
+    const QColor grid = isDarkTheme(this)
+        ? QColor(255, 255, 255, 45)
+        : QColor(0, 0, 0, 34);
+    const QColor lineColor = QColor(QStringLiteral("#3f7ecb"));
+
+    // Keep each term in a stable position, even when it has no completed
+    // evaluation yet.  This prevents the trend from visually re-scaling as
+    // the year progresses.
+    const QStringList evaluations = SpeakingAnalytics::evaluationNames();
+
+    constexpr qreal leftMargin = 42.0;
+    constexpr qreal rightMargin = 12.0;
+    constexpr qreal topMargin = 28.0;
+    constexpr qreal bottomMargin = 62.0;
+    const QRectF plot = QRectF(rect()).adjusted(
+        leftMargin, topMargin, -rightMargin, -bottomMargin);
+    if (plot.width() <= 1.0 || plot.height() <= 1.0)
+        return;
+
+    const QList<QString> grades{
+        QStringLiteral("C"),
+        QStringLiteral("B"),
+        QStringLiteral("B+"),
+        QStringLiteral("A"),
+        QStringLiteral("A+")
+    };
+    painter.setFont(FontManager::getUiFont(10));
+    for (int grade = 1; grade <= 5; ++grade)
+    {
+        const qreal y = plot.bottom()
+            - (grade - 1) * plot.height() / 4.0;
+        painter.setPen(QPen(grid, 1.0));
+        painter.drawLine(QPointF(plot.left(), y), QPointF(plot.right(), y));
+        painter.setPen(mutedTextColor(this));
+        painter.drawText(
+            QRectF(0.0, y - 9.0, leftMargin - 8.0, 18.0),
+            Qt::AlignCenter,
+            grades.at(grade - 1));
+    }
+
+    const int evaluationCount = evaluations.size();
+    if (evaluationCount == 0)
+        return;
+
+    const qreal slotWidth = evaluationCount == 1
+        ? plot.width()
+        : plot.width() / (evaluationCount - 1);
+    const QFont axisLabelFont = FontManager::getUiFont(9);
+    const QFontMetricsF axisLabelMetrics(axisLabelFont);
+    const auto slotCenter = [&plot, evaluationCount, slotWidth](int index)
+    {
+        return evaluationCount == 1
+            ? plot.center().x()
+            : plot.left() + index * slotWidth;
+    };
+    const auto pointPosition = [&plot,
+                                &evaluations,
+                                axisLabelMetrics,
+                                evaluationCount,
+                                slotCenter](int index, double average)
+    {
+        qreal x = slotCenter(index);
+        if (evaluationCount > 1 && index == 0)
+        {
+            x = plot.left() + axisLabelMetrics.horizontalAdvance(
+                evaluations.at(index)) / 2.0;
+        }
+        else if (evaluationCount > 1 && index == evaluationCount - 1)
+        {
+            x = plot.right() - axisLabelMetrics.horizontalAdvance(
+                evaluations.at(index)) / 2.0;
+        }
+        const qreal boundedAverage = qBound(1.0, average, 5.0);
+        const qreal y = plot.bottom()
+            - (boundedAverage - 1.0) * plot.height() / 4.0;
+        return QPointF(x, y);
+    };
+
+    QPainterPath trend;
+    bool previousPointPresent = false;
+    bool hasLineSegment = false;
+    for (int index = 0; index < evaluationCount; ++index)
+    {
+        const auto pointIt = std::find_if(
+            m_points.cbegin(), m_points.cend(),
+            [&evaluations, index](
+                const SpeakingAnalytics::YearToDatePoint& point)
+            {
+                return point.evaluationName == evaluations.at(index);
+            });
+        if (pointIt == m_points.cend())
+        {
+            previousPointPresent = false;
+            continue;
+        }
+
+        const QPointF point = pointPosition(index, pointIt->classAverage3);
+        if (!previousPointPresent)
+            trend.moveTo(point);
+        else
+        {
+            trend.lineTo(point);
+            hasLineSegment = true;
+        }
+        previousPointPresent = true;
+    }
+    if (hasLineSegment)
+    {
+        painter.setPen(QPen(lineColor, 2.4, Qt::SolidLine, Qt::RoundCap,
+                            Qt::RoundJoin));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPath(trend);
+    }
+
+    const QFont valueFont = FontManager::getUiFont(10, QFont::DemiBold);
+    const QFont labelFont = FontManager::getUiFont(10);
+    for (int index = 0; index < evaluationCount; ++index)
+    {
+        const QString& evaluation = evaluations.at(index);
+        const auto pointIt = std::find_if(
+            m_points.cbegin(), m_points.cend(),
+            [&evaluation](const SpeakingAnalytics::YearToDatePoint& point)
+            {
+                return point.evaluationName == evaluation;
+            });
+        const qreal x = slotCenter(index);
+
+        if (pointIt != m_points.cend())
+        {
+            const QPointF position = pointPosition(index, pointIt->classAverage3);
+
+            painter.setPen(QPen(foreground, 1.2));
+            painter.setBrush(lineColor);
+            painter.drawEllipse(position, 4.5, 4.5);
+
+            // Keep the qualitative and numeric results distinct: the grade
+            // sits above the marker and its one-decimal score sits below it.
+            painter.setFont(valueFont);
+            painter.setPen(foreground);
+            painter.drawText(
+                QRectF(position.x() - slotWidth / 2.0,
+                       position.y() - 26.0,
+                       slotWidth,
+                       18.0),
+                Qt::AlignCenter,
+                pointIt->classAverageLetter);
+
+            painter.setFont(labelFont);
+            painter.setPen(Qt::white);
+            painter.drawText(
+                QRectF(position.x() - slotWidth / 2.0,
+                       position.y() + 7.0,
+                       slotWidth,
+                       16.0),
+                Qt::AlignCenter,
+                SpeakingAnalytics::formatAverage(pointIt->classAverage3));
+        }
+
+        painter.setFont(axisLabelFont);
+        painter.setPen(mutedTextColor(this));
+        const QString label = evaluation == QLatin1String("Speech Contest")
+            ? QStringLiteral("Speech\nContest")
+            : evaluation;
+        Qt::Alignment labelAlignment = Qt::AlignHCenter | Qt::AlignTop;
+        QRectF labelArea(x - slotWidth / 2.0,
+                         plot.bottom() + 18.0,
+                         slotWidth,
+                         30.0);
+        if (index == 0)
+        {
+            labelArea = QRectF(plot.left(), labelArea.top(), slotWidth, 30.0);
+            labelAlignment = Qt::AlignLeft | Qt::AlignTop;
+        }
+        else if (index == evaluationCount - 1)
+        {
+            labelArea = QRectF(
+                plot.right() - slotWidth, labelArea.top(), slotWidth, 30.0);
+            labelAlignment = Qt::AlignRight | Qt::AlignTop;
+        }
+        else if (evaluation == QLatin1String("Speech Contest"))
+        {
+            // Preserve a readable gap after Winter at the card's narrowest
+            // supported width while retaining the two-line label.
+            labelArea.translate(4.0, 0.0);
+        }
+        painter.drawText(
+            labelArea,
+            labelAlignment,
+            label);
+    }
+
+    if (m_points.isEmpty())
+    {
+        painter.setFont(FontManager::getUiFont(11));
+        painter.setPen(mutedTextColor(this));
+        painter.drawText(
+            plot,
+            Qt::AlignCenter | Qt::TextWordWrap,
+            tr("No completed evaluations yet."));
     }
 }
 

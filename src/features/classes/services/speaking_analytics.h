@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <optional>
+
 // Pure, database-free calculations for the Class > Analytics dashboard.
 // Scores use the five-point speaking-evaluation scale: C=1, B=2, B+=3,
 // A=4, A+=5. Formatting and palette decisions belong to the UI.
@@ -61,6 +63,16 @@ struct Snapshot
     QList<StudentRank> rankings;
 };
 
+// A completed evaluation's class result for the year-to-date trend.  This is
+// deliberately separate from Snapshot::classAverage3: dashboard snapshots
+// retain partial scores, whereas trend points use fully scored students only.
+struct YearToDatePoint
+{
+    QString evaluationName;
+    double classAverage3 = 0.0;
+    QString classAverageLetter;
+};
+
 // Canonical stored evaluation names. An empty selection means all evaluations.
 [[nodiscard]] QStringList evaluationNames();
 
@@ -85,6 +97,13 @@ struct Snapshot
 [[nodiscard]] Snapshot compute(
     const QList<SpeakingEvalRows>& matrices,
     int rosterStudentCount
+);
+
+// Creates a point from the fully scored rankings in one evaluation snapshot.
+// No point is returned for blank or partial-only evaluations.
+[[nodiscard]] std::optional<YearToDatePoint> yearToDatePoint(
+    const QString& evaluationName,
+    const Snapshot& snapshot
 );
 
 } // namespace SpeakingAnalytics
