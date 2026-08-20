@@ -10,6 +10,7 @@
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/class_notes_page.h"
+#include "features/classes/ui/class_analytics_page.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -288,6 +289,7 @@ void ClassesPage::setSaveMode(
 {
     m_detailsPage->setSaveMode(mode);
     m_rosterEditor->setSaveMode(mode);
+    m_analyticsPage->setSaveMode(mode);
     m_notesPage->setSaveMode(mode);
 }
 
@@ -319,6 +321,11 @@ void ClassesPage::clearDatabaseState()
         m_rosterEditor->clearDatabaseState();
     }
 
+    if (m_analyticsPage)
+    {
+        m_analyticsPage->clearDatabaseState();
+    }
+
     if (m_notesPage)
     {
         m_notesPage->clearDatabaseState();
@@ -335,15 +342,17 @@ void ClassesPage::retranslateUi()
     m_titleLabel->setText(tr("Classes"));
     m_emptyLabel->setText(tr("No classes available"));
 
-    if (m_sectionTabs && m_sectionTabs->count() >= 3)
+    if (m_sectionTabs && m_sectionTabs->count() >= 4)
     {
         m_sectionTabs->setTabText(0, tr("Details"));
         m_sectionTabs->setTabText(1, tr("Roster"));
-        m_sectionTabs->setTabText(2, tr("Notes"));
+        m_sectionTabs->setTabText(2, tr("Analytics"));
+        m_sectionTabs->setTabText(3, tr("Notes"));
     }
 
     m_detailsPage->retranslateUi();
     m_rosterEditor->retranslateUi();
+    m_analyticsPage->retranslateUi();
     m_notesPage->retranslateUi();
 
     rebuildClassTabs(m_currentClassId);
@@ -416,6 +425,7 @@ void ClassesPage::buildUi()
     m_sectionTabs->setObjectName("classesSectionTabs");
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Details"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Roster"));
+    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Analytics"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Notes"));
     navigationLayout->addWidget(m_sectionTabs);
     contentLayout()->addWidget(m_navigationContainer);
@@ -429,9 +439,11 @@ void ClassesPage::buildUi()
     m_editorStack = new QStackedWidget(this);
     m_detailsPage = new ClassDetailsPage(m_services, true, m_editorStack);
     m_rosterEditor = new RosterEditorWidget(m_services, true, m_editorStack);
+    m_analyticsPage = new ClassAnalyticsPage(m_services, true, m_editorStack);
     m_notesPage = new ClassNotesPage(m_services, true, m_editorStack);
     m_editorStack->addWidget(m_detailsPage);
     m_editorStack->addWidget(m_rosterEditor);
+    m_editorStack->addWidget(m_analyticsPage);
     m_editorStack->addWidget(m_notesPage);
     contentLayout()->addWidget(m_editorStack, 1);
 
@@ -908,6 +920,7 @@ void ClassesPage::loadEditors(
 {
     m_detailsPage->loadClass(classroom);
     m_rosterEditor->loadClass(classroom);
+    m_analyticsPage->loadClass(classroom);
     m_notesPage->loadClass(classroom);
     showActiveEditor();
 }
@@ -1068,6 +1081,9 @@ BasePage* ClassesPage::activeEditor() const
 
     case ClassesSection::Roster:
         return m_rosterEditor;
+
+    case ClassesSection::Analytics:
+        return m_analyticsPage;
 
     case ClassesSection::Notes:
         return m_notesPage;
