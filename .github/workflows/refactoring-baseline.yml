@@ -119,7 +119,15 @@ jobs:
           if [[ -n "${{ matrix.configuration }}" ]]; then
             arguments+=(--configuration "${{ matrix.configuration }}")
           fi
-          python scripts/record_refactoring_baseline.py "${arguments[@]}"
+          # GitHub-hosted Linux runners do not provide a desktop session.  Run
+          # the same headless Qt platform used by the GUI CTest targets so the
+          # baseline measures application behavior instead of display setup.
+          if [[ "${RUNNER_OS}" == "Linux" ]]; then
+            QT_QPA_PLATFORM=offscreen \
+              python scripts/record_refactoring_baseline.py "${arguments[@]}"
+          else
+            python scripts/record_refactoring_baseline.py "${arguments[@]}"
+          fi
 
       - name: Upload baseline report and JUnit results
         if: always()

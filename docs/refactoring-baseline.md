@@ -24,7 +24,7 @@ Linux x64:
 
 ```bash
 export QT_LINUX_PREFIX="$HOME/Qt/6.11.1/gcc_64"
-python scripts/record_refactoring_baseline.py \
+QT_QPA_PLATFORM=offscreen python scripts/record_refactoring_baseline.py \
   --configure-preset linux-gcc-debug \
   --build-dir build/linux-gcc-debug \
   --output artifacts/baseline/linux-gcc-debug.json
