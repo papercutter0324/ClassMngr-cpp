@@ -57,6 +57,18 @@ void SectionCard::setTitle(
         );
 }
 
+void SectionCard::setTitleFont(
+    const QFont& font
+    )
+{
+    if (!m_titleLabel)
+    {
+        return;
+    }
+
+    m_titleLabel->setFont(font);
+}
+
 void SectionCard::setTitleAlignment(
     Qt::Alignment alignment
     )

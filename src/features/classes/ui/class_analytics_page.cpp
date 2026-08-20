@@ -102,7 +102,10 @@ int fittedRankingColumnWidth(const QTableWidget* table, int column)
         widest = qMax(widest, width);
     }
 
-    const int valueWidth = widest + 2 * kRankingColumnPadding;
+    const int valueWidth = widest + (column == 3
+        ? AnalyticsRankingLayout::AverageScoreLeftPadding
+            + AnalyticsRankingLayout::AverageScoreRightPadding
+        : 2 * kRankingColumnPadding);
     if (column != 1 && column != 2)
         return valueWidth;
 
@@ -128,6 +131,12 @@ int rankingTableMinimumWidth(const QTableWidget* table)
     return fixedColumnsWidth
         + kRankingCriterionColumnCount * header->sectionSize(1)
         + tableChromeWidth;
+}
+
+void applyAnalyticsCardTitleFont(SectionCard* card)
+{
+    Q_ASSERT(card);
+    card->setTitleFont(FontManager::getUiFont(14, QFont::DemiBold));
 }
 
 } // namespace
@@ -177,6 +186,7 @@ void ClassAnalyticsPage::buildUi()
     m_evaluationLabel->setFont(FontManager::getUiFont(12));
     topLayout->addWidget(m_evaluationLabel);
     m_evaluationCombo = new QComboBox(topBar);
+    m_evaluationCombo->setFont(FontManager::getUiFont(12));
     m_evaluationCombo->setMinimumWidth(170);
     topLayout->addWidget(m_evaluationCombo);
     content->addWidget(topBar);
@@ -194,6 +204,11 @@ void ClassAnalyticsPage::buildUi()
     m_assessedCard = new SectionCard(QString(), m_summaryContainer);
     m_strongestCard = new SectionCard(QString(), m_summaryContainer);
     m_focusCard = new SectionCard(QString(), m_summaryContainer);
+    for (SectionCard* card : { m_averageCard, m_assessedCard, m_strongestCard,
+                               m_focusCard })
+    {
+        applyAnalyticsCardTitleFont(card);
+    }
     m_averageValue = addStatValue(m_averageCard);
     m_assessedValue = addStatValue(m_assessedCard);
     m_strongestValue = addStatValue(m_strongestCard);
@@ -207,6 +222,7 @@ void ClassAnalyticsPage::buildUi()
     m_chartsLayout->setSpacing(kSectionSpacing);
 
     m_criteriaCard = new SectionCard(QString(), m_chartsContainer);
+    applyAnalyticsCardTitleFont(m_criteriaCard);
     auto* criteriaOuter = m_criteriaCard->contentLayout();
     criteriaOuter->setContentsMargins(16, 8, 16, 16);
     auto* legend = new QWidget(m_criteriaCard);
@@ -232,6 +248,7 @@ void ClassAnalyticsPage::buildUi()
     criteriaOuter->addWidget(m_criteriaContainer);
 
     m_shapeCard = new SectionCard(QString(), m_chartsContainer);
+    applyAnalyticsCardTitleFont(m_shapeCard);
     m_shapeCard->setMinimumWidth(270);
     auto* shapeLayout = m_shapeCard->contentLayout();
     shapeLayout->setContentsMargins(16, 8, 16, 16);
@@ -255,9 +272,11 @@ void ClassAnalyticsPage::buildUi()
     content->addWidget(m_chartsContainer);
 
     m_rankingCard = new SectionCard(QString(), body);
+    applyAnalyticsCardTitleFont(m_rankingCard);
     auto* rankLayout = m_rankingCard->contentLayout();
     rankLayout->setContentsMargins(16, 8, 16, 16);
     m_rankingTable = new QTableWidget(0, 10, m_rankingCard);
+    m_rankingTable->setFont(FontManager::getUiFont(12));
     m_rankingTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_rankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_rankingTable->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -265,6 +284,9 @@ void ClassAnalyticsPage::buildUi()
     m_rankingTable->setShowGrid(false);
     m_rankingTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_rankingTable->verticalHeader()->setVisible(false);
+    m_rankingTable->verticalHeader()->setDefaultSectionSize(
+        ClassAnalyticsRankingDelegate::rowHeight());
+    m_rankingTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     m_rankingTable->setHorizontalHeader(
         new ClassAnalyticsRankingHeader(Qt::Horizontal, m_rankingTable));
     m_rankingTable->setItemDelegate(
@@ -546,6 +568,7 @@ void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapsh
         m_criteriaLayout->addWidget(bar, m_criterionBars.size(), 0);
         m_criterionBars.append(bar);
     }
+    synchronizeCriterionBarStarts();
 
     m_rankingTable->setUpdatesEnabled(false);
     m_rankingTable->setRowCount(snapshot.rankings.size());
@@ -584,7 +607,7 @@ void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapsh
 
     const int visibleRows = qMin(6, m_rankingTable->rowCount());
     const int height = m_rankingTable->horizontalHeader()->height()
-        + visibleRows * SpeakingEval::RowHeight + 4;
+        + visibleRows * ClassAnalyticsRankingDelegate::rowHeight() + 4;
     m_rankingTable->setMinimumHeight(qMax(92, height));
 }
 
@@ -600,6 +623,7 @@ void ClassAnalyticsPage::applyResponsiveLayout()
     layoutSummaryCards(summaryColumns);
     layoutChartCards(width >= kChartsHorizontalBreakpoint);
     refreshAreaValueTexts();
+    synchronizeCriterionBarStarts();
     resizeRankingColumnsToContents();
 }
 
@@ -647,6 +671,16 @@ void ClassAnalyticsPage::layoutChartCards(bool horizontal)
         m_chartsLayout->setRowStretch(0, 0);
         m_chartsLayout->setRowStretch(1, 0);
     }
+}
+
+void ClassAnalyticsPage::synchronizeCriterionBarStarts()
+{
+    qreal sharedBarLeft = 0.0;
+    for (const CriterionDistributionBar* bar : m_criterionBars)
+        sharedBarLeft = qMax(sharedBarLeft, bar->minimumBarLeft());
+
+    for (CriterionDistributionBar* bar : m_criterionBars)
+        bar->setSharedBarLeft(sharedBarLeft);
 }
 
 void ClassAnalyticsPage::resizeRankingColumnsToContents()

@@ -62,6 +62,7 @@ private:
     void layoutSummaryCards(int columns);
     void layoutChartCards(bool horizontal);
     void refreshAreaValueTexts();
+    void synchronizeCriterionBarStarts();
     void resizeRankingColumnsToContents();
     void setRankingHeaders();
 

@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 
 class QLabel;
+class QFont;
 
 class SectionCard : public QFrame
 {
@@ -17,6 +18,9 @@ public:
 
     void setTitle(
         const QString& title
+        );
+    void setTitleFont(
+        const QFont& font
         );
     void setTitleAlignment(
         Qt::Alignment alignment

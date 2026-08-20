@@ -21,6 +21,9 @@ namespace AnalyticsRankingLayout
 inline constexpr int GradeBadgeWidth = 38;
 inline constexpr int GradeBadgeHeight = 26;
 inline constexpr int GradeBadgeTextSpacing = 6;
+inline constexpr int CellVerticalPadding = 10;
+inline constexpr int AverageScoreLeftPadding = 5;
+inline constexpr int AverageScoreRightPadding = 15;
 } // namespace AnalyticsRankingLayout
 
 // Header group boundaries separate the row number, student names and average,

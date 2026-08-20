@@ -2,7 +2,6 @@
 
 #include "class_analytics_ranking_header.h"
 #include "core/fontmanager.h"
-#include "domain/models/speaking_evaluation.h"
 #include "features/classes/ui/class_analytics_charts.h"
 
 #include <QFontMetrics>
@@ -50,10 +49,15 @@ public:
         const int column = index.column();
         const QString display = index.data(Qt::DisplayRole).toString();
         const QString grade = index.data(AnalyticsRankingRoles::Grade).toString();
+        const QRect contentRect = option.rect.adjusted(
+            0,
+            AnalyticsRankingLayout::CellVerticalPadding,
+            column == 3 ? -AnalyticsRankingLayout::AverageScoreRightPadding : 0,
+            -AnalyticsRankingLayout::CellVerticalPadding);
 
         if (column >= 3 && !grade.isEmpty())
         {
-            drawGradeCell(painter, option.rect, column, grade, display, dark);
+            drawGradeCell(painter, contentRect, column, grade, display, dark);
         }
         else
         {
@@ -62,9 +66,9 @@ public:
             painter->setPen(dark ? QColor(QStringLiteral("#f5f5f5"))
                                  : QColor(QStringLiteral("#24303a")));
             const QString text = QFontMetrics(painter->font()).elidedText(
-                display, Qt::ElideRight, option.rect.width() - 8);
+                display, Qt::ElideRight, contentRect.width() - 8);
             painter->drawText(
-                option.rect.adjusted(4, 0, -4, 0), Qt::AlignCenter, text);
+                contentRect.adjusted(4, 0, -4, 0), Qt::AlignCenter, text);
         }
 
         if (ClassAnalyticsRankingHeader::hasGroupBorderAfter(column))
@@ -93,8 +97,20 @@ public:
         ) const override
     {
         QSize result = QStyledItemDelegate::sizeHint(option, index);
-        result.setHeight(SpeakingEval::RowHeight);
+        result.setHeight(rowHeight());
         return result;
+    }
+
+    [[nodiscard]] static int rowHeight()
+    {
+        const int indexTextHeight =
+            QFontMetrics(FontManager::getUiFont(12)).height();
+        const int averageGradeHeight = qMax(
+            QFontMetrics(FontManager::getUiFont(11, QFont::DemiBold)).height(),
+            AnalyticsRankingLayout::GradeBadgeHeight);
+        const int contentHeight = qMax(indexTextHeight, averageGradeHeight);
+        return contentHeight
+            + 2 * AnalyticsRankingLayout::CellVerticalPadding;
     }
 
 private:
@@ -119,7 +135,9 @@ private:
             + (textWidth > 0
                    ? AnalyticsRankingLayout::GradeBadgeTextSpacing + textWidth
                    : 0);
-        const int contentLeft = cell.center().x() - contentWidth / 2;
+        const int contentLeft = column == 3
+            ? cell.left() + AnalyticsRankingLayout::AverageScoreLeftPadding
+            : cell.center().x() - contentWidth / 2;
         const QRect badge(
             contentLeft,
             cell.center().y() - badgeSize.height() / 2,

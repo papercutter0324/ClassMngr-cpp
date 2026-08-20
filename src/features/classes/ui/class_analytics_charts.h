@@ -53,8 +53,10 @@ public:
 
     void setData(const QList<SpeakingAnalytics::YearToDatePoint>& points);
     [[nodiscard]] QSize sizeHint() const override;
+    [[nodiscard]] QSize minimumSizeHint() const override;
 
 protected:
+    void changeEvent(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
 
 private:
@@ -74,6 +76,8 @@ public:
     void setAverageText(const QString& averageText);
     void setData(const QMap<QString, int>& distribution);
     void setInsight(AnalyticsCharts::CriterionInsight insight);
+    [[nodiscard]] qreal minimumBarLeft() const;
+    void setSharedBarLeft(qreal barLeft);
     [[nodiscard]] QSize sizeHint() const override;
 
 protected:
@@ -85,4 +89,5 @@ private:
     QMap<QString, int> m_distribution;
     AnalyticsCharts::CriterionInsight m_insight =
         AnalyticsCharts::CriterionInsight::None;
+    qreal m_sharedBarLeft = 0.0;
 };

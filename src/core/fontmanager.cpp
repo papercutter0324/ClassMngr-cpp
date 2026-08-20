@@ -12,6 +12,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QPointer>
+#include <QPalette>
 #include <QRegularExpression>
 #include <QStyle>
 #include <QTableWidget>
@@ -522,6 +523,15 @@ QFont FontManager::getKoreanFont(
         weight,
         italic
         );
+}
+
+QColor FontManager::getThemedTextColor(
+    const QWidget* widget
+    )
+{
+    const bool darkTheme = widget
+        && widget->palette().color(QPalette::Window).lightness() < 128;
+    return darkTheme ? QColor(Qt::white) : QColor(Qt::black);
 }
 
 

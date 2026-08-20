@@ -2,6 +2,7 @@
 #define FONTMANAGER_H
 
 #include <QApplication>
+#include <QColor>
 #include <QFont>
 #include <QFontMetrics>
 #include <QString>
@@ -9,6 +10,7 @@
 
 class FontManagerTests;
 class QLabel;
+class QWidget;
 
 
 // =========================================================
@@ -54,6 +56,10 @@ public:
         int size = stdKoreanFont,
         int weight = QFont::Normal,
         bool italic = false
+        );
+
+    static QColor getThemedTextColor(
+        const QWidget* widget
         );
 
     static int sizeOffset();

@@ -26,6 +26,33 @@ QColor mutedTextColor(const QWidget* widget)
         : QColor(QStringLiteral("#66727a"));
 }
 
+constexpr qreal kYearToDateLeftMargin = 42.0;
+constexpr qreal kYearToDateRightMargin = 12.0;
+constexpr qreal kYearToDateTopMargin = 28.0;
+constexpr qreal kYearToDateAxisLabelTopGap = 18.0;
+constexpr qreal kYearToDateBottomPadding = 14.0;
+constexpr qreal kYearToDateMinimumPlotHeight = 100.0;
+constexpr int kYearToDateMinimumHeight = 190;
+
+qreal yearToDateAxisLabelHeight()
+{
+    return QFontMetricsF(FontManager::getUiFont(9)).lineSpacing() * 2.0;
+}
+
+qreal yearToDateBottomMargin()
+{
+    return kYearToDateAxisLabelTopGap + yearToDateAxisLabelHeight()
+        + kYearToDateBottomPadding;
+}
+
+int yearToDateChartHeight()
+{
+    return qMax(
+        kYearToDateMinimumHeight,
+        qCeil(kYearToDateTopMargin + kYearToDateMinimumPlotHeight
+              + yearToDateBottomMargin()));
+}
+
 } // namespace
 
 namespace AnalyticsCharts
@@ -141,7 +168,7 @@ YearToDateChart::YearToDateChart(QWidget* parent)
     : QWidget(parent)
 {
     setObjectName(QStringLiteral("analyticsYearToDateChart"));
-    setMinimumHeight(190);
+    setMinimumHeight(yearToDateChartHeight());
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 }
 
@@ -155,7 +182,23 @@ void YearToDateChart::setData(
 
 QSize YearToDateChart::sizeHint() const
 {
-    return { 300, 190 };
+    return { 300, yearToDateChartHeight() };
+}
+
+QSize YearToDateChart::minimumSizeHint() const
+{
+    return { 300, yearToDateChartHeight() };
+}
+
+void YearToDateChart::changeEvent(QEvent* event)
+{
+    QWidget::changeEvent(event);
+
+    if (event && event->type() == QEvent::FontChange)
+    {
+        setMinimumHeight(yearToDateChartHeight());
+        updateGeometry();
+    }
 }
 
 void YearToDateChart::paintEvent(QPaintEvent*)
@@ -163,9 +206,7 @@ void YearToDateChart::paintEvent(QPaintEvent*)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    const QColor foreground = isDarkTheme(this)
-        ? QColor(QStringLiteral("#f5f5f5"))
-        : QColor(QStringLiteral("#31363b"));
+    const QColor foreground = FontManager::getThemedTextColor(this);
     const QColor grid = isDarkTheme(this)
         ? QColor(255, 255, 255, 45)
         : QColor(0, 0, 0, 34);
@@ -176,12 +217,11 @@ void YearToDateChart::paintEvent(QPaintEvent*)
     // the year progresses.
     const QStringList evaluations = SpeakingAnalytics::evaluationNames();
 
-    constexpr qreal leftMargin = 42.0;
-    constexpr qreal rightMargin = 12.0;
-    constexpr qreal topMargin = 28.0;
-    constexpr qreal bottomMargin = 62.0;
     const QRectF plot = QRectF(rect()).adjusted(
-        leftMargin, topMargin, -rightMargin, -bottomMargin);
+        kYearToDateLeftMargin,
+        kYearToDateTopMargin,
+        -kYearToDateRightMargin,
+        -yearToDateBottomMargin());
     if (plot.width() <= 1.0 || plot.height() <= 1.0)
         return;
 
@@ -201,7 +241,7 @@ void YearToDateChart::paintEvent(QPaintEvent*)
         painter.drawLine(QPointF(plot.left(), y), QPointF(plot.right(), y));
         painter.setPen(mutedTextColor(this));
         painter.drawText(
-            QRectF(0.0, y - 9.0, leftMargin - 8.0, 18.0),
+            QRectF(0.0, y - 9.0, kYearToDateLeftMargin - 8.0, 18.0),
             Qt::AlignCenter,
             grades.at(grade - 1));
     }
@@ -314,7 +354,7 @@ void YearToDateChart::paintEvent(QPaintEvent*)
                 pointIt->classAverageLetter);
 
             painter.setFont(labelFont);
-            painter.setPen(Qt::white);
+            painter.setPen(FontManager::getThemedTextColor(this));
             painter.drawText(
                 QRectF(position.x() - slotWidth / 2.0,
                        position.y() + 7.0,
@@ -331,18 +371,21 @@ void YearToDateChart::paintEvent(QPaintEvent*)
             : evaluation;
         Qt::Alignment labelAlignment = Qt::AlignHCenter | Qt::AlignTop;
         QRectF labelArea(x - slotWidth / 2.0,
-                         plot.bottom() + 18.0,
+                         plot.bottom() + kYearToDateAxisLabelTopGap,
                          slotWidth,
-                         30.0);
+                         yearToDateAxisLabelHeight());
         if (index == 0)
         {
-            labelArea = QRectF(plot.left(), labelArea.top(), slotWidth, 30.0);
+            labelArea = QRectF(
+                plot.left(), labelArea.top(), slotWidth,
+                yearToDateAxisLabelHeight());
             labelAlignment = Qt::AlignLeft | Qt::AlignTop;
         }
         else if (index == evaluationCount - 1)
         {
             labelArea = QRectF(
-                plot.right() - slotWidth, labelArea.top(), slotWidth, 30.0);
+                plot.right() - slotWidth, labelArea.top(), slotWidth,
+                yearToDateAxisLabelHeight());
             labelAlignment = Qt::AlignRight | Qt::AlignTop;
         }
         else if (evaluation == QLatin1String("Speech Contest"))
@@ -399,6 +442,34 @@ void CriterionDistributionBar::setInsight(AnalyticsCharts::CriterionInsight insi
     update();
 }
 
+qreal CriterionDistributionBar::minimumBarLeft() const
+{
+    constexpr qreal labelWidth = 164.0;
+    constexpr qreal insightToBarSpacing = 20.0;
+    const qreal defaultBarLeft = labelWidth + 8.0;
+    if (m_insight == AnalyticsCharts::CriterionInsight::None)
+        return defaultBarLeft;
+
+    const QString text = m_insight == AnalyticsCharts::CriterionInsight::Strongest
+        ? tr("Strongest")
+        : tr("Focus");
+    const qreal badgeWidth = QFontMetricsF(FontManager::getUiFont(9))
+        .horizontalAdvance(text) + 14.0;
+    const qreal averageTextWidth = QFontMetricsF(FontManager::getUiFont(10))
+        .horizontalAdvance(m_averageText);
+    const qreal badgeRight = averageTextWidth + 20.0 + badgeWidth;
+    return qMax(defaultBarLeft, badgeRight + insightToBarSpacing);
+}
+
+void CriterionDistributionBar::setSharedBarLeft(qreal barLeft)
+{
+    if (qFuzzyCompare(m_sharedBarLeft, barLeft))
+        return;
+
+    m_sharedBarLeft = barLeft;
+    update();
+}
+
 QSize CriterionDistributionBar::sizeHint() const
 {
     return { 520, 54 };
@@ -411,11 +482,9 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
 
     constexpr qreal labelWidth = 164.0;
     constexpr qreal rightPadding = 8.0;
+    constexpr qreal insightToBarSpacing = 20.0;
     const QRectF labelArea(0.0, 1.0, labelWidth, 24.0);
     const QRectF averageArea(0.0, 27.0, labelWidth, 20.0);
-    const QRectF bar(labelWidth + 8.0, 13.0,
-                     qMax<qreal>(0.0, width() - labelWidth - rightPadding - 8.0),
-                     26.0);
 
     QFont labelFont = FontManager::getUiFont(12, QFont::DemiBold);
     painter.setFont(labelFont);
@@ -428,6 +497,7 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
         Qt::AlignLeft | Qt::AlignVCenter,
         labelMetrics.elidedText(m_label, Qt::ElideRight, labelArea.width()));
 
+    QRectF insightBadge;
     if (m_insight != AnalyticsCharts::CriterionInsight::None)
     {
         const QString text = m_insight == AnalyticsCharts::CriterionInsight::Strongest
@@ -440,22 +510,34 @@ void CriterionDistributionBar::paintEvent(QPaintEvent*)
         const qreal badgeWidth = QFontMetricsF(badgeFont).horizontalAdvance(text) + 14.0;
         const qreal averageTextWidth = QFontMetricsF(FontManager::getUiFont(10))
             .horizontalAdvance(m_averageText);
-        const QRectF badge(
+        insightBadge = QRectF(
             averageArea.left() + averageTextWidth + 20.0,
-            averageArea.center().y() - 8.5,
+            averageArea.center().y() - 12,
             badgeWidth,
-            17.0);
+            23.0);
         painter.setPen(QPen(color, 1.0));
         painter.setBrush(color.lighter(isDarkTheme(this) ? 120 : 185));
-        painter.drawRoundedRect(badge, 8.5, 8.5);
+        painter.drawRoundedRect(insightBadge, 12, 12);
         painter.setFont(badgeFont);
-        painter.setPen(Qt::white);
-        painter.drawText(badge, Qt::AlignCenter, text);
+        painter.setPen(FontManager::getThemedTextColor(this));
+        painter.drawText(insightBadge, Qt::AlignCenter, text);
     }
 
     painter.setFont(FontManager::getUiFont(10));
     painter.setPen(mutedTextColor(this));
     painter.drawText(averageArea, Qt::AlignLeft | Qt::AlignVCenter, m_averageText);
+
+    // Large managed fonts can make the Strongest/Focus badge extend past the
+    // historical fixed label column.  Keep a readable 20px gap before the
+    // distribution begins rather than allowing the badge and bar to touch.
+    qreal barLeft = qMax(labelWidth + 8.0, m_sharedBarLeft);
+    if (!insightBadge.isNull())
+        barLeft = qMax(barLeft, insightBadge.right() + insightToBarSpacing);
+    const QRectF bar(
+        barLeft,
+        13.0,
+        qMax<qreal>(0.0, width() - barLeft - rightPadding),
+        26.0);
 
     int total = 0;
     for (const int count : m_distribution)

@@ -20,6 +20,16 @@ QImage render(YearToDateChart& chart, const QSize& size)
     return image;
 }
 
+QImage render(QWidget& widget, const QSize& size)
+{
+    widget.resize(size);
+    QImage image(size, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    widget.render(&painter);
+    return image;
+}
+
 bool hasPaintedPixel(const QImage& image)
 {
     for (int y = 0; y < image.height(); ++y)
@@ -51,6 +61,21 @@ bool hasTrendPixelInRange(const QImage& image, int minimumX, int maximumX)
     return false;
 }
 
+int firstGreenBarPixel(const QImage& image, int y)
+{
+    for (int x = 0; x < image.width(); ++x)
+    {
+        const QRgb pixel = image.pixel(x, y);
+        if (qAbs(qRed(pixel) - 0x15) <= 3
+            && qAbs(qGreen(pixel) - 0x94) <= 3
+            && qAbs(qBlue(pixel) - 0x47) <= 3)
+        {
+            return x;
+        }
+    }
+    return -1;
+}
+
 SpeakingAnalytics::YearToDatePoint point(
     const QString& name,
     double average,
@@ -59,6 +84,23 @@ SpeakingAnalytics::YearToDatePoint point(
 {
     return { name, average, grade };
 }
+
+class FontSizeOffsetReset
+{
+public:
+    FontSizeOffsetReset()
+        : m_offset(FontManager::sizeOffset())
+    {
+    }
+
+    ~FontSizeOffsetReset()
+    {
+        FontManager::setSizeOffset(m_offset);
+    }
+
+private:
+    int m_offset;
+};
 
 } // namespace
 
@@ -71,6 +113,8 @@ private slots:
     void rendersNoDataWithAllEvaluationSlotsAndSinglePoint();
     void rendersMultiplePointsAtNarrowCardWidth();
     void alignsEdgePointsWithTheirLabels();
+    void expandsForExtraLargeTwoLineAxisLabel();
+    void alignsCriterionBarsAfterInsightBadge();
 };
 
 void YearToDateChartTests::evaluationHistogramUsesReducedHeight()
@@ -127,6 +171,50 @@ void YearToDateChartTests::alignsEdgePointsWithTheirLabels()
     const int fallCenter = qRound(
         258.0 - metrics.horizontalAdvance(QStringLiteral("Fall")) / 2.0);
     QVERIFY(hasTrendPixelInRange(fall, fallCenter - 8, fallCenter + 8));
+}
+
+void YearToDateChartTests::expandsForExtraLargeTwoLineAxisLabel()
+{
+    const FontSizeOffsetReset restoreFontSize;
+    FontManager::setSizeOffset(4);
+
+    YearToDateChart chart;
+    QCOMPARE(chart.minimumSizeHint().height(), chart.minimumHeight());
+    QVERIFY(chart.minimumHeight() > 190);
+
+    chart.setData({ point(QStringLiteral("Speech Contest"), 3.0,
+                          QStringLiteral("B+")) });
+    const QImage image = render(chart, QSize(270, chart.minimumHeight()));
+    QVERIFY(!image.isNull());
+    QVERIFY(hasPaintedPixel(image));
+}
+
+void YearToDateChartTests::alignsCriterionBarsAfterInsightBadge()
+{
+    const FontSizeOffsetReset restoreFontSize;
+    FontManager::setSizeOffset(4);
+
+    CriterionDistributionBar strongest;
+    strongest.setAverageText(QStringLiteral("A+  -  5.0"));
+    strongest.setData({ { QStringLiteral("A+"), 1 } });
+    strongest.setInsight(AnalyticsCharts::CriterionInsight::Strongest);
+
+    CriterionDistributionBar plain;
+    plain.setAverageText(QStringLiteral("A+  -  5.0"));
+    plain.setData({ { QStringLiteral("A+"), 1 } });
+
+    const qreal sharedBarLeft = qMax(
+        strongest.minimumBarLeft(), plain.minimumBarLeft());
+    QVERIFY(sharedBarLeft > plain.minimumBarLeft());
+    strongest.setSharedBarLeft(sharedBarLeft);
+    plain.setSharedBarLeft(sharedBarLeft);
+
+    const QImage strongestImage = render(strongest, QSize(520, 54));
+    const QImage plainImage = render(plain, QSize(520, 54));
+    const int strongestBarStart = firstGreenBarPixel(strongestImage, 20);
+    const int plainBarStart = firstGreenBarPixel(plainImage, 20);
+    QVERIFY(strongestBarStart >= 0);
+    QCOMPARE(plainBarStart, strongestBarStart);
 }
 
 QTEST_MAIN(YearToDateChartTests)

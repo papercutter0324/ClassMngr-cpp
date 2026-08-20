@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
+#include <QPalette>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QtTest>
@@ -99,6 +100,21 @@ private slots:
             (static_cast<int>(font.styleStrategy())
              & static_cast<int>(QFont::PreferAntialias)) != 0
             );
+    }
+
+    void themedTextColorFollowsWidgetTheme()
+    {
+        QWidget widget;
+
+        QPalette lightPalette;
+        lightPalette.setColor(QPalette::Window, Qt::white);
+        widget.setPalette(lightPalette);
+        QCOMPARE(FontManager::getThemedTextColor(&widget), QColor(Qt::black));
+
+        QPalette darkPalette;
+        darkPalette.setColor(QPalette::Window, QColor(QStringLiteral("#202326")));
+        widget.setPalette(darkPalette);
+        QCOMPARE(FontManager::getThemedTextColor(&widget), QColor(Qt::white));
     }
 
     void configuredOffsetAppliesToAllManagedSizes()
