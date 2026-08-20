@@ -90,9 +90,11 @@ jobs:
         shell: bash
         run: |
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
+          # Qt Declarative and the command-line tools are in the Qt 6.11 base
+          # package; Qt Pdf is the only extension required by this build.
           python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
             --outputdir "${GITHUB_WORKSPACE}/Qt" \
-            --modules qtdeclarative qtpdf qttools
+            --modules qtpdf
           echo "QT_LINUX_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
 
       - name: Install Qt on macOS
