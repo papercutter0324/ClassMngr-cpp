@@ -1,9 +1,8 @@
 #include "features/classes/ui/class_analytics_page.h"
 
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
-#include "core/theme_service.h"
-#include "app/services/feature_services.h"
 #include "features/classes/ui/class_analytics_charts.h"
 #include "features/classes/ui/class_analytics_ranking_delegate.h"
 #include "features/classes/ui/class_analytics_ranking_header.h"
@@ -16,116 +15,119 @@
 #include <QComboBox>
 #include <QEvent>
 #include <QFontMetrics>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QLayout>
 #include <QLayoutItem>
-#include <QPalette>
-#include <QSizePolicy>
-#include <QStringList>
+#include <QShowEvent>
+#include <QScrollBar>
 #include <QTableWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace
 {
 
-// Page width at which "Class Shape" and "By Criterion" sit side by side
-// (Class Shape on the right); below it they stack vertically.
-constexpr int kChartsRowBreakpoint = 840;
-
-// Spacer between the sections, same as between the stat cards.
 constexpr int kSectionSpacing = 20;
+constexpr int kSummaryTwoColumnBreakpoint = 520;
+constexpr int kSummaryFourColumnBreakpoint = 920;
+constexpr int kChartsHorizontalBreakpoint = 900;
+constexpr int kRankingColumnPadding = 5;
+constexpr int kRankingHeaderPadding = 10;
+constexpr int kRankingIndexColumnWidth = 40;
+constexpr int kRankingEnglishColumnWidth = 160;
+constexpr int kRankingKoreanColumnWidth = 140;
+constexpr int kRankingAverageColumnWidth = 90;
+constexpr int kRankingCriterionColumnCount = 6;
 
-// Horizontal inset of a stat card's content: 14px layout margin (set in
-// addStatCard) plus the 2px sectionCard border from the theme stylesheet.
-constexpr int kStatCardLabelPadding = 16;
-
-// Wraps stat-card value text (one metric per line) into a single label
-// string: metrics stay on a line while they fit in maxWidth, and break to
-// their own line otherwise.  Measured with the label's current font so the
-// result stays correct across font-size changes.
-QString wrapStatValue(
-    const QStringList& values,
-    const QFontMetrics& metrics,
-    int maxWidth
-    )
+QLabel* addStatValue(SectionCard* card)
 {
-    QStringList lines;
-    QString line;
-    for (const QString& v : values)
+    auto* value = new QLabel(QStringLiteral("—"), card);
+    value->setFont(FontManager::getUiFont(20, QFont::DemiBold));
+    value->setWordWrap(true);
+    value->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    value->setMinimumHeight(42);
+    card->contentLayout()->setContentsMargins(16, 8, 16, 16);
+    card->contentLayout()->addWidget(value);
+    return value;
+}
+
+void clearLayout(QLayout* layout)
+{
+    while (QLayoutItem* item = layout->takeAt(0))
     {
-        const int vWidth = metrics.horizontalAdvance(v);
-        if (line.isEmpty())
-        {
-            line = v;
-        }
-        else if (metrics.horizontalAdvance(line)
-                 + metrics.horizontalAdvance(QLatin1Char(' '))
-                 + vWidth <= maxWidth)
-        {
-            line += QLatin1Char(' ');
-            line += v;
-        }
-        else
-        {
-            lines << line;
-            line = v;
-        }
+        if (QWidget* widget = item->widget())
+            widget->deleteLater();
+        delete item;
     }
-    if (!line.isEmpty())
-        lines << line;
-    return lines.join(QLatin1Char('\n'));
 }
 
-QList<QString> evaluationNames()
+AnalyticsCharts::CriterionInsight criterionInsight(
+    const SpeakingAnalytics::CriterionSlice& slice,
+    const SpeakingAnalytics::Snapshot& snapshot
+)
 {
-    return { QStringLiteral("All"),
-             QStringLiteral("Winter"),
-             QStringLiteral("Speech Contest"),
-             QStringLiteral("Summer"),
-             QStringLiteral("Fall") };
+    const bool strongest = snapshot.strongestNames.contains(slice.name);
+    const bool focus = snapshot.focusNames.contains(slice.name);
+    if (strongest == focus)
+        return AnalyticsCharts::CriterionInsight::None;
+    return strongest ? AnalyticsCharts::CriterionInsight::Strongest
+                     : AnalyticsCharts::CriterionInsight::Focus;
 }
 
-// Fit a name column (1 = English, 2 = Korean) to its content: the widest
-// text in the column (body names and the header label) plus a third of the
-// padding the column has at its base width. The base width is the Speaking
-// Evaluations table's name column width (180px), matching the fixed width
-// the column gets in buildUi().
-int fittedNameColumnWidth(QTableWidget* table, int column)
+int fittedRankingColumnWidth(const QTableWidget* table, int column)
 {
-    // Measure with the same fonts the body delegate actually paints
-    // with: the Korean font for the Korean column, the standard 12pt UI
-    // font for the English column (see ClassAnalyticsRankingDelegate).
-    const QFontMetrics bodyMetrics(
-        column == 2
-            ? FontManager::getKoreanFont()
-            : FontManager::getUiFont(12)
-        );
+    Q_ASSERT(table);
 
+    const QFont font = column == 2
+        ? FontManager::getKoreanFont()
+        : FontManager::getUiFont(column == 3 ? 11 : 12);
+    const QFontMetrics metrics(font);
     int widest = 0;
-    for (int r = 0; r < table->rowCount(); ++r)
+    for (int row = 0; row < table->rowCount(); ++row)
     {
-        if (const QTableWidgetItem* item = table->item(r, column))
-            widest = qMax(widest, bodyMetrics.horizontalAdvance(item->text()));
+        const QTableWidgetItem* item = table->item(row, column);
+        if (!item)
+            continue;
+
+        int width = metrics.horizontalAdvance(item->text());
+        if (column == 3
+            && !item->data(AnalyticsRankingRoles::Grade).toString().isEmpty())
+        {
+            width += AnalyticsRankingLayout::GradeBadgeWidth
+                + AnalyticsRankingLayout::GradeBadgeTextSpacing;
+        }
+        widest = qMax(widest, width);
     }
 
-    if (const QTableWidgetItem* header =
-            table->horizontalHeaderItem(column))
-    {
-        // Header text is drawn with the same font as the eval table header.
-        widest = qMax(
-            widest,
-            QFontMetrics(
-                FontManager::getUiFont(14, QFont::DemiBold)
-                ).horizontalAdvance(header->text())
-            );
-    }
+    const int valueWidth = widest + 2 * kRankingColumnPadding;
+    if (column != 1 && column != 2)
+        return valueWidth;
 
-    const int base =
-        SpeakingEval::columnWidth(SpeakingEvalColumn::EnglishName);
-    // "Widest text plus a third of the current padding"; never shrink the
-    // column below its widest text.
-    return qMax(widest, widest + (base - widest) / 3);
+    const QTableWidgetItem* header = table->horizontalHeaderItem(column);
+    const int headerWidth = header
+        ? QFontMetrics(FontManager::getUiFont(12, QFont::DemiBold))
+              .horizontalAdvance(header->text())
+              + 2 * kRankingHeaderPadding
+        : 0;
+    return qMax(valueWidth, headerWidth);
+}
+
+int rankingTableMinimumWidth(const QTableWidget* table)
+{
+    Q_ASSERT(table);
+
+    const QHeaderView* header = table->horizontalHeader();
+    const int fixedColumnsWidth = header->sectionSize(0)
+        + header->sectionSize(1) + header->sectionSize(2)
+        + header->sectionSize(3);
+    const int tableChromeWidth = 2 * table->frameWidth()
+        + table->verticalScrollBar()->sizeHint().width();
+    return fixedColumnsWidth
+        + kRankingCriterionColumnCount * header->sectionSize(1)
+        + tableChromeWidth;
 }
 
 } // namespace
@@ -140,239 +142,147 @@ ClassAnalyticsPage::ClassAnalyticsPage(
     , m_embedded(embedded)
 {
     Q_ASSERT(m_services);
-
     setProperty("role", UiRoles::Analytics);
-
     buildUi();
 }
 
 void ClassAnalyticsPage::buildUi()
 {
+    const int pageMargin = m_embedded ? 0 : UiConstants::Pages::Margin;
     contentLayout()->setContentsMargins(
-        m_embedded ? 0 : UiConstants::Pages::Margin,
-        m_embedded ? 0 : UiConstants::Pages::Margin,
-        m_embedded ? 0 : UiConstants::Pages::Margin,
-        m_embedded ? 0 : UiConstants::Pages::Margin
-        );
+        pageMargin, pageMargin, pageMargin, pageMargin);
 
-    auto* body = new ScrollablePageBody(
-        this,
-        QMargins(0, 0, 0, 0),
-        16
-        );
+    auto* body = new ScrollablePageBody(this, QMargins(0, 0, 0, 0), 16);
     body->setWidgetResizable(true);
     body->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     body->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-
-    QVBoxLayout* scroll = body->contentLayout();
-    scroll->setContentsMargins(
-        m_embedded ? 0 : 8,
-        m_embedded ? 0 : 8,
-        m_embedded ? 0 : 8,
-        8
-        );
-    scroll->setSpacing(14);
-
+    body->installEventFilter(this);
+    m_dashboardBody = body;
     contentLayout()->addWidget(body);
 
-    // Top bar: heading + evaluation selector.
-    auto* topBar = new QWidget(this);
+    auto* content = body->contentLayout();
+    content->setContentsMargins(m_embedded ? 0 : 8, m_embedded ? 0 : 8,
+                                m_embedded ? 0 : 8, 12);
+    content->setSpacing(14);
+
+    auto* topBar = new QWidget(body);
     auto* topLayout = new QHBoxLayout(topBar);
     topLayout->setContentsMargins(0, 0, 0, 0);
-    topLayout->setSpacing(12);
-
-    m_heading = new QLabel(tr("Class Analytics"), topBar);
-    m_heading->setFont(FontManager::getUiFont(18));
+    topLayout->setSpacing(10);
+    m_heading = new QLabel(topBar);
+    m_heading->setFont(FontManager::getUiFont(18, QFont::DemiBold));
     topLayout->addWidget(m_heading);
-    topLayout->addStretch(1);
-
-    auto* selectorLabel = new QLabel(tr("Evaluation"), topBar);
-    selectorLabel->setFont(FontManager::getUiFont(12));
-    topLayout->addWidget(selectorLabel);
-
+    topLayout->addStretch();
+    m_evaluationLabel = new QLabel(topBar);
+    m_evaluationLabel->setFont(FontManager::getUiFont(12));
+    topLayout->addWidget(m_evaluationLabel);
     m_evaluationCombo = new QComboBox(topBar);
-    m_evaluationCombo->addItems(evaluationNames());
     m_evaluationCombo->setMinimumWidth(170);
     topLayout->addWidget(m_evaluationCombo);
+    content->addWidget(topBar);
 
-    scroll->addWidget(topBar);
+    connect(m_evaluationCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            &ClassAnalyticsPage::onEvaluationChanged);
 
-    connect(
-        m_evaluationCombo,
-        QOverload<int>::of(&QComboBox::currentIndexChanged),
-        this,
-        &ClassAnalyticsPage::onEvaluationChanged
-        );
-    // Stat cards.
-    auto* statRow = new QWidget(this);
-    auto* statLayout = new QHBoxLayout(statRow);
-    statLayout->setContentsMargins(0, 0, 0, 0);
-    statLayout->setSpacing(kSectionSpacing);
+    m_summaryContainer = new QWidget(body);
+    m_summaryLayout = new QGridLayout(m_summaryContainer);
+    m_summaryLayout->setContentsMargins(0, 0, 0, 0);
+    m_summaryLayout->setSpacing(kSectionSpacing);
+    m_averageCard = new SectionCard(QString(), m_summaryContainer);
+    m_assessedCard = new SectionCard(QString(), m_summaryContainer);
+    m_strongestCard = new SectionCard(QString(), m_summaryContainer);
+    m_focusCard = new SectionCard(QString(), m_summaryContainer);
+    m_averageValue = addStatValue(m_averageCard);
+    m_assessedValue = addStatValue(m_assessedCard);
+    m_strongestValue = addStatValue(m_strongestCard);
+    m_focusValue = addStatValue(m_focusCard);
+    m_summaryCards = { m_averageCard, m_assessedCard, m_strongestCard, m_focusCard };
+    content->addWidget(m_summaryContainer);
 
-    auto addStatCard = [this, statRow, statLayout](
-        const QString& title,
-        QLabel*& value
-        ) -> SectionCard* {
-        auto* card = new SectionCard(title, statRow);
-        auto* cl = card->contentLayout();
-        cl->setContentsMargins(14, 2, 14, 14);
-        value = new QLabel(QStringLiteral("—"), card);
-        value->setFont(FontManager::getUiFont(20));
-        value->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        value->setMinimumHeight(34);
-        value->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        cl->addWidget(value);
-        statLayout->addWidget(card, 1);
-        return card;
-    };
+    m_chartsContainer = new QWidget(body);
+    m_chartsLayout = new QGridLayout(m_chartsContainer);
+    m_chartsLayout->setContentsMargins(0, 0, 0, 0);
+    m_chartsLayout->setSpacing(kSectionSpacing);
 
-    auto* avgCard = new SectionCard(tr("Class Average"), statRow);
-    {
-        auto* cl = avgCard->contentLayout();
-        cl->setContentsMargins(14, 2, 14, 14);
-        m_avgValue = new QLabel(QStringLiteral("—"), avgCard);
-        // Same value size as the "Students Assessed" card (20) so all
-        // stat-card values share one font size; the letter is colored.
-        m_avgValue->setFont(FontManager::getUiFont(20));
-        m_avgValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        cl->addWidget(m_avgValue);
-        m_avgLetter = new QLabel(QString(), avgCard);
-        m_avgLetter->setFont(FontManager::getUiFont(13));
-        m_avgLetter->setStyleSheet(QStringLiteral("color:#8A94A6;"));
-        cl->addWidget(m_avgLetter);
-        statLayout->addWidget(avgCard, 1);
-    }
-
-    auto* assessedCard = addStatCard(tr("Students Assessed"), m_assessedValue);
-    auto* strongestCard = addStatCard(tr("Strongest Area"), m_strongestValue);
-    auto* focusCard = addStatCard(tr("Focus Area"), m_focusValue);
-
-    m_statRow = statRow;
-    m_avgCard = avgCard;
-    m_assessedCard = assessedCard;
-    m_strongestCard = strongestCard;
-    m_focusCard = focusCard;
-    m_statTitleLabel =
-        assessedCard ? assessedCard->findChild<QLabel*>(
-                           QStringLiteral("sectionTitle"),
-                           Qt::FindDirectChildrenOnly
-                       )
-                     : nullptr;
-
-    // Stat-card widths are driven by the widest title label ("Students
-    // Assessed"); keep them in sync when the global font changes.
-    if (m_statTitleLabel)
-        m_statTitleLabel->installEventFilter(this);
-
-    for (SectionCard* card : { avgCard, assessedCard, strongestCard, focusCard })
-        card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-
-    layoutStatCards();
-
-    scroll->addWidget(statRow);
-
-    // "Class Shape" histogram + "By Criterion" bars in one row.  When the
-    // page is at least kChartsRowBreakpoint px wide the cards sit side by
-    // side (Class Shape on the right) with the same 20px spacer as the stat
-    // cards; below that they stack vertically.  applyChartsRowLayout()
-    // re-lays the row out on every body resize event.
-    auto* chartsRow = new QWidget(this);
-    chartsRow->setObjectName("analyticsChartsRow");
-    m_chartsRow = chartsRow;
-    body->installEventFilter(this);
-
-    m_shapeCard = new SectionCard(tr("Class Shape"), chartsRow);
-    m_shapeCard->setMinimumWidth(300);
-    auto* shapeLayout = m_shapeCard->contentLayout();
-    shapeLayout->setContentsMargins(14, 6, 14, 14);
-    m_histogram = new GradeHistogram(m_shapeCard);
-    shapeLayout->addWidget(m_histogram);
-
-    m_criteriaCard = new SectionCard(tr("By Criterion"), chartsRow);
-    m_criteriaCard->setMinimumWidth(400);
+    m_criteriaCard = new SectionCard(QString(), m_chartsContainer);
     auto* criteriaOuter = m_criteriaCard->contentLayout();
-    criteriaOuter->setContentsMargins(14, 6, 14, 14);
+    criteriaOuter->setContentsMargins(16, 8, 16, 16);
+    auto* legend = new QWidget(m_criteriaCard);
+    legend->setObjectName(QStringLiteral("analyticsCriterionLegend"));
+    auto* legendLayout = new QHBoxLayout(legend);
+    legendLayout->setContentsMargins(0, 0, 0, 0);
+    legendLayout->setSpacing(12);
+    for (const QString& grade : AnalyticsCharts::gradeOrder())
+    {
+        auto* label = new QLabel(QStringLiteral("● %1").arg(grade), legend);
+        label->setFont(FontManager::getUiFont(12));
+        label->setStyleSheet(QStringLiteral("color:%1;")
+            .arg(AnalyticsCharts::gradeColor(grade).name()));
+        legendLayout->addWidget(label);
+    }
+    legendLayout->addStretch();
+    criteriaOuter->addWidget(legend);
     m_criteriaContainer = new QWidget(m_criteriaCard);
-    m_criteriaLayout = new QVBoxLayout(m_criteriaContainer);
-    m_criteriaLayout->setContentsMargins(0, 0, 0, 0);
-    m_criteriaLayout->setSpacing(10);
+    m_criteriaContainer->setObjectName(QStringLiteral("analyticsCriterionMetrics"));
+    m_criteriaLayout = new QGridLayout(m_criteriaContainer);
+    m_criteriaLayout->setContentsMargins(12, 8, 12, 8);
+    m_criteriaLayout->setVerticalSpacing(4);
     criteriaOuter->addWidget(m_criteriaContainer);
 
-    scroll->addWidget(chartsRow, 0, Qt::AlignTop);
-    applyChartsRowLayout();
+    m_shapeCard = new SectionCard(QString(), m_chartsContainer);
+    m_shapeCard->setMinimumWidth(270);
+    m_shapeCard->contentLayout()->setContentsMargins(16, 8, 16, 16);
+    m_histogram = new GradeHistogram(m_shapeCard);
+    m_shapeCard->contentLayout()->addWidget(m_histogram);
+    content->addWidget(m_chartsContainer);
 
-    // Student ranking table.
-    auto* rankCard = new SectionCard(tr("Student Ranking"), this);
-    auto* rankLayout = rankCard->contentLayout();
-    rankLayout->setContentsMargins(14, 6, 14, 14);
-    m_rankingTable = new QTableWidget(0, 10, rankCard);
+    m_rankingCard = new SectionCard(QString(), body);
+    auto* rankLayout = m_rankingCard->contentLayout();
+    rankLayout->setContentsMargins(16, 8, 16, 16);
+    m_rankingTable = new QTableWidget(0, 10, m_rankingCard);
     m_rankingTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_rankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_rankingTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_rankingTable->setWordWrap(false);
+    m_rankingTable->setShowGrid(false);
+    m_rankingTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_rankingTable->verticalHeader()->setVisible(false);
     m_rankingTable->setHorizontalHeader(
         new ClassAnalyticsRankingHeader(Qt::Horizontal, m_rankingTable));
-    // Body cells are shaded by the delegate (like the Speaking
-    // Evaluations table): the app-wide stylesheet suppresses per-item
-    // background brushes, so fillRect in paint() is the reliable path.
     m_rankingTable->setItemDelegate(
         new ClassAnalyticsRankingDelegate(m_rankingTable));
-    // The "#" header cell shows nothing (column 0 label is empty).
-    m_rankingTable->setHorizontalHeaderLabels(
-        { QString(),
-          tr("English"),
-          tr("Korean"),
-          tr("Average"),
-          tr("Grammar"),
-          tr("Pronunciation"),
-          tr("Fluency"),
-          tr("Manner"),
-          tr("Content"),
-          tr("Effort") }
-        );
-    // Columns 0-2 are fixed at the same widths as the Speaking Evaluations
-    // table (# 40, names 180); columns 3-9 share the remaining space equally
-    // and resize with the window (see the ranking header for width-driven
-    // abbreviated labels).
-    auto* rankHeader = m_rankingTable->horizontalHeader();
-    for (int c = 0; c < 10; ++c)
-    {
-        rankHeader->setSectionResizeMode(
-            c,
-            c < 3 ? QHeaderView::Fixed : QHeaderView::Stretch
-            );
-    }
-    rankHeader->resizeSection(0, 40);
-    rankHeader->resizeSection(1, 180);
-    rankHeader->resizeSection(2, 180);
+    auto* header = m_rankingTable->horizontalHeader();
+    header->setSectionResizeMode(0, QHeaderView::Fixed);
+    header->resizeSection(0, kRankingIndexColumnWidth);
+    header->setSectionResizeMode(1, QHeaderView::Fixed);
+    header->resizeSection(1, kRankingEnglishColumnWidth);
+    header->setSectionResizeMode(2, QHeaderView::Fixed);
+    header->resizeSection(2, kRankingKoreanColumnWidth);
+    header->setSectionResizeMode(3, QHeaderView::Fixed);
+    header->resizeSection(3, kRankingAverageColumnWidth);
+    for (int column = 4; column < 10; ++column)
+        header->setSectionResizeMode(column, QHeaderView::Stretch);
+    m_rankingTable->setMinimumWidth(rankingTableMinimumWidth(m_rankingTable));
     rankLayout->addWidget(m_rankingTable);
-    scroll->addWidget(rankCard, 0, Qt::AlignTop);
+    content->addWidget(m_rankingCard);
 
-    // Empty state.
-    m_emptyLabel = new QLabel(this);
+    m_emptyLabel = new QLabel(body);
     m_emptyLabel->setAlignment(Qt::AlignCenter);
     m_emptyLabel->setWordWrap(true);
-    m_emptyLabel->hide();
-    scroll->addWidget(m_emptyLabel);
+    m_emptyLabel->setFont(FontManager::getUiFont(12));
+    m_emptyLabel->setMinimumHeight(180);
+    content->addWidget(m_emptyLabel);
+    content->addStretch();
 
-    scroll->addStretch(1);
-
-    // Apply theme-aware colors to the labels above (their hardcoded light
-    // theme colors were removed) and keep them in sync on theme switches.
-    syncThemeStyles();
-
-    if (auto* themeService =
-            m_services ? m_services->themeService() : nullptr)
-    {
-        connect(
-            themeService,
-            QOverload<Theme>::of(&ThemeService::themeChanged),
-            this,
-            &ClassAnalyticsPage::syncThemeStyles
-            );
-    }
+    retranslateUi();
+    // The widths are not known while the scroll body is being constructed.
+    // layout*() still installs a valid one-column layout now, so the chart
+    // cards are visible before the first resize/show event arrives.
+    applyResponsiveLayout();
+    showEmpty(true);
 }
-
 
 void ClassAnalyticsPage::loadClass(const Classroom& classroom)
 {
@@ -383,24 +293,7 @@ void ClassAnalyticsPage::loadClass(const Classroom& classroom)
 void ClassAnalyticsPage::clearDatabaseState()
 {
     m_classId = -1;
-
-    m_avgValue->setText(QStringLiteral("—"));
-    m_avgLetter->clear();
-    m_avgLetter->setStyleSheet(QString());
-    m_assessedValue->setText(QStringLiteral("—"));
-    m_strongestValue->setText(QStringLiteral("—"));
-    m_focusValue->setText(QStringLiteral("—"));
-    if (m_strongestCard)
-        m_strongestCard->setTitle(tr("Strongest Area"));
-    if (m_focusCard)
-        m_focusCard->setTitle(tr("Focus Area"));
-
-    m_histogram->setData({});
-    for (CriterionDistributionBar* bar : m_criterionBars)
-        bar->setData({});
-    m_rankingTable->setRowCount(0);
-    m_rankingTable->setMinimumHeight(0);
-
+    clearDisplay();
     showEmpty(true);
 }
 
@@ -410,393 +303,319 @@ void ClassAnalyticsPage::refresh()
         rebuild();
 }
 
-void ClassAnalyticsPage::onEvaluationChanged()
-{
-    if (m_rebuilding)
-        return;
-    rebuild();
-}
-
 void ClassAnalyticsPage::retranslateUi()
 {
+    const QString selected = selectedEvaluationName();
+    m_heading->setText(tr("Class Analytics"));
+    m_evaluationLabel->setText(tr("Evaluation"));
+    m_averageCard->setTitle(tr("Class Average"));
+    m_assessedCard->setTitle(tr("Students Fully Scored"));
+    m_strongestCard->setTitle(tr("Strongest Area"));
+    m_focusCard->setTitle(tr("Focus Area"));
+    m_criteriaCard->setTitle(tr("By Criterion"));
+    m_shapeCard->setTitle(tr("Class Shape"));
+    m_rankingCard->setTitle(tr("Student Ranking"));
     m_emptyLabel->setText(
-        tr("No speaking evaluations have been recorded for this class yet.")
-        );
+        tr("No scored speaking evaluations have been recorded for this class yet."));
+    setRankingHeaders();
+    populateEvaluationSelector(selected);
 
-    if (m_evaluationCombo)
-    {
-        const int idx = m_evaluationCombo->currentIndex();
-        m_evaluationCombo->blockSignals(true);
-        m_evaluationCombo->clear();
-        m_evaluationCombo->addItems(evaluationNames());
-        m_evaluationCombo->setCurrentIndex(idx < 0 ? 0 : idx);
-        m_evaluationCombo->blockSignals(false);
-    }
-
-    if (m_classId >= 0)
+    if (m_classId >= 0 && !m_rebuilding)
         rebuild();
+}
+
+bool ClassAnalyticsPage::eventFilter(QObject* object, QEvent* event)
+{
+    if (object == m_dashboardBody
+        && (event->type() == QEvent::Resize
+            || event->type() == QEvent::FontChange))
+    {
+        applyResponsiveLayout();
+    }
+    return BasePage::eventFilter(object, event);
+}
+
+void ClassAnalyticsPage::showEvent(QShowEvent* event)
+{
+    BasePage::showEvent(event);
+    QTimer::singleShot(0, this, &ClassAnalyticsPage::applyResponsiveLayout);
+}
+
+void ClassAnalyticsPage::onEvaluationChanged()
+{
+    if (!m_rebuilding)
+        rebuild();
+}
+
+void ClassAnalyticsPage::populateEvaluationSelector(const QString& selectedName)
+{
+    if (!m_evaluationCombo)
+        return;
+
+    const QString retained = selectedName.isEmpty()
+        ? selectedEvaluationName()
+        : selectedName;
+    m_evaluationCombo->blockSignals(true);
+    m_evaluationCombo->clear();
+    m_evaluationCombo->addItem(tr("All"), QString());
+    for (const QString& name : SpeakingAnalytics::evaluationNames())
+        m_evaluationCombo->addItem(name, name);
+
+    const int index = m_evaluationCombo->findData(retained);
+    m_evaluationCombo->setCurrentIndex(index >= 0 ? index : 0);
+    m_evaluationCombo->blockSignals(false);
+}
+
+QString ClassAnalyticsPage::selectedEvaluationName() const
+{
+    return m_evaluationCombo ? m_evaluationCombo->currentData().toString()
+                             : QString();
+}
+
+void ClassAnalyticsPage::clearDisplay()
+{
+    m_averageValue->setText(QStringLiteral("—"));
+    m_assessedValue->setText(QStringLiteral("—"));
+    m_strongestValue->setText(QStringLiteral("—"));
+    m_focusValue->setText(QStringLiteral("—"));
+    m_strongestLabels.clear();
+    m_focusLabels.clear();
+    m_histogram->setData({});
+    clearLayout(m_criteriaLayout);
+    m_criterionBars.clear();
+    m_rankingTable->setRowCount(0);
+    m_rankingTable->setMinimumHeight(0);
 }
 
 void ClassAnalyticsPage::showEmpty(bool empty)
 {
-    // The parent of each content widget is its SectionCard.
-    m_histogram->parentWidget()->setVisible(!empty);
-    m_criteriaContainer->parentWidget()->setVisible(!empty);
-    m_rankingTable->parentWidget()->setVisible(!empty);
+    m_summaryContainer->setVisible(!empty);
+    m_chartsContainer->setVisible(!empty);
+    m_rankingCard->setVisible(!empty);
     m_emptyLabel->setVisible(empty);
 }
 
-void ClassAnalyticsPage::syncThemeStyles()
+QString ClassAnalyticsPage::areaText(
+    const QList<QString>& labels,
+    const QLabel* value
+    ) const
 {
-    // Same dark-theme check the schedule widgets use. The light values below
-    // are the original hardcoded colors, so the light theme keeps its look;
-    // the dark values follow dark.qss (#f5f5f5 primary, #a8b0bd secondary).
-    const bool dark =
-        palette()
-            .color(QPalette::Window)
-            .lightness() < 128;
+    if (labels.isEmpty())
+        return QStringLiteral("—");
 
-    const QString primaryText =
-        dark ? QStringLiteral("#f5f5f5") : QStringLiteral("#1f2937");
-    const QString mutedText =
-        dark ? QStringLiteral("#a8b0bd") : QStringLiteral("#8A8F98");
+    const int availableWidth = value ? value->contentsRect().width() : 0;
+    if (availableWidth <= 0)
+        return labels.join(QLatin1Char('\n'));
 
-    if (m_heading)
+    const QFontMetrics metrics(value->font());
+    QStringList lines;
+    for (const QString& label : labels)
     {
-        m_heading->setStyleSheet(
-            QStringLiteral("color:") + primaryText + QStringLiteral(";")
-            );
-    }
-
-    const QList<QLabel*> statValues =
-        { m_avgValue, m_assessedValue, m_strongestValue, m_focusValue };
-    for (QLabel* value : statValues)
-    {
-        if (value)
+        const int gradeStart = label.lastIndexOf(QStringLiteral(" ("));
+        const bool hasTrailingGrade = gradeStart > 0 && label.endsWith(')');
+        if (hasTrailingGrade
+            && metrics.horizontalAdvance(label) > availableWidth)
         {
-            value->setStyleSheet(
-                QStringLiteral("color:") + primaryText + QStringLiteral(";")
-                );
+            lines.append(label.left(gradeStart));
+            lines.append(label.mid(gradeStart + 1));
+        }
+        else
+        {
+            lines.append(label);
         }
     }
-
-    if (m_emptyLabel)
-    {
-        m_emptyLabel->setStyleSheet(
-            QStringLiteral("color:") + mutedText
-            + QStringLiteral("; padding:24px;")
-            );
-    }
+    return lines.join(QLatin1Char('\n'));
 }
 
-
-// Re-lays out the "Class Shape" / "By Criterion" row when the page width
-// crosses the 840px breakpoint: side by side (Class Shape on the right) at
-// or above it, stacked vertically below it.
-void ClassAnalyticsPage::applyChartsRowLayout()
+void ClassAnalyticsPage::refreshAreaValueTexts()
 {
-    if (!m_chartsRow)
-        return;
-
-    const bool horizontal = m_chartsRow->width() >= kChartsRowBreakpoint;
-    if (horizontal == m_chartsRowHorizontal)
-        return;
-    m_chartsRowHorizontal = horizontal;
-
-    if (m_chartsRow->layout())
-        m_chartsRow->layout()->setEnabled(false);
-    delete m_chartsRow->layout();
-
-    if (horizontal)
-    {
-        auto* row = new QHBoxLayout(m_chartsRow);
-        row->setContentsMargins(0, 0, 0, 0);
-        row->setSpacing(kSectionSpacing);
-        // By Criterion targets ~70% of the row width; Class Shape keeps the
-        // remaining ~30%, floored at its 300px minimum width.
-        row->addWidget(m_criteriaCard, 7);
-        row->addWidget(m_shapeCard, 3);
-    }
-    else
-    {
-        auto* row = new QVBoxLayout(m_chartsRow);
-        row->setContentsMargins(0, 0, 0, 0);
-        row->setSpacing(kSectionSpacing);
-        row->addWidget(m_shapeCard);
-        row->addWidget(m_criteriaCard);
-    }
+    m_strongestValue->setText(areaText(m_strongestLabels, m_strongestValue));
+    m_focusValue->setText(areaText(m_focusLabels, m_focusValue));
 }
-
-bool ClassAnalyticsPage::eventFilter(QObject* obj, QEvent* event)
-{
-    if (event->type() == QEvent::Resize)
-    {
-        applyChartsRowLayout();
-    }
-    else if (event->type() == QEvent::FontChange && obj == m_statTitleLabel)
-    {
-        // A Preferences dialog font-size change makes FontManager call
-        // setFont() on every widget.  Re-derive the stat card widths from
-        // the new label width, and re-wrap the strongest/focus values so
-        // their grades never get clipped.
-        layoutStatCards();
-        if (m_classId >= 0 && !m_rebuilding)
-            rebuild();
-    }
-    return BasePage::eventFilter(obj, event);
-}
-
-
-// Sizes all stat cards from the widest card label ("Students Assessed")
-// plus kStatCardLabelPadding on each side.  Called at build time and again
-// whenever the title label font changes.
-void ClassAnalyticsPage::layoutStatCards()
-{
-    if (!m_statTitleLabel)
-        return;
-
-    // The stylesheet renders card titles bold (font-weight: 700); measure
-    // with the same weight so the width holds at larger sizes too.
-    QFont font = m_statTitleLabel->font();
-    font.setWeight(QFont::Bold);
-
-    const int width =
-        QFontMetrics(font).horizontalAdvance(tr("Students Assessed"))
-        + 2 * kStatCardLabelPadding;
-    for (QWidget* card : { m_avgCard,
-                           m_assessedCard,
-                           m_strongestCard,
-                           m_focusCard })
-        card->setMinimumWidth(width);
-}
-
-// Usable text width of a stat value label: the card's minimum width minus
-// the content margins (14px per side) and the card borders (2px per side).
-// The stat row can only stretch the cards beyond their minimum, so wrapping
-// at this width guarantees nothing gets clipped at any window size.
-int ClassAnalyticsPage::statValueWidth() const
-{
-    if (m_assessedCard && m_assessedCard->minimumWidth() > 0)
-        return qMax(60, m_assessedCard->minimumWidth() - 32);
-    return 120;
-}
-
-// Sets the area card title ("Strongest Area" / "Strongest Areas") and the
-// value text: one metric per line, with the "(grade)" on its own line when
-// it does not fit next to the metric name.
-void ClassAnalyticsPage::applyAreaValue(
-    SectionCard* card,
-    const QString& singularTitle,
-    const QString& pluralTitle,
-    const QList<QString>& names,
-    const QList<QString>& labels,
-    QLabel* value
-    )
-{
-    const int count = names.isEmpty() ? labels.size() : names.size();
-
-    if (card)
-        card->setTitle(count >= 2 ? pluralTitle : singularTitle);
-    if (!value)
-        return;
-
-    if (count == 0)
-    {
-        value->setText(QStringLiteral("—"));
-        return;
-    }
-
-    value->setText(
-        wrapStatValue(
-            names.isEmpty() ? labels : names,
-            QFontMetrics(value->font()),
-            statValueWidth()
-            )
-        );
-}
-
 
 void ClassAnalyticsPage::rebuild()
 {
     m_rebuilding = true;
+    clearDisplay();
 
-    const QString evalName =
-        m_evaluationCombo ? m_evaluationCombo->currentText() : QStringLiteral("All");
-
-    SpeakingAnalytics::Snapshot snap;
+    SpeakingAnalytics::Snapshot snapshot;
     if (m_services && m_classId >= 0)
     {
-        const auto* svc = m_services->speakingEvaluationService();
-        if (svc)
-            snap = svc->analytics(m_classId, evalName);
+        if (const auto* service = m_services->speakingEvaluationService())
+            snapshot = service->analytics(m_classId, selectedEvaluationName());
     }
 
-    const bool hasData = snap.hasData;
-    showEmpty(!hasData);
+    showEmpty(!snapshot.hasData);
+    if (snapshot.hasData)
+        applySnapshot(snapshot);
+    m_rebuilding = false;
+}
 
-    if (hasData)
+void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapshot)
+{
+    m_averageValue->setText(QStringLiteral("%1 · %2")
+        .arg(snapshot.classAverageLetter,
+             SpeakingAnalytics::formatAverage(snapshot.classAverage3)));
+
+    QString assessed = QString::number(snapshot.fullyScoredCount);
+    if (snapshot.rosterStudentCount > 0)
+        assessed += QStringLiteral(" / %1").arg(snapshot.rosterStudentCount);
+    m_assessedValue->setText(assessed);
+
+    m_strongestCard->setTitle(snapshot.strongestLabels.size() > 1
+        ? tr("Strongest Areas") : tr("Strongest Area"));
+    m_focusCard->setTitle(snapshot.focusLabels.size() > 1
+        ? tr("Focus Areas") : tr("Focus Area"));
+    m_strongestLabels = snapshot.strongestLabels;
+    m_focusLabels = snapshot.focusLabels;
+    refreshAreaValueTexts();
+
+    QMap<QString, int> shapeDistribution;
+    for (const QString& grade : snapshot.overallLetters)
     {
-        // Stat cards.  Class average is shown as "Letter (numeric)"
-        // (e.g. "A (3.8)"), colored by the grade letter.
-        if (snap.classAverage3 > 0.0)
+        if (!grade.isEmpty())
+            ++shapeDistribution[grade];
+    }
+    m_histogram->setData(shapeDistribution);
+
+    for (const SpeakingAnalytics::CriterionSlice& slice : snapshot.criteria)
+    {
+        auto* bar = new CriterionDistributionBar(m_criteriaContainer);
+        bar->setLabel(slice.name);
+        bar->setAverageText(slice.hasData
+            ? QStringLiteral("%1 · %2")
+                  .arg(SpeakingAnalytics::numberToGrade(
+                           SpeakingAnalytics::roundAverageToGrade(slice.average3)),
+                       SpeakingAnalytics::formatAverage(slice.average3))
+            : QStringLiteral("—"));
+        bar->setData(slice.distribution);
+        bar->setInsight(criterionInsight(slice, snapshot));
+        m_criteriaLayout->addWidget(bar, m_criterionBars.size(), 0);
+        m_criterionBars.append(bar);
+    }
+
+    m_rankingTable->setUpdatesEnabled(false);
+    m_rankingTable->setRowCount(snapshot.rankings.size());
+    for (qsizetype row = 0; row < snapshot.rankings.size(); ++row)
+    {
+        const SpeakingAnalytics::StudentRank& student = snapshot.rankings.at(row);
+        const bool needsAttention =
+            SpeakingAnalytics::gradeToNumber(student.overallLetter) <= 2;
+
+        const auto setTextItem = [this, row](int column, const QString& text)
         {
-            m_avgValue->setText(
-                snap.classAverageLetter.isEmpty()
-                    ? SpeakingAnalytics::formatAverage(snap.classAverage3)
-                    : QStringLiteral("%1 (%2)")
-                          .arg(
-                              snap.classAverageLetter,
-                              SpeakingAnalytics::formatAverage(snap.classAverage3)
-                              )
-                );
-            m_avgValue->setStyleSheet(
-                snap.classAverageLetter.isEmpty()
-                    ? QString()
-                    : QStringLiteral("color:")
-                          + AnalyticsCharts::gradeColor(snap.classAverageLetter).name()
-                          + QStringLiteral("; font-weight:bold;")
-                );
-            m_avgLetter->clear();
-            m_avgLetter->setStyleSheet(QString());
-        }
+            auto* item = new QTableWidgetItem(text);
+            item->setTextAlignment(Qt::AlignCenter);
+            m_rankingTable->setItem(row, column, item);
+            return item;
+        };
 
-        QString assessed = QString::number(snap.fullyScoredCount);
-        if (snap.rosterStudentCount > 0)
-            assessed += QStringLiteral(" / ") + QString::number(snap.rosterStudentCount);
-        m_assessedValue->setText(assessed);
+        setTextItem(0, QString::number(row + 1));
+        setTextItem(1, student.englishName);
+        setTextItem(2, student.koreanName);
+        auto* average = setTextItem(
+            3, SpeakingAnalytics::formatAverage(student.overall3));
+        average->setData(AnalyticsRankingRoles::Grade, student.overallLetter);
+        average->setData(AnalyticsRankingRoles::NeedsAttention, needsAttention);
 
-        // Strongest / focus areas carry their grade letter: "Grammar (B+)".
-        // One metric per line; the card title switches to the plural form
-        // when there is more than one.
-        applyAreaValue(
-            m_strongestCard,
-            tr("Strongest Area"),
-            tr("Strongest Areas"),
-            snap.strongestNames,
-            snap.strongestLabels,
-            m_strongestValue);
-        applyAreaValue(
-            m_focusCard,
-            tr("Focus Area"),
-            tr("Focus Areas"),
-            snap.focusNames,
-            snap.focusLabels,
-            m_focusValue);
-
-        // Class shape histogram: count each student's overall letter.
-        QMap<QString, int> dist;
-        for (const QString& letter : snap.overallLetters)
+        for (int criterion = 0; criterion < SpeakingAnalytics::CriterionCount;
+             ++criterion)
         {
-            if (!letter.isEmpty())
-                dist[letter] += 1;
+            const QString grade = student.criterionLetters.value(criterion);
+            auto* item = setTextItem(4 + criterion, QString());
+            item->setData(AnalyticsRankingRoles::Grade, grade);
         }
-        m_histogram->setData(dist);
+    }
+    m_rankingTable->setUpdatesEnabled(true);
+    resizeRankingColumnsToContents();
 
-        // Per-criterion bars.
-        while (QLayoutItem* item = m_criteriaLayout->takeAt(0))
-        {
-            if (QWidget* w = item->widget())
-                w->deleteLater();
-            delete item;
-        }
-        m_criterionBars.clear();
-        for (const SpeakingAnalytics::CriterionSlice& slice : snap.criteria)
-        {
-            auto* bar = new CriterionDistributionBar(m_criteriaContainer);
-            bar->setLabel(slice.name);
-            bar->setAverageText(
-                slice.hasData ? SpeakingAnalytics::formatAverage(slice.average3)
-                              : QStringLiteral("—")
-                );
-            bar->setData(slice.distribution);
-            m_criteriaLayout->addWidget(bar);
-            m_criterionBars.append(bar);
-        }
+    const int visibleRows = qMin(6, m_rankingTable->rowCount());
+    const int height = m_rankingTable->horizontalHeader()->height()
+        + visibleRows * SpeakingEval::RowHeight + 4;
+    m_rankingTable->setMinimumHeight(qMax(92, height));
+}
 
-        // Ranking table: average shown as "Letter (numeric)", then one
-        // centered column per criterion.
-        m_rankingTable->setRowCount(snap.rankings.size());
-        // Section keeps three times the table's natural height.
-        m_rankingTable->setMinimumHeight(
-            3 * m_rankingTable->sizeHint().height());
-        for (int r = 0; r < snap.rankings.size(); ++r)
-        {
-            const SpeakingAnalytics::StudentRank& rk = snap.rankings.at(r);
+void ClassAnalyticsPage::applyResponsiveLayout()
+{
+    if (!m_dashboardBody)
+        return;
 
-            auto setCentered = [this, r](int column, const QString& text) {
-                auto* item = new QTableWidgetItem(text);
-                item->setTextAlignment(Qt::AlignCenter);
+    const int width = m_dashboardBody->contentsRect().width();
+    const int summaryColumns = width >= kSummaryFourColumnBreakpoint ? 4
+        : width >= kSummaryTwoColumnBreakpoint ? 2
+                                                  : 1;
+    layoutSummaryCards(summaryColumns);
+    layoutChartCards(width >= kChartsHorizontalBreakpoint);
+    refreshAreaValueTexts();
+    resizeRankingColumnsToContents();
+}
 
-                // Same per-column shading as the Speaking Evaluations table.
-                const QColor background =
-                    ClassAnalyticsRankingHeader::colorForColumn(column);
-                item->setBackground(background);
-                item->setForeground(
-                    SpeakingEval::contrastTextColor(background)
-                    );
+void ClassAnalyticsPage::layoutSummaryCards(int columns)
+{
+    if (columns == m_summaryColumns)
+        return;
 
-                // Korean names use the same font as the eval table.
-                if (column == 2)
-                    item->setFont(FontManager::getKoreanFont());
+    m_summaryColumns = columns;
+    for (SectionCard* card : m_summaryCards)
+        m_summaryLayout->removeWidget(card);
+    for (int column = 0; column < 4; ++column)
+        m_summaryLayout->setColumnStretch(column, column < columns ? 1 : 0);
+    for (qsizetype index = 0; index < m_summaryCards.size(); ++index)
+    {
+        m_summaryLayout->addWidget(
+            m_summaryCards.at(index), index / columns, index % columns);
+    }
+}
 
-                m_rankingTable->setItem(r, column, item);
-            };
+void ClassAnalyticsPage::layoutChartCards(bool horizontal)
+{
+    const int horizontalValue = horizontal ? 1 : 0;
+    if (horizontalValue == m_chartsHorizontal)
+        return;
 
-            const QString average =
-                (rk.overallLetter.isEmpty()
-                     ? SpeakingAnalytics::formatAverage(rk.overall3)
-                     : rk.overallLetter
-                         + QStringLiteral(" (")
-                         + SpeakingAnalytics::formatAverage(rk.overall3)
-                         + QStringLiteral(")"));
-            auto* avgItem = new QTableWidgetItem(average);
-            avgItem->setTextAlignment(Qt::AlignCenter);
-            const QColor avgBackground =
-                ClassAnalyticsRankingHeader::colorForColumn(3);
-            avgItem->setBackground(avgBackground);
-            if (!rk.overallLetter.isEmpty())
-                avgItem->setForeground(
-                    AnalyticsCharts::gradeColor(rk.overallLetter));
-            else
-                avgItem->setForeground(
-                    SpeakingEval::contrastTextColor(avgBackground)
-                    );
-            m_rankingTable->setItem(r, 3, avgItem);
-
-            setCentered(0, QString::number(r + 1));
-            setCentered(1, rk.englishName);
-            setCentered(2, rk.koreanName);
-            for (int c = 0; c < 6; ++c)
-            {
-                const QString letter =
-                    rk.criterionLetters.size() > c
-                        ? rk.criterionLetters.at(c).trimmed()
-                        : QString();
-                setCentered(4 + c, letter);
-            }
-        }
-
-        // Fit the English/Korean columns to their content (widest text plus
-        // a third of the base-width padding); the other columns keep
-        // Stretch.
-        m_rankingTable->horizontalHeader()->resizeSection(
-            1,
-            fittedNameColumnWidth(m_rankingTable, 1));
-        m_rankingTable->horizontalHeader()->resizeSection(
-            2,
-            fittedNameColumnWidth(m_rankingTable, 2));
+    m_chartsHorizontal = horizontalValue;
+    m_chartsLayout->removeWidget(m_criteriaCard);
+    m_chartsLayout->removeWidget(m_shapeCard);
+    if (horizontal)
+    {
+        m_chartsLayout->addWidget(m_criteriaCard, 0, 0);
+        m_chartsLayout->addWidget(m_shapeCard, 0, 1);
+        m_chartsLayout->setColumnStretch(0, 7);
+        m_chartsLayout->setColumnStretch(1, 3);
     }
     else
     {
-        m_histogram->setData({});
-        m_rankingTable->setRowCount(0);
-        m_rankingTable->setMinimumHeight(0);
-        // Back to the base width while the table is empty.
-        const int nameBaseWidth =
-            SpeakingEval::columnWidth(SpeakingEvalColumn::EnglishName);
-        m_rankingTable->horizontalHeader()->resizeSection(1, nameBaseWidth);
-        m_rankingTable->horizontalHeader()->resizeSection(2, nameBaseWidth);
+        m_chartsLayout->addWidget(m_criteriaCard, 0, 0);
+        m_chartsLayout->addWidget(m_shapeCard, 1, 0);
+        m_chartsLayout->setColumnStretch(0, 1);
+        m_chartsLayout->setColumnStretch(1, 0);
     }
+}
 
-    m_rebuilding = false;
+void ClassAnalyticsPage::resizeRankingColumnsToContents()
+{
+    if (!m_rankingTable || m_rankingTable->rowCount() == 0)
+        return;
+
+    QHeaderView* header = m_rankingTable->horizontalHeader();
+    for (int column = 1; column <= 3; ++column)
+        header->resizeSection(
+            column, fittedRankingColumnWidth(m_rankingTable, column));
+    m_rankingTable->setMinimumWidth(rankingTableMinimumWidth(m_rankingTable));
+}
+
+void ClassAnalyticsPage::setRankingHeaders()
+{
+    m_rankingTable->setHorizontalHeaderLabels({
+        QString(),
+        tr("English"),
+        tr("Korean"),
+        tr("Average"),
+        tr("Grammar"),
+        tr("Pronunciation"),
+        tr("Fluency"),
+        tr("Manner"),
+        tr("Content"),
+        tr("Effort")
+    });
 }

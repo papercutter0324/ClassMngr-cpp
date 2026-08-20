@@ -8,7 +8,8 @@ class SpeakingEvalDelegate : public QStyledItemDelegate
 
 public:
     explicit SpeakingEvalDelegate(
-        QObject* parent = nullptr
+        QObject* parent = nullptr,
+        bool readOnly = false
         );
 
     QWidget* createEditor(
@@ -47,6 +48,8 @@ public:
         ) const override;
 
 private:
+    bool m_readOnly = false;
+
     bool showNotesDialog(
         QAbstractItemModel* model,
         const QModelIndex& index

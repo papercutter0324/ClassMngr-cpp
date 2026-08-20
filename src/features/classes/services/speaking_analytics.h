@@ -6,13 +6,11 @@
 #include <QList>
 #include <QMap>
 #include <QString>
+#include <QStringList>
 
-// Pure, database-free analytics for the Class > Analytics tab.
-//
-// The numeric scale mirrors the repository's buildRosterScoreImport():
-// C=1, B=2, B+=3, A=4, A+=5, with the same "round up when the fractional
-// part is >= 0.4" grade rule.  Values are computed to 3 decimal places and
-// displayed to 1, as required by the analytics spec.
+// Pure, database-free calculations for the Class > Analytics dashboard.
+// Scores use the five-point speaking-evaluation scale: C=1, B=2, B+=3,
+// A=4, A+=5. Formatting and palette decisions belong to the UI.
 namespace SpeakingAnalytics
 {
 
@@ -25,17 +23,6 @@ enum CriterionOrder
     Content,
     OverallEffort,
     CriterionCount
-};
-
-struct PoolRow
-{
-    QString englishName;
-    QString koreanName;
-    QString overallLetter;
-    double overall3 = 0.0;
-    bool fullyScored = false;
-    bool hasAny = false;
-    QList<QString> criterionLetters; // 6 entries, empty when unscored
 };
 
 struct CriterionSlice
@@ -54,7 +41,8 @@ struct StudentRank
     QString koreanName;
     double overall3 = 0.0;
     QString overallLetter;
-    QList<QString> criterionLetters; // 6 entries, empty when unscored
+    QList<QString> criterionLetters;
+    bool fullyScored = false;
 };
 
 struct Snapshot
@@ -67,12 +55,14 @@ struct Snapshot
     QList<CriterionSlice> criteria;
     QList<QString> strongestNames;
     QList<QString> focusNames;
-    // Same areas formatted for display as "Name (Letter)".
     QList<QString> strongestLabels;
     QList<QString> focusLabels;
-    QList<QString> overallLetters; // one entry per student (for Class Shape)
+    QList<QString> overallLetters;
     QList<StudentRank> rankings;
 };
+
+// Canonical stored evaluation names. An empty selection means all evaluations.
+[[nodiscard]] QStringList evaluationNames();
 
 [[nodiscard]] double roundTo3(double value);
 [[nodiscard]] QString formatAverage(double average);
@@ -82,14 +72,16 @@ struct Snapshot
 [[nodiscard]] QList<int> strongestIndices(const QList<double>& averages3);
 [[nodiscard]] QList<int> focusIndices(const QList<double>& averages3);
 
-// Keeps the evaluation rows whose student is in the class roster, matching
-// on the (normalized) English or Korean name.  An empty roster, or a roster
-// without name columns, keeps the matrix untouched.
+// Keeps rows belonging to the supplied roster. English matching ignores
+// case/whitespace; Korean matching ignores group suffixes. Without usable
+// roster name columns the input is returned unchanged.
 [[nodiscard]] SpeakingEvalRows filterMatrixByRoster(
     const SpeakingEvalRows& matrix,
     const Roster& roster
 );
 
+// Rows for the same student are consolidated across matrices before creating
+// the class shape and ranking, so an all-evaluation view has one row/student.
 [[nodiscard]] Snapshot compute(
     const QList<SpeakingEvalRows>& matrices,
     int rosterStudentCount

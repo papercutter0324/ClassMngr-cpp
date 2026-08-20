@@ -46,6 +46,7 @@ private slots:
     void strongestAndFocusTies();
     void computeFullMatrix();
     void computePartialCriterion();
+    void consolidatesStudentsAcrossEvaluations();
     void computeEmpty();
     void filterKeepsRosterStudents();
     void filterIsNameTolerant();
@@ -273,6 +274,45 @@ void SpeakingAnalyticsTests::computePartialCriterion()
     QCOMPARE(snap.rankings.at(1).overall3, 2.0);
 }
 
+void SpeakingAnalyticsTests::consolidatesStudentsAcrossEvaluations()
+{
+    // An all-evaluations view receives one matrix per term. The same student
+    // must contribute one class-shape and ranking entry, not one per term.
+    SpeakingEvalRows winter;
+    winter.append(
+        makeRow(
+            QStringLiteral("Avery"),
+            QStringLiteral("에버리"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B"),
+            QStringLiteral("B")));
+
+    SpeakingEvalRows summer;
+    summer.append(
+        makeRow(
+            QStringLiteral("avery"),
+            QStringLiteral("에버리"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A"),
+            QStringLiteral("A")));
+
+    const auto snap = SpeakingAnalytics::compute({ winter, summer }, 1);
+    QCOMPARE(snap.rankings.size(), 1);
+    QCOMPARE(snap.overallLetters, (QStringList{QStringLiteral("B+")}));
+    QCOMPARE(snap.classAverage3, 3.0);
+    QCOMPARE(snap.fullyScoredCount, 1);
+    QCOMPARE(snap.criteria.at(SpeakingAnalytics::Grammar).students, 1);
+    QCOMPARE(snap.criteria.at(SpeakingAnalytics::Grammar)
+                 .distribution.value(QStringLiteral("B+")),
+             1);
+}
+
 void SpeakingAnalyticsTests::computeEmpty()
 {
     // No matrices at all.
@@ -454,5 +494,3 @@ void SpeakingAnalyticsTests::strongestAndFocusLabelsCarryGradeLetters()
 QTEST_MAIN(SpeakingAnalyticsTests)
 
 #include "speaking_analytics_tests.moc"
-
-

@@ -14,9 +14,11 @@
 #include <QStyle>
 
 SpeakingEvalDelegate::SpeakingEvalDelegate(
-    QObject* parent
+    QObject* parent,
+    bool readOnly
     )
     : QStyledItemDelegate(parent)
+    , m_readOnly(readOnly)
 {
 }
 
@@ -27,6 +29,11 @@ QWidget* SpeakingEvalDelegate::createEditor(
     ) const
 {
     Q_UNUSED(option);
+
+    if (m_readOnly)
+    {
+        return nullptr;
+    }
 
     const auto column =
         SpeakingEval::columnFromInt(
@@ -174,6 +181,11 @@ bool SpeakingEvalDelegate::editorEvent(
     )
 {
     Q_UNUSED(option);
+
+    if (m_readOnly)
+    {
+        return false;
+    }
 
     const auto column =
         SpeakingEval::columnFromInt(

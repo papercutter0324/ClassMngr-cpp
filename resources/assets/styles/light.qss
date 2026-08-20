@@ -92,6 +92,15 @@ QWidget#sectionCard:hover {
     border-color: #a8b2b8;
 }
 
+QWidget#analyticsCriterionLegend {
+    background-color: #f5f3ee;
+}
+
+QWidget#analyticsCriterionMetrics {
+    background-color: #ebe9e4;
+    border-radius: 6px;
+}
+
 QFrame#noDatabaseBanner {
     background-color: #eef5fa;
     border: 1px solid #9db8cc;

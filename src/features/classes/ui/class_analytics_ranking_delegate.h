@@ -2,31 +2,21 @@
 
 #include "class_analytics_ranking_header.h"
 #include "core/fontmanager.h"
+#include "domain/models/speaking_evaluation.h"
+#include "features/classes/ui/class_analytics_charts.h"
 
 #include <QFontMetrics>
 #include <QPainter>
 #include <QStyledItemDelegate>
 #include <QStyle>
 
-// Body-cell delegate for the Analytics "Student Ranking" table.
-//
-// The app-wide theme stylesheet (dark.qss / light.qss) contains
-// QTableView::item / QTableWidget::item rules; as soon as a stylesheet
-// covers a view, QStyleSheetStyle takes over item rendering and
-// per-item background brushes (QTableWidgetItem::setBackground) are no
-// longer painted. The Speaking Evaluations table sidesteps the same
-// issue by drawing its cell backgrounds inside its own delegate
-// (SpeakingEvalDelegate::paint). This delegate mirrors that behaviour
-// so the ranking body is shaded exactly like the eval table: same
-// per-column palette, contrast text, elided centered text, thick
-// section borders and dotted row separators. The Average column keeps
-// its per-grade text color, read from the item's foreground brush.
+// Read-only body renderer.  It deliberately follows SpeakingEvalDelegate's
+// border treatment while using consistently sized grade badges rather than
+// source-column fills.
 class ClassAnalyticsRankingDelegate : public QStyledItemDelegate
 {
 public:
-    explicit ClassAnalyticsRankingDelegate(
-        QObject* parent = nullptr
-        )
+    explicit ClassAnalyticsRankingDelegate(QObject* parent = nullptr)
         : QStyledItemDelegate(parent)
     {
     }
@@ -37,111 +27,123 @@ public:
         const QModelIndex& index
         ) const override
     {
-        if (!index.isValid())
-        {
+        if (!painter || !index.isValid())
             return;
-        }
-
-        const int column = index.column();
-
-        const QColor background =
-            ClassAnalyticsRankingHeader::colorForColumn(
-                column
-                );
 
         painter->save();
 
-        painter->fillRect(
-            option.rect,
-            background
-            );
+        const bool dark = option.palette.color(QPalette::Base).lightness() < 128;
+        QColor background = option.palette.color(QPalette::Base);
+        const bool needsAttention = index.sibling(index.row(), 3)
+            .data(AnalyticsRankingRoles::NeedsAttention).toBool();
+        if (needsAttention)
+        {
+            background = dark
+                ? QColor(QStringLiteral("#3a302b"))
+                : QColor(QStringLiteral("#fff7ed"));
+        }
+        painter->fillRect(option.rect, background);
 
         if (option.state & QStyle::State_Selected)
+            painter->fillRect(option.rect, QColor(0, 120, 215, 60));
+
+        const int column = index.column();
+        const QString display = index.data(Qt::DisplayRole).toString();
+        const QString grade = index.data(AnalyticsRankingRoles::Grade).toString();
+
+        if (column >= 3 && !grade.isEmpty())
         {
-            painter->fillRect(
-                option.rect,
-                QColor(0, 120, 215, 60)
-                );
+            drawGradeCell(painter, option.rect, column, grade, display, dark);
+        }
+        else
+        {
+            painter->setFont(column == 2 ? FontManager::getKoreanFont()
+                                         : FontManager::getUiFont(12));
+            painter->setPen(dark ? QColor(QStringLiteral("#f5f5f5"))
+                                 : QColor(QStringLiteral("#24303a")));
+            const QString text = QFontMetrics(painter->font()).elidedText(
+                display, Qt::ElideRight, option.rect.width() - 8);
+            painter->drawText(
+                option.rect.adjusted(4, 0, -4, 0), Qt::AlignCenter, text);
         }
 
-        // Same fonts as the eval table body: the Korean font for the
-        // Korean name column, the standard 12pt UI font elsewhere.
-        const QFont font =
-            column == 2
-                ? FontManager::getKoreanFont()
-                : FontManager::getUiFont(12);
-        painter->setFont(font);
-
-        // Prefer the item's own text color (the Average column carries a
-        // per-grade color); otherwise use the palette contrast color.
-        const QBrush itemForeground =
-            index.data(
-                Qt::ForegroundRole
-                ).value<QBrush>();
-        const QColor textColor =
-            itemForeground.style() != Qt::NoBrush
-                ? itemForeground.color()
-                : SpeakingEval::contrastTextColor(background);
-
-        painter->setPen(textColor);
-
-        const QString text =
-            index.data(
-                Qt::DisplayRole
-                ).toString();
-
-        const QFontMetrics metrics(
-            painter->font()
-            );
-
-        const QString elidedText =
-            metrics.elidedText(
-                text,
-                Qt::ElideRight,
-                option.rect.width() - 8
-                );
-
-        painter->drawText(
-            option.rect.adjusted(4, 0, -4, 0),
-            Qt::AlignCenter,
-            elidedText
-            );
-
-        // Thick section borders in the same places as the eval table:
-        // after the index, after the Korean name and after the last
-        // criterion column.
-        if (
-            column == 0
-            || column == 2
-            || column == 9
-            )
+        if (ClassAnalyticsRankingHeader::hasGroupBorderAfter(column))
         {
-            QPen pen(Qt::black);
-            pen.setWidth(2);
-            pen.setCosmetic(true);
-
-            painter->setPen(pen);
-            painter->drawLine(
-                option.rect.right() - 1,
-                option.rect.top(),
-                option.rect.right() - 1,
-                option.rect.bottom()
-                );
+            QPen groupBorder(Qt::black);
+            groupBorder.setWidth(2);
+            groupBorder.setCosmetic(true);
+            painter->setPen(groupBorder);
+            painter->drawLine(option.rect.right() - 1, option.rect.top(),
+                              option.rect.right() - 1, option.rect.bottom());
         }
 
-        QPen rowPen(Qt::black);
-        rowPen.setWidth(1);
-        rowPen.setStyle(Qt::DotLine);
-        rowPen.setCosmetic(true);
-
-        painter->setPen(rowPen);
-        painter->drawLine(
-            option.rect.left(),
-            option.rect.bottom() - 1,
-            option.rect.right(),
-            option.rect.bottom() - 1
-            );
-
+        QPen rowBorder(Qt::black);
+        rowBorder.setWidth(1);
+        rowBorder.setStyle(Qt::DotLine);
+        rowBorder.setCosmetic(true);
+        painter->setPen(rowBorder);
+        painter->drawLine(option.rect.left(), option.rect.bottom() - 1,
+                          option.rect.right(), option.rect.bottom() - 1);
         painter->restore();
+    }
+
+    QSize sizeHint(
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        QSize result = QStyledItemDelegate::sizeHint(option, index);
+        result.setHeight(SpeakingEval::RowHeight);
+        return result;
+    }
+
+private:
+    static void drawGradeCell(
+        QPainter* painter,
+        const QRect& cell,
+        int column,
+        const QString& grade,
+        const QString& display,
+        bool dark
+        )
+    {
+        const QSize badgeSize(
+            AnalyticsRankingLayout::GradeBadgeWidth,
+            AnalyticsRankingLayout::GradeBadgeHeight);
+        const QFont badgeFont = FontManager::getUiFont(11, QFont::DemiBold);
+        const QFont averageFont = FontManager::getUiFont(11);
+        const int textWidth = column == 3 && !display.isEmpty()
+            ? QFontMetrics(averageFont).horizontalAdvance(display)
+            : 0;
+        const int contentWidth = badgeSize.width()
+            + (textWidth > 0
+                   ? AnalyticsRankingLayout::GradeBadgeTextSpacing + textWidth
+                   : 0);
+        const int contentLeft = cell.center().x() - contentWidth / 2;
+        const QRect badge(
+            contentLeft,
+            cell.center().y() - badgeSize.height() / 2,
+            badgeSize.width(),
+            badgeSize.height());
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(AnalyticsCharts::gradeColor(grade));
+        painter->drawRoundedRect(badge, 4.0, 4.0);
+        painter->setFont(badgeFont);
+        painter->setPen(Qt::white);
+        painter->drawText(badge, Qt::AlignCenter, grade);
+
+        if (column == 3 && !display.isEmpty())
+        {
+            painter->setFont(averageFont);
+            painter->setPen(dark ? QColor(QStringLiteral("#f5f5f5"))
+                                 : QColor(QStringLiteral("#4e5963")));
+            const QRect textRect(
+                badge.x() + badge.width()
+                    + AnalyticsRankingLayout::GradeBadgeTextSpacing,
+                cell.top(),
+                textWidth,
+                cell.height());
+            painter->drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, display);
+        }
     }
 };

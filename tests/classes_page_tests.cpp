@@ -2,6 +2,7 @@
 #include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
+#include "domain/models/speaking_evaluation.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_settings_button.h"
@@ -12,8 +13,11 @@
 #include <QApplication>
 #include <QAbstractButton>
 #include <QDialogButtonBox>
+#include <QComboBox>
+#include <QLabel>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QTableView>
 #include <QTimer>
 
 namespace ScheduleWidgetTestStubs
@@ -22,6 +26,11 @@ void reset();
 void setIncludeAdditionalClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
+void setSpeakingEvaluation(
+    int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows
+    );
 QString settingValue(const QString& key);
 }
 
@@ -106,6 +115,7 @@ private slots:
     void testingModeUsesRegularMeetingsForDayFiltering();
     void navigationControlsUsePillsAndPersistScopeSelection();
     void settingsDialogDefaultsToActiveSchedule();
+    void evaluationsSectionShowsSelectedSpeakingEvaluation();
 };
 
 void ClassesPageTests::init()
@@ -377,6 +387,72 @@ void ClassesPageTests::settingsDialogDefaultsToActiveSchedule()
         dialog.values().visibilityScope,
         ClassTabNavigation::VisibilityScope::AllClasses
         );
+}
+
+void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
+{
+    SpeakingEvalRows winter = SpeakingEval::emptyRows();
+    winter[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Winter Student");
+    SpeakingEvalRows summer = SpeakingEval::emptyRows();
+    summer[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Summer Student");
+    ScheduleWidgetTestStubs::setSpeakingEvaluation(
+        42,
+        QStringLiteral("Winter"),
+        winter);
+    ScheduleWidgetTestStubs::setSpeakingEvaluation(
+        42,
+        QStringLiteral("Summer"),
+        summer);
+
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    page.show();
+    QApplication::processEvents();
+
+    auto* heading = page.findChild<QLabel*>(
+        QStringLiteral("classEvaluationsHeading"));
+    auto* evaluationLabel = page.findChild<QLabel*>(
+        QStringLiteral("classEvaluationsEvaluationLabel"));
+    auto* evaluationCombo = page.findChild<QComboBox*>(
+        QStringLiteral("classEvaluationsEvaluationCombo"));
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("classEvaluationsTable"));
+
+    QVERIFY(heading);
+    QVERIFY(evaluationLabel);
+    QVERIFY(evaluationCombo);
+    QVERIFY(table);
+    QCOMPARE(heading->text(), QStringLiteral("Speaking Evaluations"));
+    QCOMPARE(evaluationLabel->text(), QStringLiteral("Evaluation"));
+    QCOMPARE(evaluationCombo->count(), 4);
+    QCOMPARE(evaluationCombo->itemText(0), QStringLiteral("Winter"));
+    QCOMPARE(evaluationCombo->itemText(1), QStringLiteral("Speech Contest"));
+    QCOMPARE(evaluationCombo->itemText(2), QStringLiteral("Summer"));
+    QCOMPARE(evaluationCombo->itemText(3), QStringLiteral("Fall"));
+    QVERIFY(table->isVisible());
+    QCOMPARE(table->model()->rowCount(), SpeakingEval::RowCount);
+    QCOMPARE(table->model()->columnCount(), SpeakingEval::ColumnCount);
+    QCOMPARE(
+        table->model()
+            ->index(0, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName))
+            .data()
+            .toString(),
+        QStringLiteral("Winter Student"));
+
+    evaluationCombo->setCurrentIndex(
+        evaluationCombo->findData(QStringLiteral("Summer")));
+    QApplication::processEvents();
+
+    QCOMPARE(
+        table->model()
+            ->index(0, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName))
+            .data()
+            .toString(),
+        QStringLiteral("Summer Student"));
 }
 
 QTEST_MAIN(ClassesPageTests)

@@ -10,18 +10,16 @@
 class ApplicationServices;
 class CriterionDistributionBar;
 class GradeHistogram;
-class PageHeader;
-class SectionCard;
 class QComboBox;
+class QEvent;
+class QGridLayout;
 class QLabel;
+class QShowEvent;
 class QTableWidget;
-class QVBoxLayout;
+class SectionCard;
+class QWidget;
 
-// Read-only "Analytics" editor for a Class: speaking-evaluation statistics,
-// grade distributions, per-criterion breakdowns and student rankings.
-//
-// Computed entirely from existing data via SpeakingEvaluationService::
-// analytics(); it never writes to the database.
+// Read-only dashboard for speaking-evaluation results in a class.
 class ClassAnalyticsPage : public BasePage
 {
     Q_OBJECT
@@ -33,80 +31,75 @@ public:
         QWidget* parent = nullptr
         );
 
-    void loadClass(
-        const Classroom& classroom
-        );
+    void loadClass(const Classroom& classroom);
 
     void clearDatabaseState() override;
     void refresh() override;
     void retranslateUi() override;
+    bool eventFilter(QObject* object, QEvent* event) override;
 
-    bool eventFilter(QObject* obj, QEvent* event) override;
+protected:
+    void showEvent(QShowEvent* event) override;
 
 private slots:
     void onEvaluationChanged();
-    void syncThemeStyles();
 
 private:
     void buildUi();
+    void populateEvaluationSelector(const QString& selectedName = {});
     void rebuild();
+    void clearDisplay();
     void showEmpty(bool empty);
-    void applyChartsRowLayout();
+    void applySnapshot(const SpeakingAnalytics::Snapshot& snapshot);
+    void applyResponsiveLayout();
+    void layoutSummaryCards(int columns);
+    void layoutChartCards(bool horizontal);
+    void refreshAreaValueTexts();
+    void resizeRankingColumnsToContents();
+    void setRankingHeaders();
 
-    // Stat-card sizing: every card is as wide as the widest title label
-    // ("Students Assessed").  Recomputed when the font changes so the
-    // cards stay proportional at any font size.  statValueWidth() reports
-    // the width available for value text; applyAreaValue() fills the
-    // strongest/focus cards (pluralizing the title and wrapping one
-    // metric per line).
-    void layoutStatCards();
-    int statValueWidth() const;
-    void applyAreaValue(
-        SectionCard* card,
-        const QString& singularTitle,
-        const QString& pluralTitle,
-        const QList<QString>& names,
+    [[nodiscard]] QString selectedEvaluationName() const;
+    [[nodiscard]] QString areaText(
         const QList<QString>& labels,
-        QLabel* value
-        );
+        const QLabel* value
+        ) const;
 
     ApplicationServices* m_services = nullptr;
     bool m_embedded = false;
     int m_classId = -1;
+    bool m_rebuilding = false;
 
-    PageHeader* m_header = nullptr;
+    QWidget* m_dashboardBody = nullptr;
     QLabel* m_heading = nullptr;
+    QLabel* m_evaluationLabel = nullptr;
     QComboBox* m_evaluationCombo = nullptr;
 
-    // Stat-card value labels (populated by rebuild()).
-    QLabel* m_avgValue = nullptr;
-    QLabel* m_avgLetter = nullptr;
-    QLabel* m_assessedValue = nullptr;
-    QLabel* m_strongestValue = nullptr;
-    QLabel* m_focusValue = nullptr;
-
-    // Stat-card container and the card/title pieces it depends on.  The
-    // card widths are derived from the widest title (e.g. "Students
-    // Assessed") and recomputed on font changes (see layoutStatCards()).
-    QWidget* m_statRow = nullptr;
-    QLabel* m_statTitleLabel = nullptr;
-    SectionCard* m_avgCard = nullptr;
+    QWidget* m_summaryContainer = nullptr;
+    QGridLayout* m_summaryLayout = nullptr;
+    QList<SectionCard*> m_summaryCards;
+    SectionCard* m_averageCard = nullptr;
     SectionCard* m_assessedCard = nullptr;
     SectionCard* m_strongestCard = nullptr;
     SectionCard* m_focusCard = nullptr;
+    QLabel* m_averageValue = nullptr;
+    QLabel* m_assessedValue = nullptr;
+    QLabel* m_strongestValue = nullptr;
+    QLabel* m_focusValue = nullptr;
+    QList<QString> m_strongestLabels;
+    QList<QString> m_focusLabels;
+    int m_summaryColumns = 0;
 
-    QWidget* m_chartsRow = nullptr;
-    SectionCard* m_shapeCard = nullptr;
+    QWidget* m_chartsContainer = nullptr;
+    QGridLayout* m_chartsLayout = nullptr;
     SectionCard* m_criteriaCard = nullptr;
-    bool m_chartsRowHorizontal = false;
-
-    GradeHistogram* m_histogram = nullptr;
+    SectionCard* m_shapeCard = nullptr;
     QWidget* m_criteriaContainer = nullptr;
-    QVBoxLayout* m_criteriaLayout = nullptr;
+    QGridLayout* m_criteriaLayout = nullptr;
     QList<CriterionDistributionBar*> m_criterionBars;
+    GradeHistogram* m_histogram = nullptr;
+    int m_chartsHorizontal = -1;
 
+    SectionCard* m_rankingCard = nullptr;
     QTableWidget* m_rankingTable = nullptr;
     QLabel* m_emptyLabel = nullptr;
-
-    bool m_rebuilding = false;
 };

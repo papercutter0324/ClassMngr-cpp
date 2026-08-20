@@ -10,6 +10,7 @@
 
 class ApplicationServices;
 class ClassDetailsPage;
+class ClassEvaluationsPage;
 class ClassNotesPage;
 class ClassAnalyticsPage;
 class QLabel;
@@ -25,6 +26,7 @@ enum class ClassesSection
     Details,
     Roster,
     Analytics,
+    Evaluations,
     Notes
 };
 
@@ -124,5 +126,6 @@ private:
     ClassDetailsPage* m_detailsPage = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;
     ClassAnalyticsPage* m_analyticsPage = nullptr;
+    ClassEvaluationsPage* m_evaluationsPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
 };

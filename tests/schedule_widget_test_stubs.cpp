@@ -44,6 +44,7 @@ QHash<QString, QString> testingBlocks;
 QHash<int, TestingClass> testingClasses;
 QHash<QString, int> testingClassAssignments;
 QHash<int, Roster> rosters;
+QHash<QString, SpeakingEvalRows> speakingEvaluations;
 int savedSlotStates = 0;
 int savedTestingBlocks = 0;
 int printRequestCount = 0;
@@ -64,6 +65,7 @@ void reset()
     testingClasses.clear();
     testingClassAssignments.clear();
     rosters.clear();
+    speakingEvaluations.clear();
     savedSlotStates = 0;
     savedTestingBlocks = 0;
     printRequestCount = 0;
@@ -132,6 +134,17 @@ void setIncludeAlternativeMatchingClass(
     )
 {
     includeAlternativeMatchingClass = include;
+}
+
+void setSpeakingEvaluation(
+    int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows
+    )
+{
+    speakingEvaluations.insert(
+        QStringLiteral("%1:%2").arg(classId).arg(evaluationName),
+        rows);
 }
 
 QString settingValue(
@@ -767,6 +780,15 @@ Status DataService::saveRosters(
     }
 
     return {};
+}
+
+SpeakingEvalRows DataService::loadSpeakingEval(
+    int classId,
+    const QString& evaluationName
+    )
+{
+    return ScheduleWidgetTestStubs::speakingEvaluations.value(
+        QStringLiteral("%1:%2").arg(classId).arg(evaluationName));
 }
 
 int DataService::getRosterStudentCount(
