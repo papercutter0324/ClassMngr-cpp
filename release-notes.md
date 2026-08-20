@@ -1,3 +1,38 @@
+# ClassMngr 0.17.0 Release Notes
+
+ClassMngr 0.17.0 introduces Class Analytics for a clear, at-a-glance view of
+speaking-evaluation results. It also refreshes app navigation and includes
+several setup, calendar, and theme refinements.
+
+## Class Analytics
+
+- Added an Analytics tab to each class, with a selector for viewing a specific
+  speaking evaluation.
+- See the class average, the number of students assessed, and the strongest
+  and focus areas for the selected evaluation.
+- Use Class Shape and By Criterion charts to understand grade distributions
+  and performance across the evaluation criteria.
+- Review a student ranking table with English and Korean names, overall grades,
+  and criterion-level results.
+
+## Navigation
+
+- Redesigned the navigation tabs used across the app for a more consistent,
+  compact experience.
+- Added filtering and display settings to help you focus the Classes list on
+  the classes that matter now.
+
+## Initial Setup and Preferences
+
+- Refined the Initial Setup wizard and Getting Started banner layout.
+- Cancelling the Initial Setup wizard no longer saves incomplete setup data.
+- Restored the option to follow the system theme in Preferences.
+
+## Calendar and Schedule
+
+- Improved how term schedule dates are updated in the Calendar.
+- Reduced unused vertical space in schedule cells.
+
 # ClassMngr 0.16.0 Release Notes
 
 ClassMngr 0.16.0 adds an on-screen Korean / English keyboard, makes update
