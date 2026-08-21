@@ -1,3 +1,36 @@
+# ClassMngr 0.17.1 Release Notes
+
+ClassMngr 0.17.1 adds birthday reminders, expands access to the Korean /
+English on-screen keyboard, and streamlines Preferences and class navigation.
+
+## Birthday Reminders
+
+- Added an Upcoming Birthdays view for birthdays today and over the next two
+  weeks.
+- Birthdays are shown for Korean teachers, Native English Teachers, and GS Team
+  members.
+- ClassMngr can show the Upcoming Birthdays reminder when it starts.
+
+## Classes and Navigation
+
+- Combined class details, roster, analytics, evaluations, and notes into one
+  class page with consistent tabs.
+- Refined class navigation with options for showing all classes or only
+  active-schedule classes, plus improved class filtering and selection behavior.
+
+## Preferences
+
+- Consolidated schedule, calendar, and class-navigation settings into the
+  Preferences dialog.
+- Added clearer sections and controls for configuring the app's navigation and
+  schedule behavior.
+
+## On-Screen Keyboard
+
+- Added quick access to the Korean / English on-screen keyboard from more pages
+  and dialogs.
+- Added on-screen keyboard support to the Initial Setup wizard.
+
 # ClassMngr 0.17.0 Release Notes
 
 ClassMngr 0.17.0 introduces Class Analytics for a clear, at-a-glance view of
