@@ -25,10 +25,6 @@ namespace
 {
 constexpr int ScrollButtonWidth = 28;
 constexpr int TabContentSpacing = NavigationPillStyle::Gap;
-constexpr int PageSpacing = 8;
-constexpr int InitialStripHeight =
-    NavigationPillStyle::ControlHeight
-    + NavigationPillStyle::RowBottomSpacing;
 }
 
 NavigationTabStrip::NavigationTabStrip(
@@ -44,7 +40,11 @@ NavigationTabStrip::NavigationTabStrip(
           )
 {
     setProperty("navigationTabKind", kindPropertyValue(kind));
-    setFixedHeight(InitialStripHeight);
+    const int initialControlHeight =
+        NavigationPillStyle::controlHeight(fontMetrics());
+    const int initialStripHeight =
+        initialControlHeight + NavigationPillStyle::RowBottomSpacing;
+    setFixedHeight(initialStripHeight);
     setMinimumWidth(0);
 
     m_rootLayout = new QHBoxLayout(this);
@@ -58,7 +58,7 @@ NavigationTabStrip::NavigationTabStrip(
     m_leftButton->setArrowType(Qt::LeftArrow);
     m_leftButton->setFixedSize(
         ScrollButtonWidth,
-        NavigationPillStyle::ControlHeight
+        initialControlHeight
         );
     m_leftButton->setAutoRepeat(true);
     m_leftButton->setAutoRepeatDelay(350);
@@ -72,7 +72,7 @@ NavigationTabStrip::NavigationTabStrip(
     m_rightButton->setArrowType(Qt::RightArrow);
     m_rightButton->setFixedSize(
         ScrollButtonWidth,
-        NavigationPillStyle::ControlHeight
+        initialControlHeight
         );
     m_rightButton->setAutoRepeat(true);
     m_rightButton->setAutoRepeatDelay(350);
@@ -86,7 +86,7 @@ NavigationTabStrip::NavigationTabStrip(
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setWidgetResizable(false);
     m_scrollArea->setMinimumWidth(0);
-    m_scrollArea->setFixedHeight(InitialStripHeight);
+    m_scrollArea->setFixedHeight(initialStripHeight);
     m_scrollArea->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Fixed
@@ -94,7 +94,7 @@ NavigationTabStrip::NavigationTabStrip(
 
     m_tabContent = new QWidget;
     m_tabContent->setObjectName(QStringLiteral("navigationTabContent"));
-    m_tabContent->setFixedHeight(InitialStripHeight);
+    m_tabContent->setFixedHeight(initialStripHeight);
     m_tabLayout = new QHBoxLayout(m_tabContent);
     m_tabLayout->setContentsMargins(0, 0, 0, 0);
     m_tabLayout->setSpacing(TabContentSpacing);
@@ -103,6 +103,13 @@ NavigationTabStrip::NavigationTabStrip(
     m_rootLayout->addWidget(m_leftButton, 0, Qt::AlignTop);
     m_rootLayout->addWidget(m_scrollArea, 1, Qt::AlignTop);
     m_rootLayout->addWidget(m_rightButton, 0, Qt::AlignTop);
+    m_trailingSpacer = new QSpacerItem(
+        0,
+        0,
+        QSizePolicy::Fixed,
+        QSizePolicy::Minimum
+        );
+    m_rootLayout->addItem(m_trailingSpacer);
 
     m_leftButton->hide();
     m_rightButton->hide();
@@ -253,12 +260,20 @@ void NavigationTabStrip::setCurrentIndex(int index)
 
     if (m_currentIndex == index)
     {
+        if (usesVisibleTabWindow())
+        {
+            updateTabSizes();
+        }
         updateButtonStates();
         ensureCurrentVisible();
         return;
     }
 
     m_currentIndex = index;
+    if (usesVisibleTabWindow())
+    {
+        updateTabSizes();
+    }
     updateButtonStates();
     ensureCurrentVisible();
     emit currentChanged(index);
@@ -364,14 +379,87 @@ QWidget* NavigationTabStrip::trailingWidget() const
     return m_trailingWidget;
 }
 
+void NavigationTabStrip::setTrailingMinimumGap(int gap)
+{
+    const int minimumGap = std::max(0, gap);
+    if (m_trailingMinimumGap == minimumGap)
+    {
+        return;
+    }
+
+    m_trailingMinimumGap = minimumGap;
+    updateLayoutState();
+}
+
 int NavigationTabStrip::contentWidth() const
 {
     return m_contentWidth;
 }
 
+int NavigationTabStrip::allTabsContentWidth() const
+{
+    return m_allTabsContentWidth;
+}
+
 bool NavigationTabStrip::hasOverflow() const
 {
     return m_hasOverflow;
+}
+
+void NavigationTabStrip::setVisibleTabCount(int count)
+{
+    const int requestedCount =
+        m_buttons.isEmpty()
+            || count >= static_cast<int>(m_buttons.size())
+            ? 0
+            : std::max(1, count);
+    if (m_requestedVisibleTabCount == requestedCount)
+    {
+        return;
+    }
+
+    m_requestedVisibleTabCount = requestedCount;
+    updateTabSizes();
+}
+
+int NavigationTabStrip::visibleTabCount() const
+{
+    return effectiveVisibleTabCount();
+}
+
+int NavigationTabStrip::tabGroupWidth(int visibleTabCount) const
+{
+    if (m_buttons.isEmpty() || visibleTabCount <= 0)
+    {
+        return 0;
+    }
+
+    const int totalTabCount = static_cast<int>(m_buttons.size());
+    const int tabCount = std::min(visibleTabCount, totalTabCount);
+    if (tabCount == totalTabCount)
+    {
+        return m_allTabsContentWidth;
+    }
+
+    return (2 * ScrollButtonWidth)
+        + TabContentSpacing
+        + (m_tabWidth * tabCount)
+        + (TabContentSpacing * (tabCount - 1));
+}
+
+void NavigationTabStrip::setSingleTabNavigation(bool enabled)
+{
+    setVisibleTabCount(enabled ? 1 : m_buttons.size());
+}
+
+bool NavigationTabStrip::singleTabNavigation() const
+{
+    return usesVisibleTabWindow() && effectiveVisibleTabCount() == 1;
+}
+
+void NavigationTabStrip::refreshLayout()
+{
+    updateTabSizes();
 }
 
 void NavigationTabStrip::changeEvent(QEvent* event)
@@ -546,7 +634,8 @@ void NavigationTabStrip::resizeEvent(QResizeEvent* event)
 void NavigationTabStrip::updateTabSizes()
 {
     int widestWidth = 0;
-    int tallestHeight = NavigationPillStyle::ControlHeight;
+    int tallestHeight =
+        NavigationPillStyle::controlHeight(fontMetrics());
     const QList<NavigationPillButton*> trailingButtons =
         m_trailingWidget
             ? m_trailingWidget->findChildren<NavigationPillButton*>()
@@ -564,6 +653,9 @@ void NavigationTabStrip::updateTabSizes()
         widestWidth = std::max(widestWidth, requiredSize.width());
         tallestHeight = std::max(tallestHeight, requiredSize.height());
     }
+
+    m_tabWidth = widestWidth;
+    updateVisibleButtons();
 
     for (NavigationPillButton* button : trailingButtons)
     {
@@ -603,7 +695,7 @@ void NavigationTabStrip::updateTabSizes()
     m_rightButton->setFixedSize(ScrollButtonWidth, tallestHeight);
     m_scrollArea->setFixedHeight(stripHeight);
 
-    m_contentWidth =
+    m_allTabsContentWidth =
         m_buttons.isEmpty()
             ? 0
             : (widestWidth * static_cast<int>(m_buttons.size()))
@@ -611,6 +703,25 @@ void NavigationTabStrip::updateTabSizes()
                     TabContentSpacing
                     * (static_cast<int>(m_buttons.size()) - 1)
                     );
+    m_contentWidth =
+        usesVisibleTabWindow()
+            ? (
+                m_currentIndex >= 0
+                    ? (widestWidth * effectiveVisibleTabCount())
+                        + (
+                            TabContentSpacing
+                            * (effectiveVisibleTabCount() - 1)
+                            )
+                        + TabContentSpacing
+                    : 0
+                )
+            : m_allTabsContentWidth;
+    m_tabLayout->setContentsMargins(
+        usesVisibleTabWindow() ? TabContentSpacing : 0,
+        0,
+        0,
+        0
+        );
     m_tabContent->setFixedSize(
         m_contentWidth,
         stripHeight
@@ -628,6 +739,62 @@ void NavigationTabStrip::updateLayoutState()
 
     m_updatingLayout = true;
 
+    if (usesVisibleTabWindow())
+    {
+        m_hasOverflow = false;
+        m_leftButton->show();
+        m_rightButton->show();
+        m_scrollArea->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Fixed
+            );
+        m_scrollArea->setFixedWidth(m_contentWidth);
+        m_trailingSpacer->changeSize(
+            m_trailingMinimumGap,
+            0,
+            QSizePolicy::MinimumExpanding,
+            QSizePolicy::Minimum
+            );
+        m_scrollArea->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+        m_rootLayout->invalidate();
+        m_rootLayout->activate();
+        m_updatingLayout = false;
+
+        updateScrollButtons();
+        return;
+    }
+
+    if (m_kind == NavigationTabKind::Grade)
+    {
+        m_scrollArea->setSizePolicy(
+            QSizePolicy::Fixed,
+            QSizePolicy::Fixed
+            );
+        m_scrollArea->setFixedWidth(m_contentWidth);
+        m_trailingSpacer->changeSize(
+            m_trailingMinimumGap,
+            0,
+            QSizePolicy::MinimumExpanding,
+            QSizePolicy::Minimum
+            );
+    }
+    else
+    {
+        m_scrollArea->setMinimumWidth(0);
+        m_scrollArea->setMaximumWidth(QWIDGETSIZE_MAX);
+        m_scrollArea->setSizePolicy(
+            QSizePolicy::Expanding,
+            QSizePolicy::Fixed
+            );
+        m_trailingSpacer->changeSize(
+            0,
+            0,
+            QSizePolicy::Fixed,
+            QSizePolicy::Minimum
+            );
+    }
+    m_rootLayout->invalidate();
+
     const int trailingWidth =
         m_trailingWidget && m_trailingWidget->isVisible()
             ? std::max(
@@ -638,14 +805,12 @@ void NavigationTabStrip::updateLayoutState()
     const int availableWithoutArrows =
         std::max(0, width() - trailingWidth);
     const bool overflow =
-        m_contentWidth > availableWithoutArrows;
+        m_kind != NavigationTabKind::Grade
+        && m_contentWidth > availableWithoutArrows;
 
-    if (m_hasOverflow != overflow)
-    {
-        m_hasOverflow = overflow;
-        m_leftButton->setVisible(overflow);
-        m_rightButton->setVisible(overflow);
-    }
+    m_hasOverflow = overflow;
+    m_leftButton->setVisible(overflow);
+    m_rightButton->setVisible(overflow);
 
     m_scrollArea->setAlignment(
         !m_hasOverflow && m_alignment == NavigationTabAlignment::Center
@@ -662,6 +827,16 @@ void NavigationTabStrip::updateLayoutState()
 
 void NavigationTabStrip::updateScrollButtons()
 {
+    if (usesVisibleTabWindow())
+    {
+        m_leftButton->setEnabled(m_currentIndex > 0);
+        m_rightButton->setEnabled(
+            m_currentIndex >= 0
+            && m_currentIndex < m_buttons.size() - 1
+            );
+        return;
+    }
+
     QScrollBar* scrollBar = m_scrollArea->horizontalScrollBar();
     m_leftButton->setEnabled(
         m_hasOverflow && scrollBar->value() > scrollBar->minimum()
@@ -673,6 +848,16 @@ void NavigationTabStrip::updateScrollButtons()
 
 void NavigationTabStrip::scrollByTab(bool forward)
 {
+    if (usesVisibleTabWindow())
+    {
+        const int target =
+            forward
+                ? m_currentIndex + 1
+                : m_currentIndex - 1;
+        setCurrentIndex(target);
+        return;
+    }
+
     if (!m_hasOverflow || m_buttons.isEmpty())
     {
         return;
@@ -702,6 +887,8 @@ void NavigationTabStrip::scrollByTab(bool forward)
 void NavigationTabStrip::ensureCurrentVisible()
 {
     if (
+        usesVisibleTabWindow()
+        ||
         !m_hasOverflow
         || m_currentIndex < 0
         || m_currentIndex >= m_buttons.size()
@@ -738,6 +925,69 @@ void NavigationTabStrip::updateButtonStates()
             m_selectionVisible && index == m_currentIndex
             );
     }
+}
+
+void NavigationTabStrip::updateVisibleButtons()
+{
+    updateVisibleTabWindow();
+
+    for (int index = 0; index < m_buttons.size(); ++index)
+    {
+        m_buttons.at(index)->setVisible(
+            !usesVisibleTabWindow()
+            || (
+                index >= m_firstVisibleTabIndex
+                && index < m_firstVisibleTabIndex + effectiveVisibleTabCount()
+                )
+            );
+    }
+}
+
+void NavigationTabStrip::updateVisibleTabWindow()
+{
+    if (!usesVisibleTabWindow())
+    {
+        m_firstVisibleTabIndex = 0;
+        return;
+    }
+
+    const int tabCount = effectiveVisibleTabCount();
+    const int lastPossibleFirstIndex = m_buttons.size() - tabCount;
+    m_firstVisibleTabIndex = std::clamp(
+        m_firstVisibleTabIndex,
+        0,
+        lastPossibleFirstIndex
+        );
+
+    if (m_currentIndex < 0)
+    {
+        return;
+    }
+
+    if (m_currentIndex < m_firstVisibleTabIndex)
+    {
+        m_firstVisibleTabIndex = m_currentIndex;
+    }
+    else if (m_currentIndex >= m_firstVisibleTabIndex + tabCount)
+    {
+        m_firstVisibleTabIndex = m_currentIndex - tabCount + 1;
+    }
+}
+
+int NavigationTabStrip::effectiveVisibleTabCount() const
+{
+    return m_requestedVisibleTabCount > 0
+        ? std::min(
+            m_requestedVisibleTabCount,
+            static_cast<int>(m_buttons.size())
+            )
+        : static_cast<int>(m_buttons.size());
+}
+
+bool NavigationTabStrip::usesVisibleTabWindow() const
+{
+    return m_requestedVisibleTabCount > 0
+        && m_requestedVisibleTabCount < static_cast<int>(m_buttons.size());
 }
 
 int NavigationTabStrip::buttonIndex(QObject* object) const
@@ -782,7 +1032,7 @@ NavigationTabWidget::NavigationTabWidget(
 
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->setSpacing(PageSpacing);
+    m_layout->setSpacing(NavigationPillStyle::RowSpacing);
 
     m_tabStrip = new NavigationTabStrip(kind, this);
     m_tabStrip->setObjectName(tabStripObjectName);
@@ -908,4 +1158,9 @@ void NavigationTabWidget::setTrailingWidget(QWidget* widget)
 QWidget* NavigationTabWidget::trailingWidget() const
 {
     return m_tabStrip->trailingWidget();
+}
+
+void NavigationTabWidget::setPageSpacing(int spacing)
+{
+    m_layout->setSpacing(std::max(0, spacing));
 }

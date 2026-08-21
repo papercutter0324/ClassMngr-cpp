@@ -9,6 +9,7 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QImage>
 #include <QPainter>
@@ -76,6 +77,10 @@ private slots:
     void resizeTransitionsAndInsertionStayConsistent();
     void programmaticSelectionRevealsActiveTab();
     void arrowsScrollByTabBoundary();
+    void gradeArrowsAppearOnlyForReducedTabWindow();
+    void gradeTrailingGapExpandsFromMinimum();
+    void singleTabNavigationUsesArrowsToSelectTabs();
+    void visibleTabWindowKeepsSelectionAndNavigates();
     void draggingScrollsWithoutChangingSelection();
     void clickingSelectsAndKeyboardNavigates();
     void hiddenSelectionPreservesCurrentPage();
@@ -102,7 +107,10 @@ void NavigationTabWidgetTests::equalWidthTabsUseWidestLabel()
     QVERIFY(width > 0);
     QCOMPARE(strip->tabButton(1)->width(), width);
     QCOMPARE(strip->tabButton(2)->width(), width);
-    QCOMPARE(strip->tabButton(0)->height(), NavigationPillStyle::ControlHeight);
+    QCOMPARE(
+        strip->tabButton(0)->height(),
+        NavigationPillStyle::controlHeight(strip->tabButton(0)->fontMetrics())
+        );
 }
 
 void NavigationTabWidgetTests::fitTabsUseConfiguredAlignment()
@@ -140,7 +148,7 @@ void NavigationTabWidgetTests::
     overflowButtonsBracketViewportAndTrailingControls()
 {
     NavigationTabWidget tabs(
-        NavigationTabKind::Grade,
+        NavigationTabKind::Class,
         QStringLiteral("overflowStrip")
         );
     tabs.resize(760, 220);
@@ -248,6 +256,186 @@ void NavigationTabWidgetTests::arrowsScrollByTabBoundary()
     QCOMPARE(bar->value(), std::min(step, bar->maximum()));
     leftButton(tabs.tabStrip())->click();
     QCOMPARE(bar->value(), 0);
+}
+
+void NavigationTabWidgetTests::
+    gradeArrowsAppearOnlyForReducedTabWindow()
+{
+    NavigationTabWidget tabs(
+        NavigationTabKind::Grade,
+        QStringLiteral("gradeArrowVisibilityStrip")
+        );
+    tabs.resize(320, 200);
+    addRepresentativeTabs(&tabs, 4);
+    tabs.show();
+    QApplication::processEvents();
+
+    NavigationTabStrip* strip = tabs.tabStrip();
+    QToolButton* left = leftButton(strip);
+    QToolButton* right = rightButton(strip);
+    QVERIFY(!left->isVisible());
+    QVERIFY(!right->isVisible());
+
+    strip->setVisibleTabCount(2);
+    QApplication::processEvents();
+
+    QVERIFY(left->isVisible());
+    QVERIFY(right->isVisible());
+    NavigationPillButton* rightMostGrade = strip->tabButton(1);
+    QCOMPARE(
+        right->geometry().left(),
+        rightMostGrade->mapTo(strip, QPoint(rightMostGrade->width(), 0)).x()
+        );
+
+    right->click();
+    right->click();
+    rightMostGrade = strip->tabButton(2);
+    QCOMPARE(
+        right->geometry().left(),
+        rightMostGrade->mapTo(strip, QPoint(rightMostGrade->width(), 0)).x()
+        );
+
+    strip->setVisibleTabCount(strip->count());
+    QApplication::processEvents();
+
+    QVERIFY(!left->isVisible());
+    QVERIFY(!right->isVisible());
+}
+
+void NavigationTabWidgetTests::gradeTrailingGapExpandsFromMinimum()
+{
+    constexpr int MinimumGap = 60;
+
+    NavigationTabWidget tabs(
+        NavigationTabKind::Grade,
+        QStringLiteral("gradeTrailingGapStrip")
+        );
+    tabs.resize(900, 200);
+    addRepresentativeTabs(&tabs, 2);
+
+    auto* trailing = new QWidget;
+    auto* trailingLayout = new QHBoxLayout(trailing);
+    trailingLayout->setContentsMargins(0, 0, 0, 0);
+    auto* filter = new NavigationPillButton(trailing);
+    filter->setText(QStringLiteral("M"));
+    trailingLayout->addWidget(filter);
+    tabs.setTrailingWidget(trailing);
+
+    NavigationTabStrip* strip = tabs.tabStrip();
+    strip->setTrailingMinimumGap(MinimumGap);
+    tabs.show();
+    QApplication::processEvents();
+
+    const auto trailingGap = [strip, trailing]
+    {
+        NavigationPillButton* rightMostGrade = strip->tabButton(1);
+        return trailing->geometry().left()
+            - rightMostGrade->mapTo(
+                strip,
+                QPoint(rightMostGrade->width(), 0)
+                ).x();
+    };
+
+    QVERIFY(trailingGap() > MinimumGap);
+
+    tabs.resize(
+        strip->allTabsContentWidth()
+            + MinimumGap
+            + trailing->sizeHint().width(),
+        200
+        );
+    QApplication::processEvents();
+    QCOMPARE(trailingGap(), MinimumGap);
+
+    tabs.resize(
+        strip->allTabsContentWidth()
+            + MinimumGap
+            + trailing->sizeHint().width()
+            - 40,
+        200
+        );
+    QApplication::processEvents();
+    QCOMPARE(trailingGap(), MinimumGap);
+}
+
+void NavigationTabWidgetTests::singleTabNavigationUsesArrowsToSelectTabs()
+{
+    NavigationTabWidget tabs(
+        NavigationTabKind::Grade,
+        QStringLiteral("singleTabNavigationStrip")
+        );
+    tabs.resize(900, 200);
+    addRepresentativeTabs(&tabs, 3);
+    tabs.setCurrentIndex(1);
+    tabs.tabStrip()->setSingleTabNavigation(true);
+    tabs.show();
+    QApplication::processEvents();
+
+    QToolButton* left = leftButton(tabs.tabStrip());
+    QToolButton* right = rightButton(tabs.tabStrip());
+    QVERIFY(left);
+    QVERIFY(right);
+    QVERIFY(left->isVisible());
+    QVERIFY(right->isVisible());
+    QVERIFY(!tabs.tabStrip()->tabButton(0)->isVisible());
+    QVERIFY(tabs.tabStrip()->tabButton(1)->isVisible());
+    QVERIFY(!tabs.tabStrip()->tabButton(2)->isVisible());
+
+    right->click();
+    QCOMPARE(tabs.currentIndex(), 2);
+    QVERIFY(!right->isEnabled());
+    QVERIFY(left->isEnabled());
+
+    left->click();
+    QCOMPARE(tabs.currentIndex(), 1);
+
+    tabs.tabStrip()->setSingleTabNavigation(false);
+    QApplication::processEvents();
+    QVERIFY(tabs.tabStrip()->tabButton(0)->isVisible());
+    QVERIFY(tabs.tabStrip()->tabButton(1)->isVisible());
+    QVERIFY(tabs.tabStrip()->tabButton(2)->isVisible());
+}
+
+void NavigationTabWidgetTests::visibleTabWindowKeepsSelectionAndNavigates()
+{
+    NavigationTabWidget tabs(
+        NavigationTabKind::Grade,
+        QStringLiteral("visibleTabWindowStrip")
+        );
+    tabs.resize(900, 200);
+    addRepresentativeTabs(&tabs, 4);
+    tabs.setCurrentIndex(1);
+    tabs.tabStrip()->setVisibleTabCount(2);
+    tabs.show();
+    QApplication::processEvents();
+
+    NavigationTabStrip* strip = tabs.tabStrip();
+    QCOMPARE(strip->visibleTabCount(), 2);
+    QVERIFY(strip->tabButton(0)->isVisible());
+    QVERIFY(strip->tabButton(1)->isVisible());
+    QVERIFY(!strip->tabButton(2)->isVisible());
+    QVERIFY(!strip->tabButton(3)->isVisible());
+    QVERIFY(strip->tabGroupWidth(2) < strip->tabGroupWidth(4));
+
+    rightButton(strip)->click();
+    QCOMPARE(tabs.currentIndex(), 2);
+    QVERIFY(!strip->tabButton(0)->isVisible());
+    QVERIFY(strip->tabButton(1)->isVisible());
+    QVERIFY(strip->tabButton(2)->isVisible());
+    QVERIFY(!strip->tabButton(3)->isVisible());
+
+    rightButton(strip)->click();
+    QCOMPARE(tabs.currentIndex(), 3);
+    QVERIFY(!strip->tabButton(1)->isVisible());
+    QVERIFY(strip->tabButton(2)->isVisible());
+    QVERIFY(strip->tabButton(3)->isVisible());
+
+    strip->setVisibleTabCount(3);
+    QApplication::processEvents();
+    QVERIFY(!strip->tabButton(0)->isVisible());
+    QVERIFY(strip->tabButton(1)->isVisible());
+    QVERIFY(strip->tabButton(2)->isVisible());
+    QVERIFY(strip->tabButton(3)->isVisible());
 }
 
 void NavigationTabWidgetTests::draggingScrollsWithoutChangingSelection()
@@ -410,7 +598,12 @@ void NavigationTabWidgetTests::
         }
         );
 
-    QVERIFY(largestRequiredHeight > NavigationPillStyle::ControlHeight);
+    QVERIFY(
+        largestRequiredHeight
+        > NavigationPillStyle::controlHeight(
+            tabs.tabStrip()->tabButton(0)->fontMetrics()
+            )
+        );
     for (int index = 0; index < tabs.count(); ++index)
     {
         NavigationPillButton* button = tabs.tabStrip()->tabButton(index);
@@ -460,7 +653,7 @@ void NavigationTabWidgetTests::fractionalScalePaintsCompleteBorder()
 {
     constexpr qreal Scale = 1.25;
     constexpr int LogicalWidth = 200;
-    constexpr int LogicalHeight = NavigationPillStyle::ControlHeight;
+    constexpr int LogicalHeight = 36;
     const QColor fillColor(QStringLiteral("#303030"));
     const QColor borderColor(QStringLiteral("#454545"));
 

@@ -453,6 +453,104 @@ void addNavigationPreferencesTab(
         );
     classesShownLayout->addWidget(activeSchedule);
     navigationLayout->addWidget(classesShownGroup);
+
+    const auto resetPolicy =
+        [window](bool dayFilters)
+        {
+            return dayFilters
+                ? ClassNavigationPreferences::dayFilterResetPolicy(
+                    window && window->services()
+                        ? window->services()->settingsService()
+                        : nullptr
+                    )
+                : ClassNavigationPreferences::classSelectionResetPolicy(
+                    window && window->services()
+                        ? window->services()->settingsService()
+                        : nullptr
+                    );
+        };
+    const auto addResetPolicyControls =
+        [navigationGroup, navigationLayout, window, resetPolicy](
+            const QString& title,
+            const QString& closeObjectName,
+            const QString& leaveObjectName,
+            bool dayFilters
+            )
+        {
+            auto* group = new QGroupBox(title, navigationGroup);
+            auto* groupLayout = new QVBoxLayout(group);
+            groupLayout->setSpacing(12);
+
+            const auto policy = resetPolicy(dayFilters);
+            auto* onClose = new QRadioButton(
+                preferencesText("Reset when the application closes"),
+                group
+                );
+            onClose->setObjectName(closeObjectName);
+            onClose->setChecked(
+                policy
+                == ClassNavigationPreferences::SessionResetPolicy::OnApplicationClose
+                );
+            groupLayout->addWidget(onClose);
+
+            auto* onLeave = new QRadioButton(
+                preferencesText("Reset when navigating away from the page"),
+                group
+                );
+            onLeave->setObjectName(leaveObjectName);
+            onLeave->setChecked(
+                policy
+                == ClassNavigationPreferences::SessionResetPolicy::OnPageLeave
+                );
+            groupLayout->addWidget(onLeave);
+
+            const auto savePolicy = [window, onClose, dayFilters](bool checked)
+            {
+                if (!checked)
+                {
+                    return;
+                }
+
+                const auto selectedPolicy =
+                    onClose->isChecked()
+                        ? ClassNavigationPreferences::SessionResetPolicy::OnApplicationClose
+                        : ClassNavigationPreferences::SessionResetPolicy::OnPageLeave;
+                auto* settingsService =
+                    window && window->services()
+                        ? window->services()->settingsService()
+                        : nullptr;
+
+                if (dayFilters)
+                {
+                    ClassNavigationPreferences::saveDayFilterResetPolicy(
+                        settingsService,
+                        selectedPolicy
+                        );
+                }
+                else
+                {
+                    ClassNavigationPreferences::saveClassSelectionResetPolicy(
+                        settingsService,
+                        selectedPolicy
+                        );
+                }
+            };
+            QObject::connect(onClose, &QRadioButton::toggled, group, savePolicy);
+            QObject::connect(onLeave, &QRadioButton::toggled, group, savePolicy);
+            navigationLayout->addWidget(group);
+        };
+    addResetPolicyControls(
+        preferencesText("Day Filters"),
+        QStringLiteral("preferencesNavigationDayFiltersResetOnClose"),
+        QStringLiteral("preferencesNavigationDayFiltersResetOnLeave"),
+        true
+        );
+    addResetPolicyControls(
+        preferencesText("Class Selection"),
+        QStringLiteral("preferencesNavigationClassSelectionResetOnClose"),
+        QStringLiteral("preferencesNavigationClassSelectionResetOnLeave"),
+        false
+        );
     layout->addWidget(navigationGroup);
 
     const auto save = [window, allClasses](bool checked)

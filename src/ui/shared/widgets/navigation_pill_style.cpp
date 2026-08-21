@@ -69,18 +69,18 @@ QSize sizeHint(
         contentWidth += iconSize.width() + IconSpacing;
     }
 
-    const int contentHeight =
-        std::max(metrics.height(), iconSize.height());
-
     return QSize(
         contentWidth
             + (2 * HorizontalPadding)
             + trailingGap
             + BorderExtent,
-        contentHeight
-            + (2 * VerticalPadding)
-            + BorderExtent
+        controlHeight(metrics)
         );
+}
+
+int controlHeight(const QFontMetrics& metrics)
+{
+    return metrics.height() + (2 * VerticalPadding);
 }
 
 void paint(

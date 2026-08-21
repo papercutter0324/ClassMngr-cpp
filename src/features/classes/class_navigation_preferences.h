@@ -7,6 +7,12 @@ class SettingsService;
 namespace ClassNavigationPreferences
 {
 
+enum class SessionResetPolicy
+{
+    OnApplicationClose,
+    OnPageLeave
+};
+
 [[nodiscard]] ClassTabNavigation::VisibilityScope load(
     SettingsService* settingsService
     );
@@ -14,6 +20,24 @@ namespace ClassNavigationPreferences
 void save(
     SettingsService* settingsService,
     ClassTabNavigation::VisibilityScope visibilityScope
+    );
+
+[[nodiscard]] SessionResetPolicy dayFilterResetPolicy(
+    SettingsService* settingsService
+    );
+
+void saveDayFilterResetPolicy(
+    SettingsService* settingsService,
+    SessionResetPolicy policy
+    );
+
+[[nodiscard]] SessionResetPolicy classSelectionResetPolicy(
+    SettingsService* settingsService
+    );
+
+void saveClassSelectionResetPolicy(
+    SettingsService* settingsService,
+    SessionResetPolicy policy
     );
 
 }

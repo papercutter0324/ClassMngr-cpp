@@ -3,8 +3,6 @@
 #include "core/fontmanager.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 
-#include <algorithm>
-
 #include <QFocusEvent>
 #include <QFontMetrics>
 #include <QPainter>
@@ -26,7 +24,6 @@ NavigationSettingsButton::NavigationSettingsButton(QWidget* parent)
     setText(QStringLiteral("\u2699"));
     setFont(FontManager::getUiFont(18, QFont::DemiBold));
     setFixedWidth(SettingsButtonWidth);
-    setMinimumHeight(NavigationPillStyle::ControlHeight);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     setFocusPolicy(Qt::StrongFocus);
     setCursor(Qt::PointingHandCursor);
@@ -86,17 +83,9 @@ void NavigationSettingsButton::setNavigationSettingsFocusColor(
 
 QSize NavigationSettingsButton::sizeHint() const
 {
-    const int requiredHeight =
-        fontMetrics().height()
-        + (2 * NavigationPillStyle::VerticalPadding)
-        + 2;
-
     return QSize(
         SettingsButtonWidth,
-        std::max(
-            requiredHeight,
-            NavigationPillStyle::ControlHeight
-            )
+        NavigationPillStyle::controlHeight(fontMetrics())
         );
 }
 

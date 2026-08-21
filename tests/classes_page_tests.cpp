@@ -113,6 +113,8 @@ private slots:
     void explicitClassRequestRetainsExcludingFiltersAndHiddenSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
     void navigationControlsUsePills();
+    void navigationRowsUseUniformSpacing();
+    void filterPillsKeepStaticWidthsWhenPageResizes();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
     void headerKeyboardReplacesEmbeddedRosterButton();
 };
@@ -133,12 +135,12 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
     QApplication::processEvents();
 
     const QList<QPair<QString, QString>> buttons{
-        {QStringLiteral("classesMondayFilterButton"), QStringLiteral("Mon.")},
-        {QStringLiteral("classesTuesdayFilterButton"), QStringLiteral("Tues.")},
-        {QStringLiteral("classesWednesdayFilterButton"), QStringLiteral("Wed.")},
-        {QStringLiteral("classesThursdayFilterButton"), QStringLiteral("Thurs.")},
-        {QStringLiteral("classesFridayFilterButton"), QStringLiteral("Fri.")},
-        {QStringLiteral("classesWeekendFilterButton"), QStringLiteral("Wkend")}
+        {QStringLiteral("classesMondayFilterButton"), QStringLiteral("M")},
+        {QStringLiteral("classesTuesdayFilterButton"), QStringLiteral("T")},
+        {QStringLiteral("classesWednesdayFilterButton"), QStringLiteral("W")},
+        {QStringLiteral("classesThursdayFilterButton"), QStringLiteral("Th")},
+        {QStringLiteral("classesFridayFilterButton"), QStringLiteral("F")},
+        {QStringLiteral("classesWeekendFilterButton"), QStringLiteral("Wkd")}
     };
 
     for (const auto& buttonDefinition : buttons)
@@ -308,9 +310,85 @@ void ClassesPageTests::navigationControlsUsePills()
         {
             QCOMPARE(
                 classTabBar->tabButton(0)->height(),
-                NavigationPillStyle::ControlHeight
+                NavigationPillStyle::controlHeight(
+                    classTabBar->tabButton(0)->fontMetrics()
+                    )
                 );
         }
+    }
+}
+
+void ClassesPageTests::navigationRowsUseUniformSpacing()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.show();
+    QApplication::processEvents();
+
+    auto* gradeTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesGradeTabs")
+        );
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(gradeTabs);
+    QVERIFY(sectionTabs);
+
+    auto* classTabs = gradeTabs->currentWidget()
+        ? gradeTabs->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(classTabs);
+
+    const auto rowGap = [&page](const NavigationTabStrip* upper,
+                                const NavigationTabStrip* lower)
+    {
+        return lower->mapTo(&page, QPoint(0, 0)).y()
+            - upper->mapTo(&page, QPoint(0, upper->height())).y();
+    };
+
+    QCOMPARE(
+        rowGap(gradeTabs->tabStrip(), classTabs->tabStrip()),
+        rowGap(classTabs->tabStrip(), sectionTabs->tabStrip())
+        );
+}
+
+void ClassesPageTests::filterPillsKeepStaticWidthsWhenPageResizes()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.show();
+    QApplication::processEvents();
+
+    const QStringList objectNames{
+        QStringLiteral("classesMondayFilterButton"),
+        QStringLiteral("classesTuesdayFilterButton"),
+        QStringLiteral("classesWednesdayFilterButton"),
+        QStringLiteral("classesThursdayFilterButton"),
+        QStringLiteral("classesFridayFilterButton"),
+        QStringLiteral("classesWeekendFilterButton")
+    };
+    QList<int> widths;
+    for (const QString& objectName : objectNames)
+    {
+        auto* button = navigationPillButton(&page, objectName);
+        QVERIFY(button);
+        widths.append(button->width());
+    }
+
+    page.resize(600, 800);
+    QApplication::processEvents();
+
+    for (int index = 0; index < objectNames.size(); ++index)
+    {
+        auto* button = navigationPillButton(&page, objectNames.at(index));
+        QVERIFY(button);
+        QCOMPARE(button->width(), widths.at(index));
     }
 }
 

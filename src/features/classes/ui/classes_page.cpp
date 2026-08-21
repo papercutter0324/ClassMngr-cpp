@@ -16,6 +16,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -24,15 +25,19 @@
 
 #include <QFont>
 #include <QHBoxLayout>
+#include <QHideEvent>
 #include <QLabel>
 #include <QPushButton>
+#include <QResizeEvent>
+#include <QSet>
 #include <QStackedWidget>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
 namespace
 {
-constexpr int DayFilterSpacer = 16;
+constexpr int MinimumGradeFilterGap = 60;
 
 struct DayFilterButtonDefinition
 {
@@ -221,6 +226,33 @@ bool ClassesPage::loadClasses()
         );
 }
 
+QString dayFilterButtonText(
+    const QString& key
+    )
+{
+    if (key == QStringLiteral("Monday"))
+    {
+        return ClassesPage::tr("M");
+    }
+    if (key == QStringLiteral("Tuesday"))
+    {
+        return ClassesPage::tr("T");
+    }
+    if (key == QStringLiteral("Wednesday"))
+    {
+        return ClassesPage::tr("W");
+    }
+    if (key == QStringLiteral("Thursday"))
+    {
+        return ClassesPage::tr("Th");
+    }
+    if (key == QStringLiteral("Friday"))
+    {
+        return ClassesPage::tr("F");
+    }
+    return ClassesPage::tr("Wkd");
+}
+
 bool ClassesPage::openEvaluation(
     int classId,
     const QString& evaluationName
@@ -338,6 +370,8 @@ void ClassesPage::clearDatabaseState()
     m_classes.clear();
     m_currentClassId = -1;
     m_currentSection = ClassesSection::Details;
+    m_selectedGrade.clear();
+    m_selectedClassIds.clear();
 
     rebuildClassTabs(-1);
 
@@ -510,7 +544,7 @@ void ClassesPage::buildUi()
     m_navigationContainer = new QWidget(this);
     auto* navigationLayout = new QVBoxLayout(m_navigationContainer);
     navigationLayout->setContentsMargins(0, 0, 0, 0);
-    navigationLayout->setSpacing(8);
+    navigationLayout->setSpacing(NavigationPillStyle::RowSpacing);
 
     m_classTabsContainer = new QWidget(m_navigationContainer);
     m_classTabsLayout = new QVBoxLayout(m_classTabsContainer);
@@ -616,6 +650,38 @@ void ClassesPage::buildUi()
     showActiveEditor();
 }
 
+void ClassesPage::resizeEvent(QResizeEvent* event)
+{
+    BasePage::resizeEvent(event);
+    scheduleFirstRowLayout();
+}
+
+void ClassesPage::hideEvent(QHideEvent* event)
+{
+    BasePage::hideEvent(event);
+
+    auto* settingsService =
+        m_services
+            ? m_services->settingsService()
+            : nullptr;
+
+    if (
+        ClassNavigationPreferences::dayFilterResetPolicy(settingsService)
+        == ClassNavigationPreferences::SessionResetPolicy::OnPageLeave
+        )
+    {
+        discardDayFilterState();
+    }
+
+    if (
+        ClassNavigationPreferences::classSelectionResetPolicy(settingsService)
+        == ClassNavigationPreferences::SessionResetPolicy::OnPageLeave
+        )
+    {
+        discardClassSelectionState();
+    }
+}
+
 void ClassesPage::rebuildClassTabs(
     int selectedClassId
     )
@@ -627,6 +693,7 @@ void ClassesPage::rebuildClassTabs(
 
     m_rebuildingTabs = true;
     m_dayFilterButtons.clear();
+    m_dayFilterControls = nullptr;
 
     while (QLayoutItem* item = m_classTabsLayout->takeAt(0))
     {
@@ -688,6 +755,40 @@ void ClassesPage::rebuildClassTabs(
         }
     }
 
+    m_weekendClassesAvailable = hasWeekendClasses(entries);
+    if (!m_weekendClassesAvailable)
+    {
+        m_dayFilter.selectedDays.remove(QStringLiteral("Saturday"));
+        m_dayFilter.selectedDays.remove(QStringLiteral("Sunday"));
+    }
+
+    if (entries.isEmpty())
+    {
+        m_selectedGrade.clear();
+        m_selectedClassIds.clear();
+    }
+
+    QSet<int> availableClassIds;
+    for (const Classroom& classroom : std::as_const(m_classes))
+    {
+        if (classroom.id > 0)
+        {
+            availableClassIds.insert(classroom.id);
+        }
+    }
+    for (auto iterator = m_selectedClassIds.begin();
+         iterator != m_selectedClassIds.end();)
+    {
+        if (!availableClassIds.contains(iterator.value()))
+        {
+            iterator = m_selectedClassIds.erase(iterator);
+        }
+        else
+        {
+            ++iterator;
+        }
+    }
+
     const ClassTabNavigation::Model navigation =
         ClassTabNavigation::build(
             entries,
@@ -705,13 +806,13 @@ void ClassesPage::rebuildClassTabs(
     createDayFilterControls(gradeTabs);
 
     const auto connectClassTabs =
-        [this](NavigationTabWidget* tabs)
+        [this](NavigationTabWidget* tabs, const QString& grade)
         {
             connect(
                 tabs,
                 &NavigationTabWidget::currentChanged,
                 this,
-                [this, tabs](int)
+                [this, tabs, grade](int)
                 {
                     if (m_rebuildingTabs || m_restoringTabs)
                     {
@@ -719,7 +820,10 @@ void ClassesPage::rebuildClassTabs(
                     }
 
                     setNavigationSelectionVisible(true);
-                    activateClass(currentClassIdFromTabs(tabs));
+                    const int classId = currentClassIdFromTabs(tabs);
+                    rememberClassSelection(grade, classId);
+                    m_selectedGrade = grade;
+                    activateClass(classId);
                 }
                 );
         };
@@ -728,9 +832,10 @@ void ClassesPage::rebuildClassTabs(
          : navigation.gradeGroups)
     {
         auto* gradePage = new QWidget(gradeTabs);
+        gradePage->setProperty("classGrade", group.grade);
         auto* gradeLayout = new QVBoxLayout(gradePage);
         gradeLayout->setContentsMargins(0, 0, 0, 0);
-        gradeLayout->setSpacing(8);
+        gradeLayout->setSpacing(NavigationPillStyle::RowSpacing);
         gradeLayout->setAlignment(Qt::AlignTop);
 
         auto* classTabs =
@@ -740,6 +845,9 @@ void ClassesPage::rebuildClassTabs(
                 gradePage
                 );
         classTabs->setObjectName("classesLevelTabs");
+        // These tab pages are placeholders; the actual content is shown in
+        // m_editorStack, so they must not add a second gap below this row.
+        classTabs->setPageSpacing(0);
 
         for (const ClassTabNavigation::ClassTab& classTab
              : group.classes)
@@ -750,7 +858,7 @@ void ClassesPage::rebuildClassTabs(
                 );
         }
 
-        connectClassTabs(classTabs);
+        connectClassTabs(classTabs, group.grade);
         gradeLayout->addWidget(classTabs);
         gradeTabs->addTab(gradePage, group.label);
     }
@@ -759,15 +867,23 @@ void ClassesPage::rebuildClassTabs(
         gradeTabs,
         &NavigationTabWidget::currentChanged,
         this,
-        [this, gradeTabs](int)
+        [this, gradeTabs](int gradeIndex)
         {
             if (m_rebuildingTabs || m_restoringTabs)
             {
                 return;
             }
 
+            QWidget* gradePage = gradeTabs->widget(gradeIndex);
+            const QString grade =
+                gradePage
+                    ? gradePage->property("classGrade").toString()
+                    : QString();
+            m_selectedGrade = grade;
             setNavigationSelectionVisible(true);
-            activateClass(currentClassIdFromTabs(gradeTabs));
+            const int classId = currentClassIdFromTabs(gradeTabs);
+            rememberClassSelection(grade, classId);
+            activateClass(classId);
         }
         );
 
@@ -775,6 +891,7 @@ void ClassesPage::rebuildClassTabs(
     m_classTabsLayout->addWidget(gradeTabs);
     syncTabsToClass(selectedClassId);
     m_rebuildingTabs = false;
+    scheduleFirstRowLayout();
 }
 
 void ClassesPage::createDayFilterControls(
@@ -786,38 +903,22 @@ void ClassesPage::createDayFilterControls(
         return;
     }
 
-    auto* controls = new QWidget(gradeTabs);
-    controls->setObjectName(
+    m_dayFilterControls = new QWidget(gradeTabs);
+    m_dayFilterControls->setObjectName(
         QStringLiteral("classesDayFilterControls")
         );
-    auto* layout = new QHBoxLayout(controls);
-    layout->setContentsMargins(
-        DayFilterSpacer,
-        0,
-        0,
-        0
-        );
+    auto* layout = new QHBoxLayout(m_dayFilterControls);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->setAlignment(Qt::AlignTop);
-    layout->setSpacing(6);
+    layout->setSpacing(NavigationPillStyle::Gap);
 
     for (const DayFilterButtonDefinition& definition
          : dayFilterButtonDefinitions())
     {
-        auto* button = new NavigationPillButton(controls);
+        auto* button = new NavigationPillButton(m_dayFilterControls);
         button->setObjectName(definition.objectName);
-        button->setText(
-            definition.key == QStringLiteral("Monday")
-                ? tr("Mon.")
-                : definition.key == QStringLiteral("Tuesday")
-                    ? tr("Tues.")
-                    : definition.key == QStringLiteral("Wednesday")
-                        ? tr("Wed.")
-                        : definition.key == QStringLiteral("Thursday")
-                            ? tr("Thurs.")
-                            : definition.key == QStringLiteral("Friday")
-                                ? tr("Fri.")
-                                : tr("Wkend")
-            );
+        button->setText(dayFilterButtonText(definition.key));
+        button->setFixedWidth(button->sizeHint().width());
         button->setCheckable(true);
         button->setChecked(
             dayFilterEnabled(definition.key)
@@ -827,6 +928,10 @@ void ClassesPage::createDayFilterControls(
             definition.key
             );
         button->setAccessibleName(button->text());
+        button->setVisible(
+            definition.key != QStringLiteral("Wkend")
+            || m_weekendClassesAvailable
+            );
         layout->addWidget(button);
 
         m_dayFilterButtons.insert(
@@ -845,7 +950,134 @@ void ClassesPage::createDayFilterControls(
             );
     }
 
-    gradeTabs->setTrailingWidget(controls);
+    m_dayFilterControls->setSizePolicy(
+        QSizePolicy::Fixed,
+        QSizePolicy::Minimum
+        );
+    m_dayFilterControls->setFixedWidth(layout->sizeHint().width());
+    gradeTabs->setTrailingWidget(m_dayFilterControls);
+    gradeTabs->tabStrip()->setTrailingMinimumGap(MinimumGradeFilterGap);
+}
+
+void ClassesPage::updateFirstRowLayout()
+{
+    if (
+        m_updatingFirstRowLayout
+        || !m_classTabs
+        || !m_dayFilterControls
+        )
+    {
+        return;
+    }
+
+    NavigationTabStrip* gradeStrip = m_classTabs->tabStrip();
+    if (!gradeStrip)
+    {
+        return;
+    }
+
+    m_updatingFirstRowLayout = true;
+
+    gradeStrip->setVisibleTabCount(gradeStrip->count());
+    gradeStrip->refreshLayout();
+
+    const int availableWidth = gradeStrip->width();
+    const int filterGroupWidth =
+        MinimumGradeFilterGap + m_dayFilterControls->sizeHint().width();
+    int visibleGradeCount = gradeStrip->count();
+    while (
+        visibleGradeCount > 1
+        && gradeStrip->tabGroupWidth(visibleGradeCount)
+            + filterGroupWidth > availableWidth
+        )
+    {
+        --visibleGradeCount;
+    }
+
+    gradeStrip->setVisibleTabCount(visibleGradeCount);
+    gradeStrip->refreshLayout();
+    m_updatingFirstRowLayout = false;
+}
+
+void ClassesPage::scheduleFirstRowLayout()
+{
+    if (m_firstRowLayoutQueued)
+    {
+        return;
+    }
+
+    m_firstRowLayoutQueued = true;
+    QTimer::singleShot(
+        0,
+        this,
+        [this]
+        {
+            m_firstRowLayoutQueued = false;
+            updateFirstRowLayout();
+        }
+        );
+}
+
+bool ClassesPage::hasWeekendClasses(
+    const QList<ClassTabNavigation::ClassEntry>& entries
+    ) const
+{
+    const auto includesWeekend = [](const QList<ClassTime>& times)
+    {
+        for (const ClassTime& time : times)
+        {
+            const QString day = time.day.trimmed().toCaseFolded();
+            if (
+                day == QStringLiteral("saturday")
+                || day == QStringLiteral("sunday")
+                )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    for (const ClassTabNavigation::ClassEntry& entry : entries)
+    {
+        if (
+            includesWeekend(entry.regularTimes)
+            || includesWeekend(entry.intensiveTimes)
+            )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void ClassesPage::rememberClassSelection(
+    const QString& grade,
+    int classId
+    )
+{
+    if (classId > 0)
+    {
+        m_selectedClassIds.insert(grade, classId);
+    }
+}
+
+int ClassesPage::rememberedClassId(const QString& grade) const
+{
+    return m_selectedClassIds.value(grade, -1);
+}
+
+void ClassesPage::discardClassSelectionState()
+{
+    m_selectedClassIds.clear();
+    m_currentClassId = -1;
+}
+
+void ClassesPage::discardDayFilterState()
+{
+    m_dayFilter.selectedDays.clear();
 }
 
 void ClassesPage::setDayFilterEnabled(
@@ -1056,6 +1288,10 @@ void ClassesPage::syncTabsToClass(
         return;
     }
 
+    int selectedGradeIndex = -1;
+    int selectedClassIndex = -1;
+    int fallbackGradeIndex = -1;
+
     for (int gradeIndex = 0;
          gradeIndex < m_classTabs->count();
          ++gradeIndex)
@@ -1067,50 +1303,100 @@ void ClassesPage::syncTabsToClass(
                     QStringLiteral("classesLevelTabs")
                     )
                 : nullptr;
-
-        if (!classTabs)
+        if (!gradePage || !classTabs)
         {
             continue;
         }
+
+        const QString grade = gradePage->property("classGrade").toString();
+        if (
+            !m_selectedGrade.isNull()
+            && grade == m_selectedGrade
+            )
+        {
+            fallbackGradeIndex = gradeIndex;
+        }
+
+        const int rememberedId = rememberedClassId(grade);
+        int rememberedIndex = -1;
 
         for (int classIndex = 0;
              classIndex < classTabs->count();
              ++classIndex)
         {
             QWidget* classPage = classTabs->widget(classIndex);
-
-            if (
+            const int candidateId =
                 classPage
-                && classPage->property("class_id").toInt() == classId
-                )
+                    ? classPage->property("class_id").toInt()
+                    : -1;
+
+            if (candidateId == rememberedId)
             {
-                setNavigationSelectionVisible(true);
-                m_classTabs->setCurrentIndex(gradeIndex);
-                classTabs->setCurrentIndex(classIndex);
-                return;
+                rememberedIndex = classIndex;
             }
+
+            if (candidateId == classId)
+            {
+                selectedGradeIndex = gradeIndex;
+                selectedClassIndex = classIndex;
+            }
+        }
+
+        if (rememberedIndex < 0 && classTabs->count() > 0)
+        {
+            rememberedIndex = 0;
+            QWidget* firstClassPage = classTabs->widget(rememberedIndex);
+            rememberClassSelection(
+                grade,
+                firstClassPage
+                    ? firstClassPage->property("class_id").toInt()
+                    : -1
+                );
+        }
+
+        if (rememberedIndex >= 0)
+        {
+            classTabs->setCurrentIndex(rememberedIndex);
         }
     }
 
-    if (classId > 0)
+    if (selectedGradeIndex >= 0 && selectedClassIndex >= 0)
+    {
+        QWidget* gradePage = m_classTabs->widget(selectedGradeIndex);
+        auto* classTabs =
+            gradePage
+                ? gradePage->findChild<NavigationTabWidget*>(
+                    QStringLiteral("classesLevelTabs")
+                    )
+                : nullptr;
+        m_selectedGrade = gradePage->property("classGrade").toString();
+        rememberClassSelection(m_selectedGrade, classId);
+        setNavigationSelectionVisible(true);
+        m_classTabs->setCurrentIndex(selectedGradeIndex);
+        if (classTabs)
+        {
+            classTabs->setCurrentIndex(selectedClassIndex);
+        }
+        return;
+    }
+
+    if (m_classTabs->count() <= 0)
     {
         setNavigationSelectionVisible(false);
         return;
     }
 
-    if (m_classTabs->count() > 0)
+    if (fallbackGradeIndex < 0)
     {
-        setNavigationSelectionVisible(true);
-        m_classTabs->setCurrentIndex(0);
-
-        if (auto* classTabs =
-            m_classTabs->currentWidget()->findChild<NavigationTabWidget*>(
-                QStringLiteral("classesLevelTabs")
-                ))
-        {
-            classTabs->setCurrentIndex(0);
-        }
+        fallbackGradeIndex = 0;
+        QWidget* gradePage = m_classTabs->widget(fallbackGradeIndex);
+        m_selectedGrade = gradePage
+            ? gradePage->property("classGrade").toString()
+            : QString();
     }
+
+    m_classTabs->setCurrentIndex(fallbackGradeIndex);
+    setNavigationSelectionVisible(classId <= 0);
 }
 
 int ClassesPage::currentClassIdFromTabs(

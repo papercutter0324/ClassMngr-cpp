@@ -17,9 +17,9 @@ namespace NavigationPillStyle
 {
 
 inline constexpr int HorizontalPadding = 14;
-inline constexpr int VerticalPadding = 6;
+inline constexpr int VerticalPadding = 10;
 inline constexpr int Gap = 6;
-inline constexpr int ControlHeight = 36;
+inline constexpr int RowSpacing = 8;
 inline constexpr int RowBottomSpacing = 2;
 
 struct Colors
@@ -46,6 +46,8 @@ QSize sizeHint(
     const QSize& iconSize,
     int trailingGap = 0
     );
+
+int controlHeight(const QFontMetrics& metrics);
 
 void paint(
     QPainter* painter,

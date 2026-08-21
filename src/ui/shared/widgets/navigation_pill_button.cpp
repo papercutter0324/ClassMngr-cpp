@@ -2,8 +2,6 @@
 
 #include "ui/shared/widgets/navigation_pill_style.h"
 
-#include <algorithm>
-
 #include <QEnterEvent>
 #include <QEvent>
 #include <QFontMetrics>
@@ -17,7 +15,6 @@ NavigationPillButton::NavigationPillButton(
     : QPushButton(parent)
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setMinimumHeight(NavigationPillStyle::ControlHeight);
 
     connect(
         this,
@@ -105,20 +102,12 @@ QSize NavigationPillButton::sizeHint() const
             ? QSize()
             : icon().actualSize(QSize(iconExtent, iconExtent));
 
-    QSize hint = NavigationPillStyle::sizeHint(
+    return NavigationPillStyle::sizeHint(
         fontMetrics(),
         icon(),
         text(),
         effectiveIconSize
         );
-    hint.setHeight(
-        std::max(
-            hint.height(),
-            NavigationPillStyle::ControlHeight
-            )
-        );
-
-    return hint;
 }
 
 QSize NavigationPillButton::minimumSizeHint() const

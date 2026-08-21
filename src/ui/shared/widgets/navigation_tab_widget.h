@@ -8,6 +8,7 @@ class QEvent;
 class QHBoxLayout;
 class QResizeEvent;
 class QScrollArea;
+class QSpacerItem;
 class QStackedWidget;
 class QToolButton;
 class QVBoxLayout;
@@ -59,8 +60,21 @@ public:
     void setTrailingWidget(QWidget* widget);
     QWidget* trailingWidget() const;
 
+    void setTrailingMinimumGap(int gap);
+
     int contentWidth() const;
+    int allTabsContentWidth() const;
     bool hasOverflow() const;
+
+    // Limits the number of adjacent tabs shown at once.  A count greater than
+    // or equal to the total tab count shows every tab.
+    void setVisibleTabCount(int count);
+    int visibleTabCount() const;
+    int tabGroupWidth(int visibleTabCount) const;
+
+    void setSingleTabNavigation(bool enabled);
+    bool singleTabNavigation() const;
+    void refreshLayout();
 
 signals:
     void currentChanged(int index);
@@ -77,6 +91,10 @@ private:
     void scrollByTab(bool forward);
     void ensureCurrentVisible();
     void updateButtonStates();
+    void updateVisibleButtons();
+    void updateVisibleTabWindow();
+    int effectiveVisibleTabCount() const;
+    bool usesVisibleTabWindow() const;
     int buttonIndex(QObject* object) const;
     static QString kindPropertyValue(NavigationTabKind kind);
 
@@ -89,9 +107,15 @@ private:
     QWidget* m_tabContent = nullptr;
     QHBoxLayout* m_tabLayout = nullptr;
     QWidget* m_trailingWidget = nullptr;
+    QSpacerItem* m_trailingSpacer = nullptr;
+    int m_trailingMinimumGap = 0;
     QList<NavigationPillButton*> m_buttons;
     int m_currentIndex = -1;
     int m_contentWidth = 0;
+    int m_allTabsContentWidth = 0;
+    int m_tabWidth = 0;
+    int m_requestedVisibleTabCount = 0;
+    int m_firstVisibleTabIndex = 0;
     bool m_selectionVisible = true;
     bool m_hasOverflow = false;
     bool m_updatingLayout = false;
@@ -135,6 +159,9 @@ public:
 
     void setTrailingWidget(QWidget* widget);
     QWidget* trailingWidget() const;
+
+    // Controls the space between the tab strip and its current page.
+    void setPageSpacing(int spacing);
 
 signals:
     void currentChanged(int index);
