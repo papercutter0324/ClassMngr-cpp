@@ -158,12 +158,28 @@ void RosterEditorWidget::setTestingClassMode(
     {
         m_importButton->setVisible(!m_testingClassMode);
     }
-    if (m_koreanKeyboardButton)
-    {
-        m_koreanKeyboardButton->setVisible(!m_testingClassMode);
-    }
+    updateKeyboardButtonVisibility();
 
     applyTestingClassColumnVisibility();
+}
+
+void RosterEditorWidget::setBottomKeyboardButtonVisible(
+    bool visible
+    )
+{
+    m_bottomKeyboardButtonVisible = visible;
+    updateKeyboardButtonVisibility();
+}
+
+void RosterEditorWidget::updateKeyboardButtonVisibility()
+{
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setVisible(
+            m_bottomKeyboardButtonVisible
+            && !m_testingClassMode
+            );
+    }
 }
 
 void RosterEditorWidget::applyTestingClassColumnVisibility()

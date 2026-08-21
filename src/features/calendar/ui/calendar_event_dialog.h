@@ -11,6 +11,7 @@ class QComboBox;
 class QLineEdit;
 class QPushButton;
 class QTimeEdit;
+class OnScreenKeyboard;
 
 enum class CalendarEventRepeatFrequency
 {
@@ -74,4 +75,6 @@ private:
     QButtonGroup* m_eventTypeGroup = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_deleteButton = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
 };

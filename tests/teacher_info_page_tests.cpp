@@ -1,4 +1,5 @@
 #include "features/teacher/ui/teacher_info_page.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
 #include <QCalendarWidget>
@@ -9,6 +10,7 @@
 #include <QLocale>
 #include <QMetaObject>
 #include <QInputDialog>
+#include <QPushButton>
 #include <QTimer>
 #include <QtTest>
 
@@ -69,6 +71,7 @@ private slots:
     void preferredNameListsAvailableNameChoices();
     void promptsWhenSecondPreferredNameChoiceIsAdded();
     void birthdayUsesCalendarMonthAndDayOnly();
+    void headerKeyboardOpensUntargeted();
 };
 
 void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
@@ -231,6 +234,29 @@ void TeacherInfoPageTests::birthdayUsesCalendarMonthAndDayOnly()
     QVERIFY(page.hasUnsavedChanges());
     QVERIFY(birthday->text().isEmpty());
     QCOMPARE(birthday->placeholderText(), QStringLiteral("Not set"));
+}
+
+void TeacherInfoPageTests::headerKeyboardOpensUntargeted()
+{
+    TeacherInfoPage page(nullptr);
+    page.resize(800, 600);
+    page.show();
+    QApplication::processEvents();
+
+    auto* trigger = page.findChild<QPushButton*>(
+        QStringLiteral("teacherInfoKoreanKeyboardButton")
+        );
+    auto* keyboard = page.findChild<OnScreenKeyboard*>();
+    QVERIFY(trigger);
+    QVERIFY(keyboard);
+    QVERIFY(!trigger->icon().isNull());
+    QCOMPARE(trigger->accessibleName(), QStringLiteral("Korean Keyboard"));
+
+    trigger->click();
+    QApplication::processEvents();
+    QVERIFY(keyboard->isVisible());
+    QVERIFY(!keyboard->target());
+    keyboard->close();
 }
 
 QTEST_MAIN(TeacherInfoPageTests)

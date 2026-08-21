@@ -56,6 +56,9 @@ public:
     void setTestingClassMode(
         bool testingClassMode
         );
+    void setBottomKeyboardButtonVisible(
+        bool visible
+        );
     void retranslateUi() override;
     [[nodiscard]] PageOutputCapabilities
         outputCapabilities() const override;
@@ -94,6 +97,7 @@ private:
     void updateHeaderText();
 
     void applyTestingClassColumnVisibility();
+    void updateKeyboardButtonVisibility();
 
     bool saveRosterInternal(
         bool showValidationMessages
@@ -155,6 +159,7 @@ private:
     AutosaveCoordinator* m_autosave = nullptr;
     bool m_embedded = false;
     bool m_testingClassMode = false;
+    bool m_bottomKeyboardButtonVisible = true;
 
     PageHeader* m_pageHeader = nullptr;
 

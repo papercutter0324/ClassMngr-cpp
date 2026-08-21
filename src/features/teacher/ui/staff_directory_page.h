@@ -9,6 +9,7 @@ class QLabel;
 class QPushButton;
 class QTableWidget;
 class QTimer;
+class OnScreenKeyboard;
 
 enum class StaffDirectoryKind
 {
@@ -66,6 +67,8 @@ private:
 
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QTableWidget* m_table = nullptr;
     QPushButton* m_addButton = nullptr;
     QPushButton* m_deleteButton = nullptr;

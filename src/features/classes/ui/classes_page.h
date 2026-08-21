@@ -16,9 +16,11 @@ class ClassAnalyticsPage;
 class QLabel;
 class NavigationPillButton;
 class NavigationTabWidget;
+class QPushButton;
 class QStackedWidget;
 class QVBoxLayout;
 class RosterEditorWidget;
+class OnScreenKeyboard;
 class QWidget;
 
 enum class ClassesSection
@@ -116,6 +118,8 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_emptyLabel = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QWidget* m_navigationContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;
     QVBoxLayout* m_classTabsLayout = nullptr;

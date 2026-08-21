@@ -192,8 +192,10 @@ qt_add_executable(ClassMngrClassTransferTests
         tests/staff_directory_page_tests.cpp
         tests/staff_directory_page_test_stubs.cpp
         src/core/fontmanager.cpp
+        src/ui/shared/input/hangul_composer.cpp
         src/features/teacher/ui/staff_directory_page.cpp
         src/ui/shared/pages/basepage.cpp
+        src/ui/shared/widgets/on_screen_keyboard.cpp
     )
 
     target_compile_features(ClassMngrStaffDirectoryPageTests
@@ -224,6 +226,14 @@ qt_add_executable(ClassMngrClassTransferTests
         ClassMngrStaffDirectoryPageTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    qt_add_resources(ClassMngrStaffDirectoryPageTests staff_directory_keyboard_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
     )
 
     qt_add_executable(ClassMngrClassTabNavigationModelTests

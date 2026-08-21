@@ -4,6 +4,7 @@
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QAbstractButton>
@@ -334,7 +335,33 @@ void CalendarEventDialog::buildUi()
             QFont::DemiBold
             )
         );
-    mainLayout->addWidget(title);
+
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("calendarEventKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
+
+    auto* titleRow = new QHBoxLayout;
+    titleRow->setContentsMargins(0, 0, 0, 0);
+    titleRow->setSpacing(0);
+    auto* titleSpacer = new QWidget(this);
+    titleSpacer->setFixedSize(
+        m_koreanKeyboardButton->minimumSize()
+        );
+    titleRow->addWidget(titleSpacer);
+    titleRow->addWidget(title, 1);
+    titleRow->addWidget(m_koreanKeyboardButton);
+    mainLayout->addLayout(titleRow);
 
     m_titleEdit =
         new QLineEdit(this);
@@ -750,6 +777,18 @@ void CalendarEventDialog::buildUi()
         &QCheckBox::toggled,
         this,
         &CalendarEventDialog::updateTimeFieldAvailability
+        );
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard)
+            {
+                m_onScreenKeyboard->showForFocusScope(this);
+            }
+        }
         );
     connect(
         m_unconfirmedTimeCheck,

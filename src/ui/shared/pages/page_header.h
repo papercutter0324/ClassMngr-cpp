@@ -3,6 +3,7 @@
 #include <QWidget>
 
 class QLabel;
+class QHBoxLayout;
 
 class PageHeader final : public QWidget
 {
@@ -22,6 +23,7 @@ public:
 
     void setTitle(const QString& title);
     void setSubtitle(const QString& subtitle);
+    void setTrailingWidget(QWidget* widget);
     void refreshFonts();
 
 signals:
@@ -33,4 +35,6 @@ protected:
 private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
+    QHBoxLayout* m_titleRowLayout = nullptr;
+    QWidget* m_trailingWidget = nullptr;
 };

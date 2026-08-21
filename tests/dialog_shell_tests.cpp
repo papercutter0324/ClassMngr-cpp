@@ -16,8 +16,10 @@
 #include "ui/shared/dialogs/update_dialog.h"
 #include "ui/shared/printing/pdf_print_dialog.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QDialogButtonBox>
+#include <QApplication>
 #include <QLabel>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -117,6 +119,7 @@ private slots:
     void retainsParentOwnershipAndModalContract();
     void languageChangeRetranslatesShellAndDialog();
     void persistsGeometryByStableDialogKey();
+    void calendarEventDialogsExposeUntargetedKeyboard();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -274,6 +277,33 @@ void DialogShellTests::persistsGeometryByStableDialogKey()
     restored.show();
     QCoreApplication::processEvents();
     QCOMPARE(restored.size(), savedSize);
+}
+
+void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()
+{
+    CalendarEvent event;
+
+    for (const bool existingEvent : {false, true})
+    {
+        CalendarEventDialog dialog(event, existingEvent, true);
+        dialog.show();
+        QApplication::processEvents();
+
+        auto* trigger = dialog.findChild<QPushButton*>(
+            QStringLiteral("calendarEventKoreanKeyboardButton")
+            );
+        auto* keyboard = dialog.findChild<OnScreenKeyboard*>();
+        QVERIFY(trigger);
+        QVERIFY(keyboard);
+        QVERIFY(!trigger->icon().isNull());
+        QCOMPARE(trigger->accessibleName(), QStringLiteral("Korean Keyboard"));
+
+        trigger->click();
+        QApplication::processEvents();
+        QVERIFY(keyboard->isVisible());
+        QVERIFY(!keyboard->target());
+        keyboard->close();
+    }
 }
 
 QTEST_MAIN(DialogShellTests)

@@ -95,6 +95,14 @@ qt_add_executable(ClassMngrClassesPageTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    qt_add_resources(ClassMngrClassesPageTests classes_page_keyboard_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
+    )
+
     qt_add_executable(ClassMngrScheduleImportDialogTests
         tests/schedule_import_dialog_tests.cpp
         tests/schedule_widget_test_stubs.cpp
@@ -198,6 +206,7 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/sub_prep/services/sub_prep_print_service.h
         src/ui/shared/pages/basepage.cpp
         src/ui/shared/pages/basepage.h
+        src/ui/shared/input/hangul_composer.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.cpp
         src/ui/shared/widgets/sectioncards/class_info_section_card.h
         src/ui/shared/widgets/navigation_pill_button.cpp
@@ -208,6 +217,7 @@ qt_add_executable(ClassMngrClassesPageTests
         src/ui/shared/widgets/navigation_settings_button.h
         src/ui/shared/widgets/navigation_tab_widget.cpp
         src/ui/shared/widgets/navigation_tab_widget.h
+        src/ui/shared/widgets/on_screen_keyboard.cpp
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
         src/features/schedule/ui/schedule_cell_widget_factory.cpp
@@ -256,6 +266,14 @@ qt_add_executable(ClassMngrClassesPageTests
         ClassMngrSubPrepPageTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    qt_add_resources(ClassMngrSubPrepPageTests sub_prep_keyboard_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
     )
 
     qt_add_executable(ClassMngrNavigationTabWidgetTests

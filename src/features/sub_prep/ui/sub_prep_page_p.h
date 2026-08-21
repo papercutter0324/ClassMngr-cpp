@@ -17,6 +17,7 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <algorithm>
 #include <utility>

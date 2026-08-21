@@ -4,6 +4,7 @@
 
 #include <QPointer>
 #include <QPersistentModelIndex>
+#include <QMetaObject>
 #include <QVector>
 #include <QWidget>
 
@@ -35,6 +36,10 @@ public:
 
     void showFor(
         QAbstractItemView* view
+        );
+
+    void showForFocusScope(
+        QWidget* focusScope
         );
 
     void retarget(
@@ -109,6 +114,10 @@ private:
         QAbstractItemView* view
         ) const;
 
+    [[nodiscard]] QAbstractItemView* viewForWidget(
+        QWidget* widget
+        ) const;
+
     [[nodiscard]] bool isEligibleTarget(
         QWidget* widget
         ) const;
@@ -122,12 +131,18 @@ private:
         );
 
     void detachView();
+    void trackFocusWidget(
+        QWidget* widget
+        );
+    void detachFocusScope();
     void scheduleViewRetarget();
 
 private:
     QPointer<QWidget> m_target;
     QPointer<QAbstractItemView> m_view;
+    QPointer<QWidget> m_focusScope;
     QPersistentModelIndex m_targetIndex;
+    QMetaObject::Connection m_focusChangedConnection;
     QPointer<QAbstractButton> m_triggerButton;
     QVector<CharacterButton> m_characterButtons;
     QPushButton* m_shiftButton = nullptr;

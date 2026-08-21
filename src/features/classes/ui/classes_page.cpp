@@ -19,6 +19,7 @@
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <utility>
@@ -349,6 +350,16 @@ void ClassesPage::retranslateUi()
     m_titleLabel->setText(tr("Classes"));
     m_emptyLabel->setText(tr("No classes available"));
 
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
+            );
+    }
+
     if (m_sectionTabs && m_sectionTabs->count() >= 5)
     {
         m_sectionTabs->setTabText(0, tr("Details"));
@@ -407,7 +418,29 @@ void ClassesPage::buildUi()
             )
         );
 
-    headerLayout->addWidget(m_titleLabel);
+    auto* titleRow = new QHBoxLayout;
+    titleRow->setContentsMargins(0, 0, 0, 0);
+    titleRow->setSpacing(UiConstants::Pages::HeaderSpacing);
+    titleRow->addWidget(m_titleLabel);
+    titleRow->addStretch();
+
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("classesKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
+    titleRow->addWidget(m_koreanKeyboardButton);
+
+    headerLayout->addLayout(titleRow);
     headerLayout->addWidget(m_subtitleLabel);
     contentLayout()->addLayout(headerLayout);
     contentLayout()->addSpacing(
@@ -449,6 +482,7 @@ void ClassesPage::buildUi()
     m_editorStack = new QStackedWidget(this);
     m_detailsPage = new ClassDetailsPage(m_services, true, m_editorStack);
     m_rosterEditor = new RosterEditorWidget(m_services, true, m_editorStack);
+    m_rosterEditor->setBottomKeyboardButtonVisible(false);
     m_analyticsPage = new ClassAnalyticsPage(m_services, true, m_editorStack);
     m_evaluationsPage = new ClassEvaluationsPage(m_services, true, m_editorStack);
     m_notesPage = new ClassNotesPage(m_services, true, m_editorStack);
@@ -458,6 +492,19 @@ void ClassesPage::buildUi()
     m_editorStack->addWidget(m_evaluationsPage);
     m_editorStack->addWidget(m_notesPage);
     contentLayout()->addWidget(m_editorStack, 1);
+
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard)
+            {
+                m_onScreenKeyboard->showForFocusScope(this);
+            }
+        }
+        );
 
     connect(
         m_sectionTabs,

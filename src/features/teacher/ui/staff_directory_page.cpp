@@ -7,6 +7,7 @@
 #include "domain/models/gs_team_member.h"
 #include "domain/models/native_english_teacher.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QAbstractItemView>
@@ -14,6 +15,7 @@
 #include <QEvent>
 #include <QFont>
 #include <QHeaderView>
+#include <QHBoxLayout>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
@@ -224,7 +226,30 @@ void StaffDirectoryPage::buildUi()
     m_subtitleLabel->setFont(FontManager::getUiFont(
         UiConstants::Pages::SubtitleFontSize));
     m_subtitleLabel->setWordWrap(true);
-    headerLayout->addWidget(m_titleLabel);
+
+    auto* titleRow = new QHBoxLayout;
+    titleRow->setContentsMargins(0, 0, 0, 0);
+    titleRow->setSpacing(UiConstants::Pages::HeaderSpacing);
+    titleRow->addWidget(m_titleLabel);
+    titleRow->addStretch();
+
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("staffDirectoryKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
+    titleRow->addWidget(m_koreanKeyboardButton);
+
+    headerLayout->addLayout(titleRow);
     headerLayout->addWidget(m_subtitleLabel);
     contentLayout()->addLayout(headerLayout);
     contentLayout()->addSpacing(UiConstants::Pages::HeaderContentSpacing);
@@ -281,6 +306,18 @@ void StaffDirectoryPage::buildUi()
         markDirty();
     });
     connect(m_table, &QTableWidget::itemSelectionChanged, this, &StaffDirectoryPage::updateActions);
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard)
+            {
+                m_onScreenKeyboard->showForFocusScope(this);
+            }
+        }
+        );
 
     retranslateUi();
     updateActions();
@@ -572,6 +609,15 @@ void StaffDirectoryPage::retranslateUi()
     m_addButton->setText(tr("Add"));
     m_deleteButton->setText(tr("Delete"));
     m_discardButton->setText(tr("Discard Changes"));
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
+            );
+    }
     updateActions();
 }
 

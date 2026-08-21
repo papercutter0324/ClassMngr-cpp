@@ -92,6 +92,22 @@ void SubPrepPage::buildUi()
         );
     titleRow->addWidget(m_printButton);
 
+    m_koreanKeyboardButton = new QPushButton(m_scrollContent);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("subPrepKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
+    titleRow->addWidget(m_koreanKeyboardButton);
+
     headerLayout->addLayout(titleRow);
     headerLayout->addWidget(m_subtitleLabel);
     m_scrollContentLayout->addLayout(headerLayout);
@@ -464,5 +480,17 @@ void SubPrepPage::buildUi()
         &QPushButton::clicked,
         this,
         &SubPrepPage::generateSubPrep
+        );
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard)
+            {
+                m_onScreenKeyboard->showForFocusScope(this);
+            }
+        }
         );
 }

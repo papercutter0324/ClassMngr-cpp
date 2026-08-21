@@ -13,6 +13,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/scrollable_page_body.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QCalendarWidget>
@@ -329,6 +330,21 @@ void TeacherInfoPage::buildUi()
         tr("View and manage teacher details."),
         scrollContainer
         );
+    m_koreanKeyboardButton = new QPushButton(m_pageHeader);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("teacherInfoKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_pageHeader->setTrailingWidget(m_koreanKeyboardButton);
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
     scrollLayout->addWidget(m_pageHeader);
     scrollLayout->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
@@ -759,6 +775,19 @@ void TeacherInfoPage::buildUi()
 
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(m_saveButton);
+
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard)
+            {
+                m_onScreenKeyboard->showForFocusScope(this);
+            }
+        }
+        );
 
     updateActions();
 }
@@ -1216,8 +1245,18 @@ void TeacherInfoPage::retranslateUi()
                             m_teacher
                             )
                         )
-                );
-        }
+        );
+    }
+
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
+            );
+    }
         else
         {
             m_pageHeader->setTitle(

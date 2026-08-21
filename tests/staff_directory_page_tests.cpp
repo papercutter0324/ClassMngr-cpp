@@ -2,7 +2,9 @@
 
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
+#include <QApplication>
 #include <QFont>
 #include <QHeaderView>
 #include <QLabel>
@@ -36,6 +38,7 @@ private slots:
     void gsTeamColumns();
     void directoryHeadersUseSharedPageStyling();
     void directoryTablesProvideRoomForCellEditors();
+    void directoryHeaderKeyboardOpensUntargeted();
 };
 
 void StaffDirectoryPageTests::nativeEnglishTeacherColumnsAndEditing()
@@ -175,6 +178,34 @@ void StaffDirectoryPageTests::directoryTablesProvideRoomForCellEditors()
     }
 
     qApp->setStyleSheet(previousStyleSheet);
+}
+
+void StaffDirectoryPageTests::directoryHeaderKeyboardOpensUntargeted()
+{
+    for (const auto kind : {
+             StaffDirectoryKind::NativeEnglishTeachers,
+             StaffDirectoryKind::GsTeam})
+    {
+        StaffDirectoryPage page(nullptr, kind);
+        page.resize(1000, 700);
+        page.show();
+        QApplication::processEvents();
+
+        auto* trigger = page.findChild<QPushButton*>(
+            QStringLiteral("staffDirectoryKoreanKeyboardButton")
+            );
+        auto* keyboard = page.findChild<OnScreenKeyboard*>();
+        QVERIFY(trigger);
+        QVERIFY(keyboard);
+        QVERIFY(!trigger->icon().isNull());
+        QCOMPARE(trigger->accessibleName(), QStringLiteral("Korean Keyboard"));
+
+        trigger->click();
+        QApplication::processEvents();
+        QVERIFY(keyboard->isVisible());
+        QVERIFY(!keyboard->target());
+        keyboard->close();
+    }
 }
 
 QTEST_MAIN(StaffDirectoryPageTests)

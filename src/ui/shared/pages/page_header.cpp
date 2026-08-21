@@ -5,6 +5,7 @@
 
 #include <QEvent>
 #include <QFont>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -31,7 +32,13 @@ PageHeader::PageHeader(
     m_subtitleLabel->setObjectName(QStringLiteral("pageSubtitle"));
     m_subtitleLabel->setWordWrap(true);
 
-    layout->addWidget(m_titleLabel);
+    m_titleRowLayout = new QHBoxLayout;
+    m_titleRowLayout->setContentsMargins(0, 0, 0, 0);
+    m_titleRowLayout->setSpacing(UiConstants::Pages::HeaderSpacing);
+    m_titleRowLayout->addWidget(m_titleLabel);
+    m_titleRowLayout->addStretch();
+
+    layout->addLayout(m_titleRowLayout);
     layout->addWidget(m_subtitleLabel);
     refreshFonts();
 }
@@ -64,6 +71,32 @@ void PageHeader::setTitle(const QString& title)
 void PageHeader::setSubtitle(const QString& subtitle)
 {
     m_subtitleLabel->setText(subtitle);
+}
+
+void PageHeader::setTrailingWidget(QWidget* widget)
+{
+    if (widget == m_trailingWidget || !m_titleRowLayout)
+    {
+        return;
+    }
+
+    if (m_trailingWidget)
+    {
+        m_titleRowLayout->removeWidget(m_trailingWidget);
+        m_trailingWidget->hide();
+    }
+
+    m_trailingWidget = widget;
+
+    if (m_trailingWidget)
+    {
+        if (m_trailingWidget->parentWidget() != this)
+        {
+            m_trailingWidget->setParent(this);
+        }
+        m_titleRowLayout->addWidget(m_trailingWidget);
+        m_trailingWidget->show();
+    }
 }
 
 void PageHeader::refreshFonts()

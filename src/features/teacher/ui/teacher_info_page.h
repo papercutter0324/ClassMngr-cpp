@@ -13,6 +13,7 @@ class QComboBox;
 class QTextEdit;
 class QPushButton;
 class TeacherSectionCard;
+class OnScreenKeyboard;
 
 class ApplicationServices;
 
@@ -110,6 +111,8 @@ private:
 
     ScrollablePageBody* m_pageBody = nullptr;
     PageHeader* m_pageHeader = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
 
     TeacherSectionCard* m_detailsCard = nullptr;
     TeacherSectionCard* m_connectivityCard = nullptr;

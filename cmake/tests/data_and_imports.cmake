@@ -39,9 +39,12 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         tests/teacher_info_page_test_stubs.cpp
         src/core/fontmanager.cpp
         src/core/utils/sidebar_node_naming.cpp
+        src/ui/shared/input/hangul_composer.cpp
         src/features/teacher/ui/teacher_info_page.cpp
         src/ui/shared/pages/basepage.cpp
+        src/ui/shared/pages/page_header.cpp
         src/ui/shared/widgets/no_wheel_combobox.cpp
+        src/ui/shared/widgets/on_screen_keyboard.cpp
         src/ui/shared/widgets/sectioncards/teacher_section_card.cpp
     )
 
@@ -78,6 +81,14 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
         ClassMngrTeacherInfoPageTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    qt_add_resources(ClassMngrTeacherInfoPageTests teacher_info_keyboard_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            resources/assets/icons/keyboard_dark.svg
+            resources/assets/icons/keyboard_light.svg
     )
 
     qt_add_executable(ClassMngrIntensiveSlotStateRepositoryTests

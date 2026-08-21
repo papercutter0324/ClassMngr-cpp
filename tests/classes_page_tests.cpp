@@ -7,6 +7,7 @@
 #include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QtTest>
 
@@ -19,6 +20,8 @@
 #include <QRadioButton>
 #include <QTableView>
 #include <QTimer>
+
+#include <algorithm>
 
 namespace ScheduleWidgetTestStubs
 {
@@ -116,6 +119,7 @@ private slots:
     void navigationControlsUsePillsAndPersistScopeSelection();
     void settingsDialogDefaultsToActiveSchedule();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
+    void headerKeyboardReplacesEmbeddedRosterButton();
 };
 
 void ClassesPageTests::init()
@@ -453,6 +457,62 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
             .data()
             .toString(),
         QStringLiteral("Summer Student"));
+}
+
+void ClassesPageTests::headerKeyboardReplacesEmbeddedRosterButton()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42, ClassesSection::Roster));
+    page.show();
+    QApplication::processEvents();
+
+    auto* headerTrigger = page.findChild<QPushButton*>(
+        QStringLiteral("classesKoreanKeyboardButton")
+        );
+    auto* embeddedTrigger = page.findChild<QPushButton*>(
+        QStringLiteral("rosterKoreanKeyboardButton")
+        );
+    QVERIFY(headerTrigger);
+    QVERIFY(embeddedTrigger);
+    QVERIFY(!headerTrigger->icon().isNull());
+    QCOMPARE(headerTrigger->accessibleName(), QStringLiteral("Korean Keyboard"));
+    QVERIFY(!embeddedTrigger->isVisible());
+
+    headerTrigger->click();
+    QApplication::processEvents();
+
+    const auto keyboards = page.findChildren<OnScreenKeyboard*>();
+    QVERIFY(std::any_of(
+        keyboards.cbegin(),
+        keyboards.cend(),
+        [](const OnScreenKeyboard* keyboard)
+        {
+            return keyboard->isVisible() && !keyboard->target();
+        }
+        ));
+    for (OnScreenKeyboard* keyboard : keyboards)
+    {
+        keyboard->close();
+    }
+
+    RosterEditorWidget standalone(&services, true);
+    standalone.loadClass(
+        Classroom(
+            QStringLiteral("Standalone Roster"),
+            42
+            )
+        );
+    standalone.resize(900, 500);
+    standalone.show();
+    QApplication::processEvents();
+    auto* standaloneTrigger = standalone.findChild<QPushButton*>(
+        QStringLiteral("rosterKoreanKeyboardButton")
+        );
+    QVERIFY(standaloneTrigger);
+    QVERIFY(standaloneTrigger->isVisible());
+    QVERIFY(standaloneTrigger->isEnabled());
 }
 
 QTEST_MAIN(ClassesPageTests)

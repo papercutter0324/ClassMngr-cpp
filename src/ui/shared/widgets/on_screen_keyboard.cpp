@@ -4,6 +4,7 @@
 #include <QAbstractItemDelegate>
 #include <QAbstractItemModel>
 #include <QAbstractItemView>
+#include <QAbstractSpinBox>
 #include <QApplication>
 #include <QCloseEvent>
 #include <QComboBox>
@@ -162,6 +163,8 @@ void OnScreenKeyboard::showFor(
     QAbstractItemView* view
     )
 {
+    detachFocusScope();
+    clearTarget();
     attachView(view);
     show();
     raise();
@@ -172,6 +175,38 @@ void OnScreenKeyboard::showFor(
     }
 
     retarget(view);
+}
+
+void OnScreenKeyboard::showForFocusScope(
+    QWidget* focusScope
+    )
+{
+    detachFocusScope();
+    clearTarget();
+    detachView();
+    m_focusScope = focusScope;
+
+    if (m_focusScope)
+    {
+        qApp->installEventFilter(this);
+        m_focusChangedConnection = connect(
+            qApp,
+            &QApplication::focusChanged,
+            this,
+            [this](QWidget*, QWidget* now)
+            {
+                trackFocusWidget(now);
+            }
+            );
+    }
+
+    show();
+    raise();
+
+    if (!m_positioned)
+    {
+        positionForParent();
+    }
 }
 
 void OnScreenKeyboard::retarget(
@@ -235,6 +270,17 @@ bool OnScreenKeyboard::eventFilter(
         )
     {
         refreshTriggerIcon();
+    }
+
+    if (
+        m_focusScope
+        && event->type() == QEvent::FocusIn
+        )
+    {
+        if (auto* widget = qobject_cast<QWidget*>(watched))
+        {
+            trackFocusWidget(widget);
+        }
     }
 
     if (
@@ -306,6 +352,7 @@ void OnScreenKeyboard::closeEvent(
 {
     commitComposition();
     commitEditorData();
+    detachFocusScope();
     detachView();
     QWidget::closeEvent(event);
 }
@@ -814,6 +861,23 @@ QWidget* OnScreenKeyboard::editorForView(
     return nullptr;
 }
 
+QAbstractItemView* OnScreenKeyboard::viewForWidget(
+    QWidget* widget
+    ) const
+{
+    for (QWidget* candidate = widget;
+         candidate;
+         candidate = candidate->parentWidget())
+    {
+        if (auto* view = qobject_cast<QAbstractItemView*>(candidate))
+        {
+            return view;
+        }
+    }
+
+    return nullptr;
+}
+
 bool OnScreenKeyboard::isEligibleTarget(
     QWidget* widget
     ) const
@@ -825,7 +889,10 @@ bool OnScreenKeyboard::isEligibleTarget(
 
     if (auto* lineEdit = qobject_cast<QLineEdit*>(widget))
     {
-        return !lineEdit->isReadOnly();
+        return !lineEdit->isReadOnly()
+            && !qobject_cast<QAbstractSpinBox*>(
+                lineEdit->parentWidget()
+                );
     }
 
     if (auto* plainTextEdit =
@@ -892,6 +959,64 @@ void OnScreenKeyboard::detachView()
     }
 
     m_view.clear();
+}
+
+void OnScreenKeyboard::trackFocusWidget(
+    QWidget* widget
+    )
+{
+    if (
+        !isVisible()
+        || !m_focusScope
+        || !widget
+        || !m_focusScope->isAncestorOf(widget)
+        )
+    {
+        clearTarget();
+        detachView();
+        return;
+    }
+
+    if (!isEligibleTarget(widget))
+    {
+        clearTarget();
+        detachView();
+        return;
+    }
+
+    if (auto* view = viewForWidget(widget))
+    {
+        const QModelIndex index = view->currentIndex();
+        if (index.isValid() && (index.flags() & Qt::ItemIsEditable))
+        {
+            if (view != m_view)
+            {
+                clearTarget();
+            }
+            attachView(view);
+            setTargetForIndex(widget, index);
+            return;
+        }
+    }
+
+    setTarget(widget);
+    detachView();
+}
+
+void OnScreenKeyboard::detachFocusScope()
+{
+    if (m_focusScope && qApp)
+    {
+        qApp->removeEventFilter(this);
+    }
+
+    if (m_focusChangedConnection)
+    {
+        disconnect(m_focusChangedConnection);
+    }
+
+    m_focusChangedConnection = {};
+    m_focusScope.clear();
 }
 
 void OnScreenKeyboard::scheduleViewRetarget()

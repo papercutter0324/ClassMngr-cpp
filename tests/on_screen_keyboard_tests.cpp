@@ -2,12 +2,16 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QImage>
+#include <QDateEdit>
+#include <QCoreApplication>
+#include <QFocusEvent>
 #include <QLineEdit>
 #include <QPalette>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QStandardItemModel>
 #include <QTableView>
+#include <QVBoxLayout>
 #include <QtTest>
 
 class OnScreenKeyboardTests : public QObject
@@ -28,6 +32,9 @@ private slots:
     void characterKeysHaveUniformCompactWidth();
     void triggerUsesIconAndAccessibleText();
     void triggerIconUsesThemePropertyBeforePaletteIsPolished();
+    void focusScopeStartsUntargetedAndTracksEditableFields();
+    void focusScopeCommitsEditableTableCells();
+    void focusScopeRejectsReadOnlyAndSpinBoxFields();
 };
 
 void OnScreenKeyboardTests::composesSimpleSyllableAndMovesFinal()
@@ -353,6 +360,114 @@ void OnScreenKeyboardTests
     }
 
     QVERIFY(foundWhiteStroke);
+}
+
+void OnScreenKeyboardTests
+    ::focusScopeStartsUntargetedAndTracksEditableFields()
+{
+    QWidget scope;
+    auto* layout = new QVBoxLayout(&scope);
+    auto* editor = new QLineEdit(&scope);
+    layout->addWidget(editor);
+    scope.show();
+    QApplication::processEvents();
+
+    OnScreenKeyboard keyboard(&scope);
+    keyboard.showForFocusScope(&scope);
+    QApplication::processEvents();
+
+    QVERIFY(keyboard.isVisible());
+    QVERIFY(!keyboard.target());
+
+    editor->setFocus();
+    QFocusEvent editorFocusIn(QEvent::FocusIn, Qt::OtherFocusReason);
+    QCoreApplication::sendEvent(editor, &editorFocusIn);
+    QCOMPARE(keyboard.target(), editor);
+
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_r")
+        )->click();
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_k")
+        )->click();
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardEnter")
+        )->click();
+
+    QCOMPARE(editor->text(), QStringLiteral("가"));
+    keyboard.close();
+}
+
+void OnScreenKeyboardTests::focusScopeCommitsEditableTableCells()
+{
+    QStandardItemModel model(1, 1);
+    QWidget scope;
+    auto* layout = new QVBoxLayout(&scope);
+    auto* table = new QTableView(&scope);
+    table->setModel(&model);
+    layout->addWidget(table);
+    scope.resize(420, 240);
+    scope.show();
+    QApplication::processEvents();
+
+    OnScreenKeyboard keyboard(&scope);
+    keyboard.showForFocusScope(&scope);
+    QApplication::processEvents();
+    QVERIFY(!keyboard.target());
+
+    const QModelIndex cell = model.index(0, 0);
+    table->setCurrentIndex(cell);
+    table->edit(cell);
+    QApplication::processEvents();
+
+    auto* editor = table->findChild<QLineEdit*>();
+    QVERIFY(editor);
+    editor->setFocus();
+    QFocusEvent editorFocusIn(QEvent::FocusIn, Qt::OtherFocusReason);
+    QCoreApplication::sendEvent(editor, &editorFocusIn);
+    QCOMPARE(keyboard.target(), editor);
+
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_r")
+        )->click();
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_k")
+        )->click();
+    keyboard.findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardEnter")
+        )->click();
+    QApplication::processEvents();
+
+    QCOMPARE(model.data(cell).toString(), QStringLiteral("가"));
+    keyboard.close();
+}
+
+void OnScreenKeyboardTests::focusScopeRejectsReadOnlyAndSpinBoxFields()
+{
+    QWidget scope;
+    auto* layout = new QVBoxLayout(&scope);
+    auto* readOnly = new QLineEdit(&scope);
+    readOnly->setReadOnly(true);
+    auto* date = new QDateEdit(&scope);
+    layout->addWidget(readOnly);
+    layout->addWidget(date);
+    scope.show();
+    QApplication::processEvents();
+
+    OnScreenKeyboard keyboard(&scope);
+    keyboard.showForFocusScope(&scope);
+
+    readOnly->setFocus();
+    QFocusEvent readOnlyFocusIn(QEvent::FocusIn, Qt::OtherFocusReason);
+    QCoreApplication::sendEvent(readOnly, &readOnlyFocusIn);
+    QVERIFY(!keyboard.target());
+
+    auto* dateEditor = date->findChild<QLineEdit*>();
+    QVERIFY(dateEditor);
+    QFocusEvent dateFocusIn(QEvent::FocusIn, Qt::OtherFocusReason);
+    QCoreApplication::sendEvent(dateEditor, &dateFocusIn);
+    QVERIFY(!keyboard.target());
+    keyboard.close();
 }
 
 QTEST_MAIN(OnScreenKeyboardTests)

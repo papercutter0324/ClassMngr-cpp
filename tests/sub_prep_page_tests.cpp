@@ -6,12 +6,14 @@
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QtTest>
 
 #include <algorithm>
 
 #include <QLineEdit>
+#include <QApplication>
 #include <QLabel>
 #include <QScrollArea>
 #include <QCheckBox>
@@ -76,6 +78,7 @@ class SubPrepPageTests : public QObject
 private slots:
     void init();
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
+    void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void zoomUnavailableHidesStoredCredentials();
@@ -90,6 +93,30 @@ private slots:
 void SubPrepPageTests::init()
 {
     ScheduleWidgetTestStubs::reset();
+}
+
+void SubPrepPageTests::headerKeyboardOpensUntargeted()
+{
+    ApplicationServices services;
+    SubPrepPage page(&services);
+    page.resize(1100, 800);
+    page.show();
+    QApplication::processEvents();
+
+    auto* trigger = page.findChild<QPushButton*>(
+        QStringLiteral("subPrepKoreanKeyboardButton")
+        );
+    auto* keyboard = page.findChild<OnScreenKeyboard*>();
+    QVERIFY(trigger);
+    QVERIFY(keyboard);
+    QVERIFY(!trigger->icon().isNull());
+    QCOMPARE(trigger->accessibleName(), QStringLiteral("Korean Keyboard"));
+
+    trigger->click();
+    QApplication::processEvents();
+    QVERIFY(keyboard->isVisible());
+    QVERIFY(!keyboard->target());
+    keyboard->close();
 }
 
 void SubPrepPageTests

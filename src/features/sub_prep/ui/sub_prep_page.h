@@ -13,6 +13,7 @@ class QPushButton;
 class QScrollArea;
 class QShowEvent;
 class NavigationTabWidget;
+class OnScreenKeyboard;
 class QTextEdit;
 class QTimer;
 class QVBoxLayout;
@@ -123,6 +124,8 @@ private:
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QPushButton* m_printButton = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     QLabel* m_importantInformationHeading = nullptr;
     QLabel* m_scheduleHeading = nullptr;
     QLabel* m_classInformationHeading = nullptr;

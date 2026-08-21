@@ -154,6 +154,16 @@ void SubPrepPage::retranslateUi()
             );
         m_printButton->setToolTip(
             tr("Create a dated Sub Prep package with by-day rosters and optional paper copies.")
+        );
+    }
+
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setToolTip(
+            tr("Open Korean / English on-screen keyboard")
+            );
+        m_koreanKeyboardButton->setAccessibleName(
+            tr("Korean Keyboard")
             );
     }
 
