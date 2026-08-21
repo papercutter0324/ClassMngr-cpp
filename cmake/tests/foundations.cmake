@@ -28,6 +28,24 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME InitialSetupWizard
+    SOURCES
+        tests/initial_setup_wizard_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+qt_add_resources(ClassMngrInitialSetupWizardTests initial_setup_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+classmngr_add_qt_test(
         NAME OnScreenKeyboard
         SOURCES
             tests/on_screen_keyboard_tests.cpp

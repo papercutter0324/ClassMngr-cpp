@@ -6,6 +6,9 @@
 
 class ApplicationServices;
 class ClassService;
+class OnScreenKeyboard;
+class QPushButton;
+class QResizeEvent;
 class SettingsService;
 class TeacherService;
 
@@ -46,11 +49,16 @@ public:
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void refreshWizardButtonMinimumWidths();
+    void updateKeyboardButtonVisibility();
+    void positionKeyboardButton();
 
     ApplicationServices* m_services = nullptr;
+    QPushButton* m_koreanKeyboardButton = nullptr;
+    OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     ClassInfo m_classDraft;
     int m_createdClassId = -1;
 };

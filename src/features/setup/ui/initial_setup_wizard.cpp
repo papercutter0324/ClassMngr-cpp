@@ -13,6 +13,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -33,8 +34,10 @@
 #include <QLineEdit>
 #include <QPixmap>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QVBoxLayout>
 
 namespace
@@ -1069,6 +1072,34 @@ InitialSetupWizard::InitialSetupWizard(
     setPage(CompletionPage, new ::CompletionWizardPage(this));
     setStartId(ResourcesPage);
 
+    m_koreanKeyboardButton = new QPushButton(this);
+    m_koreanKeyboardButton->setObjectName(
+        QStringLiteral("initialSetupKoreanKeyboardButton")
+        );
+    m_koreanKeyboardButton->setMinimumSize(44, 40);
+    m_koreanKeyboardButton->setMaximumWidth(52);
+    m_koreanKeyboardButton->setToolTip(
+        tr("Open Korean / English on-screen keyboard")
+        );
+    m_koreanKeyboardButton->setAccessibleName(
+        tr("Korean Keyboard")
+        );
+    m_onScreenKeyboard = new OnScreenKeyboard(this);
+    m_onScreenKeyboard->setTriggerButton(m_koreanKeyboardButton);
+
+    connect(
+        m_koreanKeyboardButton,
+        &QPushButton::clicked,
+        this,
+        [this]()
+        {
+            if (m_onScreenKeyboard && currentPage())
+            {
+                m_onScreenKeyboard->showForFocusScope(currentPage());
+            }
+        }
+        );
+
     for (const QWizard::WizardButton role : {
              QWizard::BackButton,
              QWizard::NextButton,
@@ -1093,7 +1124,10 @@ InitialSetupWizard::InitialSetupWizard(
         setMinimumWidth(targetWidth);
         resize(targetWidth, height());
         refreshWizardButtonMinimumWidths();
+        updateKeyboardButtonVisibility();
     });
+
+    updateKeyboardButtonVisibility();
 }
 
 bool InitialSetupWizard::eventFilter(QObject* watched, QEvent* event)
@@ -1142,6 +1176,75 @@ void InitialSetupWizard::refreshWizardButtonMinimumWidths()
                 );
         }
     }
+}
+
+void InitialSetupWizard::resizeEvent(
+    QResizeEvent* event
+    )
+{
+    QWizard::resizeEvent(event);
+    positionKeyboardButton();
+}
+
+void InitialSetupWizard::updateKeyboardButtonVisibility()
+{
+    if (!m_koreanKeyboardButton)
+    {
+        return;
+    }
+
+    const bool visible = currentId() == PersonalDetailsPage
+        || currentId() == TeacherEntryPage;
+    m_koreanKeyboardButton->setVisible(visible);
+
+    if (!visible && m_onScreenKeyboard)
+    {
+        m_onScreenKeyboard->close();
+    }
+
+    if (visible)
+    {
+        QTimer::singleShot(0, this, [this]() { positionKeyboardButton(); });
+    }
+}
+
+void InitialSetupWizard::positionKeyboardButton()
+{
+    if (!m_koreanKeyboardButton || m_koreanKeyboardButton->isHidden())
+    {
+        return;
+    }
+
+    const QSize buttonSize = m_koreanKeyboardButton->sizeHint()
+        .expandedTo(m_koreanKeyboardButton->minimumSize())
+        .boundedTo(m_koreanKeyboardButton->maximumSize());
+    const QRect content = contentsRect();
+    constexpr int rightPadding = 20;
+    int y = content.top() + 12;
+
+    if (const QWizardPage* page = currentPage())
+    {
+        // QWizard owns the page title outside of the page layout.
+        for (const QLabel* label : findChildren<QLabel*>())
+        {
+            if (!label->isVisible() || label->text() != page->title())
+            {
+                continue;
+            }
+
+            const QRect titleRect(
+                label->mapTo(this, QPoint{}), label->size());
+            y = titleRect.center().y() - buttonSize.height() / 2;
+            break;
+        }
+    }
+
+    m_koreanKeyboardButton->setGeometry(
+        content.right() - rightPadding - buttonSize.width() + 1,
+        std::max(content.top() + 4, y),
+        buttonSize.width(),
+        buttonSize.height());
+    m_koreanKeyboardButton->raise();
 }
 
 ApplicationServices* InitialSetupWizard::services() const
