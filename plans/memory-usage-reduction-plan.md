@@ -1,0 +1,374 @@
+# Memory Usage Reduction — Implementation Plan
+
+## Objective
+
+Reduce the application's steady-state memory footprint and startup allocation
+cost without changing visible behavior. Prioritize avoiding construction of
+rarely used pages, eliminating duplicated calendar records, replacing
+item-per-cell tables, promptly releasing PDF resources, and bounding decoded
+campus image size.
+
+## Confirmed Current Behavior
+
+- `PageManager::initialize()` constructs every top-level page and
+  `registerPages()` immediately adds every page to the stacked widget. This
+  includes Calendar, Classes, Rosters, Speaking Evaluations, Campus, and PDF
+  Viewer.
+- `MainWindow::connectSignals()` directly obtains several page pointers during
+  startup to connect cross-page signals. A page factory alone is insufficient:
+  this startup wiring must also be deferred or it will recreate the eager
+  construction path.
+- `ClassesPage::buildUi()` eagerly creates its Details, Roster, Analytics,
+  Evaluations, and Notes editors. `loadEditors()` then loads all of them when
+  a class is selected, even when only one section is visible.
+- `CalendarEventCache` stores canonical `CalendarEvent` values by ID and also
+  stores another complete `CalendarEvent` value for every date the event spans.
+  It has no bounded-retention policy, while `CalendarPage` prefetches future
+  calendar ranges and may extend its search for the next ten events.
+- `ClassAnalyticsPage` creates a `QTableWidgetItem` for every ranking cell.
+  Its existing ranking delegate and header consume model roles and can be
+  reused with a `QAbstractTableModel`.
+- The Speaking Evaluation editor already uses `SpeakingEvalModel`,
+  `SpeakingEvalTableView`, and `SpeakingEvalDelegate`; it should not be
+  rewritten as part of the main table migration. Its batch-dialog tables
+  should be profiled separately before changing them.
+- `PdfViewerPage::loadPdf()` closes the document before loading a replacement,
+  and its destructor closes it at teardown. Leaving the page does neither, so
+  a loaded PDF remains resident until another PDF is opened or the application
+  closes.
+- `CampusMapPreview::setImagePaths()` loads full-resolution `QPixmap` objects
+  into each image label's persistent source pixmap, then derives display-sized
+  pixmaps during layout and resize operations.
+
+## Implementation Principles
+
+- Preserve page state after first creation. Lazy construction is not page
+  eviction except where this plan explicitly releases a resource.
+- Do not make a simple state query construct a page. For example, checking
+  whether Campus is current must not instantiate Campus.
+- Centralize page-factory, lifecycle, and signal-registration behavior in
+  `PageManager`; do not create ad-hoc lazy construction in individual
+  navigation call sites.
+- Keep current public calendar query behavior while changing cache internals.
+- Prefer model/view storage for large tabular data. Delegates should continue
+  to paint presentation-specific visual details.
+- Bound image decode size before conversion to `QPixmap`; scaling after a
+  full-resolution decode does not achieve the memory goal.
+
+## Implementation Steps
+
+### Phase 1. Establish Memory Baselines and Test Seams
+
+1. Record startup working-set/private-bytes and per-page memory behavior for
+   representative profile sizes. Capture these checkpoints:
+
+   - after initial window construction;
+   - after opening each targeted page for the first time;
+   - after returning to a lightweight page;
+   - after opening a large PDF and navigating away;
+   - after loading campus map images.
+
+2. Extend the existing startup-performance metric output only if it can report
+   memory reliably in the supported CI/runtime environment. Keep startup timing
+   metrics intact; memory thresholds should initially be report-only until a
+   stable baseline exists.
+
+3. Add narrow test seams where behavior is otherwise invisible:
+
+   - page-instantiated checks in `PageManager`;
+   - cache-size or retained-range observability suitable for calendar tests;
+   - PDF-loaded state or a testable release method;
+   - bounded decoded-image dimensions in `CampusMapPreview` tests.
+
+### Phase 2. Lazy-Create Heavy Top-Level Pages
+
+1. Refactor `PageManager` to register page factories rather than eagerly
+   creating every `BasePage` in `initialize()`.
+
+   - Add an internal `ensurePage(PageType)` that creates a page only once,
+     parents it to the manager, adds it to the stack, connects its common
+     `BasePage` signals, applies current manager state, and returns it.
+   - Have `showPage(PageType)` call `ensurePage()` before changing the current
+     widget.
+   - Keep `m_pages` (or an equivalent registry) limited to instantiated pages;
+     retain a separate factory registry for all page types.
+   - Add `isPageInstantiated(PageType)` and `isCurrentPage(PageType)` so
+     callers can check state without forcing construction.
+   - Make `setSaveMode()`, `setDatabaseOpen()`, `clearDatabaseState()`,
+     `refreshAll()`, and `retranslatePages()` iterate only instantiated pages.
+     Newly created pages must receive the current save mode, database state,
+     document preferences, and language/theme-dependent setup immediately.
+
+2. Make the following top-level pages lazy:
+
+   - `CalendarPage`
+   - `ClassesPage`
+   - `RostersPage`
+   - `SpeakingEvalPage`
+   - `CampusDashboardPage`
+   - `PdfViewerPage`
+
+   Lightweight/default pages may remain eager initially to constrain the
+   refactor. The no-database Campus fallback may create Campus when it is
+   actually shown; that is still a first-open creation rather than startup
+   preallocation.
+
+3. Refactor `MainWindow` and `NavigationController` cross-page wiring.
+
+   - Add a `PageManager::pageCreated(PageType, BasePage*)` signal or a
+     dedicated one-time registration callback.
+   - Move page-specific signal connections to that creation path. In
+     particular, class-saved notifications, schedule-display-mode propagation,
+     Campus section synchronization, and PDF document preferences must work
+     whether the consumer page is created before or after the producer.
+   - Store shared state such as schedule display mode in `PageManager` or a
+     preference service, then apply it when a dependent page is first created.
+   - Replace pointer comparisons such as
+     `currentWidget() == campusDashboard()` with `isCurrentPage()` where they
+     are only checking navigation state.
+
+4. Update navigation call sites to obtain an ensured page only immediately
+   before invoking an operation on it. For PDF documents, ensure the page,
+   load the descriptor, and then show it. For pages that need data loaded
+   before display, preserve the current load-before-show behavior after
+   creation.
+
+### Phase 3. Lazy-Create Heavy Editors Inside Classes
+
+1. Keep the lightweight Classes shell (heading, navigation, and editor stack)
+   but replace unconditional construction of all five editors with
+   `ensureEditor(ClassesSection)`.
+
+2. Create and add each editor to `m_editorStack` only when its section is
+   first selected. Preserve the existing editor instance and unsaved state
+   afterward; do not recreate it when switching sections.
+
+3. Replace `loadEditors(classroom)` with logic that:
+
+   - records the current class;
+   - loads the currently active editor;
+   - loads an editor on first activation or when it is known to be stale;
+   - leaves uncreated sections unloaded.
+
+4. Adjust save, discard, refresh, translation, database-clear, and output
+   forwarding methods to operate only on editors that have been created.
+   Preserve the existing unsaved-change confirmation behavior for the active
+   editor.
+
+5. Treat the embedded Analytics and Evaluations editors as the highest-value
+   deferrals because their construction and class-load paths create charts,
+   tables, and evaluation data structures.
+
+### Phase 4. Compact and Bound Calendar Event Caching
+
+1. Replace duplicate date storage with shared records:
+
+   ```cpp
+   QHash<int, CalendarEvent> m_eventsById;
+   QHash<QDate, QList<int>> m_eventIdsByDate;
+   ```
+
+   `m_eventsById` remains the sole canonical event payload. Each date bucket
+   contains IDs only.
+
+2. Preserve `CalendarEventCache`'s public return types during the first
+   migration.
+
+   - `eventsForDate()` resolves date-bucket IDs through `m_eventsById`.
+   - `eventsInRange()` gathers IDs into a set before resolving and sorting,
+     preventing a multi-day event from appearing more than once.
+   - Insertion/replacement removes an event's prior date memberships before
+     adding its current memberships, then keeps each date bucket sorted by the
+     present ordering rules.
+
+3. Add explicit retention management.
+
+   - Add an API such as `setRetainedRanges()` or `evictOutside()` that accepts
+     the ranges the UI still needs.
+   - Retain the visible month, the current next-30-days range, the configured
+     forward prefetch window, and any range needed by the next-ten-events
+     search.
+   - After a displayed-month change or next-ten search-window update, prune
+     loaded range metadata and date buckets that are no longer retained.
+   - Remove a canonical event only when no retained date bucket references its
+     ID. Correctly handle multi-day events crossing a retention boundary.
+   - Keep generation checks and active/pending request handling intact so a
+     stale worker result cannot repopulate an evicted generation.
+
+4. Establish an explicit, documented retention policy. Start with the current
+   month/next-30-days requirements plus the existing five-month prefetch, then
+   tune the window using the Phase 1 measurements rather than silently
+   reducing visible functionality.
+
+### Phase 5. Replace Item-Per-Cell Analytics Storage
+
+1. Add `ClassAnalyticsRankingModel : QAbstractTableModel`, backed directly by
+   `QList<SpeakingAnalytics::StudentRank>` or the ranking portion of the
+   current snapshot.
+
+2. Implement the ten existing columns and roles:
+
+   - `Qt::DisplayRole` for rank, English name, Korean name, and formatted
+     average;
+   - `AnalyticsRankingRoles::Grade` for overall and criterion grade badges;
+   - `AnalyticsRankingRoles::NeedsAttention` for the existing row highlight;
+   - center alignment through `Qt::TextAlignmentRole` where needed.
+
+3. Replace `QTableWidget` with `QTableView` in `ClassAnalyticsPage`.
+
+   - Reuse `ClassAnalyticsRankingDelegate` and
+     `ClassAnalyticsRankingHeader`; both are model/view-compatible.
+   - Adapt column-width calculations to use model data rather than
+     `QTableWidgetItem` instances.
+   - Replace row clearing/population with a model reset or precise model
+     notifications.
+   - Preserve row selection, fixed row height, horizontal scrolling, current
+     header grouping, light/dark rendering, and visible-row minimum height.
+
+4. Do not rewrite the main Speaking Evaluation editor: it already has the
+   intended `QTableView`/model/delegate architecture. Profile
+   `speaking_eval_ai_batch_dialog.cpp` separately; migrate only a table proven
+   to be large enough to matter.
+
+### Phase 6. Release PDF Resources on Navigation Away
+
+1. Add an idempotent `PdfViewerPage::releaseDocument()` method.
+
+   - Detach the document from `QPdfView` if required to release view caches.
+   - Call `QPdfDocument::close()`.
+   - Clear `m_currentFilePath` and `m_documentDescriptor`.
+   - Reset page/zoom/status UI and refresh output capabilities.
+   - Leave the page widget and its reusable controls alive for the next PDF.
+
+2. Invoke this method whenever the PDF page is left. Prefer a single
+   `PageManager` page-transition hook so the lifecycle is explicit and cannot
+   be bypassed by a navigation path. A `hideEvent()` override is acceptable
+   only if it is verified for all `QStackedWidget` transitions.
+
+3. Keep `loadPdf()` responsible for attaching/reopening the document and for
+   replacement-document cleanup. Ensure asynchronous document status signals
+   cannot repopulate cleared state after release.
+
+### Phase 7. Downscale Campus Images During Decode
+
+1. Replace direct `QPixmap(path)` loading in `CampusMapPreview::setImagePaths()`
+   with `QImageReader`.
+
+   - Read image dimensions and orientation metadata first.
+   - Apply `setAutoTransform(true)`.
+   - Set a bounded decode size before reading, preserving aspect ratio.
+   - Convert the resulting bounded `QImage` to `QPixmap` only after decode.
+
+2. Define the cap from intended display needs, including a high-DPI allowance.
+
+   - The horizontal gallery already caps displayed image height at
+     `MaximumImageHeight`.
+   - The cap must also cover the maximum practical narrow-layout width without
+     retaining arbitrary camera-resolution originals.
+   - Use one named source-size policy constant/helper rather than unrelated
+     magic dimensions in loading and layout code.
+
+3. Keep the existing aspect-ratio layout behavior. `AspectRatioImageLabel`
+   may continue to produce smaller display pixmaps from its bounded source,
+   but it must never retain a full-resolution original.
+
+4. Consider loading the Campus map preview only when the Maps section is first
+   shown if Phase 1 measurements show it remains material after decode
+   downscaling. This is secondary to bounded decoding and must preserve map
+   controls, translations, and campus-switch behavior.
+
+### Phase 8. Regression Coverage and Rollout
+
+1. Extend or add tests for lazy pages:
+
+   - targeted pages are absent after initialization;
+   - first navigation creates exactly one instance;
+   - repeated navigation reuses it and preserves state;
+   - manager-wide refresh/clear/translation calls remain safe with uncreated
+     pages;
+   - deferred cross-page signals and stored preferences apply correctly.
+
+2. Extend `calendar_event_cache_tests.cpp` for:
+
+   - date lookup and range lookup with ID indexing;
+   - multi-day event deduplication;
+   - replacement across overlapping ranges;
+   - bounded retention/eviction;
+   - stale asynchronous results after invalidation or eviction.
+
+3. Add ranking-model tests for data, roles, headers, empty snapshots, and
+   update behavior. Retain existing visual/delegate coverage where available.
+
+4. Add PDF lifecycle coverage using a small fixture PDF: load, navigate away,
+   verify released state, reopen, and verify print/export capabilities follow
+   the new document only.
+
+5. Extend `campus_map_tests.cpp` with a high-resolution temporary image and
+   verify the retained source/decoded pixmap dimensions do not exceed the
+   chosen cap while responsive rendering remains correct at both layout modes.
+
+6. Run focused test targets after each phase, then the full test suite and the
+   Phase 1 performance/memory scenario before merging.
+
+## Files Expected to Change
+
+| File | Planned change |
+| --- | --- |
+| `src/ui/shared/pages/pagemanager.h` | Add factory/lifecycle APIs, instantiated-page state, and deferred creation hooks. |
+| `src/ui/shared/pages/pagemanager.cpp` | Replace eager registration with factories; apply state and common signal wiring on creation. |
+| `src/app/mainwindow.cpp` | Defer page-specific connections and retain cross-page preferences without eagerly obtaining heavy pages. |
+| `src/app/controllers/navigation_controller.cpp` | Use page-state helpers and ensure pages only immediately before use. |
+| `src/features/classes/ui/classes_page.h` | Track lazily created section editors and their load state. |
+| `src/features/classes/ui/classes_page.cpp` | Add `ensureEditor()`, load only active editors, and make lifecycle operations tolerate absent editors. |
+| `src/features/calendar/ui/calendar_event_cache.h` | Replace duplicate date payload storage and add retention APIs/state. |
+| `src/features/calendar/ui/calendar_event_cache.cpp` | Implement ID indexes, membership cleanup, range eviction, and preserved query behavior. |
+| `src/features/calendar/ui/calendar_page.h` | Add retained-range coordination if needed. |
+| `src/features/calendar/ui/calendar_page_events.cpp` | Inform cache retention as visible/prefetch/next-ten ranges change. |
+| `src/features/classes/ui/class_analytics_ranking_model.h` | Declare the ranking table model. |
+| `src/features/classes/ui/class_analytics_ranking_model.cpp` | Implement model columns and delegate roles. |
+| `src/features/classes/ui/class_analytics_page.h` | Replace `QTableWidget` members/helpers with model/view equivalents. |
+| `src/features/classes/ui/class_analytics_page.cpp` | Bind snapshot rankings to `QTableView` and model. |
+| `src/ui/shared/pages/pdf_viewer_page.h` | Declare PDF release lifecycle behavior. |
+| `src/ui/shared/pages/pdf_viewer_page.cpp` | Implement release/reset behavior and integrate it with document loading. |
+| `src/features/campus/ui/campus_map_preview.h` | Define decoded-source sizing policy or test-visible diagnostics. |
+| `src/features/campus/ui/campus_map_preview.cpp` | Decode images with bounded `QImageReader` dimensions. |
+| `tests/calendar_event_cache_tests.cpp` | Cover shared records and eviction. |
+| `tests/classes_page_tests.cpp` and/or new page-manager test target | Cover lazy top-level and nested page construction. |
+| Analytics model/widget test target | Cover ranking model behavior and presentation roles. |
+| PDF viewer test target | Cover document release after leaving the page. |
+| `tests/campus_map_tests.cpp` | Cover bounded high-resolution image decoding. |
+| Relevant CMake test registration | Register any new test target. |
+
+## Recommended Pull-Request Sequence
+
+1. Add measurement/test seams and characterization coverage.
+2. Introduce top-level `PageManager` factories with deferred signal wiring.
+3. Defer internal Classes editors and their data loading.
+4. Compact calendar storage, then add eviction once compatibility tests pass.
+5. Migrate the Class Analytics ranking table to model/view.
+6. Release the PDF document on page exit.
+7. Bound campus image decoding.
+8. Run full regression, compare memory measurements, and tune only the
+   documented retention/image-size policies if the data justifies it.
+
+## Acceptance Criteria
+
+- Startup does not construct Calendar, Classes, Rosters, Speaking Evaluations,
+  Campus, or PDF Viewer unless that page is the initial page actually shown.
+- First navigation to each lazy page constructs it once; later navigation
+  reuses it without breaking data loading, navigation, saved state, actions,
+  translations, or cross-page signal behavior.
+- Classes does not construct or load inactive heavy editors until their
+  sections are selected.
+- Calendar stores one `CalendarEvent` payload per event ID, date buckets store
+  IDs only, and cache memory remains bounded as users navigate across months.
+- The analytics ranking table has no per-cell `QTableWidgetItem` allocation;
+  its existing visual behavior and roles remain intact.
+- Leaving PDF Viewer closes/unloads the active document and removes its
+  document-dependent state; opening another document still works normally.
+- Campus images are decoded at a bounded size before becoming retained
+  pixmaps, while map layout and visual quality remain appropriate at supported
+  window sizes and device pixel ratios.
+- Focused and full regression tests pass, and the before/after measurements
+  demonstrate reduced startup allocation and reduced retained memory after
+  the targeted workflows.
