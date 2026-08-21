@@ -1,9 +1,16 @@
 #include "menu_builder.h"
 
+#include "app/services/feature_services.h"
+#include "core/application_services.h"
 #include "core/settingsmanager.h"
+#include "features/calendar/ui/calendar_page.h"
+#include "features/calendar/ui/calendar_preferences_panel.h"
+#include "features/classes/class_navigation_preferences.h"
+#include "features/schedule/schedule_settings_preferences.h"
 #include "mainwindow.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/state/option_state_keys.h"
 
@@ -11,6 +18,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QFrame>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -18,6 +26,7 @@
 #include <QMenuBar>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QScrollArea>
 #include <QTabWidget>
 #include <QVBoxLayout>
 
@@ -151,11 +160,322 @@ QWidget* createPreferencesPage(
     return page;
 }
 
+QScrollArea* createScrollablePreferencesPage(
+    QTabWidget* tabs,
+    const char* objectName,
+    QWidget** pageOut
+    )
+{
+    auto* scrollArea = new QScrollArea(tabs);
+    scrollArea->setObjectName(QString::fromLatin1(objectName));
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+
+    auto* page = new QWidget(scrollArea);
+    auto* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(24);
+    layout->setAlignment(Qt::AlignTop);
+    scrollArea->setWidget(page);
+    *pageOut = page;
+    return scrollArea;
+}
+
 QVBoxLayout* pageLayout(
     QWidget* page
     )
 {
     return qobject_cast<QVBoxLayout*>(page->layout());
+}
+
+void clearTestingLayout(MainWindow* window)
+{
+    auto* scheduleService =
+        window && window->services()
+            ? window->services()->scheduleService()
+            : nullptr;
+
+    if (!scheduleService || !scheduleService->isAvailable())
+    {
+        DialogServices::showWarning(
+            window,
+            preferencesText("Clear Testing Layout"),
+            preferencesText("No Teacher Profile is open.")
+            );
+        return;
+    }
+
+    const PromptChoice answer =
+        DialogServices::confirm(
+            window,
+            preferencesText("Clear Testing Layout?"),
+            preferencesText("This removes every Oral Testing block and testing-class assignment. Saved testing classes and their rosters are preserved."),
+            preferencesText("Clear Layout"),
+            preferencesText("Cancel"),
+            true
+            );
+
+    if (answer != PromptChoice::Destructive)
+    {
+        return;
+    }
+
+    const Status result = scheduleService->clearTestingAssignments();
+    if (!result)
+    {
+        DialogServices::showWarning(
+            window,
+            preferencesText("Clear Testing Layout"),
+            result.error()
+            );
+        return;
+    }
+
+    window->refreshSchedulePreferences();
+}
+
+void addSchedulePreferencesTab(
+    QTabWidget* tabs,
+    MainWindow* window
+    )
+{
+    QWidget* page = createPreferencesPage(tabs, "preferencesScheduleTab");
+    QVBoxLayout* layout = pageLayout(page);
+    auto* settingsService =
+        window && window->services()
+            ? window->services()->settingsService()
+            : nullptr;
+    const ScheduleSettingsValues values =
+        ScheduleSettingsPreferences::load(settingsService);
+
+    auto* displayGroup = new QGroupBox(preferencesText("Display"), page);
+    auto* displayLayout = new QVBoxLayout(displayGroup);
+    displayLayout->setSpacing(12);
+    auto* showEnglishNames = new QCheckBox(
+        preferencesText("Show English Names"),
+        displayGroup
+        );
+    showEnglishNames->setObjectName(
+        QStringLiteral("preferencesScheduleShowEnglishNames")
+        );
+    showEnglishNames->setChecked(values.showEnglishNames);
+    displayLayout->addWidget(showEnglishNames);
+    auto* use24HourTime = new QCheckBox(
+        preferencesText("Use 24-Hour Time"),
+        displayGroup
+        );
+    use24HourTime->setObjectName(
+        QStringLiteral("preferencesScheduleUse24HourTime")
+        );
+    use24HourTime->setChecked(values.use24HourTime);
+    displayLayout->addWidget(use24HourTime);
+    auto* showWeekends = new QCheckBox(
+        preferencesText("Show Weekends"),
+        displayGroup
+        );
+    showWeekends->setObjectName(
+        QStringLiteral("preferencesScheduleShowWeekends")
+        );
+    showWeekends->setChecked(values.showWeekends);
+    displayLayout->addWidget(showWeekends);
+    layout->addWidget(displayGroup);
+
+    auto* intensiveGroup = new QGroupBox(preferencesText("Intensive"), page);
+    auto* intensiveLayout = new QVBoxLayout(intensiveGroup);
+    intensiveLayout->setSpacing(12);
+    auto* showAllHours = new QCheckBox(
+        preferencesText("Show All Hours"),
+        intensiveGroup
+        );
+    showAllHours->setObjectName(
+        QStringLiteral("preferencesScheduleShowAllIntensiveHours")
+        );
+    showAllHours->setChecked(values.showAllIntensiveHours);
+    intensiveLayout->addWidget(showAllHours);
+    auto* intensiveExplanation = new QLabel(
+        preferencesText("When disabled, empty hours at the beginning and end of an intensive schedule are hidden."),
+        intensiveGroup
+        );
+    intensiveExplanation->setWordWrap(true);
+    intensiveLayout->addWidget(intensiveExplanation);
+    layout->addWidget(intensiveGroup);
+
+    auto* testingGroup = new QGroupBox(preferencesText("Testing"), page);
+    auto* testingLayout = new QVBoxLayout(testingGroup);
+    testingLayout->setSpacing(12);
+    auto* testingExplanation = new QLabel(
+        preferencesText("M2 and M3 classes are always hidden in Testing mode. Oral Testing blocks and testing-class assignments are saved as one reusable weekly layout."),
+        testingGroup
+        );
+    testingExplanation->setWordWrap(true);
+    testingLayout->addWidget(testingExplanation);
+    auto* testingAffectsM1 = new QCheckBox(
+        preferencesText("Testing also affects M1"),
+        testingGroup
+        );
+    testingAffectsM1->setObjectName(
+        QStringLiteral("preferencesScheduleTestingAffectsM1")
+        );
+    testingAffectsM1->setChecked(values.testingAffectsM1);
+    testingLayout->addWidget(testingAffectsM1);
+    auto* clearButton = new TextFitPushButton(
+        preferencesText("Clear Testing Layout"),
+        testingGroup
+        );
+    clearButton->setObjectName(
+        QStringLiteral("preferencesScheduleClearTestingLayout")
+        );
+    testingLayout->addWidget(clearButton, 0, Qt::AlignLeft);
+    layout->addWidget(testingGroup);
+
+    const auto save = [
+        window,
+        settingsService,
+        use24HourTime,
+        showEnglishNames,
+        showWeekends,
+        showAllHours,
+        testingAffectsM1
+        ]()
+    {
+        ScheduleSettingsPreferences::save(
+            settingsService,
+            {
+                use24HourTime->isChecked(),
+                showEnglishNames->isChecked(),
+                showWeekends->isChecked(),
+                showAllHours->isChecked(),
+                testingAffectsM1->isChecked()
+            }
+            );
+        window->refreshSchedulePreferences();
+    };
+    for (QCheckBox* checkBox : {
+             showEnglishNames,
+             use24HourTime,
+             showWeekends,
+             showAllHours,
+             testingAffectsM1
+         })
+    {
+        QObject::connect(checkBox, &QCheckBox::toggled, page, save);
+    }
+    QObject::connect(
+        clearButton,
+        &QPushButton::clicked,
+        page,
+        [window]()
+        {
+            clearTestingLayout(window);
+        }
+        );
+
+    tabs->addTab(page, preferencesText("Schedule"));
+}
+
+void addCalendarPreferencesTab(
+    QTabWidget* tabs,
+    MainWindow* window
+    )
+{
+    QWidget* page = nullptr;
+    QScrollArea* scrollArea = createScrollablePreferencesPage(
+        tabs,
+        "preferencesCalendarTab",
+        &page
+        );
+    auto* calendarPage = window ? window->calendarPage() : nullptr;
+    auto* panel = new CalendarPreferencesPanel(
+        calendarPage ? calendarPage->academicCalendarProvider() : nullptr,
+        window && window->services()
+            ? window->services()->calendarService()
+            : nullptr,
+        window && window->services()
+            ? window->services()->settingsService()
+            : nullptr,
+        page
+        );
+    pageLayout(page)->addWidget(panel);
+
+    if (calendarPage)
+    {
+        QObject::connect(
+            panel,
+            &CalendarPreferencesPanel::calendarPreferencesChanged,
+            calendarPage,
+            &CalendarPage::calendarPreferencesChanged
+            );
+    }
+
+    tabs->addTab(scrollArea, preferencesText("Calendar"));
+}
+
+void addNavigationPreferencesTab(
+    QTabWidget* tabs,
+    MainWindow* window
+    )
+{
+    QWidget* page = createPreferencesPage(tabs, "preferencesNavigationTab");
+    QVBoxLayout* layout = pageLayout(page);
+    auto* navigationGroup = new QGroupBox(preferencesText("Display"), page);
+    auto* navigationLayout = new QVBoxLayout(navigationGroup);
+    navigationLayout->setSpacing(12);
+    auto* classesShownGroup = new QGroupBox(
+        preferencesText("Classes Shown"),
+        navigationGroup
+        );
+    auto* classesShownLayout = new QVBoxLayout(classesShownGroup);
+    classesShownLayout->setSpacing(12);
+    const ClassTabNavigation::VisibilityScope scope =
+        ClassNavigationPreferences::load(
+            window && window->services()
+                ? window->services()->settingsService()
+                : nullptr
+            );
+    auto* allClasses = new QRadioButton(
+        preferencesText("All Classes"),
+        classesShownGroup
+        );
+    allClasses->setObjectName(QStringLiteral("preferencesNavigationAllClasses"));
+    allClasses->setChecked(
+        scope == ClassTabNavigation::VisibilityScope::AllClasses
+        );
+    classesShownLayout->addWidget(allClasses);
+    auto* activeSchedule = new QRadioButton(
+        preferencesText("Active Schedule"),
+        classesShownGroup
+        );
+    activeSchedule->setObjectName(
+        QStringLiteral("preferencesNavigationActiveSchedule")
+        );
+    activeSchedule->setChecked(
+        scope == ClassTabNavigation::VisibilityScope::ActiveSchedule
+        );
+    classesShownLayout->addWidget(activeSchedule);
+    navigationLayout->addWidget(classesShownGroup);
+    layout->addWidget(navigationGroup);
+
+    const auto save = [window, allClasses](bool checked)
+    {
+        if (!checked)
+        {
+            return;
+        }
+
+        ClassNavigationPreferences::save(
+            window && window->services()
+                ? window->services()->settingsService()
+                : nullptr,
+            allClasses->isChecked()
+                ? ClassTabNavigation::VisibilityScope::AllClasses
+                : ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
+        window->refreshNavigationPreferences();
+    };
+    QObject::connect(allClasses, &QRadioButton::toggled, page, save);
+    QObject::connect(activeSchedule, &QRadioButton::toggled, page, save);
+
+    tabs->addTab(page, preferencesText("Navigation Bar"));
 }
 
 void populatePreferencesDialog(
@@ -474,6 +794,10 @@ void populatePreferencesDialog(
         documentsPage,
         preferencesText("Documents")
         );
+
+    addSchedulePreferencesTab(tabs, window);
+    addCalendarPreferencesTab(tabs, window);
+    addNavigationPreferencesTab(tabs, window);
 
     QWidget* aiCommentsPage =
         createPreferencesPage(

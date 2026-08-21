@@ -1,6 +1,5 @@
 #include "core/settingsmanager.h"
 #include "features/calendar/ui/calendar_event_dialog.h"
-#include "features/calendar/ui/calendar_settings_dialog.h"
 #include "features/roster/ui/roster_print_dialog.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
@@ -30,7 +29,6 @@
 
 #include <type_traits>
 
-static_assert(std::is_base_of_v<DialogShell, CalendarSettingsDialog>);
 static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleEditorDialog>);
 static_assert(std::is_base_of_v<DialogShell, ScheduleImportDialog>);

@@ -401,6 +401,37 @@ void PageManager::saveCurrentPageAs()
     }
 }
 
+void PageManager::refreshSchedulePreferences()
+{
+    if (m_schedulePage)
+    {
+        m_schedulePage->refreshSchedulePreferences();
+    }
+
+    if (m_mySchedulePage)
+    {
+        m_mySchedulePage->refreshSchedulePreferences();
+    }
+}
+
+void PageManager::refreshNavigationPreferences()
+{
+    if (m_classesPage)
+    {
+        m_classesPage->refreshNavigationPreferences();
+    }
+
+    if (m_rostersPage)
+    {
+        m_rostersPage->refreshNavigationPreferences();
+    }
+
+    if (m_speakingPage)
+    {
+        m_speakingPage->refreshNavigationPreferences();
+    }
+}
+
 
 
 // =========================================================

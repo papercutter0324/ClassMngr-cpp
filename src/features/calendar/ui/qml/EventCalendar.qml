@@ -19,7 +19,6 @@ Item {
     property date shownDate: new Date()
     property color toolbarColor: "#536f8a"
     property color toolbarTextColor: "#fbfaf7"
-    property color navigationSettingsGlyphColor: "#27313a"
     property color textColor: "#27313a"
     property color mutedTextColor: "#66727a"
     property color inactiveTextColor: "transparent"
@@ -111,7 +110,6 @@ Item {
 
     signal dayActivated(int year, int month, int day)
     signal eventActivated(int eventId)
-    signal configureRequested(int year, int month)
     signal displayedMonthChanged(int year, int month)
 
     function moveMonth(delta) {
@@ -275,33 +273,6 @@ Item {
                     }
                 }
 
-                ToolButton {
-                    id: settingsButton
-
-                    text: "\u2699"
-                    font.pixelSize: toolbar.font.pixelSize * 1.65
-                    palette.buttonText: root.navigationSettingsGlyphColor
-
-                    Layout.preferredWidth: 48
-                    Layout.fillHeight: true
-
-                    Accessible.name: qsTr("Configure academic terms")
-                    ToolTip.text: qsTr("Configure academic terms")
-                    ToolTip.visible: hovered
-
-                    onClicked: root.configureRequested(
-                                   root.shownDate.getFullYear(),
-                                   root.shownDate.getMonth() + 1)
-
-                    background: Rectangle {
-                        color: settingsButton.hovered ? "#33ffffff" : "#1affffff"
-                        border.color: "#66ffffff"
-                        border.width: 1
-                        radius: 7
-                        anchors.fill: parent
-                        anchors.margins: 4
-                    }
-                }
             }
         }
 

@@ -3,12 +3,11 @@
 #include "data/data_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
-#include "features/schedule/ui/schedule_settings_dialog.h"
+#include "features/schedule/schedule_settings_preferences.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 #include "domain/models/testing_class.h"
 
 #include <QtTest>
@@ -30,7 +29,6 @@
 #include <QScrollBar>
 #include <QStyleOptionViewItem>
 #include <QTableWidget>
-#include <QTimer>
 
 #include <algorithm>
 
@@ -97,12 +95,7 @@ void ScheduleWidgetTests
         interactive.findChild<QPushButton*>(
             QStringLiteral("scheduleIntensiveModeButton")
             );
-    auto* settings =
-        interactive.findChild<NavigationSettingsButton*>(
-            QStringLiteral("scheduleSettingsButton")
-            );
     QVERIFY(intensive);
-    QVERIFY(settings);
 
     intensive->click();
     QCOMPARE(
@@ -112,36 +105,17 @@ void ScheduleWidgetTests
         QStringLiteral("intensive")
         );
 
-    QTimer::singleShot(
-        0,
-        []()
+    ScheduleSettingsPreferences::save(
+        services.settingsService(),
         {
-            auto* dialog =
-                qobject_cast<ScheduleSettingsDialog*>(
-                    QApplication::activeModalWidget()
-                    );
-            QVERIFY(dialog);
-
-            const QStringList settingNames{
-                QStringLiteral("scheduleSettingsUse24HourTime"),
-                QStringLiteral("scheduleSettingsShowEnglishNames"),
-                QStringLiteral("scheduleSettingsShowWeekends"),
-                QStringLiteral("scheduleSettingsShowAllIntensiveHours"),
-                QStringLiteral("scheduleSettingsTestingAffectsM1")
-            };
-
-            for (const QString& name : settingNames)
-            {
-                auto* check =
-                    dialog->findChild<QCheckBox*>(name);
-                QVERIFY(check);
-                check->setChecked(true);
-            }
-
-            dialog->accept();
+            true,
+            true,
+            true,
+            true,
+            true
         }
         );
-    settings->click();
+    interactive.refreshSchedule();
 
     QCOMPARE(
         ScheduleWidgetTestStubs::settingValue(
@@ -212,28 +186,8 @@ void ScheduleWidgetTests::clearTestingLayoutUsesScheduleService()
     QVERIFY(before);
     QCOMPARE(before->size(), 2);
 
-    FakeUserPromptService prompts;
-    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
-    DialogServices::setUserPromptServiceForTesting(&prompts);
-
-    ScheduleSettingsDialog dialog(
-        scheduleService,
-        ScheduleSettingsValues{}
-        );
-    QSignalSpy clearedSpy(
-        &dialog,
-        &ScheduleSettingsDialog::testingBlocksCleared
-        );
-    auto* clearButton =
-        dialog.findChild<QPushButton*>(
-            QStringLiteral("scheduleSettingsClearTestingLayout")
-            );
-    QVERIFY(clearButton);
-    clearButton->click();
-
-    QCOMPARE(prompts.confirmations.size(), 1);
-    QVERIFY(prompts.confirmations.first().destructive);
-    QCOMPARE(clearedSpy.count(), 1);
+    const Status cleared = scheduleService->clearTestingAssignments();
+    QVERIFY(cleared);
     const Result<QList<TestingAssignment>> after =
         scheduleService->testingAssignments();
     QVERIFY(after);

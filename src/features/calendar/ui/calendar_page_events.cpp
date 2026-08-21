@@ -1,13 +1,11 @@
 #include "calendar_page.h"
 
 #include "app/services/feature_services.h"
-#include "calendar_settings_dialog.h"
 #include "academic_calendar_provider.h"
 #include "calendar_event_cache.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
-#include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
@@ -282,54 +280,6 @@ void CalendarPage::handleCalendarEventActivated(
         true
         );
 }
-void CalendarPage::handleCalendarConfigureRequested(
-    int year,
-    int month
-    )
-{
-    if (!m_academicCalendarProvider)
-    {
-        return;
-    }
-
-    const QDate firstOfMonth(year, month, 1);
-    if (!firstOfMonth.isValid())
-    {
-        return;
-    }
-
-    const QDate firstMonday =
-        firstOfMonth.addDays(
-            (Qt::Monday - firstOfMonth.dayOfWeek() + 7) % 7
-            );
-    const int termYear =
-        m_academicCalendarProvider->termYearForDate(firstMonday);
-
-    CalendarSettingsDialog dialog(
-        m_academicCalendarProvider,
-        openCalendarService(m_services),
-        m_services
-            ? m_services->settingsService()
-            : nullptr,
-        termYear,
-        this
-        );
-
-    connect(
-        &dialog,
-        &CalendarSettingsDialog::calendarEventsImported,
-        this,
-        [this]()
-        {
-            invalidateCalendarData();
-        }
-        );
-
-    if (dialog.exec() == QDialog::Accepted)
-    {
-        updateCalendarCampusFilter();
-    }
-}
 void CalendarPage::handleCalendarDisplayedMonthChanged(
     int year,
     int month
@@ -458,7 +408,6 @@ void CalendarPage::buildCalendarContent()
 
     if (auto* root = m_calendarView->rootObject())
     {
-        syncCalendarTheme();
         syncCalendarFontSize();
         syncCalendarEventTypeColors();
 
@@ -476,29 +425,10 @@ void CalendarPage::buildCalendarContent()
             );
         connect(
             root,
-            SIGNAL(configureRequested(int,int)),
-            this,
-            SLOT(handleCalendarConfigureRequested(int,int))
-            );
-        connect(
-            root,
             SIGNAL(displayedMonthChanged(int,int)),
             this,
             SLOT(handleCalendarDisplayedMonthChanged(int,int))
         );
-    }
-
-    if (auto* themeService =
-            m_services
-                ? m_services->themeService()
-                : nullptr)
-    {
-        connect(
-            themeService,
-            QOverload<Theme>::of(&ThemeService::themeChanged),
-            this,
-            &CalendarPage::syncCalendarTheme
-            );
     }
 
     cardLayout->addWidget(
@@ -703,34 +633,6 @@ void CalendarPage::handleNextEventMonthFound(
         CalendarEventCache::Priority::Background
         );
 }
-void CalendarPage::syncCalendarTheme()
-{
-    if (!m_calendarView)
-    {
-        return;
-    }
-
-    auto* root =
-        m_calendarView->rootObject();
-
-    if (!root)
-    {
-        return;
-    }
-
-    const Theme theme =
-        m_services && m_services->themeService()
-            ? m_services->themeService()->currentTheme()
-            : Theme::Light;
-
-    root->setProperty(
-        "navigationSettingsGlyphColor",
-        theme == Theme::Dark
-            ? QColor(QStringLiteral("#f0f0f0"))
-            : QColor(QStringLiteral("#27313a"))
-        );
-}
-
 void CalendarPage::syncCalendarFontSize()
 {
     if (!m_calendarView)

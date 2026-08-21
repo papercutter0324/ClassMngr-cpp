@@ -12,8 +12,6 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/classes/models/class_tab_navigation_model.h
         src/features/classes/ui/class_details_page.cpp
         src/features/classes/ui/class_details_page.h
-        src/features/classes/ui/classes_navigation_settings_dialog.cpp
-        src/features/classes/ui/classes_navigation_settings_dialog.h
         src/features/classes/ui/classes_page.cpp
         src/features/classes/ui/classes_page.h
         src/features/classes/ui/class_notes_page.cpp
@@ -35,6 +33,8 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/roster/ui/roster_table_view.cpp
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
+        src/features/schedule/schedule_settings_preferences.cpp
+        src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
         src/features/teacher/ui/teacher_model.cpp
@@ -113,6 +113,8 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/classes/config/class_info_config.cpp
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
+        src/features/schedule/schedule_settings_preferences.cpp
+        src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/import/schedule_workbook_parser.cpp
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_import_dialog.cpp
@@ -126,8 +128,6 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/schedule/ui/schedule_import_review_dialog.cpp
         src/features/schedule/ui/schedule_import_review_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
-        src/features/schedule/ui/schedule_settings_dialog.cpp
-        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_time_formatter.h
         src/features/schedule/ui/schedule_cell_widget_factory.cpp
@@ -186,10 +186,10 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/classes/models/class_tab_navigation_model.h
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
+        src/features/schedule/schedule_settings_preferences.cpp
+        src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_print_dialog.h
-        src/features/schedule/ui/schedule_settings_dialog.cpp
-        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
         src/features/sub_prep/ui/sub_prep_page.cpp
         src/features/sub_prep/ui/sub_prep_page_class_information.cpp

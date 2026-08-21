@@ -119,6 +119,10 @@ public:
 
     void saveCurrentPageAs();
 
+    void refreshSchedulePreferences();
+
+    void refreshNavigationPreferences();
+
 
 
 signals:

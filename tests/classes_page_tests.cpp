@@ -1,11 +1,8 @@
 #include "core/application_services.h"
-#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "domain/models/speaking_evaluation.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
-#include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -13,13 +10,10 @@
 
 #include <QApplication>
 #include <QAbstractButton>
-#include <QDialogButtonBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QRadioButton>
 #include <QTableView>
-#include <QTimer>
 
 #include <algorithm>
 
@@ -116,8 +110,7 @@ private slots:
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void explicitClassRequestRetainsExcludingFiltersAndHiddenSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
-    void navigationControlsUsePillsAndPersistScopeSelection();
-    void settingsDialogDefaultsToActiveSchedule();
+    void navigationControlsUsePills();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
     void headerKeyboardReplacesEmbeddedRosterButton();
 };
@@ -277,7 +270,7 @@ void ClassesPageTests::testingModeUsesRegularMeetingsForDayFiltering()
     QCOMPARE(page.currentClassId(), 42);
 }
 
-void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
+void ClassesPageTests::navigationControlsUsePills()
 {
     ApplicationServices services;
     ClassesPage page(&services);
@@ -290,27 +283,10 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
         &page,
         QStringLiteral("classesWeekendFilterButton")
         );
-    auto* settings = dayFilterButton(
-        &page,
-        QStringLiteral("classesNavigationSettingsButton")
-        );
     QVERIFY(weekend);
-    QVERIFY(settings);
     QVERIFY(weekend->isCheckable());
-    QVERIFY(!settings->isCheckable());
-    QVERIFY(qobject_cast<NavigationSettingsButton*>(settings));
-    QVERIFY(settings->property("role").toString().isEmpty());
-    QCOMPARE(settings->width(), 46);
-    QCOMPARE(settings->text(), QStringLiteral("\u2699"));
-    QCOMPARE(settings->font().pointSize(), 18);
-    QCOMPARE(settings->font().weight(), QFont::DemiBold);
-    QVERIFY(settings->geometry().left() > weekend->geometry().right());
     auto* gradeTabBar = gradeTabs(&page)->tabStrip();
     QVERIFY(gradeTabBar);
-    QVERIFY(
-        settings->height() >= NavigationPillStyle::ControlHeight
-        );
-    QCOMPARE(settings->height(), weekend->height());
     QCOMPARE(
         weekend->height(),
         gradeTabBar->tabButton(0)->height()
@@ -334,63 +310,6 @@ void ClassesPageTests::navigationControlsUsePillsAndPersistScopeSelection()
                 );
         }
     }
-    QCOMPARE(
-        ScheduleWidgetTestStubs::settingValue(
-            QStringLiteral("classes_navigation_visibility_scope")
-            ),
-        QStringLiteral("active_schedule")
-        );
-
-    QTimer::singleShot(
-        0,
-        []()
-        {
-            auto* dialog = qobject_cast<ClassesNavigationSettingsDialog*>(
-                QApplication::activeModalWidget()
-                );
-            QVERIFY(dialog);
-
-            auto* allClasses = dialog->findChild<QRadioButton*>(
-                QStringLiteral("classesNavigationAllClasses")
-                );
-            auto* buttons = dialog->findChild<QDialogButtonBox*>();
-            QVERIFY(allClasses);
-            QVERIFY(buttons);
-            allClasses->click();
-            buttons->button(QDialogButtonBox::Save)->click();
-        }
-        );
-
-    settings->click();
-
-    QCOMPARE(
-        ScheduleWidgetTestStubs::settingValue(
-            QStringLiteral("classes_navigation_visibility_scope")
-            ),
-        QStringLiteral("all_classes")
-        );
-}
-
-void ClassesPageTests::settingsDialogDefaultsToActiveSchedule()
-{
-    ClassesNavigationSettingsDialog dialog({});
-
-    auto* activeSchedule = dialog.findChild<QRadioButton*>(
-        QStringLiteral("classesNavigationActiveSchedule")
-        );
-    auto* allClasses = dialog.findChild<QRadioButton*>(
-        QStringLiteral("classesNavigationAllClasses")
-        );
-    QVERIFY(activeSchedule);
-    QVERIFY(allClasses);
-    QVERIFY(activeSchedule->isChecked());
-    QVERIFY(!allClasses->isChecked());
-
-    allClasses->click();
-    QCOMPARE(
-        dialog.values().visibilityScope,
-        ClassTabNavigation::VisibilityScope::AllClasses
-        );
 }
 
 void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()

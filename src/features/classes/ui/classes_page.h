@@ -64,6 +64,7 @@ public:
     QString unsavedChangesMessage() const override;
     void setSaveMode(SaveMode mode) override;
     void refresh() override;
+    void refreshNavigationPreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;
 
@@ -80,7 +81,6 @@ private:
         );
     bool dayFilterEnabled(const QString& key) const;
     void setNavigationSelectionVisible(bool visible);
-    void openNavigationSettings();
     void setScheduleSource(
         ClassTabNavigation::ScheduleSource source
         );

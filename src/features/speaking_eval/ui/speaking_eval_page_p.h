@@ -16,7 +16,6 @@
 #include "domain/models/teacher.h"
 #include "data/data_service.h"
 #include "features/classes/class_navigation_preferences.h"
-#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
@@ -28,7 +27,6 @@
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QAbstractButton>

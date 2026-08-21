@@ -7,7 +7,6 @@
 #include <QWidget>
 
 class ApplicationServices;
-class NavigationSettingsButton;
 class QButtonGroup;
 class QLabel;
 class QPushButton;
@@ -76,7 +75,6 @@ signals:
 
 private slots:
     void setDisplayMode(int modeId);
-    void openSettings();
     void onCellClicked(
         int row,
         int column
@@ -125,7 +123,6 @@ private:
     QPushButton* m_regularModeButton = nullptr;
     QPushButton* m_intensiveModeButton = nullptr;
     QPushButton* m_testingModeButton = nullptr;
-    NavigationSettingsButton* m_settingsButton = nullptr;
     QPushButton* m_testingClassesButton = nullptr;
     QPushButton* m_importButton = nullptr;
     QLabel* m_testingBanner = nullptr;

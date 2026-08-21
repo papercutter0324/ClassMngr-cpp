@@ -8,17 +8,14 @@
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "features/classes/models/class_tab_navigation_model.h"
-#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include <QDialog>
 #include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -204,6 +201,15 @@ void RostersPage::setScheduleDisplayMode(
 {
     setScheduleSource(
         scheduleSourceForMode(mode)
+        );
+}
+
+void RostersPage::refreshNavigationPreferences()
+{
+    setVisibilityScope(
+        ClassNavigationPreferences::load(
+            m_services ? m_services->settingsService() : nullptr
+            )
         );
 }
 
@@ -709,20 +715,6 @@ void RostersPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new NavigationSettingsButton(controls);
-    settingsButton->setObjectName(
-        QStringLiteral("rosterNavigationSettingsButton")
-        );
-    settingsButton->setAccessibleName(tr("Rosters Settings"));
-    settingsButton->setToolTip(tr("Rosters Settings"));
-    layout->addWidget(settingsButton);
-    connect(
-        settingsButton,
-        &QPushButton::clicked,
-        this,
-        &RostersPage::openNavigationSettings
-        );
-
     tabs->setTrailingWidget(controls);
 }
 
@@ -773,26 +765,6 @@ bool RostersPage::dayFilterEnabled(
     }
 
     return m_dayFilter.selectedDays.contains(key);
-}
-
-void RostersPage::openNavigationSettings()
-{
-    ClassesNavigationSettingsDialog dialog(
-        {m_dayFilter.visibilityScope},
-        this
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    const ClassesNavigationSettingsValues values = dialog.values();
-    ClassNavigationPreferences::save(
-        m_services ? m_services->settingsService() : nullptr,
-        values.visibilityScope
-        );
-    setVisibilityScope(values.visibilityScope);
 }
 
 void RostersPage::setScheduleSource(

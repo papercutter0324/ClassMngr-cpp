@@ -23,6 +23,7 @@ public:
         );
 
     void refresh() override;
+    void refreshSchedulePreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;
     [[nodiscard]] ScheduleDisplayMode displayMode() const;

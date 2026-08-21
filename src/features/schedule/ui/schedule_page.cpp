@@ -33,6 +33,14 @@ void SchedulePage::refresh()
     }
 }
 
+void SchedulePage::refreshSchedulePreferences()
+{
+    if (m_scheduleWidget)
+    {
+        m_scheduleWidget->refreshSchedule();
+    }
+}
+
 void SchedulePage::clearDatabaseState()
 {
     if (m_scheduleWidget)

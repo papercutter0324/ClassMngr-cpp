@@ -8,7 +8,6 @@
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_details_page.h"
-#include "features/classes/ui/classes_navigation_settings_dialog.h"
 #include "features/classes/ui/class_evaluations_page.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/class_analytics_page.h"
@@ -17,7 +16,6 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -304,6 +302,15 @@ void ClassesPage::refresh()
     {
         loadClasses();
     }
+}
+
+void ClassesPage::refreshNavigationPreferences()
+{
+    setVisibilityScope(
+        ClassNavigationPreferences::load(
+            m_services ? m_services->settingsService() : nullptr
+            )
+        );
 }
 
 void ClassesPage::clearDatabaseState()
@@ -756,24 +763,6 @@ void ClassesPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new NavigationSettingsButton(controls);
-    settingsButton->setObjectName(
-        QStringLiteral("classesNavigationSettingsButton")
-        );
-    settingsButton->setAccessibleName(
-        tr("Classes Settings")
-        );
-    settingsButton->setToolTip(
-        tr("Classes Settings")
-        );
-    layout->addWidget(settingsButton);
-    connect(
-        settingsButton,
-        &QPushButton::clicked,
-        this,
-        &ClassesPage::openNavigationSettings
-        );
-
     gradeTabs->setTrailingWidget(controls);
 }
 
@@ -845,31 +834,6 @@ void ClassesPage::setNavigationSelectionVisible(
             tabBar->setSelectionVisible(visible);
         }
     }
-}
-
-void ClassesPage::openNavigationSettings()
-{
-    ClassesNavigationSettingsDialog dialog(
-        {m_dayFilter.visibilityScope},
-        this
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    const ClassesNavigationSettingsValues values =
-        dialog.values();
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-    ClassNavigationPreferences::save(
-        settingsService,
-        values.visibilityScope
-        );
-    setVisibilityScope(values.visibilityScope);
 }
 
 void ClassesPage::setScheduleSource(

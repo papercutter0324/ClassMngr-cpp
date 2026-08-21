@@ -204,6 +204,21 @@ void CalendarPage::scrollToTop()
         );
 }
 
+AcademicCalendarProvider* CalendarPage::academicCalendarProvider() const
+{
+    return m_academicCalendarProvider;
+}
+
+void CalendarPage::calendarPreferencesChanged(bool eventsChanged)
+{
+    updateCalendarCampusFilter();
+
+    if (eventsChanged)
+    {
+        invalidateCalendarData();
+    }
+}
+
 void CalendarPage::showEvent(
     QShowEvent* event
     )

@@ -33,6 +33,7 @@ public:
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode
         );
+    void refreshNavigationPreferences();
 
     void saveData() override;
     bool saveChanges() override;
@@ -63,7 +64,6 @@ private:
         bool enabled
         );
     bool dayFilterEnabled(const QString& key) const;
-    void openNavigationSettings();
     void setScheduleSource(
         ClassTabNavigation::ScheduleSource source
         );

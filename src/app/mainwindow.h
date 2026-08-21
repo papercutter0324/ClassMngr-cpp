@@ -30,6 +30,7 @@ QT_END_NAMESPACE
 // =========================================================
 
 class ApplicationServices;
+class CalendarPage;
 
 class Sidebar;
 class PageManager;
@@ -80,6 +81,14 @@ public:
     bool isAdmin() const {
         return m_isAdmin;
     }
+
+    [[nodiscard]] ApplicationServices* services() const;
+
+    [[nodiscard]] CalendarPage* calendarPage() const;
+
+    void refreshSchedulePreferences();
+
+    void refreshNavigationPreferences();
 
     bool confirmCurrentPageCanLeave(
         bool exiting = false

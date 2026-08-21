@@ -49,6 +49,8 @@ public:
     void clearDatabaseState() override;
     void retranslateUi() override;
     void scrollToTop();
+    [[nodiscard]] AcademicCalendarProvider* academicCalendarProvider() const;
+    void calendarPreferencesChanged(bool eventsChanged);
 
 protected:
     void showEvent(
@@ -68,10 +70,6 @@ private slots:
         );
     void handleCalendarEventActivated(
         int eventId
-        );
-    void handleCalendarConfigureRequested(
-        int year,
-        int month
         );
     void handleCalendarDisplayedMonthChanged(
         int year,
@@ -115,7 +113,6 @@ private:
         const QDate& firstEventDate
         );
     void refreshUpcomingEvents();
-    void syncCalendarTheme();
     void updateCalendarCampusFilter();
     void renderUpcomingEvents(
         UpcomingEventsScope scope,

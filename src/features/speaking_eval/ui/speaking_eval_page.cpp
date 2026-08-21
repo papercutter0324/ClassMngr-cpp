@@ -147,6 +147,15 @@ void SpeakingEvalPage::setScheduleDisplayMode(
         );
 }
 
+void SpeakingEvalPage::refreshNavigationPreferences()
+{
+    setVisibilityScope(
+        ClassNavigationPreferences::load(
+            m_services ? m_services->settingsService() : nullptr
+            )
+        );
+}
+
 void SpeakingEvalPage::loadEvaluationData(
     const Classroom& classroom,
     const QString& evaluationName
@@ -506,20 +515,6 @@ void SpeakingEvalPage::createDayFilterControls(
             );
     }
 
-    auto* settingsButton = new NavigationSettingsButton(controls);
-    settingsButton->setObjectName(
-        QStringLiteral("speakingEvalNavigationSettingsButton")
-        );
-    settingsButton->setAccessibleName(tr("Speaking Evaluation Settings"));
-    settingsButton->setToolTip(tr("Speaking Evaluation Settings"));
-    layout->addWidget(settingsButton);
-    connect(
-        settingsButton,
-        &QPushButton::clicked,
-        this,
-        &SpeakingEvalPage::openNavigationSettings
-        );
-
     tabs->setTrailingWidget(controls);
 }
 
@@ -570,26 +565,6 @@ bool SpeakingEvalPage::dayFilterEnabled(
     }
 
     return m_dayFilter.selectedDays.contains(key);
-}
-
-void SpeakingEvalPage::openNavigationSettings()
-{
-    ClassesNavigationSettingsDialog dialog(
-        {m_dayFilter.visibilityScope},
-        this
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    const ClassesNavigationSettingsValues values = dialog.values();
-    ClassNavigationPreferences::save(
-        m_services ? m_services->settingsService() : nullptr,
-        values.visibilityScope
-        );
-    setVisibilityScope(values.visibilityScope);
 }
 
 void SpeakingEvalPage::setScheduleSource(

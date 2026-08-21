@@ -1,41 +1,39 @@
 #pragma once
 
 #include "features/calendar/academic_calendar_schedule.h"
-#include "ui/shared/dialogs/dialog_shell.h"
 
 #include <array>
 
+#include <QWidget>
+
 class AcademicCalendarProvider;
-class CalendarService;
 class CalendarEventImportService;
+class CalendarService;
 class QCheckBox;
 class QDateEdit;
-class QDialogButtonBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
-class QTabWidget;
 class SettingsService;
 
-class CalendarSettingsDialog : public DialogShell
+class CalendarPreferencesPanel final : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit CalendarSettingsDialog(
+    explicit CalendarPreferencesPanel(
         AcademicCalendarProvider* provider,
         CalendarService* calendarService,
         SettingsService* settingsService,
-        int termYear,
         QWidget* parent = nullptr
         );
 
 signals:
-    void calendarEventsImported();
+    void calendarPreferencesChanged(bool eventsChanged);
 
 private slots:
-    void accept() override;
+    void saveTermSchedules();
     void restoreDefaults();
     void resetCalendarEvents();
     void linkWinterSpring(bool linked);
@@ -44,17 +42,16 @@ private slots:
         int importedCount,
         int skippedCount
         );
-    void handleImportFailed(
-        const QString& message
-        );
+    void handleImportFailed(const QString& message);
+    void setTermYear(int termYear);
 
 private:
     static constexpr int SchoolCount = 2;
 
     void buildUi();
-    QWidget* buildOptionsTab();
-    QWidget* buildTermSchedulesTab();
-    QWidget* buildImportTab();
+    QWidget* buildOptionsSection();
+    QWidget* buildTermSchedulesSection();
+    QWidget* buildImportSection();
     void loadSchedules();
     void loadOptions();
     void saveOptions();
@@ -83,7 +80,8 @@ private:
     QLineEdit* m_importUrlEdit = nullptr;
     QLabel* m_importStatusLabel = nullptr;
     QPushButton* m_importButton = nullptr;
-    QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_restoreButton = nullptr;
     QPushButton* m_resetEventsButton = nullptr;
+    QPushButton* m_saveSchedulesButton = nullptr;
+    QSpinBox* m_termYearSpin = nullptr;
 };

@@ -5,16 +5,14 @@
 #include "schedule_widget_delegates.h"
 
 #include "ui/shared/widgets/text_fit_push_button.h"
-#include "ui/shared/widgets/navigation_settings_button.h"
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
-#include "core/fontmanager.h"
 #include "core/theme_service.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
+#include "features/schedule/schedule_settings_preferences.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
-#include "features/schedule/ui/schedule_settings_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/services/schedule_output_controller.h"
@@ -26,7 +24,6 @@
 #include <QButtonGroup>
 #include <QDebug>
 #include <QDialog>
-#include <QFont>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPalette>
@@ -34,71 +31,11 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QTableWidget>
-#include <QVariant>
 #include <QVBoxLayout>
 
 namespace
 {
 using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
-namespace SettingsKeys
-{
-const QString Use24HourTime =
-    QStringLiteral("schedule_use_24h");
-const QString ShowKoreanTeacherEnglishNames =
-    QStringLiteral("schedule_show_korean_teacher_english_names");
-const QString ShowWeekends =
-    QStringLiteral("schedule_show_weekends");
-const QString ShowAllHoursV2 =
-    QStringLiteral("schedule_show_all_hours_v2");
-const QString TestingAffectsM1 =
-    QStringLiteral("schedule_testing_affects_m1");
-}
-
-bool settingToBool(
-    const QVariant& value,
-    bool defaultValue
-    )
-{
-    if (!value.isValid())
-    {
-        return defaultValue;
-    }
-
-    const QString text =
-        value.toString().trimmed().toLower();
-
-    if (text == QStringLiteral("true") || text == QStringLiteral("1"))
-    {
-        return true;
-    }
-
-    if (text == QStringLiteral("false") || text == QStringLiteral("0"))
-    {
-        return false;
-    }
-
-    return value.toBool();
-}
-
-void saveBoolSetting(
-    SettingsService* settingsService,
-    const QString& key,
-    bool value
-    )
-{
-    if (!settingsService || !settingsService->isAvailable())
-    {
-        return;
-    }
-
-    settingsService->save(
-        key,
-        value
-            ? QStringLiteral("true")
-            : QStringLiteral("false")
-        );
-}
-
 }
 
 ScheduleWidget::ScheduleWidget(
@@ -268,89 +205,6 @@ void ScheduleWidget::setDisplayMode(
     updateButtons();
     loadSchedule();
     emit displayModeChanged(m_displayMode);
-}
-
-void ScheduleWidget::openSettings()
-{
-    ScheduleSettingsValues initial;
-    initial.use24HourTime = m_use24h;
-    initial.showEnglishNames =
-        m_showKoreanTeacherEnglishNames;
-    initial.showWeekends = m_showWeekends;
-    initial.showAllIntensiveHours = m_showAllHours;
-    initial.testingAffectsM1 = m_testingAffectsM1;
-
-    ScheduleSettingsDialog dialog(
-        m_services
-            ? m_services->scheduleService()
-            : nullptr,
-        initial,
-        this
-        );
-
-    connect(
-        &dialog,
-        &ScheduleSettingsDialog::testingBlocksCleared,
-        this,
-        [this]()
-        {
-            m_interactionState.clearTestingAssignments();
-            loadSchedule();
-        }
-        );
-
-    if (dialog.exec() != QDialog::Accepted)
-    {
-        return;
-    }
-
-    const ScheduleSettingsValues values =
-        dialog.values();
-    m_use24h = values.use24HourTime;
-    m_showKoreanTeacherEnglishNames =
-        values.showEnglishNames;
-    m_showWeekends = values.showWeekends;
-    m_showAllHours =
-        values.showAllIntensiveHours;
-    m_testingAffectsM1 =
-        values.testingAffectsM1;
-
-    auto* settingsService =
-        m_services
-            ? m_services->settingsService()
-            : nullptr;
-
-    if (settingsService && settingsService->isAvailable())
-    {
-        saveBoolSetting(
-            settingsService,
-            SettingsKeys::Use24HourTime,
-            m_use24h
-            );
-        saveBoolSetting(
-            settingsService,
-            SettingsKeys::ShowKoreanTeacherEnglishNames,
-            m_showKoreanTeacherEnglishNames
-            );
-        saveBoolSetting(
-            settingsService,
-            SettingsKeys::ShowWeekends,
-            m_showWeekends
-            );
-        saveBoolSetting(
-            settingsService,
-            SettingsKeys::ShowAllHoursV2,
-            m_showAllHours
-            );
-        saveBoolSetting(
-            settingsService,
-            SettingsKeys::TestingAffectsM1,
-            m_testingAffectsM1
-            );
-    }
-
-    updateButtons();
-    loadSchedule();
 }
 
 void ScheduleWidget::onCellClicked(
@@ -652,19 +506,6 @@ void ScheduleWidget::buildUi()
     m_importButton->setMinimumWidth(110);
     controlsLayout->addWidget(m_importButton);
 
-    m_settingsButton =
-        new NavigationSettingsButton(this);
-    m_settingsButton->setObjectName(
-        QStringLiteral("scheduleSettingsButton")
-        );
-    m_settingsButton->setAccessibleName(
-        tr("Schedule Settings")
-        );
-    m_settingsButton->setToolTip(
-        tr("Schedule Settings")
-        );
-    controlsLayout->addWidget(m_settingsButton);
-
     layout->addWidget(m_controlsWidget);
 
     m_testingBanner =
@@ -726,13 +567,6 @@ void ScheduleWidget::buildUi()
         );
 
     connect(
-        m_settingsButton,
-        &NavigationSettingsButton::clicked,
-        this,
-        &ScheduleWidget::openSettings
-        );
-
-    connect(
         m_importButton,
         &QPushButton::clicked,
         this,
@@ -762,50 +596,13 @@ void ScheduleWidget::loadSettings()
         return;
     }
 
-    m_use24h =
-        settingToBool(
-            settingsService->load(
-                SettingsKeys::Use24HourTime,
-                QStringLiteral("false")
-                ),
-            false
-            );
-
-    m_showWeekends =
-        settingToBool(
-            settingsService->load(
-                SettingsKeys::ShowWeekends,
-                QStringLiteral("false")
-                ),
-            false
-            );
-
-    m_showKoreanTeacherEnglishNames =
-        settingToBool(
-            settingsService->load(
-                SettingsKeys::ShowKoreanTeacherEnglishNames,
-                QStringLiteral("false")
-                ),
-            false
-            );
-
-    m_showAllHours =
-        settingToBool(
-            settingsService->load(
-                SettingsKeys::ShowAllHoursV2,
-                QStringLiteral("false")
-                ),
-            false
-            );
-
-    m_testingAffectsM1 =
-        settingToBool(
-            settingsService->load(
-                SettingsKeys::TestingAffectsM1,
-                QStringLiteral("false")
-                ),
-            false
-            );
+    const ScheduleSettingsValues settings =
+        ScheduleSettingsPreferences::load(settingsService);
+    m_use24h = settings.use24HourTime;
+    m_showWeekends = settings.showWeekends;
+    m_showKoreanTeacherEnglishNames = settings.showEnglishNames;
+    m_showAllHours = settings.showAllIntensiveHours;
+    m_testingAffectsM1 = settings.testingAffectsM1;
 
     m_displayMode =
         ScheduleDisplayModePreferences::load(
@@ -841,7 +638,6 @@ void ScheduleWidget::updateButtons()
         !m_regularModeButton
         || !m_intensiveModeButton
         || !m_testingModeButton
-        || !m_settingsButton
         || !m_testingClassesButton
         || !m_importButton
         || !m_testingBanner
@@ -867,21 +663,6 @@ void ScheduleWidget::updateButtons()
         m_displayMode == ScheduleDisplayMode::Testing
         );
 
-    m_settingsButton->setText(
-        QStringLiteral("\u2699")
-        );
-    m_settingsButton->setFont(
-        FontManager::getUiFont(
-            18,
-            QFont::DemiBold
-            )
-        );
-    m_settingsButton->setAccessibleName(
-        tr("Schedule Settings")
-        );
-    m_settingsButton->setToolTip(
-        tr("Schedule Settings")
-        );
     m_testingClassesButton->setText(
         tr("Testing Classes")
         );

@@ -48,6 +48,7 @@ public:
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode
         );
+    void refreshNavigationPreferences();
 
     void saveData() override;
 
@@ -102,7 +103,6 @@ private:
 
     bool dayFilterEnabled(const QString& key) const;
 
-    void openNavigationSettings();
 
     void setScheduleSource(
         ClassTabNavigation::ScheduleSource source

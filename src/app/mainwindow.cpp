@@ -109,6 +109,34 @@ MainWindow::MainWindow(
     restoreSplitter();
 }
 
+ApplicationServices* MainWindow::services() const
+{
+    return m_services.get();
+}
+
+CalendarPage* MainWindow::calendarPage() const
+{
+    return m_pages
+        ? m_pages->calendarPage()
+        : nullptr;
+}
+
+void MainWindow::refreshSchedulePreferences()
+{
+    if (m_pages)
+    {
+        m_pages->refreshSchedulePreferences();
+    }
+}
+
+void MainWindow::refreshNavigationPreferences()
+{
+    if (m_pages)
+    {
+        m_pages->refreshNavigationPreferences();
+    }
+}
+
 void MainWindow::initializeServices()
 {
     m_services =

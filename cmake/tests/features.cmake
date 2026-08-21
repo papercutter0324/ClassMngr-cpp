@@ -299,12 +299,12 @@ qt_add_executable(ClassMngrClassTransferTests
         src/domain/models/classroom.cpp
         src/features/schedule/schedule_display_mode_preferences.cpp
         src/features/schedule/schedule_display_mode_preferences.h
+        src/features/schedule/schedule_settings_preferences.cpp
+        src/features/schedule/schedule_settings_preferences.h
         src/features/schedule/ui/schedule_editor_dialog.h
         src/features/schedule/ui/schedule_page.cpp
         src/features/schedule/ui/schedule_page.h
         src/features/schedule/ui/schedule_print_dialog.h
-        src/features/schedule/ui/schedule_settings_dialog.cpp
-        src/features/schedule/ui/schedule_settings_dialog.h
         src/features/schedule/ui/schedule_cell_widget_factory.cpp
         src/features/schedule/ui/schedule_cell_widget_factory.h
         src/features/schedule/ui/schedule_table_renderer.cpp
