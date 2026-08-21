@@ -2,10 +2,11 @@
 
 void SpeakingEvalPage::buildUi()
 {
+    const int pageMargin = m_embedded ? 0 : UiConstants::Pages::Margin;
     contentLayout()->setContentsMargins(
-        UiConstants::Pages::Margin,
-        UiConstants::Pages::Margin,
-        UiConstants::Pages::Margin,
+        pageMargin,
+        pageMargin,
+        pageMargin,
         0
         );
 
@@ -13,18 +14,64 @@ void SpeakingEvalPage::buildUi()
         UiConstants::Pages::Spacing
         );
 
-    m_pageHeader = new PageHeader(
-        tr("Speaking Evaluation"),
-        tr("No class selected"),
-        this
-        );
-    contentLayout()->addWidget(m_pageHeader);
-    contentLayout()->addSpacing(
-        UiConstants::Pages::HeaderContentSpacing
-        );
+    if (!m_embedded)
+    {
+        m_pageHeader = new PageHeader(
+            tr("Speaking Evaluation"),
+            tr("No class selected"),
+            this
+            );
+        contentLayout()->addWidget(m_pageHeader);
+        contentLayout()->addSpacing(
+            UiConstants::Pages::HeaderContentSpacing
+            );
+    }
+    else
+    {
+        auto* topBar = new QWidget(this);
+        auto* topLayout = new QHBoxLayout(topBar);
+        topLayout->setContentsMargins(0, 0, 0, 0);
+        topLayout->setSpacing(10);
+
+        m_embeddedHeading = new QLabel(topBar);
+        m_embeddedHeading->setObjectName(
+            QStringLiteral("classEvaluationsHeading")
+            );
+        m_embeddedHeading->setFont(
+            FontManager::getUiFont(18, QFont::DemiBold)
+            );
+        topLayout->addWidget(m_embeddedHeading);
+        topLayout->addStretch();
+
+        m_embeddedEvaluationLabel = new QLabel(topBar);
+        m_embeddedEvaluationLabel->setObjectName(
+            QStringLiteral("classEvaluationsEvaluationLabel")
+            );
+        m_embeddedEvaluationLabel->setFont(FontManager::getUiFont(12));
+        topLayout->addWidget(m_embeddedEvaluationLabel);
+
+        m_embeddedEvaluationCombo = new QComboBox(topBar);
+        m_embeddedEvaluationCombo->setObjectName(
+            QStringLiteral("classEvaluationsEvaluationCombo")
+            );
+        m_embeddedEvaluationCombo->setFont(FontManager::getUiFont(12));
+        m_embeddedEvaluationCombo->setMinimumWidth(170);
+
+        for (const QString& evaluationName : evaluationNames())
+        {
+            m_embeddedEvaluationCombo->addItem(
+                evaluationLabel(evaluationName),
+                evaluationName
+                );
+        }
+
+        topLayout->addWidget(m_embeddedEvaluationCombo);
+        contentLayout()->addWidget(topBar);
+    }
 
     m_tabsContainer =
         new QWidget(this);
+    m_tabsContainer->setVisible(!m_embedded);
     m_tabsContainer->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Maximum
@@ -51,6 +98,10 @@ void SpeakingEvalPage::buildUi()
             m_tabsContainer
             );
     m_evaluationTabs->setObjectName("speakingEvalEvaluationTabs");
+    if (m_embedded)
+    {
+        m_evaluationTabs->setObjectName("classEvaluationsEvaluationTabs");
+    }
     m_evaluationTabs->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Maximum
@@ -72,7 +123,10 @@ void SpeakingEvalPage::buildUi()
     }
 
     tabsLayout->addWidget(m_evaluationTabs);
-    contentLayout()->addWidget(m_tabsContainer);
+    if (!m_embedded)
+    {
+        contentLayout()->addWidget(m_tabsContainer);
+    }
 
     m_undoStack =
         new QUndoStack(this);
@@ -84,6 +138,10 @@ void SpeakingEvalPage::buildUi()
 
     m_table =
         new SpeakingEvalTableView(this);
+    if (m_embedded)
+    {
+        m_table->setObjectName("classEvaluationsTable");
+    }
 
     m_table->setSizePolicy(
         QSizePolicy::Expanding,
@@ -122,25 +180,41 @@ void SpeakingEvalPage::buildUi()
 
     setupTable();
 
-    clearLayout(
-        bottomLayout()
-        );
+    clearLayout(bottomLayout());
 
-    bottomLayout()->addStretch();
+    if (!m_embedded)
+    {
+        bottomLayout()->addStretch();
+    }
 
     m_importNamesButton =
         new TextFitPushButton(
             tr("Import Names"),
             this
             );
+    if (m_embedded)
+    {
+        m_importNamesButton->setObjectName(
+            "classEvaluationsImportNamesButton");
+    }
 
     m_importNamesButton->setSizePolicy(
-        QSizePolicy::Expanding,
+        m_embedded
+            ? QSizePolicy::Maximum
+            : QSizePolicy::Expanding,
         QSizePolicy::Preferred
         );
 
     bottomLayout()->addWidget(m_importNamesButton);
-    bottomLayout()->addSpacing(20);
+
+    if (m_embedded)
+    {
+        bottomLayout()->addStretch();
+    }
+    else
+    {
+        bottomLayout()->addSpacing(20);
+    }
 
     const QList<QString> reportLabels{
         tr("Report Editor"),
@@ -158,20 +232,33 @@ void SpeakingEvalPage::buildUi()
                 );
 
         button->setSizePolicy(
-            QSizePolicy::Expanding,
+            m_embedded
+                ? QSizePolicy::Maximum
+                : QSizePolicy::Expanding,
             QSizePolicy::Preferred
             );
 
         bottomLayout()->addWidget(button);
+        if (m_embedded)
+        {
+            button->setObjectName(
+                index == 0
+                    ? "classEvaluationsReportEditorButton"
+                    : "classEvaluationsGenerateCommentsButton"
+                );
+        }
         m_reportButtons.append(button);
 
-        if (index == 1)
+        if (index == 1 && !m_embedded)
         {
             bottomLayout()->addSpacing(20);
         }
     }
 
-    bottomLayout()->addSpacing(20);
+    if (!m_embedded)
+    {
+        bottomLayout()->addSpacing(20);
+    }
 
     m_koreanKeyboardButton = new QPushButton(this);
     m_koreanKeyboardButton->setObjectName(
@@ -192,6 +279,7 @@ void SpeakingEvalPage::buildUi()
         );
 
     bottomLayout()->addWidget(m_koreanKeyboardButton);
+    m_koreanKeyboardButton->setVisible(!m_embedded);
 
     m_saveButton =
         new TextFitPushButton(
@@ -205,7 +293,10 @@ void SpeakingEvalPage::buildUi()
         );
 
     bottomLayout()->addWidget(m_saveButton);
-    bottomLayout()->addStretch();
+    if (!m_embedded)
+    {
+        bottomLayout()->addStretch();
+    }
 
     connect(
         m_importNamesButton,
@@ -265,6 +356,22 @@ void SpeakingEvalPage::buildUi()
                 );
         }
         );
+
+    if (m_embeddedEvaluationCombo)
+    {
+        connect(
+            m_embeddedEvaluationCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            [this](int index)
+            {
+                if (m_evaluationTabs)
+                {
+                    m_evaluationTabs->setCurrentIndex(index);
+                }
+            }
+            );
+    }
 
     connect(
         m_table->selectionModel(),
@@ -370,6 +477,16 @@ void SpeakingEvalPage::setupTable()
 
 void SpeakingEvalPage::updateHeaderText()
 {
+    if (m_embeddedHeading)
+    {
+        m_embeddedHeading->setText(tr("Speaking Evaluations"));
+    }
+
+    if (m_embeddedEvaluationLabel)
+    {
+        m_embeddedEvaluationLabel->setText(tr("Evaluation"));
+    }
+
     if (!m_pageHeader)
     {
         return;

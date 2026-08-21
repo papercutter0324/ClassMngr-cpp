@@ -3,10 +3,12 @@
 
 SpeakingEvalPage::SpeakingEvalPage(
     ApplicationServices* services,
+    bool embedded,
     QWidget* parent
     )
     : BasePage(parent)
     , m_services(services)
+    , m_embedded(embedded)
     , m_autosave(new AutosaveCoordinator(this))
 {
     setProperty("role", UiRoles::SpeakingEvals);
@@ -117,6 +119,10 @@ void SpeakingEvalPage::loadEvaluations(
                 )
             {
                 m_evaluationTabs->setCurrentIndex(index);
+                if (m_embeddedEvaluationCombo)
+                {
+                    m_embeddedEvaluationCombo->setCurrentIndex(index);
+                }
                 break;
             }
         }
@@ -444,7 +450,7 @@ void SpeakingEvalPage::rebuildClassTabs(
     }
 
     m_classTabsContainer->setVisible(
-        m_classTabs && !m_evaluationClasses.isEmpty()
+        !m_embedded && m_classTabs && !m_evaluationClasses.isEmpty()
         );
 
     syncEvaluationTabFont();
@@ -718,6 +724,10 @@ void SpeakingEvalPage::restoreEvaluationTabSelection()
                 )
             {
                 m_evaluationTabs->setCurrentIndex(index);
+                if (m_embeddedEvaluationCombo)
+                {
+                    m_embeddedEvaluationCombo->setCurrentIndex(index);
+                }
                 break;
             }
         }
@@ -904,7 +914,9 @@ void SpeakingEvalPage::setEvaluationEditorAvailable(
 {
     if (m_tabsContainer)
     {
-        m_tabsContainer->setVisible(available);
+        m_tabsContainer->setVisible(
+            !m_embedded && available
+            );
     }
 
     if (m_emptyLabel)

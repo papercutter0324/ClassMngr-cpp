@@ -65,6 +65,21 @@ void SpeakingEvalPage::retranslateUi()
         }
     }
 
+    if (m_embeddedEvaluationCombo)
+    {
+        for (int index = 0;
+             index < m_embeddedEvaluationCombo->count();
+             ++index)
+        {
+            m_embeddedEvaluationCombo->setItemText(
+                index,
+                evaluationLabel(
+                    m_embeddedEvaluationCombo->itemData(index).toString()
+                    )
+                );
+        }
+    }
+
     if (m_importNamesButton)
     {
         m_importNamesButton->setText(
@@ -190,6 +205,11 @@ void SpeakingEvalPage::openKoreanKeyboard()
     {
         m_onScreenKeyboard->showFor(m_table);
     }
+}
+
+void SpeakingEvalPage::showKoreanKeyboard()
+{
+    openKoreanKeyboard();
 }
 
 void SpeakingEvalPage::updateActions()

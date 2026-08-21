@@ -32,9 +32,6 @@ inline constexpr auto TeacherInfo =
 inline constexpr auto MyInfo =
     "my_info";
 
-inline constexpr auto RostersPage =
-    "rosters_page";
-
 inline constexpr auto SpeakingEvals =
     "speaking_evals";
 

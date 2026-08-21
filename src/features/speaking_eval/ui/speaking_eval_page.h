@@ -15,6 +15,7 @@
 class ApplicationServices;
 class AutosaveCoordinator;
 class PageHeader;
+class QComboBox;
 class QLabel;
 class QModelIndex;
 class QPushButton;
@@ -33,6 +34,7 @@ class SpeakingEvalPage : public BasePage
 public:
     explicit SpeakingEvalPage(
         ApplicationServices* services,
+        bool embedded = false,
         QWidget* parent = nullptr
         );
 
@@ -49,6 +51,7 @@ public:
         ScheduleDisplayMode mode
         );
     void refreshNavigationPreferences();
+    void showKoreanKeyboard();
 
     void saveData() override;
 
@@ -188,6 +191,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    bool m_embedded = false;
     Classroom m_classroom;
     QList<Classroom> m_evaluationClasses;
     QString m_evaluationName;
@@ -205,6 +209,9 @@ private:
     };
 
     PageHeader* m_pageHeader = nullptr;
+    QLabel* m_embeddedHeading = nullptr;
+    QLabel* m_embeddedEvaluationLabel = nullptr;
+    QComboBox* m_embeddedEvaluationCombo = nullptr;
     QLabel* m_emptyLabel = nullptr;
     QWidget* m_tabsContainer = nullptr;
     QWidget* m_classTabsContainer = nullptr;

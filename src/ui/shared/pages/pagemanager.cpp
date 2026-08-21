@@ -8,9 +8,7 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
-#include "features/roster/ui/rosters_page.h"
 #include "features/schedule/ui/schedule_page.h"
-#include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
@@ -80,12 +78,6 @@ void PageManager::initialize(
             this
             );
 
-    m_rostersPage =
-        new RostersPage(
-            m_services,
-            this
-            );
-
     m_subPrepPage =
         new SubPrepPage(
             m_services,
@@ -127,12 +119,6 @@ void PageManager::initialize(
     m_campusDashboard =
         new CampusDashboardPage(
             m_adminMode,
-            this
-            );
-
-    m_speakingPage =
-        new SpeakingEvalPage(
-            m_services,
             this
             );
 
@@ -191,12 +177,6 @@ void PageManager::registerPages()
 
     m_pages[PageType::CampusDashboard] =
         m_campusDashboard;
-
-    m_pages[PageType::Rosters] =
-        m_rostersPage;
-
-    m_pages[PageType::SpeakingEval] =
-        m_speakingPage;
 
     m_pages[PageType::PdfViewer] =
         m_pdfViewerPage;
@@ -356,6 +336,11 @@ void PageManager::setDatabaseOpen(
             page->setDatabaseOpen(databaseOpen);
         }
     }
+
+    if (m_classesPage)
+    {
+        m_classesPage->setEmbeddedDatabaseOpen(databaseOpen);
+    }
 }
 
 void PageManager::clearDatabaseState()
@@ -421,15 +406,6 @@ void PageManager::refreshNavigationPreferences()
         m_classesPage->refreshNavigationPreferences();
     }
 
-    if (m_rostersPage)
-    {
-        m_rostersPage->refreshNavigationPreferences();
-    }
-
-    if (m_speakingPage)
-    {
-        m_speakingPage->refreshNavigationPreferences();
-    }
 }
 
 
@@ -492,11 +468,6 @@ MyClassesPage* PageManager::myClassesPage() const
     return m_myClassesPage;
 }
 
-RostersPage* PageManager::rostersPage() const
-{
-    return m_rostersPage;
-}
-
 SubPrepPage* PageManager::subPrepPage() const
 {
     return m_subPrepPage;
@@ -530,11 +501,6 @@ StaffDirectoryPage* PageManager::gsTeamPage() const
 CampusDashboardPage* PageManager::campusDashboard() const
 {
     return m_campusDashboard;
-}
-
-SpeakingEvalPage* PageManager::speakingPage() const
-{
-    return m_speakingPage;
 }
 
 PdfViewerPage* PageManager::pdfViewerPage() const

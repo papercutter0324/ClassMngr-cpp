@@ -10,9 +10,9 @@
 
 class ApplicationServices;
 class ClassDetailsPage;
-class ClassEvaluationsPage;
 class ClassNotesPage;
 class ClassAnalyticsPage;
+class SpeakingEvalPage;
 class QLabel;
 class NavigationPillButton;
 class NavigationTabWidget;
@@ -47,6 +47,11 @@ public:
         ClassesSection section = ClassesSection::Details
         );
 
+    bool openEvaluation(
+        int classId,
+        const QString& evaluationName
+        );
+
     bool loadClasses();
 
     int currentClassId() const;
@@ -55,6 +60,7 @@ public:
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode
         );
+    void setEmbeddedDatabaseOpen(bool databaseOpen);
 
     void saveData() override;
     bool saveChanges() override;
@@ -67,6 +73,9 @@ public:
     void refreshNavigationPreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;
+    [[nodiscard]] PageOutputCapabilities outputCapabilities() const override;
+    void printCurrentPage() override;
+    void saveCurrentPageAs() override;
 
 signals:
     void classInfoSaved(int classId);
@@ -130,6 +139,6 @@ private:
     ClassDetailsPage* m_detailsPage = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;
     ClassAnalyticsPage* m_analyticsPage = nullptr;
-    ClassEvaluationsPage* m_evaluationsPage = nullptr;
+    SpeakingEvalPage* m_evaluationsPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
 };

@@ -228,8 +228,6 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
         QStringLiteral("my_info_schedule"),
         QStringLiteral("my_info_calendar"),
         QStringLiteral("classes"),
-        QStringLiteral("my_info_class_roster"),
-        QStringLiteral("speaking_evaluations"),
         QStringLiteral("sub_prep"),
         QStringLiteral("co_teachers"),
         QStringLiteral("campus_staff"),

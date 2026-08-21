@@ -104,7 +104,7 @@
           <number>0</number>
          </property>
          <property name="currentIndex">
-          <number>4</number>
+          <number>3</number>
          </property>
          <widget class="QWidget" name="pageClassInfo">
           <property name="autoFillBackground">
@@ -117,9 +117,7 @@
           </property>
          </widget>
          <widget class="QWidget" name="pageTeacherInfo"/>
-         <widget class="QWidget" name="pageSpeakingEval"/>
          <widget class="QWidget" name="pageCampusDashboard"/>
-         <widget class="QWidget" name="pageRoster"/>
         </widget>
        </widget>
       </item>

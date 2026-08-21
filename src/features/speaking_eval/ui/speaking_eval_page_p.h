@@ -30,6 +30,7 @@
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QAbstractButton>
+#include <QComboBox>
 #include <QDialog>
 #include <QHash>
 #include <QHBoxLayout>

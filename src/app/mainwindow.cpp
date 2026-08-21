@@ -19,11 +19,9 @@
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
-#include "features/roster/ui/rosters_page.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
-#include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/dialogs/about_dialog.h"
@@ -572,25 +570,7 @@ void MainWindow::connectSignals()
         m_pages->classesPage(),
         &ClassesPage::setScheduleDisplayMode
         );
-    connect(
-        m_pages->mySchedulePage(),
-        &SchedulePage::displayModeChanged,
-        m_pages->rostersPage(),
-        &RostersPage::setScheduleDisplayMode
-        );
-    connect(
-        m_pages->mySchedulePage(),
-        &SchedulePage::displayModeChanged,
-        m_pages->speakingPage(),
-        &SpeakingEvalPage::setScheduleDisplayMode
-        );
     m_pages->classesPage()->setScheduleDisplayMode(
-        m_pages->mySchedulePage()->displayMode()
-        );
-    m_pages->rostersPage()->setScheduleDisplayMode(
-        m_pages->mySchedulePage()->displayMode()
-        );
-    m_pages->speakingPage()->setScheduleDisplayMode(
         m_pages->mySchedulePage()->displayMode()
         );
 

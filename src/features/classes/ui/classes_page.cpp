@@ -8,11 +8,11 @@
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_details_page.h"
-#include "features/classes/ui/class_evaluations_page.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/class_analytics_page.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/roster/ui/roster_editor_widget.h"
+#include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -221,6 +221,26 @@ bool ClassesPage::loadClasses()
         );
 }
 
+bool ClassesPage::openEvaluation(
+    int classId,
+    const QString& evaluationName
+    )
+{
+    if (!openClass(classId, ClassesSection::Evaluations))
+    {
+        return false;
+    }
+
+    const Classroom classroom = classroomById(m_currentClassId);
+    if (classroom.id <= 0 || evaluationName.trimmed().isEmpty())
+    {
+        return classroom.id > 0;
+    }
+
+    m_evaluationsPage->loadEvaluation(classroom, evaluationName);
+    return true;
+}
+
 int ClassesPage::currentClassId() const
 {
     return m_currentClassId;
@@ -387,6 +407,39 @@ void ClassesPage::retranslateUi()
     updateHeaderText();
 }
 
+void ClassesPage::setEmbeddedDatabaseOpen(bool databaseOpen)
+{
+    m_detailsPage->setDatabaseOpen(databaseOpen);
+    m_rosterEditor->setDatabaseOpen(databaseOpen);
+    m_analyticsPage->setDatabaseOpen(databaseOpen);
+    m_evaluationsPage->setDatabaseOpen(databaseOpen);
+    m_notesPage->setDatabaseOpen(databaseOpen);
+}
+
+PageOutputCapabilities ClassesPage::outputCapabilities() const
+{
+    const BasePage* editor = activeEditor();
+    return isDatabaseOpen() && editor
+        ? editor->outputCapabilities()
+        : PageOutputCapabilities{};
+}
+
+void ClassesPage::printCurrentPage()
+{
+    if (BasePage* editor = activeEditor())
+    {
+        editor->printCurrentPage();
+    }
+}
+
+void ClassesPage::saveCurrentPageAs()
+{
+    if (BasePage* editor = activeEditor())
+    {
+        editor->saveCurrentPageAs();
+    }
+}
+
 void ClassesPage::buildUi()
 {
     setBottomBarVisible(false);
@@ -491,7 +544,7 @@ void ClassesPage::buildUi()
     m_rosterEditor = new RosterEditorWidget(m_services, true, m_editorStack);
     m_rosterEditor->setBottomKeyboardButtonVisible(false);
     m_analyticsPage = new ClassAnalyticsPage(m_services, true, m_editorStack);
-    m_evaluationsPage = new ClassEvaluationsPage(m_services, true, m_editorStack);
+    m_evaluationsPage = new SpeakingEvalPage(m_services, true, m_editorStack);
     m_notesPage = new ClassNotesPage(m_services, true, m_editorStack);
     m_editorStack->addWidget(m_detailsPage);
     m_editorStack->addWidget(m_rosterEditor);
@@ -501,12 +554,41 @@ void ClassesPage::buildUi()
     contentLayout()->addWidget(m_editorStack, 1);
 
     connect(
+        m_rosterEditor,
+        &BasePage::outputCapabilitiesChanged,
+        this,
+        [this]()
+        {
+            if (activeEditor() == m_rosterEditor)
+            {
+                emit outputCapabilitiesChanged();
+            }
+        }
+        );
+    connect(
+        m_evaluationsPage,
+        &BasePage::outputCapabilitiesChanged,
+        this,
+        [this]()
+        {
+            if (activeEditor() == m_evaluationsPage)
+            {
+                emit outputCapabilitiesChanged();
+            }
+        }
+        );
+
+    connect(
         m_koreanKeyboardButton,
         &QPushButton::clicked,
         this,
         [this]()
         {
-            if (m_onScreenKeyboard)
+            if (m_currentSection == ClassesSection::Evaluations)
+            {
+                m_evaluationsPage->showKoreanKeyboard();
+            }
+            else if (m_onScreenKeyboard)
             {
                 m_onScreenKeyboard->showForFocusScope(this);
             }
@@ -926,6 +1008,7 @@ bool ClassesPage::activateSection(
     m_currentSection = section;
     restoreSelections();
     showActiveEditor();
+    emit outputCapabilitiesChanged();
     return true;
 }
 
@@ -944,7 +1027,7 @@ void ClassesPage::loadEditors(
     m_detailsPage->loadClass(classroom);
     m_rosterEditor->loadClass(classroom);
     m_analyticsPage->loadClass(classroom);
-    m_evaluationsPage->loadClass(classroom);
+    m_evaluationsPage->loadEvaluation(classroom, {});
     m_notesPage->loadClass(classroom);
     showActiveEditor();
 }

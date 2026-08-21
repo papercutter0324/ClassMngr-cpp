@@ -9,10 +9,8 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "features/my_info/ui/personal_details_page.h"
-#include "features/roster/ui/rosters_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "ui/shared/pages/pagemanager.h"
-#include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
@@ -191,12 +189,6 @@ void NavigationController::handleNavigation(
             return;
         }
 
-        if (data.routeKey == QStringLiteral("my_info_class_roster"))
-        {
-            handleRosters(data);
-            return;
-        }
-
         if (
             data.classId > 0
             && data.keys.contains(QStringLiteral("student_evaluations"))
@@ -215,24 +207,20 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            const Result<Classroom> classroom =
-                m_services
-                    ->classService()
-                    ->classroom(data.classId);
-
             if (
-                !classroom
-                || !m_pages->confirmCurrentPageCanLeave()
+                !m_pages->confirmCurrentPageCanLeave()
                 )
             {
                 return;
             }
 
-            m_pages->speakingPage()->loadEvaluation(
-                *classroom,
-                evaluationName
-                );
-            m_pages->showPage(PageType::SpeakingEval);
+            if (m_pages->classesPage()->openEvaluation(
+                    data.classId,
+                    evaluationName
+                    ))
+            {
+                m_pages->showPage(PageType::Classes);
+            }
             return;
         }
 
@@ -313,22 +301,6 @@ void NavigationController::handleNavigation(
         if (data.keys.first() == QStringLiteral("document"))
         {
             handleDocument(data);
-            return;
-        }
-
-        if (data.keys.first() == QStringLiteral("speaking_evaluations"))
-        {
-            if (
-                !m_services
-                || !m_services->speakingEvaluationService()->isAvailable()
-                || !m_pages->confirmCurrentPageCanLeave()
-                )
-            {
-                return;
-            }
-
-            m_pages->speakingPage()->loadEvaluations();
-            m_pages->showPage(PageType::SpeakingEval);
             return;
         }
 
@@ -517,31 +489,6 @@ void NavigationController::handleMyInfo(
     {
         m_pages->personalDetailsPage()->scrollToTop();
     }
-}
-
-void NavigationController::handleRosters(
-    const NavigationData& data
-    )
-{
-    Q_UNUSED(data)
-
-    if (
-        !m_services
-        || !m_services->rosterService()->isAvailable()
-        || !m_pages->confirmCurrentPageCanLeave()
-        )
-    {
-        return;
-    }
-
-    m_pages->rostersPage()
-        ->loadRosters();
-
-    m_pages->showPage(PageType::Rosters);
-
-    m_sidebar->selectByKeys(
-        {QStringLiteral("my_info_class_roster")}
-        );
 }
 
 void NavigationController::handleCampus(

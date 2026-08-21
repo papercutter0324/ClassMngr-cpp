@@ -74,10 +74,8 @@ void Sidebar::setDatabaseSectionsVisible(
         QStringLiteral("my_info_schedule"),
         QStringLiteral("my_info_calendar"),
         QStringLiteral("my_info_class_list"),
-        QStringLiteral("my_info_class_roster"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
-        QStringLiteral("speaking_evaluations"),
         QStringLiteral("co_teachers"),
         QStringLiteral("campus_staff")
     };

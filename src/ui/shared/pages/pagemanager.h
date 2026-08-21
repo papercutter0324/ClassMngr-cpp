@@ -18,13 +18,11 @@ class SchedulePage;
 class CalendarPage;
 class PersonalDetailsPage;
 class MyClassesPage;
-class RostersPage;
 class ClassesPage;
 class TestingClassesPage;
 class TeacherInfoPage;
 class StaffDirectoryPage;
 class CampusDashboardPage;
-class SpeakingEvalPage;
 class SubPrepPage;
 class PdfViewerPage;
 
@@ -47,8 +45,6 @@ enum class PageType
     NativeEnglishTeachers,
     GsTeam,
     CampusDashboard,
-    Rosters,
-    SpeakingEval,
     SubPrep,
     PdfViewer
 };
@@ -152,8 +148,6 @@ public:
 
     MyClassesPage* myClassesPage() const;
 
-    RostersPage* rostersPage() const;
-
     SubPrepPage* subPrepPage() const;
 
     ClassesPage* classesPage() const;
@@ -166,8 +160,6 @@ public:
     StaffDirectoryPage* gsTeamPage() const;
 
     CampusDashboardPage* campusDashboard() const;
-
-    SpeakingEvalPage* speakingPage() const;
 
     PdfViewerPage* pdfViewerPage() const;
 
@@ -221,8 +213,6 @@ private:
 
     MyClassesPage* m_myClassesPage = nullptr;
 
-    RostersPage* m_rostersPage = nullptr;
-
     SubPrepPage* m_subPrepPage = nullptr;
 
     ClassesPage* m_classesPage = nullptr;
@@ -235,8 +225,6 @@ private:
     StaffDirectoryPage* m_gsTeamPage = nullptr;
 
     CampusDashboardPage* m_campusDashboard = nullptr;
-
-    SpeakingEvalPage* m_speakingPage = nullptr;
 
     PdfViewerPage* m_pdfViewerPage = nullptr;
 

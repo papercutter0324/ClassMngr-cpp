@@ -3,6 +3,7 @@
 #include "features/roster/ui/roster_editor_widget.h"
 #include "domain/models/speaking_evaluation.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
+#include "ui/shared/widgets/navigation_pill_style.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -12,6 +13,7 @@
 #include <QAbstractButton>
 #include <QComboBox>
 #include <QLabel>
+#include <QLayout>
 #include <QPushButton>
 #include <QTableView>
 
@@ -332,7 +334,7 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
     ApplicationServices services;
     ClassesPage page(&services);
     page.resize(1200, 800);
-    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QVERIFY(page.openEvaluation(42, QStringLiteral("Winter")));
     page.show();
     QApplication::processEvents();
 
@@ -376,6 +378,15 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
     QCOMPARE(reportEditorButton->parentWidget(), generateCommentsButton->parentWidget());
     QVERIFY(importNamesButton->x() < reportEditorButton->x());
     QVERIFY(reportEditorButton->x() < generateCommentsButton->x());
+    QCOMPARE(
+        generateCommentsButton->geometry().right(),
+        generateCommentsButton->parentWidget()->width()
+            - generateCommentsButton->parentWidget()
+                ->layout()
+                ->contentsMargins()
+                .right()
+            - 1
+        );
     QCOMPARE(table->model()->rowCount(), SpeakingEval::RowCount);
     QCOMPARE(table->model()->columnCount(), SpeakingEval::ColumnCount);
     QCOMPARE(
