@@ -15,6 +15,7 @@ class TeacherInfoSection;
 class ClassDetailsSection;
 class ClassScheduleSection;
 
+class QLabel;
 class QPushButton;
 class SectionCard;
 class QVBoxLayout;
@@ -91,6 +92,7 @@ private:
     QVBoxLayout* m_scrollContentLayout{nullptr};
 
     PageHeader* m_pageHeader{nullptr};
+    QLabel* m_embeddedHeading{nullptr};
 
     QPushButton* m_saveButton{nullptr};
 };

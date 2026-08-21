@@ -7,6 +7,7 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "core/fontmanager.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "ui/shared/constants/gui_constants.h"
@@ -14,6 +15,7 @@
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QHBoxLayout>
+#include <QFont>
 #include <QLabel>
 #include <QPushButton>
 #include <QTextEdit>
@@ -275,6 +277,18 @@ void ClassNotesPage::buildUi()
             : UiConstants::Pages::Spacing
         );
 
+    if (m_embedded)
+    {
+        m_embeddedHeading = new QLabel(tr("Class Notes"), this);
+        m_embeddedHeading->setObjectName(
+            QStringLiteral("classNotesHeading")
+            );
+        m_embeddedHeading->setFont(
+            FontManager::getUiFont(18, QFont::DemiBold)
+            );
+        contentLayout()->addWidget(m_embeddedHeading);
+    }
+
     m_pageHeader = new PageHeader(
         tr("Class Notes"),
         tr("No class selected"),
@@ -375,6 +389,11 @@ void ClassNotesPage::buildUi()
 
 void ClassNotesPage::updateHeaderText()
 {
+    if (m_embeddedHeading)
+    {
+        m_embeddedHeading->setText(tr("Class Notes"));
+    }
+
     m_pageHeader->setTitle(tr("Class Notes"));
     m_pageHeader->setSubtitle(
         m_subtitleText.trimmed().isEmpty()

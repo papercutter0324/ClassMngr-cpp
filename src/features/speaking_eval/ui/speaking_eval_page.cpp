@@ -13,6 +13,11 @@ SpeakingEvalPage::SpeakingEvalPage(
 {
     setProperty("role", UiRoles::SpeakingEvals);
 
+    if (m_embedded)
+    {
+        setPageLayoutMargins({});
+    }
+
     buildUi();
     m_autosave->bindSaveButton(m_saveButton);
     connect(

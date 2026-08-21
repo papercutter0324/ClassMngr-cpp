@@ -162,6 +162,7 @@ private:
     bool m_bottomKeyboardButtonVisible = true;
 
     PageHeader* m_pageHeader = nullptr;
+    QLabel* m_embeddedHeading = nullptr;
 
     RosterTableView* m_table = nullptr;
     RosterHeaderView* m_header = nullptr;

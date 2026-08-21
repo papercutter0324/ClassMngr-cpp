@@ -152,6 +152,12 @@ ClassAnalyticsPage::ClassAnalyticsPage(
 {
     Q_ASSERT(m_services);
     setProperty("role", UiRoles::Analytics);
+
+    if (m_embedded)
+    {
+        setPageLayoutMargins({});
+    }
+
     buildUi();
 }
 
@@ -170,9 +176,13 @@ void ClassAnalyticsPage::buildUi()
     contentLayout()->addWidget(body);
 
     auto* content = body->contentLayout();
-    content->setContentsMargins(m_embedded ? 0 : 8, m_embedded ? 0 : 8,
-                                m_embedded ? 0 : 8, 12);
-    content->setSpacing(14);
+    content->setContentsMargins(
+        m_embedded ? 0 : 8,
+        m_embedded ? 0 : 8,
+        m_embedded ? 0 : 8,
+        m_embedded ? 0 : 12
+        );
+    content->setSpacing(m_embedded ? 12 : 14);
 
     auto* topBar = new QWidget(body);
     auto* topLayout = new QHBoxLayout(topBar);

@@ -16,10 +16,13 @@
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "core/utils/sidebar_node_naming.h"
 
+#include <QFont>
+#include <QLabel>
 #include <QPushButton>
 #include <QStringList>
 #include <QVBoxLayout>
@@ -112,6 +115,18 @@ void ClassDetailsPage::buildUi()
             ? 12
             : UiConstants::Pages::Spacing
         );
+
+    if (m_embedded)
+    {
+        m_embeddedHeading = new QLabel(tr("Class Details"), this);
+        m_embeddedHeading->setObjectName(
+            QStringLiteral("classDetailsHeading")
+            );
+        m_embeddedHeading->setFont(
+            FontManager::getUiFont(18, QFont::DemiBold)
+            );
+        contentLayout()->addWidget(m_embeddedHeading);
+    }
 
     m_pageHeader = new PageHeader(
         tr("Class Information"),
@@ -527,6 +542,11 @@ void ClassDetailsPage::refresh()
 
 void ClassDetailsPage::retranslateUi()
 {
+    if (m_embeddedHeading)
+    {
+        m_embeddedHeading->setText(tr("Class Details"));
+    }
+
     if (
         m_services
         && m_services->classService()

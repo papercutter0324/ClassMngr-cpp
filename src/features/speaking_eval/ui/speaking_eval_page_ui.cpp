@@ -11,7 +11,9 @@ void SpeakingEvalPage::buildUi()
         );
 
     contentLayout()->setSpacing(
-        UiConstants::Pages::Spacing
+        m_embedded
+            ? 12
+            : UiConstants::Pages::Spacing
         );
 
     if (!m_embedded)

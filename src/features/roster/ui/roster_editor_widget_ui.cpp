@@ -135,6 +135,18 @@ void RosterEditorWidget::buildUi()
             : UiConstants::Pages::Spacing
         );
 
+    if (m_embedded)
+    {
+        m_embeddedHeading = new QLabel(tr("Class Roster"), this);
+        m_embeddedHeading->setObjectName(
+            QStringLiteral("classRosterHeading")
+            );
+        m_embeddedHeading->setFont(
+            FontManager::getUiFont(18, QFont::DemiBold)
+            );
+        contentLayout()->addWidget(m_embeddedHeading);
+    }
+
     m_pageHeader = new PageHeader(
         tr("Class Roster"),
         tr("No class selected"),
@@ -298,6 +310,11 @@ void RosterEditorWidget::openKoreanKeyboard()
 
 void RosterEditorWidget::updateHeaderText()
 {
+    if (m_embeddedHeading)
+    {
+        m_embeddedHeading->setText(tr("Class Roster"));
+    }
+
     m_pageHeader->setTitle(tr("Class Roster"));
 
     if (m_classroom.id <= 0)

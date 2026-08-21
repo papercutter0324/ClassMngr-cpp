@@ -7,6 +7,7 @@
 
 class ApplicationServices;
 class AutosaveCoordinator;
+class QLabel;
 class PageHeader;
 class QPushButton;
 class SectionCard;
@@ -60,6 +61,7 @@ private:
 
     AutosaveCoordinator* m_autosave = nullptr;
     PageHeader* m_pageHeader = nullptr;
+    QLabel* m_embeddedHeading = nullptr;
     SectionCard* m_notesCard = nullptr;
     QLabel* m_timeFillerActivitiesLabel = nullptr;
     QTextEdit* m_notesEdit = nullptr;
