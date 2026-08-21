@@ -80,6 +80,7 @@ public:
     QAction* exportClasses = nullptr;
     QAction* newTeacher = nullptr;
     QAction* deleteTeacher = nullptr;
+    QAction* upcomingBirthdays = nullptr;
     QAction* importTeachers = nullptr;
 
     // =====================================================

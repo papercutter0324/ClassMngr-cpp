@@ -209,6 +209,11 @@ void ActionRegistry::retranslate()
         tr("Delete the selected teacher")
         );
     updateActionText(
+        upcomingBirthdays,
+        tr("Upcoming Birthdays..."),
+        tr("View staff birthdays for the next two weeks")
+        );
+    updateActionText(
         importTeachers,
         tr("Import Teachers..."),
         tr("Import teachers and campus staff from an Excel workbook")
@@ -687,6 +692,12 @@ void ActionRegistry::createClassActions()
         createAction(
             tr("Delete Teacher"),
             tr("Delete the selected teacher")
+            );
+
+    upcomingBirthdays =
+        createAction(
+            tr("Upcoming Birthdays..."),
+            tr("View staff birthdays for the next two weeks")
             );
 
     importTeachers =

@@ -413,3 +413,15 @@ qt_add_executable(ClassMngrClassTransferTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
+
+    classmngr_add_qt_test(
+        NAME UpcomingBirthdays
+        SOURCES
+            tests/upcoming_birthdays_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )

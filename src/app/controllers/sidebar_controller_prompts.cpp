@@ -235,6 +235,11 @@ void SidebarController::updateActionStates()
             m_actions->importTeachers->setEnabled(false);
         }
 
+        if (m_actions->upcomingBirthdays)
+        {
+            m_actions->upcomingBirthdays->setEnabled(false);
+        }
+
         return;
     }
 
@@ -246,6 +251,11 @@ void SidebarController::updateActionStates()
     if (m_actions->importTeachers)
     {
         m_actions->importTeachers->setEnabled(true);
+    }
+
+    if (m_actions->upcomingBirthdays)
+    {
+        m_actions->upcomingBirthdays->setEnabled(true);
     }
 
     const Result<QList<Classroom>> loadedClasses = classes->classes();

@@ -1,8 +1,13 @@
 #pragma once
 
+#include "features/teacher/upcoming_birthday_schedule.h"
+
+#include <QDate>
 #include <QList>
 #include <QObject>
 #include <QString>
+
+#include <optional>
 
 class ApplicationServices;
 class Sidebar;
@@ -36,6 +41,8 @@ public:
     void refreshTeacherSidebar();
     void refreshAllSidebars();
 
+    void showUpcomingBirthdaysIfRelevantOnStartup();
+
 public slots:
 
     void handleClassInfoSaved(
@@ -64,6 +71,7 @@ private slots:
 
     void addTeacher();
     void deleteTeacher();
+    void showUpcomingBirthdays();
     void importTeachers();
 
 private:
@@ -97,6 +105,9 @@ private:
     bool confirmDeleteTeacher(
         const Teacher& teacher
         ) const;
+
+    [[nodiscard]] std::optional<UpcomingBirthdaySchedule>
+        loadUpcomingBirthdaySchedule(const QDate& referenceDate) const;
 
     void updateActionStates();
 

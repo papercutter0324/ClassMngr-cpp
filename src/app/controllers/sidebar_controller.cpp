@@ -63,6 +63,13 @@ void SidebarController::connectActions(ActionRegistry& actions)
         );
 
     connect(
+        actions.upcomingBirthdays,
+        &QAction::triggered,
+        this,
+        &SidebarController::showUpcomingBirthdays
+        );
+
+    connect(
         actions.importTeachers,
         &QAction::triggered,
         this,

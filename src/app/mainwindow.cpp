@@ -838,6 +838,36 @@ void MainWindow::showEvent(QShowEvent* event)
 {
     QMainWindow::showEvent(event);
 
+    if (!m_startupBirthdayCheckQueued)
+    {
+        m_startupBirthdayCheckQueued = true;
+
+        if (
+            m_startupOptions.runPostShowStartupTasks
+            && m_services
+            && m_services->hasOpenDatabase()
+            && m_sidebarController
+            )
+        {
+            QTimer::singleShot(
+                0,
+                this,
+                [this]
+                {
+                    if (
+                        m_services
+                        && m_services->hasOpenDatabase()
+                        && m_sidebarController
+                        )
+                    {
+                        m_sidebarController
+                            ->showUpcomingBirthdaysIfRelevantOnStartup();
+                    }
+                }
+                );
+        }
+    }
+
     if (
         !m_startupFontSizeRefreshQueued
         && m_fontSizeController
@@ -1047,6 +1077,11 @@ void MainWindow::setDatabaseBackedActionsEnabled(
     if (m_actions.deleteTeacher)
     {
         m_actions.deleteTeacher->setEnabled(enabled);
+    }
+
+    if (m_actions.upcomingBirthdays)
+    {
+        m_actions.upcomingBirthdays->setEnabled(enabled);
     }
 }
 

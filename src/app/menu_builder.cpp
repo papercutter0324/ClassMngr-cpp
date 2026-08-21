@@ -1057,6 +1057,8 @@ void MenuBuilder::buildClassMenu(MainWindow* window)
     teacherMenu->addAction(a.newTeacher);
     teacherMenu->addAction(a.deleteTeacher);
     teacherMenu->addSeparator();
+    teacherMenu->addAction(a.upcomingBirthdays);
+    teacherMenu->addSeparator();
     teacherMenu->addAction(a.importTeachers);
 }
 
