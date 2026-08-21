@@ -344,11 +344,20 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
         QStringLiteral("classEvaluationsEvaluationCombo"));
     auto* table = page.findChild<QTableView*>(
         QStringLiteral("classEvaluationsTable"));
+    auto* importNamesButton = page.findChild<QPushButton*>(
+        QStringLiteral("classEvaluationsImportNamesButton"));
+    auto* reportEditorButton = page.findChild<QPushButton*>(
+        QStringLiteral("classEvaluationsReportEditorButton"));
+    auto* generateCommentsButton = page.findChild<QPushButton*>(
+        QStringLiteral("classEvaluationsGenerateCommentsButton"));
 
     QVERIFY(heading);
     QVERIFY(evaluationLabel);
     QVERIFY(evaluationCombo);
     QVERIFY(table);
+    QVERIFY(importNamesButton);
+    QVERIFY(reportEditorButton);
+    QVERIFY(generateCommentsButton);
     QCOMPARE(heading->text(), QStringLiteral("Speaking Evaluations"));
     QCOMPARE(evaluationLabel->text(), QStringLiteral("Evaluation"));
     QCOMPARE(evaluationCombo->count(), 4);
@@ -357,6 +366,16 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
     QCOMPARE(evaluationCombo->itemText(2), QStringLiteral("Summer"));
     QCOMPARE(evaluationCombo->itemText(3), QStringLiteral("Fall"));
     QVERIFY(table->isVisible());
+    QVERIFY(importNamesButton->isVisible());
+    QVERIFY(reportEditorButton->isVisible());
+    QVERIFY(generateCommentsButton->isVisible());
+    QCOMPARE(importNamesButton->text(), QStringLiteral("Import Names"));
+    QCOMPARE(reportEditorButton->text(), QStringLiteral("Report Editor"));
+    QCOMPARE(generateCommentsButton->text(), QStringLiteral("Generate Comments"));
+    QCOMPARE(importNamesButton->parentWidget(), reportEditorButton->parentWidget());
+    QCOMPARE(reportEditorButton->parentWidget(), generateCommentsButton->parentWidget());
+    QVERIFY(importNamesButton->x() < reportEditorButton->x());
+    QVERIFY(reportEditorButton->x() < generateCommentsButton->x());
     QCOMPARE(table->model()->rowCount(), SpeakingEval::RowCount);
     QCOMPARE(table->model()->columnCount(), SpeakingEval::ColumnCount);
     QCOMPARE(

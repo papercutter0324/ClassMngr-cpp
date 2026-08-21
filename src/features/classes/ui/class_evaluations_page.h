@@ -8,6 +8,7 @@
 class ApplicationServices;
 class QComboBox;
 class QLabel;
+class QPushButton;
 class QTableView;
 class SpeakingEvalModel;
 
@@ -47,6 +48,9 @@ private:
     QLabel* m_heading = nullptr;
     QLabel* m_evaluationLabel = nullptr;
     QComboBox* m_evaluationCombo = nullptr;
+    QPushButton* m_importNamesButton = nullptr;
+    QPushButton* m_reportEditorButton = nullptr;
+    QPushButton* m_generateCommentsButton = nullptr;
     SpeakingEvalModel* m_model = nullptr;
     QTableView* m_table = nullptr;
 };

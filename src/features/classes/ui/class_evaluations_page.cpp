@@ -10,6 +10,7 @@
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
+#include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QAbstractItemView>
 #include <QComboBox>
@@ -88,6 +89,23 @@ void ClassEvaluationsPage::buildUi()
     m_table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     contentLayout()->addWidget(m_table, 1);
 
+    m_importNamesButton = new TextFitPushButton(tr("Import Names"), this);
+    m_importNamesButton->setObjectName(
+        QStringLiteral("classEvaluationsImportNamesButton"));
+    bottomLayout()->addWidget(m_importNamesButton);
+    bottomLayout()->addStretch();
+
+    m_reportEditorButton = new TextFitPushButton(tr("Report Editor"), this);
+    m_reportEditorButton->setObjectName(
+        QStringLiteral("classEvaluationsReportEditorButton"));
+    bottomLayout()->addWidget(m_reportEditorButton);
+
+    m_generateCommentsButton =
+        new TextFitPushButton(tr("Generate Comments"), this);
+    m_generateCommentsButton->setObjectName(
+        QStringLiteral("classEvaluationsGenerateCommentsButton"));
+    bottomLayout()->addWidget(m_generateCommentsButton);
+
     connect(
         m_evaluationCombo,
         QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -120,6 +138,9 @@ void ClassEvaluationsPage::retranslateUi()
 {
     m_heading->setText(tr("Speaking Evaluations"));
     m_evaluationLabel->setText(tr("Evaluation"));
+    m_importNamesButton->setText(tr("Import Names"));
+    m_reportEditorButton->setText(tr("Report Editor"));
+    m_generateCommentsButton->setText(tr("Generate Comments"));
 }
 
 void ClassEvaluationsPage::onEvaluationChanged()
