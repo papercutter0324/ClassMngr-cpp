@@ -64,6 +64,7 @@ void PdfViewerPage::handleDocumentStatusChanged()
         resetZoom();
         updatePageDisplay();
         updateDocumentActionButtons();
+        notifyDocumentLoaded();
         return;
     }
 

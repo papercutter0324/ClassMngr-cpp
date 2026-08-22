@@ -123,6 +123,18 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    classmngr_add_qt_test(
+        NAME MemoryUsage
+        OFFSCREEN
+        SOURCES
+            tests/memory_usage_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+    )
+
     qt_add_executable(ClassMngrSignatureImageProcessorTests
         tests/signature_image_processor_tests.cpp
         src/features/my_info/data/signature_image_processor.cpp

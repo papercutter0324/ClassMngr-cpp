@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "academic_calendar_provider.h"
 #include "calendar_event_cache.h"
+#include "core/memory_usage_diagnostics.h"
 #include "calendar_event_dialog.h"
 #include "calendar_event_model.h"
 #include "core/application_services.h"
@@ -593,6 +594,25 @@ void CalendarPage::updateCalendarCacheRetention()
     }
 
     m_calendarCache->setRetainedRanges(retainedRanges);
+
+    if (retainedRanges != m_lastRecordedRetentionRanges)
+    {
+        m_lastRecordedRetentionRanges = retainedRanges;
+        const int eventCount = m_calendarCache->eventCount();
+        const int dateBucketCount = m_calendarCache->dateBucketCount();
+        emit calendarRetentionChanged(
+            retainedRanges.size(),
+            eventCount,
+            dateBucketCount
+            );
+        MemoryUsageDiagnostics::recordEvent(
+            QStringLiteral("calendar-retention-changed"),
+            QStringLiteral("ranges=%1, events=%2, dateBuckets=%3")
+                .arg(retainedRanges.size())
+                .arg(eventCount)
+                .arg(dateBucketCount)
+            );
+    }
 }
 
 void CalendarPage::invalidateCalendarData()

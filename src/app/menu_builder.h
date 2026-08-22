@@ -12,4 +12,5 @@ private:
     static void buildPrintExportMenu(MainWindow* window);
     static void buildHelpMenu(MainWindow* window);
     static void buildAdminMenu(MainWindow* window);
+    static void buildDeveloperMenu(MainWindow* window);
 };

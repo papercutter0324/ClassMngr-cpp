@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/calendar_event.h"
+#include "calendar_event_cache.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <array>
@@ -13,7 +14,6 @@
 
 class AcademicCalendarProvider;
 class ApplicationServices;
-class CalendarEventCache;
 class CalendarEventModel;
 class QEvent;
 class QFont;
@@ -51,6 +51,13 @@ public:
     void scrollToTop();
     [[nodiscard]] AcademicCalendarProvider* academicCalendarProvider() const;
     void calendarPreferencesChanged(bool eventsChanged);
+
+signals:
+    void calendarRetentionChanged(
+        int retainedRangeCount,
+        int cachedEventCount,
+        int dateBucketCount
+        );
 
 protected:
     void showEvent(
@@ -201,6 +208,7 @@ private:
     QHash<QString, bool> m_eventTypeFilterStates;
     QDate m_calendarVisibleMonth;
     QDate m_nextTenSearchEnd;
+    QList<CalendarEventCache::DateRange> m_lastRecordedRetentionRanges;
     bool m_nextTenSearchComplete = false;
     bool m_nextTenLookupPending = false;
 };

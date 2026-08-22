@@ -6,7 +6,9 @@ Reduce the application's steady-state memory footprint and startup allocation
 cost without changing visible behavior. Prioritize avoiding construction of
 rarely used pages, eliminating duplicated calendar records, replacing
 item-per-cell tables, promptly releasing PDF resources, and bounding decoded
-campus image size.
+campus image size. Provide opt-in developer diagnostics that make future
+memory regressions observable and explainable without imposing meaningful
+overhead on normal users.
 
 ## Implementation Progress
 
@@ -381,6 +383,213 @@ campus image size.
 6. Run focused test targets after each phase, then the full test suite and the
    Phase 1 performance/memory scenario before merging.
 
+### Phase 9. Add a Non-Activating Memory Monitor
+
+Create a modeless developer diagnostic window that can remain visible while
+the user works in the main application. It must not activate or take keyboard
+focus from the main window, including when it is shown or clicked.
+
+1. Implement `MemoryUsageDialog` (or similarly named diagnostic tool) as a
+   modeless `QDialog`/`QWidget`, shown with `show()` rather than `exec()`.
+
+   - Use `Qt::Tool`, `Qt::WindowStaysOnTopHint`, and
+     `Qt::WindowDoesNotAcceptFocus`.
+   - Set `Qt::WA_ShowWithoutActivating` before showing it. Verify the native
+     Windows behavior: opening it must preserve the main window's active
+     editor and keyboard target.
+   - Keep it out of the normal taskbar/app-switcher where the platform honors
+     tool-window semantics. Persist only its geometry; do not restore it
+     automatically on every application startup.
+   - Make it reachable through a developer-only menu/action and optionally a
+     documented shortcut. It should not appear in the standard end-user UI
+     until the information is deliberately designed for support use.
+
+2. Add a small platform abstraction for process memory snapshots instead of
+   embedding Windows calls in the dialog.
+
+   ```cpp
+   struct ProcessMemorySnapshot {
+       quint64 workingSetBytes;       // resident RAM now
+       quint64 peakWorkingSetBytes;
+       quint64 privateUsageBytes;     // private committed memory
+       quint64 pagefileUsageBytes;    // if meaningfully distinct on Windows
+       quint32 handleCount;
+       quint32 threadCount;
+       QDateTime capturedAt;
+   };
+   ```
+
+   - On Windows, use `GetProcessMemoryInfo()` with
+     `PROCESS_MEMORY_COUNTERS_EX`; document the exact mapping of displayed
+     labels to Windows fields.
+   - Return an unavailable/empty snapshot on unsupported platforms initially,
+     rather than adding fragile platform-specific guesses. The dialog must
+     still work and clearly label unavailable metrics.
+   - Refresh on a modest, user-controllable interval (default one second) and
+     stop its timer while hidden. Snapshot collection and formatting must not
+     allocate large buffers or pollute the figures being measured.
+
+3. Make the summary immediately useful.
+
+   - Display current and peak working set, private usage, process handles,
+     thread count, and captured time in human-readable binary units.
+   - Add system total/available physical memory only if it is labelled as a
+     system metric rather than ClassMngr-owned memory.
+   - Provide **Capture baseline**, **Reset peak**, and **Copy summary**
+     actions. Baseline comparison should show absolute and percentage deltas.
+   - Provide a compact rolling history (for example, 5--10 minutes of sampled
+     totals) and a small graph only if it does not complicate the window. This
+     makes delayed growth visible; the current value alone does not.
+
+4. Record contextual events in the same history.
+
+   - Automatically tag samples when a page is first instantiated, shown, or
+     hidden; when a PDF is loaded/released; when calendar retention changes;
+     and when campus maps are decoded or cleared.
+   - Let a developer insert a named marker before reproducing a suspected
+     leak, e.g. “before opening large PDF.”
+   - Export the snapshots and event markers as JSON for bug reports. Do not
+     export student data, document paths, database locations, or other
+     personally identifying content; use page/feature identifiers and sizes
+     only.
+
+5. Test behavior rather than asserting machine-dependent byte counts.
+
+   - Verify showing, interacting with, hiding, and reopening the tool does
+     not change the main window's focus target.
+   - Unit-test byte formatting, baseline-delta calculation, history capping,
+     and redacted JSON export with a fake snapshot provider.
+   - Add Windows-only coverage that a snapshot reports nonzero working-set and
+     private-usage values for the test process, using permissive assertions.
+
+### Phase 10. Attribute Memory by Feature, With Explicit Limits
+
+Do not present an invented exact “RAM used by each page” total. General Qt,
+C++ heap, allocator arenas, fonts, plugins, and shared data cannot be assigned
+reliably to one page by the operating system. Instead, show two clearly
+separate views: authoritative process totals and feature-owned, instrumented
+resources.
+
+1. Define a low-overhead reporting interface for deliberately owned retained
+   data.
+
+   ```cpp
+   struct MemoryBreakdownEntry {
+       QString category;              // e.g. "Calendar event cache"
+       QString owner;                 // e.g. "Calendar"
+       quint64 retainedBytes;
+       quint64 itemCount;
+       QString detail;                // e.g. retained date range
+       bool isEstimated;
+   };
+   ```
+
+   - Providers report their retained payload/container capacity where that is
+     cheap and meaningful. They must not scan a large model or deep-copy data
+     during every one-second refresh.
+   - The dialog labels these rows as **attributed retained memory** and never
+     claims that their sum equals process private usage.
+   - Show the summed attributed value and an **unattributed/shared/runtime**
+     remainder as an explanatory comparison only, not a false allocation
+     accounting identity.
+
+2. Instrument the memory-heavy components already targeted by this plan.
+
+   | Owner | Initial diagnostics | Useful detail |
+   | --- | --- | --- |
+   | Page manager | instantiated page count and first-creation time | page type and current/hidden state |
+   | Calendar | canonical events, date-index entries, retained ranges, pending requests | event/index counts and range boundaries |
+   | Classes | instantiated editors, active class, ranking-model rows | editor lifecycle and row counts |
+   | PDF Viewer | loaded/released state and source size | page count, document byte size when known |
+   | Campus Maps | decoded source dimensions and retained pixmap bytes | image count and image-size cap |
+   | Images/caches | cache entries, configured limit, evictions | count, byte estimate, last eviction |
+
+3. Add providers only at ownership boundaries. Start with the preceding
+   components; expand to other pages only after a measured issue identifies a
+   meaningful retained resource. Avoid a global `new`/`delete` hook in the
+   application: it is expensive, difficult to attribute correctly, and can
+   alter the memory behavior under investigation.
+
+4. Add a **page lifecycle** view in the monitor.
+
+   - For every registered page, display whether it is uncreated, instantiated
+     and hidden, or current; record creation time and last activation.
+   - Add safe developer actions to navigate to a page and release resources
+     only where an existing, explicit release API permits it (currently PDF).
+     Do not add generic page destruction or cache-clearing actions: they can
+     invalidate unsaved state and would make a diagnostic window unsafe.
+
+5. Treat native allocation tracing as a separate opt-in investigation path.
+
+   - Document a repeatable Windows Performance Recorder / Windows Performance
+     Analyzer or Visual Studio memory-profiling workflow for cases where the
+     monitor shows persistent unexplained growth.
+   - Include the diagnostic JSON export, build revision, and reproduction
+     steps with that trace. The in-app monitor identifies *when* and which
+     owned resources grew; a native heap trace determines allocator call
+     stacks when attribution is insufficient.
+
+### Phase 11. Add Complementary Developer Health Diagnostics
+
+Use the same developer-tools surface for small, cheap observability features
+that help distinguish a memory problem from an I/O, lifecycle, or background
+work problem.
+
+1. Add an application diagnostics summary containing:
+
+   - application version, Git revision/build timestamp, Qt version, OS, CPU
+     architecture, and enabled build flags;
+   - current page and page-lifecycle states;
+   - database-open state without exposing its path or contents;
+   - active background task count, task names/categories, start time, and
+     cancellation state; and
+   - current language, theme, display scale, and relevant memory policy
+     settings (calendar retention and image decode cap).
+
+2. Add a structured, bounded developer event log.
+
+   - Capture lifecycle events, failed asynchronous requests, cache evictions,
+     PDF load/release outcomes, and slow operation markers.
+   - Keep a fixed maximum entry/byte limit and redact user data. Provide
+     copying/export alongside the memory timeline so a support report has the
+     context necessary to interpret a spike.
+
+3. Add timing instrumentation around known expensive transitions.
+
+   - Measure first page construction, page activation, calendar fetch/render,
+     PDF open/release, and campus image decode. Report elapsed time and an
+     optional “slow operation” threshold.
+   - Reuse a monotonic clock and emit events only in developer builds or while
+     diagnostics are enabled. This keeps the production hot path clean.
+
+4. Add a reproducible scenario runner for tests and manual profiling.
+
+   - Describe actions such as open Classes, load a large calendar range, open
+     and leave a PDF, visit Campus Maps, then return home and wait for a short
+     settling interval.
+   - Have the existing startup-performance JSON evolve into a scenario report
+     containing elapsed time and memory checkpoints. Store results as CI
+     artifacts or local developer output, not fixed global limits at first.
+   - Once multiple controlled baselines are collected, add broad regression
+     guardrails that fail only on sustained, material increases; keep them
+     opt-in or informational on heterogeneous CI runners.
+
+## Diagnostics Rollout Order
+
+1. Define the process-snapshot interface and fake provider; add Windows
+   implementation and platform-safe tests.
+2. Implement the non-activating memory window with totals, baseline capture,
+   and bounded history. Verify focus behavior manually on supported Windows
+   versions before exposing the action.
+3. Add page lifecycle, calendar, PDF, campus, and Classes attribution
+   providers, each with a cheap test-visible snapshot method.
+4. Add contextual event markers, redacted JSON export, and the bounded event
+   log.
+5. Add timing and scenario-report integration; collect several representative
+   baselines before deciding on any automated budgets.
+6. Publish the native-profiler playbook and expand attribution only where the
+   scenario data identifies a blind spot.
+
 ## Files Expected to Change
 
 | File | Planned change |
@@ -403,11 +612,21 @@ campus image size.
 | `src/ui/shared/pages/pdf_viewer_page.cpp` | Implement release/reset behavior and integrate it with document loading. |
 | `src/features/campus/ui/campus_map_preview.h` | Define decoded-source sizing policy or test-visible diagnostics. |
 | `src/features/campus/ui/campus_map_preview.cpp` | Decode images with bounded `QImageReader` dimensions. |
+| New `src/diagnostics/process_memory_provider.h` | Define platform-neutral process-memory snapshot API and test fake. |
+| New `src/diagnostics/windows_process_memory_provider.cpp` | Obtain Windows working set, private usage, peak, handles, and thread counts. |
+| New `src/diagnostics/memory_breakdown_provider.h` | Define cheap, explicitly attributed retained-resource reporting. |
+| New `src/diagnostics/developer_event_log.*` | Store bounded, redacted lifecycle, memory-marker, and slow-operation events. |
+| New `src/ui/diagnostics/memory_usage_dialog.*` | Provide the non-activating live monitor, lifecycle/breakdown views, history, and export. |
+| `src/app/mainwindow.*` and developer action/menu registration | Add a developer-only entry point without changing normal user UI. |
+| `src/ui/shared/pages/pagemanager.*` | Surface page lifecycle snapshots and publish safe lifecycle markers. |
+| Calendar, Classes, PDF, and Campus ownership boundaries | Implement cheap component-specific breakdown providers and contextual events. |
+| Startup/scenario performance test harness | Emit repeatable memory/timing checkpoints as JSON. |
 | `tests/calendar_event_cache_tests.cpp` | Cover shared records and eviction. |
 | `tests/classes_page_tests.cpp` and/or new page-manager test target | Cover lazy top-level and nested page construction. |
 | Analytics model/widget test target | Cover ranking model behavior and presentation roles. |
 | PDF viewer test target | Cover document release after leaving the page. |
 | `tests/campus_map_tests.cpp` | Cover bounded high-resolution image decoding. |
+| New diagnostics test target | Cover snapshot formatting, baseline deltas, history caps, redaction, and fake breakdown providers. |
 | Relevant CMake test registration | Register any new test target. |
 
 ## Recommended Pull-Request Sequence
@@ -421,6 +640,9 @@ campus image size.
 7. Bound campus image decoding.
 8. Run full regression, compare memory measurements, and tune only the
    documented retention/image-size policies if the data justifies it.
+9. Add the process-level, non-activating memory monitor and focus tests.
+10. Add feature-attribution providers, event/timing diagnostics, scenario
+    reports, and the native-profiler investigation playbook.
 
 ## Acceptance Criteria
 
@@ -440,6 +662,14 @@ campus image size.
 - Campus images are decoded at a bounded size before becoming retained
   pixmaps, while map layout and visual quality remain appropriate at supported
   window sizes and device pixel ratios.
+- A developer can open a modeless memory monitor without changing the active
+  main-window focus target; it shows current/peak process metrics, a bounded
+  history, baseline deltas, and redacted export.
+- The monitor distinguishes authoritative process totals from explicitly
+  attributed retained resources, and reports the lifecycle of each page
+  without claiming a misleading exact per-page allocation total.
+- Diagnostics are opt-in/developer-only, bounded in memory use, avoid student
+  data and file paths in their exports, and add negligible work while hidden.
 - Focused and full regression tests pass, and the before/after measurements
   demonstrate reduced startup allocation and reduced retained memory after
   the targeted workflows.

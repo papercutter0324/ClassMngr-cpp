@@ -101,6 +101,7 @@ void ActionRegistry::createActions()
     createOptionActions();
     createHelpActions();
     createAdminActions();
+    createDeveloperActions();
 }
 
 void ActionRegistry::retranslate()
@@ -425,6 +426,11 @@ void ActionRegistry::retranslate()
         manageCampuses,
         tr("Manage Campuses"),
         tr("Manage campus settings")
+        );
+    updateActionText(
+        showMemoryUsageMonitor,
+        tr("Memory Usage Monitor"),
+        tr("Show the non-activating developer process memory monitor")
         );
 }
 
@@ -1215,5 +1221,33 @@ void ActionRegistry::createAdminActions()
         createAction(
             tr("Manage Campuses"),
             tr("Manage campus settings")
+        );
+}
+
+// =========================================================
+// Developer Actions
+// =========================================================
+
+void ActionRegistry::createDeveloperActions()
+{
+#if defined(QT_DEBUG)
+    constexpr bool developerToolsEnabled = true;
+#else
+    const bool developerToolsEnabled =
+        qEnvironmentVariableIsSet("CLASSMNGR_ENABLE_DEVELOPER_TOOLS");
+#endif
+
+    if (!developerToolsEnabled)
+    {
+        return;
+    }
+
+    showMemoryUsageMonitor =
+        createAction(
+            tr("Memory Usage Monitor"),
+            tr("Show the non-activating developer process memory monitor")
             );
+    showMemoryUsageMonitor->setShortcut(
+        QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M)
+        );
 }

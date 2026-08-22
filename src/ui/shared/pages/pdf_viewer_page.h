@@ -54,6 +54,12 @@ public:
         DocumentViewerBackground background
         );
 
+signals:
+    // The byte count is safe to include in diagnostics; no document path is
+    // emitted or exported.
+    void documentLoaded(quint64 byteCount);
+    void documentReleased();
+
 public slots:
     void zoomIn();
     void zoomOut();
@@ -97,10 +103,12 @@ private:
     [[nodiscard]] QString documentErrorText(
         int error
         ) const;
+    void notifyDocumentLoaded();
 
 private:
     bool m_tearingDown = false;
     bool m_documentReleased = true;
+    bool m_documentLoadRecorded = false;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;

@@ -1,5 +1,7 @@
 #include "campus_map_preview.h"
 
+#include "core/memory_usage_diagnostics.h"
+
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
@@ -290,6 +292,8 @@ void CampusMapPreview::setImagePaths(
 {
     clearImages();
 
+    quint64 decodedBytes = 0;
+
     for (int index = 0; index < imagePaths.size(); ++index)
     {
         const QString& imagePath = imagePaths.at(index);
@@ -312,6 +316,9 @@ void CampusMapPreview::setImagePaths(
         }
 
         const QSize decodedSize = pixmap.size();
+        decodedBytes += static_cast<quint64>(decodedSize.width())
+            * static_cast<quint64>(decodedSize.height())
+            * 4;
         m_imageLabels.append(
             new AspectRatioImageLabel(
                 std::move(pixmap),
@@ -351,6 +358,16 @@ void CampusMapPreview::setImagePaths(
     updateImageSizing(width());
     updatePreviewHeight(width());
     updateGeometry();
+
+    if (!m_imageLabels.isEmpty())
+    {
+        MemoryUsageDiagnostics::recordEvent(
+            QStringLiteral("campus-maps-decoded"),
+            QStringLiteral("images=%1, decodedBytes=%2")
+                .arg(m_imageLabels.size())
+                .arg(decodedBytes)
+            );
+    }
 }
 
 void CampusMapPreview::setMapControls(
@@ -603,6 +620,7 @@ void CampusMapPreview::resizeEvent(
 
 void CampusMapPreview::clearImages()
 {
+    const bool hadImages = !m_imageLabels.isEmpty();
     for (QLabel* label : std::as_const(m_imageLabels))
     {
         m_layout->removeWidget(label);
@@ -619,6 +637,13 @@ void CampusMapPreview::clearImages()
     }
 
     m_titleLabels.clear();
+
+    if (hadImages)
+    {
+        MemoryUsageDiagnostics::recordEvent(
+            QStringLiteral("campus-maps-cleared")
+            );
+    }
 }
 
 void CampusMapPreview::rebuildLayout(

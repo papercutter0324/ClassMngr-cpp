@@ -106,10 +106,6 @@ if(WIN32)
         PUBLIC
             Bcrypt
             Crypt32
-    )
-
-    target_link_libraries(ClassMngr
-        PRIVATE
             Psapi
     )
 endif()

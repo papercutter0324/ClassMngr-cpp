@@ -1,6 +1,7 @@
 #include "pagemanager.h"
 
 #include "core/application_services.h"
+#include "core/memory_usage_diagnostics.h"
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -14,6 +15,47 @@
 #include "features/teacher/ui/staff_directory_page.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+
+namespace
+{
+QString pageTypeIdentifier(PageType type)
+{
+    switch (type)
+    {
+    case PageType::PersonalDetails: return QStringLiteral("personal-details");
+    case PageType::Calendar: return QStringLiteral("calendar");
+    case PageType::MySchedule: return QStringLiteral("my-schedule");
+    case PageType::MyClasses: return QStringLiteral("my-classes");
+    case PageType::Schedule: return QStringLiteral("schedule");
+    case PageType::Classes: return QStringLiteral("classes");
+    case PageType::TestingClasses: return QStringLiteral("testing-classes");
+    case PageType::TeacherInfo: return QStringLiteral("teacher-info");
+    case PageType::NativeEnglishTeachers: return QStringLiteral("native-english-teachers");
+    case PageType::GsTeam: return QStringLiteral("gs-team");
+    case PageType::CampusDashboard: return QStringLiteral("campus-dashboard");
+    case PageType::SubPrep: return QStringLiteral("sub-prep");
+    case PageType::PdfViewer: return QStringLiteral("pdf-viewer");
+    }
+
+    return QStringLiteral("unknown-page");
+}
+
+QString pageTypeIdentifierForWidget(
+    const QMap<PageType, BasePage*>& pages,
+    const BasePage* page
+    )
+{
+    for (auto iterator = pages.cbegin(); iterator != pages.cend(); ++iterator)
+    {
+        if (iterator.value() == page)
+        {
+            return pageTypeIdentifier(iterator.key());
+        }
+    }
+
+    return QStringLiteral("unknown-page");
+}
+}
 
 
 
@@ -212,6 +254,10 @@ BasePage* PageManager::ensurePage(
     applyCurrentState(page);
 
     emit pageCreated(type, page);
+    MemoryUsageDiagnostics::recordEvent(
+        QStringLiteral("page-instantiated"),
+        pageTypeIdentifier(type)
+        );
 
     return page;
 }
@@ -302,16 +348,32 @@ void PageManager::showPage(
         return;
     }
 
-    if (page != currentWidget())
+    BasePage* leavingPage = qobject_cast<BasePage*>(currentWidget());
+
+    if (page != leavingPage)
     {
-        releaseLeavingPageResources(
-            qobject_cast<BasePage*>(currentWidget())
-            );
+        if (leavingPage)
+        {
+            MemoryUsageDiagnostics::recordEvent(
+                QStringLiteral("page-hidden"),
+                pageTypeIdentifierForWidget(m_pages, leavingPage)
+                );
+        }
+
+        releaseLeavingPageResources(leavingPage);
     }
 
     setCurrentWidget(
         page
         );
+
+    if (page != leavingPage)
+    {
+        MemoryUsageDiagnostics::recordEvent(
+            QStringLiteral("page-shown"),
+            pageTypeIdentifier(type)
+            );
+    }
 
     emit outputCapabilitiesChanged();
 }

@@ -1,5 +1,7 @@
 #include "pdf_viewer_page_p.h"
 
+#include "core/memory_usage_diagnostics.h"
+
 PdfViewerPage::PdfViewerPage(
     QWidget* parent
     )
@@ -166,6 +168,7 @@ bool PdfViewerPage::loadPdf(
     }
 
     m_documentReleased = false;
+    m_documentLoadRecorded = false;
     m_currentFilePath = filePath;
     m_documentDescriptor = descriptor;
     m_view->setDocument(m_document);
@@ -205,6 +208,9 @@ void PdfViewerPage::releaseDocument()
 
     m_documentReleased = true;
 
+    const bool wasLoaded = m_documentLoadRecorded;
+    m_documentLoadRecorded = false;
+
     if (m_view && m_view->document() == m_document)
     {
         m_view->setDocument(nullptr);
@@ -225,6 +231,30 @@ void PdfViewerPage::releaseDocument()
     updatePageDisplay();
     clearStatusMessage();
     updateDocumentActionButtons();
+
+    if (wasLoaded)
+    {
+        emit documentReleased();
+        MemoryUsageDiagnostics::recordEvent(QStringLiteral("pdf-released"));
+    }
+}
+
+void PdfViewerPage::notifyDocumentLoaded()
+{
+    if (m_documentLoadRecorded || m_currentFilePath.trimmed().isEmpty())
+    {
+        return;
+    }
+
+    m_documentLoadRecorded = true;
+    const quint64 byteCount = static_cast<quint64>(
+        qMax<qint64>(0, QFileInfo(m_currentFilePath).size())
+        );
+    emit documentLoaded(byteCount);
+    MemoryUsageDiagnostics::recordEvent(
+        QStringLiteral("pdf-loaded"),
+        QStringLiteral("bytes=%1").arg(byteCount)
+        );
 }
 
 QString PdfViewerPage::currentFilePath() const
