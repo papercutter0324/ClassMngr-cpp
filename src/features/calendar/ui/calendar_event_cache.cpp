@@ -1,5 +1,6 @@
 #include "calendar_event_cache.h"
 
+#include "core/memory_usage_diagnostics.h"
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 
@@ -108,6 +109,8 @@ CalendarEventCache::CalendarEventCache(
     )
     : QObject(parent)
 {
+    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
+
     connect(
         &m_watcher,
         &QFutureWatcher<LoadResult>::finished,
@@ -141,6 +144,7 @@ void CalendarEventCache::invalidate()
     ++m_generation;
     m_eventsById.clear();
     m_eventIdsByDate.clear();
+    m_dateIndexEntryCount = 0;
     m_loadedRanges.clear();
     m_pendingRequests.clear();
 
@@ -367,6 +371,36 @@ int CalendarEventCache::dateBucketCount() const
     return m_eventIdsByDate.size();
 }
 
+QList<MemoryBreakdownEntry> CalendarEventCache::memoryBreakdown() const
+{
+    const quint64 eventBytes = static_cast<quint64>(m_eventsById.size())
+        * sizeof(CalendarEvent);
+    const quint64 indexBytes = m_dateIndexEntryCount * sizeof(int);
+    const QString rangeDetail = m_retainedRanges.isEmpty()
+        ? QStringLiteral("none")
+        : QStringLiteral("%1 to %2")
+              .arg(
+                  m_retainedRanges.first().startDate.toString(Qt::ISODate),
+                  m_retainedRanges.last().endDate.toString(Qt::ISODate)
+                  );
+
+    return {
+        {
+            QStringLiteral("Calendar event cache"),
+            QStringLiteral("Calendar"),
+            eventBytes + indexBytes,
+            static_cast<quint64>(m_eventsById.size()) + m_dateIndexEntryCount,
+            QStringLiteral("events=%1; date indexes=%2; retained=%3; loaded ranges=%4; pending=%5")
+                .arg(m_eventsById.size())
+                .arg(m_dateIndexEntryCount)
+                .arg(rangeDetail)
+                .arg(m_loadedRanges.size())
+                .arg(m_pendingRequests.size() + (m_activeRequest ? 1 : 0)),
+            true
+        }
+    };
+}
+
 CalendarEventCache::LoadResult CalendarEventCache::load(
     const QString& databasePath,
     const Request& request
@@ -498,6 +532,22 @@ void CalendarEventCache::startNextRequest()
     const Request request = *m_activeRequest;
     const QString databasePath = m_databasePath;
 
+    m_activeRequestTiming = MemoryUsageDiagnostics::isEnabled();
+    m_activeDiagnosticTaskId = 0;
+    if (m_activeRequestTiming)
+    {
+        m_activeRequestTimer.start();
+        m_activeDiagnosticTaskId =
+            MemoryUsageDiagnostics::beginBackgroundTask(
+                QStringLiteral("Calendar"),
+                request.kind == RequestKind::Range
+                    ? (request.priority == Priority::Foreground
+                           ? QStringLiteral("foreground cache range")
+                           : QStringLiteral("background cache range"))
+                    : QStringLiteral("next-event month lookup")
+                );
+    }
+
     m_watcher.setFuture(
         QtConcurrent::run(
             [databasePath, request]()
@@ -512,13 +562,20 @@ void CalendarEventCache::finishActiveRequest()
 {
     const bool previouslyLoading = isLoading();
     const LoadResult result = m_watcher.result();
+    const qint64 elapsedMilliseconds = m_activeRequestTiming
+        ? m_activeRequestTimer.elapsed()
+        : -1;
+    const quint64 diagnosticTaskId = m_activeDiagnosticTaskId;
+    m_activeRequestTiming = false;
+    m_activeDiagnosticTaskId = 0;
 
     m_activeRequest.reset();
 
-    if (
+    const bool acceptedResult =
         result.request.generation == m_generation
-        && result.error.isEmpty()
-        )
+        && result.error.isEmpty();
+
+    if (acceptedResult)
     {
         if (result.request.kind == RequestKind::Range)
         {
@@ -551,6 +608,39 @@ void CalendarEventCache::finishActiveRequest()
             emit nextEventMonthFound(result.nextEventDate);
         }
     }
+
+    if (elapsedMilliseconds >= 0)
+    {
+        MemoryUsageDiagnostics::recordTimedOperation(
+            QStringLiteral("calendar-cache-fetch"),
+            QStringLiteral("%1; events=%2; %3")
+                .arg(
+                    result.request.kind == RequestKind::Range
+                        ? QStringLiteral("range")
+                        : QStringLiteral("next-event month"),
+                    QString::number(result.events.size()),
+                    acceptedResult
+                        ? QStringLiteral("completed")
+                        : QStringLiteral("discarded-or-failed")
+                    ),
+            elapsedMilliseconds
+            );
+    }
+    if (!acceptedResult)
+    {
+        MemoryUsageDiagnostics::recordEvent(
+            result.error.isEmpty()
+                ? QStringLiteral("calendar-cache-request-discarded")
+                : QStringLiteral("calendar-cache-request-failed"),
+            result.request.kind == RequestKind::Range
+                ? QStringLiteral("range")
+                : QStringLiteral("next-event month")
+            );
+    }
+    MemoryUsageDiagnostics::finishBackgroundTask(
+        diagnosticTaskId,
+        !acceptedResult
+        );
 
     startNextRequest();
     emitLoadingChangedIfNeeded(previouslyLoading);
@@ -594,6 +684,7 @@ void CalendarEventCache::insertEvents(
                 if (!eventIds.contains(event.id))
                 {
                     eventIds.append(event.id);
+                    ++m_dateIndexEntryCount;
                 }
 
                 std::sort(
@@ -707,6 +798,9 @@ void CalendarEventCache::pruneToRetainedRanges()
         return;
     }
 
+    const int initialEventCount = m_eventsById.size();
+    const quint64 initialDateIndexCount = m_dateIndexEntryCount;
+
     QList<DateRange> retainedLoadedRanges;
     for (const DateRange& loadedRange : m_loadedRanges)
     {
@@ -724,6 +818,7 @@ void CalendarEventCache::pruneToRetainedRanges()
     {
         if (!isDateRetained(iterator.key()))
         {
+            m_dateIndexEntryCount -= static_cast<quint64>(iterator.value().size());
             iterator = m_eventIdsByDate.erase(iterator);
             continue;
         }
@@ -747,6 +842,19 @@ void CalendarEventCache::pruneToRetainedRanges()
         }
         ++iterator;
     }
+
+    const int evictedEvents = initialEventCount - m_eventsById.size();
+    const quint64 evictedDateIndexes =
+        initialDateIndexCount - m_dateIndexEntryCount;
+    if (evictedEvents > 0 || evictedDateIndexes > 0)
+    {
+        MemoryUsageDiagnostics::recordEvent(
+            QStringLiteral("calendar-cache-evicted"),
+            QStringLiteral("events=%1; dateIndexes=%2")
+                .arg(evictedEvents)
+                .arg(evictedDateIndexes)
+            );
+    }
 }
 
 void CalendarEventCache::removeEventMemberships(
@@ -758,7 +866,11 @@ void CalendarEventCache::removeEventMemberships(
         iterator != m_eventIdsByDate.end();
         )
     {
+        const qsizetype priorCount = iterator.value().size();
         iterator.value().removeAll(eventId);
+        m_dateIndexEntryCount -= static_cast<quint64>(
+            priorCount - iterator.value().size()
+            );
         if (iterator.value().isEmpty())
         {
             iterator = m_eventIdsByDate.erase(iterator);

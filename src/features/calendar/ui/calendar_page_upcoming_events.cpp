@@ -5,6 +5,7 @@
 #include "calendar_event_model.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/memory_usage_diagnostics.h"
 #include "core/resource_paths.h"
 #include "features/campus/data/campus_json_repository.h"
 #include "features/calendar/calendar_event_campus_filter.h"
@@ -16,6 +17,7 @@
 
 #include <QColorDialog>
 #include <QEvent>
+#include <QElapsedTimer>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -503,6 +505,13 @@ void CalendarPage::refreshUpcomingEvents()
         return;
     }
 
+    const bool recordTiming = MemoryUsageDiagnostics::isEnabled();
+    QElapsedTimer renderTimer;
+    if (recordTiming)
+    {
+        renderTimer.start();
+    }
+
     syncEventTypeFilterButtons();
 
     const QList<UpcomingEventsScope> scopes{
@@ -600,6 +609,21 @@ void CalendarPage::refreshUpcomingEvents()
             dateColumnWidth,
             timeColumnWidth,
             eventTypeColumnWidth
+            );
+    }
+
+    if (recordTiming)
+    {
+        int renderedEvents = 0;
+        for (const QList<CalendarEvent>& events : filteredEventsByScope)
+        {
+            renderedEvents += events.size();
+        }
+        MemoryUsageDiagnostics::recordTimedOperation(
+            QStringLiteral("calendar-render"),
+            QStringLiteral("upcoming panels; events=%1")
+                .arg(renderedEvents),
+            renderTimer.elapsed()
             );
     }
 }

@@ -5,6 +5,8 @@
 #include <QFileInfo>
 #include <QtTest>
 
+#include <algorithm>
+
 class PageManagerTests : public QObject
 {
     Q_OBJECT
@@ -12,10 +14,13 @@ class PageManagerTests : public QObject
 private slots:
     void heavyPagesAreDeferredAndReused();
     void leavingPdfViewerReleasesTheDocument();
+    void lifecycleReportsUncreatedHiddenAndCurrentPages();
 };
 
 void PageManagerTests::heavyPagesAreDeferredAndReused()
 {
+    MemoryUsageDiagnostics::enable();
+    MemoryUsageDiagnostics::history().clear();
     ApplicationServices services;
     PageManager pages;
 
@@ -64,10 +69,38 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
 
     QCOMPARE(pages.pdfViewerPage(), firstViewer);
     QCOMPARE(pdfPageCreations, 1);
+    const QList<MemoryUsageHistoryEntry>& events =
+        MemoryUsageDiagnostics::history().entries();
+    QVERIFY(std::any_of(
+        events.cbegin(),
+        events.cend(),
+        [](const MemoryUsageHistoryEntry& entry)
+        {
+            return entry.kind == MemoryUsageHistoryEntryKind::Event
+                && entry.eventType == QStringLiteral("timing")
+                && entry.eventDetail.contains(
+                    QStringLiteral("page-construction")
+                    );
+        }
+        ));
+    QVERIFY(std::any_of(
+        events.cbegin(),
+        events.cend(),
+        [](const MemoryUsageHistoryEntry& entry)
+        {
+            return entry.kind == MemoryUsageHistoryEntryKind::Event
+                && entry.eventType == QStringLiteral("timing")
+                && entry.eventDetail.contains(
+                    QStringLiteral("page-activation")
+                    );
+        }
+        ));
 }
 
 void PageManagerTests::leavingPdfViewerReleasesTheDocument()
 {
+    MemoryUsageDiagnostics::enable();
+    MemoryUsageDiagnostics::history().clear();
     ApplicationServices services;
     PageManager pages;
     pages.initialize(&services, false);
@@ -94,6 +127,10 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
             )
         );
     QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 5000);
+    const MemoryBreakdownEntry loadedAttribution =
+        viewer->memoryBreakdown().constFirst();
+    QCOMPARE(loadedAttribution.itemCount, quint64(1));
+    QVERIFY(loadedAttribution.retainedBytes > 0);
     QVERIFY(pages.outputCapabilities().printEnabled);
     QVERIFY(pages.outputCapabilities().saveAsEnabled);
 
@@ -101,12 +138,83 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
 
     QVERIFY(!viewer->hasLoadedDocument());
     QVERIFY(viewer->currentFilePath().isEmpty());
+    const MemoryBreakdownEntry releasedAttribution =
+        viewer->memoryBreakdown().constFirst();
+    QCOMPARE(releasedAttribution.itemCount, quint64(0));
+    QCOMPARE(releasedAttribution.retainedBytes, quint64(0));
     QVERIFY(!pages.outputCapabilities().printEnabled);
     QVERIFY(!pages.outputCapabilities().saveAsEnabled);
 
     pages.showPage(PageType::PdfViewer);
     QCOMPARE(pages.pdfViewerPage(), viewer);
     QVERIFY(!viewer->hasLoadedDocument());
+    const QList<MemoryUsageHistoryEntry>& events =
+        MemoryUsageDiagnostics::history().entries();
+    QVERIFY(std::any_of(
+        events.cbegin(),
+        events.cend(),
+        [](const MemoryUsageHistoryEntry& entry)
+        {
+            return entry.kind == MemoryUsageHistoryEntryKind::Event
+                && entry.eventType == QStringLiteral("timing")
+                && entry.eventDetail.contains(QStringLiteral("pdf-open"));
+        }
+        ));
+    QVERIFY(std::any_of(
+        events.cbegin(),
+        events.cend(),
+        [](const MemoryUsageHistoryEntry& entry)
+        {
+            return entry.kind == MemoryUsageHistoryEntryKind::Event
+                && entry.eventType == QStringLiteral("timing")
+                && entry.eventDetail.contains(QStringLiteral("pdf-release"));
+        }
+        ));
+}
+
+void PageManagerTests::lifecycleReportsUncreatedHiddenAndCurrentPages()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+
+    const auto findPage = [](const QList<PageLifecycleEntry>& entries,
+                             const QString& identifier)
+    {
+        return std::find_if(
+            entries.cbegin(),
+            entries.cend(),
+            [&identifier](const PageLifecycleEntry& entry)
+            {
+                return entry.pageIdentifier == identifier;
+            }
+            );
+    };
+
+    const QList<PageLifecycleEntry> initial = pages.pageLifecycle();
+    const auto calendar = findPage(initial, QStringLiteral("calendar"));
+    QVERIFY(calendar != initial.cend());
+    QCOMPARE(calendar->state, PageLifecycleState::Uncreated);
+    QVERIFY(!calendar->createdAt.isValid());
+
+    const auto personal = findPage(initial, QStringLiteral("personal-details"));
+    QVERIFY(personal != initial.cend());
+    QCOMPARE(personal->state, PageLifecycleState::Current);
+    QVERIFY(personal->createdAt.isValid());
+    QVERIFY(personal->lastActivatedAt.isValid());
+
+    pages.showPage(PageType::PdfViewer);
+    const QList<PageLifecycleEntry> afterNavigation = pages.pageLifecycle();
+    const auto hiddenPersonal = findPage(
+        afterNavigation,
+        QStringLiteral("personal-details")
+        );
+    QVERIFY(hiddenPersonal != afterNavigation.cend());
+    QCOMPARE(hiddenPersonal->state, PageLifecycleState::Hidden);
+    const auto viewer = findPage(afterNavigation, QStringLiteral("pdf-viewer"));
+    QVERIFY(viewer != afterNavigation.cend());
+    QCOMPARE(viewer->state, PageLifecycleState::Current);
+    QVERIFY(viewer->createdAt.isValid());
 }
 
 QTEST_MAIN(PageManagerTests)

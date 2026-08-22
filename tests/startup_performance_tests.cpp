@@ -2,6 +2,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QProcess>
 #include <QProcessEnvironment>
@@ -187,6 +188,38 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     const QJsonObject metrics =
         document.object();
+
+    QCOMPARE(
+        metrics.value(QStringLiteral("format")).toString(),
+        QStringLiteral("classmngr-scenario-report-v1")
+        );
+    const QJsonObject scenario =
+        metrics.value(QStringLiteral("scenario")).toObject();
+    QCOMPARE(
+        scenario.value(QStringLiteral("name")).toString(),
+        QStringLiteral("startup-empty-profile")
+        );
+    QCOMPARE(
+        scenario.value(QStringLiteral("actions")).toArray().size(),
+        3
+        );
+    const QJsonArray checkpoints =
+        metrics.value(QStringLiteral("checkpoints")).toArray();
+    QCOMPARE(checkpoints.size(), 2);
+    QCOMPARE(
+        checkpoints.constFirst()
+            .toObject()
+            .value(QStringLiteral("name"))
+            .toString(),
+        QStringLiteral("window-constructed")
+        );
+    QCOMPARE(
+        checkpoints.constLast()
+            .toObject()
+            .value(QStringLiteral("name"))
+            .toString(),
+        QStringLiteral("ready")
+        );
 
     const double windowConstructedMs =
         metricValue(

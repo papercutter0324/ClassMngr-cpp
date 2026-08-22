@@ -4,6 +4,7 @@
 
 #include <QJsonDocument>
 #include <QList>
+#include <QPointer>
 #include <QString>
 
 struct MemoryUsageDelta
@@ -36,6 +37,62 @@ struct MemoryUsageHistoryEntry
     QString eventDetail;
 };
 
+struct DeveloperBackgroundTask
+{
+    quint64 id = 0;
+    QString category;
+    QString name;
+    QDateTime startedAt;
+    bool cancellable = false;
+    bool cancellationRequested = false;
+};
+
+// Feature-owned retained data only. These are intentionally partial,
+// low-overhead estimates and must never be presented as process allocation
+// accounting.
+struct MemoryBreakdownEntry
+{
+    QString category;
+    QString owner;
+    quint64 retainedBytes = 0;
+    quint64 itemCount = 0;
+    QString detail;
+    bool isEstimated = false;
+};
+
+class MemoryBreakdownProvider
+{
+public:
+    virtual ~MemoryBreakdownProvider() = default;
+
+    [[nodiscard]] virtual QList<MemoryBreakdownEntry>
+        memoryBreakdown() const = 0;
+};
+
+enum class PageLifecycleState
+{
+    Uncreated,
+    Hidden,
+    Current
+};
+
+struct PageLifecycleEntry
+{
+    QString pageIdentifier;
+    PageLifecycleState state = PageLifecycleState::Uncreated;
+    QDateTime createdAt;
+    QDateTime lastActivatedAt;
+};
+
+class PageLifecycleProvider
+{
+public:
+    virtual ~PageLifecycleProvider() = default;
+
+    [[nodiscard]] virtual QList<PageLifecycleEntry>
+        pageLifecycle() const = 0;
+};
+
 class MemoryUsageHistory
 {
 public:
@@ -54,12 +111,16 @@ public:
         );
 
     [[nodiscard]] QJsonDocument toJson() const;
+    [[nodiscard]] static QString redactText(const QString& text);
 
 private:
-    static QString redactText(const QString& text);
+    [[nodiscard]] static qsizetype entryByteEstimate(
+        const MemoryUsageHistoryEntry& entry
+        );
     void trimToCapacity();
 
     int m_capacity = 600;
+    qsizetype m_entryBytes = 0;
     QList<MemoryUsageHistoryEntry> m_entries;
 };
 
@@ -75,5 +136,34 @@ public:
         const QString& type,
         const QString& detail = QString()
         );
+    static void recordTimedOperation(
+        const QString& category,
+        const QString& detail,
+        qint64 elapsedMilliseconds,
+        qint64 slowThresholdMilliseconds = 500
+        );
+    [[nodiscard]] static quint64 beginBackgroundTask(
+        const QString& category,
+        const QString& name,
+        bool cancellable = false
+        );
+    static void finishBackgroundTask(
+        quint64 taskId,
+        bool cancelled = false
+        );
+    [[nodiscard]] static QList<DeveloperBackgroundTask>
+        activeBackgroundTasks();
+    static void registerMemoryBreakdownProvider(
+        QObject* owner,
+        const MemoryBreakdownProvider* provider
+        );
+    static void registerPageLifecycleProvider(
+        QObject* owner,
+        const PageLifecycleProvider* provider
+        );
+    [[nodiscard]] static QList<MemoryBreakdownEntry>
+        collectMemoryBreakdown();
+    [[nodiscard]] static QList<PageLifecycleEntry>
+        collectPageLifecycle();
     [[nodiscard]] static MemoryUsageHistory& history();
 };

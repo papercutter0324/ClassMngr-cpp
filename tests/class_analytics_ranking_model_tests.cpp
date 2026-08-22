@@ -33,6 +33,12 @@ void ClassAnalyticsRankingModelTests::exposesRankingColumnsAndDelegateRoles()
 
     QCOMPARE(model.rowCount(), 1);
     QCOMPARE(model.columnCount(), 10);
+    const MemoryBreakdownEntry attribution =
+        model.memoryBreakdown().constFirst();
+    QCOMPARE(attribution.owner, QStringLiteral("Classes"));
+    QCOMPARE(attribution.itemCount, quint64(1));
+    QVERIFY(attribution.retainedBytes > 0);
+    QVERIFY(attribution.isEstimated);
     QCOMPARE(
         model.data(model.index(0, ClassAnalyticsRankingModel::RankColumn)).toString(),
         QStringLiteral("1")

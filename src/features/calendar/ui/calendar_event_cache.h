@@ -1,8 +1,10 @@
 #pragma once
 
+#include "core/memory_usage_diagnostics.h"
 #include "domain/models/calendar_event.h"
 
 #include <QDate>
+#include <QElapsedTimer>
 #include <QFutureWatcher>
 #include <QHash>
 #include <QList>
@@ -10,7 +12,7 @@
 
 #include <optional>
 
-class CalendarEventCache : public QObject
+class CalendarEventCache : public QObject, public MemoryBreakdownProvider
 {
     Q_OBJECT
 
@@ -71,6 +73,8 @@ public:
     bool isLoading() const;
     [[nodiscard]] int eventCount() const;
     [[nodiscard]] int dateBucketCount() const;
+    [[nodiscard]] QList<MemoryBreakdownEntry>
+        memoryBreakdown() const override;
 
 signals:
     void cacheChanged();
@@ -143,11 +147,15 @@ private:
     QString m_databasePath;
     QHash<int, CalendarEvent> m_eventsById;
     QHash<QDate, QList<int>> m_eventIdsByDate;
+    quint64 m_dateIndexEntryCount = 0;
     QList<DateRange> m_loadedRanges;
     QList<DateRange> m_retainedRanges;
     bool m_retentionEnabled = false;
     QList<Request> m_pendingRequests;
     std::optional<Request> m_activeRequest;
     QFutureWatcher<LoadResult> m_watcher;
+    QElapsedTimer m_activeRequestTimer;
+    bool m_activeRequestTiming = false;
+    quint64 m_activeDiagnosticTaskId = 0;
     quint64 m_generation = 0;
 };

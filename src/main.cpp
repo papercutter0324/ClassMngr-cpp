@@ -23,6 +23,7 @@
 #include <QFile>
 #include <QIcon>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -126,6 +127,7 @@ bool writeStartupPerformanceMetrics(
     qint64 processStartToWindowConstructedMs,
     qint64 processStartToReadyMs,
     ProcessMemoryMetrics windowConstructedMemory,
+    ProcessMemoryMetrics readyMemory,
     int progressUpdates,
     int finalProgress
     )
@@ -175,6 +177,37 @@ bool writeStartupPerformanceMetrics(
         QStringLiteral("finalProgress"),
         finalProgress
         );
+
+    QJsonArray checkpoints;
+    checkpoints.append(
+        QJsonObject{
+            {QStringLiteral("name"), QStringLiteral("window-constructed")},
+            {QStringLiteral("elapsedMs"), static_cast<double>(processStartToWindowConstructedMs)},
+            {QStringLiteral("workingSetBytes"), static_cast<double>(windowConstructedMemory.workingSetBytes)},
+            {QStringLiteral("privateBytes"), static_cast<double>(windowConstructedMemory.privateBytes)}
+        }
+        );
+    checkpoints.append(
+        QJsonObject{
+            {QStringLiteral("name"), QStringLiteral("ready")},
+            {QStringLiteral("elapsedMs"), static_cast<double>(processStartToReadyMs)},
+            {QStringLiteral("workingSetBytes"), static_cast<double>(readyMemory.workingSetBytes)},
+            {QStringLiteral("privateBytes"), static_cast<double>(readyMemory.privateBytes)}
+        }
+        );
+    metrics.insert(QStringLiteral("format"), QStringLiteral("classmngr-scenario-report-v1"));
+    metrics.insert(
+        QStringLiteral("scenario"),
+        QJsonObject{
+            {QStringLiteral("name"), QStringLiteral("startup-empty-profile")},
+            {QStringLiteral("actions"), QJsonArray{
+                QStringLiteral("launch with an empty settings profile"),
+                QStringLiteral("construct the main window"),
+                QStringLiteral("wait until the startup-ready checkpoint")
+            }}
+        }
+        );
+    metrics.insert(QStringLiteral("checkpoints"), checkpoints);
 
     file.write(
         QJsonDocument(metrics).toJson(QJsonDocument::Indented)
@@ -463,6 +496,7 @@ int main(int argc, char *argv[])
                     processStartToWindowConstructedMs,
                     processStartupTimer.elapsed(),
                     windowConstructedMemory,
+                    currentProcessMemoryMetrics(),
                     progressUpdates,
                     progress
                     );

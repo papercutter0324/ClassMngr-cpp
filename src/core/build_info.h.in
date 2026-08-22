@@ -5,6 +5,12 @@ namespace BuildInfo
 inline constexpr auto Version =
     "@PROJECT_VERSION@";
 
+inline constexpr auto GitRevision =
+    "@CLASSMNGR_GIT_REVISION@";
+
+inline constexpr auto BuildTimestamp =
+    "@CLASSMNGR_BUILD_TIMESTAMP@";
+
 inline constexpr auto UpdateApiUrl =
     R"CLASSMNGR(@CLASSMNGR_UPDATE_API_URL@)CLASSMNGR";
 

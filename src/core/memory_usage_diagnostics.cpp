@@ -2,6 +2,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QObject>
 #include <QRegularExpression>
 
 #include <algorithm>
@@ -11,6 +12,45 @@
 namespace
 {
 bool s_enabled = false;
+constexpr qsizetype MaximumHistoryBytes = 64 * 1024;
+constexpr qsizetype MaximumTrackedBackgroundTasks = 64;
+constexpr qsizetype MaximumEventTextCharacters = 4096;
+
+struct MemoryBreakdownProviderRegistration
+{
+    QPointer<QObject> owner;
+    const MemoryBreakdownProvider* provider = nullptr;
+};
+
+struct PageLifecycleProviderRegistration
+{
+    QPointer<QObject> owner;
+    const PageLifecycleProvider* provider = nullptr;
+};
+
+QList<MemoryBreakdownProviderRegistration>& memoryBreakdownProviders()
+{
+    static QList<MemoryBreakdownProviderRegistration> providers;
+    return providers;
+}
+
+QList<PageLifecycleProviderRegistration>& pageLifecycleProviders()
+{
+    static QList<PageLifecycleProviderRegistration> providers;
+    return providers;
+}
+
+QList<DeveloperBackgroundTask>& activeBackgroundTasks()
+{
+    static QList<DeveloperBackgroundTask> tasks;
+    return tasks;
+}
+
+quint64& nextBackgroundTaskId()
+{
+    static quint64 id = 1;
+    return id;
+}
 
 MemoryUsageHistory& sharedHistory()
 {
@@ -100,11 +140,19 @@ const QList<MemoryUsageHistoryEntry>& MemoryUsageHistory::entries() const
 void MemoryUsageHistory::clear()
 {
     m_entries.clear();
+    m_entryBytes = 0;
 }
 
 void MemoryUsageHistory::addSnapshot(const ProcessMemorySnapshot& snapshot)
 {
-    m_entries.append({MemoryUsageHistoryEntryKind::Sample, snapshot, {}, {}});
+    const MemoryUsageHistoryEntry entry{
+        MemoryUsageHistoryEntryKind::Sample,
+        snapshot,
+        {},
+        {}
+    };
+    m_entryBytes += entryByteEstimate(entry);
+    m_entries.append(entry);
     trimToCapacity();
 }
 
@@ -115,14 +163,14 @@ void MemoryUsageHistory::addEvent(
 {
     ProcessMemorySnapshot timestamp;
     timestamp.capturedAt = QDateTime::currentDateTime();
-    m_entries.append(
-        {
-            MemoryUsageHistoryEntryKind::Event,
-            timestamp,
-            redactText(type),
-            redactText(detail)
-        }
-        );
+    const MemoryUsageHistoryEntry entry{
+        MemoryUsageHistoryEntryKind::Event,
+        timestamp,
+        redactText(type),
+        redactText(detail)
+    };
+    m_entryBytes += entryByteEstimate(entry);
+    m_entries.append(entry);
     trimToCapacity();
 }
 
@@ -172,16 +220,37 @@ QString MemoryUsageHistory::redactText(const QString& text)
         QStringLiteral(R"(([A-Za-z]:[\\/][^\s,;]+|(?:file:)?//[^\s,;]+|/[A-Za-z0-9._-]+(?:/[^\s,;]+)+))")
         );
     redacted.replace(filePath, QStringLiteral("[redacted path]"));
+    if (redacted.size() > MaximumEventTextCharacters)
+    {
+        redacted.truncate(MaximumEventTextCharacters);
+        redacted.append(QStringLiteral(" [truncated]"));
+    }
     return redacted;
+}
+
+qsizetype MemoryUsageHistory::entryByteEstimate(
+    const MemoryUsageHistoryEntry& entry
+    )
+{
+    // The snapshot's fixed-width fields are small; reserve a conservative
+    // amount so the event log remains bounded even when it has no text.
+    return 128
+        + (entry.eventType.size() + entry.eventDetail.size())
+              * static_cast<qsizetype>(sizeof(QChar));
 }
 
 void MemoryUsageHistory::trimToCapacity()
 {
-    const int excess = m_entries.size() - m_capacity;
-
-    if (excess > 0)
+    while (
+        !m_entries.isEmpty()
+        && (
+            m_entries.size() > m_capacity
+            || (m_entryBytes > MaximumHistoryBytes && m_entries.size() > 1)
+            )
+        )
     {
-        m_entries.remove(0, excess);
+        m_entryBytes -= entryByteEstimate(m_entries.constFirst());
+        m_entries.removeFirst();
     }
 }
 
@@ -214,6 +283,194 @@ void MemoryUsageDiagnostics::recordEvent(
     {
         sharedHistory().addEvent(type, detail);
     }
+}
+
+void MemoryUsageDiagnostics::recordTimedOperation(
+    const QString& category,
+    const QString& detail,
+    qint64 elapsedMilliseconds,
+    qint64 slowThresholdMilliseconds
+    )
+{
+    if (!s_enabled || elapsedMilliseconds < 0)
+    {
+        return;
+    }
+
+    const QString operationDetail =
+        QStringLiteral("%1; elapsedMs=%2%3")
+            .arg(
+                category,
+                QString::number(elapsedMilliseconds),
+                detail.isEmpty()
+                    ? QString()
+                    : QStringLiteral("; %1").arg(detail)
+                );
+    recordEvent(
+        slowThresholdMilliseconds > 0
+            && elapsedMilliseconds >= slowThresholdMilliseconds
+            ? QStringLiteral("slow-operation")
+            : QStringLiteral("timing"),
+        operationDetail
+        );
+}
+
+quint64 MemoryUsageDiagnostics::beginBackgroundTask(
+    const QString& category,
+    const QString& name,
+    bool cancellable
+    )
+{
+    if (!s_enabled || ::activeBackgroundTasks().size() >= MaximumTrackedBackgroundTasks)
+    {
+        return 0;
+    }
+
+    quint64& nextId = nextBackgroundTaskId();
+    const quint64 id = nextId++;
+    ::activeBackgroundTasks().append(
+        {
+            id,
+            MemoryUsageHistory::redactText(category),
+            MemoryUsageHistory::redactText(name),
+            QDateTime::currentDateTime(),
+            cancellable,
+            false
+        }
+        );
+    recordEvent(
+        QStringLiteral("background-task-started"),
+        QStringLiteral("%1; %2").arg(category, name)
+        );
+    return id;
+}
+
+void MemoryUsageDiagnostics::finishBackgroundTask(
+    quint64 taskId,
+    bool cancelled
+    )
+{
+    if (!s_enabled || taskId == 0)
+    {
+        return;
+    }
+
+    QList<DeveloperBackgroundTask>& tasks = ::activeBackgroundTasks();
+    const auto iterator = std::find_if(
+        tasks.cbegin(),
+        tasks.cend(),
+        [taskId](const DeveloperBackgroundTask& task)
+        {
+            return task.id == taskId;
+        }
+        );
+
+    if (iterator == tasks.cend())
+    {
+        return;
+    }
+
+    const QString detail = QStringLiteral("%1; %2; %3")
+        .arg(
+            iterator->category,
+            iterator->name,
+            cancelled ? QStringLiteral("cancelled") : QStringLiteral("finished")
+            );
+    tasks.erase(iterator);
+    recordEvent(QStringLiteral("background-task-finished"), detail);
+}
+
+QList<DeveloperBackgroundTask> MemoryUsageDiagnostics::activeBackgroundTasks()
+{
+    return ::activeBackgroundTasks();
+}
+
+void MemoryUsageDiagnostics::registerMemoryBreakdownProvider(
+    QObject* owner,
+    const MemoryBreakdownProvider* provider
+    )
+{
+    if (!owner || !provider)
+    {
+        return;
+    }
+
+    QList<MemoryBreakdownProviderRegistration>& providers =
+        memoryBreakdownProviders();
+    for (const MemoryBreakdownProviderRegistration& registration : providers)
+    {
+        if (registration.owner == owner && registration.provider == provider)
+        {
+            return;
+        }
+    }
+
+    providers.append({owner, provider});
+}
+
+void MemoryUsageDiagnostics::registerPageLifecycleProvider(
+    QObject* owner,
+    const PageLifecycleProvider* provider
+    )
+{
+    if (!owner || !provider)
+    {
+        return;
+    }
+
+    QList<PageLifecycleProviderRegistration>& providers =
+        pageLifecycleProviders();
+    for (const PageLifecycleProviderRegistration& registration : providers)
+    {
+        if (registration.owner == owner && registration.provider == provider)
+        {
+            return;
+        }
+    }
+
+    providers.append({owner, provider});
+}
+
+QList<MemoryBreakdownEntry> MemoryUsageDiagnostics::collectMemoryBreakdown()
+{
+    QList<MemoryBreakdownEntry> entries;
+    QList<MemoryBreakdownProviderRegistration>& providers =
+        memoryBreakdownProviders();
+
+    for (auto iterator = providers.begin(); iterator != providers.end();)
+    {
+        if (!iterator->owner)
+        {
+            iterator = providers.erase(iterator);
+            continue;
+        }
+
+        entries.append(iterator->provider->memoryBreakdown());
+        ++iterator;
+    }
+
+    return entries;
+}
+
+QList<PageLifecycleEntry> MemoryUsageDiagnostics::collectPageLifecycle()
+{
+    QList<PageLifecycleEntry> entries;
+    QList<PageLifecycleProviderRegistration>& providers =
+        pageLifecycleProviders();
+
+    for (auto iterator = providers.begin(); iterator != providers.end();)
+    {
+        if (!iterator->owner)
+        {
+            iterator = providers.erase(iterator);
+            continue;
+        }
+
+        entries.append(iterator->provider->pageLifecycle());
+        ++iterator;
+    }
+
+    return entries;
 }
 
 MemoryUsageHistory& MemoryUsageDiagnostics::history()

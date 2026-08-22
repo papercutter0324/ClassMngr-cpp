@@ -16,9 +16,43 @@
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <QElapsedTimer>
+
 namespace
 {
-QString pageTypeIdentifier(PageType type)
+QString pageTypeIdentifierForWidget(
+    const QMap<PageType, BasePage*>& pages,
+    const BasePage* page
+    )
+{
+    for (auto iterator = pages.cbegin(); iterator != pages.cend(); ++iterator)
+    {
+        if (iterator.value() == page)
+        {
+            return PageManager::pageTypeIdentifier(iterator.key());
+        }
+    }
+
+    return QStringLiteral("unknown-page");
+}
+}
+
+
+
+// =========================================================
+// Constructor
+// =========================================================
+
+PageManager::PageManager(
+    QWidget* parent
+    )
+    : QStackedWidget(parent)
+{
+    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
+    MemoryUsageDiagnostics::registerPageLifecycleProvider(this, this);
+}
+
+QString PageManager::pageTypeIdentifier(PageType type)
 {
     switch (type)
     {
@@ -38,36 +72,6 @@ QString pageTypeIdentifier(PageType type)
     }
 
     return QStringLiteral("unknown-page");
-}
-
-QString pageTypeIdentifierForWidget(
-    const QMap<PageType, BasePage*>& pages,
-    const BasePage* page
-    )
-{
-    for (auto iterator = pages.cbegin(); iterator != pages.cend(); ++iterator)
-    {
-        if (iterator.value() == page)
-        {
-            return pageTypeIdentifier(iterator.key());
-        }
-    }
-
-    return QStringLiteral("unknown-page");
-}
-}
-
-
-
-// =========================================================
-// Constructor
-// =========================================================
-
-PageManager::PageManager(
-    QWidget* parent
-    )
-    : QStackedWidget(parent)
-{
 }
 
 
@@ -241,6 +245,13 @@ BasePage* PageManager::ensurePage(
         return nullptr;
     }
 
+    const bool recordTiming = MemoryUsageDiagnostics::isEnabled();
+    QElapsedTimer constructionTimer;
+    if (recordTiming)
+    {
+        constructionTimer.start();
+    }
+
     BasePage* page = factory.value()();
 
     if (!page)
@@ -249,6 +260,7 @@ BasePage* PageManager::ensurePage(
     }
 
     m_pages.insert(type, page);
+    m_pageCreatedAt.insert(type, QDateTime::currentDateTime());
     addWidget(page);
     connectCommonPageSignals(page);
     applyCurrentState(page);
@@ -258,6 +270,14 @@ BasePage* PageManager::ensurePage(
         QStringLiteral("page-instantiated"),
         pageTypeIdentifier(type)
         );
+    if (recordTiming)
+    {
+        MemoryUsageDiagnostics::recordTimedOperation(
+            QStringLiteral("page-construction"),
+            pageTypeIdentifier(type),
+            constructionTimer.elapsed()
+            );
+    }
 
     return page;
 }
@@ -341,6 +361,13 @@ void PageManager::showPage(
     PageType type
     )
 {
+    const bool recordTiming = MemoryUsageDiagnostics::isEnabled();
+    QElapsedTimer activationTimer;
+    if (recordTiming)
+    {
+        activationTimer.start();
+    }
+
     BasePage* page = ensurePage(type);
 
     if (!page)
@@ -350,7 +377,11 @@ void PageManager::showPage(
 
     BasePage* leavingPage = qobject_cast<BasePage*>(currentWidget());
 
-    if (page != leavingPage)
+    const bool pageChanged = page != leavingPage;
+    const bool firstActivation =
+        !m_pageLastActivatedAt.contains(type);
+
+    if (pageChanged)
     {
         if (leavingPage)
         {
@@ -367,8 +398,9 @@ void PageManager::showPage(
         page
         );
 
-    if (page != leavingPage)
+    if (pageChanged || firstActivation)
     {
+        m_pageLastActivatedAt.insert(type, QDateTime::currentDateTime());
         MemoryUsageDiagnostics::recordEvent(
             QStringLiteral("page-shown"),
             pageTypeIdentifier(type)
@@ -376,6 +408,70 @@ void PageManager::showPage(
     }
 
     emit outputCapabilitiesChanged();
+
+    if (recordTiming && (pageChanged || firstActivation))
+    {
+        MemoryUsageDiagnostics::recordTimedOperation(
+            QStringLiteral("page-activation"),
+            pageTypeIdentifier(type),
+            activationTimer.elapsed()
+            );
+    }
+}
+
+QString PageManager::currentPageIdentifier() const
+{
+    const auto* page = qobject_cast<const BasePage*>(currentWidget());
+    return page
+        ? pageTypeIdentifierForWidget(m_pages, page)
+        : QStringLiteral("none");
+}
+
+bool PageManager::isDatabaseOpen() const
+{
+    return m_databaseStateSet && m_databaseOpen;
+}
+
+QList<MemoryBreakdownEntry> PageManager::memoryBreakdown() const
+{
+    return {
+        {
+            QStringLiteral("Top-level page registry"),
+            QStringLiteral("Page Manager"),
+            0,
+            static_cast<quint64>(m_pages.size()),
+            QStringLiteral("instantiated=%1; registered=%2")
+                .arg(m_pages.size())
+                .arg(m_pageFactories.size()),
+            true
+        }
+    };
+}
+
+QList<PageLifecycleEntry> PageManager::pageLifecycle() const
+{
+    QList<PageLifecycleEntry> entries;
+    entries.reserve(m_pageFactories.size());
+
+    for (auto iterator = m_pageFactories.cbegin(); iterator != m_pageFactories.cend(); ++iterator)
+    {
+        const auto page = m_pages.constFind(iterator.key());
+        const PageLifecycleState state = page == m_pages.cend()
+            ? PageLifecycleState::Uncreated
+            : (page.value() == currentWidget()
+                   ? PageLifecycleState::Current
+                   : PageLifecycleState::Hidden);
+        entries.append(
+            {
+                pageTypeIdentifier(iterator.key()),
+                state,
+                m_pageCreatedAt.value(iterator.key()),
+                m_pageLastActivatedAt.value(iterator.key())
+            }
+            );
+    }
+
+    return entries;
 }
 
 void PageManager::releaseLeavingPageResources(

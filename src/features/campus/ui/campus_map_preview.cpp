@@ -3,6 +3,7 @@
 #include "core/memory_usage_diagnostics.h"
 
 #include <QFileInfo>
+#include <QElapsedTimer>
 #include <QFrame>
 #include <QGridLayout>
 #include <QImage>
@@ -290,6 +291,15 @@ void CampusMapPreview::setImagePaths(
     const QStringList& imagePaths
     )
 {
+    MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
+
+    const bool recordTiming = MemoryUsageDiagnostics::isEnabled();
+    QElapsedTimer decodeTimer;
+    if (recordTiming)
+    {
+        decodeTimer.start();
+    }
+
     clearImages();
 
     quint64 decodedBytes = 0;
@@ -358,6 +368,7 @@ void CampusMapPreview::setImagePaths(
     updateImageSizing(width());
     updatePreviewHeight(width());
     updateGeometry();
+    m_decodedImageBytes = decodedBytes;
 
     if (!m_imageLabels.isEmpty())
     {
@@ -366,6 +377,17 @@ void CampusMapPreview::setImagePaths(
             QStringLiteral("images=%1, decodedBytes=%2")
                 .arg(m_imageLabels.size())
                 .arg(decodedBytes)
+            );
+    }
+
+    if (recordTiming)
+    {
+        MemoryUsageDiagnostics::recordTimedOperation(
+            QStringLiteral("campus-map-decode"),
+            QStringLiteral("images=%1; decodedBytes=%2")
+                .arg(m_imageLabels.size())
+                .arg(decodedBytes),
+            decodeTimer.elapsed()
             );
     }
 }
@@ -444,6 +466,22 @@ bool CampusMapPreview::isHorizontal() const
 bool CampusMapPreview::hasImages() const
 {
     return !m_imageLabels.isEmpty();
+}
+
+QList<MemoryBreakdownEntry> CampusMapPreview::memoryBreakdown() const
+{
+    return {
+        {
+            QStringLiteral("Decoded campus map pixmaps"),
+            QStringLiteral("Campus Maps"),
+            m_decodedImageBytes,
+            static_cast<quint64>(m_imageLabels.size()),
+            QStringLiteral("images=%1; decoded cap=%2 px")
+                .arg(m_imageLabels.size())
+                .arg(MaximumDecodedImageDimension),
+            true
+        }
+    };
 }
 
 bool CampusMapPreview::hasHeightForWidth() const
@@ -629,6 +667,7 @@ void CampusMapPreview::clearImages()
 
     m_imageLabels.clear();
     m_decodedImageSizes.clear();
+    m_decodedImageBytes = 0;
 
     for (QLabel* titleLabel : std::as_const(m_titleLabels))
     {
@@ -644,6 +683,7 @@ void CampusMapPreview::clearImages()
             QStringLiteral("campus-maps-cleared")
             );
     }
+
 }
 
 void CampusMapPreview::rebuildLayout(

@@ -817,7 +817,13 @@ void MainWindow::showMemoryUsageMonitor()
 {
     if (!m_memoryUsageDialog)
     {
-        m_memoryUsageDialog = std::make_unique<MemoryUsageDialog>(this);
+        m_memoryUsageDialog = std::make_unique<MemoryUsageDialog>(
+            this,
+            m_pages,
+            nullptr,
+            m_services.get(),
+            m_languageService
+            );
     }
 
     // The dialog uses non-activating tool-window flags, so show() preserves

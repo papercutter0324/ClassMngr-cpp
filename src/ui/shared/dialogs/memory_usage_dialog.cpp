@@ -1,16 +1,26 @@
 #include "memory_usage_dialog.h"
 
+#include "core/application_services.h"
+#include "core/build_info.h"
+#include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "core/theme_service.h"
+#include "features/campus/ui/campus_map_preview.h"
+#include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/pages/pdf_viewer_page.h"
 
 #include <QClipboard>
 #include <QCloseEvent>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHideEvent>
 #include <QInputDialog>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
@@ -18,6 +28,8 @@
 #include <QSaveFile>
 #include <QShowEvent>
 #include <QScrollBar>
+#include <QScreen>
+#include <QSysInfo>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -35,11 +47,40 @@ QString signedBytesText(qint64 value)
         : static_cast<quint64>(value);
     return sign + MemoryUsageMetrics::formatBytes(magnitude);
 }
+
+QString themeText(Theme theme)
+{
+    switch (theme)
+    {
+    case Theme::Dark:
+        return QStringLiteral("dark");
+    case Theme::Light:
+        return QStringLiteral("light");
+    case Theme::SystemDefault:
+        return QStringLiteral("system default");
+    }
+
+    return QStringLiteral("unknown");
+}
+
+QString buildFlagsText()
+{
+#if defined(QT_DEBUG)
+    return QStringLiteral("Debug");
+#elif defined(_DEBUG)
+    return QStringLiteral("Debug");
+#else
+    return QStringLiteral("Release");
+#endif
+}
 }
 
 MemoryUsageDialog::MemoryUsageDialog(
     QWidget* parent,
-    std::unique_ptr<ProcessMemorySnapshotProvider> provider
+    PageManager* pageManager,
+    std::unique_ptr<ProcessMemorySnapshotProvider> provider,
+    ApplicationServices* services,
+    LanguageService* languageService
     )
     : QDialog(parent)
     , m_provider(
@@ -47,6 +88,9 @@ MemoryUsageDialog::MemoryUsageDialog(
               ? std::move(provider)
               : std::make_unique<PlatformProcessMemorySnapshotProvider>()
           )
+    , m_pageManager(pageManager)
+    , m_services(services)
+    , m_languageService(languageService)
 {
     setModal(false);
     setWindowFlags(
@@ -71,6 +115,11 @@ void MemoryUsageDialog::retranslateUi()
     m_copySummaryButton->setText(tr("Copy summary"));
     m_exportJsonButton->setText(tr("Export JSON..."));
     m_closeButton->setText(tr("Close"));
+    m_attributionHeading->setText(tr("Attributed retained memory"));
+    m_applicationHealthHeading->setText(tr("Application health"));
+    m_pageActionLabel->setText(tr("Page lifecycle actions:"));
+    m_openPageButton->setText(tr("Show page"));
+    m_releasePdfButton->setText(tr("Release PDF"));
 }
 
 void MemoryUsageDialog::refreshNow()
@@ -98,6 +147,8 @@ void MemoryUsageDialog::refreshNow()
     MemoryUsageDiagnostics::recordSnapshot(m_latestSnapshot);
     updateSnapshotLabels();
     updateHistoryText();
+    updateAttributionText();
+    updateApplicationHealthText();
 }
 
 void MemoryUsageDialog::captureBaseline()
@@ -169,6 +220,53 @@ QString MemoryUsageDialog::summaryText() const
                         )
                     )
             );
+    }
+
+    const QList<MemoryBreakdownEntry> attribution =
+        MemoryUsageDiagnostics::collectMemoryBreakdown();
+    quint64 attributedBytes = 0;
+    for (const MemoryBreakdownEntry& entry : attribution)
+    {
+        attributedBytes += entry.retainedBytes;
+    }
+    lines.append(
+        tr("Attributed retained memory (partial estimate): %1")
+            .arg(metricText(attributedBytes))
+        );
+    lines.append(QString());
+    lines.append(applicationHealthText());
+
+    QStringList recentEvents;
+    const QList<MemoryUsageHistoryEntry>& historyEntries =
+        history().entries();
+    for (
+        int index = qMax(0, historyEntries.size() - 20);
+        index < historyEntries.size();
+        ++index
+        )
+    {
+        const MemoryUsageHistoryEntry& entry = historyEntries.at(index);
+        if (entry.kind != MemoryUsageHistoryEntryKind::Event)
+        {
+            continue;
+        }
+
+        recentEvents.append(
+            QStringLiteral("%1  %2%3")
+                .arg(
+                    entry.snapshot.capturedAt.toString(QStringLiteral("HH:mm:ss")),
+                    entry.eventType,
+                    entry.eventDetail.isEmpty()
+                        ? QString()
+                        : QStringLiteral(": %1").arg(entry.eventDetail)
+                    )
+            );
+    }
+    if (!recentEvents.isEmpty())
+    {
+        lines.append(QString());
+        lines.append(tr("Recent diagnostic events:"));
+        lines.append(recentEvents.join(QLatin1Char('\n')));
     }
 
     return lines.join(QLatin1Char('\n'));
@@ -279,15 +377,89 @@ void MemoryUsageDialog::buildUi()
     controls->addStretch();
     layout->addLayout(controls);
 
-    auto* historyLabel = new QLabel(tr("Recent history (up to 10 minutes):"), this);
+    auto* historyLabel = new QLabel(
+        tr("Recent timeline and diagnostic events (up to 10 minutes):"),
+        this
+        );
     configureNoFocus(historyLabel);
     layout->addWidget(historyLabel);
     m_historyText = new QPlainTextEdit(this);
     m_historyText->setObjectName(QStringLiteral("memoryUsageHistory"));
     m_historyText->setReadOnly(true);
-    m_historyText->setMinimumHeight(150);
+    m_historyText->setMinimumHeight(120);
     configureNoFocus(m_historyText);
     layout->addWidget(m_historyText);
+
+    m_attributionHeading = new QLabel(this);
+    m_attributionHeading->setObjectName(QStringLiteral("memoryUsageAttributionHeading"));
+    configureNoFocus(m_attributionHeading);
+    layout->addWidget(m_attributionHeading);
+    m_attributionSummary = new QLabel(this);
+    m_attributionSummary->setObjectName(QStringLiteral("memoryUsageAttributionSummary"));
+    m_attributionSummary->setWordWrap(true);
+    configureNoFocus(m_attributionSummary);
+    layout->addWidget(m_attributionSummary);
+    m_attributionText = new QPlainTextEdit(this);
+    m_attributionText->setObjectName(QStringLiteral("memoryUsageAttribution"));
+    m_attributionText->setReadOnly(true);
+    m_attributionText->setMinimumHeight(140);
+    configureNoFocus(m_attributionText);
+    layout->addWidget(m_attributionText);
+
+    m_applicationHealthHeading = new QLabel(this);
+    m_applicationHealthHeading->setObjectName(
+        QStringLiteral("memoryUsageApplicationHealthHeading")
+        );
+    configureNoFocus(m_applicationHealthHeading);
+    layout->addWidget(m_applicationHealthHeading);
+    m_applicationHealthText = new QPlainTextEdit(this);
+    m_applicationHealthText->setObjectName(
+        QStringLiteral("memoryUsageApplicationHealth")
+        );
+    m_applicationHealthText->setReadOnly(true);
+    m_applicationHealthText->setMinimumHeight(130);
+    configureNoFocus(m_applicationHealthText);
+    layout->addWidget(m_applicationHealthText);
+
+    auto* pageActions = new QHBoxLayout;
+    m_pageActionLabel = new QLabel(this);
+    configureNoFocus(m_pageActionLabel);
+    pageActions->addWidget(m_pageActionLabel);
+    m_pageActionPage = new QComboBox(this);
+    m_pageActionPage->setObjectName(QStringLiteral("memoryUsagePageActionPage"));
+    for (const PageType type : {
+             PageType::PersonalDetails,
+             PageType::Calendar,
+             PageType::MySchedule,
+             PageType::MyClasses,
+             PageType::Schedule,
+             PageType::Classes,
+             PageType::TestingClasses,
+             PageType::TeacherInfo,
+             PageType::NativeEnglishTeachers,
+             PageType::GsTeam,
+             PageType::CampusDashboard,
+             PageType::SubPrep,
+             PageType::PdfViewer
+         })
+    {
+        m_pageActionPage->addItem(
+            PageManager::pageTypeIdentifier(type),
+            static_cast<int>(type)
+            );
+    }
+    configureNoFocus(m_pageActionPage);
+    pageActions->addWidget(m_pageActionPage);
+    m_openPageButton = new QPushButton(this);
+    m_openPageButton->setObjectName(QStringLiteral("memoryUsageShowPageButton"));
+    configureNoFocus(m_openPageButton);
+    pageActions->addWidget(m_openPageButton);
+    m_releasePdfButton = new QPushButton(this);
+    m_releasePdfButton->setObjectName(QStringLiteral("memoryUsageReleasePdfButton"));
+    configureNoFocus(m_releasePdfButton);
+    pageActions->addWidget(m_releasePdfButton);
+    pageActions->addStretch();
+    layout->addLayout(pageActions);
 
     auto* buttons = new QHBoxLayout;
     const auto addButton =
@@ -320,9 +492,13 @@ void MemoryUsageDialog::buildUi()
     connect(m_copySummaryButton, &QPushButton::clicked, this, &MemoryUsageDialog::copySummary);
     connect(m_exportJsonButton, &QPushButton::clicked, this, &MemoryUsageDialog::exportJson);
     connect(m_closeButton, &QPushButton::clicked, this, &MemoryUsageDialog::close);
+    connect(m_openPageButton, &QPushButton::clicked, this, &MemoryUsageDialog::navigateToSelectedPage);
+    connect(m_releasePdfButton, &QPushButton::clicked, this, &MemoryUsageDialog::releasePdfDocument);
 
     retranslateUi();
-    resize(560, 510);
+    updateAttributionText();
+    updateApplicationHealthText();
+    resize(760, 900);
 }
 
 void MemoryUsageDialog::updateSnapshotLabels()
@@ -395,6 +571,189 @@ void MemoryUsageDialog::updateHistoryText()
         );
 }
 
+void MemoryUsageDialog::updateAttributionText()
+{
+    const QList<MemoryBreakdownEntry> attribution =
+        MemoryUsageDiagnostics::collectMemoryBreakdown();
+    quint64 attributedBytes = 0;
+    QStringList lines;
+
+    for (const MemoryBreakdownEntry& entry : attribution)
+    {
+        attributedBytes += entry.retainedBytes;
+        const QString byteText = entry.retainedBytes == 0
+            ? tr("no byte estimate")
+            : metricText(entry.retainedBytes);
+        lines.append(
+            QStringLiteral("%1 — %2: %3%4; items=%5\n  %6")
+                .arg(
+                    entry.owner,
+                    entry.category,
+                    entry.isEstimated ? QStringLiteral("~") : QString(),
+                    byteText,
+                    QString::number(entry.itemCount),
+                    entry.detail
+                    )
+            );
+    }
+
+    if (lines.isEmpty())
+    {
+        lines.append(tr("No feature-owned retained resources are instantiated yet."));
+    }
+
+    const QString comparison = !m_latestSnapshot.isAvailable
+        ? tr("Unavailable because process private usage is unavailable.")
+        : attributedBytes <= m_latestSnapshot.privateUsageBytes
+              ? metricText(m_latestSnapshot.privateUsageBytes - attributedBytes)
+              : tr("Not shown because the partial estimates exceed current private usage.");
+    m_attributionSummary->setText(
+        tr("Attributed retained memory: %1 across %2 entries. "
+           "These feature-owned estimates are partial and do not equal process private usage. "
+           "Unattributed/shared/runtime comparison: %3")
+            .arg(
+                metricText(attributedBytes),
+                QString::number(attribution.size()),
+                comparison
+                )
+        );
+
+    const QList<PageLifecycleEntry> lifecycle =
+        MemoryUsageDiagnostics::collectPageLifecycle();
+    if (!lifecycle.isEmpty())
+    {
+        lines.append(QString());
+        lines.append(tr("Page lifecycle:"));
+
+        for (const PageLifecycleEntry& entry : lifecycle)
+        {
+            QString state;
+            switch (entry.state)
+            {
+            case PageLifecycleState::Uncreated:
+                state = tr("uncreated");
+                break;
+            case PageLifecycleState::Hidden:
+                state = tr("instantiated, hidden");
+                break;
+            case PageLifecycleState::Current:
+                state = tr("current");
+                break;
+            }
+
+            lines.append(
+                QStringLiteral("%1 — %2; created=%3; last active=%4")
+                    .arg(
+                        entry.pageIdentifier,
+                        state,
+                        entry.createdAt.isValid()
+                            ? entry.createdAt.toString(Qt::ISODateWithMs)
+                            : tr("never"),
+                        entry.lastActivatedAt.isValid()
+                            ? entry.lastActivatedAt.toString(Qt::ISODateWithMs)
+                            : tr("never")
+                        )
+                );
+        }
+    }
+
+    m_attributionText->setPlainText(lines.join(QLatin1Char('\n')));
+    m_releasePdfButton->setEnabled(
+        m_pageManager
+        && m_pageManager->pdfViewerPage()
+        && m_pageManager->pdfViewerPage()->hasLoadedDocument()
+        );
+    m_openPageButton->setEnabled(m_pageManager != nullptr);
+}
+
+void MemoryUsageDialog::updateApplicationHealthText()
+{
+    if (m_applicationHealthText)
+    {
+        m_applicationHealthText->setPlainText(applicationHealthText());
+    }
+}
+
+QString MemoryUsageDialog::applicationHealthText() const
+{
+    QStringList lines{
+        tr("Application version: %1").arg(QCoreApplication::applicationVersion()),
+        tr("Build: revision=%1; timestamp=%2; flags=%3")
+            .arg(
+                QString::fromUtf8(BuildInfo::GitRevision),
+                QString::fromUtf8(BuildInfo::BuildTimestamp),
+                buildFlagsText()
+                ),
+        tr("Runtime: Qt %1; OS=%2; CPU=%3")
+            .arg(
+                QString::fromLatin1(qVersion()),
+                QSysInfo::prettyProductName(),
+                QSysInfo::currentCpuArchitecture()
+                ),
+        tr("Database: %1")
+            .arg(
+                m_services
+                    ? (m_services->hasOpenDatabase()
+                           ? tr("open")
+                           : tr("closed"))
+                    : tr("unavailable")
+                ),
+        tr("Current page: %1")
+            .arg(
+                m_pageManager
+                    ? m_pageManager->currentPageIdentifier()
+                    : tr("unavailable")
+                ),
+        tr("Language: %1; theme: %2")
+            .arg(
+                m_languageService
+                    ? m_languageService->loadedLocaleName()
+                    : tr("unavailable"),
+                m_services && m_services->themeService()
+                    ? themeText(m_services->themeService()->currentTheme())
+                    : tr("unavailable")
+                ),
+        tr("Display scale: %1")
+            .arg(
+                QGuiApplication::primaryScreen()
+                    ? QString::number(
+                          QGuiApplication::primaryScreen()->devicePixelRatio(),
+                          'f',
+                          2
+                          )
+                    : tr("unavailable")
+                ),
+        tr("Memory policies: Calendar visible/30-day/prefetch/next-ten retention; "
+           "Campus decoded-image cap %1 px")
+            .arg(CampusMapPreview::MaximumDecodedImageDimension)
+    };
+
+    const QList<DeveloperBackgroundTask> tasks =
+        MemoryUsageDiagnostics::activeBackgroundTasks();
+    lines.append(
+        tr("Active background tasks: %1")
+            .arg(tasks.size())
+        );
+    for (const DeveloperBackgroundTask& task : tasks)
+    {
+        lines.append(
+            QStringLiteral("  %1 — %2; started=%3; cancellation=%4")
+                .arg(
+                    task.category,
+                    task.name,
+                    task.startedAt.toString(Qt::ISODateWithMs),
+                    task.cancellable
+                        ? (task.cancellationRequested
+                               ? tr("requested")
+                               : tr("available"))
+                        : tr("not supported")
+                    )
+            );
+    }
+
+    return lines.join(QLatin1Char('\n'));
+}
+
 void MemoryUsageDialog::updateTimerInterval(int index)
 {
     const int interval = m_refreshInterval->itemData(index).toInt();
@@ -448,8 +807,99 @@ void MemoryUsageDialog::exportJson()
         return;
     }
 
-    file.write(history().toJson().toJson(QJsonDocument::Indented));
+    QJsonObject document = history().toJson().object();
+    QJsonArray attribution;
+    quint64 attributedBytes = 0;
+    for (const MemoryBreakdownEntry& entry :
+         MemoryUsageDiagnostics::collectMemoryBreakdown())
+    {
+        attributedBytes += entry.retainedBytes;
+        attribution.append(
+            QJsonObject{
+                {QStringLiteral("category"), entry.category},
+                {QStringLiteral("owner"), entry.owner},
+                {QStringLiteral("retainedBytes"), static_cast<double>(entry.retainedBytes)},
+                {QStringLiteral("itemCount"), static_cast<double>(entry.itemCount)},
+                {QStringLiteral("detail"), entry.detail},
+                {QStringLiteral("estimated"), entry.isEstimated}
+            }
+            );
+    }
+    document.insert(QStringLiteral("attributedRetainedBytes"), static_cast<double>(attributedBytes));
+    document.insert(QStringLiteral("attribution"), attribution);
+
+    QJsonArray lifecycle;
+    for (const PageLifecycleEntry& entry :
+         MemoryUsageDiagnostics::collectPageLifecycle())
+    {
+        lifecycle.append(
+            QJsonObject{
+                {QStringLiteral("page"), entry.pageIdentifier},
+                {QStringLiteral("state"),
+                 entry.state == PageLifecycleState::Uncreated
+                     ? QStringLiteral("uncreated")
+                     : (entry.state == PageLifecycleState::Current
+                            ? QStringLiteral("current")
+                            : QStringLiteral("hidden"))},
+                {QStringLiteral("createdAt"), entry.createdAt.toString(Qt::ISODateWithMs)},
+                {QStringLiteral("lastActivatedAt"), entry.lastActivatedAt.toString(Qt::ISODateWithMs)}
+            }
+            );
+    }
+    document.insert(QStringLiteral("pageLifecycle"), lifecycle);
+    document.insert(
+        QStringLiteral("applicationHealth"),
+        applicationHealthText()
+        );
+
+    QJsonArray backgroundTasks;
+    for (const DeveloperBackgroundTask& task :
+         MemoryUsageDiagnostics::activeBackgroundTasks())
+    {
+        backgroundTasks.append(
+            QJsonObject{
+                {QStringLiteral("category"), task.category},
+                {QStringLiteral("name"), task.name},
+                {QStringLiteral("startedAt"), task.startedAt.toString(Qt::ISODateWithMs)},
+                {QStringLiteral("cancellable"), task.cancellable},
+                {QStringLiteral("cancellationRequested"), task.cancellationRequested}
+            }
+            );
+    }
+    document.insert(QStringLiteral("activeBackgroundTasks"), backgroundTasks);
+
+    file.write(QJsonDocument(document).toJson(QJsonDocument::Indented));
     file.commit();
+}
+
+void MemoryUsageDialog::navigateToSelectedPage()
+{
+    if (!m_pageManager)
+    {
+        return;
+    }
+
+    if (!m_pageManager->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
+
+    m_pageManager->showPage(
+        static_cast<PageType>(m_pageActionPage->currentData().toInt())
+        );
+    updateAttributionText();
+    updateApplicationHealthText();
+}
+
+void MemoryUsageDialog::releasePdfDocument()
+{
+    if (m_pageManager && m_pageManager->pdfViewerPage())
+    {
+        m_pageManager->pdfViewerPage()->releaseDocument();
+    }
+
+    updateAttributionText();
+    updateApplicationHealthText();
 }
 
 void MemoryUsageDialog::restoreSavedGeometry()

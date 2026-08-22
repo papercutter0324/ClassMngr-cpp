@@ -14,6 +14,9 @@ class QShowEvent;
 class QHideEvent;
 class QCloseEvent;
 class QTimer;
+class PageManager;
+class ApplicationServices;
+class LanguageService;
 
 // A developer-only, modeless process monitor. It deliberately never accepts
 // keyboard focus so showing or clicking it cannot interrupt the active editor.
@@ -24,7 +27,10 @@ class MemoryUsageDialog final : public QDialog
 public:
     explicit MemoryUsageDialog(
         QWidget* parent = nullptr,
-        std::unique_ptr<ProcessMemorySnapshotProvider> provider = nullptr
+        PageManager* pageManager = nullptr,
+        std::unique_ptr<ProcessMemorySnapshotProvider> provider = nullptr,
+        ApplicationServices* services = nullptr,
+        LanguageService* languageService = nullptr
         );
 
     void retranslateUi();
@@ -45,10 +51,14 @@ private:
     void buildUi();
     void updateSnapshotLabels();
     void updateHistoryText();
+    void updateAttributionText();
+    void updateApplicationHealthText();
     void updateTimerInterval(int index);
     void promptForMarker();
     void copySummary();
     void exportJson();
+    void navigateToSelectedPage();
+    void releasePdfDocument();
     void restoreSavedGeometry();
     void persistGeometry() const;
     void configureNoFocus(QWidget* widget) const;
@@ -57,8 +67,12 @@ private:
         quint64 value,
         quint64 baseline
         ) const;
+    [[nodiscard]] QString applicationHealthText() const;
 
     std::unique_ptr<ProcessMemorySnapshotProvider> m_provider;
+    PageManager* m_pageManager = nullptr;
+    ApplicationServices* m_services = nullptr;
+    LanguageService* m_languageService = nullptr;
     ProcessMemorySnapshot m_latestSnapshot;
     ProcessMemorySnapshot m_baselineSnapshot;
     bool m_hasBaseline = false;
@@ -74,12 +88,21 @@ private:
     QLabel* m_threadCountValue = nullptr;
     QLabel* m_capturedAtValue = nullptr;
     QLabel* m_baselineDeltaValue = nullptr;
+    QLabel* m_attributionHeading = nullptr;
+    QLabel* m_attributionSummary = nullptr;
+    QLabel* m_pageActionLabel = nullptr;
+    QLabel* m_applicationHealthHeading = nullptr;
     QComboBox* m_refreshInterval = nullptr;
     QPlainTextEdit* m_historyText = nullptr;
+    QPlainTextEdit* m_attributionText = nullptr;
+    QPlainTextEdit* m_applicationHealthText = nullptr;
+    QComboBox* m_pageActionPage = nullptr;
     QPushButton* m_captureBaselineButton = nullptr;
     QPushButton* m_resetPeakButton = nullptr;
     QPushButton* m_markerButton = nullptr;
     QPushButton* m_copySummaryButton = nullptr;
     QPushButton* m_exportJsonButton = nullptr;
     QPushButton* m_closeButton = nullptr;
+    QPushButton* m_openPageButton = nullptr;
+    QPushButton* m_releasePdfButton = nullptr;
 };

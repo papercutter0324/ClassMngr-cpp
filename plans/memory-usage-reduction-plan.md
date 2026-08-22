@@ -80,6 +80,32 @@ overhead on normal users.
 - Completed the full Debug CTest sweep: all 61 tests pass, including the
   startup-performance, PageManager/PDF lifecycle, Calendar cache, Classes,
   Analytics ranking-model, and Campus map suites.
+- Completed Phase 9: added a developer-only, non-activating Memory Usage
+  Monitor with Windows working-set/private-usage snapshots, baseline/peak/
+  copy/export controls, a capped ten-minute history, and redacted JSON export.
+  The monitor records page, PDF, calendar-retention, and campus-map events
+  only after a developer opens it. Focus, formatting, history, redaction, and
+  Windows snapshot coverage pass alongside the focused lifecycle regressions.
+- Completed Phase 10: added low-overhead, feature-owned retained-memory
+  providers for the page manager, Calendar cache, Classes shell/ranking model,
+  PDF Viewer, and Campus Maps. The monitor now labels their sum as a partial
+  estimate and separately shows the unattributed/shared/runtime comparison;
+  it also reports every registered page as uncreated, hidden, or current with
+  creation/activation times. Developers can safely navigate to a page and
+  release only an already-loaded PDF. Added the Windows WPR/WPA and Visual
+  Studio profiling playbook in `docs/memory-profiling-windows.md`. All 62
+  Debug CTest tests pass, including attribution, page-lifecycle, PDF-release,
+  Calendar cache, ranking-model, Campus map, and monitor-focus coverage.
+- Completed Phase 11: extended the developer monitor with an application
+  health summary (build/runtime/configuration, current page, database state,
+  display scale, memory policies, and active background tasks) without paths
+  or user data. The timeline is now capped by both entries and bytes, records
+  lifecycle/cache/PDF/timing/slow-operation context, and is included in copy
+  and JSON-report workflows. Added opt-in timing for page construction and
+  activation, Calendar fetch/render, PDF open/release, and Campus decode.
+  Startup diagnostics now emit `classmngr-scenario-report-v1` checkpoints,
+  and the profiling guide documents the matching manual scenario. All 62
+  Debug CTest tests pass.
 
 ## Confirmed Current Behavior
 

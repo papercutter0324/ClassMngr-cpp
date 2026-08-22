@@ -1,7 +1,9 @@
 #pragma once
 
+#include "core/memory_usage_diagnostics.h"
 #include "ui/shared/pages/basepage.h"
 
+#include <QElapsedTimer>
 #include <QString>
 
 class QLabel;
@@ -21,7 +23,7 @@ struct PdfViewerDocumentDescriptor
     bool printEnabled = false;
 };
 
-class PdfViewerPage : public BasePage
+class PdfViewerPage : public BasePage, public MemoryBreakdownProvider
 {
     Q_OBJECT
 
@@ -45,6 +47,8 @@ public:
 
     [[nodiscard]] QString currentFilePath() const;
     [[nodiscard]] bool hasLoadedDocument() const;
+    [[nodiscard]] QList<MemoryBreakdownEntry>
+        memoryBreakdown() const override;
 
     void setDocumentPageSpacing(
         DocumentPageSpacing spacing
@@ -109,6 +113,9 @@ private:
     bool m_tearingDown = false;
     bool m_documentReleased = true;
     bool m_documentLoadRecorded = false;
+    bool m_documentLoadTimed = false;
+    quint64 m_documentByteCount = 0;
+    QElapsedTimer m_documentLoadTimer;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;

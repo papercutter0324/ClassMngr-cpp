@@ -14,6 +14,8 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <algorithm>
+
 class CampusMapTests : public QObject
 {
     Q_OBJECT
@@ -515,6 +517,8 @@ void CampusMapTests::gallerySwitchesAtBreakpoint()
 
 void CampusMapTests::retainedSourceImagesAreBoundedDuringDecode()
 {
+    MemoryUsageDiagnostics::enable();
+    MemoryUsageDiagnostics::history().clear();
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
 
@@ -545,6 +549,31 @@ void CampusMapTests::retainedSourceImagesAreBoundedDuringDecode()
             )
         < 0.01
         );
+    const MemoryBreakdownEntry attribution =
+        preview.memoryBreakdown().constFirst();
+    QCOMPARE(attribution.owner, QStringLiteral("Campus Maps"));
+    QCOMPARE(attribution.itemCount, quint64(1));
+    QCOMPARE(
+        attribution.retainedBytes,
+        static_cast<quint64>(decodedSize.width())
+            * static_cast<quint64>(decodedSize.height())
+            * 4
+        );
+    QVERIFY(attribution.isEstimated);
+    const QList<MemoryUsageHistoryEntry>& diagnosticEvents =
+        MemoryUsageDiagnostics::history().entries();
+    QVERIFY(std::any_of(
+        diagnosticEvents.cbegin(),
+        diagnosticEvents.cend(),
+        [](const MemoryUsageHistoryEntry& entry)
+        {
+            return entry.kind == MemoryUsageHistoryEntryKind::Event
+                && entry.eventType == QStringLiteral("timing")
+                && entry.eventDetail.contains(
+                    QStringLiteral("campus-map-decode")
+                    );
+        }
+        ));
 
     preview.show();
     preview.resize(

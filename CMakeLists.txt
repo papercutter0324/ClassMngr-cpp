@@ -142,6 +142,22 @@ if(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP)
     set(CLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP_CPP true)
 endif()
 
+set(CLASSMNGR_GIT_REVISION "unknown")
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        OUTPUT_VARIABLE CLASSMNGR_GIT_REVISION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+if(CLASSMNGR_GIT_REVISION STREQUAL "")
+    set(CLASSMNGR_GIT_REVISION "unknown")
+endif()
+string(TIMESTAMP CLASSMNGR_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
+
 configure_file(
     src/core/build_info.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/generated/core/build_info.h
