@@ -506,8 +506,10 @@ void TestingClassesPageTests
         );
     testingEditor->saveData();
 
-    const Roster saved =
+    const Result<Roster> savedResult =
         services.dataService()->loadRoster(*created);
+    QVERIFY(savedResult);
+    const Roster& saved = *savedResult;
     const int winterColumn =
         saved.columns.indexOf(
             QStringLiteral("Winter")

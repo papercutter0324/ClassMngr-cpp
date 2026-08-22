@@ -67,12 +67,22 @@ ValidationResult CalendarEventValidator::validate(const CalendarEvent& event)
     ValidationResult result;
     const QString title = event.title.simplified();
 
-    result.merge(ValidationRules::textLength(
-        title,
-        1,
-        MaximumTitleLength,
-        field(QStringLiteral("title"))
-        ));
+    if (title.isEmpty())
+    {
+        result.add(ValidationRules::issue(
+            QStringLiteral("calendar.title.required"),
+            field(QStringLiteral("title"))
+            ));
+    }
+    else
+    {
+        result.merge(ValidationRules::textLength(
+            title,
+            1,
+            MaximumTitleLength,
+            field(QStringLiteral("title"))
+            ));
+    }
     result.merge(ValidationRules::stringEnumValue(
         event.eventType,
         calendarEventTypes(),

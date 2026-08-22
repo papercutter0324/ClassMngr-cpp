@@ -21,6 +21,7 @@ private slots:
     void insertTransferredRowRejectsFullTargetRoster();
     void transferredRowDetectsDuplicateStudentPair();
     void namePairHelpersDetectDuplicatesAndSuggestSuffix();
+    void structuredValidationMarksAndClearsAffectedCells();
 };
 
 namespace
@@ -612,6 +613,41 @@ void RosterModelTests::namePairHelpersDetectDuplicatesAndSuggestSuffix()
         model.suggestedKoreanNameWithSuffix(0),
         QStringLiteral("김민수(B)")
         );
+}
+
+void RosterModelTests::structuredValidationMarksAndClearsAffectedCells()
+{
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.rows = {
+        studentRow(
+            QStringLiteral("Amy"),
+            QStringLiteral("김아미")
+            )
+    };
+
+    RosterModel model;
+    model.setRoster(roster);
+
+    const int koreanColumn = model.koreanNameColumn();
+    model.setDomainValidation(ValidationResult(ValidationIssue{
+        .code = QStringLiteral("roster.student_name.required"),
+        .field = QStringLiteral("rows[0].Korean"),
+        .row = 0,
+        .column = koreanColumn
+        }));
+
+    QCOMPARE(
+        model.errorsForCell(0, koreanColumn),
+        QStringList{QStringLiteral("This field is required.")}
+        );
+    QCOMPARE(
+        model.index(0, koreanColumn).data(Qt::ToolTipRole).toString(),
+        QStringLiteral("This field is required.")
+        );
+
+    model.setDomainValidation({});
+    QVERIFY(model.errorsForCell(0, koreanColumn).isEmpty());
 }
 
 int main(

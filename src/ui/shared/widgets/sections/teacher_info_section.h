@@ -23,6 +23,7 @@ public:
     void selectTeacher(int teacherId);
 
     int teacherId() const;
+    QComboBox* teacherSelector() const;
 
     void retranslateUi();
 

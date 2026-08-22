@@ -2,6 +2,31 @@
 
 #include "features/roster/ui/roster_constants.h"
 
+#include <utility>
+
+namespace
+{
+QString domainValidationMessage(const ValidationIssue& issue)
+{
+    if (issue.code.endsWith(QStringLiteral(".required")))
+    {
+        return RosterModel::tr("This field is required.");
+    }
+
+    if (issue.code == QStringLiteral("validation.length.out_of_bounds"))
+    {
+        return RosterModel::tr("This value is too long.");
+    }
+
+    if (issue.code.contains(QStringLiteral("duplicate")))
+    {
+        return RosterModel::tr("Duplicate student name pair.");
+    }
+
+    return RosterModel::tr("Enter a valid value.");
+}
+}
+
 RosterModel::RosterModel(
     QObject* parent
     )
@@ -263,6 +288,7 @@ void RosterModel::setRoster(
 
     rebuildRows(roster);
     validateAll();
+    m_domainValidationErrors.clear();
 
     m_dirtyCells.clear();
     m_dirty = false;
@@ -302,9 +328,61 @@ QStringList RosterModel::errorsForCell(
     int column
     ) const
 {
-    return m_validationErrors.value(
+    QStringList errors = m_validationErrors.value(
         cellKey(row, column)
         );
+
+    const QStringList domainErrors = m_domainValidationErrors.value(
+        cellKey(row, column)
+        );
+    for (const QString& error : domainErrors)
+    {
+        if (!errors.contains(error))
+        {
+            errors.append(error);
+        }
+    }
+
+    return errors;
+}
+
+void RosterModel::setDomainValidation(const ValidationResult& validation)
+{
+    QHash<QString, QStringList> errors;
+    for (const ValidationIssue& issue : validation.issues())
+    {
+        if (!issue.isError()
+            || issue.row < 0
+            || issue.row >= rowCount()
+            || issue.column < 0
+            || issue.column >= columnCount())
+        {
+            continue;
+        }
+
+        QStringList messages = errors.value(cellKey(issue.row, issue.column));
+        const QString message = domainValidationMessage(issue);
+        if (!messages.contains(message))
+        {
+            messages.append(message);
+        }
+        errors.insert(cellKey(issue.row, issue.column), messages);
+    }
+
+    if (m_domainValidationErrors == errors)
+    {
+        return;
+    }
+
+    m_domainValidationErrors = std::move(errors);
+    if (rowCount() > 0 && columnCount() > 0)
+    {
+        emit dataChanged(
+            index(0, 0),
+            index(rowCount() - 1, columnCount() - 1),
+            {Qt::ToolTipRole}
+            );
+    }
 }
 
 QString RosterModel::cellKey(

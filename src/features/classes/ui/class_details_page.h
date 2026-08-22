@@ -9,6 +9,7 @@
 
 class ApplicationServices;
 class AutosaveCoordinator;
+class FormValidationBinder;
 class PageHeader;
 class ScrollablePageBody;
 class TeacherInfoSection;
@@ -60,6 +61,9 @@ private:
     void markDirty();
     void clearDirty();
     void updateActions();
+    ClassInfo classInfoFromForm() const;
+    void refreshScheduleValidationBindings();
+    void updateFormValidation();
     bool saveClassInfoInternal(
         bool showMessages
         );
@@ -78,6 +82,7 @@ private:
 
     bool m_embedded{false};
     AutosaveCoordinator* m_autosave{nullptr};
+    FormValidationBinder* m_validationBinder{nullptr};
 
     SectionCard* m_teacherCard{nullptr};
     SectionCard* m_detailsCard{nullptr};
@@ -86,6 +91,15 @@ private:
     TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};
     ClassScheduleSection* m_scheduleSection{nullptr};
+
+    QLabel* m_teacherValidationMessage{nullptr};
+    QLabel* m_gradeValidationMessage{nullptr};
+    QLabel* m_levelValidationMessage{nullptr};
+    QLabel* m_readingBookValidationMessage{nullptr};
+    QLabel* m_essayBookValidationMessage{nullptr};
+    QLabel* m_colorValidationMessage{nullptr};
+    QLabel* m_regularScheduleValidationMessage{nullptr};
+    QLabel* m_intensiveScheduleValidationMessage{nullptr};
 
     ScrollablePageBody* m_pageBody{nullptr};
     QWidget* m_scrollContent{nullptr};

@@ -6,6 +6,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
 #include <QMetaObject>
@@ -72,6 +73,7 @@ private slots:
     void promptsWhenSecondPreferredNameChoiceIsAdded();
     void birthdayUsesCalendarMonthAndDayOnly();
     void headerKeyboardOpensUntargeted();
+    void inlineValidationBlocksManualSaveUntilCorrected();
 };
 
 void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
@@ -98,9 +100,9 @@ void TeacherInfoPageTests::personalDetailsUseRequestedTwoRowOrder()
     verifyPosition(grid, korean, 1, 1);
     verifyPosition(grid, romanization, 1, 2);
     verifyPosition(grid, preferredName, 1, 3);
-    verifyPosition(grid, room, 4, 0);
-    verifyPosition(grid, birthday, 4, 1);
-    verifyPosition(grid, phone, 4, 2);
+    verifyPosition(grid, room, 5, 0);
+    verifyPosition(grid, birthday, 5, 1);
+    verifyPosition(grid, phone, 5, 2);
 
     page.resize(640, 480);
     page.show();
@@ -257,6 +259,47 @@ void TeacherInfoPageTests::headerKeyboardOpensUntargeted()
     QVERIFY(keyboard->isVisible());
     QVERIFY(!keyboard->target());
     keyboard->close();
+}
+
+void TeacherInfoPageTests::inlineValidationBlocksManualSaveUntilCorrected()
+{
+    TeacherInfoPage page(nullptr);
+    page.setSaveMode(SaveMode::Manual);
+
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Alex");
+    page.loadTeacher(teacher);
+
+    auto* english = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    auto* message = page.findChild<QLabel*>(
+        QStringLiteral("teacherEnValidationMessage")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("teacherInfoSaveButton")
+        );
+    QVERIFY(english);
+    QVERIFY(message);
+    QVERIFY(saveButton);
+
+    english->clear();
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        english->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(message->text(), QStringLiteral("This field is required."));
+    QVERIFY(!message->isHidden());
+    QVERIFY(!saveButton->isEnabled());
+
+    english->setText(QStringLiteral("Alex"));
+
+    QVERIFY(!english->property("formValidationState").isValid());
+    QVERIFY(message->isHidden());
+    QVERIFY(saveButton->isEnabled());
 }
 
 QTEST_MAIN(TeacherInfoPageTests)

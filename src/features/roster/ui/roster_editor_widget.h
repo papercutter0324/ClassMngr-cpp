@@ -9,6 +9,7 @@
 
 class ApplicationServices;
 class AutosaveCoordinator;
+class FormValidationBinder;
 class PageHeader;
 class QLabel;
 class QModelIndex;
@@ -107,6 +108,9 @@ private:
         bool showValidationMessages
         );
 
+    void updateRosterValidation();
+    void focusFirstRosterError();
+
     void scheduleAutosave();
 
     void handleNameCellChanged(
@@ -156,7 +160,9 @@ private:
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;
     bool m_movingRosterRow = false;
+    bool m_updatingValidation = false;
     AutosaveCoordinator* m_autosave = nullptr;
+    FormValidationBinder* m_validationBinder = nullptr;
     bool m_embedded = false;
     bool m_testingClassMode = false;
     bool m_bottomKeyboardButtonVisible = true;
@@ -169,6 +175,7 @@ private:
     RosterModel* m_model = nullptr;
     RosterColumnLayoutController* m_layoutController = nullptr;
     RosterItemDelegate* m_delegate = nullptr;
+    QLabel* m_validationMessage = nullptr;
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;

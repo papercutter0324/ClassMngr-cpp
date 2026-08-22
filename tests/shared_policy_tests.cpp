@@ -47,9 +47,12 @@ private slots:
     void englishNameNormalization();
     void englishNameValidation_data();
     void englishNameValidation();
+    void invalidEnglishNameNormalizationPreservesErrors();
     void koreanNameValidation_data();
     void koreanNameValidation();
+    void invalidKoreanNameNormalizationPreservesErrors();
     void duplicatePairValidation();
+    void generatedFileNamesAreSafeAndIdempotent();
     void validationResultHelpers();
     void structuredNameValidation_data();
     void structuredNameValidation();
@@ -322,6 +325,41 @@ void SharedPolicyTests::englishNameValidation()
     }
 }
 
+void SharedPolicyTests::invalidEnglishNameNormalizationPreservesErrors()
+{
+    for (ushort code = 0; code <= 0x7f; ++code)
+    {
+        const QString input = QStringLiteral("A") + QChar(code)
+            + QStringLiteral("B");
+        const auto originalIssues = StudentNameUtils::validateEnglishName(input);
+        if (!originalIssues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsInvalidCharacters
+                ))
+        {
+            continue;
+        }
+
+        const QString normalized = StudentNameUtils::normalizeEnglishName(input);
+        const auto normalizedIssues = StudentNameUtils::validateEnglishName(
+            normalized
+            );
+        QVERIFY2(
+            normalizedIssues.contains(
+                StudentNameUtils::ValidationIssue::EnglishContainsInvalidCharacters
+                ),
+            qPrintable(QStringLiteral("Normalization hid an invalid ASCII character: %1")
+                .arg(code))
+            );
+    }
+
+    const QString nonAscii = QStringLiteral("A\u00E9B");
+    const QString normalized = StudentNameUtils::normalizeEnglishName(nonAscii);
+    QCOMPARE(normalized, nonAscii);
+    QVERIFY(StudentNameUtils::validateEnglishName(normalized).contains(
+        StudentNameUtils::ValidationIssue::EnglishContainsNonAscii
+        ));
+}
+
 void SharedPolicyTests::koreanNameValidation_data()
 {
     QTest::addColumn<QString>("value");
@@ -349,6 +387,40 @@ void SharedPolicyTests::koreanNameValidation()
     }
 }
 
+void SharedPolicyTests::invalidKoreanNameNormalizationPreservesErrors()
+{
+    const QString prefix = QString::fromUtf8("\xEA\xB9\x80");
+    const QString suffix = QString::fromUtf8("\xEB\xAF\xBC\xEC\x88\x98");
+    for (ushort code = 0; code <= 0x7f; ++code)
+    {
+        const QString input = prefix + QChar(code) + suffix;
+        const auto originalIssues = StudentNameUtils::validateKoreanName(input);
+        if (!originalIssues.contains(
+                StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+                ))
+        {
+            continue;
+        }
+
+        const QString normalized = StudentNameUtils::normalizeKoreanName(input);
+        QCOMPARE(normalized, input.trimmed());
+        QVERIFY2(
+            StudentNameUtils::validateKoreanName(normalized).contains(
+                StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+                ),
+            qPrintable(QStringLiteral("Normalization hid an invalid ASCII character: %1")
+                .arg(code))
+            );
+    }
+
+    const QString hanCharacter = prefix + QString::fromUtf8("\xE4\xB8\xAD") + suffix;
+    const QString normalized = StudentNameUtils::normalizeKoreanName(hanCharacter);
+    QCOMPARE(normalized, hanCharacter);
+    QVERIFY(StudentNameUtils::validateKoreanName(normalized).contains(
+        StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+        ));
+}
+
 void SharedPolicyTests::duplicatePairValidation()
 {
     const QList<QStringList> rows{
@@ -359,6 +431,35 @@ void SharedPolicyTests::duplicatePairValidation()
     const auto duplicates = StudentNameUtils::duplicateRowsByNamePair(rows, 0, 1);
     QCOMPARE(duplicates.size(), 1);
     QCOMPARE(duplicates.constBegin().value(), QList<int>({0, 1}));
+}
+
+void SharedPolicyTests::generatedFileNamesAreSafeAndIdempotent()
+{
+    QString unsafeName = QStringLiteral("Report");
+    for (ushort code = 0; code <= 0x1f; ++code)
+    {
+        unsafeName.append(QChar(code));
+    }
+    unsafeName += QStringLiteral("\\\\/:*?\"<>|. ");
+
+    const QString safeName = FileNameUtils::filesystemSafeFileName(
+        unsafeName,
+        QStringLiteral(".json"),
+        QStringLiteral("Fallback")
+        );
+    QVERIFY(safeName.endsWith(QStringLiteral(".json")));
+    for (const QChar character : safeName)
+    {
+        QVERIFY(character.unicode() > 0x1f);
+        QVERIFY(!QStringLiteral("\\\\/:*?\"<>|").contains(character));
+    }
+
+    const auto normalized = FileNameUtils::normalizedFilesystemSafeFileName(
+        safeName,
+        QStringLiteral(".json")
+        );
+    QVERIFY(normalized);
+    QCOMPARE(*normalized, safeName);
 }
 
 void SharedPolicyTests::validationResultHelpers()
@@ -756,12 +857,12 @@ void SharedPolicyTests::featureServicesRejectInvalidTeacherAndClassMutations()
     legacyTeacherUpdate.addBindValue(QStringLiteral("Satellite"));
     legacyTeacherUpdate.addBindValue(QStringLiteral("Laser"));
     legacyTeacherUpdate.addBindValue(*createdTeacher);
-    QVERIFY(legacyTeacherUpdate.exec());
+    QVERIFY(!legacyTeacherUpdate.exec());
 
-    const Result<Teacher> legacyTeacher = teachers.teacher(*createdTeacher);
-    QVERIFY(legacyTeacher);
-    QCOMPARE(legacyTeacher->internetType, QStringLiteral("Satellite"));
-    QCOMPARE(legacyTeacher->projectionType, QStringLiteral("Laser"));
+    const Result<Teacher> storedTeacher = teachers.teacher(*createdTeacher);
+    QVERIFY(storedTeacher);
+    QCOMPARE(storedTeacher->internetType, QStringLiteral("WiFi"));
+    QCOMPARE(storedTeacher->projectionType, QStringLiteral("HDMI"));
 
     ClassService classes(dataService.databaseSession(), &dataService);
     const Result<int> firstClass = classes.create(QString());
@@ -842,9 +943,9 @@ void SharedPolicyTests::calendarEventValidatorNormalizesAndChecksTimeConsistency
     invalid.allDay = true;
     invalid.endDate = invalid.startDate.addDays(-1);
     const ValidationResult errors = CalendarEventValidator::validate(invalid);
-    QVERIFY(errors.hasErrors());
-    QCOMPARE(errors.forField(QStringLiteral("title")).first().code,
-             QStringLiteral("validation.length.out_of_bounds"));
+  QVERIFY(errors.hasErrors());
+  QCOMPARE(errors.forField(QStringLiteral("title")).first().code,
+             QStringLiteral("calendar.title.required"));
     QCOMPARE(errors.forField(QStringLiteral("eventType")).first().code,
              QStringLiteral("validation.enum.invalid_value"));
     QCOMPARE(errors.forField(QStringLiteral("endDate")).first().code,

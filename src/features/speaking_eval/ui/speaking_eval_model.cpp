@@ -5,6 +5,36 @@
 
 #include <QRegularExpression>
 
+#include <utility>
+
+namespace
+{
+QString domainValidationMessage(const ValidationIssue& issue)
+{
+    if (issue.code.endsWith(QStringLiteral(".required")))
+    {
+        return SpeakingEvalModel::tr("This field is required.");
+    }
+
+    if (issue.code == QStringLiteral("validation.length.out_of_bounds"))
+    {
+        return SpeakingEvalModel::tr("This value is too long.");
+    }
+
+    if (issue.code.contains(QStringLiteral("duplicate")))
+    {
+        return SpeakingEvalModel::tr("Duplicate student name pair.");
+    }
+
+    if (issue.code.contains(QStringLiteral("enum")))
+    {
+        return SpeakingEvalModel::tr("Choose a listed score.");
+    }
+
+    return SpeakingEvalModel::tr("Enter a valid value.");
+}
+}
+
 SpeakingEvalModel::SpeakingEvalModel(
     QObject* parent
     )
@@ -252,6 +282,7 @@ void SpeakingEvalModel::loadData(
         normalizeStructure(rows);
 
     revalidateAll();
+    m_domainErrors.clear();
     markSaved();
 
     endResetModel();
@@ -309,9 +340,62 @@ QStringList SpeakingEvalModel::errorsForCell(
     int column
     ) const
 {
-    return m_errors.value(
+    QStringList errors = m_errors.value(
         cellKey(row, column)
         );
+
+    const QStringList domainErrors = m_domainErrors.value(
+        cellKey(row, column)
+        );
+    for (const QString& error : domainErrors)
+    {
+        if (!errors.contains(error))
+        {
+            errors.append(error);
+        }
+    }
+
+    return errors;
+}
+
+void SpeakingEvalModel::setDomainValidation(const ValidationResult& validation)
+{
+    QHash<QString, QStringList> errors;
+    for (const ValidationIssue& issue : validation.issues())
+    {
+        if (!issue.isError()
+            || issue.row < 0
+            || issue.row >= rowCount()
+            || issue.column < 0
+            || issue.column >= columnCount())
+        {
+            continue;
+        }
+
+        const QString key = cellKey(issue.row, issue.column);
+        QStringList messages = errors.value(key);
+        const QString message = domainValidationMessage(issue);
+        if (!messages.contains(message))
+        {
+            messages.append(message);
+        }
+        errors.insert(key, messages);
+    }
+
+    if (m_domainErrors == errors)
+    {
+        return;
+    }
+
+    m_domainErrors = std::move(errors);
+    if (rowCount() > 0 && columnCount() > 0)
+    {
+        emit dataChanged(
+            index(0, 0),
+            index(rowCount() - 1, columnCount() - 1),
+            {Qt::ToolTipRole}
+            );
+    }
 }
 
 QList<int> SpeakingEvalModel::duplicateNameRows(
@@ -372,7 +456,7 @@ bool SpeakingEvalModel::containsNamePair(
 
 bool SpeakingEvalModel::hasErrors() const
 {
-    return !m_errors.isEmpty();
+    return !m_errors.isEmpty() || !m_domainErrors.isEmpty();
 }
 
 QStringList SpeakingEvalModel::errorList() const

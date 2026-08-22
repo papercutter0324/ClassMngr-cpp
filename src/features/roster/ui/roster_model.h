@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/roster.h"
+#include "domain/validation/validation_result.h"
 
 #include <QAbstractTableModel>
 #include <QHash>
@@ -136,6 +137,7 @@ public:
         int row,
         int column
         ) const;
+    void setDomainValidation(const ValidationResult& validation);
 
     int englishNameColumn() const;
 
@@ -236,6 +238,7 @@ private:
     QStringList m_columns;
     QList<QStringList> m_rows;
     QHash<QString, QStringList> m_validationErrors;
+    QHash<QString, QStringList> m_domainValidationErrors;
     QSet<QString> m_duplicateNameErrorCells;
     QSet<QString> m_dirtyCells;
     bool m_dirty = false;

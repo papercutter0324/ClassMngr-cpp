@@ -178,15 +178,19 @@ ClassDetailsSection::ClassDetailsSection(
     m_pendingFontColor = "#000000";
 
     m_gradeCombo = new NoWheelComboBox(this);
+    m_gradeCombo->setObjectName(QStringLiteral("classGradeCombo"));
     m_gradeCombo->addItem(QString());
     m_gradeCombo->addItems(ClassInfoConfig::Grades);
 
     m_levelCombo = new NoWheelComboBox(this);
+    m_levelCombo->setObjectName(QStringLiteral("classLevelCombo"));
     m_studentCountEdit = new QLineEdit(this);
     m_studentCountEdit->setReadOnly(true);
 
     m_readingBookCombo = new NoWheelComboBox(this);
+    m_readingBookCombo->setObjectName(QStringLiteral("classReadingBookCombo"));
     m_essayBookCombo = new NoWheelComboBox(this);
+    m_essayBookCombo->setObjectName(QStringLiteral("classEssayBookCombo"));
 
     m_colorButton =
         new TextFitPushButton(this);
@@ -194,6 +198,7 @@ ClassDetailsSection::ClassDetailsSection(
     m_colorButton->setText(
         tr("Choose Color")
         );
+    m_colorButton->setObjectName(QStringLiteral("classColorButton"));
     updateColorButtonWidth();
 
     auto* colorLayout =
@@ -483,6 +488,31 @@ QString ClassDetailsSection::classColor() const
 QString ClassDetailsSection::fontColor() const
 {
     return m_pendingFontColor;
+}
+
+QComboBox* ClassDetailsSection::gradeEditor() const
+{
+    return m_gradeCombo;
+}
+
+QComboBox* ClassDetailsSection::levelEditor() const
+{
+    return m_levelCombo;
+}
+
+QComboBox* ClassDetailsSection::readingBookEditor() const
+{
+    return m_readingBookCombo;
+}
+
+QComboBox* ClassDetailsSection::essayBookEditor() const
+{
+    return m_essayBookCombo;
+}
+
+QPushButton* ClassDetailsSection::colorEditor() const
+{
+    return m_colorButton;
 }
 
 void ClassDetailsSection::retranslateUi()

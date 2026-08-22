@@ -16,6 +16,7 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 #include <QAbstractItemModel>
 #include <QHeaderView>
@@ -183,7 +184,26 @@ void RosterEditorWidget::buildUi()
     m_table->setItemDelegate(m_delegate);
     m_table->verticalHeader()->setDefaultSectionSize(RosterUi::RowHeight);
     m_layoutController->applyWidths({});
+    m_validationBinder = new FormValidationBinder(m_autosave, nullptr, this);
+    m_validationMessage = m_validationBinder->createMessageLabel(this);
+    m_validationMessage->setObjectName(
+        QStringLiteral("rosterValidationMessage")
+        );
+    m_validationBinder->registerFieldPrefix(
+        QStringLiteral("rows["),
+        m_table,
+        m_validationMessage
+        );
+    m_validationBinder->registerFieldPrefix(
+        QStringLiteral("columns["),
+        m_table
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("columns"),
+        m_table
+        );
     contentLayout()->addWidget(m_table);
+    contentLayout()->addWidget(m_validationMessage);
 
     m_importButton = new TextFitPushButton(tr("Import Scores"), this);
     m_importButton->setEnabled(true);
@@ -248,6 +268,11 @@ void RosterEditorWidget::buildUi()
         this,
         [this](const QModelIndex& topLeft, const QModelIndex& bottomRight, const QList<int>&)
         {
+            if (m_updatingValidation)
+            {
+                return;
+            }
+
             handleNameCellChanged(topLeft, bottomRight);
             scheduleAutosave();
         }

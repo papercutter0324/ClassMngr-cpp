@@ -1,5 +1,6 @@
 #include "speaking_eval_page_p.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 void SpeakingEvalPage::saveData()
 {
@@ -65,22 +66,13 @@ bool SpeakingEvalPage::saveEvaluationInternal(
         return false;
     }
 
-    m_model->revalidateAll();
-    m_table->viewport()->update();
+    Q_UNUSED(showValidationMessages);
+    updateEvaluationValidation();
 
-    if (m_model->hasErrors())
+    if (m_validationBinder && m_validationBinder->hasErrors())
     {
         updateActions();
-        if (showValidationMessages)
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Validation Errors"),
-                tr("Fix validation errors before saving."),
-                m_model->errorList().join(QLatin1Char('\n'))
-                );
-        }
-
+        focusFirstEvaluationError();
         return false;
     }
 

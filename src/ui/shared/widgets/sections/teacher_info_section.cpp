@@ -347,6 +347,11 @@ int TeacherInfoSection::teacherId() const
     return m_selectedTeacherId;
 }
 
+QComboBox* TeacherInfoSection::teacherSelector() const
+{
+    return m_teacherKrCombo;
+}
+
 void TeacherInfoSection::retranslateUi()
 {
     if (m_teacherKrLabel)

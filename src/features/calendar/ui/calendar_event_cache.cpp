@@ -1,5 +1,6 @@
 #include "calendar_event_cache.h"
 
+#include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
 
 #include <QSqlDatabase>
@@ -248,6 +249,15 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
         if (!database.open())
         {
             result.error = database.lastError().text();
+        }
+        else if (const Status foreignKeyStatus =
+                     DatabaseSchemaManager::enableForeignKeyEnforcement(
+                         database
+                         );
+                 !foreignKeyStatus)
+        {
+            result.error = foreignKeyStatus.error();
+            database.close();
         }
         else
         {

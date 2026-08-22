@@ -34,6 +34,8 @@ public:
 
     QList<ClassTime> regularTimes() const;
     QList<ClassTime> intensiveTimes() const;
+    const QList<ClassTimeRow*>& regularRows() const;
+    const QList<ClassTimeRow*>& intensiveRows() const;
 
     void retranslateUi();
 

@@ -8,8 +8,10 @@
 #include "features/roster/ui/roster_header_view.h"
 #include "features/roster/ui/roster_model.h"
 #include "features/roster/ui/roster_table_view.h"
+#include "domain/validation/roster_validator.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -79,6 +81,7 @@ void RosterEditorWidget::loadClass(
 
     m_model->clearDirty();
     m_widthsDirty = false;
+    updateRosterValidation();
     m_loadingRoster = false;
     m_autosave->setLoading(false);
     m_autosave->markClean();
@@ -253,32 +256,68 @@ bool RosterEditorWidget::validateRosterBeforeSave(
     bool showValidationMessages
     )
 {
-    if (!m_model || !m_model->hasDuplicateNameErrors())
+    Q_UNUSED(showValidationMessages);
+
+    updateRosterValidation();
+    if (!m_validationBinder || !m_validationBinder->hasErrors())
     {
         return true;
     }
 
-    if (showValidationMessages)
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Duplicate Student Names"),
-            tr("Resolve duplicate English/Korean student name pairs before saving."),
-            m_model->duplicateNameErrorList().join(QLatin1Char('\n'))
-            );
-    }
+    focusFirstRosterError();
     return false;
 }
 
 void RosterEditorWidget::scheduleAutosave()
 {
+    updateRosterValidation();
     m_autosave->setSaveAvailable(m_classroom.id > 0);
-    m_autosave->setValid(
-        !m_model || !m_model->hasDuplicateNameErrors()
-        );
     m_autosave->setDirty(
         m_widthsDirty || (m_model && m_model->isDirty())
         );
+}
+
+void RosterEditorWidget::updateRosterValidation()
+{
+    if (!m_validationBinder || !m_model || m_updatingValidation)
+    {
+        return;
+    }
+
+    const Roster roster = RosterValidator::normalized(currentRosterForSave());
+    const ValidationResult validation = RosterValidator::validate(roster);
+
+    m_updatingValidation = true;
+    m_validationBinder->setValidation(
+        validation,
+        [](const ValidationIssue& issue)
+        {
+            return issue.field.startsWith(QStringLiteral("rows["))
+                ? QObject::tr("Correct the highlighted roster cells.")
+                : QString();
+        }
+        );
+    m_model->setDomainValidation(validation);
+    m_updatingValidation = false;
+}
+
+void RosterEditorWidget::focusFirstRosterError()
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    for (const ValidationIssue& issue : m_validationBinder->validation().errors())
+    {
+        if (issue.row >= 0 && issue.column >= 0)
+        {
+            selectRosterCell(issue.row, issue.column);
+            return;
+        }
+    }
+
+    m_validationBinder->focusFirstError();
 }
 
 Roster RosterEditorWidget::currentRosterForSave() const

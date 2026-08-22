@@ -1,6 +1,8 @@
 #include "core/application_services.h"
+#include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
+#include "features/speaking_eval/ui/speaking_eval_page.h"
 #include "domain/models/speaking_evaluation.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
@@ -115,6 +117,8 @@ private slots:
     void navigationControlsUsePills();
     void navigationRowsUseUniformSpacing();
     void filterPillsKeepStaticWidthsWhenPageResizes();
+    void classInfoShowsInlineValidationAndBlocksManualSave();
+    void speakingEvaluationShowsInlineValidationAndBlocksManualSave();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
     void headerKeyboardReplacesEmbeddedRosterButton();
 };
@@ -390,6 +394,96 @@ void ClassesPageTests::filterPillsKeepStaticWidthsWhenPageResizes()
         QVERIFY(button);
         QCOMPARE(button->width(), widths.at(index));
     }
+}
+
+void ClassesPageTests::classInfoShowsInlineValidationAndBlocksManualSave()
+{
+    ApplicationServices services;
+    ClassDetailsPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Class 42"), 42));
+    page.show();
+    QApplication::processEvents();
+
+    auto* level = page.findChild<QComboBox*>(
+        QStringLiteral("classLevelCombo")
+        );
+    auto* message = page.findChild<QLabel*>(
+        QStringLiteral("classLevelValidationMessage")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(level);
+    QVERIFY(message);
+    QVERIFY(saveButton);
+
+    level->setCurrentIndex(0);
+    QApplication::processEvents();
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        level->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(message->text(), QStringLiteral("This field is required."));
+    QVERIFY(message->isVisible());
+    QVERIFY(!saveButton->isEnabled());
+
+    const int validLevel = level->findText(QStringLiteral("Hercules"));
+    QVERIFY(validLevel >= 0);
+    level->setCurrentIndex(validLevel);
+    QApplication::processEvents();
+
+    QVERIFY(!level->property("formValidationState").isValid());
+    QVERIFY(message->isHidden());
+    QVERIFY(saveButton->isEnabled());
+}
+
+void ClassesPageTests::speakingEvaluationShowsInlineValidationAndBlocksManualSave()
+{
+    ApplicationServices services;
+    SpeakingEvalPage page(&services, true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(Classroom(QStringLiteral("Class 42"), 42), QStringLiteral("Winter"));
+    page.show();
+    QApplication::processEvents();
+
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("classEvaluationsTable")
+        );
+    auto* message = page.findChild<QLabel*>(
+        QStringLiteral("speakingEvalValidationMessage")
+        );
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    QVERIFY(table);
+    QVERIFY(message);
+    QVERIFY(saveButton);
+
+    const QModelIndex english = table->model()->index(0, 1);
+    const QModelIndex korean = table->model()->index(0, 2);
+    QVERIFY(table->model()->setData(english, QStringLiteral("Amy"), Qt::EditRole));
+    QApplication::processEvents();
+
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        korean.data(Qt::ToolTipRole).toString(),
+        QStringLiteral("This field is required.")
+        );
+    QCOMPARE(
+        message->text(),
+        QStringLiteral("Correct the highlighted evaluation cells.")
+        );
+    QVERIFY(message->isVisible());
+    QVERIFY(!saveButton->isEnabled());
+
+    QVERIFY(table->model()->setData(korean, QStringLiteral("김아미"), Qt::EditRole));
+    QApplication::processEvents();
+
+    QVERIFY(message->isHidden());
+    QVERIFY(saveButton->isEnabled());
 }
 
 void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()

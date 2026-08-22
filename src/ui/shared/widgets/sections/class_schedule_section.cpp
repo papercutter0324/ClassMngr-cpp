@@ -671,6 +671,11 @@ QList<ClassTime> ClassScheduleSection::regularTimes() const
     return out;
 }
 
+const QList<ClassTimeRow*>& ClassScheduleSection::regularRows() const
+{
+    return m_regularRows;
+}
+
 QList<ClassTime> ClassScheduleSection::intensiveTimes() const
 {
     QList<ClassTime> out;
@@ -686,4 +691,9 @@ QList<ClassTime> ClassScheduleSection::intensiveTimes() const
     }
 
     return out;
+}
+
+const QList<ClassTimeRow*>& ClassScheduleSection::intensiveRows() const
+{
+    return m_intensiveRows;
 }

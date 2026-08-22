@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/speaking_evaluation.h"
+#include "domain/validation/validation_result.h"
 
 #include <QAbstractTableModel>
 #include <QHash>
@@ -59,6 +60,7 @@ public:
         int row,
         int column
         ) const;
+    void setDomainValidation(const ValidationResult& validation);
 
     QList<int> duplicateNameRows(
         int row
@@ -142,6 +144,7 @@ private:
     SpeakingEvalRows m_rows;
     SpeakingEvalRows m_lastSaved;
     QHash<QString, QStringList> m_errors;
+    QHash<QString, QStringList> m_domainErrors;
     QSet<QString> m_dirtyCells;
     bool m_dirty = false;
 };

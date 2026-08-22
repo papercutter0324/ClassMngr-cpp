@@ -38,7 +38,15 @@ public:
         QWidget* widget,
         QLabel* messageLabel = nullptr
         );
+    // Prefix bindings cover repeating controls such as table and schedule rows.
+    // Exact bindings still take precedence for focus when both are present.
+    void registerFieldPrefix(
+        QString fieldPrefix,
+        QWidget* widget,
+        QLabel* messageLabel = nullptr
+        );
     void unregisterField(const QString& field);
+    void unregisterFieldsWithPrefix(const QString& fieldPrefix);
 
     void setValidation(
         ValidationResult validation,
@@ -78,6 +86,7 @@ private:
     static void repolish(QWidget* widget);
 
     QHash<QString, FieldBinding> m_bindings;
+    QHash<QString, FieldBinding> m_prefixBindings;
     ValidationResult m_validation;
     AutosaveCoordinator* m_autosave = nullptr;
     QScrollArea* m_scrollArea = nullptr;

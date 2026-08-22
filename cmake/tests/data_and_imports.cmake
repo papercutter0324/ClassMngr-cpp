@@ -209,6 +209,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrCalendarEventCacheTests
         tests/calendar_event_cache_tests.cpp
+        src/data/database/database_schema_manager.cpp
         src/data/database/database_transaction.cpp
         src/data/database/sql_query_utils.cpp
         src/data/repositories/calendar_event_repository.cpp

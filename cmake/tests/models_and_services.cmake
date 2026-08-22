@@ -206,6 +206,7 @@ qt_add_executable(ClassMngrBasePageTests
     qt_add_executable(ClassMngrRosterModelTests
         tests/roster_model_tests.cpp
         src/domain/models/roster.cpp
+        src/domain/validation/validation_result.cpp
         src/features/roster/ui/roster_model.cpp
         src/features/roster/ui/roster_model_columns.cpp
         src/features/roster/ui/roster_model_names.cpp

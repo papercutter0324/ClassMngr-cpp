@@ -14,6 +14,7 @@
 
 class ApplicationServices;
 class AutosaveCoordinator;
+class FormValidationBinder;
 class PageHeader;
 class QComboBox;
 class QLabel;
@@ -165,6 +166,8 @@ private:
         bool showSuccessMessage
         );
 
+    void updateEvaluationValidation();
+    void focusFirstEvaluationError();
     void scheduleAutosave();
 
     QList<SpeakingEvalCellEdit> nameImportChanges(
@@ -198,10 +201,12 @@ private:
     bool m_loadingEvaluation = false;
     bool m_importingNames = false;
     bool m_resolvingDuplicateName = false;
+    bool m_updatingValidation = false;
     bool m_rebuildingClassTabs = false;
     bool m_restoringClassTabs = false;
     bool m_syncingEvaluationTabs = false;
     AutosaveCoordinator* m_autosave = nullptr;
+    FormValidationBinder* m_validationBinder = nullptr;
     ClassTabNavigation::DayFilter m_dayFilter{
         {},
         ClassTabNavigation::ScheduleSource::Regular,
@@ -222,6 +227,7 @@ private:
     SpeakingEvalModel* m_model = nullptr;
     SpeakingEvalTableView* m_table = nullptr;
     SpeakingEvalDelegate* m_delegate = nullptr;
+    QLabel* m_validationMessage = nullptr;
     QUndoStack* m_undoStack = nullptr;
 
     QPushButton* m_importNamesButton = nullptr;

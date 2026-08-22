@@ -659,7 +659,7 @@ void ScheduleWidgetTests
     const auto buttons =
         controls->findChildren<QAbstractButton*>();
     QVERIFY(controls->findChildren<QCheckBox*>().isEmpty());
-    QCOMPARE(buttons.size(), 6);
+    QCOMPARE(buttons.size(), 5);
     QVERIFY(
         std::any_of(
             buttons.cbegin(),

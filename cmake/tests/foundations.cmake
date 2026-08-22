@@ -8,6 +8,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME DatabaseSchemaManager
+    SOURCES
+        tests/database_schema_manager_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Sql
+)
+
+classmngr_add_qt_test(
     NAME PageComponents
     SOURCES
         tests/page_components_tests.cpp
@@ -25,6 +34,14 @@ classmngr_add_qt_test(
         Qt6::Test
         Qt6::Widgets
     OFFSCREEN
+)
+
+qt_add_resources(ClassMngrDialogShellTests dialog_shell_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
 )
 
 classmngr_add_qt_test(

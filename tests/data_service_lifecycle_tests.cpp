@@ -228,6 +228,7 @@ private slots:
     void teacherDeleteFailureRollsBackClassAssignments();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
+    void compoundAndCollectionReadFailuresAreObservable();
     void legacyRepositoryWriteFailuresRollBack();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
@@ -679,6 +680,104 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
         ));
     QVERIFY(failedTeachers.error().contains(
         QStringLiteral("Loading teachers")
+        ));
+}
+
+void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("compound-read-failures.db"))
+        ).has_value());
+
+    const Result<int> classId = service.createClass(QStringLiteral("Read Contract"));
+    QVERIFY(classId);
+    const QDate date(2026, 9, 1);
+
+    // These success cases establish the legitimate empty/default states that
+    // callers may receive before a database failure occurs.
+    const Result<ClassInfo> emptyClassInfo = service.loadClassInfo(*classId);
+    const Result<Roster> emptyRoster = service.loadRoster(*classId);
+    const Result<SpeakingEvalRows> emptyEvaluation = service.loadSpeakingEval(
+        *classId,
+        QStringLiteral("Week 1")
+        );
+    const Result<QList<CalendarEvent>> emptyCalendarEvents =
+        service.loadCalendarEventsForDate(date);
+    const Result<QVariant> missingSetting = service.loadSetting(
+        QStringLiteral("missing/read-contract")
+        );
+    QVERIFY(emptyClassInfo);
+    QCOMPARE(emptyClassInfo->classId, *classId);
+    QVERIFY(emptyRoster);
+    QVERIFY(emptyRoster->columns.isEmpty());
+    QVERIFY(emptyEvaluation);
+    QVERIFY(emptyEvaluation->isEmpty());
+    QVERIFY(emptyCalendarEvents);
+    QVERIFY(emptyCalendarEvents->isEmpty());
+    QVERIFY(missingSetting);
+    QVERIFY(!missingSetting->isValid());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE class_times")));
+    const Result<ClassInfo> failedClassInfo = service.loadClassInfo(*classId);
+    QVERIFY(!failedClassInfo);
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("Loading regular class times")
+        ));
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("class id %1").arg(*classId)
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE roster_columns")));
+    const Result<Roster> failedRoster = service.loadRoster(*classId);
+    QVERIFY(!failedRoster);
+    QVERIFY(failedRoster.error().contains(
+        QStringLiteral("Loading roster columns")
+        ));
+    QVERIFY(failedRoster.error().contains(
+        QStringLiteral("class id %1").arg(*classId)
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE speaking_evaluations")));
+    const Result<SpeakingEvalRows> failedEvaluation = service.loadSpeakingEval(
+        *classId,
+        QStringLiteral("Week 1")
+        );
+    QVERIFY(!failedEvaluation);
+    QVERIFY(failedEvaluation.error().contains(
+        QStringLiteral("Loading speaking evaluation")
+        ));
+    QVERIFY(failedEvaluation.error().contains(
+        QStringLiteral("class id %1, evaluation 'Week 1'").arg(*classId)
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE calendar_events")));
+    const Result<QList<CalendarEvent>> failedCalendarEvents =
+        service.loadCalendarEventsForDate(date);
+    QVERIFY(!failedCalendarEvents);
+    QVERIFY(failedCalendarEvents.error().contains(
+        QStringLiteral("Loading calendar events for date")
+        ));
+    QVERIFY(failedCalendarEvents.error().contains(
+        QStringLiteral("date 2026-09-01")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
+    const Result<QVariant> failedSetting = service.loadSetting(
+        QStringLiteral("missing/read-contract")
+        );
+    QVERIFY(!failedSetting);
+    QVERIFY(failedSetting.error().contains(
+        QStringLiteral("Loading application setting")
+        ));
+    QVERIFY(failedSetting.error().contains(
+        QStringLiteral("setting key 'missing/read-contract'")
         ));
 }
 

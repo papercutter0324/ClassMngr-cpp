@@ -37,6 +37,12 @@ public:
     QString classColor() const;
     QString fontColor() const;
 
+    QComboBox* gradeEditor() const;
+    QComboBox* levelEditor() const;
+    QComboBox* readingBookEditor() const;
+    QComboBox* essayBookEditor() const;
+    QPushButton* colorEditor() const;
+
     void retranslateUi();
 
 signals:

@@ -337,7 +337,11 @@ Status ClassInfoRepository::saveClassInfo(
     )");
 
     query.addBindValue(info.classId);
-    query.addBindValue(info.teacherId);
+    query.addBindValue(
+        info.teacherId > 0
+            ? QVariant(info.teacherId)
+            : QVariant()
+        );
     query.addBindValue(info.classGrade);
     query.addBindValue(info.classLevel);
     query.addBindValue(info.readingBook);

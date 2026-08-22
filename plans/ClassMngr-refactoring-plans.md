@@ -18,14 +18,15 @@ FileDialogService
 DialogShell
 Migration of all production dialogs
 CI and contract-test enforcement
-Plan 3 — Data and Input Validation: In progress.
-Repository mutation contracts are complete.
-Repository read-contract migration is in progress.
-Structured validation, domain validators, UI validation, database constraints, and full regression testing remain.
+Plan 3 — Data and Input Validation: Complete.
+Repository mutation and significant read contracts now expose `Status` or
+`Result<T>` failures explicitly. Structured validation, domain validators,
+inline/autosave-aware UI validation, numbered schema migrations, and their
+regression coverage are complete.
 
-Current native builds and all tests pass.
+The current Debug build and all 59 CTest targets pass.
 
-Remaining Work — Data and Input Validation
+Plan 3 Implementation Record — Data and Input Validation
 Phase 1 — Finish Failure Observability
 Completed
 DatabaseSchemaManager::ensureSchema() returns Status.
@@ -45,23 +46,17 @@ teachers
 
 now distinguish successful-empty, missing-record, unavailable-service, and SQL-failure cases.
 
-Remaining
+Completed
 
-Convert the remaining repository reads to checked Result<T> contracts.
-
-Priority order:
-
-Compound class-information reads
-Roster reads
-Speaking-evaluation reads
-Remaining settings reads
-Remaining calendar collection reads
-Audit services and production callers for any remaining default-object or empty-collection error sentinels
+Compound class-information, roster, speaking-evaluation, settings, and
+calendar reads now use checked `Result<T>` contracts. The repository,
+DataService, and feature-service public read APIs were audited to ensure
+SQL failures are not returned as empty collections or fabricated defaults.
 Exit Criteria
 Repository query failures cannot be mistaken for missing or empty data.
 No repository read silently returns a fabricated default after SQL failure.
 Services and UI callers explicitly handle read failures.
-Phase 2 — Shared Validation Model
+Phase 2 — Shared Validation Model: Complete
 
 Introduce one structured validation system used across features.
 
@@ -118,7 +113,7 @@ Exit Criteria
 
 All validation features can return stable, field-addressed issues without depending on UI widgets or translated messages.
 
-Phase 3 — Domain Validators and Service Enforcement
+Phase 3 — Domain Validators and Service Enforcement: Complete
 
 Create:
 
@@ -191,7 +186,7 @@ Exit Criteria
 
 No caller can bypass domain validation simply by avoiding a particular page or dialog.
 
-Phase 4 — UI Validation Experience
+Phase 4 — UI Validation Experience: Complete
 
 Add a shared FormValidationBinder.
 
@@ -217,7 +212,7 @@ Exit Criteria
 
 Validation errors are visible, accessible, consistent, and compatible with the existing autosave system.
 
-Phase 5 — Database Constraints and Migrations
+Phase 5 — Database Constraints and Migrations: Complete
 Foreign Keys
 
 Enable and verify:
@@ -271,7 +266,7 @@ Schema changes have explicit versions.
 Migrations can fail safely and roll back.
 Referential integrity is enforced by SQLite.
 Existing profiles have a defined upgrade/preflight path.
-Phase 6 — Regression and Failure Testing
+Phase 6 — Regression and Failure Testing: Complete
 Validators
 
 Unit-test every validator and normalizer.
@@ -317,7 +312,7 @@ Exit Criteria
 Validation, persistence failure, migration, import, and UI-error behavior are protected against regression.
 
 Recommended Remaining PR Sequence
-PR 1 — Finish Repository Read Contracts
+PR 1 — Finish Repository Read Contracts: Complete
 
 Convert:
 
@@ -328,7 +323,7 @@ settings/calendar reads
 
 Then audit all repository/service reads for ambiguous default or empty results.
 
-PR 2 — Validation Infrastructure
+PR 2 — Validation Infrastructure: Complete
 
 Add:
 
@@ -336,7 +331,7 @@ ValidationIssue
 ValidationResult
 shared enum/range validation
 structured validation tests
-PR 3 — Teacher and Class Validation
+PR 3 — Teacher and Class Validation: Complete
 
 Implement:
 
@@ -346,19 +341,19 @@ ClassTimeValidator
 
 Enforce them through TeacherService and ClassService.
 
-PR 4 — Calendar Validation
+PR 4 — Calendar Validation: Complete
 
 Extract CalendarEventValidator and apply it to manual editing, recurrence creation, and imports.
 
-PR 5 — Roster and Speaking Evaluation Validation
+PR 5 — Roster and Speaking Evaluation Validation: Complete
 
 Implement shared structured validation while retaining feature-specific rules.
 
-PR 6 — UI Validation Binder - In proress
+PR 6 — UI Validation Binder: Complete
 
 Introduce FormValidationBinder and integrate it incrementally with teacher, class, calendar, roster, and speaking-evaluation surfaces.
 
-PR 7 — Numbered Database Migrations
+PR 7 — Numbered Database Migrations: Complete
 
 Introduce:
 
@@ -367,11 +362,14 @@ PRAGMA user_version
 foreign-key enforcement
 schema constraints
 legacy-data preflight
-PR 8 — Validation and Migration Regression Suite
+PR 8 — Validation and Migration Regression Suite: Complete
 
 Complete repository, validator, UI, import, migration, and property/fuzz-style coverage.
 
 Final Acceptance Criteria
+
+Completed. The final audit confirmed the contracts and validation paths above,
+and the freshly rebuilt Debug regression suite passes all 59 tests.
 
 The refactoring initiative is complete when:
 

@@ -259,6 +259,7 @@ QComboBox[formValidationState="error"],
 QDateEdit[formValidationState="error"],
 QTimeEdit[formValidationState="error"],
 QDateTimeEdit[formValidationState="error"],
+QPushButton[formValidationState="error"],
 QWidget[role="input"][formValidationState="error"] {
     border: 2px solid #c43d3d;
     padding: 4px 7px;
@@ -273,6 +274,7 @@ QComboBox[formValidationState="warning"],
 QDateEdit[formValidationState="warning"],
 QTimeEdit[formValidationState="warning"],
 QDateTimeEdit[formValidationState="warning"],
+QPushButton[formValidationState="warning"],
 QWidget[role="input"][formValidationState="warning"] {
     border: 2px solid #a66c00;
     padding: 4px 7px;

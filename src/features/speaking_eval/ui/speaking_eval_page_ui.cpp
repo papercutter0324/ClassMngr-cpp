@@ -1,5 +1,8 @@
 #include "speaking_eval_page_p.h"
 
+#include "domain/validation/speaking_eval_validator.h"
+#include "ui/shared/validation/form_validation_binder.h"
+
 void SpeakingEvalPage::buildUi()
 {
     const int pageMargin = m_embedded ? 0 : UiConstants::Pages::Margin;
@@ -166,6 +169,17 @@ void SpeakingEvalPage::buildUi()
 
     m_table->setItemDelegate(m_delegate);
 
+    m_validationBinder = new FormValidationBinder(m_autosave, nullptr, this);
+    m_validationMessage = m_validationBinder->createMessageLabel(this);
+    m_validationMessage->setObjectName(
+        QStringLiteral("speakingEvalValidationMessage")
+        );
+    m_validationBinder->registerFieldPrefix(
+        QStringLiteral("rows["),
+        m_table,
+        m_validationMessage
+        );
+
     m_emptyLabel =
         new QLabel(
             tr("No classes available"),
@@ -179,6 +193,7 @@ void SpeakingEvalPage::buildUi()
 
     contentLayout()->addWidget(m_emptyLabel);
     contentLayout()->addWidget(m_table);
+    contentLayout()->addWidget(m_validationMessage);
 
     setupTable();
 
@@ -288,6 +303,7 @@ void SpeakingEvalPage::buildUi()
             tr("Save Changes"),
             this
             );
+    m_saveButton->setObjectName(QStringLiteral("speakingEvalSaveButton"));
 
     m_saveButton->setSizePolicy(
         QSizePolicy::Expanding,
@@ -429,6 +445,11 @@ void SpeakingEvalPage::buildUi()
             const QList<int>&
             )
         {
+            if (m_updatingValidation)
+            {
+                return;
+            }
+
             handleNameCellChanged(
                 topLeft,
                 bottomRight
@@ -441,12 +462,70 @@ void SpeakingEvalPage::buildUi()
 
 void SpeakingEvalPage::scheduleAutosave()
 {
+    updateEvaluationValidation();
     m_autosave->setSaveAvailable(
         m_classroom.id > 0
         && !m_evaluationName.trimmed().isEmpty()
         );
-    m_autosave->setValid(!m_model || !m_model->hasErrors());
     m_autosave->setDirty(m_model && m_model->isDirty());
+}
+
+void SpeakingEvalPage::updateEvaluationValidation()
+{
+    if (!m_validationBinder || !m_model || m_updatingValidation)
+    {
+        return;
+    }
+
+    const SpeakingEvalRows rows = SpeakingEvalValidator::normalized(m_model->rows());
+    const ValidationResult validation = SpeakingEvalValidator::validate(
+        m_classroom.id,
+        m_evaluationName,
+        rows
+        );
+
+    m_updatingValidation = true;
+    m_validationBinder->setValidation(
+        validation,
+        [](const ValidationIssue& issue)
+        {
+            return issue.field.startsWith(QStringLiteral("rows["))
+                ? QObject::tr("Correct the highlighted evaluation cells.")
+                : QString();
+        }
+        );
+    m_model->setDomainValidation(validation);
+    m_updatingValidation = false;
+
+    if (m_table)
+    {
+        m_table->viewport()->update();
+    }
+}
+
+void SpeakingEvalPage::focusFirstEvaluationError()
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    for (const ValidationIssue& issue : m_validationBinder->validation().errors())
+    {
+        if (issue.row >= 0
+            && issue.row < SpeakingEval::RowCount
+            && issue.column >= 0
+            && issue.column < SpeakingEval::ColumnCount)
+        {
+            selectEvaluationCell(
+                issue.row,
+                SpeakingEval::columnFromInt(issue.column)
+                );
+            return;
+        }
+    }
+
+    m_validationBinder->focusFirstError();
 }
 
 void SpeakingEvalPage::setupTable()

@@ -4,6 +4,7 @@
 #include "domain/models/teacher.h"
 
 class AutosaveCoordinator;
+class FormValidationBinder;
 class PageHeader;
 class ScrollablePageBody;
 class QShowEvent;
@@ -77,6 +78,7 @@ private:
 
     bool formDiffersFromTeacher() const;
 
+    void updateFormValidation();
     bool saveTeacherInternal(bool showErrors = true);
 
     void clearDirty();
@@ -102,6 +104,7 @@ private:
 
     Teacher m_teacher;
     AutosaveCoordinator* m_autosave = nullptr;
+    FormValidationBinder* m_validationBinder = nullptr;
 
 
 

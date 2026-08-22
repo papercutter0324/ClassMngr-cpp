@@ -23,7 +23,9 @@ private slots:
     void invalidStatePausesAndThenResumesAutosave();
     void saveModeAndManualRequirementControlButton();
     void formValidationMapsIssuesAndControlsAutosave();
+    void formValidationWarningsRemainNonBlocking();
     void formValidationFocusesTheFirstMappedError();
+    void formValidationBindsRepeatingFieldPrefixes();
     void pageHeaderOwnsStandardLabelsAndFonts();
     void scrollableBodyOwnsContentAndLayoutPolicy();
 };
@@ -97,6 +99,14 @@ void PageComponentsTests::saveModeAndManualRequirementControlButton()
     QCOMPARE(saveSpy.count(), 1);
     QCOMPARE(saveSpy.first().at(0).toBool(), true);
 
+    coordinator.setValid(false);
+    QVERIFY(!button.isEnabled());
+    button.click();
+    QCOMPARE(saveSpy.count(), 1);
+
+    coordinator.setValid(true);
+    QVERIFY(button.isEnabled());
+
     coordinator.setSaveMode(SaveMode::Automatic);
     QVERIFY(button.isHidden());
     coordinator.setManualSaveRequired(true);
@@ -150,6 +160,61 @@ void PageComponentsTests::formValidationMapsIssuesAndControlsAutosave()
     QTRY_COMPARE_WITH_TIMEOUT(saveSpy.count(), 1, 200);
 }
 
+void PageComponentsTests::formValidationWarningsRemainNonBlocking()
+{
+    QWidget form;
+    auto* formLayout = new QVBoxLayout(&form);
+    auto* field = new QLineEdit(&form);
+    field->setAccessibleDescription(QStringLiteral("Class level"));
+    auto* message = new QLabel(&form);
+    formLayout->addWidget(field);
+    formLayout->addWidget(message);
+
+    AutosaveCoordinator autosave;
+    autosave.setDebounceInterval(10);
+    FormValidationBinder binder(&autosave, nullptr, &form);
+    binder.registerField(QStringLiteral("classLevel"), field, message);
+
+    QSignalSpy saveSpy(&autosave, &AutosaveCoordinator::saveRequested);
+    binder.setValidation(ValidationResult(ValidationIssue{
+        .code = QStringLiteral("class_info.level.unusual"),
+        .field = QStringLiteral("classLevel"),
+        .severity = ValidationSeverity::Warning
+        }));
+    autosave.markDirty();
+
+    QVERIFY(!binder.hasErrors());
+    QVERIFY(binder.hasWarnings());
+    QVERIFY(autosave.isValid());
+    QCOMPARE(
+        field->property("formValidationState").toString(),
+        QStringLiteral("warning")
+        );
+    QCOMPARE(message->property("formValidationSeverity").toString(),
+             QStringLiteral("warning"));
+    QCOMPARE(field->accessibleDescription(),
+             QStringLiteral("Class level\nWarning: Review this value."));
+    QTRY_COMPARE_WITH_TIMEOUT(saveSpy.count(), 1, 200);
+
+    binder.setValidation(ValidationResult(ValidationIssues{
+        {.code = QStringLiteral("class_info.level.unusual"),
+         .field = QStringLiteral("classLevel"),
+         .severity = ValidationSeverity::Warning},
+        {.code = QStringLiteral("class_info.level.required"),
+         .field = QStringLiteral("classLevel")}
+        }));
+
+    QVERIFY(binder.hasErrors());
+    QVERIFY(binder.hasWarnings());
+    QVERIFY(!autosave.isValid());
+    QCOMPARE(
+        field->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QVERIFY(message->text().contains(QStringLiteral("Review this value.")));
+    QVERIFY(message->text().contains(QStringLiteral("This field is required.")));
+}
+
 void PageComponentsTests::formValidationFocusesTheFirstMappedError()
 {
     QWidget window;
@@ -180,6 +245,45 @@ void PageComponentsTests::formValidationFocusesTheFirstMappedError()
 
     QVERIFY(binder.focusFirstError());
     QTRY_VERIFY_WITH_TIMEOUT(secondEdit->hasFocus(), 200);
+}
+
+void PageComponentsTests::formValidationBindsRepeatingFieldPrefixes()
+{
+    QWidget window;
+    auto* layout = new QVBoxLayout(&window);
+    auto* schedule = new QWidget(&window);
+    auto* scheduleLayout = new QVBoxLayout(schedule);
+    auto* startTimeEdit = new QLineEdit(schedule);
+    scheduleLayout->addWidget(startTimeEdit);
+    layout->addWidget(schedule);
+
+    FormValidationBinder binder(nullptr, nullptr, &window);
+    auto* message = binder.createMessageLabel(&window);
+    layout->addWidget(message);
+    binder.registerFieldPrefix(
+        QStringLiteral("classTimes["),
+        schedule,
+        message
+        );
+    binder.registerField(
+        QStringLiteral("classTimes[0].startTime"),
+        startTimeEdit
+        );
+    binder.setValidation(ValidationResult(ValidationIssue{
+        .code = QStringLiteral("schedule.time.invalid_format"),
+        .field = QStringLiteral("classTimes[0].startTime")
+        }));
+
+    QCOMPARE(
+        startTimeEdit->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(message->text(), QStringLiteral("Enter a valid value."));
+
+    window.show();
+    QTest::qWait(10);
+    QVERIFY(binder.focusFirstError());
+    QTRY_VERIFY_WITH_TIMEOUT(startTimeEdit->hasFocus(), 200);
 }
 
 void PageComponentsTests::pageHeaderOwnsStandardLabelsAndFonts()

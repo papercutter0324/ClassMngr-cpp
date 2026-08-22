@@ -5,23 +5,27 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/scrollable_page_body.h"
+#include "ui/shared/validation/form_validation_binder.h"
 
 #include "ui/shared/widgets/sections/teacher_info_section.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
+#include "ui/shared/widgets/sectioncards/class_time_row.h"
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "domain/validation/class_info_validator.h"
 #include "core/fontmanager.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "core/utils/sidebar_node_naming.h"
 
 #include <QFont>
+#include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QStringList>
@@ -209,6 +213,100 @@ void ClassDetailsPage::buildUi()
         m_scheduleSection
         );
 
+    m_validationBinder = new FormValidationBinder(
+        m_autosave,
+        m_pageBody,
+        this
+        );
+
+    const auto addValidationMessage =
+        [this](SectionCard* card, const QString& objectName)
+        {
+            QLabel* label = m_validationBinder->createMessageLabel(card);
+            label->setObjectName(objectName);
+            card->contentLayout()->addWidget(label);
+            return label;
+        };
+
+    m_teacherValidationMessage = addValidationMessage(
+        m_teacherCard,
+        QStringLiteral("classTeacherValidationMessage")
+        );
+    m_gradeValidationMessage = addValidationMessage(
+        m_detailsCard,
+        QStringLiteral("classGradeValidationMessage")
+        );
+    m_levelValidationMessage = addValidationMessage(
+        m_detailsCard,
+        QStringLiteral("classLevelValidationMessage")
+        );
+    m_readingBookValidationMessage = addValidationMessage(
+        m_detailsCard,
+        QStringLiteral("classReadingBookValidationMessage")
+        );
+    m_essayBookValidationMessage = addValidationMessage(
+        m_detailsCard,
+        QStringLiteral("classEssayBookValidationMessage")
+        );
+    m_colorValidationMessage = addValidationMessage(
+        m_detailsCard,
+        QStringLiteral("classColorValidationMessage")
+        );
+    m_regularScheduleValidationMessage = addValidationMessage(
+        m_scheduleCard,
+        QStringLiteral("classRegularScheduleValidationMessage")
+        );
+    m_intensiveScheduleValidationMessage = addValidationMessage(
+        m_scheduleCard,
+        QStringLiteral("classIntensiveScheduleValidationMessage")
+        );
+
+    m_validationBinder->registerField(
+        QStringLiteral("teacherId"),
+        m_teacherSection->teacherSelector(),
+        m_teacherValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("classGrade"),
+        m_detailsSection->gradeEditor(),
+        m_gradeValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("classLevel"),
+        m_detailsSection->levelEditor(),
+        m_levelValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("readingBook"),
+        m_detailsSection->readingBookEditor(),
+        m_readingBookValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("essayBook"),
+        m_detailsSection->essayBookEditor(),
+        m_essayBookValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("classColor"),
+        m_detailsSection->colorEditor(),
+        m_colorValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("fontColor"),
+        m_detailsSection->colorEditor()
+        );
+    m_scheduleSection->setFocusPolicy(Qt::StrongFocus);
+    m_validationBinder->registerFieldPrefix(
+        QStringLiteral("classTimes["),
+        m_scheduleSection,
+        m_regularScheduleValidationMessage
+        );
+    m_validationBinder->registerFieldPrefix(
+        QStringLiteral("intensiveTimes["),
+        m_scheduleSection,
+        m_intensiveScheduleValidationMessage
+        );
+
     updateScrollContentMinimumWidth();
 
     m_saveButton =
@@ -217,6 +315,7 @@ void ClassDetailsPage::buildUi()
             );
 
     m_saveButton->setEnabled(false);
+    m_saveButton->setObjectName(QStringLiteral("classInfoSaveButton"));
 
     bottomLayout()->addStretch();
     bottomLayout()->addWidget(
@@ -250,6 +349,7 @@ void ClassDetailsPage::markDirty()
         return;
     }
 
+    updateFormValidation();
     m_autosave->markDirty();
 }
 
@@ -316,6 +416,9 @@ void ClassDetailsPage::loadClass(
         info.intensiveTimes
         );
 
+    refreshScheduleValidationBindings();
+    m_validationBinder->clear();
+
     updateScrollContentMinimumWidth();
 
     m_autosave->setLoading(false);
@@ -335,6 +438,8 @@ void ClassDetailsPage::clearDatabaseState()
         QList<ClassTime>{},
         QList<ClassTime>{}
         );
+    refreshScheduleValidationBindings();
+    m_validationBinder->clear();
     updateTitle({});
     m_pageHeader->setSubtitle(
         tr("No class selected")
@@ -421,6 +526,86 @@ void ClassDetailsPage::updateActions()
     m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
+ClassInfo ClassDetailsPage::classInfoFromForm() const
+{
+    ClassInfo info;
+    info.classId = m_classroom.id;
+    info.teacherId = m_teacherSection->teacherId();
+    info.classGrade = m_detailsSection->grade();
+    info.classLevel = m_detailsSection->level();
+    info.readingBook = m_detailsSection->readingBook();
+    info.essayBook = m_detailsSection->essayBook();
+    info.classColor = m_detailsSection->classColor();
+    info.fontColor = m_detailsSection->fontColor();
+    info.classTimes = m_scheduleSection->regularTimes();
+    info.intensiveTimes = m_scheduleSection->intensiveTimes();
+    return info;
+}
+
+void ClassDetailsPage::refreshScheduleValidationBindings()
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    const auto bindRows =
+        [this](const QList<ClassTimeRow*>& rows, const QString& fieldPrefix)
+        {
+            for (qsizetype index = 0; index < rows.size(); ++index)
+            {
+                ClassTimeRow* row = rows.at(index);
+                if (!row)
+                {
+                    continue;
+                }
+
+                const QString rowPrefix =
+                    QStringLiteral("%1[%2]").arg(fieldPrefix).arg(index);
+                m_validationBinder->registerField(
+                    rowPrefix + QStringLiteral(".day"),
+                    row->dayCombo()
+                    );
+                m_validationBinder->registerField(
+                    rowPrefix + QStringLiteral(".startTime"),
+                    row->startHourCombo()
+                    );
+                m_validationBinder->registerField(
+                    rowPrefix + QStringLiteral(".endTime"),
+                    row->endCombo()
+                    );
+            }
+        };
+
+    m_validationBinder->unregisterFieldsWithPrefix(QStringLiteral("classTimes["));
+    m_validationBinder->unregisterFieldsWithPrefix(
+        QStringLiteral("intensiveTimes[")
+        );
+    bindRows(m_scheduleSection->regularRows(), QStringLiteral("classTimes"));
+    bindRows(
+        m_scheduleSection->intensiveRows(),
+        QStringLiteral("intensiveTimes")
+        );
+}
+
+void ClassDetailsPage::updateFormValidation()
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    if (m_classroom.id < 0)
+    {
+        m_validationBinder->clear();
+        return;
+    }
+
+    refreshScheduleValidationBindings();
+    const ClassInfo info = ClassInfoValidator::normalized(classInfoFromForm());
+    m_validationBinder->setValidation(ClassInfoValidator::validate(info));
+}
+
 bool ClassDetailsPage::saveClassInfoInternal(
     bool showMessages
     )
@@ -437,42 +622,25 @@ bool ClassDetailsPage::saveClassInfoInternal(
                 m_classroom.id
                 ).value_or(ClassInfo{});
 
-    ClassInfo info;
-    info.classId =
-        m_classroom.id;
-
-    info.teacherId =
-        m_teacherSection->teacherId();
-
-    info.classGrade =
-        m_detailsSection->grade();
-
-    info.classLevel =
-        m_detailsSection->level();
-
-    info.readingBook =
-        m_detailsSection->readingBook();
-
-    info.essayBook =
-        m_detailsSection->essayBook();
-
-    info.classColor =
-        m_detailsSection->classColor();
-
-    info.fontColor =
-        m_detailsSection->fontColor();
-
-    info.classTimes =
-        m_scheduleSection->regularTimes();
-
-    info.intensiveTimes =
-        m_scheduleSection->intensiveTimes();
+    ClassInfo info = classInfoFromForm();
 
     info.notes =
         currentInfo.notes;
 
     info.timeFillerActivities =
         currentInfo.timeFillerActivities;
+
+    refreshScheduleValidationBindings();
+    m_validationBinder->setValidation(
+        ClassInfoValidator::validate(
+            ClassInfoValidator::normalized(info)
+            )
+        );
+    if (m_validationBinder->hasErrors())
+    {
+        m_validationBinder->focusFirstError();
+        return false;
+    }
 
     if (
         showScheduleConflicts(

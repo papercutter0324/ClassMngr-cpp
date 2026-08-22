@@ -35,6 +35,7 @@ public:
     // Widget access (IMPORTANT for layout ownership)
     // =========================================================
     QComboBox* dayCombo() const { return m_dayCombo; }
+    QComboBox* startHourCombo() const { return m_startHourCombo; }
     QWidget* startWidget() const { return m_startWidget; }
     QComboBox* endCombo() const { return m_endCombo; }
     QPushButton* removeButton() const { return m_removeButton; }

@@ -59,6 +59,35 @@ void FormValidationBinder::registerField(
     m_bindings.insert(field, std::move(binding));
 }
 
+void FormValidationBinder::registerFieldPrefix(
+    QString fieldPrefix,
+    QWidget* widget,
+    QLabel* messageLabel
+    )
+{
+    fieldPrefix = fieldPrefix.trimmed();
+    if (fieldPrefix.isEmpty())
+    {
+        return;
+    }
+
+    if (auto existing = m_prefixBindings.find(fieldPrefix);
+        existing != m_prefixBindings.end())
+    {
+        clearVisualState(existing.value());
+    }
+
+    FieldBinding binding;
+    binding.widget = widget;
+    binding.messageLabel = messageLabel;
+    if (widget)
+    {
+        binding.originalAccessibleDescription = widget->accessibleDescription();
+    }
+
+    m_prefixBindings.insert(fieldPrefix, std::move(binding));
+}
+
 void FormValidationBinder::unregisterField(const QString& field)
 {
     auto binding = m_bindings.find(field);
@@ -71,12 +100,30 @@ void FormValidationBinder::unregisterField(const QString& field)
     m_bindings.erase(binding);
 }
 
+void FormValidationBinder::unregisterFieldsWithPrefix(const QString& fieldPrefix)
+{
+    const auto bindings = m_bindings.keys();
+    for (const QString& field : bindings)
+    {
+        if (field.startsWith(fieldPrefix))
+        {
+            unregisterField(field);
+        }
+    }
+}
+
 void FormValidationBinder::setValidation(
     ValidationResult validation,
     const MessageFormatter& formatter
     )
 {
     for (auto binding = m_bindings.begin(); binding != m_bindings.end(); ++binding)
+    {
+        clearVisualState(binding.value());
+    }
+    for (auto binding = m_prefixBindings.begin();
+         binding != m_prefixBindings.end();
+         ++binding)
     {
         clearVisualState(binding.value());
     }
@@ -97,6 +144,25 @@ void FormValidationBinder::setValidation(
         if (auto binding = m_bindings.find(it.key()); binding != m_bindings.end())
         {
             applyVisualState(binding.value(), it.value(), formatter);
+        }
+    }
+
+    for (auto binding = m_prefixBindings.begin();
+         binding != m_prefixBindings.end();
+         ++binding)
+    {
+        ValidationIssues matchingIssues;
+        for (const ValidationIssue& issue : m_validation.issues())
+        {
+            if (issue.field.startsWith(binding.key()))
+            {
+                matchingIssues.append(issue);
+            }
+        }
+
+        if (!matchingIssues.isEmpty())
+        {
+            applyVisualState(binding.value(), matchingIssues, formatter);
         }
     }
 
@@ -135,13 +201,34 @@ bool FormValidationBinder::focusFirstError()
 {
     for (const ValidationIssue& issue : m_validation.errors())
     {
-        const auto binding = m_bindings.constFind(issue.field);
-        if (binding == m_bindings.cend() || !binding->widget)
+        const FieldBinding* target = nullptr;
+        if (const auto binding = m_bindings.constFind(issue.field);
+            binding != m_bindings.cend())
+        {
+            target = &binding.value();
+        }
+        else
+        {
+            qsizetype longestPrefix = 0;
+            for (auto binding = m_prefixBindings.cbegin();
+                 binding != m_prefixBindings.cend();
+                 ++binding)
+            {
+                if (issue.field.startsWith(binding.key())
+                    && binding.key().size() > longestPrefix)
+                {
+                    target = &binding.value();
+                    longestPrefix = binding.key().size();
+                }
+            }
+        }
+
+        if (!target || !target->widget)
         {
             continue;
         }
 
-        QWidget* widget = binding->widget;
+        QWidget* widget = target->widget;
         if (m_scrollArea)
         {
             m_scrollArea->ensureWidgetVisible(widget, 0, 16);

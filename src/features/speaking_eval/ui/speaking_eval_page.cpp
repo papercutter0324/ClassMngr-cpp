@@ -206,6 +206,7 @@ void SpeakingEvalPage::loadEvaluationData(
 
     m_model->loadData(rows);
     setupTable();
+    updateEvaluationValidation();
     updateHeaderText();
     updateActions();
 

@@ -4,6 +4,7 @@
 #include "app/services/feature_services.h"
 #include "core/fontmanager.h"
 #include "domain/models/teacher.h"
+#include "domain/validation/teacher_validator.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/utils/widget_sizing.h"
@@ -13,6 +14,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/pages/scrollable_page_body.h"
+#include "ui/shared/validation/form_validation_binder.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
 
@@ -320,6 +322,19 @@ void TeacherInfoPage::buildUi()
     auto* scrollContainer = m_pageBody->contentWidget();
     auto* scrollLayout = m_pageBody->contentLayout();
     contentLayout()->addWidget(m_pageBody);
+    m_validationBinder = new FormValidationBinder(
+        m_autosave,
+        m_pageBody,
+        this
+        );
+
+    const auto createValidationMessage =
+        [this](const QString& objectName)
+        {
+            auto* label = m_validationBinder->createMessageLabel(this);
+            label->setObjectName(objectName);
+            return label;
+        };
 
     // =====================================================
     // Header
@@ -395,6 +410,28 @@ void TeacherInfoPage::buildUi()
     m_phoneNumberEdit = new QLineEdit;
     m_phoneNumberEdit->setObjectName(
         QStringLiteral("phoneNumberEdit")
+        );
+
+    auto* teacherEnValidationMessage = createValidationMessage(
+        QStringLiteral("teacherEnValidationMessage")
+        );
+    auto* teacherKrValidationMessage = createValidationMessage(
+        QStringLiteral("teacherKrValidationMessage")
+        );
+    auto* preferredRomanizationValidationMessage = createValidationMessage(
+        QStringLiteral("preferredRomanizationValidationMessage")
+        );
+    auto* preferredNameValidationMessage = createValidationMessage(
+        QStringLiteral("preferredNameValidationMessage")
+        );
+    auto* roomNumberValidationMessage = createValidationMessage(
+        QStringLiteral("roomNumberValidationMessage")
+        );
+    auto* birthdayValidationMessage = createValidationMessage(
+        QStringLiteral("birthdayValidationMessage")
+        );
+    auto* phoneNumberValidationMessage = createValidationMessage(
+        QStringLiteral("phoneNumberValidationMessage")
         );
 
     WidgetSizing::installTextAwareFieldWidth(
@@ -475,6 +512,11 @@ void TeacherInfoPage::buildUi()
     detailsGrid->addWidget(
         m_preferredNameCombo, 1, 3, Qt::AlignLeft);
 
+    detailsGrid->addWidget(teacherEnValidationMessage, 2, 0);
+    detailsGrid->addWidget(teacherKrValidationMessage, 2, 1);
+    detailsGrid->addWidget(preferredRomanizationValidationMessage, 2, 2);
+    detailsGrid->addWidget(preferredNameValidationMessage, 2, 3);
+
     detailsGrid->addItem(
         new QSpacerItem(
             0,
@@ -482,24 +524,27 @@ void TeacherInfoPage::buildUi()
             QSizePolicy::Minimum,
             QSizePolicy::Fixed
             ),
-        2,
+        3,
         0,
         1,
         4
         );
 
     detailsGrid->addWidget(
-        m_roomNumberLabel, 3, 0);
+        m_roomNumberLabel, 4, 0);
 
     detailsGrid->addWidget(
-        m_birthdayLabel, 3, 1);
+        m_birthdayLabel, 4, 1);
 
     detailsGrid->addWidget(
-        m_phoneNumberLabel, 3, 2);
+        m_phoneNumberLabel, 4, 2);
 
-    detailsGrid->addWidget(m_roomNumberEdit, 4, 0, Qt::AlignLeft);
-    detailsGrid->addWidget(m_birthdayEdit, 4, 1, Qt::AlignLeft);
-    detailsGrid->addWidget(m_phoneNumberEdit, 4, 2, Qt::AlignLeft);
+    detailsGrid->addWidget(m_roomNumberEdit, 5, 0, Qt::AlignLeft);
+    detailsGrid->addWidget(m_birthdayEdit, 5, 1, Qt::AlignLeft);
+    detailsGrid->addWidget(m_phoneNumberEdit, 5, 2, Qt::AlignLeft);
+    detailsGrid->addWidget(roomNumberValidationMessage, 6, 0);
+    detailsGrid->addWidget(birthdayValidationMessage, 6, 1);
+    detailsGrid->addWidget(phoneNumberValidationMessage, 6, 2);
 
     detailsGrid->setColumnStretch(0, 0);
     detailsGrid->setColumnStretch(1, 0);
@@ -529,8 +574,13 @@ void TeacherInfoPage::buildUi()
         );
 
     m_wifiNameEdit = new QLineEdit;
+    m_wifiNameEdit->setObjectName(QStringLiteral("wifiNameEdit"));
     m_wifiPasswordEdit = new QLineEdit;
+    m_wifiPasswordEdit->setObjectName(QStringLiteral("wifiPasswordEdit"));
     m_internetTypeCombo = new NoWheelComboBox;
+    m_internetTypeCombo->setObjectName(
+        QStringLiteral("internetTypeCombo")
+        );
     m_internetTypeCombo->addItem(
         QStringLiteral("WiFi"),
         QStringLiteral("WiFi")
@@ -549,8 +599,13 @@ void TeacherInfoPage::buildUi()
         );
 
     m_zoomIdEdit = new QLineEdit;
+    m_zoomIdEdit->setObjectName(QStringLiteral("zoomIdEdit"));
     m_zoomPasswordEdit = new QLineEdit;
+    m_zoomPasswordEdit->setObjectName(QStringLiteral("zoomPasswordEdit"));
     m_projectionTypeCombo = new NoWheelComboBox;
+    m_projectionTypeCombo->setObjectName(
+        QStringLiteral("projectionTypeCombo")
+        );
     m_projectionTypeCombo->addItem(
         QStringLiteral("HDMI"),
         QStringLiteral("HDMI")
@@ -566,6 +621,25 @@ void TeacherInfoPage::buildUi()
     m_projectionTypeCombo->addItem(
         tr("N/A"),
         QStringLiteral("N/A")
+        );
+
+    auto* internetTypeValidationMessage = createValidationMessage(
+        QStringLiteral("internetTypeValidationMessage")
+        );
+    auto* wifiNameValidationMessage = createValidationMessage(
+        QStringLiteral("wifiNameValidationMessage")
+        );
+    auto* wifiPasswordValidationMessage = createValidationMessage(
+        QStringLiteral("wifiPasswordValidationMessage")
+        );
+    auto* projectionTypeValidationMessage = createValidationMessage(
+        QStringLiteral("projectionTypeValidationMessage")
+        );
+    auto* zoomIdValidationMessage = createValidationMessage(
+        QStringLiteral("zoomIdValidationMessage")
+        );
+    auto* zoomPasswordValidationMessage = createValidationMessage(
+        QStringLiteral("zoomPasswordValidationMessage")
         );
 
     m_internetTypeLabel =
@@ -593,6 +667,10 @@ void TeacherInfoPage::buildUi()
     connectivityGrid->addWidget(
         m_wifiPasswordEdit, 1, 2);
 
+    connectivityGrid->addWidget(internetTypeValidationMessage, 2, 0);
+    connectivityGrid->addWidget(wifiNameValidationMessage, 2, 1);
+    connectivityGrid->addWidget(wifiPasswordValidationMessage, 2, 2);
+
     connectivityGrid->addItem(
         new QSpacerItem(
             0,
@@ -600,7 +678,7 @@ void TeacherInfoPage::buildUi()
             QSizePolicy::Minimum,
             QSizePolicy::Fixed
             ),
-        2,
+        3,
         0,
         1,
         4
@@ -616,20 +694,23 @@ void TeacherInfoPage::buildUi()
         createFieldLabel(tr("Zoom Password"));
 
     connectivityGrid->addWidget(
-        m_projectionTypeLabel, 3, 0, Qt::AlignLeft);
+        m_projectionTypeLabel, 4, 0, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        m_zoomIdLabel, 3, 1, Qt::AlignLeft);
+        m_zoomIdLabel, 4, 1, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        m_zoomPasswordLabel, 3, 2, Qt::AlignLeft);
+        m_zoomPasswordLabel, 4, 2, Qt::AlignLeft);
 
     connectivityGrid->addWidget(
-        m_projectionTypeCombo, 4, 0);
+        m_projectionTypeCombo, 5, 0);
     connectivityGrid->addWidget(
-        m_zoomIdEdit, 4, 1);
+        m_zoomIdEdit, 5, 1);
     connectivityGrid->addWidget(
-        m_zoomPasswordEdit, 4, 2);
+        m_zoomPasswordEdit, 5, 2);
+    connectivityGrid->addWidget(projectionTypeValidationMessage, 6, 0);
+    connectivityGrid->addWidget(zoomIdValidationMessage, 6, 1);
+    connectivityGrid->addWidget(zoomPasswordValidationMessage, 6, 2);
 
     for (auto* widget : {
              static_cast<QWidget*>(m_internetTypeCombo),
@@ -679,9 +760,86 @@ void TeacherInfoPage::buildUi()
         new TeacherSectionCard(tr("Notes"));
 
     m_notesEdit = new QTextEdit;
+    m_notesEdit->setObjectName(QStringLiteral("teacherNotesEdit"));
     m_notesEdit->setMinimumHeight(180);
 
+    auto* notesValidationMessage = createValidationMessage(
+        QStringLiteral("teacherNotesValidationMessage")
+        );
+
     m_notesCard->contentLayout()->addWidget(m_notesEdit);
+    m_notesCard->contentLayout()->addWidget(notesValidationMessage);
+
+    m_validationBinder->registerField(
+        QStringLiteral("teacherEn"),
+        m_teacherEnEdit,
+        teacherEnValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("teacherKr"),
+        m_teacherKrEdit,
+        teacherKrValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("preferredRomanization"),
+        m_preferredRomanizationEdit,
+        preferredRomanizationValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("preferredName"),
+        m_preferredNameCombo,
+        preferredNameValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("roomNumber"),
+        m_roomNumberEdit,
+        roomNumberValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("birthday"),
+        m_birthdayEdit,
+        birthdayValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("phoneNumber"),
+        m_phoneNumberEdit,
+        phoneNumberValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("internetType"),
+        m_internetTypeCombo,
+        internetTypeValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("wifiName"),
+        m_wifiNameEdit,
+        wifiNameValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("wifiPassword"),
+        m_wifiPasswordEdit,
+        wifiPasswordValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("projectionType"),
+        m_projectionTypeCombo,
+        projectionTypeValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("zoomId"),
+        m_zoomIdEdit,
+        zoomIdValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("zoomPassword"),
+        m_zoomPasswordEdit,
+        zoomPasswordValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("notes"),
+        m_notesEdit,
+        notesValidationMessage
+        );
 
     scrollLayout->addWidget(m_notesCard);
 
@@ -691,6 +849,7 @@ void TeacherInfoPage::buildUi()
 
     m_saveButton =
         new TextFitPushButton(tr("Save Changes"));
+    m_saveButton->setObjectName(QStringLiteral("teacherInfoSaveButton"));
 
     for (auto* edit : {
              m_teacherKrEdit,
@@ -871,6 +1030,7 @@ void TeacherInfoPage::loadTeacher(
     updateFieldWidths();
 
     m_autosave->setLoading(false);
+    m_validationBinder->clear();
     clearDirty();
 }
 
@@ -941,6 +1101,7 @@ void TeacherInfoPage::handleFieldChanged()
         return;
     }
 
+    updateFormValidation();
     m_autosave->setDirty(formDiffersFromTeacher());
 }
 
@@ -998,8 +1159,30 @@ bool TeacherInfoPage::formDiffersFromTeacher() const
         || updated.notes != m_teacher.notes.trimmed();
 }
 
+void TeacherInfoPage::updateFormValidation()
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    const Teacher normalized = TeacherValidator::normalized(teacherFromForm());
+    m_validationBinder->setValidation(TeacherValidator::validate(normalized));
+}
+
 bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 {
+    m_autosave->cancelPendingSave();
+    updateFormValidation();
+    if (m_validationBinder && m_validationBinder->hasErrors())
+    {
+        if (showErrors)
+        {
+            m_validationBinder->focusFirstError();
+        }
+        return false;
+    }
+
     if (
         !m_services
         || !m_services->teacherService()
@@ -1008,8 +1191,6 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
     {
         return false;
     }
-
-    m_autosave->cancelPendingSave();
 
     auto* teacherService = m_services->teacherService();
 

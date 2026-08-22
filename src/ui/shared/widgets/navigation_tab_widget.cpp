@@ -726,6 +726,8 @@ void NavigationTabStrip::updateTabSizes()
         m_contentWidth,
         stripHeight
         );
+    m_tabLayout->invalidate();
+    m_tabLayout->activate();
 
     updateLayoutState();
 }
