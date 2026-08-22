@@ -111,6 +111,7 @@ class ClassesPageTests : public QObject
 
 private slots:
     void init();
+    void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void explicitClassRequestRetainsExcludingFiltersAndHiddenSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
@@ -127,6 +128,39 @@ void ClassesPageTests::init()
 {
     ScheduleWidgetTestStubs::reset();
     ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+}
+
+void ClassesPageTests::nestedEditorsAreDeferredUntilTheirSectionIsOpened()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+
+    for (const ClassesSection section : {
+             ClassesSection::Details,
+             ClassesSection::Roster,
+             ClassesSection::Analytics,
+             ClassesSection::Evaluations,
+             ClassesSection::Notes
+         })
+    {
+        QVERIFY(!page.isEditorInstantiated(section));
+    }
+
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Details));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Roster));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Analytics));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Evaluations));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Notes));
+
+    QVERIFY(page.openClass(42, ClassesSection::Analytics));
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Analytics));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Evaluations));
+
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QVERIFY(page.isEditorInstantiated(ClassesSection::Evaluations));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Roster));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::Notes));
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()

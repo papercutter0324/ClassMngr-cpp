@@ -58,6 +58,9 @@ public:
 
     int currentClassId() const;
     ClassesSection currentSection() const;
+    [[nodiscard]] bool isEditorInstantiated(
+        ClassesSection section
+        ) const;
 
     void setScheduleDisplayMode(
         ScheduleDisplayMode mode
@@ -113,7 +116,10 @@ private:
     bool activateClass(int classId);
     bool activateSection(ClassesSection section);
     bool commitActiveEditor();
-    void loadEditors(const Classroom& classroom);
+    BasePage* ensureEditor(
+        ClassesSection section
+        );
+    void loadActiveEditor();
     void restoreSelections();
     void syncTabsToClass(int classId);
     int currentClassIdFromTabs(NavigationTabWidget* tabs) const;
@@ -124,6 +130,7 @@ private:
     void updateHeaderText();
     void setEditorAvailable(bool available);
     void handleClassInfoSaved(int classId);
+    void applyEditorState(BasePage* editor);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -134,6 +141,9 @@ private:
     QList<Classroom> m_classes;
     int m_currentClassId = -1;
     ClassesSection m_currentSection = ClassesSection::Details;
+    SaveMode m_saveMode = SaveMode::Automatic;
+    bool m_embeddedDatabaseStateSet = false;
+    bool m_embeddedDatabaseOpen = false;
     bool m_rebuildingTabs = false;
     bool m_restoringTabs = false;
     bool m_weekendClassesAvailable = false;
@@ -141,6 +151,7 @@ private:
     bool m_updatingFirstRowLayout = false;
     QString m_selectedGrade;
     QHash<QString, int> m_selectedClassIds;
+    QHash<int, int> m_loadedEditorClassIds;
     ClassTabNavigation::DayFilter m_dayFilter{
         {},
         ClassTabNavigation::ScheduleSource::Regular,

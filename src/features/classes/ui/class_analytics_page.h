@@ -9,6 +9,7 @@
 
 class ApplicationServices;
 class CriterionDistributionBar;
+class ClassAnalyticsRankingModel;
 class GradeHistogram;
 class YearToDateChart;
 class QComboBox;
@@ -16,7 +17,7 @@ class QEvent;
 class QGridLayout;
 class QLabel;
 class QShowEvent;
-class QTableWidget;
+class QTableView;
 class SectionCard;
 class QWidget;
 struct SpeakingEvaluationDashboard;
@@ -112,6 +113,7 @@ private:
     int m_chartsHorizontal = -1;
 
     SectionCard* m_rankingCard = nullptr;
-    QTableWidget* m_rankingTable = nullptr;
+    QTableView* m_rankingTable = nullptr;
+    ClassAnalyticsRankingModel* m_rankingModel = nullptr;
     QLabel* m_emptyLabel = nullptr;
 };

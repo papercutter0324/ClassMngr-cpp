@@ -1,3 +1,13 @@
+classmngr_add_qt_test(
+    NAME PageManager
+    SOURCES
+        tests/pagemanager_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
         tests/schedule_widget_test_stubs.cpp

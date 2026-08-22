@@ -41,8 +41,10 @@ public:
     [[nodiscard]] bool loadPdf(
         const PdfViewerDocumentDescriptor& descriptor
         );
+    void releaseDocument();
 
     [[nodiscard]] QString currentFilePath() const;
+    [[nodiscard]] bool hasLoadedDocument() const;
 
     void setDocumentPageSpacing(
         DocumentPageSpacing spacing
@@ -98,6 +100,7 @@ private:
 
 private:
     bool m_tearingDown = false;
+    bool m_documentReleased = true;
     QPdfDocument* m_document = nullptr;
     QPdfView* m_view = nullptr;
     QLabel* m_statusLabel = nullptr;

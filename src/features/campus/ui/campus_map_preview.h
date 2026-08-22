@@ -18,6 +18,8 @@ class CampusMapPreview : public QWidget
 public:
     static constexpr int HorizontalBreakpoint = 760;
     static constexpr int MaximumImageHeight = 360;
+    static constexpr int MaximumDecodedImageDimension =
+        HorizontalBreakpoint * 2;
 
     explicit CampusMapPreview(
         QWidget* parent = nullptr
@@ -33,6 +35,9 @@ public:
     void retranslateUi();
 
     [[nodiscard]] int displayedImageCount() const;
+    [[nodiscard]] QSize decodedImageSize(
+        int index
+        ) const;
     [[nodiscard]] bool isHorizontal() const;
     [[nodiscard]] bool hasImages() const;
 
@@ -81,6 +86,7 @@ private:
     QFrame* m_divider = nullptr;
     QWidget* m_mapControls = nullptr;
     QList<QLabel*> m_imageLabels;
+    QList<QSize> m_decodedImageSizes;
     QList<QLabel*> m_titleLabels;
     bool m_horizontal = false;
 };

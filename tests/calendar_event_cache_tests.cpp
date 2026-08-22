@@ -37,13 +37,16 @@ void createCalendarEventsTable(
 void saveEvent(
     QSqlDatabase& database,
     const QDate& date,
-    const QString& title
+    const QString& title,
+    const QDate& endDate = {}
     )
 {
     CalendarEvent event;
     event.title = title;
     event.startDate = date;
-    event.endDate = date;
+    event.endDate = endDate.isValid()
+        ? endDate
+        : date;
     event.startTime = QTime(9, 0);
     event.endTime = QTime(10, 0);
 
@@ -90,6 +93,8 @@ class CalendarEventCacheTests : public QObject
 private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void invalidationDiscardsCompletedWorkerResult();
+    void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
+    void retainedRangesEvictEventsAndRejectEvictedWorkerResults();
 };
 
 void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess()
@@ -166,6 +171,138 @@ void CalendarEventCacheTests::invalidationDiscardsCompletedWorkerResult()
         5000
         );
     QCOMPARE(cache.eventsForDate(QDate(2026, 7, 10)).size(), 1);
+}
+
+void CalendarEventCacheTests::multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+
+    const QString connectionName =
+        QStringLiteral("calendar-event-cache-multiday-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        saveEvent(
+            database,
+            QDate(2026, 7, 12),
+            QStringLiteral("Three-day event"),
+            QDate(2026, 7, 14)
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ),
+        5000
+        );
+
+    QCOMPARE(cache.eventCount(), 2);
+    QCOMPARE(cache.dateBucketCount(), 4);
+    QCOMPARE(cache.eventsForDate(QDate(2026, 7, 12)).size(), 1);
+    QCOMPARE(cache.eventsForDate(QDate(2026, 7, 13)).size(), 1);
+    QCOMPARE(
+        cache.eventsInRange(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ).size(),
+        2
+        );
+}
+
+void CalendarEventCacheTests::retainedRangesEvictEventsAndRejectEvictedWorkerResults()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    cache.setRetainedRanges(
+        {
+            {
+                QDate(2026, 7, 1),
+                QDate(2026, 7, 31)
+            }
+        }
+        );
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            ),
+        5000
+        );
+    QCOMPARE(cache.eventCount(), 1);
+
+    cache.setRetainedRanges(
+        {
+            {
+                QDate(2026, 8, 1),
+                QDate(2026, 8, 31)
+            }
+        }
+        );
+    QVERIFY(
+        !cache.isRangeLoaded(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31)
+            )
+        );
+    QCOMPARE(cache.eventCount(), 0);
+    QCOMPARE(cache.dateBucketCount(), 0);
+
+    cache.setRetainedRanges(
+        {
+            {
+                QDate(2026, 7, 1),
+                QDate(2026, 7, 31)
+            }
+        }
+        );
+    cache.requestRange(
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    cache.setRetainedRanges(
+        {
+            {
+                QDate(2026, 8, 1),
+                QDate(2026, 8, 31)
+            }
+        }
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QCOMPARE(cache.eventCount(), 0);
+    QCOMPARE(cache.dateBucketCount(), 0);
 }
 
 QTEST_GUILESS_MAIN(CalendarEventCacheTests)

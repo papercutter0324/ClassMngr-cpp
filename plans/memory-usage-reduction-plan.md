@@ -8,6 +8,77 @@ rarely used pages, eliminating duplicated calendar records, replacing
 item-per-cell tables, promptly releasing PDF resources, and bounding decoded
 campus image size.
 
+## Implementation Progress
+
+### Completed — 2026-08-22
+
+- Added `PageManager::isPageInstantiated()` and `isCurrentPage()` as
+  non-constructing lifecycle test seams.
+- Refactored `PageManager` to register factories and lazy-create Calendar,
+  Classes, Campus Dashboard, and PDF Viewer. Lightweight/default pages remain
+  eager for this first slice.
+- Stored save mode, database state, and PDF-viewer preferences in the manager
+  so a deferred page receives the current state upon creation.
+- Deferred Classes and Campus cross-page signal wiring through the new
+  `PageManager::pageCreated()` signal. Navigation, sidebar, and document
+  callers now ensure a heavy page only when performing an operation on it.
+- Added `tests/pagemanager_tests.cpp` to verify deferred construction, safe
+  manager-wide lifecycle calls, and first-creation reuse.
+- Validated the debug application build plus focused PageManager, Classes,
+  and Campus Dashboard tests.
+- Refactored `ClassesPage` to create its Details, Roster, Analytics,
+  Evaluations, and Notes editors only when their section is first opened.
+  Existing editors retain their state; loading and lifecycle actions now skip
+  sections that have not been created.
+- Added focused Classes-page coverage for deferred nested-editor construction
+  and re-ran the debug build plus Classes and PageManager tests.
+- Replaced `CalendarEventCache` date buckets of copied event payloads with
+  sorted event-ID indexes backed by a single canonical event map. Range
+  queries now deduplicate multi-day events through those IDs.
+- Added Calendar retention coordination for the visible month, next 30 days,
+  five-month prefetch window, and next-ten-events search range. Changing the
+  retained ranges prunes stale date buckets, loaded-range metadata, and
+  unreferenced event payloads.
+- Added cache coverage for multi-day-event deduplication and eviction-safe
+  asynchronous loading. Rebuilt the debug application and passed the focused
+  Calendar, Classes, and PageManager test suite.
+- Replaced the Class Analytics `QTableWidget` ranking grid with
+  `ClassAnalyticsRankingModel` and `QTableView`. The existing delegate and
+  grouped header retain grade badges, attention highlighting, alignment,
+  sizing, selection, and translations without per-cell item allocations.
+- Added model tests for the ten columns, display/grade/attention roles,
+  headers, and reset behavior. Rebuilt the debug application and passed the
+  focused Analytics, Calendar, Classes, and PageManager tests.
+- Added idempotent `PdfViewerPage::releaseDocument()` behavior and a single
+  PageManager transition hook that invokes it when leaving PDF Viewer. The
+  viewer now detaches/closes its document, clears document-dependent state,
+  resets its UI, and remains reusable for a later document.
+- Added PageManager coverage using a real PDF fixture: load, verify output
+  actions, navigate away, verify the document/actions are released, and
+  return to the same viewer instance. Focused regressions pass.
+- Replaced direct `QPixmap(path)` map loading with `QImageReader`, automatic
+  orientation handling, and a 1,520-pixel decoded-source bounding box (the
+  narrow-layout breakpoint with a 2× high-DPI allowance). Display layout
+  continues to scale from that bounded source.
+- Added a high-resolution map regression that verifies the retained decoded
+  source stays within the cap; the complete Campus map layout suite passes.
+- Hardened the PDF leave-transition hook to resolve the viewer through the
+  instantiated-page registry before releasing it. This fixes the Debug
+  startup-performance access violation in `PdfViewerPage::releaseDocument()`.
+- Extended startup-performance JSON with report-only Windows working-set and
+  private-byte snapshots taken immediately after `MainWindow` construction;
+  the startup regression verifies both values are available on Windows while
+  retaining the existing timing metrics and optional thresholds.
+- Recorded a comparable empty-profile, headless Debug startup baseline using
+  three isolated samples of the committed pre-change revision and the current
+  worktree. Average startup peak working set fell from 271.4 MiB to 215.0 MiB
+  (-56.4 MiB); private bytes fell from 187.5 MiB to 142.8 MiB (-44.7 MiB).
+  The current construction-point report was 211.9 MiB working set and
+  139.9 MiB private bytes. These are report-only baselines, not CI limits.
+- Completed the full Debug CTest sweep: all 61 tests pass, including the
+  startup-performance, PageManager/PDF lifecycle, Calendar cache, Classes,
+  Analytics ranking-model, and Campus map suites.
+
 ## Confirmed Current Behavior
 
 - `PageManager::initialize()` constructs every top-level page and

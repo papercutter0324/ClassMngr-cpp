@@ -262,8 +262,13 @@ void SidebarController::importClasses()
 
     if (firstAffectedClassId > 0)
     {
-        m_pages->classesPage()->openClass(
-            firstAffectedClassId, ClassesSection::Details);
+        if (auto* page = m_pages->ensureClassesPage())
+        {
+            page->openClass(
+                firstAffectedClassId,
+                ClassesSection::Details
+                );
+        }
         m_pages->showPage(PageType::Classes);
         m_sidebar->selectClass(firstAffectedClassId);
     }

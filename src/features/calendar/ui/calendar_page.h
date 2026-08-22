@@ -107,6 +107,7 @@ private:
         bool existingEvent
         );
     void refreshCalendarData();
+    void updateCalendarCacheRetention();
     void invalidateCalendarData();
     void ensureNextTenEvents();
     void handleNextEventMonthFound(

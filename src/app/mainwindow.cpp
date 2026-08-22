@@ -119,6 +119,13 @@ CalendarPage* MainWindow::calendarPage() const
         : nullptr;
 }
 
+CalendarPage* MainWindow::ensureCalendarPage() const
+{
+    return m_pages
+        ? m_pages->ensureCalendarPage()
+        : nullptr;
+}
+
 void MainWindow::refreshSchedulePreferences()
 {
     if (m_pages)
@@ -544,13 +551,6 @@ void MainWindow::connectSignals()
         );
 
     connect(
-        m_pages->classesPage(),
-        &ClassesPage::classInfoSaved,
-        m_sidebarController.get(),
-        &SidebarController::handleClassInfoSaved
-        );
-
-    connect(
         m_pages->schedulePage(),
         &SchedulePage::classInfoSaved,
         m_sidebarController.get(),
@@ -564,15 +564,49 @@ void MainWindow::connectSignals()
         &SidebarController::handleClassInfoSaved
         );
 
+    const auto connectClassesPage =
+        [this](ClassesPage* page)
+        {
+            if (!page || !m_pages)
+            {
+                return;
+            }
+
+            connect(
+                page,
+                &ClassesPage::classInfoSaved,
+                m_sidebarController.get(),
+                &SidebarController::handleClassInfoSaved
+                );
+
+            connect(
+                m_pages->mySchedulePage(),
+                &SchedulePage::displayModeChanged,
+                page,
+                &ClassesPage::setScheduleDisplayMode
+                );
+            page->setScheduleDisplayMode(
+                m_pages->mySchedulePage()->displayMode()
+                );
+        };
+
     connect(
-        m_pages->mySchedulePage(),
-        &SchedulePage::displayModeChanged,
-        m_pages->classesPage(),
-        &ClassesPage::setScheduleDisplayMode
+        m_pages,
+        &PageManager::pageCreated,
+        this,
+        [connectClassesPage](PageType type, BasePage* page)
+        {
+            if (type == PageType::Classes)
+            {
+                connectClassesPage(qobject_cast<ClassesPage*>(page));
+            }
+        }
         );
-    m_pages->classesPage()->setScheduleDisplayMode(
-        m_pages->mySchedulePage()->displayMode()
-        );
+
+    if (auto* page = m_pages->classesPage())
+    {
+        connectClassesPage(page);
+    }
 
     const auto connectScheduleImport =
         [this](SchedulePage* page)
@@ -691,12 +725,41 @@ void MainWindow::connectSignals()
         &SidebarController::handleTeacherSaved
         );
 
+    const auto connectCampusDashboard =
+        [this](CampusDashboardPage* page)
+        {
+            if (!page || !ui || !ui->sidebarWidget)
+            {
+                return;
+            }
+
+            connect(
+                page,
+                &CampusDashboardPage::sectionChanged,
+                ui->sidebarWidget,
+                &Sidebar::selectCampusSection
+                );
+        };
+
     connect(
-        m_pages->campusDashboard(),
-        &CampusDashboardPage::sectionChanged,
-        ui->sidebarWidget,
-        &Sidebar::selectCampusSection
+        m_pages,
+        &PageManager::pageCreated,
+        this,
+        [connectCampusDashboard](PageType type, BasePage* page)
+        {
+            if (type == PageType::CampusDashboard)
+            {
+                connectCampusDashboard(
+                    qobject_cast<CampusDashboardPage*>(page)
+                    );
+            }
+        }
         );
+
+    if (auto* page = m_pages->campusDashboard())
+    {
+        connectCampusDashboard(page);
+    }
 
     if (m_actions.manageCampuses)
     {
@@ -956,11 +1019,15 @@ void MainWindow::applyNoDatabaseState()
 
     setDatabaseBackedActionsEnabled(false);
 
-    if (m_pages && m_pages->campusDashboard())
+    if (m_pages)
     {
         m_pages->showPage(PageType::CampusDashboard);
-        m_pages->campusDashboard()->showInformation();
-        m_pages->campusDashboard()->refresh();
+
+        if (auto* campus = m_pages->campusDashboard())
+        {
+            campus->showInformation();
+            campus->refresh();
+        }
     }
 
     if (ui && ui->sidebarWidget)

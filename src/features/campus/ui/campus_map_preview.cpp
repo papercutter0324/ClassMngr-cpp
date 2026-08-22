@@ -3,6 +3,8 @@
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
+#include <QImage>
+#include <QImageReader>
 #include <QLabel>
 #include <QPixmap>
 #include <QResizeEvent>
@@ -47,6 +49,46 @@ double imageAspectRatio(
             ->property(ImageAspectRatioProperty)
             .toDouble()
         : 0.0;
+}
+
+QSize boundedDecodeSize(
+    const QSize& sourceSize
+    )
+{
+    if (!sourceSize.isValid() || sourceSize.isEmpty())
+    {
+        return {};
+    }
+
+    return sourceSize.scaled(
+        QSize(
+            CampusMapPreview::MaximumDecodedImageDimension,
+            CampusMapPreview::MaximumDecodedImageDimension
+            ),
+        Qt::KeepAspectRatio
+        );
+}
+
+QPixmap loadBoundedPixmap(
+    const QString& imagePath
+    )
+{
+    QImageReader reader(imagePath);
+    reader.setAutoTransform(true);
+
+    const QSize sourceSize = reader.size();
+    const QSize decodeSize = boundedDecodeSize(sourceSize);
+    if (!decodeSize.isValid())
+    {
+        return {};
+    }
+
+    reader.setScaledSize(decodeSize);
+    const QImage image = reader.read();
+
+    return image.isNull()
+        ? QPixmap()
+        : QPixmap::fromImage(image);
 }
 
 class AspectRatioImageLabel : public QLabel
@@ -262,19 +304,21 @@ void CampusMapPreview::setImagePaths(
             continue;
         }
 
-        QPixmap pixmap(trimmedPath);
+        QPixmap pixmap = loadBoundedPixmap(trimmedPath);
 
         if (pixmap.isNull())
         {
             continue;
         }
 
+        const QSize decodedSize = pixmap.size();
         m_imageLabels.append(
             new AspectRatioImageLabel(
                 std::move(pixmap),
                 this
                 )
             );
+        m_decodedImageSizes.append(decodedSize);
 
         const ViewKind kind =
             index == 0
@@ -364,6 +408,15 @@ void CampusMapPreview::retranslateUi()
 int CampusMapPreview::displayedImageCount() const
 {
     return m_imageLabels.size();
+}
+
+QSize CampusMapPreview::decodedImageSize(
+    int index
+    ) const
+{
+    return index >= 0 && index < m_decodedImageSizes.size()
+        ? m_decodedImageSizes.at(index)
+        : QSize();
 }
 
 bool CampusMapPreview::isHorizontal() const
@@ -557,6 +610,7 @@ void CampusMapPreview::clearImages()
     }
 
     m_imageLabels.clear();
+    m_decodedImageSizes.clear();
 
     for (QLabel* titleLabel : std::as_const(m_titleLabels))
     {

@@ -112,13 +112,6 @@ ClassesPage::ClassesPage(
     setProperty("role", UiRoles::Classes);
 
     buildUi();
-
-    connect(
-        m_detailsPage,
-        &ClassDetailsPage::classInfoSaved,
-        this,
-        &ClassesPage::handleClassInfoSaved
-        );
 }
 
 bool ClassesPage::openClass(
@@ -211,7 +204,8 @@ bool ClassesPage::openClass(
 
     m_currentClassId = classroom.id;
     m_currentSection = section;
-    loadEditors(classroom);
+    m_loadedEditorClassIds.clear();
+    loadActiveEditor();
     restoreSelections();
     setEditorAvailable(true);
     updateHeaderText();
@@ -269,7 +263,11 @@ bool ClassesPage::openEvaluation(
         return classroom.id > 0;
     }
 
-    m_evaluationsPage->loadEvaluation(classroom, evaluationName);
+    if (m_evaluationsPage)
+    {
+        m_evaluationsPage->loadEvaluation(classroom, evaluationName);
+    }
+
     return true;
 }
 
@@ -281,6 +279,31 @@ int ClassesPage::currentClassId() const
 ClassesSection ClassesPage::currentSection() const
 {
     return m_currentSection;
+}
+
+bool ClassesPage::isEditorInstantiated(
+    ClassesSection section
+    ) const
+{
+    switch (section)
+    {
+    case ClassesSection::Details:
+        return m_detailsPage;
+
+    case ClassesSection::Roster:
+        return m_rosterEditor;
+
+    case ClassesSection::Analytics:
+        return m_analyticsPage;
+
+    case ClassesSection::Evaluations:
+        return m_evaluationsPage;
+
+    case ClassesSection::Notes:
+        return m_notesPage;
+    }
+
+    return false;
 }
 
 void ClassesPage::setScheduleDisplayMode(
@@ -339,11 +362,21 @@ void ClassesPage::setSaveMode(
     SaveMode mode
     )
 {
-    m_detailsPage->setSaveMode(mode);
-    m_rosterEditor->setSaveMode(mode);
-    m_analyticsPage->setSaveMode(mode);
-    m_evaluationsPage->setSaveMode(mode);
-    m_notesPage->setSaveMode(mode);
+    m_saveMode = mode;
+
+    for (BasePage* editor : {
+             static_cast<BasePage*>(m_detailsPage),
+             static_cast<BasePage*>(m_rosterEditor),
+             static_cast<BasePage*>(m_analyticsPage),
+             static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_notesPage)
+         })
+    {
+        if (editor)
+        {
+            editor->setSaveMode(mode);
+        }
+    }
 }
 
 void ClassesPage::refresh()
@@ -372,6 +405,7 @@ void ClassesPage::clearDatabaseState()
     m_currentSection = ClassesSection::Details;
     m_selectedGrade.clear();
     m_selectedClassIds.clear();
+    m_loadedEditorClassIds.clear();
 
     rebuildClassTabs(-1);
 
@@ -430,11 +464,19 @@ void ClassesPage::retranslateUi()
         m_sectionTabs->setTabText(4, tr("Notes"));
     }
 
-    m_detailsPage->retranslateUi();
-    m_rosterEditor->retranslateUi();
-    m_analyticsPage->retranslateUi();
-    m_evaluationsPage->retranslateUi();
-    m_notesPage->retranslateUi();
+    for (BasePage* editor : {
+             static_cast<BasePage*>(m_detailsPage),
+             static_cast<BasePage*>(m_rosterEditor),
+             static_cast<BasePage*>(m_analyticsPage),
+             static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_notesPage)
+         })
+    {
+        if (editor)
+        {
+            editor->retranslateUi();
+        }
+    }
 
     rebuildClassTabs(m_currentClassId);
     restoreSelections();
@@ -443,11 +485,22 @@ void ClassesPage::retranslateUi()
 
 void ClassesPage::setEmbeddedDatabaseOpen(bool databaseOpen)
 {
-    m_detailsPage->setDatabaseOpen(databaseOpen);
-    m_rosterEditor->setDatabaseOpen(databaseOpen);
-    m_analyticsPage->setDatabaseOpen(databaseOpen);
-    m_evaluationsPage->setDatabaseOpen(databaseOpen);
-    m_notesPage->setDatabaseOpen(databaseOpen);
+    m_embeddedDatabaseStateSet = true;
+    m_embeddedDatabaseOpen = databaseOpen;
+
+    for (BasePage* editor : {
+             static_cast<BasePage*>(m_detailsPage),
+             static_cast<BasePage*>(m_rosterEditor),
+             static_cast<BasePage*>(m_analyticsPage),
+             static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_notesPage)
+         })
+    {
+        if (editor)
+        {
+            editor->setDatabaseOpen(databaseOpen);
+        }
+    }
 }
 
 PageOutputCapabilities ClassesPage::outputCapabilities() const
@@ -574,43 +627,7 @@ void ClassesPage::buildUi()
     contentLayout()->addWidget(m_emptyLabel, 1);
 
     m_editorStack = new QStackedWidget(this);
-    m_detailsPage = new ClassDetailsPage(m_services, true, m_editorStack);
-    m_rosterEditor = new RosterEditorWidget(m_services, true, m_editorStack);
-    m_rosterEditor->setBottomKeyboardButtonVisible(false);
-    m_analyticsPage = new ClassAnalyticsPage(m_services, true, m_editorStack);
-    m_evaluationsPage = new SpeakingEvalPage(m_services, true, m_editorStack);
-    m_notesPage = new ClassNotesPage(m_services, true, m_editorStack);
-    m_editorStack->addWidget(m_detailsPage);
-    m_editorStack->addWidget(m_rosterEditor);
-    m_editorStack->addWidget(m_analyticsPage);
-    m_editorStack->addWidget(m_evaluationsPage);
-    m_editorStack->addWidget(m_notesPage);
     contentLayout()->addWidget(m_editorStack, 1);
-
-    connect(
-        m_rosterEditor,
-        &BasePage::outputCapabilitiesChanged,
-        this,
-        [this]()
-        {
-            if (activeEditor() == m_rosterEditor)
-            {
-                emit outputCapabilitiesChanged();
-            }
-        }
-        );
-    connect(
-        m_evaluationsPage,
-        &BasePage::outputCapabilitiesChanged,
-        this,
-        [this]()
-        {
-            if (activeEditor() == m_evaluationsPage)
-            {
-                emit outputCapabilitiesChanged();
-            }
-        }
-        );
 
     connect(
         m_koreanKeyboardButton,
@@ -620,7 +637,10 @@ void ClassesPage::buildUi()
         {
             if (m_currentSection == ClassesSection::Evaluations)
             {
-                m_evaluationsPage->showKoreanKeyboard();
+                if (m_evaluationsPage)
+                {
+                    m_evaluationsPage->showKoreanKeyboard();
+                }
             }
             else if (m_onScreenKeyboard)
             {
@@ -1215,7 +1235,7 @@ bool ClassesPage::activateClass(
     }
 
     m_currentClassId = classroom.id;
-    loadEditors(classroom);
+    loadActiveEditor();
     restoreSelections();
     updateHeaderText();
     return true;
@@ -1227,7 +1247,7 @@ bool ClassesPage::activateSection(
 {
     if (section == m_currentSection)
     {
-        showActiveEditor();
+        loadActiveEditor();
         return true;
     }
 
@@ -1239,7 +1259,7 @@ bool ClassesPage::activateSection(
 
     m_currentSection = section;
     restoreSelections();
-    showActiveEditor();
+    loadActiveEditor();
     emit outputCapabilitiesChanged();
     return true;
 }
@@ -1252,15 +1272,157 @@ bool ClassesPage::commitActiveEditor()
         || editor->saveChanges();
 }
 
-void ClassesPage::loadEditors(
-    const Classroom& classroom
+BasePage* ClassesPage::ensureEditor(
+    ClassesSection section
     )
 {
-    m_detailsPage->loadClass(classroom);
-    m_rosterEditor->loadClass(classroom);
-    m_analyticsPage->loadClass(classroom);
-    m_evaluationsPage->loadEvaluation(classroom, {});
-    m_notesPage->loadClass(classroom);
+    if (!m_editorStack)
+    {
+        return nullptr;
+    }
+
+    BasePage* editor = nullptr;
+
+    switch (section)
+    {
+    case ClassesSection::Details:
+        if (!m_detailsPage)
+        {
+            m_detailsPage =
+                new ClassDetailsPage(m_services, true, m_editorStack);
+            connect(
+                m_detailsPage,
+                &ClassDetailsPage::classInfoSaved,
+                this,
+                &ClassesPage::handleClassInfoSaved
+                );
+        }
+        editor = m_detailsPage;
+        break;
+
+    case ClassesSection::Roster:
+        if (!m_rosterEditor)
+        {
+            m_rosterEditor =
+                new RosterEditorWidget(m_services, true, m_editorStack);
+            m_rosterEditor->setBottomKeyboardButtonVisible(false);
+            connect(
+                m_rosterEditor,
+                &BasePage::outputCapabilitiesChanged,
+                this,
+                [this]()
+                {
+                    if (activeEditor() == m_rosterEditor)
+                    {
+                        emit outputCapabilitiesChanged();
+                    }
+                }
+                );
+        }
+        editor = m_rosterEditor;
+        break;
+
+    case ClassesSection::Analytics:
+        if (!m_analyticsPage)
+        {
+            m_analyticsPage =
+                new ClassAnalyticsPage(m_services, true, m_editorStack);
+        }
+        editor = m_analyticsPage;
+        break;
+
+    case ClassesSection::Evaluations:
+        if (!m_evaluationsPage)
+        {
+            m_evaluationsPage =
+                new SpeakingEvalPage(m_services, true, m_editorStack);
+            connect(
+                m_evaluationsPage,
+                &BasePage::outputCapabilitiesChanged,
+                this,
+                [this]()
+                {
+                    if (activeEditor() == m_evaluationsPage)
+                    {
+                        emit outputCapabilitiesChanged();
+                    }
+                }
+                );
+        }
+        editor = m_evaluationsPage;
+        break;
+
+    case ClassesSection::Notes:
+        if (!m_notesPage)
+        {
+            m_notesPage =
+                new ClassNotesPage(m_services, true, m_editorStack);
+        }
+        editor = m_notesPage;
+        break;
+    }
+
+    if (!editor)
+    {
+        return nullptr;
+    }
+
+    if (m_editorStack->indexOf(editor) < 0)
+    {
+        m_editorStack->addWidget(editor);
+        applyEditorState(editor);
+    }
+
+    return editor;
+}
+
+void ClassesPage::loadActiveEditor()
+{
+    const Classroom classroom = classroomById(m_currentClassId);
+
+    if (classroom.id <= 0)
+    {
+        showActiveEditor();
+        return;
+    }
+
+    BasePage* editor = ensureEditor(m_currentSection);
+
+    if (!editor)
+    {
+        return;
+    }
+
+    const int sectionKey = static_cast<int>(m_currentSection);
+
+    if (m_loadedEditorClassIds.value(sectionKey, -1) != classroom.id)
+    {
+        switch (m_currentSection)
+        {
+        case ClassesSection::Details:
+            m_detailsPage->loadClass(classroom);
+            break;
+
+        case ClassesSection::Roster:
+            m_rosterEditor->loadClass(classroom);
+            break;
+
+        case ClassesSection::Analytics:
+            m_analyticsPage->loadClass(classroom);
+            break;
+
+        case ClassesSection::Evaluations:
+            m_evaluationsPage->loadEvaluation(classroom, {});
+            break;
+
+        case ClassesSection::Notes:
+            m_notesPage->loadClass(classroom);
+            break;
+        }
+
+        m_loadedEditorClassIds.insert(sectionKey, classroom.id);
+    }
+
     showActiveEditor();
 }
 
@@ -1498,6 +1660,23 @@ void ClassesPage::showActiveEditor()
     if (QWidget* editor = activeEditor())
     {
         m_editorStack->setCurrentWidget(editor);
+    }
+}
+
+void ClassesPage::applyEditorState(
+    BasePage* editor
+    )
+{
+    if (!editor)
+    {
+        return;
+    }
+
+    editor->setSaveMode(m_saveMode);
+
+    if (m_embeddedDatabaseStateSet)
+    {
+        editor->setDatabaseOpen(m_embeddedDatabaseOpen);
     }
 }
 

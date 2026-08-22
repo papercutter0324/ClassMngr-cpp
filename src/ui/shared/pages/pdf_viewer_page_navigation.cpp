@@ -46,6 +46,7 @@ void PdfViewerPage::handleDocumentStatusChanged()
 {
     if (
         m_tearingDown
+        || m_documentReleased
         || !m_document
         || !m_view
         )

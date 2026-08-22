@@ -4,6 +4,8 @@
 #include <QMap>
 #include <QStackedWidget>
 
+#include <functional>
+
 #include "basepage.h"
 
 
@@ -86,6 +88,14 @@ public:
         PageType type
         );
 
+    [[nodiscard]] bool isPageInstantiated(
+        PageType type
+        ) const;
+
+    [[nodiscard]] bool isCurrentPage(
+        PageType type
+        ) const;
+
     bool confirmCurrentPageCanLeave(
         bool exiting = false
         );
@@ -123,6 +133,11 @@ public:
 
 signals:
 
+    void pageCreated(
+        PageType type,
+        BasePage* page
+        );
+
     void initialSetupRequested();
 
     void openDatabaseRequested();
@@ -143,6 +158,7 @@ public:
     PersonalDetailsPage* personalDetailsPage() const;
 
     CalendarPage* calendarPage() const;
+    CalendarPage* ensureCalendarPage();
 
     SchedulePage* mySchedulePage() const;
 
@@ -151,6 +167,7 @@ public:
     SubPrepPage* subPrepPage() const;
 
     ClassesPage* classesPage() const;
+    ClassesPage* ensureClassesPage();
     TestingClassesPage* testingClassesPage() const;
 
     TeacherInfoPage* teacherPage() const;
@@ -160,8 +177,10 @@ public:
     StaffDirectoryPage* gsTeamPage() const;
 
     CampusDashboardPage* campusDashboard() const;
+    CampusDashboardPage* ensureCampusDashboard();
 
     PdfViewerPage* pdfViewerPage() const;
+    PdfViewerPage* ensurePdfViewerPage();
 
 
 
@@ -182,6 +201,14 @@ private:
 
     bool m_initialized = false;
     bool m_adminMode = false;
+    bool m_databaseStateSet = false;
+    bool m_databaseOpen = false;
+
+    SaveMode m_saveMode = SaveMode::Automatic;
+    DocumentPageSpacing m_documentPageSpacing =
+        DocumentPageSpacing::Small;
+    DocumentViewerBackground m_documentViewerBackground =
+        DocumentViewerBackground::Default;
 
     // =====================================================
     // Services
@@ -195,7 +222,23 @@ private:
     // Setup
     // =====================================================
 
-    void registerPages();
+    void registerPageFactories();
+
+    BasePage* ensurePage(
+        PageType type
+        );
+
+    void applyCurrentState(
+        BasePage* page
+        );
+
+    void connectCommonPageSignals(
+        BasePage* page
+        );
+
+    void releaseLeavingPageResources(
+        BasePage* page
+        );
 
 
 
@@ -235,6 +278,7 @@ private:
     // =====================================================
 
     QMap<PageType, BasePage*> m_pages;
+    QMap<PageType, std::function<BasePage*()>> m_pageFactories;
 };
 
 

@@ -85,6 +85,7 @@ public:
     [[nodiscard]] ApplicationServices* services() const;
 
     [[nodiscard]] CalendarPage* calendarPage() const;
+    [[nodiscard]] CalendarPage* ensureCalendarPage() const;
 
     void refreshSchedulePreferences();
 

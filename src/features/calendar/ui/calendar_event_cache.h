@@ -15,6 +15,16 @@ class CalendarEventCache : public QObject
     Q_OBJECT
 
 public:
+    struct DateRange
+    {
+        QDate startDate;
+        QDate endDate;
+
+        [[nodiscard]] bool operator==(
+            const DateRange& other
+            ) const = default;
+    };
+
     enum class Priority
     {
         Foreground,
@@ -31,6 +41,10 @@ public:
     QString databasePath() const;
 
     void invalidate();
+
+    void setRetainedRanges(
+        const QList<DateRange>& ranges
+        );
 
     void requestRange(
         const QDate& startDate,
@@ -55,6 +69,8 @@ public:
         const QDate& endDate
         ) const;
     bool isLoading() const;
+    [[nodiscard]] int eventCount() const;
+    [[nodiscard]] int dateBucketCount() const;
 
 signals:
     void cacheChanged();
@@ -64,12 +80,6 @@ signals:
         );
 
 private:
-    struct DateRange
-    {
-        QDate startDate;
-        QDate endDate;
-    };
-
     enum class RequestKind
     {
         Range,
@@ -106,8 +116,7 @@ private:
     void finishActiveRequest();
     void insertEvents(
         const QList<CalendarEvent>& events,
-        const QDate& loadedStartDate,
-        const QDate& loadedEndDate
+        const QList<DateRange>& loadedRanges
         );
     void markRangeLoaded(
         const QDate& startDate,
@@ -117,14 +126,26 @@ private:
         const QDate& startDate,
         const QDate& endDate
         ) const;
+    QList<DateRange> retainedRangesWithin(
+        const DateRange& range
+        ) const;
+    bool isDateRetained(
+        const QDate& date
+        ) const;
+    void pruneToRetainedRanges();
+    void removeEventMemberships(
+        int eventId
+        );
     void emitLoadingChangedIfNeeded(
         bool previouslyLoading
         );
 
     QString m_databasePath;
     QHash<int, CalendarEvent> m_eventsById;
-    QHash<QDate, QList<CalendarEvent>> m_eventsByDate;
+    QHash<QDate, QList<int>> m_eventIdsByDate;
     QList<DateRange> m_loadedRanges;
+    QList<DateRange> m_retainedRanges;
+    bool m_retentionEnabled = false;
     QList<Request> m_pendingRequests;
     std::optional<Request> m_activeRequest;
     QFutureWatcher<LoadResult> m_watcher;

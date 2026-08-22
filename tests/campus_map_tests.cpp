@@ -26,6 +26,7 @@ private slots:
     void mapUrlsRequireAbsoluteHttps();
     void bundledCampusImagesLoad();
     void gallerySwitchesAtBreakpoint();
+    void retainedSourceImagesAreBoundedDuringDecode();
     void mapControlsStayCenteredOverFirstImage();
     void wideMapControlsAreNotCompressed();
     void galleryHandlesMissingImagesAndCampusChanges();
@@ -510,6 +511,49 @@ void CampusMapTests::gallerySwitchesAtBreakpoint()
         );
     QCOMPARE(imageLabels.at(0)->pixmap().size(), QSize(720, 360));
     QCOMPARE(imageLabels.at(1)->pixmap().size(), QSize(180, 360));
+}
+
+void CampusMapTests::retainedSourceImagesAreBoundedDuringDecode()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString imagePath =
+        directory.filePath(QStringLiteral("large-map.png"));
+    QImage image(5000, 3000, QImage::Format_ARGB32);
+    image.fill(Qt::darkGreen);
+    QVERIFY(image.save(imagePath));
+
+    CampusMapPreview preview;
+    preview.setImagePaths({imagePath});
+
+    QCOMPARE(preview.displayedImageCount(), 1);
+    const QSize decodedSize = preview.decodedImageSize(0);
+    QVERIFY(decodedSize.isValid());
+    QVERIFY(
+        decodedSize.width()
+        <= CampusMapPreview::MaximumDecodedImageDimension
+        );
+    QVERIFY(
+        decodedSize.height()
+        <= CampusMapPreview::MaximumDecodedImageDimension
+        );
+    QVERIFY(
+        qAbs(
+            static_cast<double>(decodedSize.width()) / decodedSize.height()
+            - 5000.0 / 3000.0
+            )
+        < 0.01
+        );
+
+    preview.show();
+    preview.resize(
+        CampusMapPreview::HorizontalBreakpoint,
+        1000
+        );
+    QCoreApplication::processEvents();
+    QVERIFY(preview.isHorizontal());
+    QVERIFY(preview.hasImages());
 }
 
 void CampusMapTests::galleryHandlesMissingImagesAndCampusChanges()

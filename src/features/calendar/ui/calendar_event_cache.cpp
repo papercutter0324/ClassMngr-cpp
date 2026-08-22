@@ -5,10 +5,103 @@
 
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QSet>
 #include <QUuid>
 #include <QtConcurrentRun>
 
 #include <algorithm>
+
+namespace
+{
+bool eventComesBefore(
+    const CalendarEvent& left,
+    const CalendarEvent& right
+    )
+{
+    if (left.startDate != right.startDate)
+    {
+        return left.startDate < right.startDate;
+    }
+
+    if (left.startTime != right.startTime)
+    {
+        return left.startTime < right.startTime;
+    }
+
+    if (left.title != right.title)
+    {
+        return left.title < right.title;
+    }
+
+    return left.id < right.id;
+}
+
+bool eventComesBeforeOnDate(
+    const CalendarEvent& left,
+    const CalendarEvent& right
+    )
+{
+    if (left.startTime != right.startTime)
+    {
+        return left.startTime < right.startTime;
+    }
+
+    if (left.title != right.title)
+    {
+        return left.title < right.title;
+    }
+
+    return left.id < right.id;
+}
+
+QList<CalendarEventCache::DateRange> normalizedRanges(
+    QList<CalendarEventCache::DateRange> ranges
+    )
+{
+    ranges.erase(
+        std::remove_if(
+            ranges.begin(),
+            ranges.end(),
+            [](const CalendarEventCache::DateRange& range)
+            {
+                return !range.startDate.isValid()
+                    || !range.endDate.isValid()
+                    || range.endDate < range.startDate;
+            }
+            ),
+        ranges.end()
+        );
+    std::sort(
+        ranges.begin(),
+        ranges.end(),
+        [](const CalendarEventCache::DateRange& left,
+           const CalendarEventCache::DateRange& right)
+        {
+            return left.startDate < right.startDate;
+        }
+        );
+
+    QList<CalendarEventCache::DateRange> merged;
+    for (const CalendarEventCache::DateRange& range : ranges)
+    {
+        if (
+            merged.isEmpty()
+            || range.startDate > merged.last().endDate.addDays(1)
+            )
+        {
+            merged.append(range);
+            continue;
+        }
+
+        merged.last().endDate = qMax(
+            merged.last().endDate,
+            range.endDate
+            );
+    }
+
+    return merged;
+}
+}
 
 CalendarEventCache::CalendarEventCache(
     QObject* parent
@@ -47,12 +140,30 @@ void CalendarEventCache::invalidate()
 
     ++m_generation;
     m_eventsById.clear();
-    m_eventsByDate.clear();
+    m_eventIdsByDate.clear();
     m_loadedRanges.clear();
     m_pendingRequests.clear();
 
     emit cacheChanged();
     emitLoadingChangedIfNeeded(previouslyLoading);
+}
+
+void CalendarEventCache::setRetainedRanges(
+    const QList<DateRange>& ranges
+    )
+{
+    const QList<DateRange> normalized =
+        normalizedRanges(ranges);
+
+    if (m_retentionEnabled && m_retainedRanges == normalized)
+    {
+        return;
+    }
+
+    m_retainedRanges = normalized;
+    m_retentionEnabled = true;
+    pruneToRetainedRanges();
+    emit cacheChanged();
 }
 
 void CalendarEventCache::requestRange(
@@ -132,9 +243,29 @@ QList<CalendarEvent> CalendarEventCache::eventsForDate(
     const QDate& date
     ) const
 {
-    return isRangeLoaded(date, date)
-        ? m_eventsByDate.value(date)
-        : QList<CalendarEvent>();
+    QList<CalendarEvent> events;
+    if (!isRangeLoaded(date, date))
+    {
+        return events;
+    }
+
+    const auto eventIds = m_eventIdsByDate.constFind(date);
+    if (eventIds == m_eventIdsByDate.cend())
+    {
+        return events;
+    }
+
+    events.reserve(eventIds->size());
+    for (const int eventId : *eventIds)
+    {
+        const auto event = m_eventsById.constFind(eventId);
+        if (event != m_eventsById.cend())
+        {
+            events.append(*event);
+        }
+    }
+
+    return events;
 }
 
 QList<CalendarEvent> CalendarEventCache::eventsInRange(
@@ -153,39 +284,40 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
         return events;
     }
 
-    for (const CalendarEvent& event : m_eventsById)
+    QSet<int> eventIds;
+    for (
+        QDate date = startDate;
+        date <= endDate;
+        date = date.addDays(1)
+        )
     {
-        if (
-            event.endDate >= startDate
-            && event.startDate <= endDate
-            )
+        const auto dateEventIds =
+            m_eventIdsByDate.constFind(date);
+        if (dateEventIds == m_eventIdsByDate.cend())
         {
-            events.append(event);
+            continue;
+        }
+
+        for (const int eventId : *dateEventIds)
+        {
+            eventIds.insert(eventId);
+        }
+    }
+
+    events.reserve(eventIds.size());
+    for (const int eventId : eventIds)
+    {
+        const auto event = m_eventsById.constFind(eventId);
+        if (event != m_eventsById.cend())
+        {
+            events.append(*event);
         }
     }
 
     std::sort(
         events.begin(),
         events.end(),
-        [](const CalendarEvent& left, const CalendarEvent& right)
-        {
-            if (left.startDate != right.startDate)
-            {
-                return left.startDate < right.startDate;
-            }
-
-            if (left.startTime != right.startTime)
-            {
-                return left.startTime < right.startTime;
-            }
-
-            if (left.title != right.title)
-            {
-                return left.title < right.title;
-            }
-
-            return left.id < right.id;
-        }
+        eventComesBefore
         );
 
     return events;
@@ -223,6 +355,16 @@ bool CalendarEventCache::isLoading() const
 {
     return m_activeRequest.has_value()
         || !m_pendingRequests.isEmpty();
+}
+
+int CalendarEventCache::eventCount() const
+{
+    return m_eventsById.size();
+}
+
+int CalendarEventCache::dateBucketCount() const
+{
+    return m_eventIdsByDate.size();
 }
 
 CalendarEventCache::LoadResult CalendarEventCache::load(
@@ -380,17 +522,29 @@ void CalendarEventCache::finishActiveRequest()
     {
         if (result.request.kind == RequestKind::Range)
         {
-            insertEvents(
-                result.events,
-                result.request.startDate,
-                result.request.endDate
-                );
+            const QList<DateRange> loadedRanges =
+                retainedRangesWithin(
+                    {
+                        result.request.startDate,
+                        result.request.endDate
+                    }
+                    );
+            if (!loadedRanges.isEmpty())
+            {
+                insertEvents(
+                    result.events,
+                    loadedRanges
+                    );
 
-            markRangeLoaded(
-                result.request.startDate,
-                result.request.endDate
-                );
-            emit cacheChanged();
+                for (const DateRange& range : loadedRanges)
+                {
+                    markRangeLoaded(
+                        range.startDate,
+                        range.endDate
+                        );
+                }
+                emit cacheChanged();
+            }
         }
         else
         {
@@ -404,10 +558,14 @@ void CalendarEventCache::finishActiveRequest()
 
 void CalendarEventCache::insertEvents(
     const QList<CalendarEvent>& events,
-    const QDate& loadedStartDate,
-    const QDate& loadedEndDate
+    const QList<DateRange>& loadedRanges
     )
 {
+    QList<DateRange> indexedRanges =
+        m_loadedRanges;
+    indexedRanges.append(loadedRanges);
+    indexedRanges = normalizedRanges(indexedRanges);
+
     for (const CalendarEvent& event : events)
     {
         if (
@@ -420,51 +578,36 @@ void CalendarEventCache::insertEvents(
             continue;
         }
 
+        removeEventMemberships(event.id);
         m_eventsById.insert(event.id, event);
 
-        for (
-            QDate date = qMax(event.startDate, loadedStartDate);
-            date <= qMin(event.endDate, loadedEndDate);
-            date = date.addDays(1)
-            )
+        for (const DateRange& range : indexedRanges)
         {
-            QList<CalendarEvent>& dateEvents =
-                m_eventsByDate[date];
-            bool replaced = false;
-
-            for (CalendarEvent& existing : dateEvents)
+            for (
+                QDate date = qMax(event.startDate, range.startDate);
+                date <= qMin(event.endDate, range.endDate);
+                date = date.addDays(1)
+                )
             {
-                if (existing.id == event.id)
+                QList<int>& eventIds =
+                    m_eventIdsByDate[date];
+                if (!eventIds.contains(event.id))
                 {
-                    existing = event;
-                    replaced = true;
-                    break;
+                    eventIds.append(event.id);
                 }
-            }
 
-            if (!replaced)
-            {
-                dateEvents.append(event);
-            }
-
-            std::sort(
-                dateEvents.begin(),
-                dateEvents.end(),
-                [](const CalendarEvent& left, const CalendarEvent& right)
-                {
-                    if (left.startTime != right.startTime)
+                std::sort(
+                    eventIds.begin(),
+                    eventIds.end(),
+                    [this](int leftId, int rightId)
                     {
-                        return left.startTime < right.startTime;
+                        return eventComesBeforeOnDate(
+                            m_eventsById.value(leftId),
+                            m_eventsById.value(rightId)
+                            );
                     }
-
-                    if (left.title != right.title)
-                    {
-                        return left.title < right.title;
-                    }
-
-                    return left.id < right.id;
-                }
-                );
+                    );
+            }
         }
     }
 }
@@ -475,37 +618,7 @@ void CalendarEventCache::markRangeLoaded(
     )
 {
     m_loadedRanges.append({startDate, endDate});
-
-    std::sort(
-        m_loadedRanges.begin(),
-        m_loadedRanges.end(),
-        [](const DateRange& left, const DateRange& right)
-        {
-            return left.startDate < right.startDate;
-        }
-        );
-
-    QList<DateRange> merged;
-
-    for (const DateRange& range : m_loadedRanges)
-    {
-        if (
-            merged.isEmpty()
-            || merged.last().startDate > range.endDate.addDays(1)
-            || range.startDate > merged.last().endDate.addDays(1)
-            )
-        {
-            merged.append(range);
-            continue;
-        }
-
-        merged.last().endDate = qMax(
-            merged.last().endDate,
-            range.endDate
-            );
-    }
-
-    m_loadedRanges = merged;
+    m_loadedRanges = normalizedRanges(m_loadedRanges);
 }
 
 bool CalendarEventCache::hasPendingRange(
@@ -535,6 +648,124 @@ bool CalendarEventCache::hasPendingRange(
     }
 
     return false;
+}
+
+QList<CalendarEventCache::DateRange>
+CalendarEventCache::retainedRangesWithin(
+    const DateRange& range
+    ) const
+{
+    if (!m_retentionEnabled)
+    {
+        return {range};
+    }
+
+    QList<DateRange> intersections;
+    for (const DateRange& retainedRange : m_retainedRanges)
+    {
+        const QDate startDate = qMax(
+            range.startDate,
+            retainedRange.startDate
+            );
+        const QDate endDate = qMin(
+            range.endDate,
+            retainedRange.endDate
+            );
+        if (startDate <= endDate)
+        {
+            intersections.append({startDate, endDate});
+        }
+    }
+
+    return intersections;
+}
+
+bool CalendarEventCache::isDateRetained(
+    const QDate& date
+    ) const
+{
+    if (!m_retentionEnabled)
+    {
+        return true;
+    }
+
+    for (const DateRange& range : m_retainedRanges)
+    {
+        if (range.startDate <= date && date <= range.endDate)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void CalendarEventCache::pruneToRetainedRanges()
+{
+    if (!m_retentionEnabled)
+    {
+        return;
+    }
+
+    QList<DateRange> retainedLoadedRanges;
+    for (const DateRange& loadedRange : m_loadedRanges)
+    {
+        retainedLoadedRanges.append(
+            retainedRangesWithin(loadedRange)
+            );
+    }
+    m_loadedRanges = normalizedRanges(retainedLoadedRanges);
+
+    QSet<int> referencedEventIds;
+    for (
+        auto iterator = m_eventIdsByDate.begin();
+        iterator != m_eventIdsByDate.end();
+        )
+    {
+        if (!isDateRetained(iterator.key()))
+        {
+            iterator = m_eventIdsByDate.erase(iterator);
+            continue;
+        }
+
+        for (const int eventId : iterator.value())
+        {
+            referencedEventIds.insert(eventId);
+        }
+        ++iterator;
+    }
+
+    for (
+        auto iterator = m_eventsById.begin();
+        iterator != m_eventsById.end();
+        )
+    {
+        if (!referencedEventIds.contains(iterator.key()))
+        {
+            iterator = m_eventsById.erase(iterator);
+            continue;
+        }
+        ++iterator;
+    }
+}
+
+void CalendarEventCache::removeEventMemberships(
+    int eventId
+    )
+{
+    for (
+        auto iterator = m_eventIdsByDate.begin();
+        iterator != m_eventIdsByDate.end();
+        )
+    {
+        iterator.value().removeAll(eventId);
+        if (iterator.value().isEmpty())
+        {
+            iterator = m_eventIdsByDate.erase(iterator);
+            continue;
+        }
+        ++iterator;
+    }
 }
 
 void CalendarEventCache::emitLoadingChangedIfNeeded(

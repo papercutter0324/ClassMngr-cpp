@@ -58,26 +58,49 @@ NavigationController::NavigationController(
     , m_sidebar(sidebar)
     , m_pages(pages)
 {
-    if (m_pages && m_pages->campusDashboard() && m_sidebar)
+    if (m_pages && m_sidebar)
     {
         connect(
-            m_pages->campusDashboard(),
-            &CampusDashboardPage::sectionChanged,
+            m_pages,
+            &PageManager::pageCreated,
             this,
-            [this](const QString& sectionKey)
+            [this](PageType type, BasePage* page)
             {
-                if (
-                    !m_pages
-                    || !m_sidebar
-                    || m_pages->currentWidget() != m_pages->campusDashboard()
-                    )
+                if (type != PageType::CampusDashboard)
                 {
                     return;
                 }
 
-                m_sidebar->selectCampusSection(sectionKey);
+                auto* campus = qobject_cast<CampusDashboardPage*>(page);
+
+                if (!campus)
+                {
+                    return;
+                }
+
+                connect(
+                    campus,
+                    &CampusDashboardPage::sectionChanged,
+                    this,
+                    [this](const QString& sectionKey)
+                    {
+                        if (
+                            !m_pages
+                            || !m_sidebar
+                            || !m_pages->isCurrentPage(
+                                PageType::CampusDashboard
+                                )
+                            )
+                        {
+                            return;
+                        }
+
+                        m_sidebar->selectCampusSection(sectionKey);
+                    }
+                    );
             }
             );
+
     }
 }
 
@@ -214,7 +237,8 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            if (m_pages->classesPage()->openEvaluation(
+            if (auto* classes = m_pages->ensureClassesPage(); classes
+                && classes->openEvaluation(
                     data.classId,
                     evaluationName
                     ))
@@ -256,8 +280,7 @@ void NavigationController::handleNavigation(
             }
 
             const bool alreadyShowingClasses =
-                m_pages->currentWidget()
-                == m_pages->classesPage();
+                m_pages->isCurrentPage(PageType::Classes);
 
             if (
                 !alreadyShowingClasses
@@ -267,7 +290,9 @@ void NavigationController::handleNavigation(
                 return;
             }
 
-            if (!m_pages->classesPage()->loadClasses())
+            auto* classes = m_pages->ensureClassesPage();
+
+            if (!classes || !classes->loadClasses())
             {
                 return;
             }
@@ -355,8 +380,10 @@ void NavigationController::handleDocument(
             document->exportFile->fileName;
     }
 
-    [[maybe_unused]] const bool loaded =
-        m_pages->pdfViewerPage()->loadPdf(descriptor);
+    if (auto* viewer = m_pages->ensurePdfViewerPage())
+    {
+        [[maybe_unused]] const bool loaded = viewer->loadPdf(descriptor);
+    }
 
     m_pages->showPage(
         PageType::PdfViewer
@@ -433,8 +460,6 @@ void NavigationController::handleMyInfo(
 
     PageType targetPageType =
         PageType::PersonalDetails;
-    QWidget* targetPage =
-        m_pages->personalDetailsPage();
     QString selectedSectionKey =
         QStringLiteral("my_info_information");
 
@@ -442,8 +467,6 @@ void NavigationController::handleMyInfo(
     {
         targetPageType =
             PageType::MySchedule;
-        targetPage =
-            m_pages->mySchedulePage();
         selectedSectionKey =
             QStringLiteral("my_info_schedule");
     }
@@ -451,8 +474,6 @@ void NavigationController::handleMyInfo(
     {
         targetPageType =
             PageType::MyClasses;
-        targetPage =
-            m_pages->myClassesPage();
         selectedSectionKey =
             QStringLiteral("my_info_class_information");
     }
@@ -460,15 +481,12 @@ void NavigationController::handleMyInfo(
     {
         targetPageType =
             PageType::Calendar;
-        targetPage =
-            m_pages->calendarPage();
         selectedSectionKey =
             QStringLiteral("my_info_calendar");
     }
 
     const bool alreadyShowingTarget =
-        m_pages->currentWidget()
-        == targetPage;
+        m_pages->isCurrentPage(targetPageType);
 
     if (!alreadyShowingTarget && !m_pages->confirmCurrentPageCanLeave())
     {
@@ -483,7 +501,10 @@ void NavigationController::handleMyInfo(
 
     if (sectionKey == QStringLiteral("my_info_calendar"))
     {
-        m_pages->calendarPage()->scrollToTop();
+        if (auto* calendar = m_pages->calendarPage())
+        {
+            calendar->scrollToTop();
+        }
     }
     else if (sectionKey == QStringLiteral("my_info_information"))
     {
@@ -501,8 +522,7 @@ void NavigationController::handleCampus(
     }
 
     const bool alreadyShowingCampus =
-        m_pages->currentWidget()
-        == m_pages->campusDashboard();
+        m_pages->isCurrentPage(PageType::CampusDashboard);
 
     const bool rootClick =
         data.path.size() == 1;
@@ -522,7 +542,11 @@ void NavigationController::handleCampus(
             }
 
             m_pages->showPage(PageType::CampusDashboard);
-            m_pages->campusDashboard()->showInformation();
+
+            if (auto* campus = m_pages->campusDashboard())
+            {
+                campus->showInformation();
+            }
         }
 
         m_sidebar->selectCampusSection(
@@ -539,6 +563,13 @@ void NavigationController::handleCampus(
 
     m_pages->showPage(PageType::CampusDashboard);
 
+    auto* campus = m_pages->campusDashboard();
+
+    if (!campus)
+    {
+        return;
+    }
+
     const QString pageKey =
         data.keys.size() >= 2
             ? data.routeKey
@@ -546,31 +577,31 @@ void NavigationController::handleCampus(
 
     if (pageKey == QStringLiteral("campus_address"))
     {
-        m_pages->campusDashboard()->showAddress();
+        campus->showAddress();
         return;
     }
 
     if (pageKey == QStringLiteral("campus_directions"))
     {
-        m_pages->campusDashboard()->showDirections();
+        campus->showDirections();
         return;
     }
 
     if (pageKey == QStringLiteral("campus_information"))
     {
-        m_pages->campusDashboard()->showInformation();
+        campus->showInformation();
         return;
     }
 
     if (pageKey == QStringLiteral("campus_housing"))
     {
-        m_pages->campusDashboard()->showHousing();
+        campus->showHousing();
         return;
     }
 
     if (pageKey == QStringLiteral("campus_map"))
     {
-        m_pages->campusDashboard()->showMap();
+        campus->showMap();
         return;
     }
 }
@@ -589,8 +620,7 @@ void NavigationController::handleRoster(
     }
 
     const bool alreadyShowingClasses =
-        m_pages->currentWidget()
-        == m_pages->classesPage();
+        m_pages->isCurrentPage(PageType::Classes);
 
     if (
         !alreadyShowingClasses
@@ -600,8 +630,8 @@ void NavigationController::handleRoster(
         return;
     }
 
-    if (
-        m_pages->classesPage()->openClass(
+    if (auto* classes = m_pages->ensureClassesPage(); classes
+        && classes->openClass(
             data.classId,
             ClassesSection::Roster
             )
@@ -625,8 +655,7 @@ void NavigationController::handleNotes(
     }
 
     const bool alreadyShowingClasses =
-        m_pages->currentWidget()
-        == m_pages->classesPage();
+        m_pages->isCurrentPage(PageType::Classes);
 
     if (
         !alreadyShowingClasses
@@ -636,8 +665,8 @@ void NavigationController::handleNotes(
         return;
     }
 
-    if (
-        m_pages->classesPage()->openClass(
+    if (auto* classes = m_pages->ensureClassesPage(); classes
+        && classes->openClass(
             data.classId,
             ClassesSection::Notes
             )
@@ -665,8 +694,7 @@ void NavigationController::handleClass(
     }
 
     const bool alreadyShowingClasses =
-        m_pages->currentWidget()
-        == m_pages->classesPage();
+        m_pages->isCurrentPage(PageType::Classes);
 
     if (
         !alreadyShowingClasses
@@ -676,8 +704,8 @@ void NavigationController::handleClass(
         return;
     }
 
-    if (
-        m_pages->classesPage()->openClass(
+    if (auto* classes = m_pages->ensureClassesPage(); classes
+        && classes->openClass(
             data.classId,
             ClassesSection::Details
             )

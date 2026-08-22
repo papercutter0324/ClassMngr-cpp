@@ -198,6 +198,16 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             metrics,
             QStringLiteral("processStartToReadyMs")
             );
+    const double windowConstructedWorkingSetBytes =
+        metricValue(
+            metrics,
+            QStringLiteral("windowConstructedWorkingSetBytes")
+            );
+    const double windowConstructedPrivateBytes =
+        metricValue(
+            metrics,
+            QStringLiteral("windowConstructedPrivateBytes")
+            );
     const double progressUpdates =
         metricValue(
             metrics,
@@ -215,11 +225,18 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QCOMPARE(finalProgress, 100.0);
     QVERIFY(processStartToExitMs >= readyMs);
 
+#if defined(Q_OS_WIN)
+    QVERIFY(windowConstructedWorkingSetBytes > 0.0);
+    QVERIFY(windowConstructedPrivateBytes > 0.0);
+#endif
+
     std::printf(
-        "Startup performance: windowConstructed=%.0f ms, ready=%.0f ms, process=%lld ms, progressUpdates=%.0f, finalProgress=%.0f\n",
+        "Startup performance: windowConstructed=%.0f ms, ready=%.0f ms, process=%lld ms, workingSet=%.1f MiB, privateBytes=%.1f MiB, progressUpdates=%.0f, finalProgress=%.0f\n",
         windowConstructedMs,
         readyMs,
         static_cast<long long>(processStartToExitMs),
+        windowConstructedWorkingSetBytes / (1024.0 * 1024.0),
+        windowConstructedPrivateBytes / (1024.0 * 1024.0),
         progressUpdates,
         finalProgress
         );

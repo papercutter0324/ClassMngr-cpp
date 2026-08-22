@@ -6,6 +6,7 @@
 #include "features/classes/ui/class_analytics_charts.h"
 #include "features/classes/ui/class_analytics_ranking_delegate.h"
 #include "features/classes/ui/class_analytics_ranking_header.h"
+#include "features/classes/ui/class_analytics_ranking_model.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/pages/scrollable_page_body.h"
 #include "ui/shared/styles/roles.h"
@@ -23,7 +24,7 @@
 #include <QLayoutItem>
 #include <QShowEvent>
 #include <QScrollBar>
-#include <QTableWidget>
+#include <QTableView>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -77,24 +78,25 @@ AnalyticsCharts::CriterionInsight criterionInsight(
                      : AnalyticsCharts::CriterionInsight::Focus;
 }
 
-int fittedRankingColumnWidth(const QTableWidget* table, int column)
+int fittedRankingColumnWidth(const QTableView* table, int column)
 {
     Q_ASSERT(table);
+    Q_ASSERT(table->model());
 
     const QFont font = column == 2
         ? FontManager::getKoreanFont()
         : FontManager::getUiFont(column == 3 ? 11 : 12);
     const QFontMetrics metrics(font);
     int widest = 0;
-    for (int row = 0; row < table->rowCount(); ++row)
+    const QAbstractItemModel* model = table->model();
+    for (int row = 0; row < model->rowCount(); ++row)
     {
-        const QTableWidgetItem* item = table->item(row, column);
-        if (!item)
-            continue;
+        const QModelIndex index = model->index(row, column);
+        const QString text = index.data(Qt::DisplayRole).toString();
 
-        int width = metrics.horizontalAdvance(item->text());
+        int width = metrics.horizontalAdvance(text);
         if (column == 3
-            && !item->data(AnalyticsRankingRoles::Grade).toString().isEmpty())
+            && !index.data(AnalyticsRankingRoles::Grade).toString().isEmpty())
         {
             width += AnalyticsRankingLayout::GradeBadgeWidth
                 + AnalyticsRankingLayout::GradeBadgeTextSpacing;
@@ -109,16 +111,20 @@ int fittedRankingColumnWidth(const QTableWidget* table, int column)
     if (column != 1 && column != 2)
         return valueWidth;
 
-    const QTableWidgetItem* header = table->horizontalHeaderItem(column);
-    const int headerWidth = header
-        ? QFontMetrics(FontManager::getUiFont(12, QFont::DemiBold))
-              .horizontalAdvance(header->text())
-              + 2 * kRankingHeaderPadding
-        : 0;
+    const int headerWidth =
+        QFontMetrics(FontManager::getUiFont(12, QFont::DemiBold))
+            .horizontalAdvance(
+                model->headerData(
+                    column,
+                    Qt::Horizontal,
+                    Qt::DisplayRole
+                    ).toString()
+                )
+        + 2 * kRankingHeaderPadding;
     return qMax(valueWidth, headerWidth);
 }
 
-int rankingTableMinimumWidth(const QTableWidget* table)
+int rankingTableMinimumWidth(const QTableView* table)
 {
     Q_ASSERT(table);
 
@@ -285,7 +291,10 @@ void ClassAnalyticsPage::buildUi()
     applyAnalyticsCardTitleFont(m_rankingCard);
     auto* rankLayout = m_rankingCard->contentLayout();
     rankLayout->setContentsMargins(16, 8, 16, 16);
-    m_rankingTable = new QTableWidget(0, 10, m_rankingCard);
+    m_rankingTable = new QTableView(m_rankingCard);
+    m_rankingTable->setObjectName(
+        QStringLiteral("classAnalyticsRankingTable")
+        );
     m_rankingTable->setFont(FontManager::getUiFont(12));
     m_rankingTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_rankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -301,6 +310,8 @@ void ClassAnalyticsPage::buildUi()
         new ClassAnalyticsRankingHeader(Qt::Horizontal, m_rankingTable));
     m_rankingTable->setItemDelegate(
         new ClassAnalyticsRankingDelegate(m_rankingTable));
+    m_rankingModel = new ClassAnalyticsRankingModel(m_rankingTable);
+    m_rankingTable->setModel(m_rankingModel);
     auto* header = m_rankingTable->horizontalHeader();
     header->setSectionResizeMode(0, QHeaderView::Fixed);
     header->resizeSection(0, kRankingIndexColumnWidth);
@@ -440,7 +451,7 @@ void ClassAnalyticsPage::clearDisplay()
     m_yearToDateChart->setData({});
     clearLayout(m_criteriaLayout);
     m_criterionBars.clear();
-    m_rankingTable->setRowCount(0);
+    m_rankingModel->setRankings({});
     m_rankingTable->setMinimumHeight(0);
 }
 
@@ -581,42 +592,10 @@ void ClassAnalyticsPage::applySnapshot(const SpeakingAnalytics::Snapshot& snapsh
     }
     synchronizeCriterionBarStarts();
 
-    m_rankingTable->setUpdatesEnabled(false);
-    m_rankingTable->setRowCount(snapshot.rankings.size());
-    for (qsizetype row = 0; row < snapshot.rankings.size(); ++row)
-    {
-        const SpeakingAnalytics::StudentRank& student = snapshot.rankings.at(row);
-        const bool needsAttention =
-            SpeakingAnalytics::gradeToNumber(student.overallLetter) <= 2;
-
-        const auto setTextItem = [this, row](int column, const QString& text)
-        {
-            auto* item = new QTableWidgetItem(text);
-            item->setTextAlignment(Qt::AlignCenter);
-            m_rankingTable->setItem(row, column, item);
-            return item;
-        };
-
-        setTextItem(0, QString::number(row + 1));
-        setTextItem(1, student.englishName);
-        setTextItem(2, student.koreanName);
-        auto* average = setTextItem(
-            3, SpeakingAnalytics::formatAverage(student.overall3));
-        average->setData(AnalyticsRankingRoles::Grade, student.overallLetter);
-        average->setData(AnalyticsRankingRoles::NeedsAttention, needsAttention);
-
-        for (int criterion = 0; criterion < SpeakingAnalytics::CriterionCount;
-             ++criterion)
-        {
-            const QString grade = student.criterionLetters.value(criterion);
-            auto* item = setTextItem(4 + criterion, QString());
-            item->setData(AnalyticsRankingRoles::Grade, grade);
-        }
-    }
-    m_rankingTable->setUpdatesEnabled(true);
+    m_rankingModel->setRankings(snapshot.rankings);
     resizeRankingColumnsToContents();
 
-    const int visibleRows = qMin(6, m_rankingTable->rowCount());
+    const int visibleRows = qMin(6, m_rankingModel->rowCount());
     const int height = m_rankingTable->horizontalHeader()->height()
         + visibleRows * ClassAnalyticsRankingDelegate::rowHeight() + 4;
     m_rankingTable->setMinimumHeight(qMax(92, height));
@@ -696,7 +675,11 @@ void ClassAnalyticsPage::synchronizeCriterionBarStarts()
 
 void ClassAnalyticsPage::resizeRankingColumnsToContents()
 {
-    if (!m_rankingTable || m_rankingTable->rowCount() == 0)
+    if (
+        !m_rankingTable
+        || !m_rankingModel
+        || m_rankingModel->rowCount() == 0
+        )
         return;
 
     QHeaderView* header = m_rankingTable->horizontalHeader();
@@ -708,7 +691,7 @@ void ClassAnalyticsPage::resizeRankingColumnsToContents()
 
 void ClassAnalyticsPage::setRankingHeaders()
 {
-    m_rankingTable->setHorizontalHeaderLabels({
+    m_rankingModel->setHeaderLabels({
         QString(),
         tr("English"),
         tr("Korean"),

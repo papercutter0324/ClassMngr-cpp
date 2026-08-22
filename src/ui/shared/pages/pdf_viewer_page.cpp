@@ -155,24 +155,20 @@ bool PdfViewerPage::loadPdf(
     const QString filePath =
         descriptor.pdfFilePath;
 
-    m_currentFilePath =
-        filePath;
-    m_documentDescriptor =
-        descriptor;
+    releaseDocument();
 
     if (filePath.trimmed().isEmpty())
     {
-        m_document->close();
-        updateDocumentActionButtons();
-        updatePageDisplay();
         showStatusMessage(
             tr("No PDF file selected.")
             );
         return false;
     }
 
-    m_document->close();
-    updateDocumentActionButtons();
+    m_documentReleased = false;
+    m_currentFilePath = filePath;
+    m_documentDescriptor = descriptor;
+    m_view->setDocument(m_document);
 
     const QPdfDocument::Error error =
         m_document->load(filePath);
@@ -200,9 +196,48 @@ bool PdfViewerPage::loadPdf(
     return true;
 }
 
+void PdfViewerPage::releaseDocument()
+{
+    if (!m_document)
+    {
+        return;
+    }
+
+    m_documentReleased = true;
+
+    if (m_view && m_view->document() == m_document)
+    {
+        m_view->setDocument(nullptr);
+    }
+
+    m_document->close();
+    m_currentFilePath.clear();
+    m_documentDescriptor = {};
+    m_currentZoom = 1.0;
+
+    if (m_view)
+    {
+        m_view->setZoomMode(QPdfView::ZoomMode::Custom);
+        m_view->setZoomFactor(m_currentZoom);
+    }
+
+    updateZoomDisplay();
+    updatePageDisplay();
+    clearStatusMessage();
+    updateDocumentActionButtons();
+}
+
 QString PdfViewerPage::currentFilePath() const
 {
     return m_currentFilePath;
+}
+
+bool PdfViewerPage::hasLoadedDocument() const
+{
+    return !m_documentReleased
+        && m_document
+        && m_document->status() == QPdfDocument::Status::Ready
+        && m_document->pageCount() > 0;
 }
 
 void PdfViewerPage::setDocumentPageSpacing(

@@ -74,10 +74,13 @@ void SidebarController::addClass()
         return;
     }
 
-    m_pages->classesPage()->openClass(
-        classroom->id,
-        ClassesSection::Details
-        );
+    if (auto* page = m_pages->ensureClassesPage())
+    {
+        page->openClass(
+            classroom->id,
+            ClassesSection::Details
+            );
+    }
 
     m_pages->showPage(
         PageType::Classes
@@ -157,7 +160,10 @@ void SidebarController::deleteClass()
 
     refreshClassSidebar();
 
-    m_pages->classesPage()->loadClasses();
+    if (auto* page = m_pages->classesPage())
+    {
+        page->loadClasses();
+    }
 
     if (selectedClassId == classroom->id)
     {

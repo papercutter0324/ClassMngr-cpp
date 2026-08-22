@@ -543,8 +543,56 @@ void CalendarPage::refreshCalendarData()
         }
     }
 
+    updateCalendarCacheRetention();
+
     refreshUpcomingEvents();
     ensureNextTenEvents();
+}
+
+void CalendarPage::updateCalendarCacheRetention()
+{
+    if (!m_calendarCache)
+    {
+        return;
+    }
+
+    const QDate today = QDate::currentDate();
+    const QDate visibleMonth =
+        m_calendarVisibleMonth.isValid()
+            ? m_calendarVisibleMonth
+            : QDate(today.year(), today.month(), 1);
+
+    QList<CalendarEventCache::DateRange> retainedRanges;
+    retainedRanges.append(
+        {
+            visibleMonth,
+            visibleMonth.addMonths(1).addDays(-1)
+        }
+        );
+    retainedRanges.append(
+        {
+            today,
+            today.addDays(30)
+        }
+        );
+    retainedRanges.append(
+        {
+            visibleMonth.addMonths(1),
+            visibleMonth.addMonths(5).addDays(-1)
+        }
+        );
+
+    if (m_nextTenSearchEnd.isValid())
+    {
+        retainedRanges.append(
+            {
+                today,
+                m_nextTenSearchEnd
+            }
+            );
+    }
+
+    m_calendarCache->setRetainedRanges(retainedRanges);
 }
 
 void CalendarPage::invalidateCalendarData()
@@ -631,6 +679,7 @@ void CalendarPage::handleNextEventMonthFound(
 
     m_nextTenSearchEnd =
         firstOfMonth.addMonths(1).addDays(-1);
+    updateCalendarCacheRetention();
     m_calendarCache->requestRange(
         firstOfMonth,
         m_nextTenSearchEnd,

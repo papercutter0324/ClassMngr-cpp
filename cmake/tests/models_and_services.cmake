@@ -409,6 +409,16 @@ qt_add_executable(ClassMngrBasePageTests
     )
 
     classmngr_add_qt_test(
+        NAME ClassAnalyticsRankingModel
+        SOURCES
+            tests/class_analytics_ranking_model_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+    )
+
+    classmngr_add_qt_test(
         NAME SpeakingEvaluationService
         SOURCES
             tests/speaking_evaluation_service_tests.cpp

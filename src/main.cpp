@@ -28,6 +28,11 @@
 #include <QElapsedTimer>
 #include <QDebug>
 
+#if defined(Q_OS_WIN)
+#include <windows.h>
+#include <psapi.h>
+#endif
+
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
 // =========================================================
@@ -57,6 +62,36 @@ struct StartupPerformanceMode
     bool enabled = false;
     QString outputPath;
 };
+
+struct ProcessMemoryMetrics
+{
+    qint64 workingSetBytes = -1;
+    qint64 privateBytes = -1;
+};
+
+ProcessMemoryMetrics currentProcessMemoryMetrics()
+{
+#if defined(Q_OS_WIN)
+    PROCESS_MEMORY_COUNTERS_EX counters{};
+    counters.cb = sizeof(counters);
+
+    if (
+        GetProcessMemoryInfo(
+            GetCurrentProcess(),
+            reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
+            sizeof(counters)
+            )
+        )
+    {
+        return {
+            static_cast<qint64>(counters.WorkingSetSize),
+            static_cast<qint64>(counters.PrivateUsage)
+        };
+    }
+#endif
+
+    return {};
+}
 
 StartupPerformanceMode startupPerformanceMode(
     const QStringList& args
@@ -90,6 +125,7 @@ bool writeStartupPerformanceMetrics(
     const QString& outputPath,
     qint64 processStartToWindowConstructedMs,
     qint64 processStartToReadyMs,
+    ProcessMemoryMetrics windowConstructedMemory,
     int progressUpdates,
     int finalProgress
     )
@@ -122,6 +158,14 @@ bool writeStartupPerformanceMetrics(
     metrics.insert(
         QStringLiteral("processStartToReadyMs"),
         static_cast<double>(processStartToReadyMs)
+        );
+    metrics.insert(
+        QStringLiteral("windowConstructedWorkingSetBytes"),
+        static_cast<double>(windowConstructedMemory.workingSetBytes)
+        );
+    metrics.insert(
+        QStringLiteral("windowConstructedPrivateBytes"),
+        static_cast<double>(windowConstructedMemory.privateBytes)
         );
     metrics.insert(
         QStringLiteral("progressUpdates"),
@@ -350,6 +394,8 @@ int main(int argc, char *argv[])
 
     const qint64 processStartToWindowConstructedMs =
         processStartupTimer.elapsed();
+    const ProcessMemoryMetrics windowConstructedMemory =
+        currentProcessMemoryMetrics();
 
 
 
@@ -380,6 +426,7 @@ int main(int argc, char *argv[])
             &startupPerformance,
             &processStartupTimer,
             processStartToWindowConstructedMs,
+            windowConstructedMemory,
             progressUpdates,
             progress
         ]()
@@ -415,6 +462,7 @@ int main(int argc, char *argv[])
                     startupPerformance.outputPath,
                     processStartToWindowConstructedMs,
                     processStartupTimer.elapsed(),
+                    windowConstructedMemory,
                     progressUpdates,
                     progress
                     );

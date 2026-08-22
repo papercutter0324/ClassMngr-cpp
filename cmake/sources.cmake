@@ -107,6 +107,11 @@ if(WIN32)
             Bcrypt
             Crypt32
     )
+
+    target_link_libraries(ClassMngr
+        PRIVATE
+            Psapi
+    )
 endif()
 
 target_sources(ClassMngr
