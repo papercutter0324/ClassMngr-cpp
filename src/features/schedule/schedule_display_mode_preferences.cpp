@@ -93,10 +93,14 @@ ScheduleDisplayMode load(SettingsService* settingsService)
     if (!settingsService || !settingsService->isAvailable())
         return ScheduleDisplayMode::Regular;
 
-    const QVariant storedMode = settingsService->load(displayModeSettingKey());
+    const Result<QVariant> storedModeResult =
+        settingsService->load(displayModeSettingKey());
+    const QVariant storedMode = storedModeResult.value_or(QVariant());
     const ScheduleDisplayMode mode = modeFromSetting(
         storedMode,
-        settingToBool(settingsService->load(LegacyShowIntensiveKey, false))
+        settingToBool(
+            settingsService->loadOrDefault(LegacyShowIntensiveKey, false)
+            )
         );
     if (!storedMode.isValid())
         save(settingsService, mode);

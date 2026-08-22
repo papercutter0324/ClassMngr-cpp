@@ -42,7 +42,7 @@ QString sidebarClassDisplayName(
     const ClassInfo classInfo =
         classService->classInfo(
             classId
-            );
+            ).value_or(ClassInfo{});
 
     Teacher teacher;
 

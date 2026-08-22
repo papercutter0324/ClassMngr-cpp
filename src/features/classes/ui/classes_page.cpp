@@ -733,7 +733,7 @@ void ClassesPage::rebuildClassTabs(
             }
 
             const ClassInfo info =
-                classService->classInfo(classroom.id);
+                classService->classInfo(classroom.id).value_or(ClassInfo{});
             Teacher teacher;
 
             if (info.teacherId > 0)
@@ -1527,7 +1527,7 @@ void ClassesPage::updateHeaderText()
         return;
     }
 
-    const ClassInfo info = classService->classInfo(classroom.id);
+    const ClassInfo info = classService->classInfo(classroom.id).value_or(ClassInfo{});
     Teacher teacher;
 
     if (info.teacherId > 0)

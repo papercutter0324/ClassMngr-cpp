@@ -87,9 +87,8 @@ Status SettingsRepository::saveSettings(
     return {};
 }
 
-QVariant SettingsRepository::loadSetting(
-    const QString& key,
-    const QVariant& defaultValue
+Result<QVariant> SettingsRepository::loadSetting(
+    const QString& key
     )
 {
     QSqlQuery query(m_database);
@@ -102,14 +101,19 @@ QVariant SettingsRepository::loadSetting(
 
     query.addBindValue(key);
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading application setting"),
+        QObject::tr("setting key '%1'").arg(key)
+        );
+    if (!loaded)
     {
-        return defaultValue;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     if (!query.next())
     {
-        return defaultValue;
+        return QVariant();
     }
 
     return query.value(0);

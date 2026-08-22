@@ -113,7 +113,7 @@ Result<Classroom> ClassService::classroom(
     return classroom;
 }
 
-ClassInfo ClassService::classInfo(
+Result<ClassInfo> ClassService::classInfo(
     int classId
     ) const
 {
@@ -127,7 +127,7 @@ ClassInfo ClassService::classInfo(
     return info;
 }
 
-Roster RosterService::roster(
+Result<Roster> RosterService::roster(
     int classId
     ) const
 {

@@ -167,14 +167,14 @@ Result<Classroom> DataService::getClassById(
     return std::unexpected(QStringLiteral("Class not found."));
 }
 
-ClassInfo DataService::loadClassInfo(
+Result<ClassInfo> DataService::loadClassInfo(
     int classId
     )
 {
     return g_classInfo.value(classId);
 }
 
-Roster DataService::loadRoster(
+Result<Roster> DataService::loadRoster(
     int classId
     )
 {

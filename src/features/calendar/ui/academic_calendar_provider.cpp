@@ -252,7 +252,7 @@ void AcademicCalendarProvider::reload()
     {
         const QByteArray json =
             m_settingsService
-                ->load(
+                ->loadOrDefault(
                     AcademicCalendarSettingsKey,
                     QString()
                     )
@@ -284,7 +284,7 @@ void AcademicCalendarProvider::loadOptions()
     m_firstDayOfWeek =
         m_settingsService && m_settingsService->isAvailable()
             ? normalizedFirstDayOfWeek(
-                m_settingsService->load(
+                m_settingsService->loadOrDefault(
                     CalendarSettingsKeys::FirstDayOfWeek,
                     defaultFirstDayOfWeek()
                     )

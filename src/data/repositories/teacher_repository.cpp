@@ -13,8 +13,7 @@ namespace
 {
 QString normalizedTeacherChoice(
     const QString& value,
-    const QStringList& choices,
-    const QString& fallback
+    const QStringList& choices
     )
 {
     const QString trimmed =
@@ -28,7 +27,10 @@ QString normalizedTeacherChoice(
         }
     }
 
-    return fallback;
+    // Keep legacy or invalid values observable. Feature services validate new
+    // writes, and silently turning an unknown value into a default hides data
+    // corruption from callers.
+    return trimmed;
 }
 
 QString normalizedInternetType(
@@ -42,8 +44,7 @@ QString normalizedInternetType(
             QStringLiteral("LAN"),
             QStringLiteral("Both"),
             QStringLiteral("N/A")
-        },
-        QStringLiteral("WiFi")
+        }
         );
 }
 
@@ -58,8 +59,7 @@ QString normalizedProjectionType(
             QStringLiteral("Zoom"),
             QStringLiteral("Any"),
             QStringLiteral("N/A")
-        },
-        QStringLiteral("HDMI")
+        }
         );
 }
 

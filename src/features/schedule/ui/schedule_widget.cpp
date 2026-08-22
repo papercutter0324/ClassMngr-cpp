@@ -729,10 +729,22 @@ void ScheduleWidget::reloadSlotStates()
         return;
     }
 
-    const QList<IntensiveSlotState> states =
+    const Result<QList<IntensiveSlotState>> states =
         scheduleService->intensiveSlotStates();
+    if (!states)
+    {
+        qWarning()
+            << "Failed to load intensive slot states:"
+            << states.error();
+        DialogServices::showWarning(
+            this,
+            tr("Schedule"),
+            states.error()
+            );
+        return;
+    }
 
-    m_interactionState.setSlotStates(states);
+    m_interactionState.setSlotStates(*states);
 }
 
 void ScheduleWidget::reloadTestingBlocks()
@@ -801,7 +813,7 @@ void ScheduleWidget::reloadTestingBlocks()
             const ClassInfo info =
                 classService->classInfo(
                     assignment.classId
-                    );
+                    ).value_or(ClassInfo{});
             ScheduleEntry entry;
             entry.classId = assignment.classId;
             entry.kind = ScheduleEntryKind::TestingClass;

@@ -397,7 +397,7 @@ Result<BuildResult> build(
                 continue;
             }
             const ClassInfo info =
-                classService->classInfo(classroom.id);
+                classService->classInfo(classroom.id).value_or(ClassInfo{});
             if (
                 !scheduleImportClassOptionIsEligible(
                     candidate,

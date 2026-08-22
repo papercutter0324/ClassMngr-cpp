@@ -40,7 +40,9 @@ ClassTabNavigation::VisibilityScope load(SettingsService* settingsService)
     if (!settingsService || !settingsService->isAvailable())
         return ClassTabNavigation::VisibilityScope::ActiveSchedule;
 
-    const QVariant storedScope = settingsService->load(VisibilityScopeKey);
+    const Result<QVariant> storedScopeResult =
+        settingsService->load(VisibilityScopeKey);
+    const QVariant storedScope = storedScopeResult.value_or(QVariant());
     const auto visibilityScope = scopeFromSetting(storedScope);
     if (!storedScope.isValid())
         save(settingsService, visibilityScope);
@@ -86,7 +88,9 @@ SessionResetPolicy dayFilterResetPolicy(
         return SessionResetPolicy::OnApplicationClose;
     }
 
-    const QVariant storedPolicy = settingsService->load(DayFilterResetPolicyKey);
+    const Result<QVariant> storedPolicyResult =
+        settingsService->load(DayFilterResetPolicyKey);
+    const QVariant storedPolicy = storedPolicyResult.value_or(QVariant());
     const SessionResetPolicy policy = resetPolicyFromSetting(storedPolicy);
     if (!storedPolicy.isValid())
     {
@@ -120,7 +124,9 @@ SessionResetPolicy classSelectionResetPolicy(
         return SessionResetPolicy::OnApplicationClose;
     }
 
-    const QVariant storedPolicy = settingsService->load(ClassSelectionResetPolicyKey);
+    const Result<QVariant> storedPolicyResult =
+        settingsService->load(ClassSelectionResetPolicyKey);
+    const QVariant storedPolicy = storedPolicyResult.value_or(QVariant());
     const SessionResetPolicy policy = resetPolicyFromSetting(storedPolicy);
     if (!storedPolicy.isValid())
     {

@@ -4,6 +4,7 @@
 #include "data/database/sql_query_utils.h"
 
 #include <QSet>
+#include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
 
@@ -27,12 +28,14 @@ GsTeamRepository::GsTeamRepository(QSqlDatabase& database)
 {
 }
 
-QList<GsTeamMember> GsTeamRepository::getAll() const
+Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
 {
     QList<GsTeamMember> result;
     QSqlQuery query(m_database);
 
-    if (!query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT id, name, korean_name, position, phone_number, birthday
         FROM gs_team
         ORDER BY CASE position
@@ -47,9 +50,12 @@ QList<GsTeamMember> GsTeamRepository::getAll() const
         END,
         CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
         id
-    )"))
+    )"),
+        QObject::tr("Loading GS Team directory")
+        );
+    if (!executed)
     {
-        return result;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())

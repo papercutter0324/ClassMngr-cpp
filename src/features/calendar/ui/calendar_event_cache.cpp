@@ -255,18 +255,34 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
 
             if (request.kind == RequestKind::Range)
             {
-                result.events =
+                const Result<QList<CalendarEvent>> events =
                     repository.loadCalendarEventsInRange(
                         request.startDate,
                         request.endDate
                         );
+                if (events)
+                {
+                    result.events = *events;
+                }
+                else
+                {
+                    result.error = events.error();
+                }
             }
             else
             {
-                result.nextEventDate =
+                const Result<QDate> nextEventDate =
                     repository.findNextCalendarEventStartDate(
                         request.startDate
                         );
+                if (nextEventDate)
+                {
+                    result.nextEventDate = *nextEventDate;
+                }
+                else
+                {
+                    result.error = nextEventDate.error();
+                }
             }
 
             database.close();

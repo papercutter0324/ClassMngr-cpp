@@ -23,9 +23,8 @@ public:
         const QVariantMap& values
         );
 
-    QVariant loadSetting(
-        const QString& key,
-        const QVariant& defaultValue = QVariant()
+    [[nodiscard]] Result<QVariant> loadSetting(
+        const QString& key
         );
 
 private:

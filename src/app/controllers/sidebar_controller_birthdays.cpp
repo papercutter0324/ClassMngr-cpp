@@ -29,10 +29,27 @@ SidebarController::loadUpcomingBirthdaySchedule(
         return std::nullopt;
     }
 
+    const Result<QList<NativeEnglishTeacher>> nativeEnglishTeachers =
+        teachers->nativeEnglishTeachers();
+    const Result<QList<GsTeamMember>> gsTeamMembers =
+        teachers->gsTeamMembers();
+    if (!nativeEnglishTeachers || !gsTeamMembers)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Upcoming Birthdays"),
+            tr("Birthdays could not be loaded."),
+            !nativeEnglishTeachers
+                ? nativeEnglishTeachers.error()
+                : gsTeamMembers.error()
+            );
+        return std::nullopt;
+    }
+
     return UpcomingBirthdaySchedule::build(
         *loadedTeachers,
-        teachers->nativeEnglishTeachers(),
-        teachers->gsTeamMembers(),
+        *nativeEnglishTeachers,
+        *gsTeamMembers,
         referenceDate
         );
 }

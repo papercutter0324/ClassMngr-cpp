@@ -195,7 +195,7 @@ void SpeakingEvalPage::loadEvaluationData(
                 ->evaluation(
                     m_classroom.id,
                     m_evaluationName
-                    );
+                    ).value_or(SpeakingEvalRows{});
     }
 
     if (rows.isEmpty())
@@ -255,7 +255,7 @@ void SpeakingEvalPage::rebuildClassTabs(
             const ClassInfo info =
                 classService->classInfo(
                     classroom.id
-                    );
+                    ).value_or(ClassInfo{});
 
             Teacher teacher;
 

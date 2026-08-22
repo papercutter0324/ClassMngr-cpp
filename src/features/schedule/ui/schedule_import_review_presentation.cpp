@@ -460,7 +460,7 @@ QString classLabel(
     const Classroom classroom =
         classService->classroom(classId).value_or(Classroom{});
     const ClassInfo info =
-        classService->classInfo(classId);
+        classService->classInfo(classId).value_or(ClassInfo{});
     const QString course =
         QStringLiteral("%1 %2")
             .arg(
@@ -570,7 +570,7 @@ QString classDifferences(
         };
 
     const ClassInfo existing =
-        classService->classInfo(targetClassId);
+        classService->classInfo(targetClassId).value_or(ClassInfo{});
     const Teacher existingTeacher =
         teacherService->teacher(existing.teacherId).value_or(Teacher{});
     const QList<ClassTime> existingTimes =

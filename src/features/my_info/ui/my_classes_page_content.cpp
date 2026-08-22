@@ -472,11 +472,11 @@ void MyClassesPage::rebuildClassInformation()
         summary.info =
             classService->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
         summary.studentCount =
             rosterService->studentCount(
                 classroom.id
-                );
+                ).value_or(0);
 
         if (summary.info.teacherId > 0)
         {

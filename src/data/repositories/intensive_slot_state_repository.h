@@ -14,7 +14,7 @@ public:
         QSqlDatabase& database
         );
 
-    QList<IntensiveSlotState> loadIntensiveSlotStates();
+    [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
     [[nodiscard]] Status saveIntensiveSlotState(
         const QString& day,

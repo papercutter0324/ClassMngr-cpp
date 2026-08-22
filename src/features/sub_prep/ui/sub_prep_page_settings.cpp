@@ -35,7 +35,7 @@ void SubPrepPage::loadStoredSettings()
 
     m_classMaterialsEdit->setPlainText(
         settingsService
-            ->load(
+            ->loadOrDefault(
                 SettingsKeys::ClassMaterials,
                 QString()
                 )
@@ -43,12 +43,12 @@ void SubPrepPage::loadStoredSettings()
         );
 
     const QVariant storedGrading =
-        settingsService->load(
+        settingsService->loadOrDefault(
             SettingsKeys::BookReportGrading,
             QVariant()
             );
     const QVariant storedSpecial =
-        settingsService->load(
+        settingsService->loadOrDefault(
             SettingsKeys::BookReportSpecialInstructions,
             QVariant()
             );
@@ -78,7 +78,7 @@ void SubPrepPage::loadStoredSettings()
 
     m_subNotesEdit->setPlainText(
         settingsService
-            ->load(
+            ->loadOrDefault(
                 SettingsKeys::SubNotes,
                 QString()
                 )
@@ -157,7 +157,7 @@ void SubPrepPage::loadCampuses()
 
     const QString savedCampus =
         settingsService
-            ->load(
+            ->loadOrDefault(
                 SettingsKeys::MyInfoCampus,
                 QString()
                 )

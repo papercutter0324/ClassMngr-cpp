@@ -1,9 +1,10 @@
 #include "calendar_event_dialog.h"
-#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/fontmanager.h"
+#include "domain/validation/calendar_event_validator.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
+#include "ui/shared/validation/form_validation_binder.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
@@ -26,55 +27,13 @@
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
+#include <utility>
+
 namespace
 {
 constexpr int DateTimeFieldWidth = 140;
 constexpr int RepeatFieldWidth = 180;
 constexpr int RepeatOptionToFieldsSpacing = 24;
-constexpr int MaximumRepeatOccurrences = 366;
-
-int repeatIntervalDays(
-    CalendarEventRepeatFrequency frequency
-    )
-{
-    switch (frequency)
-    {
-    case CalendarEventRepeatFrequency::Daily:
-        return 1;
-
-    case CalendarEventRepeatFrequency::Weekly:
-        return 7;
-
-    case CalendarEventRepeatFrequency::Monthly:
-        return 31;
-    }
-
-    return 7;
-}
-
-int estimatedRepeatOccurrences(
-    const QDate& startDate,
-    const QDate& untilDate,
-    CalendarEventRepeatFrequency frequency
-    )
-{
-    if (
-        !startDate.isValid()
-        || !untilDate.isValid()
-        || untilDate < startDate
-        )
-    {
-        return 0;
-    }
-
-    const int intervalDays =
-        qMax(
-            1,
-            repeatIntervalDays(frequency)
-            );
-
-    return (startDate.daysTo(untilDate) / intervalDays) + 1;
-}
 
 QDate finalMatchingWeekdayInYear(
     const QDate& date
@@ -229,73 +188,10 @@ CalendarEventSeriesEditScope CalendarEventDialog::seriesEditScope() const
 
 void CalendarEventDialog::accept()
 {
-    const CalendarEvent event =
-        eventData();
-
-    if (event.title.trimmed().isEmpty())
+    validateForm(true);
+    if (m_validationBinder && m_validationBinder->hasErrors())
     {
-        DialogServices::showWarning(
-            this,
-            tr("Missing Title"),
-            tr("Enter a title for the calendar event.")
-            );
         return;
-    }
-
-    const QDateTime start(
-        event.startDate,
-        event.startTime
-        );
-    const QDateTime end(
-        event.endDate,
-        event.endTime
-        );
-
-    if (end < start)
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Invalid Time Range"),
-            tr("The event end must be after the event start.")
-            );
-        return;
-    }
-
-    if (repeatEnabled())
-    {
-        const QDate untilDate =
-            repeatUntilDate();
-
-        if (
-            !untilDate.isValid()
-            || untilDate < event.startDate
-            )
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Invalid Repeat Range"),
-                tr("The repeat end date must be on or after the event start date.")
-                );
-            return;
-        }
-
-        const int occurrenceCount =
-            estimatedRepeatOccurrences(
-                event.startDate,
-                untilDate,
-                repeatFrequency()
-                );
-
-        if (occurrenceCount > MaximumRepeatOccurrences)
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Too Many Events"),
-                tr("Choose a shorter repeat range. Repeating events can create up to %1 events at once.")
-                    .arg(MaximumRepeatOccurrences)
-                );
-            return;
-        }
     }
 
     QDialog::accept();
@@ -365,14 +261,27 @@ void CalendarEventDialog::buildUi()
 
     m_titleEdit =
         new QLineEdit(this);
+    m_titleEdit->setObjectName(QStringLiteral("calendarEventTitleEdit"));
     m_startDateEdit =
         new QDateEdit(this);
+    m_startDateEdit->setObjectName(
+        QStringLiteral("calendarEventStartDateEdit")
+        );
     m_startTimeEdit =
         new QTimeEdit(this);
+    m_startTimeEdit->setObjectName(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
     m_endDateEdit =
         new QDateEdit(this);
+    m_endDateEdit->setObjectName(
+        QStringLiteral("calendarEventEndDateEdit")
+        );
     m_endTimeEdit =
         new QTimeEdit(this);
+    m_endTimeEdit->setObjectName(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
     m_allDayCheck =
         new QCheckBox(
             tr("All Day Event"),
@@ -390,12 +299,55 @@ void CalendarEventDialog::buildUi()
             );
     m_repeatFrequencyCombo =
         new QComboBox(this);
+    m_repeatFrequencyCombo->setObjectName(
+        QStringLiteral("calendarEventRepeatFrequencyCombo")
+        );
     m_repeatUntilDateEdit =
         new QDateEdit(this);
+    m_repeatUntilDateEdit->setObjectName(
+        QStringLiteral("calendarEventRepeatUntilDateEdit")
+        );
     m_seriesScopeGroup =
         new QButtonGroup(this);
     m_eventTypeGroup =
         new QButtonGroup(this);
+    m_validationBinder = new FormValidationBinder(nullptr, nullptr, this);
+
+    const auto createValidationMessage =
+        [this](const QString& objectName)
+        {
+            auto* label = m_validationBinder->createMessageLabel(this);
+            label->setObjectName(objectName);
+            return label;
+        };
+
+    auto* titleValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventTitleValidationMessage")
+        );
+    auto* startDateValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventStartDateValidationMessage")
+        );
+    auto* endDateValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventEndDateValidationMessage")
+        );
+    auto* startTimeValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventStartTimeValidationMessage")
+        );
+    auto* endTimeValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventEndTimeValidationMessage")
+        );
+    auto* timeStatusValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventTimeStatusValidationMessage")
+        );
+    auto* repeatFrequencyValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventRepeatFrequencyValidationMessage")
+        );
+    auto* repeatUntilValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventRepeatUntilValidationMessage")
+        );
+    auto* eventTypeValidationMessage = createValidationMessage(
+        QStringLiteral("calendarEventTypeValidationMessage")
+        );
 
     for (auto* edit : {m_startDateEdit, m_endDateEdit})
     {
@@ -487,7 +439,8 @@ void CalendarEventDialog::buildUi()
     auto createFieldGroup =
         [this, createLabel](
             const QString& labelText,
-            QWidget* field
+            QWidget* field,
+            QLabel* validationMessage = nullptr
             )
         {
             auto* group =
@@ -498,6 +451,10 @@ void CalendarEventDialog::buildUi()
                 createLabel(labelText)
                 );
             group->addWidget(field);
+            if (validationMessage)
+            {
+                group->addWidget(validationMessage);
+            }
 
             return group;
         };
@@ -510,6 +467,7 @@ void CalendarEventDialog::buildUi()
     fieldsLayout->addWidget(
         m_titleEdit
         );
+    fieldsLayout->addWidget(titleValidationMessage);
 
     auto* dateLayout =
         new QHBoxLayout;
@@ -519,7 +477,8 @@ void CalendarEventDialog::buildUi()
     dateLayout->addLayout(
         createFieldGroup(
             tr("Start Date"),
-            m_startDateEdit
+            m_startDateEdit,
+            startDateValidationMessage
             )
         );
     dateLayout->addSpacerItem(
@@ -533,7 +492,8 @@ void CalendarEventDialog::buildUi()
     dateLayout->addLayout(
         createFieldGroup(
             tr("End Date"),
-            m_endDateEdit
+            m_endDateEdit,
+            endDateValidationMessage
             )
         );
 
@@ -583,6 +543,23 @@ void CalendarEventDialog::buildUi()
         2,
         1,
         1
+        );
+    timeLayout->addWidget(
+        startTimeValidationMessage,
+        3,
+        0
+        );
+    timeLayout->addWidget(
+        endTimeValidationMessage,
+        3,
+        2
+        );
+    timeLayout->addWidget(
+        timeStatusValidationMessage,
+        4,
+        0,
+        1,
+        3
         );
 
     timeLayout->setColumnMinimumWidth(
@@ -653,6 +630,16 @@ void CalendarEventDialog::buildUi()
         repeatLayout->addWidget(
             m_repeatUntilDateEdit,
             3,
+            2
+            );
+        repeatLayout->addWidget(
+            repeatFrequencyValidationMessage,
+            4,
+            0
+            );
+        repeatLayout->addWidget(
+            repeatUntilValidationMessage,
+            4,
             2
             );
         repeatLayout->setColumnMinimumWidth(
@@ -737,6 +724,10 @@ void CalendarEventDialog::buildUi()
                 eventType,
                 this
                 );
+        if (!m_eventTypeFocusButton)
+        {
+            m_eventTypeFocusButton = button;
+        }
         button->setProperty(
             "eventType",
             eventType
@@ -751,6 +742,53 @@ void CalendarEventDialog::buildUi()
     }
 
     mainLayout->addLayout(eventTypeLayout);
+    mainLayout->addWidget(eventTypeValidationMessage);
+
+    m_validationBinder->registerField(
+        QStringLiteral("title"),
+        m_titleEdit,
+        titleValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("startDate"),
+        m_startDateEdit,
+        startDateValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("endDate"),
+        m_endDateEdit,
+        endDateValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("startTime"),
+        m_startTimeEdit,
+        startTimeValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("endTime"),
+        m_endTimeEdit,
+        endTimeValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("timeStatus"),
+        m_unconfirmedTimeCheck,
+        timeStatusValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("repeat.frequency"),
+        m_repeatFrequencyCombo,
+        repeatFrequencyValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("repeat.untilDate"),
+        m_repeatUntilDateEdit,
+        repeatUntilValidationMessage
+        );
+    m_validationBinder->registerField(
+        QStringLiteral("eventType"),
+        m_eventTypeFocusButton,
+        eventTypeValidationMessage
+        );
 
     m_buttons = addButtonBox(
         QDialogButtonBox::Save
@@ -802,6 +840,64 @@ void CalendarEventDialog::buildUi()
         this,
         &CalendarEventDialog::updateRepeatFieldAvailability
         );
+    const auto updateValidation = [this]
+    {
+        updateValidationIfDisplayed();
+    };
+    connect(
+        m_titleEdit,
+        &QLineEdit::textChanged,
+        this,
+        updateValidation
+        );
+    for (auto* edit : {m_startDateEdit, m_endDateEdit, m_repeatUntilDateEdit})
+    {
+        connect(
+            edit,
+            &QDateEdit::dateChanged,
+            this,
+            updateValidation
+            );
+    }
+    for (auto* edit : {m_startTimeEdit, m_endTimeEdit})
+    {
+        connect(
+            edit,
+            &QTimeEdit::timeChanged,
+            this,
+            updateValidation
+            );
+    }
+    connect(
+        m_allDayCheck,
+        &QCheckBox::toggled,
+        this,
+        updateValidation
+        );
+    connect(
+        m_unconfirmedTimeCheck,
+        &QCheckBox::toggled,
+        this,
+        updateValidation
+        );
+    connect(
+        m_repeatCheck,
+        &QCheckBox::toggled,
+        this,
+        updateValidation
+        );
+    connect(
+        m_repeatFrequencyCombo,
+        qOverload<int>(&QComboBox::currentIndexChanged),
+        this,
+        updateValidation
+        );
+    connect(
+        m_eventTypeGroup,
+        &QButtonGroup::idClicked,
+        this,
+        [updateValidation](int) { updateValidation(); }
+        );
     connect(
         m_startDateEdit,
         &QDateEdit::dateChanged,
@@ -824,6 +920,43 @@ void CalendarEventDialog::buildUi()
             }
         }
         );
+}
+
+void CalendarEventDialog::validateForm(bool focusFirstError)
+{
+    if (!m_validationBinder)
+    {
+        return;
+    }
+
+    const CalendarEvent event = CalendarEventValidator::normalized(eventData());
+    ValidationResult validation = CalendarEventValidator::validate(event);
+
+    if (repeatEnabled())
+    {
+        validation = CalendarEventValidator::validateRecurrence(
+            event,
+            repeatFrequency(),
+            repeatUntilDate()
+            );
+    }
+
+    m_validationBinder->setValidation(std::move(validation));
+    if (focusFirstError && m_validationBinder->hasErrors())
+    {
+        m_validationBinder->focusFirstError();
+    }
+}
+
+void CalendarEventDialog::updateValidationIfDisplayed()
+{
+    if (
+        m_validationBinder
+        && !m_validationBinder->validation().issues().isEmpty()
+        )
+    {
+        validateForm();
+    }
 }
 
 void CalendarEventDialog::loadEvent()

@@ -4,6 +4,7 @@
 #include "data/database/sql_query_utils.h"
 
 #include <QHash>
+#include <QObject>
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -30,12 +31,14 @@ NativeEnglishTeacherRepository::NativeEnglishTeacherRepository(
 {
 }
 
-QList<NativeEnglishTeacher> NativeEnglishTeacherRepository::getAll() const
+Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() const
 {
     QList<NativeEnglishTeacher> result;
     QSqlQuery query(m_database);
 
-    if (!query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT id, name, position, phone_number, birthday, nationality, email
         FROM native_english_teachers
         ORDER BY CASE position
@@ -49,9 +52,12 @@ QList<NativeEnglishTeacher> NativeEnglishTeacherRepository::getAll() const
             WHEN 'NET' THEN 8
             ELSE 9
         END, name COLLATE NOCASE, id
-    )"))
+    )"),
+        QObject::tr("Loading Native English Teacher directory")
+        );
+    if (!executed)
     {
-        return result;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())

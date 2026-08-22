@@ -342,8 +342,21 @@ bool StaffDirectoryPage::loadDirectory()
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
-        const QList<NativeEnglishTeacher> teachers =
+        const Result<QList<NativeEnglishTeacher>> loadedTeachers =
             teacherService->nativeEnglishTeachers();
+        if (!loadedTeachers)
+        {
+            m_loading = false;
+            updateActions();
+            DialogServices::showWarning(
+                this,
+                tr("Load Directory"),
+                loadedTeachers.error()
+                );
+            return false;
+        }
+
+        const QList<NativeEnglishTeacher>& teachers = *loadedTeachers;
         m_table->setRowCount(teachers.size());
         for (int row = 0; row < teachers.size(); ++row)
         {
@@ -358,8 +371,21 @@ bool StaffDirectoryPage::loadDirectory()
     }
     else
     {
-        const QList<GsTeamMember> members =
+        const Result<QList<GsTeamMember>> loadedMembers =
             teacherService->gsTeamMembers();
+        if (!loadedMembers)
+        {
+            m_loading = false;
+            updateActions();
+            DialogServices::showWarning(
+                this,
+                tr("Load Directory"),
+                loadedMembers.error()
+                );
+            return false;
+        }
+
+        const QList<GsTeamMember>& members = *loadedMembers;
         m_table->setRowCount(members.size());
         for (int row = 0; row < members.size(); ++row)
         {

@@ -66,7 +66,7 @@ void ClassNotesPage::loadClass(
     const ClassInfo info =
         classService->classInfo(
             classroom.id
-            );
+            ).value_or(ClassInfo{});
 
     Teacher teacher;
 

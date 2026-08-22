@@ -24,7 +24,18 @@ void SidebarController::importTeachers()
     }
 
     const TeacherImportPlan plan = dialog.importPlan();
-    const QDate previousDate = teachers->latestImportDate();
+    const Result<QDate> previousDateResult = teachers->latestImportDate();
+    if (!previousDateResult)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Import Teachers"),
+            previousDateResult.error()
+            );
+        return;
+    }
+
+    const QDate previousDate = *previousDateResult;
     if (previousDate.isValid() && plan.sourceDate <= previousDate)
     {
         const bool versionsMatch = plan.sourceDate == previousDate;

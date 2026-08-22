@@ -337,22 +337,24 @@ void ClassTransferTests::importsCompleteClassesAndDeduplicatesTeacher()
     QVERIFY(importedFirstId != firstClassId || importedSecondId != secondClassId
             || service.currentDatabasePath().endsWith(
                 QStringLiteral("destination.db")));
-    const ClassInfo importedFirst = service.loadClassInfo(importedFirstId);
-    const ClassInfo importedSecond = service.loadClassInfo(importedSecondId);
-    QCOMPARE(importedFirst.teacherId, importedSecond.teacherId);
-    QCOMPARE(importedFirst.notes, QStringLiteral("수업 노트\nSecond line"));
-    QCOMPARE(importedFirst.classColor, QStringLiteral("#123456"));
-    QCOMPARE(service.getTeacher(importedFirst.teacherId)
+    const Result<ClassInfo> importedFirst = service.loadClassInfo(importedFirstId);
+    const Result<ClassInfo> importedSecond = service.loadClassInfo(importedSecondId);
+    QVERIFY(importedFirst);
+    QVERIFY(importedSecond);
+    QCOMPARE(importedFirst->teacherId, importedSecond->teacherId);
+    QCOMPARE(importedFirst->notes, QStringLiteral("수업 노트\nSecond line"));
+    QCOMPARE(importedFirst->classColor, QStringLiteral("#123456"));
+    QCOMPARE(service.getTeacher(importedFirst->teacherId)
                  .value_or(Teacher{}).wifiPassword,
              QStringLiteral("wifi-password"));
-    QCOMPARE(service.getTeacher(importedFirst.teacherId)
+    QCOMPARE(service.getTeacher(importedFirst->teacherId)
                  .value_or(Teacher{}).birthday,
              QStringLiteral("02-29"));
-    QCOMPARE(service.loadRoster(importedFirstId).rows.first().first(),
+    QCOMPARE(service.loadRoster(importedFirstId)->rows.first().first(),
              QStringLiteral("Jamie"));
     QCOMPARE(
-        service.loadSpeakingEval(
-            importedFirstId, QStringLiteral("Custom Evaluation"))[0][
+        (*service.loadSpeakingEval(
+            importedFirstId, QStringLiteral("Custom Evaluation")))[0][
                 SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)],
         QStringLiteral("Jamie")
         );
@@ -456,16 +458,16 @@ void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
     QCOMPARE(service.getClassById(destinationClass)
                  .value_or(Classroom{}).name,
              QStringLiteral("Imported Stored Name"));
-    QCOMPARE(service.loadClassInfo(destinationClass).classTimes.first().day,
+    QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().day,
              QStringLiteral("Monday"));
-    QCOMPARE(service.loadRoster(destinationClass).rows.first().first(),
+    QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
              QStringLiteral("New Student"));
     QVERIFY(service.loadSpeakingEval(
         destinationClass,
-        QStringLiteral("Destination Only Evaluation")).isEmpty());
+        QStringLiteral("Destination Only Evaluation"))->isEmpty());
     QVERIFY(!service.loadSpeakingEval(
         destinationClass,
-        QStringLiteral("Imported Evaluation")).isEmpty());
+        QStringLiteral("Imported Evaluation"))->isEmpty());
     QCOMPARE(service.getTeacher(destinationTeacher)
                  .value_or(Teacher{}).wifiPassword,
              QStringLiteral("local-password"));
@@ -582,7 +584,7 @@ void ClassTransferTests::scheduleConflictLeavesDestinationUnchanged()
              teachersBefore);
     QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
              classesBefore);
-    QCOMPARE(service.loadRoster(destinationClass).rows.first().first(),
+    QCOMPARE(service.loadRoster(destinationClass)->rows.first().first(),
              QStringLiteral("Destination Student"));
 }
 

@@ -38,7 +38,8 @@ QString sidebarClassDisplayName(
         return {};
     }
 
-    const ClassInfo classInfo = classService->classInfo(classId);
+    const ClassInfo classInfo =
+        classService->classInfo(classId).value_or(ClassInfo{});
     Teacher teacher;
     if (classInfo.teacherId > 0)
     {
@@ -93,7 +94,10 @@ void RosterEditorWidget::showRosterContextMenu(
 
     const QString currentGrade =
         classService && m_classroom.id > 0
-            ? classService->classInfo(m_classroom.id).classGrade.trimmed()
+            ? classService->classInfo(m_classroom.id)
+                  .value_or(ClassInfo{})
+                  .classGrade
+                  .trimmed()
             : QString();
     QList<TransferClassTarget> targets;
 
@@ -118,14 +122,17 @@ void RosterEditorWidget::showRosterContextMenu(
                 continue;
             }
 
-            const ClassInfo targetInfo = classService->classInfo(classroom.id);
+            const ClassInfo targetInfo =
+                classService->classInfo(classroom.id).value_or(ClassInfo{});
             if (targetInfo.classGrade.trimmed() != currentGrade)
             {
                 continue;
             }
 
             RosterModel targetModel;
-            targetModel.setRoster(rosterService->roster(classroom.id));
+            targetModel.setRoster(
+                rosterService->roster(classroom.id).value_or(Roster{})
+                );
             TransferClassTarget target;
             target.classId = classroom.id;
             target.label = sidebarClassDisplayName(
@@ -222,7 +229,8 @@ void RosterEditorWidget::transferRosterRow(
     auto* rosterService = m_services->rosterService();
     const QStringList sourceColumns = m_model->columnNames();
     const QStringList sourceRow = m_model->rowValues(row);
-    const Roster targetSourceRoster = rosterService->roster(targetClassId);
+    const Roster targetSourceRoster =
+        rosterService->roster(targetClassId).value_or(Roster{});
     RosterModel targetModel;
     targetModel.setRoster(targetSourceRoster);
 

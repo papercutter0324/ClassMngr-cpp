@@ -277,7 +277,7 @@ SubPrepPrintDialog::SubPrepPrintDialog(
     if (settingsService && settingsService->isAvailable())
     {
         m_storedUserName =
-            settingsService->load(
+            settingsService->loadOrDefault(
                     QStringLiteral("myInfo/name"),
                     QString()
                     )

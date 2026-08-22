@@ -155,13 +155,18 @@ void CalendarEventImportService::handleFinished(
     }
 
     QSet<QString> existingSignatures;
-    const QList<CalendarEvent> existingEvents =
+    const Result<QList<CalendarEvent>> existingEvents =
         m_calendarService->eventsInRange(
             firstDate,
             lastDate
             );
+    if (!existingEvents)
+    {
+        emit importFailed(existingEvents.error());
+        return;
+    }
 
-    for (const CalendarEvent& event : existingEvents)
+    for (const CalendarEvent& event : *existingEvents)
     {
         existingSignatures.insert(
             CalendarImport::calendarEventImportSignature(event)

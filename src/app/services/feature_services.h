@@ -63,7 +63,11 @@ public:
     [[nodiscard]] Status saveAll(
         const QVariantMap& values
         ) const;
-    QVariant load(const QString& key, const QVariant& defaultValue = {}) const;
+    [[nodiscard]] Result<QVariant> load(const QString& key) const;
+    [[nodiscard]] QVariant loadOrDefault(
+        const QString& key,
+        const QVariant& defaultValue
+        ) const;
 };
 
 class TeacherService final : public FeatureService
@@ -76,18 +80,18 @@ public:
     [[nodiscard]] Result<Teacher> teacher(int teacherId) const;
     [[nodiscard]] Result<QList<Teacher>> teachers() const;
     [[nodiscard]] Status remove(int teacherId) const;
-    QList<NativeEnglishTeacher> nativeEnglishTeachers() const;
+    [[nodiscard]] Result<QList<NativeEnglishTeacher>> nativeEnglishTeachers() const;
     Status saveNativeEnglishTeacherDirectory(
         const QList<NativeEnglishTeacher>& teachers,
         const QList<int>& deletedIds
         ) const;
-    QList<GsTeamMember> gsTeamMembers() const;
+    [[nodiscard]] Result<QList<GsTeamMember>> gsTeamMembers() const;
     Status saveGsTeamDirectory(
         const QList<GsTeamMember>& members,
         const QList<int>& deletedIds
         ) const;
     Result<TeacherImportSummary> importTeachers(const TeacherImportPlan& plan) const;
-    QDate latestImportDate() const;
+    [[nodiscard]] Result<QDate> latestImportDate() const;
 };
 
 class ClassService final : public FeatureService
@@ -99,7 +103,7 @@ public:
     [[nodiscard]] Result<Classroom> classroom(int classId) const;
     [[nodiscard]] Status rename(int classId, const QString& name) const;
     [[nodiscard]] Status remove(int classId) const;
-    ClassInfo classInfo(int classId) const;
+    [[nodiscard]] Result<ClassInfo> classInfo(int classId) const;
     [[nodiscard]] Status saveClassInfo(const ClassInfo& info) const;
     [[nodiscard]] Status saveClassNotes(
         int classId,
@@ -128,7 +132,7 @@ public:
         ScheduleImportKind kind
         ) const;
     Result<ScheduleImportSummary> importSchedule(const ScheduleImportPlan& plan) const;
-    QList<IntensiveSlotState> intensiveSlotStates() const;
+    [[nodiscard]] Result<QList<IntensiveSlotState>> intensiveSlotStates() const;
     [[nodiscard]] Status saveIntensiveSlotState(
         const QString& day,
         const QString& startTime,
@@ -169,11 +173,11 @@ class CalendarService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    QList<CalendarEvent> eventsForDate(const QDate& date) const;
-    QList<CalendarEvent> eventsInRange(const QDate& startDate, const QDate& endDate) const;
-    QList<CalendarEvent> upcomingEvents(const QDate& fromDate, int limit) const;
-    CalendarEvent event(int eventId) const;
-    QList<CalendarEvent> repeatSeriesFromDate(
+    [[nodiscard]] Result<QList<CalendarEvent>> eventsForDate(const QDate& date) const;
+    [[nodiscard]] Result<QList<CalendarEvent>> eventsInRange(const QDate& startDate, const QDate& endDate) const;
+    [[nodiscard]] Result<QList<CalendarEvent>> upcomingEvents(const QDate& fromDate, int limit) const;
+    [[nodiscard]] Result<CalendarEvent> event(int eventId) const;
+    [[nodiscard]] Result<QList<CalendarEvent>> repeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
@@ -197,8 +201,8 @@ public:
     [[nodiscard]] Status saveRosters(
         const QList<QPair<int, Roster>>& rosters
         ) const;
-    Roster roster(int classId) const;
-    int studentCount(int classId) const;
+    [[nodiscard]] Result<Roster> roster(int classId) const;
+    [[nodiscard]] Result<int> studentCount(int classId) const;
 };
 
 class SpeakingEvaluationService final : public FeatureService
@@ -211,16 +215,16 @@ public:
         const SpeakingEvalRows& rows,
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         ) const;
-    SpeakingEvalRows evaluation(int classId, const QString& evaluationName) const;
-    SpeakingAnalytics::Snapshot analytics(
+    [[nodiscard]] Result<SpeakingEvalRows> evaluation(int classId, const QString& evaluationName) const;
+    [[nodiscard]] Result<SpeakingAnalytics::Snapshot> analytics(
         int classId,
         const QString& evaluationName
     ) const;
-    [[nodiscard]] SpeakingEvaluationDashboard analyticsDashboard(
+    [[nodiscard]] Result<SpeakingEvaluationDashboard> analyticsDashboard(
         int classId,
         const QString& evaluationName
     ) const;
-    QList<SpeakingEvalScore> rosterScoreImport(
+    [[nodiscard]] Result<QList<SpeakingEvalScore>> rosterScoreImport(
         int classId,
         const QString& evaluationName
         ) const;

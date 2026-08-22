@@ -10,6 +10,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonValue>
+#include <QRegularExpression>
 #include <QVariant>
 
 namespace
@@ -276,6 +277,23 @@ QString ColorUtils::getContrastingFontColor(
         : "#FFFFFF";
 }
 
+std::optional<QString> ColorUtils::canonicalHexColor(
+    const QString& color
+    )
+{
+    static const QRegularExpression hexColorExpression(
+        QStringLiteral("^#[0-9A-Fa-f]{6}$")
+        );
+
+    const QString normalized = color.trimmed();
+    if (!hexColorExpression.match(normalized).hasMatch())
+    {
+        return std::nullopt;
+    }
+
+    return normalized.toUpper();
+}
+
 QColor ColorUtils::getColor(
     const QColor& initialColor,
     QWidget* parent,
@@ -307,7 +325,7 @@ void ColorUtils::loadCustomColors(SettingsService* settingsService)
     {
         colors = normalizeCustomColors(
             colorsFromSetting(
-                settingsService->load(CustomColorsSettingKey, QString())
+                settingsService->loadOrDefault(CustomColorsSettingKey, QString())
                 )
             );
     }

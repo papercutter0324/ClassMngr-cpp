@@ -17,12 +17,94 @@
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
+#include "domain/validation/calendar_event_validator.h"
+#include "domain/validation/class_info_validator.h"
+#include "domain/validation/roster_validator.h"
+#include "domain/validation/speaking_eval_validator.h"
+#include "domain/validation/teacher_validator.h"
+#include "domain/validation/validation_rules.h"
+
+#include <QDebug>
+#include <QStringList>
 
 namespace
 {
 QString unavailableError()
 {
     return QStringLiteral("No Teacher Profile service is available.");
+}
+
+QString validationError(
+    const QString& subject,
+    const ValidationResult& validation
+    )
+{
+    QStringList details;
+    for (const ValidationIssue& issue : validation.errors())
+    {
+        QString detail = issue.field.isEmpty()
+            ? issue.code
+            : QStringLiteral("%1: %2").arg(issue.field, issue.code);
+        if (issue.row >= 0 && !issue.field.contains(QChar(u'[')))
+        {
+            detail.prepend(QStringLiteral("row %1, ").arg(issue.row + 1));
+        }
+        details.append(detail);
+    }
+
+    return QStringLiteral("%1 validation failed: %2")
+        .arg(subject, details.join(QStringLiteral("; ")));
+}
+
+void appendImportedValidation(
+    ValidationResult& destination,
+    const ValidationResult& source,
+    const QString& prefix
+    )
+{
+    for (ValidationIssue issue : source.issues())
+    {
+        issue.field = issue.field.isEmpty()
+            ? prefix
+            : QStringLiteral("%1.%2").arg(prefix, issue.field);
+        destination.add(std::move(issue));
+    }
+}
+
+Status validateClassScheduleConflicts(
+    const ClassService& service,
+    const ClassInfo& info,
+    const QList<ClassTime>& times,
+    ScheduleType type
+    )
+{
+    if (times.isEmpty())
+    {
+        return {};
+    }
+
+    const Result<QList<ClassConflict>> conflicts =
+        service.conflicts(info.classId, times, type);
+    if (!conflicts)
+    {
+        return std::unexpected(conflicts.error());
+    }
+    if (conflicts->isEmpty())
+    {
+        return {};
+    }
+
+    const ClassConflict& first = conflicts->first();
+    return std::unexpected(
+        QStringLiteral(
+            "Class schedule conflict: %1 %2–%3 conflicts with %4."
+            ).arg(
+                first.day,
+                first.startTime,
+                first.endTime,
+                first.conflictingClassName
+                )
+        );
 }
 }
 
@@ -89,51 +171,92 @@ Status SettingsService::saveAll(
     return std::unexpected(unavailableError());
 }
 
-QVariant SettingsService::load(
-    const QString& key,
-    const QVariant& defaultValue
+Result<QVariant> SettingsService::load(
+    const QString& key
     ) const
 {
     if (auto* repository = session() ? session()->settingsRepository() : nullptr)
     {
-        return repository->loadSetting(key, defaultValue);
+        return repository->loadSetting(key);
     }
     return dataService()
-        ? dataService()->loadSetting(key, defaultValue)
-        : defaultValue;
+        ? dataService()->loadSetting(key)
+        : Result<QVariant>(std::unexpected(unavailableError()));
+}
+
+QVariant SettingsService::loadOrDefault(
+    const QString& key,
+    const QVariant& defaultValue
+    ) const
+{
+    const Result<QVariant> value = load(key);
+    if (!value)
+    {
+        qWarning() << "Failed to load setting" << key << ':' << value.error();
+        return defaultValue;
+    }
+
+    return value->isValid() ? *value : defaultValue;
 }
 
 Result<int> TeacherService::create(const Teacher& teacher) const
 {
+    const Teacher normalized = TeacherValidator::normalized(teacher);
+    const ValidationResult validation = TeacherValidator::validate(normalized);
+    if (validation.hasErrors())
+    {
+        return std::unexpected(validationError(QStringLiteral("Teacher"), validation));
+    }
+
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->createTeacher(teacher);
+        return repository->createTeacher(normalized);
     }
     return dataService()
-        ? dataService()->createTeacher(teacher)
+        ? dataService()->createTeacher(normalized)
         : Result<int>(std::unexpected(unavailableError()));
 }
 
 Result<int> TeacherService::save(const Teacher& teacher) const
 {
+    const Teacher normalized = TeacherValidator::normalized(teacher);
+    const ValidationResult validation = TeacherValidator::validate(normalized);
+    if (validation.hasErrors())
+    {
+        return std::unexpected(validationError(QStringLiteral("Teacher"), validation));
+    }
+
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->saveTeacher(teacher);
+        return repository->saveTeacher(normalized);
     }
     return dataService()
-        ? dataService()->saveTeacher(teacher)
+        ? dataService()->saveTeacher(normalized)
         : Result<int>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::update(const Teacher& teacher) const
 {
+    const Teacher normalized = TeacherValidator::normalized(teacher);
+    const ValidationResult validation = TeacherValidator::validate(normalized);
+    if (validation.hasErrors())
+    {
+        return std::unexpected(validationError(QStringLiteral("Teacher"), validation));
+    }
+    if (normalized.id <= 0)
+    {
+        return std::unexpected(
+            QStringLiteral("Teacher validation failed: id must be positive.")
+            );
+    }
+
     if (auto* repository = session() ? session()->teacherRepository() : nullptr)
     {
-        return repository->updateTeacher(teacher);
+        return repository->updateTeacher(normalized);
     }
     else if (dataService())
     {
-        return dataService()->updateTeacher(teacher);
+        return dataService()->updateTeacher(normalized);
     }
 
     return std::unexpected(unavailableError());
@@ -175,7 +298,7 @@ Status TeacherService::remove(int teacherId) const
     return std::unexpected(unavailableError());
 }
 
-QList<NativeEnglishTeacher> TeacherService::nativeEnglishTeachers() const
+Result<QList<NativeEnglishTeacher>> TeacherService::nativeEnglishTeachers() const
 {
     if (auto* repository = session()
             ? session()->nativeEnglishTeacherRepository() : nullptr)
@@ -184,7 +307,7 @@ QList<NativeEnglishTeacher> TeacherService::nativeEnglishTeachers() const
     }
     return dataService()
         ? dataService()->getNativeEnglishTeachers()
-        : QList<NativeEnglishTeacher>{};
+        : Result<QList<NativeEnglishTeacher>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::saveNativeEnglishTeacherDirectory(
@@ -202,13 +325,15 @@ Status TeacherService::saveNativeEnglishTeacherDirectory(
         : Status(std::unexpected(unavailableError()));
 }
 
-QList<GsTeamMember> TeacherService::gsTeamMembers() const
+Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
 {
     if (auto* repository = session() ? session()->gsTeamRepository() : nullptr)
     {
         return repository->getAll();
     }
-    return dataService() ? dataService()->getGsTeamMembers() : QList<GsTeamMember>{};
+    return dataService()
+        ? dataService()->getGsTeamMembers()
+        : Result<QList<GsTeamMember>>(std::unexpected(unavailableError()));
 }
 
 Status TeacherService::saveGsTeamDirectory(
@@ -229,27 +354,51 @@ Result<TeacherImportSummary> TeacherService::importTeachers(
     const TeacherImportPlan& plan
     ) const
 {
+    TeacherImportPlan normalizedPlan = plan;
+    ValidationResult validation;
+    for (int index = 0; index < normalizedPlan.koreanTeachers.size(); ++index)
+    {
+        Teacher& teacher = normalizedPlan.koreanTeachers[index];
+        teacher = TeacherValidator::normalized(teacher);
+        appendImportedValidation(
+            validation,
+            TeacherValidator::validate(teacher),
+            QStringLiteral("koreanTeachers[%1]").arg(index)
+            );
+    }
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Teacher import"), validation)
+            );
+    }
+
     if (auto* repository = session() ? session()->teacherImportRepository() : nullptr)
     {
-        return repository->importTeachers(plan);
+        return repository->importTeachers(normalizedPlan);
     }
     return dataService()
-        ? dataService()->importTeachers(plan)
+        ? dataService()->importTeachers(normalizedPlan)
         : Result<TeacherImportSummary>(std::unexpected(unavailableError()));
 }
 
-QDate TeacherService::latestImportDate() const
+Result<QDate> TeacherService::latestImportDate() const
 {
     const QString key =
         QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting);
     if (auto* repository = session() ? session()->settingsRepository() : nullptr)
     {
-        return QDate::fromString(
-            repository->loadSetting(key, QString()).toString(),
-            Qt::ISODate
-            );
+        const Result<QVariant> value = repository->loadSetting(key);
+        if (!value)
+        {
+            return std::unexpected(value.error());
+        }
+
+        return QDate::fromString(value->toString(), Qt::ISODate);
     }
-    return dataService() ? dataService()->latestTeacherImportDate() : QDate{};
+    return dataService()
+        ? dataService()->latestTeacherImportDate()
+        : Result<QDate>(std::unexpected(unavailableError()));
 }
 
 Result<int> ClassService::create(const QString& name) const
@@ -313,7 +462,7 @@ Status ClassService::remove(int classId) const
     return std::unexpected(unavailableError());
 }
 
-ClassInfo ClassService::classInfo(int classId) const
+Result<ClassInfo> ClassService::classInfo(int classId) const
 {
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
@@ -323,19 +472,48 @@ ClassInfo ClassService::classInfo(int classId) const
     {
         return dataService()->loadClassInfo(classId);
     }
-    ClassInfo info;
-    info.classId = classId;
-    return info;
+    return std::unexpected(unavailableError());
 }
 
 Status ClassService::saveClassInfo(const ClassInfo& info) const
 {
+    const ClassInfo normalized = ClassInfoValidator::normalized(info);
+    const ValidationResult validation = ClassInfoValidator::validate(normalized);
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Class information"), validation)
+            );
+    }
+
+    const Status regularConflicts = validateClassScheduleConflicts(
+        *this,
+        normalized,
+        normalized.classTimes,
+        ScheduleType::Regular
+        );
+    if (!regularConflicts)
+    {
+        return regularConflicts;
+    }
+
+    const Status intensiveConflicts = validateClassScheduleConflicts(
+        *this,
+        normalized,
+        normalized.intensiveTimes,
+        ScheduleType::Intensive
+        );
+    if (!intensiveConflicts)
+    {
+        return intensiveConflicts;
+    }
+
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
-        return repository->saveClassInfo(info);
+        return repository->saveClassInfo(normalized);
     }
     return dataService()
-        ? dataService()->saveClassInfo(info)
+        ? dataService()->saveClassInfo(normalized)
         : Status(std::unexpected(unavailableError()));
 }
 
@@ -345,14 +523,28 @@ Status ClassService::saveClassNotes(
     const QString& timeFillerActivities
     ) const
 {
+    const QString normalizedNotes = notes.trimmed();
+    const QString normalizedActivities = timeFillerActivities.trimmed();
+    const ValidationResult validation = ClassInfoValidator::validateNotes(
+        classId,
+        normalizedNotes,
+        normalizedActivities
+        );
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Class notes"), validation)
+            );
+    }
+
     if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
     {
         return repository->saveClassNotes(
-            classId, notes, timeFillerActivities);
+            classId, normalizedNotes, normalizedActivities);
     }
     return dataService()
         ? dataService()->saveClassNotes(
-            classId, notes, timeFillerActivities)
+            classId, normalizedNotes, normalizedActivities)
         : Status(std::unexpected(unavailableError()));
 }
 
@@ -406,13 +598,47 @@ Result<ClassImportSummary> ClassService::importClasses(
     const ClassImportPlan& plan
     ) const
 {
+    ClassTransferPackage normalizedPackage = package;
+    ValidationResult validation;
+
+    for (int index = 0; index < normalizedPackage.teachers.size(); ++index)
+    {
+        ClassTransferTeacher& teacher = normalizedPackage.teachers[index];
+        teacher.teacher = TeacherValidator::normalized(teacher.teacher);
+        appendImportedValidation(
+            validation,
+            TeacherValidator::validate(teacher.teacher),
+            QStringLiteral("teachers[%1]").arg(index)
+            );
+    }
+
+    for (int index = 0; index < normalizedPackage.classes.size(); ++index)
+    {
+        ClassTransferClass& transferredClass = normalizedPackage.classes[index];
+        transferredClass.info = ClassInfoValidator::normalized(
+            transferredClass.info
+            );
+        appendImportedValidation(
+            validation,
+            ClassInfoValidator::validate(transferredClass.info),
+            QStringLiteral("classes[%1].info").arg(index)
+            );
+    }
+
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Class import"), validation)
+            );
+    }
+
     if (auto* repository = session()
             ? session()->classTransferRepository() : nullptr)
     {
-        return repository->importClasses(package, plan);
+        return repository->importClasses(normalizedPackage, plan);
     }
     return dataService()
-        ? dataService()->importClasses(package, plan)
+        ? dataService()->importClasses(normalizedPackage, plan)
         : Result<ClassImportSummary>(std::unexpected(unavailableError()));
 }
 
@@ -445,7 +671,7 @@ Result<ScheduleImportSummary> ScheduleService::importSchedule(
         : Result<ScheduleImportSummary>(std::unexpected(unavailableError()));
 }
 
-QList<IntensiveSlotState> ScheduleService::intensiveSlotStates() const
+Result<QList<IntensiveSlotState>> ScheduleService::intensiveSlotStates() const
 {
     if (auto* repository = session()
             ? session()->intensiveSlotStateRepository() : nullptr)
@@ -454,7 +680,7 @@ QList<IntensiveSlotState> ScheduleService::intensiveSlotStates() const
     }
     return dataService()
         ? dataService()->loadIntensiveSlotStates()
-        : QList<IntensiveSlotState>{};
+        : Result<QList<IntensiveSlotState>>(std::unexpected(unavailableError()));
 }
 
 Status ScheduleService::saveIntensiveSlotState(
@@ -673,7 +899,7 @@ Result<bool> ScheduleService::isTestingClass(int classId) const
         : Result<bool>(std::unexpected(unavailableError()));
 }
 
-QList<CalendarEvent> CalendarService::eventsForDate(const QDate& date) const
+Result<QList<CalendarEvent>> CalendarService::eventsForDate(const QDate& date) const
 {
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
@@ -682,10 +908,10 @@ QList<CalendarEvent> CalendarService::eventsForDate(const QDate& date) const
     }
     return dataService()
         ? dataService()->loadCalendarEventsForDate(date)
-        : QList<CalendarEvent>{};
+        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
-QList<CalendarEvent> CalendarService::eventsInRange(
+Result<QList<CalendarEvent>> CalendarService::eventsInRange(
     const QDate& startDate,
     const QDate& endDate
     ) const
@@ -697,10 +923,10 @@ QList<CalendarEvent> CalendarService::eventsInRange(
     }
     return dataService()
         ? dataService()->loadCalendarEventsInRange(startDate, endDate)
-        : QList<CalendarEvent>{};
+        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
-QList<CalendarEvent> CalendarService::upcomingEvents(
+Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
     const QDate& fromDate,
     int limit
     ) const
@@ -712,10 +938,10 @@ QList<CalendarEvent> CalendarService::upcomingEvents(
     }
     return dataService()
         ? dataService()->loadUpcomingCalendarEvents(fromDate, limit)
-        : QList<CalendarEvent>{};
+        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
-CalendarEvent CalendarService::event(int eventId) const
+Result<CalendarEvent> CalendarService::event(int eventId) const
 {
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
@@ -724,10 +950,10 @@ CalendarEvent CalendarService::event(int eventId) const
     }
     return dataService()
         ? dataService()->getCalendarEvent(eventId)
-        : CalendarEvent{};
+        : Result<CalendarEvent>(std::unexpected(unavailableError()));
 }
 
-QList<CalendarEvent> CalendarService::repeatSeriesFromDate(
+Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     ) const
@@ -741,18 +967,27 @@ QList<CalendarEvent> CalendarService::repeatSeriesFromDate(
     return dataService()
         ? dataService()->loadCalendarEventsForRepeatSeriesFromDate(
             repeatSeriesId, startDate)
-        : QList<CalendarEvent>{};
+        : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
 Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
 {
+    const CalendarEvent normalized = CalendarEventValidator::normalized(event);
+    const ValidationResult validation = CalendarEventValidator::validate(normalized);
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Calendar event"), validation)
+            );
+    }
+
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        return repository->saveCalendarEvent(event);
+        return repository->saveCalendarEvent(normalized);
     }
     return dataService()
-        ? dataService()->saveCalendarEvent(event)
+        ? dataService()->saveCalendarEvent(normalized)
         : Result<int>(std::unexpected(unavailableError()));
 }
 
@@ -760,13 +995,30 @@ Result<QList<int>> CalendarService::saveEvents(
     const QList<CalendarEvent>& events
     ) const
 {
+    QList<CalendarEvent> normalizedEvents;
+    normalizedEvents.reserve(events.size());
+    for (const CalendarEvent& event : events)
+    {
+        normalizedEvents.append(CalendarEventValidator::normalized(event));
+    }
+
+    const ValidationResult validation = CalendarEventValidator::validateSeries(
+        normalizedEvents
+        );
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Calendar events"), validation)
+            );
+    }
+
     if (auto* repository = session()
             ? session()->calendarEventRepository() : nullptr)
     {
-        return repository->saveCalendarEvents(events);
+        return repository->saveCalendarEvents(normalizedEvents);
     }
     return dataService()
-        ? dataService()->saveCalendarEvents(events)
+        ? dataService()->saveCalendarEvents(normalizedEvents)
         : Result<QList<int>>(std::unexpected(unavailableError()));
 }
 
@@ -822,13 +1074,31 @@ Status CalendarService::deleteAllEvents() const
 
 Status RosterService::saveRoster(int classId, const Roster& roster) const
 {
+    const Roster normalized = RosterValidator::normalized(roster);
+    ValidationResult validation = RosterValidator::validate(normalized);
+    if (classId <= 0)
+    {
+        validation.add(ValidationRules::issue(
+            QStringLiteral("roster.class_id.invalid"),
+            {.field = QStringLiteral("classId")},
+            ValidationSeverity::Error,
+            {{QStringLiteral("value"), classId}}
+            ));
+    }
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Roster"), validation)
+            );
+    }
+
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        return repository->saveRoster(classId, roster);
+        return repository->saveRoster(classId, normalized);
     }
     if (dataService())
     {
-        return dataService()->saveRoster(classId, roster);
+        return dataService()->saveRoster(classId, normalized);
     }
 
     return std::unexpected(unavailableError());
@@ -838,31 +1108,68 @@ Status RosterService::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     ) const
 {
+    QList<QPair<int, Roster>> normalizedRosters;
+    normalizedRosters.reserve(rosters.size());
+    ValidationResult validation;
+    for (int index = 0; index < rosters.size(); ++index)
+    {
+        const int classId = rosters[index].first;
+        const Roster normalized = RosterValidator::normalized(
+            rosters[index].second
+            );
+        normalizedRosters.append({classId, normalized});
+
+        if (classId <= 0)
+        {
+            validation.add(ValidationRules::issue(
+                QStringLiteral("roster.class_id.invalid"),
+                {.field = QStringLiteral("rosters[%1].classId").arg(index)},
+                ValidationSeverity::Error,
+                {{QStringLiteral("value"), classId}}
+                ));
+        }
+        appendImportedValidation(
+            validation,
+            RosterValidator::validate(normalized),
+            QStringLiteral("rosters[%1]").arg(index)
+            );
+    }
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Roster batch"), validation)
+            );
+    }
+
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
-        return repository->saveRosters(rosters);
+        return repository->saveRosters(normalizedRosters);
     }
     return dataService()
-        ? dataService()->saveRosters(rosters)
+        ? dataService()->saveRosters(normalizedRosters)
         : Status(std::unexpected(unavailableError()));
 }
 
-Roster RosterService::roster(int classId) const
+Result<Roster> RosterService::roster(int classId) const
 {
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
         return repository->loadRoster(classId);
     }
-    return dataService() ? dataService()->loadRoster(classId) : Roster{};
+    return dataService()
+        ? dataService()->loadRoster(classId)
+        : Result<Roster>(std::unexpected(unavailableError()));
 }
 
-int RosterService::studentCount(int classId) const
+Result<int> RosterService::studentCount(int classId) const
 {
     if (auto* repository = session() ? session()->rosterRepository() : nullptr)
     {
         return repository->getRosterStudentCount(classId);
     }
-    return dataService() ? dataService()->getRosterStudentCount(classId) : 0;
+    return dataService()
+        ? dataService()->getRosterStudentCount(classId)
+        : Result<int>(std::unexpected(unavailableError()));
 }
 
 Status SpeakingEvaluationService::saveEvaluation(
@@ -872,19 +1179,35 @@ Status SpeakingEvaluationService::saveEvaluation(
     const QList<SpeakingEvalCellChange>& dirtyCells
     ) const
 {
+    const QString normalizedName = evaluationName.trimmed();
+    const SpeakingEvalRows normalizedRows = SpeakingEvalValidator::normalized(
+        rows
+        );
+    const ValidationResult validation = SpeakingEvalValidator::validate(
+        classId,
+        normalizedName,
+        normalizedRows
+        );
+    if (validation.hasErrors())
+    {
+        return std::unexpected(
+            validationError(QStringLiteral("Speaking evaluation"), validation)
+            );
+    }
+
     if (auto* repository = session()
             ? session()->speakingEvalRepository() : nullptr)
     {
         return repository->saveSpeakingEval(
-            classId, evaluationName, rows, dirtyCells);
+            classId, normalizedName, normalizedRows, dirtyCells);
     }
     return dataService()
         ? dataService()->saveSpeakingEval(
-            classId, evaluationName, rows, dirtyCells)
+            classId, normalizedName, normalizedRows, dirtyCells)
         : Status(std::unexpected(unavailableError()));
 }
 
-SpeakingEvalRows SpeakingEvaluationService::evaluation(
+Result<SpeakingEvalRows> SpeakingEvaluationService::evaluation(
     int classId,
     const QString& evaluationName
     ) const
@@ -896,18 +1219,25 @@ SpeakingEvalRows SpeakingEvaluationService::evaluation(
     }
     return dataService()
         ? dataService()->loadSpeakingEval(classId, evaluationName)
-        : SpeakingEvalRows{};
+        : Result<SpeakingEvalRows>(std::unexpected(unavailableError()));
 }
 
-SpeakingAnalytics::Snapshot SpeakingEvaluationService::analytics(
+Result<SpeakingAnalytics::Snapshot> SpeakingEvaluationService::analytics(
     int classId,
     const QString& evaluationName
     ) const
 {
-    return analyticsDashboard(classId, evaluationName).selectedSnapshot;
+    const Result<SpeakingEvaluationDashboard> dashboard =
+        analyticsDashboard(classId, evaluationName);
+    if (!dashboard)
+    {
+        return std::unexpected(dashboard.error());
+    }
+
+    return dashboard->selectedSnapshot;
 }
 
-SpeakingEvaluationDashboard SpeakingEvaluationService::analyticsDashboard(
+Result<SpeakingEvaluationDashboard> SpeakingEvaluationService::analyticsDashboard(
     int classId,
     const QString& evaluationName
     ) const
@@ -915,22 +1245,29 @@ SpeakingEvaluationDashboard SpeakingEvaluationService::analyticsDashboard(
     const QString name = evaluationName.trimmed();
     const bool allEvaluations = name.isEmpty()
         || name.compare(QStringLiteral("All"), Qt::CaseInsensitive) == 0;
-    Roster roster;
+    Result<Roster> loadedRoster =
+        std::unexpected(unavailableError());
     if (auto* repository = session()
             ? session()->rosterRepository() : nullptr)
     {
-        roster = repository->loadRoster(classId);
+        loadedRoster = repository->loadRoster(classId);
     }
     else if (dataService())
     {
-        roster = dataService()->loadRoster(classId);
+        loadedRoster = dataService()->loadRoster(classId);
     }
+    if (!loadedRoster)
+    {
+        return std::unexpected(loadedRoster.error());
+    }
+
+    const Roster& roster = *loadedRoster;
 
     // Repository-backed sessions do not necessarily expose a DataService.
     // The loaded roster is therefore the authoritative denominator here.
     const int rosterCount = !roster.rows.isEmpty()
         ? roster.rows.size()
-        : (dataService() ? dataService()->getRosterStudentCount(classId) : 0);
+        : 0;
 
     struct EvaluationView
     {
@@ -946,20 +1283,26 @@ SpeakingEvaluationDashboard SpeakingEvaluationService::analyticsDashboard(
         // Load every canonical evaluation exactly once.  The two snapshots
         // deliberately have different scopes: the dashboard remains about
         // today's roster, while YTD must retain each historical cohort.
-        const SpeakingEvalRows raw = evaluation(classId, evaluationName);
+        const Result<SpeakingEvalRows> raw =
+            evaluation(classId, evaluationName);
+        if (!raw)
+        {
+            return std::unexpected(raw.error());
+        }
+
         const SpeakingEvalRows filtered = !roster.rows.isEmpty()
-            ? SpeakingAnalytics::filterMatrixByRoster(raw, roster)
-            : raw;
+            ? SpeakingAnalytics::filterMatrixByRoster(*raw, roster)
+            : *raw;
 
         EvaluationView view;
         view.name = evaluationName;
         view.filteredSnapshot =
             SpeakingAnalytics::compute({ filtered }, rosterCount);
         view.historicalSnapshot =
-            SpeakingAnalytics::compute({ raw }, rosterCount);
+            SpeakingAnalytics::compute({ *raw }, rosterCount);
         evaluations.append(view);
 
-        if (!raw.isEmpty())
+        if (!raw->isEmpty())
             filteredMatrices.append(filtered);
     }
 
@@ -1013,7 +1356,7 @@ SpeakingEvaluationDashboard SpeakingEvaluationService::analyticsDashboard(
     return dashboard;
 }
 
-QList<SpeakingEvalScore> SpeakingEvaluationService::rosterScoreImport(
+Result<QList<SpeakingEvalScore>> SpeakingEvaluationService::rosterScoreImport(
     int classId,
     const QString& evaluationName
     ) const
@@ -1025,5 +1368,5 @@ QList<SpeakingEvalScore> SpeakingEvaluationService::rosterScoreImport(
     }
     return dataService()
         ? dataService()->buildRosterScoreImport(classId, evaluationName)
-        : QList<SpeakingEvalScore>{};
+        : Result<QList<SpeakingEvalScore>>(std::unexpected(unavailableError()));
 }

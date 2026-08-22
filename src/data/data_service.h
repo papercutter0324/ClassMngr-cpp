@@ -97,9 +97,8 @@ public:
         const QVariantMap& values
         );
 
-    QVariant loadSetting(
-        const QString &key,
-        const QVariant &defaultValue = QVariant()
+    [[nodiscard]] Result<QVariant> loadSetting(
+        const QString &key
         );
 
 
@@ -130,14 +129,14 @@ public:
         int teacherId
         );
 
-    QList<NativeEnglishTeacher> getNativeEnglishTeachers();
+    [[nodiscard]] Result<QList<NativeEnglishTeacher>> getNativeEnglishTeachers();
 
     [[nodiscard]] Status saveNativeEnglishTeacherDirectory(
         const QList<NativeEnglishTeacher>& teachers,
         const QList<int>& deletedIds
         );
 
-    QList<GsTeamMember> getGsTeamMembers();
+    [[nodiscard]] Result<QList<GsTeamMember>> getGsTeamMembers();
 
     [[nodiscard]] Status saveGsTeamDirectory(
         const QList<GsTeamMember>& members,
@@ -148,7 +147,7 @@ public:
         const TeacherImportPlan& plan
         );
 
-    [[nodiscard]] QDate latestTeacherImportDate();
+    [[nodiscard]] Result<QDate> latestTeacherImportDate();
 
 
 
@@ -213,7 +212,7 @@ public:
         const QString& timeFillerActivities
         );
 
-    ClassInfo loadClassInfo(
+    [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
 
@@ -227,7 +226,7 @@ public:
     // Intensive Slot States
     // =====================================================
 
-    QList<IntensiveSlotState> loadIntensiveSlotStates();
+    [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
     [[nodiscard]] Status saveIntensiveSlotState(
         const QString& day,
@@ -307,25 +306,25 @@ public:
     // Calendar Events
     // =====================================================
 
-    QList<CalendarEvent> loadCalendarEventsForDate(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForDate(
         const QDate& date
         );
 
-    QList<CalendarEvent> loadCalendarEventsInRange(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsInRange(
         const QDate& startDate,
         const QDate& endDate
         );
 
-    QList<CalendarEvent> loadUpcomingCalendarEvents(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadUpcomingCalendarEvents(
         const QDate& fromDate,
         int limit
         );
 
-    CalendarEvent getCalendarEvent(
+    [[nodiscard]] Result<CalendarEvent> getCalendarEvent(
         int eventId
         );
 
-    QList<CalendarEvent> loadCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );
@@ -379,11 +378,11 @@ public:
         const QList<QPair<int, Roster>>& rosters
         );
 
-    Roster loadRoster(
+    [[nodiscard]] Result<Roster> loadRoster(
         int classId
         );
 
-    int getRosterStudentCount(
+    [[nodiscard]] Result<int> getRosterStudentCount(
         int classId
         );
 
@@ -402,12 +401,12 @@ public:
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         );
 
-    SpeakingEvalRows loadSpeakingEval(
+    [[nodiscard]] Result<SpeakingEvalRows> loadSpeakingEval(
         int classId,
         const QString& evaluationName
         );
 
-    QList<SpeakingEvalScore> buildRosterScoreImport(
+    [[nodiscard]] Result<QList<SpeakingEvalScore>> buildRosterScoreImport(
         int classId,
         const QString& evaluationName
         );

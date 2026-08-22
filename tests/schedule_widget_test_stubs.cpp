@@ -240,14 +240,12 @@ Status DataService::saveSettings(
     return {};
 }
 
-QVariant DataService::loadSetting(
-    const QString& key,
-    const QVariant& defaultValue
+Result<QVariant> DataService::loadSetting(
+    const QString& key
     )
 {
     return ScheduleWidgetTestStubs::settings.value(
-        key,
-        defaultValue
+        key
         );
 }
 
@@ -264,7 +262,8 @@ Result<ScheduleImportPreview> DataService::previewScheduleImport(
     preview.inventory.classCount = classrooms.size();
     for (const Classroom& classroom : classrooms)
     {
-        const ClassInfo info = loadClassInfo(classroom.id);
+        const ClassInfo info =
+            loadClassInfo(classroom.id).value_or(ClassInfo{});
         preview.inventory.hasRegularHours =
             preview.inventory.hasRegularHours
             || !info.classTimes.isEmpty();
@@ -336,12 +335,12 @@ Result<ScheduleImportSummary> DataService::importSchedule(
     return summary;
 }
 
-QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()
+Result<QList<IntensiveSlotState>> DataService::loadIntensiveSlotStates()
 {
     return {};
 }
 
-QList<CalendarEvent> DataService::loadCalendarEventsInRange(
+Result<QList<CalendarEvent>> DataService::loadCalendarEventsInRange(
     const QDate&,
     const QDate&
     )
@@ -624,7 +623,7 @@ Result<Classroom> DataService::getClassById(
     return std::unexpected(QStringLiteral("Class not found."));
 }
 
-ClassInfo DataService::loadClassInfo(
+Result<ClassInfo> DataService::loadClassInfo(
     int classId
     )
 {
@@ -733,7 +732,7 @@ Result<QList<ClassConflict>> DataService::getClassTimeConflicts(
     return {};
 }
 
-Roster DataService::loadRoster(
+Result<Roster> DataService::loadRoster(
     int classId
     )
 {
@@ -782,7 +781,7 @@ Status DataService::saveRosters(
     return {};
 }
 
-SpeakingEvalRows DataService::loadSpeakingEval(
+Result<SpeakingEvalRows> DataService::loadSpeakingEval(
     int classId,
     const QString& evaluationName
     )
@@ -791,7 +790,7 @@ SpeakingEvalRows DataService::loadSpeakingEval(
         QStringLiteral("%1:%2").arg(classId).arg(evaluationName));
 }
 
-int DataService::getRosterStudentCount(
+Result<int> DataService::getRosterStudentCount(
     int classId
     )
 {

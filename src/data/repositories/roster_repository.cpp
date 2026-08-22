@@ -215,7 +215,7 @@ Status RosterRepository::writeRoster(
     return {};
 }
 
-Roster RosterRepository::loadRoster(
+Result<Roster> RosterRepository::loadRoster(
     int classId
     )
 {
@@ -223,7 +223,10 @@ Roster RosterRepository::loadRoster(
 
     if (classId <= 0)
     {
-        return roster;
+        return std::unexpected(
+            QObject::tr("Loading roster failed: invalid class id %1.")
+                .arg(classId)
+            );
     }
 
     QSqlQuery query(m_database);
@@ -239,13 +242,15 @@ Roster RosterRepository::loadRoster(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster columns"),
+        identity
+        );
+    if (!loadedColumns)
     {
-        qWarning()
-            << "Failed to load roster columns:"
-            << query.lastError().text();
-
-        return roster;
+        return std::unexpected(loadedColumns.error().userMessage());
     }
 
     while (query.next())
@@ -276,13 +281,14 @@ Roster RosterRepository::loadRoster(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const auto loadedData = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading roster data"),
+        identity
+        );
+    if (!loadedData)
     {
-        qWarning()
-            << "Failed to load roster data:"
-            << query.lastError().text();
-
-        return roster;
+        return std::unexpected(loadedData.error().userMessage());
     }
 
     while (query.next())
@@ -321,20 +327,24 @@ Roster RosterRepository::loadRoster(
     return roster;
 }
 
-int RosterRepository::getRosterStudentCount(
+Result<int> RosterRepository::getRosterStudentCount(
     int classId
     )
 {
-    const Roster roster =
+    const Result<Roster> roster =
         loadRoster(classId);
+    if (!roster)
+    {
+        return std::unexpected(roster.error());
+    }
 
     const int englishColumn =
-        roster.columns.indexOf(
+        roster->columns.indexOf(
             QStringLiteral("English")
             );
 
     const int koreanColumn =
-        roster.columns.indexOf(
+        roster->columns.indexOf(
             QStringLiteral("Korean")
             );
 
@@ -345,7 +355,7 @@ int RosterRepository::getRosterStudentCount(
 
     int count = 0;
 
-    for (const QStringList& row : roster.rows)
+    for (const QStringList& row : roster->rows)
     {
         const bool hasEnglish =
             englishColumn >= 0

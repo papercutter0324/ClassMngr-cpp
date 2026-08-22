@@ -491,7 +491,7 @@ void RosterPrintDialog::updateExtraInfoColumns()
     {
         RosterTemplatePrintService::RosterClassData data;
         data.roster =
-            rosterService->roster(classId);
+            rosterService->roster(classId).value_or(Roster{});
         rosterClasses.append(data);
     }
 
@@ -1247,7 +1247,7 @@ void RosterPrintDialog::loadClasses()
         const ClassInfo classInfo =
             classService->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
 
         Teacher teacher;
 

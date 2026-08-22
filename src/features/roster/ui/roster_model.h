@@ -194,10 +194,6 @@ private:
         const QString& value
         ) const;
 
-    QString normalizeEnglishToken(
-        const QString& token
-        ) const;
-
     QStringList validateCell(
         const QString& value,
         int column

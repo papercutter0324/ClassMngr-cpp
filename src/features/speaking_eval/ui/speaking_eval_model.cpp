@@ -1,6 +1,7 @@
 #include "speaking_eval_model.h"
 
 #include "core/utils/student_name_utils.h"
+#include "domain/validation/speaking_eval_validator.h"
 
 #include <QRegularExpression>
 
@@ -544,48 +545,7 @@ QString SpeakingEvalModel::normalizeScore(
     const QString& value
     ) const
 {
-    if (value.trimmed().isEmpty())
-    {
-        return {};
-    }
-
-    QString normalized =
-        value.trimmed().toUpper();
-
-    normalized.remove(
-        QRegularExpression(QStringLiteral("\\s+"))
-        );
-
-    const QString koreanC(QChar(0x314A));
-    const QString koreanB(QChar(0x3160));
-    const QString koreanA(QChar(0x3141));
-
-    if (normalized == QStringLiteral("1") || normalized == koreanC)
-    {
-        return QStringLiteral("C");
-    }
-
-    if (normalized == QStringLiteral("2") || normalized == koreanB)
-    {
-        return QStringLiteral("B");
-    }
-
-    if (normalized == QStringLiteral("3") || normalized == koreanB + QLatin1Char('+'))
-    {
-        return QStringLiteral("B+");
-    }
-
-    if (normalized == QStringLiteral("4") || normalized == koreanA)
-    {
-        return QStringLiteral("A");
-    }
-
-    if (normalized == QStringLiteral("5") || normalized == koreanA + QLatin1Char('+'))
-    {
-        return QStringLiteral("A+");
-    }
-
-    return normalized;
+    return SpeakingEvalValidator::normalizedScore(value);
 }
 
 QString SpeakingEvalModel::normalizeComment(

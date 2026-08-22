@@ -20,6 +20,7 @@
 #include <QDialogButtonBox>
 #include <QApplication>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -118,6 +119,7 @@ private slots:
     void languageChangeRetranslatesShellAndDialog();
     void persistsGeometryByStableDialogKey();
     void calendarEventDialogsExposeUntargetedKeyboard();
+    void calendarEventDialogShowsInlineValidation();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -302,6 +304,36 @@ void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()
         QVERIFY(!keyboard->target());
         keyboard->close();
     }
+}
+
+void DialogShellTests::calendarEventDialogShowsInlineValidation()
+{
+    CalendarEventDialog dialog(CalendarEvent{}, false, true);
+    dialog.show();
+    QApplication::processEvents();
+
+    auto* titleEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("calendarEventTitleEdit")
+        );
+    auto* message = dialog.findChild<QLabel*>(
+        QStringLiteral("calendarEventTitleValidationMessage")
+        );
+    auto* buttons = dialog.findChild<QDialogButtonBox*>();
+    QVERIFY(titleEdit);
+    QVERIFY(message);
+    QVERIFY(buttons);
+
+    buttons->button(QDialogButtonBox::Save)->click();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        titleEdit->property("formValidationState").toString(),
+        QStringLiteral("error")
+        );
+    QCOMPARE(message->text(), QStringLiteral("This field is required."));
+    QVERIFY(!message->isHidden());
+    QVERIFY(titleEdit->hasFocus());
+    QVERIFY(dialog.isVisible());
 }
 
 QTEST_MAIN(DialogShellTests)

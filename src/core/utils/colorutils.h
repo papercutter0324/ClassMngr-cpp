@@ -4,6 +4,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <optional>
+
 class SettingsService;
 class QWidget;
 
@@ -33,6 +35,13 @@ public:
 
     static QString getContrastingFontColor(
         const QColor &color
+        );
+
+    // Returns no value for malformed colors rather than substituting a
+    // display default. Domain validation can therefore distinguish invalid
+    // persisted/input values from intentional defaults.
+    [[nodiscard]] static std::optional<QString> canonicalHexColor(
+        const QString& color
         );
 
     static QColor getColor(

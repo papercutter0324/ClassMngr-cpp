@@ -14,26 +14,28 @@ IntensiveSlotStateRepository::IntensiveSlotStateRepository(
 {
 }
 
-QList<IntensiveSlotState> IntensiveSlotStateRepository::loadIntensiveSlotStates()
+Result<QList<IntensiveSlotState>>
+IntensiveSlotStateRepository::loadIntensiveSlotStates()
 {
     QList<IntensiveSlotState> states;
 
     QSqlQuery query(m_database);
 
-    if (!query.exec(R"(
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
         SELECT
             day,
             start_time,
             state
         FROM intensive_slot_states
         ORDER BY day, start_time
-    )"))
+    )"),
+        QObject::tr("Loading intensive slot states")
+        );
+    if (!executed)
     {
-        qWarning()
-            << "Failed to load intensive slot states:"
-            << query.lastError().text();
-
-        return states;
+        return std::unexpected(executed.error().userMessage());
     }
 
     while (query.next())

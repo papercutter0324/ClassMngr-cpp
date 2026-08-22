@@ -501,7 +501,8 @@ void ClassAnalyticsPage::rebuild()
         if (const auto* service = m_services->speakingEvaluationService())
         {
             dashboard = service->analyticsDashboard(
-                m_classId, selectedEvaluationName());
+                m_classId, selectedEvaluationName())
+                .value_or(SpeakingEvaluationDashboard{});
         }
     }
 

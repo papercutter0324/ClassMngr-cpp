@@ -132,12 +132,10 @@ void verifyDatabase(
     QVERIFY(ids.intensiveSlotStateSaved);
     QVERIFY(ids.rosterSaved);
     QVERIFY(ids.speakingEvaluationSaved);
-    QCOMPARE(
-        service.loadSetting(
-            QStringLiteral("lifecycle/value")
-            ).toString(),
-        prefix
-        );
+    const Result<QVariant> setting =
+        service.loadSetting(QStringLiteral("lifecycle/value"));
+    QVERIFY(setting);
+    QCOMPARE(setting->toString(), prefix);
     const Result<Teacher> teacher = service.getTeacher(ids.teacherId);
     QVERIFY(teacher);
     QCOMPARE(teacher->teacherEn, prefix + QStringLiteral(" Teacher"));
@@ -159,14 +157,17 @@ void verifyDatabase(
         prefix + QStringLiteral(" Class")
         );
     QCOMPARE(
-        service.loadClassInfo(ids.classId).notes,
+        service.loadClassInfo(ids.classId)->notes,
         prefix + QStringLiteral(" Class Notes")
         );
     QCOMPARE(
-        service.loadClassInfo(ids.classId).teacherPreferredName,
+        service.loadClassInfo(ids.classId)->teacherPreferredName,
         prefix + QStringLiteral(" Preferred Name")
         );
-    QCOMPARE(service.loadIntensiveSlotStates().size(), 1);
+    const Result<QList<IntensiveSlotState>> intensiveSlotStates =
+        service.loadIntensiveSlotStates();
+    QVERIFY(intensiveSlotStates);
+    QCOMPARE(intensiveSlotStates->size(), 1);
     const Result<QList<TestingBlock>> testingBlocks =
         service.loadTestingBlocks();
     QVERIFY(testingBlocks);
@@ -176,31 +177,33 @@ void verifyDatabase(
         prefix + QStringLiteral(" Testing Room")
         );
     QCOMPARE(
-        service.getCalendarEvent(ids.eventId).title,
+        service.getCalendarEvent(ids.eventId)->title,
         prefix + QStringLiteral(" Event")
         );
-    const Roster roster =
+    const Result<Roster> roster =
         service.loadRoster(ids.classId);
-    QVERIFY(!roster.rows.isEmpty());
-    QVERIFY(!roster.rows.first().isEmpty());
+    QVERIFY(roster);
+    QVERIFY(!roster->rows.isEmpty());
+    QVERIFY(!roster->rows.first().isEmpty());
     QCOMPARE(
-        roster.rows.first().first(),
+        roster->rows.first().first(),
         prefix + QStringLiteral(" Student")
         );
-    const SpeakingEvalRows evaluation =
+    const Result<SpeakingEvalRows> evaluation =
         service.loadSpeakingEval(
             ids.classId,
             QStringLiteral("First Semester")
             );
-    QVERIFY(!evaluation.isEmpty());
+    QVERIFY(evaluation);
+    QVERIFY(!evaluation->isEmpty());
     QVERIFY(
-        evaluation.first().size()
+        evaluation->first().size()
         > SpeakingEval::toInt(
             SpeakingEvalColumn::EnglishName
             )
         );
     QCOMPARE(
-        evaluation[0][SpeakingEval::toInt(
+        (*evaluation)[0][SpeakingEval::toInt(
                 SpeakingEvalColumn::EnglishName
                 )],
         prefix + QStringLiteral(" Student")
@@ -260,7 +263,7 @@ void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
     QCOMPARE(
         copiedServices.settingsService()
             ->load(QStringLiteral("application-services/value"))
-            .toString(),
+            ->toString(),
         QStringLiteral("saved")
         );
 
@@ -408,7 +411,7 @@ void DataServiceLifecycleTests
     QVERIFY(rolledBackTeacher);
     QCOMPARE(rolledBackTeacher->id, *createdTeacher);
     QCOMPARE(
-        service.loadClassInfo(*createdClass).teacherId,
+        service.loadClassInfo(*createdClass)->teacherId,
         *createdTeacher
         );
 }
@@ -500,10 +503,10 @@ void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()
         }
     });
     QVERIFY(!settingsSaved);
-    QVERIFY(!service.loadSetting(
-        QStringLiteral("failure/first"),
-        QVariant()
-        ).isValid());
+    const Result<QVariant> rolledBackSetting =
+        service.loadSetting(QStringLiteral("failure/first"));
+    QVERIFY(rolledBackSetting);
+    QVERIFY(!rolledBackSetting->isValid());
 
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_slot_write "
@@ -735,11 +738,12 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(classInfoSaved.error().contains(
         QStringLiteral("class id %1").arg(classId)
         ));
-    const ClassInfo rolledBackInfo = service.loadClassInfo(classId);
-    QCOMPARE(rolledBackInfo.notes, QStringLiteral("Original notes"));
-    QCOMPARE(rolledBackInfo.classTimes.size(), 1);
-    QCOMPARE(rolledBackInfo.classTimes.first().day, QStringLiteral("Monday"));
-    QVERIFY(rolledBackInfo.intensiveTimes.isEmpty());
+    const Result<ClassInfo> rolledBackInfo = service.loadClassInfo(classId);
+    QVERIFY(rolledBackInfo);
+    QCOMPARE(rolledBackInfo->notes, QStringLiteral("Original notes"));
+    QCOMPARE(rolledBackInfo->classTimes.size(), 1);
+    QCOMPARE(rolledBackInfo->classTimes.first().day, QStringLiteral("Monday"));
+    QVERIFY(rolledBackInfo->intensiveTimes.isEmpty());
 
     QVERIFY(query.exec(QStringLiteral(
         "CREATE TRIGGER reject_class_notes_update "
@@ -759,7 +763,7 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(notesSaved.error().contains(
         QStringLiteral("class id %1").arg(classId)
         ));
-    QCOMPARE(service.loadClassInfo(classId).notes,
+    QCOMPARE(service.loadClassInfo(classId)->notes,
              QStringLiteral("Original notes"));
 
     QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_intensive_time_insert")));
@@ -787,7 +791,7 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(rosterSaved.error().contains(
         QStringLiteral("class id %1").arg(classId)
         ));
-    QCOMPARE(service.loadRoster(classId).rows.first().first(),
+    QCOMPARE(service.loadRoster(classId)->rows.first().first(),
              QStringLiteral("Original Student"));
 
     QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_roster_data_insert")));
@@ -814,9 +818,9 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
         qMakePair(*secondClass, secondBatchRoster)
     });
     QVERIFY(!rostersSaved);
-    QCOMPARE(service.loadRoster(classId).rows.first().first(),
+    QCOMPARE(service.loadRoster(classId)->rows.first().first(),
              QStringLiteral("Original Student"));
-    QCOMPARE(service.loadRoster(*secondClass).rows.first().first(),
+    QCOMPARE(service.loadRoster(*secondClass)->rows.first().first(),
              QStringLiteral("Second Original"));
 
     SpeakingEvalRows originalEvaluation = SpeakingEval::emptyRows();
@@ -852,12 +856,13 @@ void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
     QVERIFY(evaluationSaved.error().contains(
         QStringLiteral("Rollback Evaluation")
         ));
-    const SpeakingEvalRows rolledBackEvaluation = service.loadSpeakingEval(
+    const Result<SpeakingEvalRows> rolledBackEvaluation = service.loadSpeakingEval(
         classId,
         QStringLiteral("Rollback Evaluation")
         );
-    QCOMPARE(rolledBackEvaluation[0][0], QStringLiteral("Original A"));
-    QCOMPARE(rolledBackEvaluation[1][0], QStringLiteral("Original B"));
+    QVERIFY(rolledBackEvaluation);
+    QCOMPARE((*rolledBackEvaluation)[0][0], QStringLiteral("Original A"));
+    QCOMPARE((*rolledBackEvaluation)[1][0], QStringLiteral("Original B"));
 
     const Result<QList<ClassConflict>> noConflicts =
         service.getClassTimeConflicts(
@@ -961,7 +966,7 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
         QStringLiteral("saved")
         ).has_value());
     QCOMPARE(
-        settings.load(QStringLiteral("feature-services/value")).toString(),
+        settings.load(QStringLiteral("feature-services/value"))->toString(),
         QStringLiteral("saved")
         );
 
@@ -998,7 +1003,7 @@ void DataServiceLifecycleTests::featureServicesExposeNarrowOperations()
         {QStringLiteral("Student"), QStringLiteral("학생")}
         );
     QVERIFY(rosters.saveRoster(classId, roster).has_value());
-    QCOMPARE(rosters.studentCount(classId), 1);
+    QCOMPARE(rosters.studentCount(classId).value_or(-1), 1);
 
     dataService.closeDatabase();
     QVERIFY(!teachers.isAvailable());
@@ -1028,7 +1033,10 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     QVERIFY(emptyTeachers->isEmpty());
     QVERIFY(emptyClasses);
     QVERIFY(emptyClasses->isEmpty());
-    QVERIFY(service.loadIntensiveSlotStates().isEmpty());
+    const Result<QList<IntensiveSlotState>> emptyIntensiveSlotStates =
+        service.loadIntensiveSlotStates();
+    QVERIFY(emptyIntensiveSlotStates);
+    QVERIFY(emptyIntensiveSlotStates->isEmpty());
     const Result<QList<TestingBlock>> emptyTestingBlocks =
         service.loadTestingBlocks();
     QVERIFY(emptyTestingBlocks);
@@ -1036,19 +1044,16 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     QVERIFY(
         service.loadCalendarEventsForDate(
             QDate(2026, 7, 17)
-            ).isEmpty()
+            )->isEmpty()
         );
     const Result<QList<CampusRecord>> emptyCampuses =
         service.getAllCampuses();
     QVERIFY(emptyCampuses);
     QVERIFY(emptyCampuses->isEmpty());
-    QCOMPARE(
-        service.loadSetting(
-            QStringLiteral("lifecycle/value"),
-            QStringLiteral("missing")
-            ).toString(),
-        QStringLiteral("missing")
-        );
+    const Result<QVariant> missingSetting =
+        service.loadSetting(QStringLiteral("lifecycle/value"));
+    QVERIFY(missingSetting);
+    QCOMPARE(missingSetting->toString(), QString());
 
     const DatabaseIds idsB =
         populateDatabase(service, QStringLiteral("Database B"));
@@ -1064,16 +1069,16 @@ void DataServiceLifecycleTests::closeAndSwitchReleaseEveryRepository()
     QVERIFY(service.currentDatabasePath().isEmpty());
     QVERIFY(!service.getAllTeachers());
     QVERIFY(!service.getClasses());
-    QVERIFY(service.loadIntensiveSlotStates().isEmpty());
+    QVERIFY(!service.loadIntensiveSlotStates());
+    QVERIFY(!service.getNativeEnglishTeachers());
+    QVERIFY(!service.getGsTeamMembers());
     QVERIFY(!service.loadTestingBlocks());
     QVERIFY(!service.getAllCampuses());
-    QVERIFY(service.loadRoster(idsA.classId).rows.isEmpty());
-    QVERIFY(
-        service.loadSpeakingEval(
-            idsA.classId,
-            QStringLiteral("First Semester")
-            ).isEmpty()
-    );
+    QVERIFY(!service.loadRoster(idsA.classId));
+    QVERIFY(!service.loadSpeakingEval(
+        idsA.classId,
+        QStringLiteral("First Semester")
+        ));
 }
 
 void DataServiceLifecycleTests

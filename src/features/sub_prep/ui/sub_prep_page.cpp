@@ -469,11 +469,15 @@ void SubPrepPage::generateSubPrep()
 
     if (auto* calendarService = openCalendarService(m_services))
     {
-        calendarEvents =
+        const Result<QList<CalendarEvent>> loadedEvents =
             calendarService->eventsInRange(
                 QDate(1, 1, 1),
                 QDate(9999, 12, 31)
                 );
+        if (loadedEvents)
+        {
+            calendarEvents = *loadedEvents;
+        }
     }
 
     const ScheduleViewModel fullSchedule =

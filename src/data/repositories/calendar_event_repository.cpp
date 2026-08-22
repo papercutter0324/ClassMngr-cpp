@@ -76,7 +76,7 @@ CalendarEventRepository::CalendarEventRepository(
 {
 }
 
-QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
+Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForDate(
     const QDate& date
     )
 {
@@ -84,7 +84,9 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
 
     if (!date.isValid())
     {
-        return events;
+        return std::unexpected(
+            QObject::tr("Loading calendar events failed: invalid date.")
+            );
     }
 
     QSqlQuery query(m_database);
@@ -113,13 +115,14 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
     query.addBindValue(isoDate);
     query.addBindValue(isoDate);
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar events for date"),
+        QObject::tr("date %1").arg(isoDate)
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to load calendar events:"
-            << query.lastError().text();
-
-        return events;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     while (query.next())
@@ -132,7 +135,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForDate(
     return events;
 }
 
-QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
+Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
     const QDate& startDate,
     const QDate& endDate
     )
@@ -145,7 +148,9 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
         || endDate < startDate
         )
     {
-        return events;
+        return std::unexpected(
+            QObject::tr("Loading calendar events failed: invalid date range.")
+            );
     }
 
     QSqlQuery query(m_database);
@@ -175,13 +180,15 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
         endDate.toString(Qt::ISODate)
         );
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar events in range"),
+        QObject::tr("from %1 to %2")
+            .arg(startDate.toString(Qt::ISODate), endDate.toString(Qt::ISODate))
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to load calendar events in range:"
-            << query.lastError().text();
-
-        return events;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     while (query.next())
@@ -194,7 +201,7 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsInRange(
     return events;
 }
 
-QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
+Result<QList<CalendarEvent>> CalendarEventRepository::loadUpcomingCalendarEvents(
     const QDate& fromDate,
     int limit
     )
@@ -206,7 +213,9 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
         || limit <= 0
         )
     {
-        return events;
+        return std::unexpected(
+            QObject::tr("Loading upcoming calendar events failed: invalid request.")
+            );
     }
 
     QSqlQuery query(m_database);
@@ -234,13 +243,16 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
         );
     query.addBindValue(limit);
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading upcoming calendar events"),
+        QObject::tr("from %1, limit %2")
+            .arg(fromDate.toString(Qt::ISODate))
+            .arg(limit)
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to load upcoming calendar events:"
-            << query.lastError().text();
-
-        return events;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     while (query.next())
@@ -253,13 +265,15 @@ QList<CalendarEvent> CalendarEventRepository::loadUpcomingCalendarEvents(
     return events;
 }
 
-QDate CalendarEventRepository::findNextCalendarEventStartDate(
+Result<QDate> CalendarEventRepository::findNextCalendarEventStartDate(
     const QDate& fromDate
     )
 {
     if (!fromDate.isValid())
     {
-        return {};
+        return std::unexpected(
+            QObject::tr("Finding next calendar event failed: invalid date.")
+            );
     }
 
     QSqlQuery query(m_database);
@@ -273,13 +287,14 @@ QDate CalendarEventRepository::findNextCalendarEventStartDate(
         fromDate.toString(Qt::ISODate)
         );
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Finding next calendar event start date"),
+        QObject::tr("from %1").arg(fromDate.toString(Qt::ISODate))
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to find next calendar event:"
-            << query.lastError().text();
-
-        return {};
+        return std::unexpected(loaded.error().userMessage());
     }
 
     if (!query.next())
@@ -293,15 +308,16 @@ QDate CalendarEventRepository::findNextCalendarEventStartDate(
         );
 }
 
-CalendarEvent CalendarEventRepository::getCalendarEvent(
+Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
     int eventId
     )
 {
-    CalendarEvent event;
-
     if (eventId <= 0)
     {
-        return event;
+        return std::unexpected(
+            QObject::tr("Loading calendar event failed: invalid event id %1.")
+                .arg(eventId)
+            );
     }
 
     QSqlQuery query(m_database);
@@ -324,24 +340,28 @@ CalendarEvent CalendarEventRepository::getCalendarEvent(
 
     query.addBindValue(eventId);
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar event"),
+        QObject::tr("calendar event id %1").arg(eventId)
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to load calendar event:"
-            << query.lastError().text();
-
-        return event;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     if (!query.next())
     {
-        return event;
+        return std::unexpected(
+            QObject::tr("Loading calendar event failed: no matching record exists for event id %1.")
+                .arg(eventId)
+            );
     }
 
     return eventFromQuery(query);
 }
 
-QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
+Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     )
@@ -356,7 +376,9 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForRepeatSeriesF
         || !startDate.isValid()
         )
     {
-        return events;
+        return std::unexpected(
+            QObject::tr("Loading calendar repeat series failed: invalid series or start date.")
+            );
     }
 
     QSqlQuery query(m_database);
@@ -384,13 +406,15 @@ QList<CalendarEvent> CalendarEventRepository::loadCalendarEventsForRepeatSeriesF
         startDate.toString(Qt::ISODate)
         );
 
-    if (!query.exec())
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading calendar repeat series events"),
+        QObject::tr("repeat series '%1' from %2")
+            .arg(normalizedRepeatSeriesId, startDate.toString(Qt::ISODate))
+        );
+    if (!loaded)
     {
-        qWarning()
-            << "Failed to load calendar repeat series events:"
-            << query.lastError().text();
-
-        return events;
+        return std::unexpected(loaded.error().userMessage());
     }
 
     while (query.next())

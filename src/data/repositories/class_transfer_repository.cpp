@@ -473,11 +473,15 @@ Result<ClassImportPreview> buildPreview(
 
         for (const Classroom& destination : *destinationClasses)
         {
-            const ClassInfo destinationInfo =
+            const Result<ClassInfo> destinationInfo =
                 classInfoRepository.loadClassInfo(destination.id);
+            if (!destinationInfo)
+            {
+                return std::unexpected(destinationInfo.error());
+            }
 
-            if (normalized(destinationInfo.classGrade) != sourceGrade
-                || normalized(destinationInfo.classLevel) != sourceLevel)
+            if (normalized(destinationInfo->classGrade) != sourceGrade
+                || normalized(destinationInfo->classLevel) != sourceLevel)
             {
                 continue;
             }
@@ -486,12 +490,12 @@ Result<ClassImportPreview> buildPreview(
 
             if (!sourceTeacher)
             {
-                sameTeacher = destinationInfo.teacherId <= 0;
+                sameTeacher = destinationInfo->teacherId <= 0;
             }
-            else if (destinationInfo.teacherId > 0)
+            else if (destinationInfo->teacherId > 0)
             {
                 const Result<Teacher> destinationTeacher =
-                    teacherRepository.getTeacher(destinationInfo.teacherId);
+                    teacherRepository.getTeacher(destinationInfo->teacherId);
                 if (!destinationTeacher)
                 {
                     return std::unexpected(destinationTeacher.error());
@@ -728,12 +732,18 @@ Status preflightSchedules(
             continue;
         }
 
-        const ClassInfo info = classInfoRepository.loadClassInfo(classroom.id);
-        const QString label = destinationClassLabel(classroom, info);
+        const Result<ClassInfo> info =
+            classInfoRepository.loadClassInfo(classroom.id);
+        if (!info)
+        {
+            return std::unexpected(info.error());
+        }
+
+        const QString label = destinationClassLabel(classroom, *info);
         Status status = appendAndValidateTimes(
             &existingRegular,
             label,
-            info.classTimes,
+            info->classTimes,
             QObject::tr("regular")
             );
 
@@ -745,7 +755,7 @@ Status preflightSchedules(
         status = appendAndValidateTimes(
             &existingIntensive,
             label,
-            info.intensiveTimes,
+            info->intensiveTimes,
             QObject::tr("intensive")
             );
 
@@ -1163,8 +1173,20 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
         ClassTransferClass transferClass;
         transferClass.key = QStringLiteral("class-%1").arg(index + 1);
         transferClass.name = classroom->name;
-        transferClass.info = classInfoRepository.loadClassInfo(classId);
-        transferClass.roster = rosterRepository.loadRoster(classId);
+        const Result<ClassInfo> info = classInfoRepository.loadClassInfo(classId);
+        if (!info)
+        {
+            return std::unexpected(info.error());
+        }
+
+        const Result<Roster> roster = rosterRepository.loadRoster(classId);
+        if (!roster)
+        {
+            return std::unexpected(roster.error());
+        }
+
+        transferClass.info = *info;
+        transferClass.roster = *roster;
 
         if (transferClass.info.teacherId > 0)
         {

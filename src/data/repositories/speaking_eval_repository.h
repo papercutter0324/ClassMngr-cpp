@@ -21,12 +21,12 @@ public:
         const QList<SpeakingEvalCellChange>& dirtyCells = {}
         );
 
-    SpeakingEvalRows loadSpeakingEval(
+    [[nodiscard]] Result<SpeakingEvalRows> loadSpeakingEval(
         int classId,
         const QString& evaluationName
         );
 
-    QList<SpeakingEvalScore> buildRosterScoreImport(
+    [[nodiscard]] Result<QList<SpeakingEvalScore>> buildRosterScoreImport(
         int classId,
         const QString& evaluationName
         );

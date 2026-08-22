@@ -72,6 +72,40 @@ QString filesystemSafeFileName(
     QChar replacement
     )
 {
+    const auto normalizedSuggested = normalizedFilesystemSafeFileName(
+        suggestedBaseName,
+        extension,
+        replacement
+        );
+    if (normalizedSuggested)
+    {
+        return *normalizedSuggested;
+    }
+
+    const auto normalizedFallback = normalizedFilesystemSafeFileName(
+        fallbackBaseName,
+        extension,
+        replacement
+        );
+    if (normalizedFallback)
+    {
+        return *normalizedFallback;
+    }
+
+    extension = extension.trimmed();
+    if (!extension.isEmpty() && !extension.startsWith(u'.'))
+    {
+        extension.prepend(u'.');
+    }
+    return QStringLiteral("Document") + extension;
+}
+
+std::optional<QString> normalizedFilesystemSafeFileName(
+    QString suggestedBaseName,
+    QString extension,
+    QChar replacement
+    )
+{
     extension = extension.trimmed();
     if (!extension.isEmpty() && !extension.startsWith(u'.'))
     {
@@ -87,11 +121,7 @@ QString filesystemSafeFileName(
     QString baseName = sanitizedBaseName(suggestedBaseName, replacement);
     if (baseName.isEmpty())
     {
-        baseName = sanitizedBaseName(fallbackBaseName, replacement);
-    }
-    if (baseName.isEmpty())
-    {
-        baseName = QStringLiteral("Document");
+        return std::nullopt;
     }
     if (isWindowsReservedName(baseName))
     {

@@ -133,7 +133,7 @@ void SpeakingEvalPage::importNames()
             ->rosterService()
             ->roster(
                 m_classroom.id
-                );
+                ).value_or(Roster{});
 
     if (roster.rows.isEmpty())
     {
@@ -322,7 +322,8 @@ void SpeakingEvalPage::showReports()
     if (m_services && m_services->classService())
     {
         classInfo =
-            m_services->classService()->classInfo(m_classroom.id);
+            m_services->classService()->classInfo(m_classroom.id)
+                .value_or(ClassInfo{});
         signatureImage =
             PersonalDetailsRepository(m_services->settingsService())
                 .load()
@@ -396,7 +397,7 @@ void SpeakingEvalPage::generateClassAiComments()
                 ->classService()
                 ->classInfo(
                     m_classroom.id
-                    );
+                    ).value_or(ClassInfo{});
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
@@ -463,7 +464,8 @@ void SpeakingEvalPage::outputReports(
     if (m_services && m_services->classService())
     {
         classInfo =
-            m_services->classService()->classInfo(m_classroom.id);
+            m_services->classService()->classInfo(m_classroom.id)
+                .value_or(ClassInfo{});
         signatureImage =
             PersonalDetailsRepository(m_services->settingsService())
                 .load()

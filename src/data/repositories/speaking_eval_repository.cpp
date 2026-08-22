@@ -243,7 +243,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     return {};
 }
 
-SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(
+Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     int classId,
     const QString& evaluationName
     )
@@ -252,7 +252,12 @@ SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(
 
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return rows;
+        return std::unexpected(
+            QObject::tr(
+                "Loading speaking evaluation failed: invalid class id or "
+                "evaluation name."
+                )
+            );
     }
 
     QSqlQuery query(m_database);
@@ -266,13 +271,18 @@ SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(
     query.addBindValue(classId);
     query.addBindValue(evaluationName);
 
-    if (!query.exec())
+    const QString identity = QObject::tr(
+        "class id %1, evaluation '%2'")
+        .arg(classId)
+        .arg(evaluationName);
+    const auto loadedEvaluation = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading speaking evaluation"),
+        identity
+        );
+    if (!loadedEvaluation)
     {
-        qWarning()
-            << "Failed to load speaking evaluation:"
-            << query.lastError().text();
-
-        return rows;
+        return std::unexpected(loadedEvaluation.error().userMessage());
     }
 
     if (!query.next())
@@ -292,13 +302,14 @@ SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(
 
     query.addBindValue(evaluationId);
 
-    if (!query.exec())
+    const auto loadedRows = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading speaking evaluation rows"),
+        identity
+        );
+    if (!loadedRows)
     {
-        qWarning()
-            << "Failed to load speaking evaluation rows:"
-            << query.lastError().text();
-
-        return rows;
+        return std::unexpected(loadedRows.error().userMessage());
     }
 
     while (query.next())
@@ -321,20 +332,25 @@ SpeakingEvalRows SpeakingEvalRepository::loadSpeakingEval(
     return rows;
 }
 
-QList<SpeakingEvalScore> SpeakingEvalRepository::buildRosterScoreImport(
+Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
     int classId,
     const QString& evaluationName
     )
 {
     QList<SpeakingEvalScore> scores;
 
-    const SpeakingEvalRows rows =
+    const Result<SpeakingEvalRows> rows =
         loadSpeakingEval(
             classId,
             evaluationName
             );
 
-    if (rows.isEmpty())
+    if (!rows)
+    {
+        return std::unexpected(rows.error());
+    }
+
+    if (rows->isEmpty())
     {
         return scores;
     }
@@ -364,7 +380,7 @@ QList<SpeakingEvalScore> SpeakingEvalRepository::buildRosterScoreImport(
         SpeakingEval::toInt(SpeakingEvalColumn::OverallEffort)
     };
 
-    for (const QStringList& row : rows)
+    for (const QStringList& row : *rows)
     {
         if (row.size() < SpeakingEval::ColumnCount)
         {

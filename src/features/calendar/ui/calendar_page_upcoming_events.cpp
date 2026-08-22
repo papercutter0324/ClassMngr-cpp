@@ -777,7 +777,7 @@ CalendarPage::calendarEventDisplayOptions() const
     {
         options.showAllCampuses =
             settingToBool(
-                settingsService->load(
+                settingsService->loadOrDefault(
                     CalendarSettingsKeys::ShowEventsAtAllCampuses,
                     false
                     ),
@@ -785,7 +785,7 @@ CalendarPage::calendarEventDisplayOptions() const
                 );
         options.hideStartOfTermEvents =
             settingToBool(
-                settingsService->load(
+                settingsService->loadOrDefault(
                     CalendarSettingsKeys::HideStartOfTermEvents,
                     false
                     ),
@@ -793,7 +793,7 @@ CalendarPage::calendarEventDisplayOptions() const
                 );
         options.use24HourTime =
             settingToBool(
-                settingsService->load(
+                settingsService->loadOrDefault(
                     QStringLiteral("schedule_use_24h"),
                     QStringLiteral("false")
                     ),
@@ -802,7 +802,7 @@ CalendarPage::calendarEventDisplayOptions() const
 
         const QString currentName =
             settingsService
-                ->load(
+                ->loadOrDefault(
                     QStringLiteral("myInfo/campus"),
                     QString()
                     )
@@ -889,7 +889,7 @@ QColor CalendarPage::calendarEventTypeColor(
     {
         const QColor storedColor(
             settingsService
-                ->load(
+                ->loadOrDefault(
                     calendarEventTypeColorSettingKey(normalized),
                     QString()
                     )

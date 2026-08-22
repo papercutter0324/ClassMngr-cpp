@@ -11,7 +11,7 @@ class GsTeamRepository
 public:
     explicit GsTeamRepository(QSqlDatabase& database);
 
-    [[nodiscard]] QList<GsTeamMember> getAll() const;
+    [[nodiscard]] Result<QList<GsTeamMember>> getAll() const;
 
     [[nodiscard]] Status saveDirectory(
         const QList<GsTeamMember>& members,

@@ -28,7 +28,7 @@ QString classDisplayName(
     const Classroom& classroom
     )
 {
-    const ClassInfo info = classService->classInfo(classroom.id);
+    const ClassInfo info = classService->classInfo(classroom.id).value_or(ClassInfo{});
     Teacher teacher;
 
     if (info.teacherId > 0)

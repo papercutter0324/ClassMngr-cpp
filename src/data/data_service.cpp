@@ -126,20 +126,18 @@ Status DataService::saveSettings(
     return m_settingsRepository->saveSettings(values);
 }
 
-QVariant DataService::loadSetting(
-    const QString &key,
-    const QVariant &defaultValue
+Result<QVariant> DataService::loadSetting(
+    const QString &key
     )
 {
     if (!m_settingsRepository)
     {
-        return defaultValue;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
-    return m_settingsRepository->loadSetting(
-        key,
-        defaultValue
-        );
+    return m_settingsRepository->loadSetting(key);
 }
 
 Result<int> DataService::createTeacher(
@@ -222,11 +220,14 @@ Status DataService::deleteTeacher(
     return m_teacherRepository->deleteTeacher(teacherId);
 }
 
-QList<NativeEnglishTeacher> DataService::getNativeEnglishTeachers()
+Result<QList<NativeEnglishTeacher>> DataService::getNativeEnglishTeachers()
 {
-    return m_nativeEnglishTeacherRepository
-        ? m_nativeEnglishTeacherRepository->getAll()
-        : QList<NativeEnglishTeacher>{};
+    if (!m_nativeEnglishTeacherRepository)
+    {
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
+    }
+
+    return m_nativeEnglishTeacherRepository->getAll();
 }
 
 Status DataService::saveNativeEnglishTeacherDirectory(
@@ -241,11 +242,14 @@ Status DataService::saveNativeEnglishTeacherDirectory(
     return m_nativeEnglishTeacherRepository->saveDirectory(teachers, deletedIds);
 }
 
-QList<GsTeamMember> DataService::getGsTeamMembers()
+Result<QList<GsTeamMember>> DataService::getGsTeamMembers()
 {
-    return m_gsTeamRepository
-        ? m_gsTeamRepository->getAll()
-        : QList<GsTeamMember>{};
+    if (!m_gsTeamRepository)
+    {
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
+    }
+
+    return m_gsTeamRepository->getAll();
 }
 
 Status DataService::saveGsTeamDirectory(
@@ -271,13 +275,17 @@ Result<TeacherImportSummary> DataService::importTeachers(
     return m_teacherImportRepository->importTeachers(plan);
 }
 
-QDate DataService::latestTeacherImportDate()
+Result<QDate> DataService::latestTeacherImportDate()
 {
-    const QString value = loadSetting(
-        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting),
-        QString()
-        ).toString();
-    return QDate::fromString(value, Qt::ISODate);
+    const Result<QVariant> value = loadSetting(
+        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting)
+        );
+    if (!value)
+    {
+        return std::unexpected(value.error());
+    }
+
+    return QDate::fromString(value->toString(), Qt::ISODate);
 }
 
 Result<int> DataService::createClass(
@@ -458,16 +466,15 @@ Status DataService::saveClassNotes(
         );
 }
 
-ClassInfo DataService::loadClassInfo(
+Result<ClassInfo> DataService::loadClassInfo(
     int classId
     )
 {
     if (!m_classInfoRepository)
     {
-        ClassInfo info;
-        info.classId = classId;
-
-        return info;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_classInfoRepository->loadClassInfo(
@@ -475,11 +482,11 @@ ClassInfo DataService::loadClassInfo(
         );
 }
 
-QList<IntensiveSlotState> DataService::loadIntensiveSlotStates()
+Result<QList<IntensiveSlotState>> DataService::loadIntensiveSlotStates()
 {
     if (!m_intensiveSlotStateRepository)
     {
-        return {};
+        return std::unexpected(QStringLiteral("No Teacher Profile is open."));
     }
 
     return m_intensiveSlotStateRepository->loadIntensiveSlotStates();
@@ -724,13 +731,15 @@ Result<bool> DataService::isTestingClass(
     return m_testingClassRepository->isTestingClass(classId);
 }
 
-QList<CalendarEvent> DataService::loadCalendarEventsForDate(
+Result<QList<CalendarEvent>> DataService::loadCalendarEventsForDate(
     const QDate& date
     )
 {
     if (!m_calendarEventRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->loadCalendarEventsForDate(
@@ -738,14 +747,16 @@ QList<CalendarEvent> DataService::loadCalendarEventsForDate(
         );
 }
 
-QList<CalendarEvent> DataService::loadCalendarEventsInRange(
+Result<QList<CalendarEvent>> DataService::loadCalendarEventsInRange(
     const QDate& startDate,
     const QDate& endDate
     )
 {
     if (!m_calendarEventRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->loadCalendarEventsInRange(
@@ -754,14 +765,16 @@ QList<CalendarEvent> DataService::loadCalendarEventsInRange(
         );
 }
 
-QList<CalendarEvent> DataService::loadUpcomingCalendarEvents(
+Result<QList<CalendarEvent>> DataService::loadUpcomingCalendarEvents(
     const QDate& fromDate,
     int limit
     )
 {
     if (!m_calendarEventRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->loadUpcomingCalendarEvents(
@@ -770,13 +783,15 @@ QList<CalendarEvent> DataService::loadUpcomingCalendarEvents(
         );
 }
 
-CalendarEvent DataService::getCalendarEvent(
+Result<CalendarEvent> DataService::getCalendarEvent(
     int eventId
     )
 {
     if (!m_calendarEventRepository)
     {
-        return CalendarEvent();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->getCalendarEvent(
@@ -784,14 +799,16 @@ CalendarEvent DataService::getCalendarEvent(
         );
 }
 
-QList<CalendarEvent> DataService::loadCalendarEventsForRepeatSeriesFromDate(
+Result<QList<CalendarEvent>> DataService::loadCalendarEventsForRepeatSeriesFromDate(
     const QString& repeatSeriesId,
     const QDate& startDate
     )
 {
     if (!m_calendarEventRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_calendarEventRepository->loadCalendarEventsForRepeatSeriesFromDate(
@@ -926,13 +943,15 @@ Status DataService::saveRosters(
         );
 }
 
-Roster DataService::loadRoster(
+Result<Roster> DataService::loadRoster(
     int classId
     )
 {
     if (!m_rosterRepository)
     {
-        return Roster();
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_rosterRepository->loadRoster(
@@ -940,13 +959,15 @@ Roster DataService::loadRoster(
         );
 }
 
-int DataService::getRosterStudentCount(
+Result<int> DataService::getRosterStudentCount(
     int classId
     )
 {
     if (!m_rosterRepository)
     {
-        return 0;
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_rosterRepository->getRosterStudentCount(
@@ -976,14 +997,16 @@ Status DataService::saveSpeakingEval(
         );
 }
 
-SpeakingEvalRows DataService::loadSpeakingEval(
+Result<SpeakingEvalRows> DataService::loadSpeakingEval(
     int classId,
     const QString& evaluationName
     )
 {
     if (!m_speakingEvalRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_speakingEvalRepository->loadSpeakingEval(
@@ -992,14 +1015,16 @@ SpeakingEvalRows DataService::loadSpeakingEval(
         );
 }
 
-QList<SpeakingEvalScore> DataService::buildRosterScoreImport(
+Result<QList<SpeakingEvalScore>> DataService::buildRosterScoreImport(
     int classId,
     const QString& evaluationName
     )
 {
     if (!m_speakingEvalRepository)
     {
-        return {};
+        return std::unexpected(
+            QStringLiteral("No Teacher Profile is open.")
+            );
     }
 
     return m_speakingEvalRepository->buildRosterScoreImport(

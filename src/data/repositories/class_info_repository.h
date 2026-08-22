@@ -25,7 +25,7 @@ public:
         const QString& timeFillerActivities
         );
 
-    ClassInfo loadClassInfo(
+    [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
 

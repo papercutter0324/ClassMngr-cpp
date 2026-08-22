@@ -10,6 +10,7 @@ class IntensiveSlotStateRepositoryTests : public QObject
 
 private slots:
     void defaultStateControlsStoredRows();
+    void readFailuresAreReturned();
     void writeFailuresAreReturned();
 };
 
@@ -52,7 +53,10 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("essay")
             ).has_value());
 
-        QVERIFY(repository.loadIntensiveSlotStates().isEmpty());
+        const Result<QList<IntensiveSlotState>> noStoredStates =
+            repository.loadIntensiveSlotStates();
+        QVERIFY(noStoredStates);
+        QVERIFY(noStoredStates->isEmpty());
 
         QVERIFY(repository.saveIntensiveSlotState(
             QStringLiteral("Saturday"),
@@ -60,8 +64,10 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("lunch")
             ).has_value());
 
-        QList<IntensiveSlotState> states =
+        Result<QList<IntensiveSlotState>> loadedStates =
             repository.loadIntensiveSlotStates();
+        QVERIFY(loadedStates);
+        QList<IntensiveSlotState> states = *loadedStates;
 
         QCOMPARE(states.size(), 1);
         QCOMPARE(states.first().state, QStringLiteral("lunch"));
@@ -72,7 +78,9 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("essay")
             ).has_value());
 
-        QVERIFY(repository.loadIntensiveSlotStates().isEmpty());
+        loadedStates = repository.loadIntensiveSlotStates();
+        QVERIFY(loadedStates);
+        QVERIFY(loadedStates->isEmpty());
 
         QVERIFY(repository.saveIntensiveSlotState(
             QStringLiteral("Saturday"),
@@ -81,8 +89,9 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("empty")
             ).has_value());
 
-        states =
-            repository.loadIntensiveSlotStates();
+        loadedStates = repository.loadIntensiveSlotStates();
+        QVERIFY(loadedStates);
+        states = *loadedStates;
 
         QCOMPARE(states.size(), 1);
         QCOMPARE(states.first().state, QStringLiteral("essay"));
@@ -94,12 +103,39 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
             QStringLiteral("empty")
             ).has_value());
 
-        QVERIFY(repository.loadIntensiveSlotStates().isEmpty());
+        loadedStates = repository.loadIntensiveSlotStates();
+        QVERIFY(loadedStates);
+        QVERIFY(loadedStates->isEmpty());
     }
 
     QSqlDatabase::removeDatabase(
         connectionName
         );
+}
+
+void IntensiveSlotStateRepositoryTests::readFailuresAreReturned()
+{
+    const QString connectionName =
+        QStringLiteral("intensive_slot_state_repository_read_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+
+        IntensiveSlotStateRepository repository(database);
+        const Result<QList<IntensiveSlotState>> states =
+            repository.loadIntensiveSlotStates();
+        QVERIFY(!states);
+        QVERIFY(states.error().contains(
+            QStringLiteral("Loading intensive slot states")
+            ));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
@@ -169,7 +205,10 @@ void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
         QVERIFY(deleted.error().contains(
             QStringLiteral("Deleting intensive slot state")
             ));
-        QCOMPARE(repository.loadIntensiveSlotStates().size(), 1);
+        const Result<QList<IntensiveSlotState>> states =
+            repository.loadIntensiveSlotStates();
+        QVERIFY(states);
+        QCOMPARE(states->size(), 1);
     }
 
     QSqlDatabase::removeDatabase(connectionName);

@@ -177,15 +177,19 @@ Status saveRepeatSeriesFromDate(
         editedEvent.startDate.daysTo(
             editedEvent.endDate
             );
-    const QList<CalendarEvent> seriesEvents =
+    const Result<QList<CalendarEvent>> seriesEvents =
         calendarService->repeatSeriesFromDate(
             repeatSeriesId,
             originalEvent.startDate
             );
+    if (!seriesEvents)
+    {
+        return std::unexpected(seriesEvents.error());
+    }
 
     QList<CalendarEvent> updatedEvents;
-    updatedEvents.reserve(seriesEvents.size());
-    for (const CalendarEvent& seriesEvent : seriesEvents)
+    updatedEvents.reserve(seriesEvents->size());
+    for (const CalendarEvent& seriesEvent : *seriesEvents)
     {
         CalendarEvent updatedEvent =
             seriesEvent;
@@ -265,18 +269,18 @@ void CalendarPage::handleCalendarEventActivated(
         return;
     }
 
-    const CalendarEvent event =
+    const Result<CalendarEvent> event =
         calendarService->event(
             eventId
             );
 
-    if (event.id <= 0)
+    if (!event || event->id <= 0)
     {
         return;
     }
 
     openCalendarDialog(
-        event,
+        *event,
         true
         );
 }
@@ -683,7 +687,7 @@ void CalendarPage::openCalendarDialog(
         existingEvent,
         settingToBool(
             settingsService
-                ? settingsService->load(
+                ? settingsService->loadOrDefault(
                 QStringLiteral("schedule_use_24h"),
                 QStringLiteral("false")
                 )

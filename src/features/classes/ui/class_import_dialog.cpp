@@ -74,7 +74,7 @@ QString destinationClassDisplayName(
 {
     const Classroom classroom = classService->classroom(classId)
         .value_or(Classroom{});
-    const ClassInfo info = classService->classInfo(classId);
+    const ClassInfo info = classService->classInfo(classId).value_or(ClassInfo{});
     Teacher teacher;
 
     if (info.teacherId > 0)

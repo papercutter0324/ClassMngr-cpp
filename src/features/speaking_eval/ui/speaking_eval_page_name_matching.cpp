@@ -479,7 +479,7 @@ QList<QStringList> SpeakingEvalPage::unmatchedRosterNamePairs() const
             ->rosterService()
             ->roster(
                 m_classroom.id
-                );
+                ).value_or(Roster{});
 
     const int englishColumn =
         findColumn(

@@ -341,7 +341,7 @@ void ScheduleEditorDialog::loadData()
     m_loadingData = true;
 
     m_cachedInfo =
-        classService->classInfo(m_classId);
+        classService->classInfo(m_classId).value_or(ClassInfo{});
 
     m_originalGrade =
         m_cachedInfo.classGrade;

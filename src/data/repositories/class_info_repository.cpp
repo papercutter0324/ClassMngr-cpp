@@ -171,8 +171,7 @@ QString classDisplayName(
 
 QString normalizedTeacherChoice(
     const QString& value,
-    const QStringList& choices,
-    const QString& fallback
+    const QStringList& choices
     )
 {
     const QString trimmed =
@@ -186,7 +185,9 @@ QString normalizedTeacherChoice(
         }
     }
 
-    return fallback;
+    // Preserve unrecognized values from existing profiles rather than
+    // fabricating a valid-looking default during a read.
+    return trimmed;
 }
 
 QString normalizedInternetType(
@@ -200,8 +201,7 @@ QString normalizedInternetType(
             QStringLiteral("LAN"),
             QStringLiteral("Both"),
             QStringLiteral("N/A")
-        },
-        QStringLiteral("WiFi")
+        }
         );
 }
 
@@ -216,8 +216,7 @@ QString normalizedProjectionType(
             QStringLiteral("Zoom"),
             QStringLiteral("Any"),
             QStringLiteral("N/A")
-        },
-        QStringLiteral("HDMI")
+        }
         );
 }
 
@@ -482,10 +481,18 @@ Status ClassInfoRepository::saveClassNotes(
     return {};
 }
 
-ClassInfo ClassInfoRepository::loadClassInfo(
+Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     int classId
     )
 {
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
     ClassInfo info;
     info.classId =    classId;
     info.classColor = "#FFFFFF";
@@ -518,15 +525,21 @@ ClassInfo ClassInfoRepository::loadClassInfo(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto loadedInfo = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loadedInfo)
     {
-        qWarning()
-            << "Failed to load class info:"
-            << query.lastError().text();
+        return std::unexpected(loadedInfo.error().userMessage());
     }
-    else if (query.next())
+
+    if (query.next())
     {
-        info.teacherId =    query.value("teacher_id").toInt();
+        const QVariant teacherId = query.value("teacher_id");
+        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
         info.teacherKr =    query.value("teacher_kr").toString();
         info.teacherEn =    query.value("teacher_en").toString();
         info.teacherPreferredName =
@@ -581,24 +594,25 @@ ClassInfo ClassInfoRepository::loadClassInfo(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const auto loadedRegularTimes = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading regular class times"),
+        identity
+        );
+    if (!loadedRegularTimes)
     {
-        qWarning()
-            << "Failed to load regular class times:"
-            << query.lastError().text();
+        return std::unexpected(loadedRegularTimes.error().userMessage());
     }
-    else
+
+    while (query.next())
     {
-        while (query.next())
-        {
-            ClassTime time;
+        ClassTime time;
 
-            time.day =       query.value("day").toString();
-            time.startTime = query.value("start_time").toString();
-            time.endTime =   query.value("end_time").toString();
+        time.day =       query.value("day").toString();
+        time.startTime = query.value("start_time").toString();
+        time.endTime =   query.value("end_time").toString();
 
-            info.classTimes.append(time);
-        }
+        info.classTimes.append(time);
     }
 
     query.prepare(R"(
@@ -610,24 +624,25 @@ ClassInfo ClassInfoRepository::loadClassInfo(
 
     query.addBindValue(classId);
 
-    if (!query.exec())
+    const auto loadedIntensiveTimes = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading intensive class times"),
+        identity
+        );
+    if (!loadedIntensiveTimes)
     {
-        qWarning()
-            << "Failed to load intensive class times:"
-            << query.lastError().text();
+        return std::unexpected(loadedIntensiveTimes.error().userMessage());
     }
-    else
+
+    while (query.next())
     {
-        while (query.next())
-        {
-            ClassTime time;
+        ClassTime time;
 
-            time.day =       query.value("day").toString();
-            time.startTime = query.value("start_time").toString();
-            time.endTime =   query.value("end_time").toString();
+        time.day =       query.value("day").toString();
+        time.startTime = query.value("start_time").toString();
+        time.endTime =   query.value("end_time").toString();
 
-            info.intensiveTimes.append(time);
-        }
+        info.intensiveTimes.append(time);
     }
 
     return info;

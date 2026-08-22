@@ -249,6 +249,52 @@ QDateTimeEdit:hover {
     border-color: #3daee9;
 }
 
+QLineEdit[formValidationState="error"],
+QPlainTextEdit[formValidationState="error"],
+QTextEdit[formValidationState="error"],
+QSpinBox[formValidationState="error"],
+QDoubleSpinBox[formValidationState="error"],
+QComboBox[formValidationState="error"],
+QDateEdit[formValidationState="error"],
+QTimeEdit[formValidationState="error"],
+QDateTimeEdit[formValidationState="error"],
+QWidget[role="input"][formValidationState="error"] {
+    border-color: #ff6b6b;
+}
+
+QLineEdit[formValidationState="warning"],
+QPlainTextEdit[formValidationState="warning"],
+QTextEdit[formValidationState="warning"],
+QSpinBox[formValidationState="warning"],
+QDoubleSpinBox[formValidationState="warning"],
+QComboBox[formValidationState="warning"],
+QDateEdit[formValidationState="warning"],
+QTimeEdit[formValidationState="warning"],
+QDateTimeEdit[formValidationState="warning"],
+QWidget[role="input"][formValidationState="warning"] {
+    border-color: #f6b44d;
+}
+
+QLabel[formValidationSeverity="error"] {
+    color: #ff8a8a;
+    background: transparent;
+}
+
+QLabel[formValidationSeverity="warning"] {
+    color: #f6c15f;
+    background: transparent;
+}
+
+QCheckBox[formValidationState="error"]::indicator,
+QRadioButton[formValidationState="error"]::indicator {
+    border-color: #ff6b6b;
+}
+
+QCheckBox[formValidationState="warning"]::indicator,
+QRadioButton[formValidationState="warning"]::indicator {
+    border-color: #f6b44d;
+}
+
 QLineEdit:disabled,
 QPlainTextEdit:disabled,
 QTextEdit:disabled,

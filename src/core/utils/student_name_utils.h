@@ -11,9 +11,11 @@ enum class ValidationIssue
 {
     EnglishTooLong,
     EnglishContainsNonAscii,
+    EnglishContainsInvalidCharacters,
     KoreanTooShort,
     KoreanUnusualLength,
-    KoreanTooLong
+    KoreanTooLong,
+    KoreanContainsInvalidCharacters
 };
 
 QString normalizeEnglishName(const QString& value);

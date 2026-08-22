@@ -14,7 +14,7 @@ Result<QList<Classroom>> ClassService::classes() const
     return {};
 }
 
-ClassInfo ClassService::classInfo(
+Result<ClassInfo> ClassService::classInfo(
     int
     ) const
 {

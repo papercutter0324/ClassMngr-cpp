@@ -128,7 +128,7 @@ QString SidebarController::classDisplayName(
     const ClassInfo classInfo =
         classes->classInfo(
             classroom.id
-            );
+            ).value_or(ClassInfo{});
 
     Teacher teacher;
 

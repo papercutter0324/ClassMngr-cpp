@@ -64,7 +64,7 @@ void RosterEditorWidget::importScores()
             m_services->speakingEvaluationService()->rosterScoreImport(
                 m_classroom.id,
                 evaluationName
-                );
+                ).value_or(QList<SpeakingEvalScore>{});
         if (scores.isEmpty())
         {
             continue;

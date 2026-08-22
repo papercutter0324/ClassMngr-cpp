@@ -11,7 +11,7 @@ class NativeEnglishTeacherRepository
 public:
     explicit NativeEnglishTeacherRepository(QSqlDatabase& database);
 
-    [[nodiscard]] QList<NativeEnglishTeacher> getAll() const;
+    [[nodiscard]] Result<QList<NativeEnglishTeacher>> getAll() const;
 
     [[nodiscard]] Status saveDirectory(
         const QList<NativeEnglishTeacher>& teachers,

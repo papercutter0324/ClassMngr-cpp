@@ -194,7 +194,7 @@ QVariant loadSettingWithLegacyFallback(
     }
 
     QVariant value =
-        settingsService->load(
+        settingsService->loadOrDefault(
             primaryKey,
             QVariant()
             );
@@ -205,7 +205,7 @@ QVariant loadSettingWithLegacyFallback(
     }
 
     value =
-        settingsService->load(
+        settingsService->loadOrDefault(
             legacyKey,
             QVariant()
             );
@@ -215,9 +215,11 @@ QVariant loadSettingWithLegacyFallback(
         return defaultValue;
     }
 
-    settingsService->save(
-        primaryKey,
-        value
+    static_cast<void>(
+        settingsService->save(
+            primaryKey,
+            value
+            )
         );
 
     return value;

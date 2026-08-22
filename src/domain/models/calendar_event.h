@@ -5,6 +5,13 @@
 #include <QStringList>
 #include <QTime>
 
+enum class CalendarEventRepeatFrequency
+{
+    Daily,
+    Weekly,
+    Monthly
+};
+
 struct CalendarEvent
 {
     int id = -1;

@@ -607,7 +607,7 @@ void CalendarPreferencesPanel::loadOptions()
     {
         m_showAllCampusesCheck->setChecked(
             m_settingsService && m_settingsService->isAvailable()
-                ? m_settingsService->load(
+                ? m_settingsService->loadOrDefault(
                     CalendarSettingsKeys::ShowEventsAtAllCampuses,
                     false
                     ).toBool()
@@ -624,7 +624,7 @@ void CalendarPreferencesPanel::loadOptions()
     {
         m_hideStartOfTermEventsCheck->setChecked(
             m_settingsService && m_settingsService->isAvailable()
-                ? m_settingsService->load(
+                ? m_settingsService->loadOrDefault(
                     CalendarSettingsKeys::HideStartOfTermEvents,
                     false
                     ).toBool()

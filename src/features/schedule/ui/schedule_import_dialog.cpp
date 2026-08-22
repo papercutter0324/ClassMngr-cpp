@@ -702,7 +702,7 @@ void ScheduleImportDialog::prepareUserSelection()
     m_profileName =
         settingsService && settingsService->isAvailable()
             ? settingsService
-                ->load(
+                ->loadOrDefault(
                     QStringLiteral("myInfo/name"),
                     QString()
                     )

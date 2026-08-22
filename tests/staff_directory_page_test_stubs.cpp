@@ -11,7 +11,7 @@ bool FeatureService::isAvailable() const
     return false;
 }
 
-QList<NativeEnglishTeacher> TeacherService::nativeEnglishTeachers() const
+Result<QList<NativeEnglishTeacher>> TeacherService::nativeEnglishTeachers() const
 {
     return {};
 }
@@ -23,7 +23,7 @@ Status TeacherService::saveNativeEnglishTeacherDirectory(
     return {};
 }
 
-QList<GsTeamMember> TeacherService::gsTeamMembers() const
+Result<QList<GsTeamMember>> TeacherService::gsTeamMembers() const
 {
     return {};
 }

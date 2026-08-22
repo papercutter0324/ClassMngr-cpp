@@ -10,15 +10,10 @@ class QCheckBox;
 class QComboBox;
 class QLineEdit;
 class QPushButton;
+class QRadioButton;
 class QTimeEdit;
 class OnScreenKeyboard;
-
-enum class CalendarEventRepeatFrequency
-{
-    Daily,
-    Weekly,
-    Monthly
-};
+class FormValidationBinder;
 
 enum class CalendarEventSeriesEditScope
 {
@@ -52,6 +47,8 @@ private slots:
 private:
     void buildUi();
     void loadEvent();
+    void validateForm(bool focusFirstError = false);
+    void updateValidationIfDisplayed();
     void updateTimeFieldAvailability();
     void updateRepeatFieldAvailability();
 
@@ -73,8 +70,10 @@ private:
     QDateEdit* m_repeatUntilDateEdit = nullptr;
     QButtonGroup* m_seriesScopeGroup = nullptr;
     QButtonGroup* m_eventTypeGroup = nullptr;
+    QRadioButton* m_eventTypeFocusButton = nullptr;
     QDialogButtonBox* m_buttons = nullptr;
     QPushButton* m_deleteButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
+    FormValidationBinder* m_validationBinder = nullptr;
 };

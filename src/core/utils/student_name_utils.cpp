@@ -5,6 +5,53 @@
 
 namespace StudentNameUtils
 {
+namespace
+{
+bool containsNonAsciiCharacters(const QString& value)
+{
+    for (const QChar character : value)
+    {
+        if (character.unicode() > 127)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool containsInvalidEnglishCharacters(const QString& value)
+{
+    for (const QChar character : value)
+    {
+        const ushort code = character.unicode();
+        if ((code >= 'A' && code <= 'Z')
+            || (code >= 'a' && code <= 'z')
+            || character == QLatin1Char('.')
+            || character == QLatin1Char('-')
+            || character.isSpace()
+            || code > 127)
+        {
+            continue;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool containsInvalidKoreanCharacters(const QString& value)
+{
+    static const QRegularExpression validNameExpression(
+        QStringLiteral("^[\\s\\x{AC00}-\\x{D7A3}]+(?:\\s*\\([A-Za-z]\\))?\\s*$")
+        );
+
+    return !value.trimmed().isEmpty()
+        && !validNameExpression.match(value).hasMatch();
+}
+}
+
 QString normalizeEnglishName(const QString& value)
 {
     static const QRegularExpression spacedHyphenExpression(
@@ -29,6 +76,14 @@ QString normalizeEnglishName(const QString& value)
     if (value.trimmed().isEmpty())
     {
         return {};
+    }
+
+    // Preserve malformed input so callers that normalize before validating do
+    // not accidentally turn it into a different, valid name.
+    if (containsNonAsciiCharacters(value)
+        || containsInvalidEnglishCharacters(value))
+    {
+        return value.trimmed();
     }
 
     QString filtered;
@@ -101,6 +156,12 @@ QString normalizeKoreanName(
     static const QRegularExpression suffixExpression(
         QStringLiteral("\\(([A-Za-z])\\)\\s*$")
         );
+
+    // As with English names, invalid input must remain visible to validation.
+    if (containsInvalidKoreanCharacters(value))
+    {
+        return value.trimmed();
+    }
 
     const QRegularExpressionMatch suffixMatch =
         suffixExpression.match(value);
@@ -231,33 +292,42 @@ QList<ValidationIssue> validateEnglishName(
     {
         issues.append(ValidationIssue::EnglishTooLong);
     }
-    for (const QChar character : value)
+    if (containsNonAsciiCharacters(value))
     {
-        if (character.unicode() > 127)
-        {
-            issues.append(ValidationIssue::EnglishContainsNonAscii);
-            break;
-        }
+        issues.append(ValidationIssue::EnglishContainsNonAscii);
+    }
+    if (containsInvalidEnglishCharacters(value))
+    {
+        issues.append(ValidationIssue::EnglishContainsInvalidCharacters);
     }
     return issues;
 }
 
 QList<ValidationIssue> validateKoreanName(const QString& value)
 {
+    QList<ValidationIssue> issues;
+    if (containsInvalidKoreanCharacters(value))
+    {
+        issues.append(ValidationIssue::KoreanContainsInvalidCharacters);
+    }
+
     const int length = baseKoreanName(value).size();
     if (length == 0 || length == 3)
     {
-        return {};
+        return issues;
     }
     if (length <= 1)
     {
-        return {ValidationIssue::KoreanTooShort};
+        issues.append(ValidationIssue::KoreanTooShort);
+        return issues;
     }
     if (length >= 6)
     {
-        return {ValidationIssue::KoreanTooLong};
+        issues.append(ValidationIssue::KoreanTooLong);
+        return issues;
     }
-    return {ValidationIssue::KoreanUnusualLength};
+    issues.append(ValidationIssue::KoreanUnusualLength);
+    return issues;
 }
 
 QHash<QString, QList<int>> duplicateRowsByNamePair(

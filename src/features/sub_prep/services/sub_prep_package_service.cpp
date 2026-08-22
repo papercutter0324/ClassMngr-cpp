@@ -219,9 +219,9 @@ QList<PackageClass> loadPackageClasses(
         }
 
         packageClass.rosterData.info =
-            classService->classInfo(classId);
+            classService->classInfo(classId).value_or(ClassInfo{});
         packageClass.rosterData.roster =
-            rosterService->roster(classId);
+            rosterService->roster(classId).value_or(Roster{});
 
         if (packageClass.rosterData.info.teacherId > 0)
         {

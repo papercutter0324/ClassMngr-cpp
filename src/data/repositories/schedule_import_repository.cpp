@@ -215,10 +215,14 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     QHash<int, ClassInfo> classInfo;
     for (const Classroom& classroom : *classrooms)
     {
-        classInfo.insert(
-            classroom.id,
-            classInfoRepository.loadClassInfo(classroom.id)
-            );
+        const Result<ClassInfo> info =
+            classInfoRepository.loadClassInfo(classroom.id);
+        if (!info)
+        {
+            return std::unexpected(info.error());
+        }
+
+        classInfo.insert(classroom.id, *info);
     }
 
     return ScheduleImportMatcher::preview(
@@ -282,10 +286,14 @@ Result<ScheduleImportSummary> ScheduleImportRepository::apply(
     QHash<int, ClassInfo> existingInfo;
     for (const Classroom& classroom : *existingClasses)
     {
-        existingInfo.insert(
-            classroom.id,
-            classInfoRepository.loadClassInfo(classroom.id)
-            );
+        const Result<ClassInfo> info =
+            classInfoRepository.loadClassInfo(classroom.id);
+        if (!info)
+        {
+            return std::unexpected(info.error());
+        }
+
+        existingInfo.insert(classroom.id, *info);
     }
 
     const Status currentState = ScheduleImportStateValidator::validate(

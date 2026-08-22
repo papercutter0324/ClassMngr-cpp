@@ -85,31 +85,33 @@ void SpeakingEvaluationServiceTests::dashboardUsesCurrentRosterAndHistoricalTren
                 QStringLiteral("A+"))
     })).has_value());
 
-    const SpeakingEvaluationDashboard all =
+    const Result<SpeakingEvaluationDashboard> all =
         evaluations.analyticsDashboard(classId, {});
+    QVERIFY(all);
     // The current dashboard excludes Former, while the historical Winter
     // point keeps that student: (2.0 + 5.0) / 2 = 3.5.
-    QCOMPARE(all.selectedSnapshot.classAverage3, 3.294);
-    QCOMPARE(all.classShapeEvaluationName, QStringLiteral("Summer"));
-    QCOMPARE(all.classShapeSnapshot.overallLetters,
+    QCOMPARE(all->selectedSnapshot.classAverage3, 3.294);
+    QCOMPARE(all->classShapeEvaluationName, QStringLiteral("Summer"));
+    QCOMPARE(all->classShapeSnapshot.overallLetters,
              (QStringList{ QStringLiteral("A") }));
-    QCOMPARE(all.yearToDatePoints.size(), 3);
-    QCOMPARE(all.yearToDatePoints.at(0).evaluationName, QStringLiteral("Winter"));
-    QCOMPARE(all.yearToDatePoints.at(0).classAverage3, 3.5);
-    QCOMPARE(all.yearToDatePoints.at(0).classAverageLetter, QStringLiteral("A"));
-    QCOMPARE(all.yearToDatePoints.at(1).evaluationName, QStringLiteral("Summer"));
-    QCOMPARE(all.yearToDatePoints.at(2).evaluationName, QStringLiteral("Fall"));
+    QCOMPARE(all->yearToDatePoints.size(), 3);
+    QCOMPARE(all->yearToDatePoints.at(0).evaluationName, QStringLiteral("Winter"));
+    QCOMPARE(all->yearToDatePoints.at(0).classAverage3, 3.5);
+    QCOMPARE(all->yearToDatePoints.at(0).classAverageLetter, QStringLiteral("A"));
+    QCOMPARE(all->yearToDatePoints.at(1).evaluationName, QStringLiteral("Summer"));
+    QCOMPARE(all->yearToDatePoints.at(2).evaluationName, QStringLiteral("Fall"));
 
     // A named selection always uses the selected named snapshot for both the
     // dashboard and its Class Shape distribution, while YTD remains global.
-    const SpeakingEvaluationDashboard winter =
+    const Result<SpeakingEvaluationDashboard> winter =
         evaluations.analyticsDashboard(classId, QStringLiteral("Winter"));
-    QCOMPARE(winter.selectedSnapshot.overallLetters,
+    QVERIFY(winter);
+    QCOMPARE(winter->selectedSnapshot.overallLetters,
              (QStringList{ QStringLiteral("B") }));
-    QCOMPARE(winter.classShapeEvaluationName, QStringLiteral("Winter"));
-    QCOMPARE(winter.classShapeSnapshot.overallLetters,
+    QCOMPARE(winter->classShapeEvaluationName, QStringLiteral("Winter"));
+    QCOMPARE(winter->classShapeSnapshot.overallLetters,
              (QStringList{ QStringLiteral("B") }));
-    QCOMPARE(winter.yearToDatePoints.size(), 3);
+    QCOMPARE(winter->yearToDatePoints.size(), 3);
 }
 
 QTEST_MAIN(SpeakingEvaluationServiceTests)

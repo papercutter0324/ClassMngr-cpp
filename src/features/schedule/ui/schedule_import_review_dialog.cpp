@@ -1039,7 +1039,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 }
 
                 const ClassInfo info =
-                    classService->classInfo(target);
+                    classService->classInfo(target).value_or(ClassInfo{});
                 ScheduleImportClassCandidate preserved;
                 const Teacher preservedTeacher =
                     teachersById.value(info.teacherId);
@@ -1109,7 +1109,7 @@ void ScheduleImportReviewDialog::updateReviewState()
                 }
 
                 const ClassInfo info =
-                    classService->classInfo(classroom.id);
+                    classService->classInfo(classroom.id).value_or(ClassInfo{});
                 if (info.intensiveTimes.isEmpty())
                 {
                     continue;
@@ -1185,7 +1185,7 @@ void ScheduleImportReviewDialog::updateReviewState()
         for (const Classroom& classroom : availableClasses)
         {
             const ClassInfo info =
-                classService->classInfo(classroom.id);
+                classService->classInfo(classroom.id).value_or(ClassInfo{});
             const bool hasSelectedTimes =
                 m_request.kind == ScheduleImportKind::Intensive
                     ? !info.intensiveTimes.isEmpty()

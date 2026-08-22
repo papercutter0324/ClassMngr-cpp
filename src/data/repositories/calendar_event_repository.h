@@ -13,29 +13,29 @@ public:
         QSqlDatabase& database
         );
 
-    QList<CalendarEvent> loadCalendarEventsForDate(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForDate(
         const QDate& date
         );
 
-    QList<CalendarEvent> loadCalendarEventsInRange(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsInRange(
         const QDate& startDate,
         const QDate& endDate
         );
 
-    QList<CalendarEvent> loadUpcomingCalendarEvents(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadUpcomingCalendarEvents(
         const QDate& fromDate,
         int limit
         );
 
-    QDate findNextCalendarEventStartDate(
+    [[nodiscard]] Result<QDate> findNextCalendarEventStartDate(
         const QDate& fromDate
         );
 
-    CalendarEvent getCalendarEvent(
+    [[nodiscard]] Result<CalendarEvent> getCalendarEvent(
         int eventId
         );
 
-    QList<CalendarEvent> loadCalendarEventsForRepeatSeriesFromDate(
+    [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         );

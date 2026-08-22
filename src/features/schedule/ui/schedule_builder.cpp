@@ -86,7 +86,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
         const ClassInfo info =
             m_classService->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
 
         const QList<ClassTime>& times =
             useIntensive

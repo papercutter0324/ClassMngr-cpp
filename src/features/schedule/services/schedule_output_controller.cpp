@@ -46,7 +46,7 @@ void ScheduleOutputController::execute(
             : nullptr;
     if (settingsService && settingsService->isAvailable())
     {
-        request.userName = settingsService->load(
+        request.userName = settingsService->loadOrDefault(
             QStringLiteral("myInfo/name"),
             QString()
             ).toString();

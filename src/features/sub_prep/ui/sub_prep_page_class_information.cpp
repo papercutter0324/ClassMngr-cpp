@@ -518,11 +518,11 @@ SubPrepPage::buildClassInformation(
         source.info =
             classService->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
         source.studentCount =
             rosterService->studentCount(
                 classroom.id
-                );
+                ).value_or(0);
 
         if (source.info.teacherId > 0)
         {

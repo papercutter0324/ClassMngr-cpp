@@ -61,26 +61,26 @@ ScheduleSettingsValues load(SettingsService* settingsService)
 
     return {
         settingToBool(
-            settingsService->load(Use24HourTime, QStringLiteral("false")),
+            settingsService->loadOrDefault(Use24HourTime, QStringLiteral("false")),
             false
             ),
         settingToBool(
-            settingsService->load(
+            settingsService->loadOrDefault(
                 ShowKoreanTeacherEnglishNames,
                 QStringLiteral("false")
                 ),
             false
             ),
         settingToBool(
-            settingsService->load(ShowWeekends, QStringLiteral("false")),
+            settingsService->loadOrDefault(ShowWeekends, QStringLiteral("false")),
             false
             ),
         settingToBool(
-            settingsService->load(ShowAllHours, QStringLiteral("false")),
+            settingsService->loadOrDefault(ShowAllHours, QStringLiteral("false")),
             false
             ),
         settingToBool(
-            settingsService->load(
+            settingsService->loadOrDefault(
                 TestingAffectsM1,
                 QStringLiteral("false")
                 ),

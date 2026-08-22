@@ -84,10 +84,22 @@ QStringList daysWithValues(
             return std::unexpected(classroom.error());
         }
         data.classroom = *classroom;
-        data.info =
+        const ::Result<ClassInfo> info =
             classService->classInfo(classId);
-        data.roster =
+        if (!info)
+        {
+            return std::unexpected(info.error());
+        }
+
+        const ::Result<Roster> roster =
             rosterService->roster(classId);
+        if (!roster)
+        {
+            return std::unexpected(roster.error());
+        }
+
+        data.info = *info;
+        data.roster = *roster;
 
         if (data.classroom.id > 0)
         {

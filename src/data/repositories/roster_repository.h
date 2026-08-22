@@ -23,11 +23,11 @@ public:
         const QList<QPair<int, Roster>>& rosters
         );
 
-    Roster loadRoster(
+    [[nodiscard]] Result<Roster> loadRoster(
         int classId
         );
 
-    int getRosterStudentCount(
+    [[nodiscard]] Result<int> getRosterStudentCount(
         int classId
         );
 

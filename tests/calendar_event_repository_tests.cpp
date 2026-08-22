@@ -144,7 +144,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 repository.loadCalendarEventsInRange(
                     QDate(2026, 7, 1),
                     QDate(2026, 7, 31)
-                    )
+                    ).value_or(QList<CalendarEvent>{})
                 ),
             QStringList({
                 QStringLiteral("Overlaps Start"),
@@ -218,7 +218,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 repository.loadCalendarEventsInRange(
                     QDate(2026, 7, 1),
                     QDate(2026, 7, 31)
-                    )
+                    ).value_or(QList<CalendarEvent>{})
                 ),
             QStringList({
                 QStringLiteral("Early Time"),
@@ -287,7 +287,7 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
             repository.loadUpcomingCalendarEvents(
                 QDate(2026, 7, 5),
                 10
-                );
+                ).value_or(QList<CalendarEvent>{});
 
         QCOMPARE(upcoming.size(), 10);
         QVERIFY(!titles(upcoming).contains(QStringLiteral("Past")));
@@ -333,17 +333,15 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
                 )
             );
 
-        QCOMPARE(
-            repository.findNextCalendarEventStartDate(
-                QDate(2026, 7, 6)
-                ),
-            QDate(2026, 8, 12)
-            );
-        QVERIFY(
-            !repository.findNextCalendarEventStartDate(
-                QDate(2026, 9, 1)
-                ).isValid()
-            );
+        const Result<QDate> nextEventDate =
+            repository.findNextCalendarEventStartDate(QDate(2026, 7, 6));
+        QVERIFY(nextEventDate);
+        QCOMPARE(*nextEventDate, QDate(2026, 8, 12));
+
+        const Result<QDate> noNextEventDate =
+            repository.findNextCalendarEventStartDate(QDate(2026, 9, 1));
+        QVERIFY(noNextEventDate);
+        QVERIFY(!noNextEventDate->isValid());
     }
 
     QSqlDatabase::removeDatabase(connectionName);
@@ -421,18 +419,19 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
         QVERIFY(savedEvent);
         const int eventId = *savedEvent;
 
-        const CalendarEvent loaded =
+        const Result<CalendarEvent> loaded =
             repository.getCalendarEvent(eventId);
+        QVERIFY(loaded);
 
-        QCOMPARE(loaded.repeatSeriesId, QStringLiteral("series-1"));
+        QCOMPARE(loaded->repeatSeriesId, QStringLiteral("series-1"));
 
         CalendarEvent detached =
-            loaded;
+            *loaded;
         detached.repeatSeriesId.clear();
         repository.saveCalendarEvent(detached);
 
         QCOMPARE(
-            repository.getCalendarEvent(eventId).repeatSeriesId,
+            repository.getCalendarEvent(eventId)->repeatSeriesId,
             QString()
             );
     }
@@ -518,7 +517,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 repository.loadCalendarEventsForRepeatSeriesFromDate(
                     QStringLiteral("series-1"),
                     QDate(2026, 7, 8)
-                    )
+                    ).value_or(QList<CalendarEvent>{})
                 ),
             QStringList({
                 QStringLiteral("Series 2"),
@@ -613,7 +612,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 repository.loadCalendarEventsInRange(
                     QDate(2026, 7, 1),
                     QDate(2026, 7, 31)
-                    )
+                    ).value_or(QList<CalendarEvent>{})
                 ),
             QStringList({
                 QStringLiteral("Series 1"),
@@ -675,7 +674,7 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
         QVERIFY(repository.loadCalendarEventsInRange(
             QDate(2026, 8, 1),
             QDate(2026, 8, 31)
-            ).isEmpty());
+            )->isEmpty());
 
         QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_calendar_insert")));
         CalendarEvent existing = makeEvent(
@@ -708,7 +707,7 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
         QVERIFY(updated.error().contains(
             QStringLiteral("calendar event id %1").arg(existing.id)
             ));
-        QCOMPARE(repository.getCalendarEvent(existing.id).title,
+        QCOMPARE(repository.getCalendarEvent(existing.id)->title,
                  QStringLiteral("Existing"));
 
         QVERIFY(query.exec(QStringLiteral("DROP TRIGGER reject_calendar_update")));
@@ -741,7 +740,7 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
         QVERIFY(allDeleted.error().contains(
             QStringLiteral("Deleting all calendar events")
             ));
-        QCOMPARE(repository.getCalendarEvent(existing.id).id, existing.id);
+        QCOMPARE(repository.getCalendarEvent(existing.id)->id, existing.id);
     }
 
     QSqlDatabase::removeDatabase(connectionName);

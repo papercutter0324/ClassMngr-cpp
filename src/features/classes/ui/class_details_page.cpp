@@ -291,7 +291,7 @@ void ClassDetailsPage::loadClass(
     const ClassInfo info =
         classService->classInfo(
             classroom.id
-            );
+            ).value_or(ClassInfo{});
 
     updateTitle(info);
 
@@ -308,7 +308,7 @@ void ClassDetailsPage::loadClass(
         info.fontColor,
         rosterService->studentCount(
             classroom.id
-            )
+            ).value_or(0)
         );
 
     m_scheduleSection->loadSchedules(
@@ -435,7 +435,7 @@ bool ClassDetailsPage::saveClassInfoInternal(
     const ClassInfo currentInfo =
         classService->classInfo(
                 m_classroom.id
-                );
+                ).value_or(ClassInfo{});
 
     ClassInfo info;
     info.classId =
@@ -557,6 +557,7 @@ void ClassDetailsPage::retranslateUi()
             m_services
                 ->classService()
                 ->classInfo(m_classroom.id)
+                .value_or(ClassInfo{})
             );
     }
     else

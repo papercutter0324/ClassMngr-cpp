@@ -577,7 +577,7 @@ void SubPrepPageTests
             ->loadSetting(
                 QStringLiteral("subPrep/bookReportSpecialInstructions")
                 )
-            .toString(),
+            ->toString(),
         QStringLiteral("Bring spare books")
         );
     QCOMPARE(
@@ -585,7 +585,7 @@ void SubPrepPageTests
             ->loadSetting(
                 QStringLiteral("subPrep/subComments")
                 )
-            .toString(),
+            ->toString(),
         QStringLiteral("Updated substitute note")
         );
 }
@@ -677,7 +677,7 @@ void SubPrepPageTests
             ->loadSetting(
                 QStringLiteral("myInfo/zoomLoginId")
                 )
-            .toString(),
+            ->toString(),
         QStringLiteral("legacy@example.com")
         );
 }
@@ -754,7 +754,7 @@ void SubPrepPageTests
             ->loadSetting(
                 QStringLiteral("subPrep/classMaterials")
                 )
-            .toString(),
+            ->toString(),
         QStringLiteral("Stored database A material")
         );
 }
@@ -1541,7 +1541,7 @@ void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()
     QCOMPARE(
         services.dataService()
             ->loadSetting(QStringLiteral("myInfo/name"))
-            .toString(),
+            ->toString(),
         QStringLiteral("Jamie")
         );
 }

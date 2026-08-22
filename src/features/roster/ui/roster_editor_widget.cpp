@@ -60,7 +60,9 @@ void RosterEditorWidget::loadClass(
     Roster roster;
     if (m_services && m_services->rosterService() && m_classroom.id > 0)
     {
-        roster = m_services->rosterService()->roster(m_classroom.id);
+        roster = m_services->rosterService()
+            ->roster(m_classroom.id)
+            .value_or(Roster{});
     }
 
     m_model->setRoster(roster);

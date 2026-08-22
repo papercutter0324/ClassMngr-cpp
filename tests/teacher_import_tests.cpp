@@ -571,8 +571,9 @@ void TeacherImportTests::sortsGsTeamPositions()
         }
 
         GsTeamRepository repository(database);
-        const QList<GsTeamMember> members = repository.getAll();
-        QCOMPARE(members.size(), positions.size());
+        const Result<QList<GsTeamMember>> members = repository.getAll();
+        QVERIFY(members);
+        QCOMPARE(members->size(), positions.size());
         const QStringList expectedPositions{
             QStringLiteral("Branch Manager"),
             QStringLiteral("M3"),
@@ -584,7 +585,7 @@ void TeacherImportTests::sortsGsTeamPositions()
         };
         for (int index = 0; index < expectedPositions.size(); ++index)
         {
-            QCOMPARE(members.at(index).position, expectedPositions.at(index));
+            QCOMPARE(members->at(index).position, expectedPositions.at(index));
         }
         database.close();
     }

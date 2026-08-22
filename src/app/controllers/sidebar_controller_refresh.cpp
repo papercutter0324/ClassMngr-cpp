@@ -44,7 +44,7 @@ void SidebarController::refreshClassSidebar()
         auto classInfo =
             classes->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
 
         Teacher teacher;
 
@@ -162,7 +162,7 @@ void SidebarController::refreshTeacherSidebar()
         const ClassInfo classInfo =
             classes->classInfo(
                 classroom.id
-                );
+                ).value_or(ClassInfo{});
 
         const int teacherId =
             classInfo.teacherId;

@@ -143,7 +143,7 @@ QVariant PersonalDetailsRepository::loadSetting(
     ) const
 {
     return m_settingsService
-        ? m_settingsService->load(key, defaultValue)
+        ? m_settingsService->loadOrDefault(key, defaultValue)
         : defaultValue;
 }
 
