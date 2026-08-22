@@ -1,6 +1,7 @@
 #ifndef BASEPAGE_H
 #define BASEPAGE_H
 
+#include "core/result.h"
 #include "ui/shared/constants/options.h"
 
 #include <QMargins>
@@ -65,6 +66,9 @@ public:
     virtual void retranslateUi();
 
     virtual void clearDatabaseState();
+
+    [[nodiscard]] virtual Status prepareForActivation();
+    virtual void releaseFeatureResources();
 
     [[nodiscard]] virtual PageOutputCapabilities
         outputCapabilities() const;

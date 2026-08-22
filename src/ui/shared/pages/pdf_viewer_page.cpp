@@ -2,6 +2,8 @@
 
 #include "core/memory_usage_diagnostics.h"
 
+#include <utility>
+
 PdfViewerPage::PdfViewerPage(
     QWidget* parent
     )
@@ -152,7 +154,7 @@ void PdfViewerPage::changeEvent(
 }
 
 bool PdfViewerPage::loadPdf(
-    const PdfViewerDocumentDescriptor& descriptor
+    PdfViewerDocumentDescriptor descriptor
     )
 {
     const QString filePath =
@@ -179,7 +181,7 @@ bool PdfViewerPage::loadPdf(
         qMax<qint64>(0, QFileInfo(filePath).size())
         );
     m_currentFilePath = filePath;
-    m_documentDescriptor = descriptor;
+    m_documentDescriptor = std::move(descriptor);
     m_view->setDocument(m_document);
 
     const QPdfDocument::Error error =

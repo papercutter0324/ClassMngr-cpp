@@ -29,6 +29,8 @@
 #include <QElapsedTimer>
 #include <QDebug>
 
+#include <memory>
+
 #if defined(Q_OS_WIN)
 #include <windows.h>
 #include <psapi.h>
@@ -301,10 +303,28 @@ int main(int argc, char *argv[])
     // Splash Screen
     // =====================================================
 
-    SplashScreen splash;
+    if (
+        const Status resourcePackStatus =
+            ResourcePackManager::instance().initialize();
+        !resourcePackStatus
+        )
+    {
+        qWarning().noquote() << resourcePackStatus.error();
+    }
 
-    splash.centerOnScreen();
-    splash.show();
+    auto splashLease = ResourcePaths::Splash::acquire();
+    if (!splashLease)
+    {
+        qWarning().noquote() << splashLease.error();
+        return 1;
+    }
+
+    auto splash = std::make_unique<SplashScreen>(
+        ResourcePaths::Splash::imagePath(*splashLease)
+        );
+
+    splash->centerOnScreen();
+    splash->show();
 
     app.processEvents();
 
@@ -332,8 +352,8 @@ int main(int argc, char *argv[])
                     / AppSettings::StartupProgressSteps
                 );
 
-        splash.setMessage(message);
-        splash.setProgress(progress);
+        splash->setMessage(message);
+        splash->setProgress(progress);
 
         app.processEvents();
     };
@@ -354,7 +374,7 @@ int main(int argc, char *argv[])
         &app
         );
     updateController.setSplashScreen(
-        &splash
+        splash.get()
         );
 
     updateProgress(
@@ -381,16 +401,6 @@ int main(int argc, char *argv[])
             "Loading resource packs..."
             )
         );
-
-    if (
-        const Status resourcePackStatus =
-            ResourcePackManager::instance().initialize();
-        !resourcePackStatus
-        )
-    {
-        qWarning().noquote()
-            << resourcePackStatus.error();
-    }
 
     updateProgress(
         QCoreApplication::translate(
@@ -455,6 +465,7 @@ int main(int argc, char *argv[])
             &app,
             &window,
             &splash,
+            &splashLease,
             &updateController,
             &startupPerformance,
             &processStartupTimer,
@@ -485,7 +496,9 @@ int main(int argc, char *argv[])
                 );
         }
 
-        splash.close();
+        splash.reset();
+        splashLease->reset();
+        updateController.setSplashScreen(nullptr);
         updateController.setStartupComplete();
 
         if (startupPerformance.enabled)
@@ -514,7 +527,7 @@ int main(int argc, char *argv[])
 
     auto startFinish = [&splash, &finish]()
     {
-        splash.fadeOut(finish);
+        splash->fadeOut(finish);
     };
 
     if (remaining <= 0)

@@ -84,6 +84,18 @@ qt_add_executable(ClassMngrClassesPageTests
             ${PROJECT_SOURCE_DIR}/src
     )
 
+    add_dependencies(
+        ClassMngrClassesPageTests
+        ClassMngrtemplatesResourcePack
+    )
+
+    target_compile_definitions(ClassMngrClassesPageTests
+        PRIVATE
+            CLASSMNGR_TEST_USE_REAL_RESOURCE_PACK_MANAGER
+            CLASSMNGR_RESOURCE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
+            CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+    )
+
     target_link_libraries(ClassMngrClassesPageTests
         PRIVATE
             Qt6::Core

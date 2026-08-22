@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/memory_usage_diagnostics.h"
+#include "core/resource_paths.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
@@ -14,6 +15,7 @@
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/navigation_pill_button.h"
@@ -25,6 +27,7 @@
 #include <utility>
 
 #include <QFont>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QHideEvent>
 #include <QLabel>
@@ -135,6 +138,14 @@ bool ClassesPage::openClass(
     ClassesSection section
     )
 {
+    if (section == ClassesSection::Evaluations)
+    {
+        if (const Status status = acquireEvaluationResources(); !status)
+        {
+            return false;
+        }
+    }
+
     auto* classService =
         m_services
             ? m_services->classService()
@@ -146,6 +157,11 @@ bool ClassesPage::openClass(
 
     if (!classService || !classService->isAvailable())
     {
+        if (m_currentSection == ClassesSection::Evaluations
+            && section != ClassesSection::Evaluations)
+        {
+            releaseEvaluationResources();
+        }
         m_classes.clear();
         m_currentClassId = -1;
         m_currentSection = section;
@@ -211,11 +227,22 @@ bool ClassesPage::openClass(
 
     if (classroom.id <= 0)
     {
+        if (m_currentSection == ClassesSection::Evaluations
+            && section != ClassesSection::Evaluations)
+        {
+            releaseEvaluationResources();
+        }
         m_currentClassId = -1;
         m_currentSection = section;
         setEditorAvailable(false);
         updateHeaderText();
         return true;
+    }
+
+    if (m_currentSection == ClassesSection::Evaluations
+        && section != ClassesSection::Evaluations)
+    {
+        releaseEvaluationResources();
     }
 
     m_currentClassId = classroom.id;
@@ -441,6 +468,7 @@ void ClassesPage::refreshNavigationPreferences()
 
 void ClassesPage::clearDatabaseState()
 {
+    releaseEvaluationResources();
     m_classes.clear();
     m_currentClassId = -1;
     m_currentSection = ClassesSection::Details;
@@ -522,6 +550,18 @@ void ClassesPage::retranslateUi()
     rebuildClassTabs(m_currentClassId);
     restoreSelections();
     updateHeaderText();
+}
+
+Status ClassesPage::prepareForActivation()
+{
+    return m_currentSection == ClassesSection::Evaluations
+        ? acquireEvaluationResources()
+        : Status{};
+}
+
+void ClassesPage::releaseFeatureResources()
+{
+    releaseEvaluationResources();
 }
 
 void ClassesPage::setEmbeddedDatabaseOpen(bool databaseOpen)
@@ -1288,6 +1328,13 @@ bool ClassesPage::activateSection(
 {
     if (section == m_currentSection)
     {
+        if (section == ClassesSection::Evaluations)
+        {
+            if (const Status status = acquireEvaluationResources(); !status)
+            {
+                return false;
+            }
+        }
         loadActiveEditor();
         return true;
     }
@@ -1296,6 +1343,20 @@ bool ClassesPage::activateSection(
     {
         restoreSelections();
         return false;
+    }
+
+    if (section == ClassesSection::Evaluations)
+    {
+        if (const Status status = acquireEvaluationResources(); !status)
+        {
+            restoreSelections();
+            return false;
+        }
+    }
+
+    if (m_currentSection == ClassesSection::Evaluations)
+    {
+        releaseEvaluationResources();
     }
 
     m_currentSection = section;
@@ -1415,6 +1476,39 @@ BasePage* ClassesPage::ensureEditor(
     }
 
     return editor;
+}
+
+Status ClassesPage::acquireEvaluationResources()
+{
+    if (m_evaluationResourceLease.isValid())
+    {
+        return {};
+    }
+
+    auto lease = ResourcePaths::Templates::acquireSpeakingEval();
+    if (!lease)
+    {
+        // Focused report tests provide the legacy resource tree directly.
+        if (QDir(QStringLiteral(":/assets/templates/speaking-eval")).exists())
+        {
+            return {};
+        }
+        return std::unexpected(lease.error());
+    }
+
+    m_evaluationResourceLease = std::move(*lease);
+    return {};
+}
+
+void ClassesPage::releaseEvaluationResources()
+{
+    if (!m_evaluationResourceLease.isValid())
+    {
+        return;
+    }
+
+    releaseSpeakingEvalTemplateAssets();
+    m_evaluationResourceLease.reset();
 }
 
 void ClassesPage::loadActiveEditor()

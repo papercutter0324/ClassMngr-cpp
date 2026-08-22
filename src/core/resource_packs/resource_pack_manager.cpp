@@ -1,5 +1,8 @@
 #include "resource_pack_manager.h"
 
+#include "core/memory_usage_diagnostics.h"
+
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
@@ -10,48 +13,116 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 
+#include <utility>
+
 namespace
 {
 constexpr int InstalledMetadataSchemaVersion = 1;
 
-QString sha256ForFile(
-    const QString& filePath
-    )
+QString sha256ForFile(const QString& filePath)
 {
     QFile file(filePath);
-
     if (!file.open(QIODevice::ReadOnly))
     {
-        return QString();
+        return {};
     }
 
     QCryptographicHash hash(QCryptographicHash::Sha256);
-
     while (!file.atEnd())
     {
-        const QByteArray data =
-            file.read(1024 * 1024);
-
+        const QByteArray data = file.read(1024 * 1024);
         if (data.isEmpty() && file.error() != QFile::NoError)
         {
-            return QString();
+            return {};
         }
-
         hash.addData(data);
     }
-
-    return QString::fromLatin1(
-        hash.result().toHex()
-        );
+    return QString::fromLatin1(hash.result().toHex());
 }
 
-QString packRoot(
-    const QString& packId
-    )
+QString packRoot(const QString& packId)
 {
-    return QStringLiteral(":/resource-packs/%1")
-        .arg(packId);
+    return QStringLiteral(":/resource-packs/%1").arg(packId);
 }
+
+QString defaultBaselineDirectory()
+{
+#ifdef CLASSMNGR_RESOURCE_PACK_DIR
+    const QString configured = QStringLiteral(CLASSMNGR_RESOURCE_PACK_DIR);
+    if (!configured.trimmed().isEmpty())
+    {
+        return QDir::cleanPath(configured);
+    }
+#endif
+
+    const QString appDirectory = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_MACOS
+    return QDir::cleanPath(appDirectory + QStringLiteral("/../Resources/resource-packs"));
+#else
+    return QDir::cleanPath(appDirectory + QStringLiteral("/resources/resource-packs"));
+#endif
+}
+}
+
+ResourcePackLease::ResourcePackLease(
+    ResourcePackManager* manager,
+    QString packId,
+    QString root
+    )
+    : m_manager(manager)
+    , m_packId(std::move(packId))
+    , m_root(std::move(root))
+{
+}
+
+ResourcePackLease::~ResourcePackLease()
+{
+    reset();
+}
+
+ResourcePackLease::ResourcePackLease(ResourcePackLease&& other) noexcept
+    : m_manager(std::exchange(other.m_manager, nullptr))
+    , m_packId(std::move(other.m_packId))
+    , m_root(std::move(other.m_root))
+{
+}
+
+ResourcePackLease& ResourcePackLease::operator=(ResourcePackLease&& other) noexcept
+{
+    if (this != &other)
+    {
+        reset();
+        m_manager = std::exchange(other.m_manager, nullptr);
+        m_packId = std::move(other.m_packId);
+        m_root = std::move(other.m_root);
+    }
+    return *this;
+}
+
+bool ResourcePackLease::isValid() const
+{
+    return m_manager != nullptr;
+}
+
+QString ResourcePackLease::packId() const
+{
+    return m_packId;
+}
+
+QString ResourcePackLease::root() const
+{
+    return m_root;
+}
+
+void ResourcePackLease::reset()
+{
+    if (m_manager)
+    {
+        m_manager->release(m_packId);
+    }
+    m_manager = nullptr;
+    m_packId.clear();
+    m_root.clear();
 }
 
 ResourcePackManager& ResourcePackManager::instance()
@@ -61,53 +132,36 @@ ResourcePackManager& ResourcePackManager::instance()
 }
 
 ResourcePackManager::ResourcePackManager(
-    QString storageDirectory
+    QString storageDirectory,
+    QString baselineDirectory
     )
     : m_definitions({
-        {
-            QStringLiteral("campuses"),
-            QStringLiteral(":/assets/campuses"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("templates"),
-            QStringLiteral(":/assets/templates"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("roster-designs"),
-            QStringLiteral(":/assets/roster-designs"),
-            Version(1, 0, 0)
-        },
-        {
-            QStringLiteral("documents"),
-            QStringLiteral(":/assets/documents"),
-            Version(1, 0, 0)
-        }
+        {QStringLiteral("campuses"), Version(1, 0, 0), true},
+        {QStringLiteral("templates"), Version(1, 0, 0), true},
+        {QStringLiteral("roster-designs"), Version(1, 0, 0), true},
+        {QStringLiteral("documents"), Version(1, 0, 0), true},
+        {QStringLiteral("files"), Version(1, 0, 0), false},
+        {QStringLiteral("images"), Version(1, 0, 0), false},
+        {QStringLiteral("splash"), Version(1, 0, 0), false}
     })
 {
     if (!storageDirectory.trimmed().isEmpty())
     {
-        m_storageDirectory =
-            QDir::cleanPath(storageDirectory);
-        return;
+        m_storageDirectory = QDir::cleanPath(storageDirectory);
     }
-
-    QString baseDirectory =
-        QStandardPaths::writableLocation(
-            QStandardPaths::AppDataLocation
-            );
-
-    if (baseDirectory.isEmpty())
+    else
     {
-        baseDirectory =
-            QDir::homePath() + QStringLiteral("/.ClassMngr");
+        QString baseDirectory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        if (baseDirectory.isEmpty())
+        {
+            baseDirectory = QDir::homePath() + QStringLiteral("/.ClassMngr");
+        }
+        m_storageDirectory = QDir(baseDirectory).filePath(QStringLiteral("resource-packs"));
     }
 
-    m_storageDirectory =
-        QDir(baseDirectory).filePath(
-            QStringLiteral("resource-packs")
-            );
+    m_baselineDirectory = baselineDirectory.trimmed().isEmpty()
+        ? defaultBaselineDirectory()
+        : QDir::cleanPath(baselineDirectory);
 }
 
 Status ResourcePackManager::initialize()
@@ -116,90 +170,79 @@ Status ResourcePackManager::initialize()
     {
         return {};
     }
-
-    m_initialized =
-        true;
+    m_initialized = true;
 
     QDir directory(m_storageDirectory);
-
     if (!directory.exists() && !directory.mkpath(QStringLiteral(".")))
     {
-        return std::unexpected(
-            QStringLiteral("Unable to create the resource-pack directory.")
-            );
+        return std::unexpected(QStringLiteral("Unable to create the resource-pack directory."));
     }
 
     QStringList errors;
-
     for (const Definition& packDefinition : m_definitions)
     {
-        if (const Status status = loadInstalledPack(packDefinition); !status)
+        if (const Status status = discoverInstalledPack(packDefinition); !status)
         {
             errors.append(status.error());
         }
     }
-
     removeStalePackFiles();
+    return errors.isEmpty()
+        ? Status{}
+        : Status(std::unexpected(errors.join(QLatin1Char('\n'))));
+}
 
-    if (!errors.isEmpty())
+Result<ResourcePackLease> ResourcePackManager::acquire(const QString& packId)
+{
+    [[maybe_unused]] const Status initialized = initialize();
+    const Definition* packDefinition = definition(packId);
+    if (!packDefinition)
     {
-        return std::unexpected(
-            errors.join(QLatin1Char('\n'))
-            );
+        return std::unexpected(QStringLiteral("Unknown resource pack '%1'.").arg(packId));
+    }
+    if (const Status status = mount(*packDefinition); !status)
+    {
+        return std::unexpected(status.error());
     }
 
-    return {};
+    MountedPack& mounted = m_mountedPacks[packId];
+    ++mounted.leaseCount;
+    return ResourcePackLease(this, packId, mounted.root);
+}
+
+bool ResourcePackManager::isMounted(const QString& packId) const
+{
+    return m_mountedPacks.contains(packId);
+}
+
+QString ResourcePackManager::activeRoot(const QString& packId) const
+{
+    const auto mounted = m_mountedPacks.constFind(packId);
+    return mounted == m_mountedPacks.cend() ? QString() : mounted->root;
 }
 
 QStringList ResourcePackManager::knownPackIds() const
 {
     QStringList ids;
-
     for (const Definition& packDefinition : m_definitions)
     {
-        ids.append(packDefinition.id);
+        if (packDefinition.updateable)
+        {
+            ids.append(packDefinition.id);
+        }
     }
-
     return ids;
 }
 
-QString ResourcePackManager::activeRoot(
-    const QString& packId
-    ) const
+Version ResourcePackManager::currentVersion(const QString& packId) const
 {
-    return m_activeRoots.value(packId);
-}
-
-QString ResourcePackManager::embeddedRoot(
-    const QString& packId
-    ) const
-{
-    const Definition* packDefinition =
-        definition(packId);
-
-    return packDefinition
-        ? packDefinition->embeddedRoot
-        : QString();
-}
-
-Version ResourcePackManager::currentVersion(
-    const QString& packId
-    ) const
-{
-    const auto activeIt =
-        m_activeVersions.constFind(packId);
-
-    if (activeIt != m_activeVersions.constEnd())
+    const auto installed = m_installedPacks.constFind(packId);
+    if (installed != m_installedPacks.cend())
     {
-        return activeIt.value();
+        return installed->version;
     }
-
-    const Definition* packDefinition =
-        definition(packId);
-
-    return packDefinition
-        ? packDefinition->embeddedVersion
-        : Version();
+    const Definition* packDefinition = definition(packId);
+    return packDefinition ? packDefinition->baselineVersion : Version();
 }
 
 QString ResourcePackManager::storageDirectory() const
@@ -207,155 +250,79 @@ QString ResourcePackManager::storageDirectory() const
     return m_storageDirectory;
 }
 
+QString ResourcePackManager::baselineDirectory() const
+{
+    return m_baselineDirectory;
+}
+
 Status ResourcePackManager::stagePack(
     const ResourcePackArtifact& artifact,
     const QString& downloadedFilePath
     )
 {
-    if (!definition(artifact.id))
+    const Definition* packDefinition = definition(artifact.id);
+    if (!packDefinition || !packDefinition->updateable)
     {
-        return std::unexpected(
-            QStringLiteral("Unknown resource pack '%1'.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Unknown resource pack '%1'.").arg(artifact.id));
     }
-
     if (!artifact.version.isValid() || artifact.version <= currentVersion(artifact.id))
     {
-        return std::unexpected(
-            QStringLiteral("Resource pack '%1' is not newer than the active or embedded version.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Resource pack '%1' is not newer than the installed baseline.").arg(artifact.id));
     }
 
     const QFileInfo downloadedFile(downloadedFilePath);
-
-    if (
-        !downloadedFile.isFile()
-        || downloadedFile.size() != artifact.sizeBytes
-        || sha256ForFile(downloadedFilePath).compare(
-            artifact.sha256,
-            Qt::CaseInsensitive
-            ) != 0
-        )
+    if (!downloadedFile.isFile() || downloadedFile.size() != artifact.sizeBytes
+        || sha256ForFile(downloadedFilePath).compare(artifact.sha256, Qt::CaseInsensitive) != 0)
     {
-        return std::unexpected(
-            QStringLiteral("Downloaded resource pack '%1' failed its integrity check.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Downloaded resource pack '%1' failed its integrity check.").arg(artifact.id));
     }
 
-    const QString validationRoot =
-        QStringLiteral("/__classmngr_pack_validation__/%1")
-            .arg(artifact.id);
-
+    const QString validationRoot = QStringLiteral("/__classmngr_pack_validation__/%1").arg(artifact.id);
     if (!QResource::registerResource(downloadedFilePath, validationRoot))
     {
-        return std::unexpected(
-            QStringLiteral("Downloaded resource pack '%1' is not a valid RCC file.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Downloaded resource pack '%1' is not a valid RCC file.").arg(artifact.id));
     }
-
-    const QString expectedValidationPath =
-        QStringLiteral(":%1/resource-packs/%2")
-            .arg(validationRoot, artifact.id);
-
-    const bool hasExpectedRoot =
-        QDir(expectedValidationPath).exists();
-
-    QResource::unregisterResource(
-        downloadedFilePath,
-        validationRoot
-        );
-
+    const bool hasExpectedRoot = QDir(QStringLiteral(":%1/resource-packs/%2").arg(validationRoot, artifact.id)).exists();
+    QResource::unregisterResource(downloadedFilePath, validationRoot);
     if (!hasExpectedRoot)
     {
-        return std::unexpected(
-            QStringLiteral("Resource pack '%1' does not contain /resource-packs/%1.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Resource pack '%1' has the wrong root.").arg(artifact.id));
     }
 
-    const QString finalFileName =
-        QStringLiteral("%1-%2.rcc")
-            .arg(
-                artifact.id,
-                artifact.version.toString()
-                );
-
-    const QString finalPath =
-        QDir(m_storageDirectory).filePath(finalFileName);
-
+    const QString finalFileName = QStringLiteral("%1-%2.rcc").arg(artifact.id, artifact.version.toString());
+    const QString finalPath = QDir(m_storageDirectory).filePath(finalFileName);
     if (QFileInfo(downloadedFilePath).absoluteFilePath() != QFileInfo(finalPath).absoluteFilePath())
     {
         QFile::remove(finalPath);
-
         if (!QFile::rename(downloadedFilePath, finalPath))
         {
-            return std::unexpected(
-                QStringLiteral("Unable to finalize resource pack '%1'.")
-                    .arg(artifact.id)
-                );
+            return std::unexpected(QStringLiteral("Unable to finalize resource pack '%1'.").arg(artifact.id));
         }
     }
 
     QJsonObject metadata;
-    metadata.insert(
-        QStringLiteral("schemaVersion"),
-        InstalledMetadataSchemaVersion
-        );
-    metadata.insert(
-        QStringLiteral("id"),
-        artifact.id
-        );
-    metadata.insert(
-        QStringLiteral("version"),
-        artifact.version.toString()
-        );
-    metadata.insert(
-        QStringLiteral("fileName"),
-        finalFileName
-        );
-    metadata.insert(
-        QStringLiteral("sha256"),
-        artifact.sha256.toLower()
-        );
-
-    QSaveFile metadataFile(
-        QDir(m_storageDirectory).filePath(
-            artifact.id + QStringLiteral(".json")
-            )
-        );
-
+    metadata.insert(QStringLiteral("schemaVersion"), InstalledMetadataSchemaVersion);
+    metadata.insert(QStringLiteral("id"), artifact.id);
+    metadata.insert(QStringLiteral("version"), artifact.version.toString());
+    metadata.insert(QStringLiteral("fileName"), finalFileName);
+    metadata.insert(QStringLiteral("sha256"), artifact.sha256.toLower());
+    QSaveFile metadataFile(QDir(m_storageDirectory).filePath(artifact.id + QStringLiteral(".json")));
     if (!metadataFile.open(QIODevice::WriteOnly))
     {
         QFile::remove(finalPath);
-        return std::unexpected(
-            QStringLiteral("Unable to write metadata for resource pack '%1'.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Unable to write resource-pack metadata."));
     }
-
-    metadataFile.write(
-        QJsonDocument(metadata).toJson(QJsonDocument::Indented)
-        );
-
+    metadataFile.write(QJsonDocument(metadata).toJson(QJsonDocument::Indented));
     if (!metadataFile.commit())
     {
         QFile::remove(finalPath);
-        return std::unexpected(
-            QStringLiteral("Unable to commit metadata for resource pack '%1'.")
-                .arg(artifact.id)
-            );
+        return std::unexpected(QStringLiteral("Unable to commit resource-pack metadata."));
     }
-
+    m_installedPacks.insert(artifact.id, {QFileInfo(finalPath).absoluteFilePath(), artifact.version});
     return {};
 }
 
-const ResourcePackManager::Definition* ResourcePackManager::definition(
-    const QString& packId
-    ) const
+const ResourcePackManager::Definition* ResourcePackManager::definition(const QString& packId) const
 {
     for (const Definition& packDefinition : m_definitions)
     {
@@ -364,178 +331,127 @@ const ResourcePackManager::Definition* ResourcePackManager::definition(
             return &packDefinition;
         }
     }
-
     return nullptr;
 }
 
-Status ResourcePackManager::loadInstalledPack(
-    const Definition& packDefinition
-    )
+Status ResourcePackManager::discoverInstalledPack(const Definition& packDefinition)
 {
-    const QString metadataPath =
-        QDir(m_storageDirectory).filePath(
-            packDefinition.id + QStringLiteral(".json")
-            );
-
-    QFile metadataFile(metadataPath);
-
+    if (!packDefinition.updateable)
+    {
+        return {};
+    }
+    QFile metadataFile(QDir(m_storageDirectory).filePath(packDefinition.id + QStringLiteral(".json")));
     if (!metadataFile.exists())
     {
         return {};
     }
-
     if (!metadataFile.open(QIODevice::ReadOnly))
     {
-        return std::unexpected(
-            QStringLiteral("Unable to read metadata for resource pack '%1'; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Unable to read metadata for resource pack '%1'.").arg(packDefinition.id));
     }
-
-    const QJsonDocument document =
-        QJsonDocument::fromJson(metadataFile.readAll());
-
-    if (!document.isObject())
+    const QJsonDocument document = QJsonDocument::fromJson(metadataFile.readAll());
+    const QJsonObject metadata = document.object();
+    const auto version = Version::parse(metadata.value(QStringLiteral("version")).toString());
+    const QString fileName = metadata.value(QStringLiteral("fileName")).toString();
+    const QString expectedHash = metadata.value(QStringLiteral("sha256")).toString().toLower();
+    if (!document.isObject()
+        || metadata.value(QStringLiteral("schemaVersion")).toInt(-1) != InstalledMetadataSchemaVersion
+        || metadata.value(QStringLiteral("id")).toString() != packDefinition.id
+        || !version || *version <= packDefinition.baselineVersion
+        || fileName.isEmpty() || QFileInfo(fileName).fileName() != fileName
+        || expectedHash.size() != 64)
     {
-        return std::unexpected(
-            QStringLiteral("Metadata for resource pack '%1' is invalid; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Metadata for resource pack '%1' is invalid.").arg(packDefinition.id));
     }
-
-    const QJsonObject metadata =
-        document.object();
-
-    if (
-        metadata.value(QStringLiteral("schemaVersion")).toInt(-1)
-            != InstalledMetadataSchemaVersion
-        || metadata.value(QStringLiteral("id")).toString()
-            != packDefinition.id
-        )
+    const QString filePath = QDir(m_storageDirectory).filePath(fileName);
+    if (!QFileInfo::exists(filePath)
+        || sha256ForFile(filePath).compare(expectedHash, Qt::CaseInsensitive) != 0)
     {
-        return std::unexpected(
-            QStringLiteral("Metadata for resource pack '%1' does not match the installed pack; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Resource pack '%1' failed its integrity check.").arg(packDefinition.id));
     }
+    m_installedPacks.insert(packDefinition.id, {QFileInfo(filePath).absoluteFilePath(), *version});
+    return {};
+}
 
-    const auto version =
-        Version::parse(
-            metadata.value(QStringLiteral("version")).toString()
-            );
-
-    const QString fileName =
-        metadata.value(QStringLiteral("fileName")).toString();
-
-    const QString expectedHash =
-        metadata.value(QStringLiteral("sha256")).toString().toLower();
-
-    if (
-        !version
-        || *version <= packDefinition.embeddedVersion
-        || fileName.isEmpty()
-        || QFileInfo(fileName).fileName() != fileName
-        || expectedHash.size() != 64
-        )
+Status ResourcePackManager::mount(const Definition& packDefinition)
+{
+    if (m_mountedPacks.contains(packDefinition.id))
     {
-        return std::unexpected(
-            QStringLiteral("Metadata for resource pack '%1' is invalid; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return {};
     }
-
-    const QString filePath =
-        QDir(m_storageDirectory).filePath(fileName);
-
-    if (
-        !QFileInfo::exists(filePath)
-        || sha256ForFile(filePath).compare(expectedHash, Qt::CaseInsensitive) != 0
-        )
+    const auto installed = m_installedPacks.constFind(packDefinition.id);
+    const QString filePath = installed != m_installedPacks.cend()
+        ? installed->filePath
+        : QDir(m_baselineDirectory).filePath(packDefinition.id + QStringLiteral(".rcc"));
+    const Version version = installed != m_installedPacks.cend()
+        ? installed->version
+        : packDefinition.baselineVersion;
+    if (!QFileInfo(filePath).isFile())
     {
-        return std::unexpected(
-            QStringLiteral("Resource pack '%1' failed its integrity check; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Required resource pack '%1' is unavailable.").arg(packDefinition.id));
     }
-
     if (!QResource::registerResource(filePath))
     {
-        return std::unexpected(
-            QStringLiteral("Unable to mount resource pack '%1'; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Unable to mount resource pack '%1'.").arg(packDefinition.id));
     }
-
-    const QString root =
-        packRoot(packDefinition.id);
-
+    const QString root = packRoot(packDefinition.id);
     if (!QDir(root).exists())
     {
         QResource::unregisterResource(filePath);
-        return std::unexpected(
-            QStringLiteral("Resource pack '%1' has the wrong resource root; using embedded resources.")
-                .arg(packDefinition.id)
-            );
+        return std::unexpected(QStringLiteral("Resource pack '%1' has the wrong root.").arg(packDefinition.id));
     }
-
-    m_activeRoots.insert(
-        packDefinition.id,
-        root
+    m_mountedPacks.insert(packDefinition.id, {QFileInfo(filePath).absoluteFilePath(), root, version, 0});
+    MemoryUsageDiagnostics::recordEvent(
+        QStringLiteral("resource-pack-mounted"),
+        QStringLiteral("%1 (%2)")
+            .arg(packDefinition.id, version.toString())
         );
-    m_activeVersions.insert(
-        packDefinition.id,
-        *version
-        );
-    m_activeFiles.insert(
-        packDefinition.id,
-        QFileInfo(filePath).absoluteFilePath()
-        );
-
     return {};
+}
+
+void ResourcePackManager::release(const QString& packId)
+{
+    auto mounted = m_mountedPacks.find(packId);
+    if (mounted == m_mountedPacks.end())
+    {
+        return;
+    }
+    if (--mounted->leaseCount > 0)
+    {
+        return;
+    }
+    const QString filePath = mounted->filePath;
+    m_mountedPacks.erase(mounted);
+    QResource::unregisterResource(filePath);
+    MemoryUsageDiagnostics::recordEvent(
+        QStringLiteral("resource-pack-unmounted"),
+        packId
+        );
 }
 
 void ResourcePackManager::removeStalePackFiles() const
 {
     QDir directory(m_storageDirectory);
-
-    const QStringList files =
-        directory.entryList(
-            {QStringLiteral("*.rcc")},
-            QDir::Files
-            );
-
-    const QList<QString> activeFiles =
-        m_activeFiles.values();
-
-    for (const QString& fileName : files)
+    QStringList activeFiles;
+    for (const InstalledPack& pack : m_installedPacks)
     {
-        const QString absolutePath =
-            QFileInfo(directory.filePath(fileName)).absoluteFilePath();
-
-        if (!activeFiles.contains(absolutePath))
+        activeFiles.append(QFileInfo(pack.filePath).absoluteFilePath());
+    }
+    for (const QString& fileName : directory.entryList({QStringLiteral("*.rcc")}, QDir::Files))
+    {
+        const QString path = QFileInfo(directory.filePath(fileName)).absoluteFilePath();
+        if (!activeFiles.contains(path))
         {
-            QFile::remove(absolutePath);
+            QFile::remove(path);
         }
     }
 
-    const QStringList retiredPackIds = {
-        QStringLiteral("book-reports"),
-        QStringLiteral("essay"),
-        QStringLiteral("essay-topics"),
-        QStringLiteral("evaluations"),
-        QStringLiteral("guides"),
-        QStringLiteral("lessons"),
-        QStringLiteral("sub-prep"),
-        QStringLiteral("training"),
-        QStringLiteral("vacation")
-    };
-
-    for (const QString& packId : retiredPackIds)
+    for (const QString& fileName : directory.entryList({QStringLiteral("*.json")}, QDir::Files))
     {
-        QFile::remove(
-            directory.filePath(
-                packId + QStringLiteral(".json")
-                )
-            );
+        const QString packId = QFileInfo(fileName).completeBaseName();
+        if (!definition(packId))
+        {
+            QFile::remove(directory.filePath(fileName));
+        }
     }
 }

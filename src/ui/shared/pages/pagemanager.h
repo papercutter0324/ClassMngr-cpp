@@ -2,6 +2,7 @@
 #define PAGEMANAGER_H
 
 #include "core/memory_usage_diagnostics.h"
+#include "core/resource_packs/resource_pack_manager.h"
 
 #include <QDateTime>
 #include <QMap>
@@ -223,6 +224,7 @@ private:
         DocumentPageSpacing::Small;
     DocumentViewerBackground m_documentViewerBackground =
         DocumentViewerBackground::Default;
+    ResourcePackLease m_campusResourceLease;
 
     // =====================================================
     // Services
@@ -250,8 +252,11 @@ private:
         BasePage* page
         );
 
+    [[nodiscard]] Status preparePageResources(PageType type);
+    [[nodiscard]] static bool usesCampusResources(PageType type);
     void releaseLeavingPageResources(
-        BasePage* page
+        BasePage* page,
+        PageType nextType
         );
 
 

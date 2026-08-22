@@ -1,8 +1,10 @@
 #include "speaking_eval_report_assets_p.h"
 
+#include "core/fontmanager.h"
 #include "core/resource_paths.h"
 
 #include <QFile>
+#include <QDir>
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QJsonArray>
@@ -12,11 +14,21 @@
 #include <QStringList>
 
 #include <cmath>
+#include <optional>
 
 namespace
 {
-constexpr auto AssetRoot =
-    ":/assets/templates/speaking-eval";
+QString assetRoot()
+{
+    const QString activeRoot =
+        ResourcePackManager::instance().activeRoot(
+            QStringLiteral("templates")
+            );
+
+    return activeRoot.isEmpty()
+        ? QStringLiteral(":/assets/templates/speaking-eval")
+        : QDir(activeRoot).filePath(QStringLiteral("speaking-eval"));
+}
 
 const QStringList& gradeNames()
 {
@@ -579,11 +591,13 @@ struct TemplateFontFamilies
     QString inter;
     QString pretendard;
     QString handwritten;
+    QList<int> registeredFontIds;
 };
 
 QString loadApplicationFont(
     const QString& path,
-    const QString& familyFragment
+    const QString& familyFragment,
+    QList<int>* registeredFontIds
     )
 {
     if (!QFile::exists(path))
@@ -596,6 +610,11 @@ QString loadApplicationFont(
     if (id < 0)
     {
         return {};
+    }
+
+    if (registeredFontIds)
+    {
+        registeredFontIds->append(id);
     }
 
     const QStringList families =
@@ -623,20 +642,16 @@ TemplateFontFamilies loadTemplateFonts()
         return fonts;
     }
 
-    fonts.inter =
-        loadApplicationFont(
-            ResourcePaths::Fonts::inter(),
-            QStringLiteral("Inter")
-            );
-    fonts.pretendard =
-        loadApplicationFont(
-            ResourcePaths::Fonts::pretendard(),
-            QStringLiteral("Pretendard")
-            );
+    // Inter and Pretendard are registered for the application's global UI.
+    // Reuse those registrations so releasing this template cache cannot
+    // remove a font that the rest of the application still owns.
+    fonts.inter = FontManager::getUiFont().family();
+    fonts.pretendard = FontManager::getKoreanFont().family();
     fonts.handwritten =
         loadApplicationFont(
             ResourcePaths::Fonts::justAnotherHand(),
-            QStringLiteral("Just Another Hand")
+            QStringLiteral("Just Another Hand"),
+            &fonts.registeredFontIds
             );
 
     QStringList missing;
@@ -665,11 +680,27 @@ TemplateFontFamilies loadTemplateFonts()
     return fonts;
 }
 
+struct TemplateAssetCache
+{
+    std::optional<TemplateFontFamilies> fonts;
+    std::optional<SpeakingEvalTemplateAssets> standard;
+    std::optional<SpeakingEvalTemplateAssets> advanced;
+};
+
+TemplateAssetCache& templateAssetCache()
+{
+    static TemplateAssetCache cache;
+    return cache;
+}
+
 const TemplateFontFamilies& templateFonts()
 {
-    static const TemplateFontFamilies fonts =
-        loadTemplateFonts();
-    return fonts;
+    TemplateAssetCache& cache = templateAssetCache();
+    if (!cache.fonts)
+    {
+        cache.fonts = loadTemplateFonts();
+    }
+    return *cache.fonts;
 }
 
 SpeakingEvalTemplateAssets loadTemplateAssets(
@@ -684,7 +715,7 @@ SpeakingEvalTemplateAssets loadTemplateAssets(
     const QString manifestPath =
         QStringLiteral("%1/%2-manifest.json")
             .arg(
-                QString::fromUtf8(AssetRoot),
+                assetRoot(),
                 kind
                 );
 
@@ -781,7 +812,7 @@ SpeakingEvalTemplateAssets loadTemplateAssets(
     }
 
     const QString assetDirectory =
-        QStringLiteral("%1/").arg(QString::fromUtf8(AssetRoot));
+        QStringLiteral("%1/").arg(assetRoot());
     if (!assets.background.load(assetDirectory + backgroundName)
         || !assets.sprites.load(assetDirectory + spriteName)
         || !assets.sprites.hasAlphaChannel()
@@ -1165,14 +1196,37 @@ const SpeakingEvalTemplateAssets& speakingEvalTemplateAssets(
     SpeakingEvalReportTemplate reportTemplate
     )
 {
-    static const SpeakingEvalTemplateAssets standard =
-        loadTemplateAssets(SpeakingEvalReportTemplate::Standard);
-    static const SpeakingEvalTemplateAssets advanced =
-        loadTemplateAssets(SpeakingEvalReportTemplate::Advanced);
+    TemplateAssetCache& cache = templateAssetCache();
+    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
+    {
+        if (!cache.advanced)
+        {
+            cache.advanced = loadTemplateAssets(reportTemplate);
+        }
+        return *cache.advanced;
+    }
 
-    return reportTemplate == SpeakingEvalReportTemplate::Advanced
-        ? advanced
-        : standard;
+    if (!cache.standard)
+    {
+        cache.standard = loadTemplateAssets(reportTemplate);
+    }
+    return *cache.standard;
+}
+
+void releaseSpeakingEvalTemplateAssets()
+{
+    TemplateAssetCache& cache = templateAssetCache();
+    cache.standard.reset();
+    cache.advanced.reset();
+
+    if (cache.fonts)
+    {
+        for (const int fontId : cache.fonts->registeredFontIds)
+        {
+            QFontDatabase::removeApplicationFont(fontId);
+        }
+        cache.fonts.reset();
+    }
 }
 
 const SpeakingEvalFieldAsset* speakingEvalFieldAsset(

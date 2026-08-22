@@ -121,6 +121,7 @@ private slots:
     void classInfoShowsInlineValidationAndBlocksManualSave();
     void speakingEvaluationShowsInlineValidationAndBlocksManualSave();
     void evaluationsSectionShowsSelectedSpeakingEvaluation();
+    void evaluationTemplatePackReleasesAndReacquiresAcrossSections();
     void headerKeyboardReplacesEmbeddedRosterButton();
 };
 
@@ -612,6 +613,26 @@ void ClassesPageTests::evaluationsSectionShowsSelectedSpeakingEvaluation()
             .data()
             .toString(),
         QStringLiteral("Summer Student"));
+}
+
+void ClassesPageTests::
+    evaluationTemplatePackReleasesAndReacquiresAcrossSections()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    ResourcePackManager& resourcePacks = ResourcePackManager::instance();
+
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QVERIFY(resourcePacks.isMounted(QStringLiteral("templates")));
+
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    QVERIFY(!resourcePacks.isMounted(QStringLiteral("templates")));
+
+    QVERIFY(page.openClass(42, ClassesSection::Evaluations));
+    QVERIFY(resourcePacks.isMounted(QStringLiteral("templates")));
+
+    page.releaseFeatureResources();
+    QVERIFY(!resourcePacks.isMounted(QStringLiteral("templates")));
 }
 
 void ClassesPageTests::headerKeyboardReplacesEmbeddedRosterButton()

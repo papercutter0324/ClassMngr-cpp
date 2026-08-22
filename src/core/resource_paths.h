@@ -14,6 +14,23 @@
 
 namespace ResourcePaths::Detail
 {
+inline Result<ResourcePackLease> acquirePack(
+    const QString& packId
+    )
+{
+    return ResourcePackManager::instance().acquire(packId);
+}
+
+inline QString leasedPath(
+    const ResourcePackLease& lease,
+    const QString& relativePath = QString()
+    )
+{
+    return relativePath.isEmpty()
+        ? lease.root()
+        : QDir(lease.root()).filePath(relativePath);
+}
+
 inline QString activePackPath(
     const QString& packId,
     const QString& relativePath = QString()
@@ -148,6 +165,51 @@ inline QString splash()
 }
 }
 
+namespace ResourcePaths::Splash
+{
+inline Result<ResourcePackLease> acquire()
+{
+    return Detail::acquirePack(QStringLiteral("splash"));
+}
+
+inline QString imagePath(const ResourcePackLease& lease)
+{
+    return Detail::leasedPath(lease, QStringLiteral("splash.png"));
+}
+}
+
+namespace ResourcePaths::DynamicImages
+{
+inline Result<ResourcePackLease> acquire()
+{
+    return Detail::acquirePack(QStringLiteral("images"));
+}
+
+inline QString filePath(
+    const ResourcePackLease& lease,
+    const QString& relativePath
+    )
+{
+    return Detail::leasedPath(lease, relativePath);
+}
+}
+
+namespace ResourcePaths::Files
+{
+inline Result<ResourcePackLease> acquire()
+{
+    return Detail::acquirePack(QStringLiteral("files"));
+}
+
+inline QString filePath(
+    const ResourcePackLease& lease,
+    const QString& relativePath
+    )
+{
+    return Detail::leasedPath(lease, relativePath);
+}
+}
+
 namespace ResourcePaths::Fonts
 {
 inline constexpr auto Inter =
@@ -236,6 +298,16 @@ inline QString directory()
         ? QStringLiteral(":/assets/templates")
         : packPath;
 }
+
+inline Result<ResourcePackLease> acquireSpeakingEval()
+{
+    return Detail::acquirePack(QStringLiteral("templates"));
+}
+
+inline QString speakingEvalDirectory(const ResourcePackLease& lease)
+{
+    return Detail::leasedPath(lease, QStringLiteral("speaking-eval"));
+}
 }
 
 namespace ResourcePaths::Campuses
@@ -312,6 +384,16 @@ inline QString directory()
 
     return QString::fromUtf8(Directory);
 }
+
+inline Result<ResourcePackLease> acquire()
+{
+    return Detail::acquirePack(QStringLiteral("campuses"));
+}
+
+inline QString directory(const ResourcePackLease& lease)
+{
+    return Detail::leasedPath(lease);
+}
 }
 
 namespace ResourcePaths::RosterDesigns
@@ -367,6 +449,24 @@ inline QString filePath(
         QDir(QStringLiteral(":/assets/documents"))
             .filePath(relativePath)
         );
+}
+
+inline Result<ResourcePackLease> acquire()
+{
+    return Detail::acquirePack(QStringLiteral("documents"));
+}
+
+inline QString directory(const ResourcePackLease& lease)
+{
+    return Detail::leasedPath(lease);
+}
+
+inline QString filePath(
+    const ResourcePackLease& lease,
+    const QString& relativePath
+    )
+{
+    return Detail::leasedPath(lease, relativePath);
 }
 }
 

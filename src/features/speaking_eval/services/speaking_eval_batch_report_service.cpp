@@ -10,6 +10,7 @@
 
 #include "core/utils/file_name_utils.h"
 #include "core/zip_archive_writer.h"
+#include "core/resource_paths.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
@@ -509,6 +510,12 @@ Result exportReports(
     SpeakingEvalPowerPointWorkspace powerPointWorkspace;
     if (request.renderer == Renderer::PowerPoint)
     {
+        auto documentsLease = ResourcePaths::Documents::acquire();
+        if (!documentsLease)
+        {
+            return failed(documentsLease.error());
+        }
+
         if (!powerPointWorkspace.prepare(
                 stagingDirectory.path(),
                 &errorMessage
@@ -540,7 +547,8 @@ Result exportReports(
             SpeakingEvalPowerPointJobModel::build(
                 request.reports,
                 powerPointPdfPaths,
-                powerPointWorkspace.automationDirectory()
+                powerPointWorkspace.automationDirectory(),
+                ResourcePaths::Documents::directory(*documentsLease)
                 );
         const PowerPointBatchStatus powerPointStatus =
             renderPowerPointBatch(

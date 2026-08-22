@@ -29,6 +29,8 @@ struct TemplateProfile
     bool signatureAlignsBottomLeft = false;
     bool scoreTableOnMaster = true;
     QString scoreTableName;
+    // The path is resolved while the caller owns a documents-pack lease.
+    // It must be consumed before that lease is released.
     int minimumTableRows = 12;
     int minimumTableColumns = 6;
     int firstGradeColumn = 2;
@@ -68,7 +70,8 @@ struct BatchJob
 [[nodiscard]] BatchJob build(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     const QStringList& pdfPaths,
-    const QString& workingDirectory
+    const QString& workingDirectory,
+    const QString& documentsRoot
     );
 
 [[nodiscard]] QJsonObject toJson(

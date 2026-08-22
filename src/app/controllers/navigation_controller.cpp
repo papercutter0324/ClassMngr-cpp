@@ -14,8 +14,12 @@
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "features/teacher/ui/staff_directory_page.h"
+#include "core/resource_paths.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
+#include <QDir>
+
+#include <utility>
 namespace
 {
 QString evaluationNameForKey(
@@ -363,9 +367,18 @@ void NavigationController::handleDocument(
         return;
     }
 
+    auto lease = ResourcePaths::Documents::acquire();
+    if (!lease)
+    {
+        return;
+    }
+
     PdfViewerDocumentDescriptor descriptor;
     descriptor.pdfFilePath =
-        document->pdf.absoluteFilePath;
+        ResourcePaths::Documents::filePath(
+            *lease,
+            QDir(document->pdf.path).filePath(document->pdf.fileName)
+            );
     descriptor.printEnabled =
         document->printingEnabled;
     descriptor.exportEnabled =
@@ -375,14 +388,21 @@ void NavigationController::handleDocument(
     if (document->exportFile)
     {
         descriptor.exportFilePath =
-            document->exportFile->absoluteFilePath;
+            ResourcePaths::Documents::filePath(
+                *lease,
+                QDir(document->exportFile->path).filePath(
+                    document->exportFile->fileName
+                    )
+                );
         descriptor.exportFileName =
             document->exportFile->fileName;
     }
 
+    descriptor.resourceLease = std::move(*lease);
+
     if (auto* viewer = m_pages->ensurePdfViewerPage())
     {
-        [[maybe_unused]] const bool loaded = viewer->loadPdf(descriptor);
+        [[maybe_unused]] const bool loaded = viewer->loadPdf(std::move(descriptor));
     }
 
     m_pages->showPage(

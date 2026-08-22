@@ -1,4 +1,5 @@
 #include "features/documents/document_catalog.h"
+#include "core/resource_packs/resource_pack_manager.h"
 
 #include <QDir>
 #include <QFile>
@@ -96,6 +97,7 @@ private slots:
     void skipsInvalidAndDuplicateDocuments();
     void malformedActiveCatalogUsesEmbeddedCatalog();
     void rejectsCatalogLevelFailures();
+    void startupParsingReleasesDocumentsPack();
 };
 
 void DocumentCatalogTests::loadsValidCatalogAndResolvesLocales()
@@ -286,6 +288,29 @@ void DocumentCatalogTests::rejectsCatalogLevelFailures()
             QStringLiteral("Embedded Documents catalog failed")
             )
         );
+}
+
+void DocumentCatalogTests::startupParsingReleasesDocumentsPack()
+{
+    DocumentCatalog catalog;
+    const Status status = catalog.initialize();
+    if (!status)
+    {
+        QFAIL(qPrintable(status.error()));
+    }
+
+    QVERIFY(!catalog.isEmpty());
+    QVERIFY(catalog.rootPath().isEmpty());
+    QVERIFY(!ResourcePackManager::instance().isMounted(
+        QStringLiteral("documents")
+        ));
+
+    const DocumentDefinition& document = catalog.documents().first();
+    QVERIFY(document.pdf.absoluteFilePath.isEmpty());
+    if (document.exportFile)
+    {
+        QVERIFY(document.exportFile->absoluteFilePath.isEmpty());
+    }
 }
 
 QTEST_MAIN(DocumentCatalogTests)

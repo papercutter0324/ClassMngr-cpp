@@ -130,6 +130,7 @@ classmngr_add_qt_test(
 
     qt_add_executable(ClassMngrResourcePackTests
         tests/resource_pack_tests.cpp
+        src/core/memory_usage_diagnostics.cpp
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/resource_packs/resource_pack_manifest.cpp
         src/core/updater/version.cpp
@@ -181,11 +182,22 @@ classmngr_add_qt_test(
         SOURCES
             tests/document_catalog_tests.cpp
             src/features/documents/document_catalog.cpp
+            src/core/memory_usage_diagnostics.cpp
             src/core/resource_packs/resource_pack_manager.cpp
             src/core/updater/version.cpp
         LIBRARIES
             Qt6::Core
             Qt6::Test
+    )
+
+    add_dependencies(
+        ClassMngrDocumentCatalogTests
+        ClassMngrdocumentsResourcePack
+    )
+    target_compile_definitions(
+        ClassMngrDocumentCatalogTests
+        PRIVATE
+            CLASSMNGR_RESOURCE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
     )
 
     classmngr_add_qt_test(

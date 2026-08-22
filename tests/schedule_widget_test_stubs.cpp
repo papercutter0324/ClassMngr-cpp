@@ -849,6 +849,7 @@ Result<QList<Teacher>> DataService::getAllTeachers()
     };
 }
 
+#ifndef CLASSMNGR_TEST_USE_REAL_RESOURCE_PACK_MANAGER
 ResourcePackManager& ResourcePackManager::instance()
 {
     static ResourcePackManager manager;
@@ -856,9 +857,11 @@ ResourcePackManager& ResourcePackManager::instance()
 }
 
 ResourcePackManager::ResourcePackManager(
-    QString storageDirectory
+    QString storageDirectory,
+    QString baselineDirectory
     )
     : m_storageDirectory(std::move(storageDirectory))
+    , m_baselineDirectory(std::move(baselineDirectory))
 {
 }
 
@@ -868,6 +871,7 @@ QString ResourcePackManager::activeRoot(
 {
     return {};
 }
+#endif
 
 Theme ThemeService::currentTheme() const
 {

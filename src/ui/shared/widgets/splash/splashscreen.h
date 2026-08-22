@@ -2,6 +2,7 @@
 #define SPLASHSCREEN_H
 
 #include <QWidget>
+#include <QString>
 
 class QLabel;
 class QProgressBar;
@@ -21,6 +22,11 @@ public:
 
     explicit SplashScreen(
         QWidget *parent = nullptr
+        );
+
+    SplashScreen(
+        const QString& imagePath,
+        QWidget* parent = nullptr
         );
 
 

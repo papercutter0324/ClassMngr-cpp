@@ -3,7 +3,6 @@
 #include "speaking_eval_batch_report_service.h"
 #include "speaking_eval_report_data_assembler.h"
 
-#include "core/resource_paths.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QDir>
@@ -24,7 +23,8 @@ QString normalizedText(
 }
 
 TemplateProfile templateProfile(
-    SpeakingEvalReportTemplate reportTemplate
+    SpeakingEvalReportTemplate reportTemplate,
+    const QString& documentsRoot
     )
 {
     const SpeakingEvalReportTemplateLayout& layout =
@@ -32,10 +32,9 @@ TemplateProfile templateProfile(
 
     TemplateProfile profile;
     profile.reportTemplate = reportTemplate;
-    profile.resourcePath =
-        ResourcePaths::Documents::filePath(
-            layout.powerPointResourcePath
-            );
+    profile.resourcePath = QDir(documentsRoot).filePath(
+        layout.powerPointResourcePath
+        );
     profile.signatureBounds = layout.signatureBounds;
     profile.signatureAlignsBottomLeft =
         layout.signatureAlignsBottomLeft;
@@ -61,7 +60,8 @@ TemplateProfile templateProfile(
 BatchJob build(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     const QStringList& pdfPaths,
-    const QString& workingDirectory
+    const QString& workingDirectory,
+    const QString& documentsRoot
     )
 {
     BatchJob batch;
@@ -72,7 +72,8 @@ BatchJob build(
 
     batch.templateProfile =
         templateProfile(
-            reports.constFirst().report.reportTemplate
+            reports.constFirst().report.reportTemplate,
+            documentsRoot
             );
     batch.signatureImage =
         reports.constFirst().report.signatureImage;

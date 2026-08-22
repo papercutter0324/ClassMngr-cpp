@@ -1,4 +1,5 @@
 #include "memory_usage_diagnostics.h"
+#include "memory_usage_diagnostics.h"
 
 #include <QJsonArray>
 #include <QJsonObject>

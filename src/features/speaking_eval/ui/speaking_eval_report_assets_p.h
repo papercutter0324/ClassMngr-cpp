@@ -96,3 +96,7 @@ speakingEvalFieldAsset(
     const QString& text,
     qreal stepPoints = 1.0
     );
+
+// Clears decoded report images and the application-font registrations made
+// exclusively for the templates pack. Call only after report widgets close.
+void releaseSpeakingEvalTemplateAssets();

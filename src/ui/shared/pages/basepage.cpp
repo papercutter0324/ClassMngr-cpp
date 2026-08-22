@@ -416,6 +416,15 @@ void BasePage::clearDatabaseState()
 {
 }
 
+Status BasePage::prepareForActivation()
+{
+    return {};
+}
+
+void BasePage::releaseFeatureResources()
+{
+}
+
 PageOutputCapabilities BasePage::outputCapabilities() const
 {
     return {};

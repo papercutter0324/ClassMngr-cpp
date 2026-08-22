@@ -172,6 +172,19 @@ void CampusDashboardPage::refresh()
     loadCampuses();
 }
 
+Status CampusDashboardPage::prepareForActivation()
+{
+    updateMapPreview();
+    return {};
+}
+
+void CampusDashboardPage::releaseFeatureResources()
+{
+    // Map cards own QPixmaps decoded from the campuses pack. Delete them
+    // before PageManager releases the final campuses lease.
+    clearMapSections();
+}
+
 void CampusDashboardPage::retranslateUi()
 {
     if (m_tabs)

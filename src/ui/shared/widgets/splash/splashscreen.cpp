@@ -20,6 +20,14 @@
 // =========================================================
 
 SplashScreen::SplashScreen(QWidget *parent)
+    : SplashScreen(ResourcePaths::Images::splash(), parent)
+{
+}
+
+SplashScreen::SplashScreen(
+    const QString& imagePath,
+    QWidget* parent
+    )
     : QWidget(parent)
 {
     setFont(
@@ -46,9 +54,7 @@ SplashScreen::SplashScreen(QWidget *parent)
     // Splash Image
     // =====================================================
 
-    QPixmap pixmap(
-        ResourcePaths::Images::splash()
-        );
+    QPixmap pixmap(imagePath);
 
     setFixedSize(
         pixmap.size()

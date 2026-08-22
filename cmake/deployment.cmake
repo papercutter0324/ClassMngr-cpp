@@ -27,6 +27,18 @@ install(FILES
     DESTINATION licenses/fonts/inter
 )
 
+if(APPLE)
+    install(FILES
+        ${CLASSMNGR_RESOURCE_PACK_FILES}
+        DESTINATION "ClassMngr.app/Contents/Resources/resource-packs"
+    )
+else()
+    install(FILES
+        ${CLASSMNGR_RESOURCE_PACK_FILES}
+        DESTINATION "${CMAKE_INSTALL_BINDIR}/resources/resource-packs"
+    )
+endif()
+
 install(FILES
     licenses/fonts/pretendard/LICENSE.txt
     DESTINATION licenses/fonts/pretendard

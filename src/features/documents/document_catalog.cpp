@@ -1,6 +1,6 @@
 #include "document_catalog.h"
 
-#include "core/resource_packs/resource_pack_manager.h"
+#include "core/resource_paths.h"
 
 #include <QDir>
 #include <QFile>
@@ -732,14 +732,20 @@ QString DocumentLocalizedNames::forLocale(
 
 Status DocumentCatalog::initialize()
 {
-    ResourcePackManager& manager =
-        ResourcePackManager::instance();
+    auto lease = ResourcePaths::Documents::acquire();
+    if (!lease)
+    {
+        m_rootPath.clear();
+        m_folders.clear();
+        m_documents.clear();
+        m_documentIndexes.clear();
+        m_warnings = {lease.error()};
+        return std::unexpected(lease.error());
+    }
 
-    const auto catalog =
-        loadFromRoots(
-            manager.activeRoot(QStringLiteral("documents")),
-            manager.embeddedRoot(QStringLiteral("documents"))
-            );
+    const auto catalog = loadFromRoot(
+        ResourcePaths::Documents::directory(*lease)
+        );
 
     if (!catalog)
     {
@@ -751,8 +757,19 @@ Status DocumentCatalog::initialize()
         return std::unexpected(catalog.error());
     }
 
-    *this =
-        *catalog;
+    *this = *catalog;
+
+    // The sidebar retains parsed metadata only. Resource paths are rebuilt
+    // from a fresh documents lease when a document is actually opened.
+    m_rootPath.clear();
+    for (DocumentDefinition& document : m_documents)
+    {
+        document.pdf.absoluteFilePath.clear();
+        if (document.exportFile)
+        {
+            document.exportFile->absoluteFilePath.clear();
+        }
+    }
 
     return {};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/memory_usage_diagnostics.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "domain/models/classroom.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "features/schedule/ui/schedule_view_model.h"
@@ -80,6 +81,8 @@ public:
     void refresh() override;
     void refreshNavigationPreferences();
     void clearDatabaseState() override;
+    [[nodiscard]] Status prepareForActivation() override;
+    void releaseFeatureResources() override;
     void retranslateUi() override;
     [[nodiscard]] PageOutputCapabilities outputCapabilities() const override;
     void printCurrentPage() override;
@@ -118,6 +121,8 @@ private:
         );
     bool activateClass(int classId);
     bool activateSection(ClassesSection section);
+    [[nodiscard]] Status acquireEvaluationResources();
+    void releaseEvaluationResources();
     bool commitActiveEditor();
     BasePage* ensureEditor(
         ClassesSection section
@@ -179,4 +184,5 @@ private:
     ClassAnalyticsPage* m_analyticsPage = nullptr;
     SpeakingEvalPage* m_evaluationsPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
+    ResourcePackLease m_evaluationResourceLease;
 };

@@ -2,6 +2,7 @@
 
 #include "core/application_services.h"
 #include "core/memory_usage_diagnostics.h"
+#include "core/resource_paths.h"
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -17,6 +18,9 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QElapsedTimer>
+#include <QDebug>
+
+#include <utility>
 
 namespace
 {
@@ -233,6 +237,12 @@ BasePage* PageManager::ensurePage(
         return nullptr;
     }
 
+    if (const Status status = preparePageResources(type); !status)
+    {
+        qWarning().noquote() << status.error();
+        return nullptr;
+    }
+
     if (const auto page = m_pages.constFind(type); page != m_pages.cend())
     {
         return page.value();
@@ -256,6 +266,12 @@ BasePage* PageManager::ensurePage(
 
     if (!page)
     {
+        return nullptr;
+    }
+
+    if (const Status status = page->prepareForActivation(); !status)
+    {
+        qWarning().noquote() << status.error();
         return nullptr;
     }
 
@@ -368,11 +384,23 @@ void PageManager::showPage(
         activationTimer.start();
     }
 
+    const bool wasInstantiated = m_pages.contains(type);
     BasePage* page = ensurePage(type);
 
     if (!page)
     {
         return;
+    }
+
+    // Newly-created pages are prepared by ensurePage(). Existing pages need
+    // their decoded feature assets rebuilt after a prior deactivation.
+    if (wasInstantiated)
+    {
+        if (const Status status = page->prepareForActivation(); !status)
+        {
+            qWarning().noquote() << status.error();
+            return;
+        }
     }
 
     BasePage* leavingPage = qobject_cast<BasePage*>(currentWidget());
@@ -391,7 +419,7 @@ void PageManager::showPage(
                 );
         }
 
-        releaseLeavingPageResources(leavingPage);
+        releaseLeavingPageResources(leavingPage, type);
     }
 
     setCurrentWidget(
@@ -474,10 +502,45 @@ QList<PageLifecycleEntry> PageManager::pageLifecycle() const
     return entries;
 }
 
-void PageManager::releaseLeavingPageResources(
-    BasePage* page
+Status PageManager::preparePageResources(
+    PageType type
     )
 {
+    if (!usesCampusResources(type) || m_campusResourceLease.isValid())
+    {
+        return {};
+    }
+
+    auto lease = ResourcePaths::Campuses::acquire();
+    if (!lease)
+    {
+        return std::unexpected(lease.error());
+    }
+
+    m_campusResourceLease = std::move(*lease);
+    return {};
+}
+
+bool PageManager::usesCampusResources(
+    PageType type
+    )
+{
+    return type == PageType::PersonalDetails
+        || type == PageType::Calendar
+        || type == PageType::CampusDashboard
+        || type == PageType::SubPrep;
+}
+
+void PageManager::releaseLeavingPageResources(
+    BasePage* page,
+    PageType nextType
+    )
+{
+    if (page)
+    {
+        page->releaseFeatureResources();
+    }
+
     const auto pdfPage =
         m_pages.constFind(PageType::PdfViewer);
 
@@ -486,12 +549,21 @@ void PageManager::releaseLeavingPageResources(
         || pdfPage.value() != page
         )
     {
+        if (!usesCampusResources(nextType))
+        {
+            m_campusResourceLease.reset();
+        }
         return;
     }
 
     if (auto* viewer = qobject_cast<PdfViewerPage*>(page))
     {
         viewer->releaseDocument();
+    }
+
+    if (!usesCampusResources(nextType))
+    {
+        m_campusResourceLease.reset();
     }
 }
 

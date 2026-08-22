@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/memory_usage_diagnostics.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QElapsedTimer>
@@ -21,6 +22,7 @@ struct PdfViewerDocumentDescriptor
     QString exportFilePath;
     QString exportFileName;
     bool printEnabled = false;
+    ResourcePackLease resourceLease;
 };
 
 class PdfViewerPage : public BasePage, public MemoryBreakdownProvider
@@ -41,7 +43,7 @@ public:
     void saveCurrentPageAs() override;
 
     [[nodiscard]] bool loadPdf(
-        const PdfViewerDocumentDescriptor& descriptor
+        PdfViewerDocumentDescriptor descriptor
         );
     void releaseDocument();
 

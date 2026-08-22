@@ -45,6 +45,8 @@ public:
 
     void refresh() override;
     void retranslateUi() override;
+    [[nodiscard]] Status prepareForActivation() override;
+    void releaseFeatureResources() override;
 
     void saveData() override;
     bool saveChanges() override;
