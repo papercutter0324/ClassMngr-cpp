@@ -33,9 +33,12 @@ if(APPLE)
         DESTINATION "ClassMngr.app/Contents/Resources/resource-packs"
     )
 else()
+    set(CLASSMNGR_RESOURCE_PACK_INSTALL_DESTINATION
+        "${CMAKE_INSTALL_BINDIR}/resources/resource-packs")
+    cmake_path(NORMAL_PATH CLASSMNGR_RESOURCE_PACK_INSTALL_DESTINATION)
     install(FILES
         ${CLASSMNGR_RESOURCE_PACK_FILES}
-        DESTINATION "${CMAKE_INSTALL_BINDIR}/resources/resource-packs"
+        DESTINATION "${CLASSMNGR_RESOURCE_PACK_INSTALL_DESTINATION}"
     )
 endif()
 
