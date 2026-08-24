@@ -47,20 +47,33 @@ QString packRoot(const QString& packId)
 
 QString defaultBaselineDirectory()
 {
+    const QString appDirectory = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_MACOS
+    const QString installedDirectory = QDir::cleanPath(
+        appDirectory + QStringLiteral("/../Resources/resource-packs"));
+#else
+    const QString installedDirectory = QDir::cleanPath(
+        appDirectory + QStringLiteral("/resources/resource-packs"));
+#endif
+
+    // Release packages keep resource packs next to the executable.  Prefer
+    // that location even for a build configured with a development pack
+    // directory: the latter is an absolute build-machine path and therefore
+    // cannot exist on an end user's machine.
+    if (QDir(installedDirectory).exists())
+    {
+        return installedDirectory;
+    }
+
 #ifdef CLASSMNGR_RESOURCE_PACK_DIR
     const QString configured = QStringLiteral(CLASSMNGR_RESOURCE_PACK_DIR);
-    if (!configured.trimmed().isEmpty())
+    if (!configured.trimmed().isEmpty() && QDir(configured).exists())
     {
         return QDir::cleanPath(configured);
     }
 #endif
 
-    const QString appDirectory = QCoreApplication::applicationDirPath();
-#ifdef Q_OS_MACOS
-    return QDir::cleanPath(appDirectory + QStringLiteral("/../Resources/resource-packs"));
-#else
-    return QDir::cleanPath(appDirectory + QStringLiteral("/resources/resource-packs"));
-#endif
+    return installedDirectory;
 }
 }
 

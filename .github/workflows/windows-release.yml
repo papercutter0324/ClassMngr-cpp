@@ -219,6 +219,62 @@ jobs:
         shell: pwsh
         run: cmake --build --preset "windows-${{ matrix.architecture }}-release-installer" --parallel
 
+      - name: Smoke test packaged application startup
+        if: matrix.architecture == 'x64'
+        shell: pwsh
+        run: |
+          Set-Location $Env:GITHUB_WORKSPACE
+
+          $stageDirectory =
+            'build\windows-x64-release\installer-stage\ClassMngr-windows-x64'
+          $application = Join-Path $stageDirectory 'ClassMngr.exe'
+          $metricsPath = Join-Path $stageDirectory 'startup-metrics.json'
+          $buildPackDirectory = 'build\windows-x64-release\resource-packs'
+          $hiddenBuildPackDirectory = "$buildPackDirectory.__startup_smoke_test"
+
+          if (-not (Test-Path -LiteralPath $application)) {
+            throw "Packaged application was not found: $application"
+          }
+          if (-not (Test-Path -LiteralPath $buildPackDirectory)) {
+            throw "Build resource packs were not found: $buildPackDirectory"
+          }
+          if (Test-Path -LiteralPath $hiddenBuildPackDirectory) {
+            throw "Unexpected pre-existing smoke-test path: $hiddenBuildPackDirectory"
+          }
+
+          # The executable is compiled with this development-only absolute
+          # pack path.  Hide it while testing so the staged package must use
+          # its own adjacent resources, just as it will after installation.
+          Move-Item -LiteralPath $buildPackDirectory -Destination $hiddenBuildPackDirectory
+          try {
+            $startupArguments = @(
+              '--startup-performance-test',
+              '--startup-performance-output',
+              $metricsPath
+            )
+            $process = Start-Process `
+              -FilePath $application `
+              -WorkingDirectory $stageDirectory `
+              -ArgumentList $startupArguments `
+              -Wait `
+              -PassThru
+
+            if ($process.ExitCode -ne 0) {
+              throw "Packaged application startup smoke test failed with exit code $($process.ExitCode)."
+            }
+            if (-not (Test-Path -LiteralPath $metricsPath)) {
+              throw "Packaged application did not write startup metrics."
+            }
+
+            $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
+            if ($metrics.finalProgress -ne 100) {
+              throw "Packaged application did not complete startup."
+            }
+          }
+          finally {
+            Move-Item -LiteralPath $hiddenBuildPackDirectory -Destination $buildPackDirectory
+          }
+
       - name: Diagnostics — environment, build and tooling
         shell: pwsh
         run: |
