@@ -1,4 +1,6 @@
 #include "speaking_eval_page_p.h"
+
+#include "domain/validation/speaking_eval_validator.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/validation/form_validation_binder.h"
 

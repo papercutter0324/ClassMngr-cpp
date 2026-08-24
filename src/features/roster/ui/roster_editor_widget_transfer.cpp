@@ -221,7 +221,7 @@ void RosterEditorWidget::transferRosterRow(
         DialogServices::showWarning(this, tr("Cannot Transfer Student"), reason);
         return;
     }
-    if (!validateRosterBeforeSave(true))
+    if (!validateRosterBeforeSave(true, true))
     {
         return;
     }
