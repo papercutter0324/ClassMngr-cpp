@@ -324,7 +324,6 @@ public:
 
         updateSignaturePreview();
 
-        connect(m_name, &QLineEdit::textChanged, this, &QWizardPage::completeChanged);
         connect(browse, &QPushButton::clicked, this, [this]()
         {
             const std::optional<QString> selection =

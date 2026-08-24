@@ -3,6 +3,7 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QtTest>
 
@@ -14,6 +15,7 @@ class InitialSetupWizardTests : public QObject
 
 private slots:
     void keyboardIsAvailableAtTextEntryStages();
+    void personalNameFieldRetainsFocusWhileTyping();
 };
 
 void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
@@ -54,6 +56,30 @@ void InitialSetupWizardTests::keyboardIsAvailableAtTextEntryStages()
         QVERIFY(keyboard->isVisible());
         keyboard->close();
     }
+}
+
+void InitialSetupWizardTests::personalNameFieldRetainsFocusWhileTyping()
+{
+    ApplicationServices services;
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
+    wizard.show();
+    QApplication::processEvents();
+
+    auto* name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName"));
+    QVERIFY(name);
+
+    name->setFocus();
+    QTRY_VERIFY(name->hasFocus());
+
+    for (const auto key : {Qt::Key_A, Qt::Key_l, Qt::Key_e, Qt::Key_x})
+    {
+        QTest::keyClick(name, key);
+        QVERIFY(name->hasFocus());
+    }
+
+    QCOMPARE(name->text(), QStringLiteral("Alex"));
 }
 
 QTEST_MAIN(InitialSetupWizardTests)
