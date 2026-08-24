@@ -6,6 +6,7 @@
 #include "core/settingsmanager.h"
 #include "core/theme_service.h"
 #include "features/campus/ui/campus_map_preview.h"
+#include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
@@ -13,7 +14,6 @@
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QCoreApplication>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QGuiApplication>
 #include <QHBoxLayout>
@@ -789,19 +789,25 @@ void MemoryUsageDialog::copySummary()
 
 void MemoryUsageDialog::exportJson()
 {
-    const QString filePath = QFileDialog::getSaveFileName(
-        parentWidget() ? parentWidget() : this,
-        tr("Export memory diagnostics"),
-        QStringLiteral("classmngr-memory-diagnostics.json"),
-        tr("JSON Files (*.json)")
-        );
+    const std::optional<QString> selection =
+        DialogServices::fileDialogs().saveFile(
+            SaveFileRequest{
+                .parent = parentWidget() ? parentWidget() : this,
+                .title = tr("Export memory diagnostics"),
+                .purpose = FileDialogPurpose::ExportReport,
+                .suggestedFileName =
+                    QStringLiteral("classmngr-memory-diagnostics.json"),
+                .nameFilters = {tr("JSON Files (*.json)")},
+                .defaultSuffix = QStringLiteral("json")
+            }
+            );
 
-    if (filePath.isEmpty())
+    if (!selection)
     {
         return;
     }
 
-    QSaveFile file(filePath);
+    QSaveFile file(*selection);
     if (!file.open(QIODevice::WriteOnly))
     {
         return;
