@@ -1,6 +1,7 @@
 #include "roster_item_delegate.h"
 
 #include "core/fontmanager.h"
+#include "core/utils/student_name_utils.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_model.h"
@@ -108,6 +109,23 @@ void RosterItemDelegate::paint(
         rosterModel
         && index.column() == rosterModel->koreanNameColumn();
 
+    const auto koreanNameIssues = koreanNameCell
+        ? StudentNameUtils::validateKoreanName(
+            index.data(Qt::DisplayRole).toString()
+            )
+        : QList<StudentNameUtils::ValidationIssue>();
+    const bool hasKoreanNameCaution = koreanNameIssues.contains(
+        StudentNameUtils::ValidationIssue::KoreanUnusualLength
+        )
+        && !koreanNameIssues.contains(
+            StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+            );
+
+    if (hasKoreanNameCaution && !(option.state & QStyle::State_Selected))
+    {
+        painter->fillRect(option.rect, QColor(245, 158, 11, 55));
+    }
+
     painter->setFont(
         koreanNameCell
             ? FontManager::getKoreanFont()
@@ -140,8 +158,12 @@ void RosterItemDelegate::paint(
         elidedText
         );
 
-    if (
-        rosterModel
+    if (hasKoreanNameCaution)
+    {
+        painter->setPen(QPen(QColor(217, 119, 6), 2));
+        painter->drawRect(option.rect.adjusted(1, 1, -2, -2));
+    }
+    else if (rosterModel
         && !rosterModel->errorsForCell(
             index.row(),
             index.column()

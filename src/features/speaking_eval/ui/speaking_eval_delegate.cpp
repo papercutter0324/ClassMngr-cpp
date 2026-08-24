@@ -1,6 +1,7 @@
 #include "speaking_eval_delegate.h"
 
 #include "core/fontmanager.h"
+#include "core/utils/student_name_utils.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
@@ -267,6 +268,19 @@ void SpeakingEvalDelegate::paint(
             index.column()
             ).isEmpty();
 
+    const auto koreanNameIssues =
+        column == SpeakingEvalColumn::KoreanName
+            ? StudentNameUtils::validateKoreanName(
+                index.data(Qt::DisplayRole).toString()
+                )
+            : QList<StudentNameUtils::ValidationIssue>();
+    const bool hasKoreanNameCaution = koreanNameIssues.contains(
+        StudentNameUtils::ValidationIssue::KoreanUnusualLength
+        )
+        && !koreanNameIssues.contains(
+            StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters
+            );
+
     const bool isDirty =
         speakingModel
         && speakingModel->dirtyCellKeys().contains(key);
@@ -279,7 +293,14 @@ void SpeakingEvalDelegate::paint(
             );
     }
 
-    if (hasErrors)
+    if (hasKoreanNameCaution)
+    {
+        painter->fillRect(
+            option.rect,
+            QColor(245, 158, 11, 90)
+            );
+    }
+    else if (hasErrors)
     {
         painter->fillRect(
             option.rect,
@@ -303,7 +324,13 @@ void SpeakingEvalDelegate::paint(
     QColor textColor =
         SpeakingEval::contrastTextColor(background);
 
-    if (hasErrors)
+    if (hasKoreanNameCaution)
+    {
+        textColor = SpeakingEval::contrastTextColor(
+            QColor(245, 158, 11)
+            );
+    }
+    else if (hasErrors)
     {
         textColor =
             SpeakingEval::contrastTextColor(

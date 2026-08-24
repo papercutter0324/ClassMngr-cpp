@@ -5,6 +5,7 @@
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
 
+#include <QStringList>
 #include <QVector>
 
 class ApplicationServices;
@@ -101,12 +102,17 @@ private:
     void updateKeyboardButtonVisibility();
 
     bool saveRosterInternal(
-        bool showValidationMessages
+        bool showValidationMessages,
+        bool confirmQuestionableKoreanNameLengths = false
         );
 
     bool validateRosterBeforeSave(
-        bool showValidationMessages
+        bool showValidationMessages,
+        bool confirmQuestionableKoreanNameLengths
         );
+
+    [[nodiscard]] QStringList questionableKoreanNameRows() const;
+    bool confirmQuestionableKoreanNameLengths();
 
     void updateRosterValidation();
     void focusFirstRosterError();

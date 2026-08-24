@@ -16,7 +16,7 @@ bool SpeakingEvalPage::saveChanges()
         return true;
     }
 
-    return saveEvaluationInternal(true, false);
+    return saveEvaluationInternal(true, false, true);
 }
 
 bool SpeakingEvalPage::hasUnsavedChanges() const
@@ -53,7 +53,8 @@ void SpeakingEvalPage::setSaveMode(
 
 bool SpeakingEvalPage::saveEvaluationInternal(
     bool showValidationMessages,
-    bool showSuccessMessage
+    bool showSuccessMessage,
+    bool confirmQuestionableLengths
     )
 {
     if (
@@ -69,9 +70,22 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     Q_UNUSED(showValidationMessages);
     updateEvaluationValidation();
 
-    if (m_validationBinder && m_validationBinder->hasErrors())
+    const ValidationResult validation = SpeakingEvalValidator::validate(
+        m_classroom.id,
+        m_evaluationName,
+        SpeakingEvalValidator::normalized(m_model->rows()),
+        confirmQuestionableLengths
+        );
+    if (validation.hasErrors())
     {
         updateActions();
+        focusFirstEvaluationError();
+        return false;
+    }
+
+    if (confirmQuestionableLengths
+        && !confirmQuestionableKoreanNameLengths())
+    {
         focusFirstEvaluationError();
         return false;
     }
@@ -83,7 +97,8 @@ bool SpeakingEvalPage::saveEvaluationInternal(
                 m_classroom.id,
                 m_evaluationName,
                 m_model->rows(),
-                m_model->changedCells()
+                m_model->changedCells(),
+                confirmQuestionableLengths
                 );
 
     if (!saved)
@@ -114,4 +129,52 @@ bool SpeakingEvalPage::saveEvaluationInternal(
     }
 
     return true;
+}
+
+QStringList SpeakingEvalPage::questionableKoreanNameRows() const
+{
+    if (!m_model)
+    {
+        return {};
+    }
+
+    QStringList names;
+    const int koreanColumn = SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+    const SpeakingEvalRows rows = m_model->rows();
+    for (int row = 0; row < rows.size(); ++row)
+    {
+        const QString koreanName = rows[row].value(koreanColumn);
+        const auto issues = StudentNameUtils::validateKoreanName(koreanName);
+        if (!issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
+            && !issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
+        {
+            continue;
+        }
+
+        names.append(
+            tr("Row %1: %2")
+                .arg(row + 1)
+                .arg(koreanName)
+            );
+    }
+
+    return names;
+}
+
+bool SpeakingEvalPage::confirmQuestionableKoreanNameLengths()
+{
+    const QStringList names = questionableKoreanNameRows();
+    if (names.isEmpty())
+    {
+        return true;
+    }
+
+    return DialogServices::confirm(
+        this,
+        tr("Verify Korean Name Lengths"),
+        tr("These Korean names have 1 or 5+ syllables and may be incorrect:\n%1\n\nSave them anyway?")
+            .arg(names.join(QLatin1Char('\n'))),
+        tr("Save Anyway"),
+        tr("Go Back")
+        ) == PromptChoice::Accepted;
 }

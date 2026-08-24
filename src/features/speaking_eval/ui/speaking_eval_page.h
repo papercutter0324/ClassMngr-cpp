@@ -163,8 +163,12 @@ private:
 
     bool saveEvaluationInternal(
         bool showValidationMessages,
-        bool showSuccessMessage
+        bool showSuccessMessage,
+        bool confirmQuestionableKoreanNameLengths = false
         );
+
+    [[nodiscard]] QStringList questionableKoreanNameRows() const;
+    bool confirmQuestionableKoreanNameLengths();
 
     void updateEvaluationValidation();
     void focusFirstEvaluationError();

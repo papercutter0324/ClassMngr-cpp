@@ -1072,10 +1072,17 @@ Status CalendarService::deleteAllEvents() const
     return std::unexpected(unavailableError());
 }
 
-Status RosterService::saveRoster(int classId, const Roster& roster) const
+Status RosterService::saveRoster(
+    int classId,
+    const Roster& roster,
+    bool allowQuestionableKoreanNameLengths
+    ) const
 {
     const Roster normalized = RosterValidator::normalized(roster);
-    ValidationResult validation = RosterValidator::validate(normalized);
+    ValidationResult validation = RosterValidator::validate(
+        normalized,
+        allowQuestionableKoreanNameLengths
+        );
     if (classId <= 0)
     {
         validation.add(ValidationRules::issue(
@@ -1176,7 +1183,8 @@ Status SpeakingEvaluationService::saveEvaluation(
     int classId,
     const QString& evaluationName,
     const SpeakingEvalRows& rows,
-    const QList<SpeakingEvalCellChange>& dirtyCells
+    const QList<SpeakingEvalCellChange>& dirtyCells,
+    bool allowQuestionableKoreanNameLengths
     ) const
 {
     const QString normalizedName = evaluationName.trimmed();
@@ -1186,7 +1194,8 @@ Status SpeakingEvaluationService::saveEvaluation(
     const ValidationResult validation = SpeakingEvalValidator::validate(
         classId,
         normalizedName,
-        normalizedRows
+        normalizedRows,
+        allowQuestionableKoreanNameLengths
         );
     if (validation.hasErrors())
     {

@@ -164,7 +164,8 @@ SpeakingEvalRows SpeakingEvalValidator::normalized(const SpeakingEvalRows& rows)
 ValidationResult SpeakingEvalValidator::validate(
     int classId,
     const QString& evaluationName,
-    const SpeakingEvalRows& rows
+    const SpeakingEvalRows& rows,
+    bool allowQuestionableKoreanNameLengths
     )
 {
     ValidationResult result;
@@ -242,7 +243,8 @@ ValidationResult SpeakingEvalValidator::validate(
                 cellLocation(
                     rowIndex,
                     koreanColumn,
-                    fieldName(rowIndex, SpeakingEvalColumn::KoreanName))));
+                    fieldName(rowIndex, SpeakingEvalColumn::KoreanName)),
+                allowQuestionableKoreanNameLengths));
         }
 
         for (int column = 0; column < row.size()

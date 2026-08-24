@@ -140,7 +140,10 @@ Roster RosterValidator::normalized(const Roster& roster)
     return normalized;
 }
 
-ValidationResult RosterValidator::validate(const Roster& roster)
+ValidationResult RosterValidator::validate(
+    const Roster& roster,
+    bool allowQuestionableKoreanNameLengths
+    )
 {
     ValidationResult result;
     const int englishColumn = columnIndex(
@@ -260,7 +263,8 @@ ValidationResult RosterValidator::validate(const Roster& roster)
                 cellLocation(
                     rowIndex,
                     koreanColumn,
-                    QStringLiteral("rows[%1].Korean").arg(rowIndex))));
+                    QStringLiteral("rows[%1].Korean").arg(rowIndex)),
+                allowQuestionableKoreanNameLengths));
         }
     }
 

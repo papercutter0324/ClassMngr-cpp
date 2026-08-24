@@ -3,6 +3,7 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "core/utils/student_name_utils.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
 #include "features/roster/ui/roster_header_view.h"
@@ -122,7 +123,7 @@ bool RosterEditorWidget::saveChanges()
 {
     m_autosave->cancelPendingSave();
 
-    return !hasUnsavedChanges() || saveRosterInternal(true);
+    return !hasUnsavedChanges() || saveRosterInternal(true, true);
 }
 
 bool RosterEditorWidget::hasUnsavedChanges() const
@@ -216,21 +217,26 @@ void RosterEditorWidget::applyTestingClassColumnVisibility()
 }
 
 bool RosterEditorWidget::saveRosterInternal(
-    bool showValidationMessages
+    bool showValidationMessages,
+    bool confirmQuestionableLengths
     )
 {
     if (!m_services || !m_services->rosterService() || m_classroom.id <= 0)
     {
         return false;
     }
-    if (!validateRosterBeforeSave(showValidationMessages))
+    if (!validateRosterBeforeSave(
+            showValidationMessages,
+            confirmQuestionableLengths
+            ))
     {
         return false;
     }
 
     const Status saved = m_services->rosterService()->saveRoster(
         m_classroom.id,
-        currentRosterForSave()
+        currentRosterForSave(),
+        confirmQuestionableLengths
         );
     if (!saved)
     {
@@ -253,19 +259,84 @@ bool RosterEditorWidget::saveRosterInternal(
 }
 
 bool RosterEditorWidget::validateRosterBeforeSave(
-    bool showValidationMessages
+    bool showValidationMessages,
+    bool confirmQuestionableLengths
     )
 {
     Q_UNUSED(showValidationMessages);
 
     updateRosterValidation();
-    if (!m_validationBinder || !m_validationBinder->hasErrors())
+    const ValidationResult validation = RosterValidator::validate(
+        RosterValidator::normalized(currentRosterForSave()),
+        confirmQuestionableLengths
+        );
+    if (validation.hasErrors())
+    {
+        focusFirstRosterError();
+        return false;
+    }
+
+    if (confirmQuestionableLengths
+        && !confirmQuestionableKoreanNameLengths())
+    {
+        focusFirstRosterError();
+        return false;
+    }
+
+    return true;
+}
+
+QStringList RosterEditorWidget::questionableKoreanNameRows() const
+{
+    if (!m_model)
+    {
+        return {};
+    }
+
+    const int koreanColumn = m_model->koreanNameColumn();
+    if (koreanColumn < 0)
+    {
+        return {};
+    }
+
+    QStringList names;
+    const Roster roster = m_model->toRoster();
+    for (int row = 0; row < roster.rows.size(); ++row)
+    {
+        const QString koreanName = roster.rows[row].value(koreanColumn);
+        const auto issues = StudentNameUtils::validateKoreanName(koreanName);
+        if (!issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort)
+            && !issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
+        {
+            continue;
+        }
+
+        names.append(
+            tr("Row %1: %2")
+                .arg(row + 1)
+                .arg(koreanName)
+            );
+    }
+
+    return names;
+}
+
+bool RosterEditorWidget::confirmQuestionableKoreanNameLengths()
+{
+    const QStringList names = questionableKoreanNameRows();
+    if (names.isEmpty())
     {
         return true;
     }
 
-    focusFirstRosterError();
-    return false;
+    return DialogServices::confirm(
+        this,
+        tr("Verify Korean Name Lengths"),
+        tr("These Korean names have 1 or 5+ syllables and may be incorrect:\n%1\n\nSave them anyway?")
+            .arg(names.join(QLatin1Char('\n'))),
+        tr("Save Anyway"),
+        tr("Go Back")
+        ) == PromptChoice::Accepted;
 }
 
 void RosterEditorWidget::scheduleAutosave()

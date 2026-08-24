@@ -21,6 +21,14 @@ QString domainValidationMessage(const ValidationIssue& issue)
         return SpeakingEvalModel::tr("This value is too long.");
     }
 
+    if (issue.code == QStringLiteral("student_name.korean.too_short")
+        || issue.code == QStringLiteral("student_name.korean.too_long"))
+    {
+        return SpeakingEvalModel::tr(
+            "Korean name has 1 or 5+ syllables. Verify it is correct."
+            );
+    }
+
     if (issue.code.contains(QStringLiteral("duplicate")))
     {
         return SpeakingEvalModel::tr("Duplicate student name pair.");
@@ -683,7 +691,7 @@ QStringList SpeakingEvalModel::validateValue(
             || issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
         {
             errors.append(
-                tr("Invalid Korean name length.")
+                tr("Korean name has 1 or 5+ syllables. Verify it is correct.")
                 );
         }
         else if (issues.contains(
@@ -691,7 +699,7 @@ QStringList SpeakingEvalModel::validateValue(
                      ))
         {
             errors.append(
-                tr("Uncommon Korean name length. Please verify.")
+                tr("Korean name has an uncommon length. Verify it is correct.")
                 );
         }
     }

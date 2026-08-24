@@ -18,6 +18,7 @@ public:
     [[nodiscard]] static ValidationResult validate(
         int classId,
         const QString& evaluationName,
-        const SpeakingEvalRows& rows
+        const SpeakingEvalRows& rows,
+        bool allowQuestionableKoreanNameLengths = false
         );
 };

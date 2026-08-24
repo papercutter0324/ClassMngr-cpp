@@ -14,5 +14,8 @@ public:
     // malformed input. Call validate() after normalization.
     [[nodiscard]] static Roster normalized(const Roster& roster);
 
-    [[nodiscard]] static ValidationResult validate(const Roster& roster);
+    [[nodiscard]] static ValidationResult validate(
+        const Roster& roster,
+        bool allowQuestionableKoreanNameLengths = false
+        );
 };

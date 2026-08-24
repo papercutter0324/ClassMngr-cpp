@@ -16,7 +16,8 @@ namespace SharedValidation
 
 [[nodiscard]] ValidationResult koreanName(
     const QString& value,
-    ValidationLocation location = {}
+    ValidationLocation location = {},
+    bool allowQuestionableLength = false
     );
 
 [[nodiscard]] ValidationResult duplicateNamePairs(

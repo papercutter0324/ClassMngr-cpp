@@ -321,7 +321,7 @@ QList<ValidationIssue> validateKoreanName(const QString& value)
         issues.append(ValidationIssue::KoreanTooShort);
         return issues;
     }
-    if (length >= 6)
+    if (length >= 5)
     {
         issues.append(ValidationIssue::KoreanTooLong);
         return issues;

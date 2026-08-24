@@ -370,6 +370,12 @@ void SharedPolicyTests::koreanNameValidation_data()
         << int(StudentNameUtils::ValidationIssue::KoreanTooShort);
     QTest::newRow("unusual") << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC")
         << int(StudentNameUtils::ValidationIssue::KoreanUnusualLength);
+    QTest::newRow("four-syllables")
+        << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98\xEC\xA7\x80")
+        << int(StudentNameUtils::ValidationIssue::KoreanUnusualLength);
+    QTest::newRow("five-syllables")
+        << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98\xEC\xA7\x80\xEC\x9B\x90")
+        << int(StudentNameUtils::ValidationIssue::KoreanTooLong);
     QTest::newRow("invalid-character")
         << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98" "1")
         << int(StudentNameUtils::ValidationIssue::KoreanContainsInvalidCharacters);
@@ -514,6 +520,10 @@ void SharedPolicyTests::structuredNameValidation_data()
         << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC")
         << QStringLiteral("student_name.korean.unusual_length")
         << int(ValidationSeverity::Warning);
+    QTest::newRow("korean-five-syllable") << QStringLiteral("korean")
+        << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98\xEC\xA7\x80\xEC\x9B\x90")
+        << QStringLiteral("student_name.korean.too_long")
+        << int(ValidationSeverity::Error);
     QTest::newRow("korean-invalid-character") << QStringLiteral("korean")
         << QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\x88\x98" "1")
         << QStringLiteral("student_name.korean.invalid_characters")
@@ -1182,6 +1192,14 @@ void SharedPolicyTests::featureServicesRejectInvalidRosterAndSpeakingEvaluationM
     QVERIFY(savedRoster);
     QCOMPARE(savedRoster->rows.first().first(), QStringLiteral("Alice"));
 
+    roster.rows.first()[1] = QStringLiteral("김");
+    const Status rejectedQuestionableRoster = rosters.saveRoster(*classId, roster);
+    QVERIFY(!rejectedQuestionableRoster);
+    QVERIFY(rejectedQuestionableRoster.error().contains(
+        QStringLiteral("rows[0].Korean: student_name.korean.too_short")
+        ));
+    QVERIFY(rosters.saveRoster(*classId, roster, true));
+
     SpeakingEvalRows rows = SpeakingEval::emptyRows();
     rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
         QStringLiteral("Alice");
@@ -1199,12 +1217,27 @@ void SharedPolicyTests::featureServicesRejectInvalidRosterAndSpeakingEvaluationM
     rows[0][SpeakingEval::toInt(SpeakingEvalColumn::Grammar)] =
         QStringLiteral(" 4 ");
     QVERIFY(evaluations.saveEvaluation(*classId, QStringLiteral(" Winter "), rows));
+
+    rows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("김민수지원가");
+    const Status rejectedQuestionableEvaluation = evaluations.saveEvaluation(
+        *classId, QStringLiteral("Winter"), rows);
+    QVERIFY(!rejectedQuestionableEvaluation);
+    QVERIFY(rejectedQuestionableEvaluation.error().contains(
+        QStringLiteral("rows[0].Korean Name: student_name.korean.too_long")
+        ));
+    QVERIFY(evaluations.saveEvaluation(
+        *classId, QStringLiteral("Winter"), rows, {}, true));
     const Result<SpeakingEvalRows> savedEvaluation = evaluations.evaluation(
         *classId, QStringLiteral("Winter"));
     QVERIFY(savedEvaluation);
     QCOMPARE(
         savedEvaluation->first()[SpeakingEval::toInt(SpeakingEvalColumn::Grammar)],
         QStringLiteral("A")
+        );
+    QCOMPARE(
+        savedEvaluation->first()[SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)],
+        QStringLiteral("김민수지원가")
         );
 }
 

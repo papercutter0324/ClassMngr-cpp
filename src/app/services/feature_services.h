@@ -197,7 +197,11 @@ class RosterService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    [[nodiscard]] Status saveRoster(int classId, const Roster& roster) const;
+    [[nodiscard]] Status saveRoster(
+        int classId,
+        const Roster& roster,
+        bool allowQuestionableKoreanNameLengths = false
+        ) const;
     [[nodiscard]] Status saveRosters(
         const QList<QPair<int, Roster>>& rosters
         ) const;
@@ -213,7 +217,8 @@ public:
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,
-        const QList<SpeakingEvalCellChange>& dirtyCells = {}
+        const QList<SpeakingEvalCellChange>& dirtyCells = {},
+        bool allowQuestionableKoreanNameLengths = false
         ) const;
     [[nodiscard]] Result<SpeakingEvalRows> evaluation(int classId, const QString& evaluationName) const;
     [[nodiscard]] Result<SpeakingAnalytics::Snapshot> analytics(

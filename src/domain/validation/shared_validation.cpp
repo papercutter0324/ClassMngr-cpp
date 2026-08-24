@@ -70,7 +70,8 @@ ValidationResult englishName(
 
 ValidationResult koreanName(
     const QString& value,
-    ValidationLocation location
+    ValidationLocation location,
+    bool allowQuestionableLength
     )
 {
     ValidationResult result;
@@ -90,14 +91,20 @@ ValidationResult koreanName(
     {
         result.add(ValidationRules::issue(
             QStringLiteral("student_name.korean.too_short"),
-            location
+            location,
+            allowQuestionableLength
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
             ));
     }
     else if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
     {
         result.add(ValidationRules::issue(
             QStringLiteral("student_name.korean.too_long"),
-            location
+            location,
+            allowQuestionableLength
+                ? ValidationSeverity::Warning
+                : ValidationSeverity::Error
             ));
     }
     else if (issues.contains(
