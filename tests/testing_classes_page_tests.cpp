@@ -16,6 +16,7 @@
 #include <QPushButton>
 #include <QScrollBar>
 #include <QSplitter>
+#include <QStandardItemModel>
 #include <QTabWidget>
 #include <QTimer>
 
@@ -115,6 +116,7 @@ class TestingClassesPageTests : public QObject
 private slots:
     void init();
     void rosterEditorOmitsRemoveButtonAndKeepsContextAction();
+    void rosterTableSupportsMultiCellSelection();
     void rosterKeyboardTriggerOpensInAppPalette();
     void rosterKeyboardWritesToKoreanNameCell();
     void outputAvailabilityFollowsRosterTabAndLoadedClass();
@@ -222,6 +224,44 @@ void TestingClassesPageTests
             )
         );
     QVERIFY(foundRemoveAction);
+}
+
+void TestingClassesPageTests::rosterTableSupportsMultiCellSelection()
+{
+    QStandardItemModel model(2, 2);
+    model.setData(model.index(0, 0), QStringLiteral("First"));
+    model.setData(model.index(0, 1), QStringLiteral("Second"));
+
+    RosterTableView table;
+    table.setModel(&model);
+    table.resize(320, 160);
+    table.show();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        table.selectionMode(),
+        QAbstractItemView::ExtendedSelection
+        );
+
+    const QModelIndex firstCell = model.index(0, 0);
+    const QModelIndex secondCell = model.index(0, 1);
+
+    QTest::mouseClick(
+        table.viewport(),
+        Qt::LeftButton,
+        Qt::NoModifier,
+        table.visualRect(firstCell).center()
+        );
+    QTest::mouseClick(
+        table.viewport(),
+        Qt::LeftButton,
+        Qt::ControlModifier,
+        table.visualRect(secondCell).center()
+        );
+
+    QCOMPARE(table.selectedIndexes().size(), 2);
+    QVERIFY(table.selectedIndexes().contains(firstCell));
+    QVERIFY(table.selectedIndexes().contains(secondCell));
 }
 
 void TestingClassesPageTests

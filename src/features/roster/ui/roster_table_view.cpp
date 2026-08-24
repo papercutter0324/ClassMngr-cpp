@@ -471,7 +471,7 @@ RosterTableView::RosterTableView(
     setShowGrid(false);
     setAlternatingRowColors(false);
     setSelectionBehavior(QAbstractItemView::SelectItems);
-    setSelectionMode(QAbstractItemView::SingleSelection);
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
     setEditTriggers(
         QAbstractItemView::DoubleClicked
         | QAbstractItemView::EditKeyPressed

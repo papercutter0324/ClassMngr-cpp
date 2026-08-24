@@ -39,13 +39,13 @@ QStringList RosterModel::validateCell(
         if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooShort))
         {
             errors.append(
-                tr("Korean name looks too short.")
+                tr("Korean name has 1 or 5+ syllables. Verify it is correct.")
                 );
         }
         else if (issues.contains(StudentNameUtils::ValidationIssue::KoreanTooLong))
         {
             errors.append(
-                tr("Korean name looks too long.")
+                tr("Korean name has 1 or 5+ syllables. Verify it is correct.")
                 );
         }
         else if (issues.contains(
@@ -53,7 +53,7 @@ QStringList RosterModel::validateCell(
                      ))
         {
             errors.append(
-                tr("Korean name length is unusual.")
+                tr("Korean name has an uncommon length. Verify it is correct.")
                 );
         }
     }
