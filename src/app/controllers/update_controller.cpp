@@ -211,6 +211,36 @@ void UpdateController::setStartupComplete()
 
     if (m_dialog)
     {
+        // An automatic prompt can appear while the splash is still visible,
+        // before the main window is ready to own it.  Once the main window is
+        // shown, make that dialog its child window so showing the main window
+        // cannot place itself above the update prompt.
+        if (
+            m_window
+            && m_dialog->parentWidget() != m_window
+            )
+        {
+            const bool wasVisible =
+                m_dialog->isVisible();
+            const Qt::WindowFlags windowFlags =
+                m_dialog->windowFlags();
+
+            m_dialog->setParent(
+                m_window,
+                windowFlags
+                );
+
+            // QWidget::setParent() hides a visible widget.  Restore the
+            // prompt after assigning its owner, so it remains in front of
+            // the main window during the startup handoff.
+            if (wasVisible)
+            {
+                m_dialog->show();
+                m_dialog->raise();
+                m_dialog->activateWindow();
+            }
+        }
+
         m_dialog->setStartupComplete(true);
     }
 }
