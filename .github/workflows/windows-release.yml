@@ -225,11 +225,14 @@ jobs:
         run: |
           Set-Location $Env:GITHUB_WORKSPACE
 
-          $stageDirectory =
+          $stageDirectory = Join-Path `
+            $Env:GITHUB_WORKSPACE `
             'build\windows-x64-release\installer-stage\ClassMngr-windows-x64'
           $application = Join-Path $stageDirectory 'ClassMngr.exe'
           $metricsPath = Join-Path $stageDirectory 'startup-metrics.json'
-          $buildPackDirectory = 'build\windows-x64-release\resource-packs'
+          $buildPackDirectory = Join-Path `
+            $Env:GITHUB_WORKSPACE `
+            'build\windows-x64-release\resource-packs'
           $hiddenBuildPackDirectory = "$buildPackDirectory.__startup_smoke_test"
 
           if (-not (Test-Path -LiteralPath $application)) {
