@@ -69,6 +69,7 @@ struct GradeGroup
 struct Model
 {
     Mode mode{Mode::Flat};
+    QList<ClassTab> allClasses;
     QList<ClassTab> flatClasses;
     QList<GradeGroup> gradeGroups;
 };

@@ -155,10 +155,6 @@ void NavigationController::handleNavigation(
         handleTeacher(data);
         return;
 
-    case NodeType::Class:
-        handleClass(data);
-        return;
-
     case NodeType::Root:
         if (!data.keys.isEmpty() && data.keys.first() == QStringLiteral("sub_prep"))
         {

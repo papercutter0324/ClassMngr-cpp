@@ -49,6 +49,4 @@ struct TreeNodeSpec
 
 QList<TreeNodeSpec> treeStructure();
 
-QList<TreeNodeSpec> classTemplate();
-
 #endif // SIDEBAR_DEFINITIONS_H

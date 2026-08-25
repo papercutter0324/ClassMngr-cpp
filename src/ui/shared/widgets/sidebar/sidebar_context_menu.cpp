@@ -49,50 +49,10 @@ void Sidebar::showContextMenu(
 
 
     // =====================================================
-    // Class Items
-    // =====================================================
-
-    if (isClassItem(item))
-    {
-        addClassAction();
-
-        QTreeWidgetItem* classItem = item;
-
-        while (
-            classItem
-            && static_cast<NodeType>(
-                classItem->data(0, Qt::UserRole).toInt()) != NodeType::Class
-            )
-        {
-            classItem = classItem->parent();
-        }
-
-        const int classId = classItem
-            ? classItem->data(0, Qt::UserRole + 2).toInt()
-            : -1;
-
-        auto* exportAction = menu.addAction(tr("Export Class"));
-        exportAction->setEnabled(
-            m_databaseSectionsVisible && classId > 0);
-        connect(exportAction, &QAction::triggered, this, [this, classId]()
-        {
-            emit exportClassRequested(classId);
-        });
-
-        menu.addAction(
-            tr("Delete Class"),
-            this,
-            &Sidebar::deleteClassRequested
-            );
-    }
-
-
-
-    // =====================================================
     // Teacher Items
     // =====================================================
 
-    else if (type == NodeType::Teacher)
+    if (type == NodeType::Teacher)
     {
         addTeacherAction();
 
@@ -123,10 +83,7 @@ void Sidebar::showContextMenu(
     // Class Root
     // =====================================================
 
-    else if (
-        item == m_nodes["classes"]
-        || item == m_nodes["my_info_class_list"]
-        )
+    else if (item == m_nodes["classes"])
     {
         addClassAction();
     }

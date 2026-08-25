@@ -31,26 +31,6 @@ public:
         );
 
 
-
-    // =====================================================
-    // Classes
-    // =====================================================
-
-    void addClassNode(
-        const QString &displayName,
-        int classId
-        );
-
-    void clearClasses();
-
-    void selectClass(
-        int classId
-        );
-
-    int getSelectedClassId() const;
-
-
-
     // =====================================================
     // Teachers
     // =====================================================
@@ -96,7 +76,6 @@ public:
 
     void selectByKeys(
         const QStringList& keys,
-        int classId = -1,
         int teacherId = -1
         );
 
@@ -137,10 +116,6 @@ signals:
         );
 
     void addClassRequested();
-
-    void deleteClassRequested();
-
-    void exportClassRequested(int classId);
 
     void addTeacherRequested();
 
@@ -206,14 +181,6 @@ private:
         QTreeWidgetItem* item
         ) const;
 
-    bool isClassItem(
-        QTreeWidgetItem *item
-        ) const;
-
-    QTreeWidgetItem* classDetailsChildForClass(
-        QTreeWidgetItem* classItem
-        ) const;
-
     QTreeWidgetItem* childWithText(
         QTreeWidgetItem* item,
         const QString& text
@@ -222,12 +189,6 @@ private:
     QTreeWidgetItem* childWithKey(
         QTreeWidgetItem* item,
         const QString& key
-        ) const;
-
-    QTreeWidgetItem* childWithKeyAndClassId(
-        QTreeWidgetItem* item,
-        const QString& key,
-        int classId
         ) const;
 
     void updateTreeColumnWidth();
@@ -277,11 +238,6 @@ private:
         QString,
         QTreeWidgetItem*
         > m_nodes;
-
-    QHash<
-        int,
-        QTreeWidgetItem*
-        > m_classItems;
 
     QHash<
         int,

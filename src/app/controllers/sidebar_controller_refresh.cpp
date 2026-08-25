@@ -5,107 +5,6 @@
 
 using namespace SidebarControllerPrivate;
 
-void SidebarController::refreshClassSidebar()
-{
-    if (!m_sidebar)
-    {
-        return;
-    }
-
-    m_sidebar->clearClasses();
-
-    auto* classes =
-        openClassService(m_services);
-    auto* teachers =
-        openTeacherService(m_services);
-
-    if (!classes || !teachers)
-    {
-        updateActionStates();
-        return;
-    }
-
-    QList<SidebarClassNode> classNodes;
-    const Result<QList<Classroom>> loadedClasses = classes->classes();
-    if (!loadedClasses)
-    {
-        DialogServices::showWarning(
-            m_sidebar,
-            tr("Load Classes"),
-            tr("Classes could not be loaded."),
-            loadedClasses.error()
-            );
-        updateActionStates();
-        return;
-    }
-
-    for (const Classroom& classroom : *loadedClasses)
-    {
-        auto classInfo =
-            classes->classInfo(
-                classroom.id
-                ).value_or(ClassInfo{});
-
-        Teacher teacher;
-
-        if (classInfo.teacherId > 0)
-        {
-            const Result<Teacher> loadedTeacher =
-                teachers->teacher(classInfo.teacherId);
-            if (!loadedTeacher)
-            {
-                DialogServices::showWarning(
-                    m_sidebar,
-                    tr("Load Classes"),
-                    tr("A class teacher could not be loaded."),
-                    loadedTeacher.error()
-                    );
-                updateActionStates();
-                return;
-            }
-            teacher = *loadedTeacher;
-        }
-
-        QString displayName =
-            SidebarNodeNaming::formatClassDisplayName(
-                classInfo,
-                teacher
-                );
-
-        SidebarClassNode node;
-        node.classId =
-            classroom.id;
-        node.classInfo =
-            classInfo;
-        node.displayName =
-            displayName;
-        node.teacherKr =
-            teacher.teacherKr.trimmed().isEmpty()
-                ? classInfo.teacherKr
-                : teacher.teacherKr;
-
-        classNodes.append(
-            node
-            );
-    }
-
-    std::sort(
-        classNodes.begin(),
-        classNodes.end(),
-        sidebarClassNodeLessThan
-        );
-
-    for (const SidebarClassNode& node : std::as_const(classNodes))
-    {
-        m_sidebar->addClassNode(
-            node.displayName,
-            node.classId
-            );
-    }
-
-    updateActionStates();
-}
-
 void SidebarController::refreshTeacherSidebar()
 {
     if (!m_sidebar)
@@ -218,26 +117,13 @@ void SidebarController::refreshTeacherSidebar()
 void SidebarController::refreshAllSidebars()
 {
     refreshTeacherSidebar();
-    refreshClassSidebar();
 }
 
 void SidebarController::handleClassInfoSaved(
-    int classId
+    int /*classId*/
     )
 {
-    const QStringList selectedKeys =
-        m_sidebar->selectedKeys();
-    const int selectedClassId =
-        m_sidebar->getSelectedClassId();
-
-    refreshClassSidebar();
-
-    m_sidebar->selectByKeys(
-        selectedKeys,
-        selectedClassId > 0
-            ? selectedClassId
-            : classId
-        );
+    updateActionStates();
 }
 
 void SidebarController::handleTeacherSaved(
@@ -245,7 +131,6 @@ void SidebarController::handleTeacherSaved(
     )
 {
     refreshTeacherSidebar();
-    refreshClassSidebar();
 
     m_sidebar->selectTeacher(
         teacherId

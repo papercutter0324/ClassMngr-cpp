@@ -5,29 +5,6 @@
 
 using namespace SidebarControllerPrivate;
 
-Classroom SidebarController::getClassById(int classId) const
-{
-    auto* classes =
-        openClassService(m_services);
-
-    return classes
-        ? classes->classroom(classId).value_or(Classroom{})
-        : Classroom();
-}
-
-Classroom SidebarController::getSelectedClass() const
-{
-    const int classId =
-        m_sidebar->getSelectedClassId();
-
-    if (classId <= 0)
-    {
-        return {};
-    }
-
-    return getClassById(classId);
-}
-
 void SidebarController::addClass()
 {
     auto* classes =
@@ -55,8 +32,6 @@ void SidebarController::addClass()
         return;
     }
     const int classId = *created;
-
-    refreshClassSidebar();
 
     const Result<Classroom> classroom =
         classes->classroom(
@@ -93,18 +68,12 @@ void SidebarController::addClass()
 
 void SidebarController::deleteClass()
 {
-    int classId =
-        m_sidebar->getSelectedClassId();
+    const int classId =
+        promptForClassToDelete();
 
     if (classId <= 0)
     {
-        classId =
-            promptForClassToDelete();
-
-        if (classId <= 0)
-        {
-            return;
-        }
+        return;
     }
 
     auto* classes =
@@ -141,11 +110,6 @@ void SidebarController::deleteClass()
         return;
     }
 
-    const QStringList selectedKeys =
-        m_sidebar->selectedKeys();
-    const int selectedClassId =
-        m_sidebar->getSelectedClassId();
-
     const Status removed = classes->remove(classroom->id);
     if (!removed)
     {
@@ -158,24 +122,12 @@ void SidebarController::deleteClass()
         return;
     }
 
-    refreshClassSidebar();
-
     if (auto* page = m_pages->classesPage())
     {
         page->loadClasses();
     }
 
-    if (selectedClassId == classroom->id)
-    {
-        m_sidebar->selectByKeys(
-            {QStringLiteral("classes")}
-            );
-    }
-    else
-    {
-        m_sidebar->selectByKeys(
-            selectedKeys,
-            selectedClassId
-            );
-    }
+    m_sidebar->selectByKeys(
+        {QStringLiteral("classes")}
+        );
 }

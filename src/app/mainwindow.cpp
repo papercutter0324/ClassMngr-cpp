@@ -311,11 +311,6 @@ void MainWindow::retranslateUi()
             ? ui->sidebarWidget->selectedKeys()
             : QStringList();
 
-    const int selectedClassId =
-        ui && ui->sidebarWidget
-            ? ui->sidebarWidget->getSelectedClassId()
-            : -1;
-
     const int selectedTeacherId =
         ui && ui->sidebarWidget
             ? ui->sidebarWidget->getSelectedTeacherId()
@@ -371,7 +366,6 @@ void MainWindow::retranslateUi()
 
         ui->sidebarWidget->selectByKeys(
             selectedKeys,
-            selectedClassId,
             selectedTeacherId
             );
     }
@@ -1173,17 +1167,6 @@ void MainWindow::onSidebarItemSelected(
         PageType::TeacherInfo
         );
 
-    /*if (data.type == NodeType::Teacher)
-    {
-        m_pages->showPage(PageType::TeacherInfo);
-        return;
-    }
-
-    if (data.type == NodeType::Class)
-    {
-        m_pages->showPage(PageType::Classes);
-        return;
-    }*/
 }
 
 // =========================================================

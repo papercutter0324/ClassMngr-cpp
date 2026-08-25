@@ -85,20 +85,6 @@ void SidebarController::connectActions(ActionRegistry& actions)
 
     connect(
         m_sidebar,
-        &Sidebar::deleteClassRequested,
-        this,
-        &SidebarController::deleteClass
-        );
-
-    connect(
-        m_sidebar,
-        &Sidebar::exportClassRequested,
-        this,
-        &SidebarController::exportClass
-        );
-
-    connect(
-        m_sidebar,
         &Sidebar::addTeacherRequested,
         this,
         &SidebarController::addTeacher

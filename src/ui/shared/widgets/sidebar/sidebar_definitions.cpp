@@ -72,12 +72,6 @@ QList<TreeNodeSpec> treeStructure()
         },
 
         {
-            "my_info_class_list",
-            QObject::tr("Individual Class List"),
-            NodeType::Root
-        },
-
-        {
             "useful_links",
             QObject::tr("Useful Links"),
             NodeType::Root,
@@ -174,68 +168,6 @@ QList<TreeNodeSpec> treeStructure()
                 {
                     "campus_map",
                     QObject::tr("Maps"),
-                    NodeType::Page
-                }
-            }
-        }
-};
-}
-
-
-
-// =========================================================
-// Class Template
-// =========================================================
-
-QList<TreeNodeSpec> classTemplate()
-{
-    return
-    {
-        {
-            "class_details",
-            QObject::tr("Details"),
-            NodeType::Page
-        },
-
-        {
-            "class_roster",
-            QObject::tr("Roster"),
-            NodeType::Page
-        },
-
-        {
-            "class_notes",
-            QObject::tr("Notes"),
-            NodeType::Page
-        },
-
-        {
-            "student_evaluations",
-            QObject::tr("Student Evaluations"),
-            NodeType::ClassSection,
-
-            {
-                {
-                    "speaking_winter",
-                    QObject::tr("Winter"),
-                    NodeType::Page
-                },
-
-                {
-                    "speaking_speech_contest",
-                    QObject::tr("Speech Contest"),
-                    NodeType::Page
-                },
-
-                {
-                    "speaking_summer",
-                    QObject::tr("Summer"),
-                    NodeType::Page
-                },
-
-                {
-                    "speaking_fall",
-                    QObject::tr("Fall"),
                     NodeType::Page
                 }
             }

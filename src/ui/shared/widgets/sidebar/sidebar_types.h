@@ -10,8 +10,6 @@ enum class NodeType
     Root,
     Page,
     Url,
-    Class,
-    ClassSection,
     Teacher
 };
 

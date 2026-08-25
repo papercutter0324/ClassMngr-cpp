@@ -74,42 +74,6 @@ void SidebarController::exportClasses()
         );
 }
 
-void SidebarController::exportClass(
-    int classId
-    )
-{
-    auto* classes = openClassService(m_services);
-
-    if (!classes || !m_pages || !m_sidebar || classId <= 0)
-    {
-        return;
-    }
-
-    if (!m_pages->confirmCurrentPageCanLeave())
-    {
-        return;
-    }
-
-    const Result<Classroom> classroom = classes->classroom(classId);
-
-    if (!classroom)
-    {
-        DialogServices::showWarning(
-            m_sidebar,
-            tr("Export Class"),
-            tr("The class could not be loaded."),
-            classroom.error()
-            );
-        return;
-    }
-
-    saveClassExport(
-        {classId},
-        classDisplayName(*classroom),
-        tr("Export Class")
-        );
-}
-
 void SidebarController::saveClassExport(
     const QList<int>& classIds,
     const QString& suggestedBaseName,
@@ -235,7 +199,6 @@ void SidebarController::importClasses()
     }
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
-    const int selectedClassId = m_sidebar->getSelectedClassId();
     const auto summary = classes->importClasses(
         *package, dialog.importPlan());
 
@@ -270,11 +233,13 @@ void SidebarController::importClasses()
                 );
         }
         m_pages->showPage(PageType::Classes);
-        m_sidebar->selectClass(firstAffectedClassId);
+        m_sidebar->selectByKeys(
+            {QStringLiteral("classes")}
+            );
     }
     else
     {
-        m_sidebar->selectByKeys(selectedKeys, selectedClassId);
+        m_sidebar->selectByKeys(selectedKeys);
     }
 
     DialogServices::showInformation(

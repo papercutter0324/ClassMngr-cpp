@@ -64,16 +64,15 @@ class SidebarStructureTests : public QObject
     Q_OBJECT
 
 private slots:
-    void classListOwnsDynamicClassesAndDeepLinks();
-    void classContextMenuOffersExportForClickedClass();
+    void classesPageContainsNoIndividualEntries();
+    void classesPageContextMenuOffersAddClass();
     void topLevelOrderAndSubPrepStructure();
     void documentCatalogBuildsLocalizedTree();
 };
 
-void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
+void SidebarStructureTests::classesPageContainsNoIndividualEntries()
 {
     Sidebar sidebar;
-    sidebar.addClassNode(QStringLiteral("E4 Perseus"), 42);
 
     auto* tree = sidebar.findChild<QTreeWidget*>(
         QStringLiteral("sidebarTree")
@@ -86,41 +85,12 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
     QCOMPARE(myInformation->text(0), QStringLiteral("My Information"));
     QCOMPARE(myInformation->childCount(), 0);
 
-    QTreeWidgetItem* classList =
-        topLevelWithKey(tree, QStringLiteral("my_info_class_list"));
-    QVERIFY(classList);
-    QCOMPARE(classList->text(0), QStringLiteral("Individual Class List"));
-    QCOMPARE(classList->childCount(), 1);
-    classList->setExpanded(true);
-    QVERIFY(
-        sidebar.expandedRootKeys().contains(
-            QStringLiteral("my_info_class_list")
-            )
-        );
-
-    QTreeWidgetItem* classItem = classList->child(0);
-    QCOMPARE(classItem->data(0, KeyRole).toString(), QStringLiteral("class"));
-    QCOMPARE(classItem->childCount(), 4);
-    QCOMPARE(
-        childWithKey(classItem, QStringLiteral("class_details"))->text(0),
-        QStringLiteral("Details")
-        );
-    QCOMPARE(
-        childWithKey(classItem, QStringLiteral("class_roster"))->text(0),
-        QStringLiteral("Roster")
-        );
-    QCOMPARE(
-        childWithKey(classItem, QStringLiteral("class_notes"))->text(0),
-        QStringLiteral("Notes")
-        );
-    QVERIFY(
-        childWithKey(classItem, QStringLiteral("student_evaluations"))
-        );
-
     QTreeWidgetItem* classesPage =
         topLevelWithKey(tree, QStringLiteral("classes"));
     QVERIFY(classesPage);
     QCOMPARE(classesPage->text(0), QStringLiteral("Classes"));
+    QCOMPARE(classesPage->childCount(), 0);
+
     QCOMPARE(
         static_cast<NodeType>(
             classesPage->data(0, Qt::UserRole).toInt()
@@ -134,7 +104,7 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
             &sidebar,
             "onItemClicked",
             Qt::DirectConnection,
-            Q_ARG(QTreeWidgetItem*, classItem),
+            Q_ARG(QTreeWidgetItem*, classesPage),
             Q_ARG(int, 0)
             )
         );
@@ -144,42 +114,33 @@ void SidebarStructureTests::classListOwnsDynamicClassesAndDeepLinks()
         qvariant_cast<NavigationData>(
             selectionSpy.takeFirst().constFirst()
             );
-    QCOMPARE(navigation.classId, 42);
-    QCOMPARE(navigation.routeKey, QStringLiteral("class_details"));
+    QCOMPARE(navigation.classId, -1);
+    QCOMPARE(navigation.routeKey, QStringLiteral("classes"));
     QCOMPARE(
         navigation.keys,
-        QStringList({
-            QStringLiteral("my_info_class_list"),
-            QStringLiteral("class"),
-            QStringLiteral("class_details")
-        })
+        QStringList({QStringLiteral("classes")})
         );
 }
 
-void SidebarStructureTests::classContextMenuOffersExportForClickedClass()
+void SidebarStructureTests::classesPageContextMenuOffersAddClass()
 {
     Sidebar sidebar;
     sidebar.resize(420, 700);
-    sidebar.addClassNode(QStringLiteral("Alpha"), 11);
-    sidebar.addClassNode(QStringLiteral("Beta"), 22);
     sidebar.show();
 
     auto* tree = sidebar.findChild<QTreeWidget*>(
         QStringLiteral("sidebarTree"));
     QVERIFY(tree);
 
-    QTreeWidgetItem* classList =
-        topLevelWithKey(tree, QStringLiteral("my_info_class_list"));
-    QVERIFY(classList);
-    classList->setExpanded(true);
-    QTreeWidgetItem* betaClass = classList->child(1);
-    QVERIFY(betaClass);
-    tree->scrollToItem(betaClass);
+    QTreeWidgetItem* classesPage =
+        topLevelWithKey(tree, QStringLiteral("classes"));
+    QVERIFY(classesPage);
+    tree->scrollToItem(classesPage);
 
-    QSignalSpy exportSpy(&sidebar, &Sidebar::exportClassRequested);
-    bool foundExportAction = false;
+    QSignalSpy addClassSpy(&sidebar, &Sidebar::addClassRequested);
+    bool foundAddClassAction = false;
 
-    QTimer::singleShot(0, &sidebar, [&foundExportAction]()
+    QTimer::singleShot(0, &sidebar, [&foundAddClassAction]()
     {
         auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
 
@@ -190,9 +151,9 @@ void SidebarStructureTests::classContextMenuOffersExportForClickedClass()
 
         for (QAction* action : menu->actions())
         {
-            if (action->text() == QStringLiteral("Export Class"))
+            if (action->text() == QStringLiteral("Add Class"))
             {
-                foundExportAction = true;
+                foundAddClassAction = true;
                 action->trigger();
                 menu->close();
                 return;
@@ -207,12 +168,11 @@ void SidebarStructureTests::classContextMenuOffersExportForClickedClass()
             &sidebar,
             "showContextMenu",
             Qt::DirectConnection,
-            Q_ARG(QPoint, tree->visualItemRect(betaClass).center())
+            Q_ARG(QPoint, tree->visualItemRect(classesPage).center())
             )
         );
-    QVERIFY(foundExportAction);
-    QCOMPARE(exportSpy.count(), 1);
-    QCOMPARE(exportSpy.takeFirst().constFirst().toInt(), 22);
+    QVERIFY(foundAddClassAction);
+    QCOMPARE(addClassSpy.count(), 1);
 }
 
 void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
@@ -231,8 +191,11 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
         QStringLiteral("sub_prep"),
         QStringLiteral("co_teachers"),
         QStringLiteral("campus_staff"),
-        QStringLiteral("my_info_class_list")
+        QStringLiteral("useful_links"),
+        QStringLiteral("campus_info")
     };
+
+    QCOMPARE(tree->topLevelItemCount(), expectedKeys.size());
 
     for (int index = 0; index < expectedKeys.size(); ++index)
     {

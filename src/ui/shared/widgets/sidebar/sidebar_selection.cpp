@@ -73,7 +73,6 @@ void Sidebar::setDatabaseSectionsVisible(
         QStringLiteral("my_info_information"),
         QStringLiteral("my_info_schedule"),
         QStringLiteral("my_info_calendar"),
-        QStringLiteral("my_info_class_list"),
         QStringLiteral("sub_prep"),
         QStringLiteral("classes"),
         QStringLiteral("co_teachers"),
@@ -185,10 +184,7 @@ void Sidebar::onItemClicked(
         return;
     }
 
-    if (
-        type == NodeType::Root
-        || type == NodeType::ClassSection
-        )
+    if (type == NodeType::Root)
     {
         if (item->childCount() > 0)
         {
@@ -228,30 +224,6 @@ void Sidebar::onItemClicked(
         return;
     }
 
-    if (type == NodeType::Class)
-    {
-        item->setExpanded(true);
-
-        if (auto* classInfoItem = classDetailsChildForClass(item))
-        {
-            item =
-                classInfoItem;
-
-            m_tree->setCurrentItem(item);
-            m_tree->scrollToItem(item);
-
-            type =
-                static_cast<NodeType>(
-                    item->data(
-                            0,
-                            Qt::UserRole
-                            ).toInt()
-                    );
-        }
-    }
-
-
-
     // =====================================================
     // Navigation Payload
     // =====================================================
@@ -268,65 +240,6 @@ void Sidebar::onItemClicked(
             : data.keys.last();
 
     data.type = type;
-
-
-
-    // =====================================================
-    // Class ID
-    // =====================================================
-
-    const int directClassId =
-        item->data(
-                0,
-                Qt::UserRole + 2
-                ).toInt();
-
-    if (directClassId > 0)
-    {
-        data.classId =
-            directClassId;
-    }
-
-    if (data.classId <= 0 && type == NodeType::Class)
-    {
-        data.classId =
-            item->data(
-                    0,
-                    Qt::UserRole + 2
-                           ).toInt();
-    }
-    else if (data.classId <= 0)
-    {
-        auto* parent =
-            item->parent();
-
-        while (parent)
-        {
-            NodeType parentType =
-                static_cast<NodeType>(
-                    parent->data(
-                            0,
-                            Qt::UserRole
-                            ).toInt()
-                    );
-
-            if (parentType == NodeType::Class)
-            {
-                data.classId =
-                    parent->data(
-                            0,
-                            Qt::UserRole + 2
-                            ).toInt();
-
-                break;
-            }
-
-            parent =
-                parent->parent();
-        }
-    }
-
-
 
     // =====================================================
     // Teacher ID
@@ -436,91 +349,6 @@ QStringList Sidebar::getItemKeys(
 
 
 
-// =========================================================
-// Is Class Item
-// =========================================================
-
-bool Sidebar::isClassItem(
-    QTreeWidgetItem *item
-    ) const
-{
-    while (item)
-    {
-        NodeType type =
-            static_cast<NodeType>(
-                item->data(
-                        0,
-                        Qt::UserRole
-                        ).toInt()
-                );
-
-        if (type == NodeType::Class)
-        {
-            return true;
-        }
-
-        item = item->parent();
-    }
-
-    return false;
-}
-
-QTreeWidgetItem* Sidebar::classDetailsChildForClass(
-    QTreeWidgetItem* classItem
-    ) const
-{
-    if (!classItem)
-    {
-        return nullptr;
-    }
-
-    QTreeWidgetItem* fallbackPageItem =
-        nullptr;
-
-    for (int i = 0; i < classItem->childCount(); ++i)
-    {
-        auto* child =
-            classItem->child(i);
-
-        if (!child)
-        {
-            continue;
-        }
-
-        const NodeType type =
-            static_cast<NodeType>(
-                child->data(
-                        0,
-                        Qt::UserRole
-                        ).toInt()
-                );
-
-        if (type != NodeType::Page)
-        {
-            continue;
-        }
-
-        if (!fallbackPageItem)
-        {
-            fallbackPageItem =
-                child;
-        }
-
-        if (
-            child->data(
-                    0,
-                    Qt::UserRole + 4
-                    ).toString()
-            == QStringLiteral("class_details")
-            )
-        {
-            return child;
-        }
-    }
-
-    return fallbackPageItem;
-}
-
 QTreeWidgetItem* Sidebar::childWithKey(
     QTreeWidgetItem* item,
     const QString& key
@@ -542,41 +370,6 @@ QTreeWidgetItem* Sidebar::childWithKey(
                     0,
                     Qt::UserRole + 4
                     ).toString() == key
-            )
-        {
-            return child;
-        }
-    }
-
-    return nullptr;
-}
-
-QTreeWidgetItem* Sidebar::childWithKeyAndClassId(
-    QTreeWidgetItem* item,
-    const QString& key,
-    int classId
-    ) const
-{
-    if (!item || classId <= 0)
-    {
-        return nullptr;
-    }
-
-    for (int index = 0; index < item->childCount(); ++index)
-    {
-        auto* child =
-            item->child(index);
-
-        if (
-            child
-            && child->data(
-                    0,
-                    Qt::UserRole + 4
-                    ).toString() == key
-            && child->data(
-                    0,
-                    Qt::UserRole + 2
-                    ).toInt() == classId
             )
         {
             return child;

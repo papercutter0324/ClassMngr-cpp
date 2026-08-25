@@ -106,7 +106,6 @@ void Sidebar::buildTree()
     m_tree->clear();
 
     m_nodes.clear();
-    m_classItems.clear();
     m_teacherItems.clear();
 
 
@@ -254,7 +253,6 @@ QStringList Sidebar::selectedKeys() const
 
 void Sidebar::selectByKeys(
     const QStringList& keys,
-    int classId,
     int teacherId
     )
 {
@@ -282,39 +280,11 @@ void Sidebar::selectByKeys(
         const QString key =
             keys.at(index);
 
-        if (key == QStringLiteral("class"))
-        {
-            item =
-                m_classItems.value(classId, nullptr);
-        }
-        else if (
-            key == QStringLiteral("class_roster")
-            && classId > 0
-            )
-        {
-            auto* rosterItem =
-                childWithKeyAndClassId(
-                    item,
-                    key,
-                    classId
-                    );
-
-            item =
-                rosterItem
-                    ? rosterItem
-                    : childWithKey(
-                        item,
-                        key
-                        );
-        }
-        else
-        {
-            item =
-                childWithKey(
-                    item,
-                    key
-                    );
-        }
+        item =
+            childWithKey(
+                item,
+                key
+                );
 
         if (!item)
         {

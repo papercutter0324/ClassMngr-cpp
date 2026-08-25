@@ -881,13 +881,15 @@ Model build(
     const QList<ClassEntry> sorted =
         sortedEntries(filtered);
 
+    model.allClasses =
+        makeClassTabs(
+            sorted,
+            true
+            );
+
     if (model.mode == Mode::Flat)
     {
-        model.flatClasses =
-            makeClassTabs(
-                sorted,
-                true
-                );
+        model.flatClasses = model.allClasses;
         return model;
     }
 

@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/roster/ui/roster_editor_widget.h"
@@ -19,12 +20,15 @@
 #include <QPushButton>
 #include <QTableView>
 
+#include "ui/shared/widgets/sectioncards/class_info_section_card.h"
+
 #include <algorithm>
 
 namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setIncludeAdditionalClass(bool include);
+void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
 void setSpeakingEvaluation(
@@ -112,9 +116,13 @@ class ClassesPageTests : public QObject
 private slots:
     void init();
     void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
+    void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
-    void explicitClassRequestRetainsExcludingFiltersAndHiddenSelection();
+    void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
+    void allGradeTabShowsClassesAcrossGrades();
+    void dayFilterSelectsAllWhenSelectedGradeDisappears();
+    void selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut();
     void navigationControlsUsePills();
     void navigationRowsUseUniformSpacing();
     void filterPillsKeepStaticWidthsWhenPageResizes();
@@ -141,6 +149,7 @@ void ClassesPageTests::nestedEditorsAreDeferredUntilTheirSectionIsOpened()
              ClassesSection::Roster,
              ClassesSection::Analytics,
              ClassesSection::Evaluations,
+             ClassesSection::CoTeacher,
              ClassesSection::Notes
          })
     {
@@ -152,6 +161,7 @@ void ClassesPageTests::nestedEditorsAreDeferredUntilTheirSectionIsOpened()
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Roster));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Analytics));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Evaluations));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::CoTeacher));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Notes));
 
     QVERIFY(page.openClass(42, ClassesSection::Analytics));
@@ -161,7 +171,62 @@ void ClassesPageTests::nestedEditorsAreDeferredUntilTheirSectionIsOpened()
     QVERIFY(page.openClass(42, ClassesSection::Evaluations));
     QVERIFY(page.isEditorInstantiated(ClassesSection::Evaluations));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Roster));
+    QVERIFY(!page.isEditorInstantiated(ClassesSection::CoTeacher));
     QVERIFY(!page.isEditorInstantiated(ClassesSection::Notes));
+}
+
+void ClassesPageTests::classDetailsAndCoTeacherTabsSeparateTheirSectionCards()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+    const QStringList actualTabLabels{
+        sectionTabs->tabText(0),
+        sectionTabs->tabText(1),
+        sectionTabs->tabText(2),
+        sectionTabs->tabText(3),
+        sectionTabs->tabText(4),
+        sectionTabs->tabText(5)
+    };
+    const QStringList expectedTabLabels{
+        QStringLiteral("Details"),
+        QStringLiteral("Roster"),
+        QStringLiteral("Analytics"),
+        QStringLiteral("Evaluations"),
+        QStringLiteral("Co-Teacher"),
+        QStringLiteral("Notes")
+    };
+    QCOMPARE(actualTabLabels, expectedTabLabels);
+
+    QVERIFY(page.openClass(42, ClassesSection::Details));
+    auto* details = page.findChild<ClassDetailsPage*>();
+    QVERIFY(details);
+    QVERIFY(details->findChild<SectionCard*>(
+        QStringLiteral("classDetailsCard")
+        ));
+    QVERIFY(details->findChild<SectionCard*>(
+        QStringLiteral("classTimesCard")
+        ));
+    QVERIFY(!details->findChild<SectionCard*>(
+        QStringLiteral("classKoreanTeacherCard")
+        ));
+
+    QVERIFY(page.openClass(42, ClassesSection::CoTeacher));
+    auto* coTeacher = page.findChild<ClassCoTeacherPage*>();
+    QVERIFY(coTeacher);
+    QVERIFY(coTeacher->findChild<SectionCard*>(
+        QStringLiteral("classKoreanTeacherCard")
+        ));
+    QVERIFY(!coTeacher->findChild<SectionCard*>(
+        QStringLiteral("classDetailsCard")
+        ));
+    QVERIFY(!coTeacher->findChild<SectionCard*>(
+        QStringLiteral("classTimesCard")
+        ));
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
@@ -206,7 +271,7 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
             QStringLiteral("classesTuesdayFilterButton")
             )->isChecked()
         );
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
 
     auto* thursday =
         dayFilterButton(
@@ -230,7 +295,7 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
             QStringLiteral("classesThursdayFilterButton")
             )->isChecked()
         );
-    QCOMPARE(gradeTabs(&page)->count(), 2);
+    QCOMPARE(gradeTabs(&page)->count(), 3);
 
     dayFilterButton(
         &page,
@@ -239,14 +304,14 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
     QApplication::processEvents();
 
     QCOMPARE(page.currentClassId(), 42);
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
     QVERIFY(
-        !gradeTabs(&page)->selectionVisible()
+        gradeTabs(&page)->selectionVisible()
         );
 }
 
 void ClassesPageTests::
-    explicitClassRequestRetainsExcludingFiltersAndHiddenSelection()
+    explicitClassRequestRetainsExcludingFiltersAndAllSelection()
 {
     ApplicationServices services;
     ClassesPage page(&services);
@@ -260,9 +325,9 @@ void ClassesPageTests::
     QVERIFY(thursday);
     thursday->click();
     QApplication::processEvents();
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
     QVERIFY(
-        !gradeTabs(&page)->selectionVisible()
+        gradeTabs(&page)->selectionVisible()
         );
 
     QVERIFY(page.openClass(42));
@@ -275,9 +340,9 @@ void ClassesPageTests::
             QStringLiteral("classesThursdayFilterButton")
             )->isChecked()
         );
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
     QVERIFY(
-        !gradeTabs(&page)->selectionVisible()
+        gradeTabs(&page)->selectionVisible()
         );
 }
 
@@ -298,7 +363,7 @@ void ClassesPageTests::testingModeUsesRegularMeetingsForDayFiltering()
     QVERIFY(tuesday);
     tuesday->click();
     QApplication::processEvents();
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
 
     page.setScheduleDisplayMode(ScheduleDisplayMode::Intensive);
     QApplication::processEvents();
@@ -309,8 +374,117 @@ void ClassesPageTests::testingModeUsesRegularMeetingsForDayFiltering()
 
     page.setScheduleDisplayMode(ScheduleDisplayMode::Testing);
     QApplication::processEvents();
-    QCOMPARE(gradeTabs(&page)->count(), 1);
+    QCOMPARE(gradeTabs(&page)->count(), 2);
     QCOMPARE(page.currentClassId(), 42);
+}
+
+void ClassesPageTests::allGradeTabShowsClassesAcrossGrades()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    auto* tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    QVERIFY(tabs->count() > 0);
+    QCOMPARE(tabs->tabText(tabs->count() - 1), QStringLiteral("All"));
+    QCOMPARE(tabs->currentIndex(), tabs->count() - 1);
+
+    auto* allClassesTabs = tabs->currentWidget()
+        ? tabs->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesTabs);
+    QCOMPARE(allClassesTabs->count(), 2);
+    QCOMPARE(
+        allClassesTabs->tabText(0),
+        QStringLiteral("E4 Hercules • T 4:00")
+        );
+    QCOMPARE(
+        allClassesTabs->tabText(1),
+        QStringLiteral("E5 Athena • Th 5:00")
+        );
+
+    allClassesTabs->setCurrentIndex(1);
+    QApplication::processEvents();
+    QCOMPARE(page.currentClassId(), 43);
+    QCOMPARE(tabs->currentIndex(), tabs->count() - 1);
+}
+
+void ClassesPageTests::dayFilterSelectsAllWhenSelectedGradeDisappears()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    auto* tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(0);
+    QCOMPARE(tabs->tabText(tabs->currentIndex()), QStringLiteral("E4"));
+
+    auto* thursday =
+        dayFilterButton(
+            &page,
+            QStringLiteral("classesThursdayFilterButton")
+            );
+    QVERIFY(thursday);
+    thursday->click();
+    QApplication::processEvents();
+
+    tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    QCOMPARE(page.currentClassId(), 42);
+    QCOMPARE(tabs->tabText(tabs->count() - 1), QStringLiteral("All"));
+    QCOMPARE(tabs->currentIndex(), tabs->count() - 1);
+    QVERIFY(tabs->selectionVisible());
+}
+
+void ClassesPageTests::selectedGradeRemainsVisibleWhenCurrentClassIsFilteredOut()
+{
+    ScheduleWidgetTestStubs::setIncludeAlternativeMatchingClass(true);
+
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    auto* tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(0);
+    QCOMPARE(tabs->tabText(tabs->currentIndex()), QStringLiteral("E4"));
+
+    auto* monday =
+        dayFilterButton(
+            &page,
+            QStringLiteral("classesMondayFilterButton")
+            );
+    QVERIFY(monday);
+    monday->click();
+    QApplication::processEvents();
+
+    auto* tuesday =
+        dayFilterButton(
+            &page,
+            QStringLiteral("classesTuesdayFilterButton")
+            );
+    QVERIFY(tuesday);
+    tuesday->click();
+    QApplication::processEvents();
+
+    monday =
+        dayFilterButton(
+            &page,
+            QStringLiteral("classesMondayFilterButton")
+            );
+    QVERIFY(monday);
+    monday->click();
+    QApplication::processEvents();
+
+    tabs = gradeTabs(&page);
+    QVERIFY(tabs);
+    QCOMPARE(page.currentClassId(), 44);
+    QCOMPARE(tabs->tabText(tabs->currentIndex()), QStringLiteral("E4"));
+    QVERIFY(tabs->selectionVisible());
 }
 
 void ClassesPageTests::navigationControlsUsePills()

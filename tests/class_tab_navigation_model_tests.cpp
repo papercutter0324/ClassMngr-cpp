@@ -74,7 +74,7 @@ private slots:
     void weekendDayFilterMatchesSaturdayAndSunday();
     void dayFilterUsesSelectedScheduleSource();
     void activeScheduleScopeExcludesClassesWithoutSelectedSchedule();
-    void sidebarDefinesClassListAndClassesPage();
+    void sidebarDefinesClassesPage();
 };
 
 void ClassTabNavigationTests::sixOrFewerClassesUseFlatTabs()
@@ -153,6 +153,10 @@ void ClassTabNavigationTests::forcedGroupingUsesGradeAndLevelRows()
     QCOMPARE(model.gradeGroups.at(1).classes.first().classId, 1);
     QCOMPARE(model.gradeGroups.at(2).label, QStringLiteral("Other"));
     QCOMPARE(model.gradeGroups.at(2).classes.first().classId, 3);
+    QCOMPARE(model.allClasses.size(), 3);
+    QCOMPARE(model.allClasses.at(0).classId, 2);
+    QCOMPARE(model.allClasses.at(1).classId, 1);
+    QCOMPARE(model.allClasses.at(2).classId, 3);
 }
 
 void ClassTabNavigationTests::moreThanSixClassesUseOrderedGradeGroups()
@@ -565,7 +569,7 @@ void ClassTabNavigationTests::
     QCOMPARE(classIds(allClassesModel), QList<int>({1, 2, 3}));
 }
 
-void ClassTabNavigationTests::sidebarDefinesClassListAndClassesPage()
+void ClassTabNavigationTests::sidebarDefinesClassesPage()
 {
     const QList<TreeNodeSpec> tree = treeStructure();
 
@@ -584,29 +588,12 @@ void ClassTabNavigationTests::sidebarDefinesClassListAndClassesPage()
             return nullptr;
         };
 
-    const TreeNodeSpec* classList =
-        findNode(tree, QStringLiteral("my_info_class_list"));
-    QVERIFY(classList);
-    QCOMPARE(classList->label, QStringLiteral("Individual Class List"));
-    QCOMPARE(classList->type, NodeType::Root);
-
     const TreeNodeSpec* classes =
         findNode(tree, QStringLiteral("classes"));
     QVERIFY(classes);
     QCOMPARE(classes->label, QStringLiteral("Classes"));
     QCOMPARE(classes->type, NodeType::Page);
 
-    const QList<TreeNodeSpec> classNodes = classTemplate();
-    QCOMPARE(classNodes.size(), 4);
-    QCOMPARE(classNodes.at(0).key, QStringLiteral("class_details"));
-    QCOMPARE(classNodes.at(0).label, QStringLiteral("Details"));
-    QCOMPARE(classNodes.at(1).label, QStringLiteral("Roster"));
-    QCOMPARE(classNodes.at(2).label, QStringLiteral("Notes"));
-    QCOMPARE(
-        classNodes.at(3).key,
-        QStringLiteral("student_evaluations")
-        );
-    QCOMPARE(classNodes.at(3).children.size(), 4);
 }
 
 QTEST_APPLESS_MAIN(ClassTabNavigationTests)

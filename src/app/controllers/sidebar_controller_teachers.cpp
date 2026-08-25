@@ -129,5 +129,4 @@ void SidebarController::deleteTeacher()
     }
 
     refreshTeacherSidebar();
-    refreshClassSidebar();
 }

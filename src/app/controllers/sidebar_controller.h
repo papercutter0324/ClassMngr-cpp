@@ -37,7 +37,6 @@ public:
     // Refresh
     // =====================================================
 
-    void refreshClassSidebar();
     void refreshTeacherSidebar();
     void refreshAllSidebars();
 
@@ -63,7 +62,6 @@ private slots:
     void deleteClass();
     void importClasses();
     void exportClasses();
-    void exportClass(int classId);
 
     // =====================================================
     // Teacher Actions
@@ -79,12 +77,6 @@ private:
     // =====================================================
     // Lookup Helpers
     // =====================================================
-
-    Classroom getSelectedClass() const;
-
-    Classroom getClassById(
-        int classId
-        ) const;
 
     Teacher getTeacherById(
         int teacherId
