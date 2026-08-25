@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <QCheckBox>
+#include <QDebug>
 #include <QDir>
 #include <QDialogButtonBox>
 #include <QFileInfo>
@@ -793,10 +794,13 @@ void SubPrepPrintDialog::acceptGeneration()
             m_services->settingsService();
         if (settingsService && settingsService->isAvailable())
         {
-            settingsService->save(
-                QStringLiteral("myInfo/name"),
-                m_nameEdit->text().trimmed()
-                );
+            if (const Status saved = settingsService->save(
+                    QStringLiteral("myInfo/name"),
+                    m_nameEdit->text().trimmed()
+                    ); !saved)
+            {
+                qWarning() << "Failed to save the Sub Prep user name:" << saved.error();
+            }
         }
     }
 

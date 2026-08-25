@@ -11,6 +11,7 @@
 #include <QtTest>
 
 #include <QApplication>
+#include <QItemSelectionModel>
 #include <QListWidget>
 #include <QMenu>
 #include <QPushButton>
@@ -259,9 +260,11 @@ void TestingClassesPageTests::rosterTableSupportsMultiCellSelection()
         table.visualRect(secondCell).center()
         );
 
-    QCOMPARE(table.selectedIndexes().size(), 2);
-    QVERIFY(table.selectedIndexes().contains(firstCell));
-    QVERIFY(table.selectedIndexes().contains(secondCell));
+    const QModelIndexList selectedIndexes =
+        table.selectionModel()->selectedIndexes();
+    QCOMPARE(selectedIndexes.size(), 2);
+    QVERIFY(selectedIndexes.contains(firstCell));
+    QVERIFY(selectedIndexes.contains(secondCell));
 }
 
 void TestingClassesPageTests

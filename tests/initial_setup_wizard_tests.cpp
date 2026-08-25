@@ -73,13 +73,13 @@ void InitialSetupWizardTests::personalNameFieldRetainsFocusWhileTyping()
     name->setFocus();
     QTRY_VERIFY(name->hasFocus());
 
-    for (const auto key : {Qt::Key_A, Qt::Key_l, Qt::Key_e, Qt::Key_x})
+    for (const auto key : {Qt::Key_A, Qt::Key_L, Qt::Key_E, Qt::Key_X})
     {
         QTest::keyClick(name, key);
         QVERIFY(name->hasFocus());
     }
 
-    QCOMPARE(name->text(), QStringLiteral("Alex"));
+    QCOMPARE(name->text(), QStringLiteral("alex"));
 }
 
 QTEST_MAIN(InitialSetupWizardTests)

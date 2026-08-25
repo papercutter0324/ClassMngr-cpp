@@ -56,7 +56,7 @@ class SettingsService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
-    Status save(
+    [[nodiscard]] Status save(
         const QString& key,
         const QVariant& value
         ) const;

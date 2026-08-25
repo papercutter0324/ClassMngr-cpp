@@ -16,6 +16,7 @@
 #include <array>
 
 #include <QColorDialog>
+#include <QDebug>
 #include <QEvent>
 #include <QElapsedTimer>
 #include <QFontMetrics>
@@ -946,10 +947,13 @@ void CalendarPage::saveCalendarEventTypeColor(
         return;
     }
 
-    settingsService->save(
-        calendarEventTypeColorSettingKey(eventType),
-        color.name(QColor::HexRgb)
-        );
+    if (const Status saved = settingsService->save(
+            calendarEventTypeColorSettingKey(eventType),
+            color.name(QColor::HexRgb)
+            ); !saved)
+    {
+        qWarning() << "Failed to save calendar event type color:" << saved.error();
+    }
 }
 void CalendarPage::chooseCalendarEventTypeColor(
     const QString& eventType

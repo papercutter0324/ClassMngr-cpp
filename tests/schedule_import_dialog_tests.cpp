@@ -78,6 +78,16 @@ private slots:
 
 namespace
 {
+void saveSettingOrFail(
+    DataService* dataService,
+    const QString& key,
+    const QVariant& value
+    )
+{
+    QVERIFY(dataService);
+    QVERIFY(dataService->saveSetting(key, value).has_value());
+}
+
 constexpr int ExpectedSourceDialogWidth = 436;
 
 int actionIndex(
@@ -512,7 +522,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("A Name That Is Not In The Workbook")
         );
@@ -805,7 +815,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
         );
@@ -843,7 +853,7 @@ void ScheduleImportDialogTests
     QVERIFY(!path.isEmpty());
 
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QStringLiteral("Alice")
         );
@@ -1889,11 +1899,11 @@ void ScheduleImportDialogTests
             );
     }
 
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_use_24h"),
         QStringLiteral("true")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_weekends"),
         QStringLiteral("true")
         );
@@ -2143,7 +2153,7 @@ void ScheduleImportDialogTests
     }
 
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/name"),
         QString()
         );

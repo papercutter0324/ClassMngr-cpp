@@ -52,6 +52,14 @@ CalendarEvent makeEvent(
     return calendarEvent;
 }
 
+void saveCalendarEventOrFail(
+    CalendarEventRepository& repository,
+    const CalendarEvent& calendarEvent
+    )
+{
+    QVERIFY(repository.saveCalendarEvent(calendarEvent).has_value());
+}
+
 QStringList titles(
     const QList<CalendarEvent>& events
     )
@@ -102,7 +110,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Inside"),
                 QDate(2026, 7, 10),
@@ -111,7 +119,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Overlaps Start"),
                 QDate(2026, 6, 30),
@@ -120,7 +128,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Overlaps End"),
                 QDate(2026, 7, 31),
@@ -129,7 +137,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Outside"),
                 QDate(2026, 8, 3),
@@ -176,7 +184,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Later Date"),
                 QDate(2026, 7, 11),
@@ -185,7 +193,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 QTime(9, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Beta"),
                 QDate(2026, 7, 10),
@@ -194,7 +202,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Alpha"),
                 QDate(2026, 7, 10),
@@ -203,7 +211,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Early Time"),
                 QDate(2026, 7, 10),
@@ -251,7 +259,7 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Past"),
                 QDate(2026, 6, 1),
@@ -260,7 +268,7 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Ongoing"),
                 QDate(2026, 6, 30),
@@ -272,7 +280,7 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
 
         for (int index = 1; index <= 12; ++index)
         {
-            repository.saveCalendarEvent(
+            saveCalendarEventOrFail(repository,
                 makeEvent(
                     QStringLiteral("Future %1").arg(index),
                     QDate(2026, 7, 5).addDays(index),
@@ -314,7 +322,7 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Earlier"),
                 QDate(2026, 7, 5),
@@ -323,7 +331,7 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
                 QTime(10, 0)
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Later"),
                 QDate(2026, 8, 12),
@@ -428,7 +436,7 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
         CalendarEvent detached =
             *loaded;
         detached.repeatSeriesId.clear();
-        repository.saveCalendarEvent(detached);
+        saveCalendarEventOrFail(repository, detached);
 
         QCOMPARE(
             repository.getCalendarEvent(eventId)->repeatSeriesId,
@@ -458,7 +466,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 1"),
                 QDate(2026, 7, 1),
@@ -469,7 +477,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 2"),
                 QDate(2026, 7, 8),
@@ -480,7 +488,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 3"),
                 QDate(2026, 7, 15),
@@ -491,7 +499,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Other Series"),
                 QDate(2026, 7, 8),
@@ -502,7 +510,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 QStringLiteral("series-2")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Standalone"),
                 QDate(2026, 7, 8),
@@ -548,7 +556,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
         createCalendarEventsTable(database);
 
         CalendarEventRepository repository(database);
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 1"),
                 QDate(2026, 7, 1),
@@ -559,7 +567,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 2"),
                 QDate(2026, 7, 8),
@@ -570,7 +578,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Series 3"),
                 QDate(2026, 7, 15),
@@ -581,7 +589,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("series-1")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Other Series"),
                 QDate(2026, 7, 8),
@@ -592,7 +600,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 QStringLiteral("series-2")
                 )
             );
-        repository.saveCalendarEvent(
+        saveCalendarEventOrFail(repository,
             makeEvent(
                 QStringLiteral("Standalone"),
                 QDate(2026, 7, 8),

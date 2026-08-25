@@ -4,6 +4,7 @@
 #include "features/calendar/calendar_settings_keys.h"
 
 #include <QDateTime>
+#include <QDebug>
 #include <QJsonDocument>
 #include <QLocale>
 #include <QVariantMap>
@@ -370,10 +371,13 @@ void AcademicCalendarProvider::persist()
             QJsonDocument(m_schedule.toJson())
                 .toJson(QJsonDocument::Compact)
             );
-    m_settingsService->save(
-        AcademicCalendarSettingsKey,
-        json
-        );
+    if (const Status saved = m_settingsService->save(
+            AcademicCalendarSettingsKey,
+            json
+            ); !saved)
+    {
+        qWarning() << "Failed to save academic calendar schedule:" << saved.error();
+    }
 }
 
 void AcademicCalendarProvider::persistFirstDayOfWeek()
@@ -383,8 +387,11 @@ void AcademicCalendarProvider::persistFirstDayOfWeek()
         return;
     }
 
-    m_settingsService->save(
-        CalendarSettingsKeys::FirstDayOfWeek,
-        m_firstDayOfWeek
-        );
+    if (const Status saved = m_settingsService->save(
+            CalendarSettingsKeys::FirstDayOfWeek,
+            m_firstDayOfWeek
+            ); !saved)
+    {
+        qWarning() << "Failed to save calendar first-day preference:" << saved.error();
+    }
 }

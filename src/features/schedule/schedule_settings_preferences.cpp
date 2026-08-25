@@ -2,6 +2,8 @@
 
 #include "app/services/feature_services.h"
 
+#include <QDebug>
+
 namespace
 {
 const QString Use24HourTime =
@@ -99,26 +101,19 @@ void save(
         return;
     }
 
-    settingsService->save(
-        Use24HourTime,
-        storedBool(values.use24HourTime)
-        );
-    settingsService->save(
-        ShowKoreanTeacherEnglishNames,
-        storedBool(values.showEnglishNames)
-        );
-    settingsService->save(
-        ShowWeekends,
-        storedBool(values.showWeekends)
-        );
-    settingsService->save(
-        ShowAllHours,
-        storedBool(values.showAllIntensiveHours)
-        );
-    settingsService->save(
-        TestingAffectsM1,
-        storedBool(values.testingAffectsM1)
-        );
+    if (const Status saved = settingsService->saveAll({
+            {Use24HourTime, storedBool(values.use24HourTime)},
+            {
+                ShowKoreanTeacherEnglishNames,
+                storedBool(values.showEnglishNames)
+            },
+            {ShowWeekends, storedBool(values.showWeekends)},
+            {ShowAllHours, storedBool(values.showAllIntensiveHours)},
+            {TestingAffectsM1, storedBool(values.testingAffectsM1)}
+        }); !saved)
+    {
+        qWarning() << "Failed to save schedule settings:" << saved.error();
+    }
 }
 
 } // namespace ScheduleSettingsPreferences

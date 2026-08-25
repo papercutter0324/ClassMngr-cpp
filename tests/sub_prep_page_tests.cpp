@@ -35,6 +35,16 @@ void setIncludeAdditionalClass(bool include);
 
 namespace
 {
+void saveSettingOrFail(
+    DataService* dataService,
+    const QString& key,
+    const QVariant& value
+    )
+{
+    QVERIFY(dataService);
+    QVERIFY(dataService->saveSetting(key, value).has_value());
+}
+
 int layoutIndexForSection(
     QVBoxLayout* layout,
     const QString& section
@@ -536,11 +546,11 @@ void SubPrepPageTests
     }
 
     ScheduleWidgetTestStubs::reset();
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("subPrep/bookReportGrading"),
         QStringLiteral("Custom legacy grading\nAdditional Rules: keep here")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("subPrep/subComments"),
         QStringLiteral("Existing substitute note")
         );
@@ -594,15 +604,15 @@ void SubPrepPageTests
     ::zoomUnavailableHidesStoredCredentials()
 {
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomLoginId"),
         QStringLiteral("teacher@example.com")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomPassword"),
         QStringLiteral("secret")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomNotAvailable"),
         true
         );
@@ -625,7 +635,7 @@ void SubPrepPageTests
         QStringLiteral("N/A")
         );
 
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomNotAvailable"),
         false
         );
@@ -650,15 +660,15 @@ void SubPrepPageTests
 
     ScheduleWidgetTestStubs::reset();
     ApplicationServices legacyServices;
-    legacyServices.dataService()->saveSetting(
+    saveSettingOrFail(legacyServices.dataService(),
         QStringLiteral("subPrep/personalZoomEmail"),
         QStringLiteral("legacy@example.com")
         );
-    legacyServices.dataService()->saveSetting(
+    saveSettingOrFail(legacyServices.dataService(),
         QStringLiteral("subPrep/personalZoomPassword"),
         QStringLiteral("legacy secret")
         );
-    legacyServices.dataService()->saveSetting(
+    saveSettingOrFail(legacyServices.dataService(),
         QStringLiteral("subPrep/personalZoomNotAvailable"),
         false
         );
@@ -686,15 +696,15 @@ void SubPrepPageTests
     ::clearDatabaseStateStopsAutosaveAndRemovesLoadedContent()
 {
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("subPrep/classMaterials"),
         QStringLiteral("Stored database A material")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomLoginId"),
         QStringLiteral("database-a@example.com")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("myInfo/zoomNotAvailable"),
         false
         );

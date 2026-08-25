@@ -53,6 +53,19 @@ void setTestingClassAssignment(
 QString settingValue(const QString& key);
 }
 
+namespace
+{
+void saveSettingOrFail(
+    DataService* dataService,
+    const QString& key,
+    const QVariant& value
+    )
+{
+    QVERIFY(dataService);
+    QVERIFY(dataService->saveSetting(key, value).has_value());
+}
+}
+
 class ScheduleWidgetTests : public QObject
 {
     Q_OBJECT
@@ -197,7 +210,7 @@ void ScheduleWidgetTests::clearTestingLayoutUsesScheduleService()
 void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
 {
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_korean_teacher_english_names"),
         QStringLiteral("true")
         );
@@ -207,7 +220,7 @@ void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
     QVERIFY(ScheduleWidgetTestStubs::lastPrintRequestShowsEnglishNames);
 
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_korean_teacher_english_names"),
         QStringLiteral("false")
         );
@@ -269,11 +282,11 @@ void ScheduleWidgetTests
     ::legacyHourSettingsDoNotCarryForward()
 {
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_all_hours"),
         QStringLiteral("true")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_hide_empty_rows"),
         QStringLiteral("false")
         );
@@ -340,7 +353,7 @@ void ScheduleWidgetTests
         scheduleTestingSlotState()
         );
 
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_testing_affects_m1"),
         QStringLiteral("true")
         );
@@ -380,7 +393,7 @@ void ScheduleWidgetTests
         );
 
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_korean_teacher_english_names"),
         QStringLiteral("true")
         );
@@ -621,7 +634,7 @@ void ScheduleWidgetTests
     ::readOnlyPresentationHidesControlsAndIgnoresClicks()
 {
     ApplicationServices services;
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_intensive"),
         QStringLiteral("true")
         );
@@ -777,15 +790,15 @@ void ScheduleWidgetTests
 
     QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
 
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_use_24h"),
         QStringLiteral("true")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_show_weekends"),
         QStringLiteral("true")
         );
-    services.dataService()->saveSetting(
+    saveSettingOrFail(services.dataService(),
         QStringLiteral("schedule_display_mode"),
         QStringLiteral("testing")
         );

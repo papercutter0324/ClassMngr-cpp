@@ -11,6 +11,7 @@
 
 #include <QCheckBox>
 #include <QDateEdit>
+#include <QDebug>
 #include <QFont>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -639,14 +640,19 @@ void CalendarPreferencesPanel::saveOptions()
 {
     if (m_settingsService && m_settingsService->isAvailable())
     {
-        m_settingsService->save(
-            CalendarSettingsKeys::ShowEventsAtAllCampuses,
-            m_showAllCampusesCheck->isChecked()
-            );
-        m_settingsService->save(
-            CalendarSettingsKeys::HideStartOfTermEvents,
-            m_hideStartOfTermEventsCheck->isChecked()
-            );
+        if (const Status saved = m_settingsService->saveAll({
+                {
+                    CalendarSettingsKeys::ShowEventsAtAllCampuses,
+                    m_showAllCampusesCheck->isChecked()
+                },
+                {
+                    CalendarSettingsKeys::HideStartOfTermEvents,
+                    m_hideStartOfTermEventsCheck->isChecked()
+                }
+            }); !saved)
+        {
+            qWarning() << "Failed to save calendar preferences:" << saved.error();
+        }
     }
 
     if (m_provider && m_startWeekOnMondayCheck)

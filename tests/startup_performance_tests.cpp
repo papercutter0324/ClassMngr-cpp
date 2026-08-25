@@ -207,14 +207,14 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         metrics.value(QStringLiteral("checkpoints")).toArray();
     QCOMPARE(checkpoints.size(), 2);
     QCOMPARE(
-        checkpoints.constFirst()
+        checkpoints.at(0)
             .toObject()
             .value(QStringLiteral("name"))
             .toString(),
         QStringLiteral("window-constructed")
         );
     QCOMPARE(
-        checkpoints.constLast()
+        checkpoints.at(1)
             .toObject()
             .value(QStringLiteral("name"))
             .toString(),

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <QColor>
 #include <QColorDialog>
+#include <QDebug>
 #include <QDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -347,8 +348,11 @@ void ColorUtils::saveCustomColors(SettingsService* settingsService)
                 : DefaultCustomColors[index]
             );
     }
-    settingsService->save(
-        CustomColorsSettingKey,
-        serializeCustomColors(colors)
-        );
+    if (const Status saved = settingsService->save(
+            CustomColorsSettingKey,
+            serializeCustomColors(colors)
+            ); !saved)
+    {
+        qWarning() << "Failed to save custom colors:" << saved.error();
+    }
 }

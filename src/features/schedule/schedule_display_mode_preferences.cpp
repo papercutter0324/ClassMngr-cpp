@@ -2,6 +2,8 @@
 
 #include "app/services/feature_services.h"
 
+#include <QDebug>
+
 namespace
 {
 const QString LegacyShowIntensiveKey =
@@ -110,7 +112,14 @@ ScheduleDisplayMode load(SettingsService* settingsService)
 void save(SettingsService* settingsService, ScheduleDisplayMode mode)
 {
     if (settingsService && settingsService->isAvailable())
-        settingsService->save(displayModeSettingKey(), settingValue(mode));
+    {
+        if (const Status saved =
+                settingsService->save(displayModeSettingKey(), settingValue(mode));
+            !saved)
+        {
+            qWarning() << "Failed to save schedule display mode:" << saved.error();
+        }
+    }
 }
 
 }
