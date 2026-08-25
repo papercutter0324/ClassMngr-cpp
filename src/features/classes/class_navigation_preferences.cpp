@@ -6,6 +6,10 @@ namespace
 {
 const QString VisibilityScopeKey =
     QStringLiteral("classes_navigation_visibility_scope");
+const QString ShowMiddleSchoolAnalyticsAndEvaluationsKey =
+    QStringLiteral(
+        "classes_navigation_show_middle_school_analytics_and_evaluations"
+        );
 const QString DayFilterResetPolicyKey =
     QStringLiteral("classes_navigation_day_filter_reset_policy");
 const QString ClassSelectionResetPolicyKey =
@@ -77,6 +81,43 @@ void save(
         static_cast<void>(
             settingsService->save(VisibilityScopeKey, settingValue(visibilityScope))
             );
+}
+
+bool showMiddleSchoolAnalyticsAndEvaluations(
+    SettingsService* settingsService
+    )
+{
+    if (!settingsService || !settingsService->isAvailable())
+    {
+        return false;
+    }
+
+    const Result<QVariant> storedValueResult = settingsService->load(
+        ShowMiddleSchoolAnalyticsAndEvaluationsKey
+        );
+    const QVariant storedValue = storedValueResult.value_or(QVariant());
+    const bool show = storedValue.isValid() && storedValue.toBool();
+    if (!storedValue.isValid())
+    {
+        saveShowMiddleSchoolAnalyticsAndEvaluations(settingsService, show);
+    }
+    return show;
+}
+
+void saveShowMiddleSchoolAnalyticsAndEvaluations(
+    SettingsService* settingsService,
+    bool show
+    )
+{
+    if (settingsService && settingsService->isAvailable())
+    {
+        static_cast<void>(
+            settingsService->save(
+                ShowMiddleSchoolAnalyticsAndEvaluationsKey,
+                show
+                )
+            );
+    }
 }
 
 SessionResetPolicy dayFilterResetPolicy(

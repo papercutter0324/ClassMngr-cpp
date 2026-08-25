@@ -40,6 +40,7 @@
 namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
+QHash<int, QString> classGrades;
 QHash<QString, QString> testingBlocks;
 QHash<int, TestingClass> testingClasses;
 QHash<QString, int> testingClassAssignments;
@@ -61,6 +62,7 @@ bool includeAlternativeMatchingClass = false;
 void reset()
 {
     settings.clear();
+    classGrades.clear();
     testingBlocks.clear();
     testingClasses.clear();
     testingClassAssignments.clear();
@@ -99,6 +101,14 @@ void setIncludeMiddleSchoolClasses(
     )
 {
     includeMiddleSchoolClasses = include;
+}
+
+void setClassGrade(
+    int classId,
+    const QString& grade
+    )
+{
+    classGrades.insert(classId, grade);
 }
 
 void setMatchImportedClasses(
@@ -650,9 +660,12 @@ Result<ClassInfo> DataService::loadClassInfo(
 
     info.teacherId = classId == 43 ? 8 : 7;
     info.classGrade =
-        classId == 43
-            ? QStringLiteral("E5")
-            : QStringLiteral("E4");
+        ScheduleWidgetTestStubs::classGrades.value(
+            classId,
+            classId == 43
+                ? QStringLiteral("E5")
+                : QStringLiteral("E4")
+            );
     info.classLevel =
         classId == 43
             ? QStringLiteral("Athena")

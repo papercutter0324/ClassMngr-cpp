@@ -96,6 +96,7 @@ signals:
 private:
     void buildUi();
     void rebuildClassTabs(int selectedClassId);
+    void rebuildSectionTabs();
     void createDayFilterControls(NavigationTabWidget* gradeTabs);
     void updateFirstRowLayout();
     void scheduleFirstRowLayout();
@@ -120,6 +121,9 @@ private:
         );
     void setVisibilityScope(
         ClassTabNavigation::VisibilityScope visibilityScope
+        );
+    void setShowMiddleSchoolAnalyticsAndEvaluations(
+        bool show
         );
     bool activateClass(int classId);
     bool activateSection(ClassesSection section);
@@ -155,6 +159,8 @@ private:
     bool m_embeddedDatabaseStateSet = false;
     bool m_embeddedDatabaseOpen = false;
     bool m_rebuildingTabs = false;
+    bool m_rebuildingSectionTabs = false;
+    bool m_showMiddleSchoolAnalyticsAndEvaluations = false;
     bool m_restoringTabs = false;
     bool m_weekendClassesAvailable = false;
     bool m_firstRowLayoutQueued = false;
@@ -162,6 +168,7 @@ private:
     QString m_selectedGrade;
     QHash<QString, int> m_selectedClassIds;
     QHash<int, int> m_loadedEditorClassIds;
+    QList<ClassesSection> m_visibleSections;
     ClassTabNavigation::DayFilter m_dayFilter{
         {},
         ClassTabNavigation::ScheduleSource::Regular,

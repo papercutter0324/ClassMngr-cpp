@@ -454,6 +454,26 @@ void addNavigationPreferencesTab(
     classesShownLayout->addWidget(activeSchedule);
     navigationLayout->addWidget(classesShownGroup);
 
+    auto* showMiddleSchoolAnalyticsAndEvaluations = new QCheckBox(
+        preferencesText(
+            "Show Analytics and Evaluations for M1, M2, and M3 classes"
+            ),
+        navigationGroup
+        );
+    showMiddleSchoolAnalyticsAndEvaluations->setObjectName(
+        QStringLiteral(
+            "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
+            )
+        );
+    showMiddleSchoolAnalyticsAndEvaluations->setChecked(
+        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
+            window && window->services()
+                ? window->services()->settingsService()
+                : nullptr
+            )
+        );
+    navigationLayout->addWidget(showMiddleSchoolAnalyticsAndEvaluations);
+
     const auto resetPolicy =
         [window](bool dayFilters)
         {
@@ -572,6 +592,21 @@ void addNavigationPreferencesTab(
     };
     QObject::connect(allClasses, &QRadioButton::toggled, page, save);
     QObject::connect(activeSchedule, &QRadioButton::toggled, page, save);
+    QObject::connect(
+        showMiddleSchoolAnalyticsAndEvaluations,
+        &QCheckBox::toggled,
+        page,
+        [window](bool show)
+        {
+            ClassNavigationPreferences::saveShowMiddleSchoolAnalyticsAndEvaluations(
+                window && window->services()
+                    ? window->services()->settingsService()
+                    : nullptr,
+                show
+                );
+            window->refreshNavigationPreferences();
+        }
+        );
 
     tabs->addTab(page, preferencesText("Navigation Bar"));
 }

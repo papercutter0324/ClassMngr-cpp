@@ -64,6 +64,29 @@ QString classesSectionIdentifier(ClassesSection section)
     return QStringLiteral("unknown");
 }
 
+bool isMiddleSchoolGrade(const QString& grade)
+{
+    const QString normalizedGrade = grade.trimmed().toUpper();
+    return normalizedGrade == QStringLiteral("M1")
+        || normalizedGrade == QStringLiteral("M2")
+        || normalizedGrade == QStringLiteral("M3");
+}
+
+QString classesSectionText(ClassesSection section)
+{
+    switch (section)
+    {
+    case ClassesSection::Details: return ClassesPage::tr("Details");
+    case ClassesSection::Roster: return ClassesPage::tr("Roster");
+    case ClassesSection::Analytics: return ClassesPage::tr("Analytics");
+    case ClassesSection::Evaluations: return ClassesPage::tr("Evaluations");
+    case ClassesSection::CoTeacher: return ClassesPage::tr("Co-Teacher");
+    case ClassesSection::Notes: return ClassesPage::tr("Notes");
+    }
+
+    return {};
+}
+
 struct DayFilterButtonDefinition
 {
     QString key;
@@ -136,6 +159,11 @@ ClassesPage::ClassesPage(
 {
     setProperty("role", UiRoles::Classes);
 
+    m_showMiddleSchoolAnalyticsAndEvaluations =
+        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
+            m_services ? m_services->settingsService() : nullptr
+            );
+
     MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
     buildUi();
 }
@@ -173,6 +201,7 @@ bool ClassesPage::openClass(
         m_currentClassId = -1;
         m_currentSection = section;
         rebuildClassTabs(-1);
+        rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
         return false;
@@ -205,6 +234,7 @@ bool ClassesPage::openClass(
         m_classes.clear();
         m_currentClassId = -1;
         rebuildClassTabs(-1);
+        rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
         return false;
@@ -241,6 +271,7 @@ bool ClassesPage::openClass(
         }
         m_currentClassId = -1;
         m_currentSection = section;
+        rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
         return true;
@@ -254,6 +285,7 @@ bool ClassesPage::openClass(
 
     m_currentClassId = classroom.id;
     m_currentSection = section;
+    rebuildSectionTabs();
     m_loadedEditorClassIds.clear();
     loadActiveEditor();
     restoreSelections();
@@ -476,6 +508,11 @@ void ClassesPage::refreshNavigationPreferences()
             m_services ? m_services->settingsService() : nullptr
             )
         );
+    setShowMiddleSchoolAnalyticsAndEvaluations(
+        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
+            m_services ? m_services->settingsService() : nullptr
+            )
+        );
 }
 
 void ClassesPage::clearDatabaseState()
@@ -489,6 +526,7 @@ void ClassesPage::clearDatabaseState()
     m_loadedEditorClassIds.clear();
 
     rebuildClassTabs(-1);
+    rebuildSectionTabs();
 
     if (m_detailsPage)
     {
@@ -541,16 +579,6 @@ void ClassesPage::retranslateUi()
             );
     }
 
-    if (m_sectionTabs && m_sectionTabs->count() >= 6)
-    {
-        m_sectionTabs->setTabText(0, tr("Details"));
-        m_sectionTabs->setTabText(1, tr("Roster"));
-        m_sectionTabs->setTabText(2, tr("Analytics"));
-        m_sectionTabs->setTabText(3, tr("Evaluations"));
-        m_sectionTabs->setTabText(4, tr("Co-Teacher"));
-        m_sectionTabs->setTabText(5, tr("Notes"));
-    }
-
     for (BasePage* editor : {
              static_cast<BasePage*>(m_detailsPage),
              static_cast<BasePage*>(m_rosterEditor),
@@ -566,6 +594,7 @@ void ClassesPage::retranslateUi()
         }
     }
 
+    rebuildSectionTabs();
     rebuildClassTabs(m_currentClassId);
     restoreSelections();
     updateHeaderText();
@@ -713,13 +742,8 @@ void ClassesPage::buildUi()
             m_navigationContainer
             );
     m_sectionTabs->setObjectName("classesSectionTabs");
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Details"));
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Roster"));
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Analytics"));
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Evaluations"));
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Co-Teacher"));
-    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Notes"));
     navigationLayout->addWidget(m_sectionTabs);
+    rebuildSectionTabs();
     contentLayout()->addWidget(m_navigationContainer);
 
     m_emptyLabel = new QLabel(tr("No classes available"), this);
@@ -757,13 +781,19 @@ void ClassesPage::buildUi()
         this,
         [this](int index)
         {
-            if (m_rebuildingTabs || m_restoringTabs || index < 0)
+            if (
+                m_rebuildingTabs
+                || m_rebuildingSectionTabs
+                || m_restoringTabs
+                || index < 0
+                || index >= m_visibleSections.size()
+                )
             {
                 return;
             }
 
             activateSection(
-                static_cast<ClassesSection>(index)
+                m_visibleSections.at(index)
                 );
         }
         );
@@ -1059,6 +1089,67 @@ void ClassesPage::rebuildClassTabs(
     scheduleFirstRowLayout();
 }
 
+void ClassesPage::rebuildSectionTabs()
+{
+    if (!m_sectionTabs)
+    {
+        return;
+    }
+
+    bool hideMiddleSchoolAnalyticsAndEvaluations = false;
+    const Classroom classroom = classroomById(m_currentClassId);
+    auto* classService =
+        m_services
+            ? m_services->classService()
+            : nullptr;
+    if (
+        !m_showMiddleSchoolAnalyticsAndEvaluations
+        && classroom.id > 0
+        && classService
+        && classService->isAvailable()
+        )
+    {
+        hideMiddleSchoolAnalyticsAndEvaluations = isMiddleSchoolGrade(
+            classService->classInfo(classroom.id)
+                .value_or(ClassInfo{})
+                .classGrade
+            );
+    }
+
+    QList<ClassesSection> visibleSections{
+        ClassesSection::Details,
+        ClassesSection::Roster
+    };
+    if (!hideMiddleSchoolAnalyticsAndEvaluations)
+    {
+        visibleSections.append(ClassesSection::Analytics);
+        visibleSections.append(ClassesSection::Evaluations);
+    }
+    visibleSections.append(ClassesSection::CoTeacher);
+    visibleSections.append(ClassesSection::Notes);
+
+    m_rebuildingSectionTabs = true;
+    while (m_sectionTabs->count() > 0)
+    {
+        QWidget* page = m_sectionTabs->widget(0);
+        m_sectionTabs->removeTab(0);
+        delete page;
+    }
+
+    m_visibleSections = visibleSections;
+    for (const ClassesSection section : std::as_const(m_visibleSections))
+    {
+        m_sectionTabs->addTab(
+            tabPage(m_sectionTabs),
+            classesSectionText(section)
+            );
+    }
+    m_sectionTabs->setCurrentIndex(
+        m_visibleSections.indexOf(m_currentSection)
+        );
+    m_rebuildingSectionTabs = false;
+}
+
 void ClassesPage::createDayFilterControls(
     NavigationTabWidget* gradeTabs
     )
@@ -1351,6 +1442,26 @@ void ClassesPage::setVisibilityScope(
     }
 }
 
+void ClassesPage::setShowMiddleSchoolAnalyticsAndEvaluations(
+    bool show
+    )
+{
+    if (m_showMiddleSchoolAnalyticsAndEvaluations == show)
+    {
+        return;
+    }
+
+    m_showMiddleSchoolAnalyticsAndEvaluations = show;
+    rebuildSectionTabs();
+
+    if (m_currentClassId > 0)
+    {
+        loadActiveEditor();
+        restoreSelections();
+        updateHeaderText();
+    }
+}
+
 bool ClassesPage::activateClass(
     int classId
     )
@@ -1380,6 +1491,7 @@ bool ClassesPage::activateClass(
     }
 
     m_currentClassId = classroom.id;
+    rebuildSectionTabs();
     loadActiveEditor();
     restoreSelections();
     updateHeaderText();
@@ -1652,7 +1764,7 @@ void ClassesPage::restoreSelections()
     if (m_sectionTabs)
     {
         m_sectionTabs->setCurrentIndex(
-            static_cast<int>(m_currentSection)
+            m_visibleSections.indexOf(m_currentSection)
             );
     }
 
@@ -1998,6 +2110,7 @@ void ClassesPage::handleClassInfoSaved(
         }
         m_classes = *loadedClasses;
         rebuildClassTabs(classId);
+        rebuildSectionTabs();
         restoreSelections();
         updateHeaderText();
     }

@@ -22,6 +22,15 @@ void save(
     ClassTabNavigation::VisibilityScope visibilityScope
     );
 
+[[nodiscard]] bool showMiddleSchoolAnalyticsAndEvaluations(
+    SettingsService* settingsService
+    );
+
+void saveShowMiddleSchoolAnalyticsAndEvaluations(
+    SettingsService* settingsService,
+    bool show
+    );
+
 [[nodiscard]] SessionResetPolicy dayFilterResetPolicy(
     SettingsService* settingsService
     );

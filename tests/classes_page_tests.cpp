@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "features/classes/class_navigation_preferences.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -28,6 +29,7 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setIncludeAdditionalClass(bool include);
+void setClassGrade(int classId, const QString& grade);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
@@ -117,6 +119,7 @@ private slots:
     void init();
     void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
     void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
+    void middleSchoolAnalyticsAndEvaluationsTabsFollowPreference();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
@@ -227,6 +230,59 @@ void ClassesPageTests::classDetailsAndCoTeacherTabsSeparateTheirSectionCards()
     QVERIFY(!coTeacher->findChild<SectionCard*>(
         QStringLiteral("classTimesCard")
         ));
+}
+
+void ClassesPageTests
+    ::middleSchoolAnalyticsAndEvaluationsTabsFollowPreference()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+    auto* sectionTabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+
+    const QStringList defaultLabels{
+        QStringLiteral("Details"),
+        QStringLiteral("Roster"),
+        QStringLiteral("Co-Teacher"),
+        QStringLiteral("Notes")
+    };
+    for (const QString& grade : {
+             QStringLiteral("M1"),
+             QStringLiteral("M2"),
+             QStringLiteral("M3")
+         })
+    {
+        ScheduleWidgetTestStubs::setClassGrade(42, grade);
+        QVERIFY(page.openClass(42));
+        QCOMPARE(page.currentClassId(), 42);
+        QCOMPARE(sectionTabs->count(), defaultLabels.size());
+        for (int index = 0; index < defaultLabels.size(); ++index)
+        {
+            QCOMPARE(sectionTabs->tabText(index), defaultLabels.at(index));
+        }
+    }
+
+    ClassNavigationPreferences::saveShowMiddleSchoolAnalyticsAndEvaluations(
+        services.settingsService(),
+        true
+        );
+    page.refreshNavigationPreferences();
+
+    const QStringList enabledLabels{
+        QStringLiteral("Details"),
+        QStringLiteral("Roster"),
+        QStringLiteral("Analytics"),
+        QStringLiteral("Evaluations"),
+        QStringLiteral("Co-Teacher"),
+        QStringLiteral("Notes")
+    };
+    QCOMPARE(sectionTabs->count(), enabledLabels.size());
+    for (int index = 0; index < enabledLabels.size(); ++index)
+    {
+        QCOMPARE(sectionTabs->tabText(index), enabledLabels.at(index));
+    }
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
