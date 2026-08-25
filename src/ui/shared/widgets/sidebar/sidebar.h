@@ -66,6 +66,8 @@ public:
         const QString& localeName
         );
 
+    [[nodiscard]] int defaultWidthForTopLevelLabels() const;
+
     QStringList expandedRootKeys() const;
 
     void restoreExpandedRootKeys(

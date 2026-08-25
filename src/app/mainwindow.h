@@ -126,7 +126,7 @@ private:
 
     void connectSignals();
 
-    void restoreSplitter();
+    void setDefaultSidebarWidth();
     void reapplyStartupFontSize();
     void showStartupDatabasePage();
     void startInitialSetup();
@@ -185,6 +185,7 @@ private:
     bool m_testingClassesReturnToPersonalSchedule = true;
     bool m_startupFontSizeRefreshQueued = false;
     bool m_startupBirthdayCheckQueued = false;
+    bool m_startupSidebarWidthApplied = false;
     MainWindowStartupOptions m_startupOptions;
     LanguageService* m_languageService = nullptr;
 };

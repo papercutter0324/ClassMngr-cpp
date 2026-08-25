@@ -1,5 +1,35 @@
 #include "sidebar_p.h"
 
+int Sidebar::defaultWidthForTopLevelLabels() const
+{
+    if (!m_tree)
+    {
+        return UiConstants::MainWindow::SidebarStartupLabelPadding;
+    }
+
+    const QFontMetrics metrics(m_tree->font());
+    int longestLabelWidth = 0;
+
+    for (int index = 0;
+         index < m_tree->topLevelItemCount();
+         ++index)
+    {
+        const QTreeWidgetItem* item =
+            m_tree->topLevelItem(index);
+
+        if (item)
+        {
+            longestLabelWidth = qMax(
+                longestLabelWidth,
+                metrics.horizontalAdvance(item->text(0))
+                );
+        }
+    }
+
+    return longestLabelWidth
+        + UiConstants::MainWindow::SidebarStartupLabelPadding;
+}
+
 void Sidebar::updateTreeColumnWidth()
 {
     if (!m_tree)

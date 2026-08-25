@@ -1,7 +1,9 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
+#include "ui/shared/constants/gui_constants.h"
 #include "features/documents/document_catalog.h"
 
 #include <QApplication>
+#include <QFontMetrics>
 #include <QMenu>
 #include <QSignalSpy>
 #include <QTimer>
@@ -67,6 +69,7 @@ private slots:
     void classesPageContainsNoIndividualEntries();
     void classesPageContextMenuOffersAddClass();
     void topLevelOrderAndSubPrepStructure();
+    void defaultWidthAccommodatesLongestTopLevelLabel();
     void documentCatalogBuildsLocalizedTree();
 };
 
@@ -272,6 +275,36 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
              QStringLiteral("native_english_teachers"));
     QCOMPARE(campusStaff->child(2)->data(0, KeyRole).toString(),
              QStringLiteral("gs_team"));
+}
+
+void SidebarStructureTests::defaultWidthAccommodatesLongestTopLevelLabel()
+{
+    Sidebar sidebar;
+    auto* tree = sidebar.findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    int longestLabelWidth = 0;
+
+    for (int index = 0;
+         index < tree->topLevelItemCount();
+         ++index)
+    {
+        QTreeWidgetItem* item = tree->topLevelItem(index);
+        QVERIFY(item);
+
+        longestLabelWidth = qMax(
+            longestLabelWidth,
+            QFontMetrics(tree->font()).horizontalAdvance(item->text(0))
+            );
+    }
+
+    QCOMPARE(
+        sidebar.defaultWidthForTopLevelLabels(),
+        longestLabelWidth
+            + UiConstants::MainWindow::SidebarStartupLabelPadding
+        );
 }
 
 void SidebarStructureTests::documentCatalogBuildsLocalizedTree()

@@ -12,7 +12,6 @@
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "core/language_service.h"
-#include "core/settingsmanager.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
@@ -104,8 +103,7 @@ MainWindow::MainWindow(
         applyNoDatabaseState();
     }
 
-    progressCallback(tr("Restoring window layout..."));
-    restoreSplitter();
+    progressCallback(tr("Configuring window..."));
 }
 
 ApplicationServices* MainWindow::services() const
@@ -909,6 +907,12 @@ void MainWindow::showEvent(QShowEvent* event)
 {
     QMainWindow::showEvent(event);
 
+    if (!m_startupSidebarWidthApplied)
+    {
+        m_startupSidebarWidthApplied = true;
+        setDefaultSidebarWidth();
+    }
+
     if (!m_startupBirthdayCheckQueued)
     {
         m_startupBirthdayCheckQueued = true;
@@ -1178,13 +1182,35 @@ MainWindow::~MainWindow() = default;
 
 
 // =========================================================
-// Splitter Persistence
+// Sidebar Startup Width
 // =========================================================
 
-void MainWindow::restoreSplitter()
+void MainWindow::setDefaultSidebarWidth()
 {
-    ui->splitter->restoreState(
-        SettingsManager::instance().getSplitterState()
+    if (!ui || !ui->splitter || !ui->sidebarWidget)
+    {
+        return;
+    }
+
+    const int sidebarWidth =
+        ui->sidebarWidget->defaultWidthForTopLevelLabels();
+
+    ui->sidebarWidget->setMinimumWidth(
+        qMin(
+            UiConstants::MainWindow::SidebarMinWidth,
+            sidebarWidth
+            )
+        );
+
+    const int pagesWidth = qMax(
+        UiConstants::MainWindow::PagesMinWidth,
+        ui->splitter->width()
+            - ui->splitter->handleWidth()
+            - sidebarWidth
+        );
+
+    ui->splitter->setSizes(
+        {sidebarWidth, pagesWidth}
         );
 }
 
@@ -1196,10 +1222,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
         return;
     }
-
-    SettingsManager::instance().setSplitterState(
-        ui->splitter->saveState()
-        );
 
     QMainWindow::closeEvent(event);
 }
