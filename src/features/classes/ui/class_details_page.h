@@ -12,7 +12,6 @@ class AutosaveCoordinator;
 class FormValidationBinder;
 class PageHeader;
 class ScrollablePageBody;
-class TeacherInfoSection;
 class ClassDetailsSection;
 class ClassScheduleSection;
 
@@ -84,15 +83,12 @@ private:
     AutosaveCoordinator* m_autosave{nullptr};
     FormValidationBinder* m_validationBinder{nullptr};
 
-    SectionCard* m_teacherCard{nullptr};
     SectionCard* m_detailsCard{nullptr};
     SectionCard* m_scheduleCard{nullptr};
 
-    TeacherInfoSection* m_teacherSection{nullptr};
     ClassDetailsSection* m_detailsSection{nullptr};
     ClassScheduleSection* m_scheduleSection{nullptr};
 
-    QLabel* m_teacherValidationMessage{nullptr};
     QLabel* m_gradeValidationMessage{nullptr};
     QLabel* m_levelValidationMessage{nullptr};
     QLabel* m_readingBookValidationMessage{nullptr};

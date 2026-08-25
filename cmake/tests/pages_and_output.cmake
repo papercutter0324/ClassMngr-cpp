@@ -20,6 +20,8 @@ qt_add_executable(ClassMngrClassesPageTests
         src/features/classes/config/class_info_config.cpp
         src/features/classes/models/class_tab_navigation_model.cpp
         src/features/classes/models/class_tab_navigation_model.h
+        src/features/classes/ui/class_co_teacher_page.cpp
+        src/features/classes/ui/class_co_teacher_page.h
         src/features/classes/ui/class_details_page.cpp
         src/features/classes/ui/class_details_page.h
         src/features/classes/ui/classes_page.cpp
@@ -352,7 +354,6 @@ qt_add_executable(ClassMngrClassesPageTests
         src/core/updater/version.cpp
         src/features/documents/document_catalog.cpp
         src/ui/shared/widgets/sidebar/sidebar.cpp
-        src/ui/shared/widgets/sidebar/sidebar_classes.cpp
         src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp
         src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
         src/ui/shared/widgets/sidebar/sidebar_marquee_delegate.cpp

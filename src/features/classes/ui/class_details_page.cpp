@@ -7,7 +7,6 @@
 #include "ui/shared/pages/scrollable_page_body.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
-#include "ui/shared/widgets/sections/teacher_info_section.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
@@ -91,13 +90,6 @@ ClassDetailsPage::ClassDetailsPage(
         );
 
     connect(
-        m_teacherSection,
-        &TeacherInfoSection::dataChanged,
-        this,
-        &ClassDetailsPage::markDirty
-        );
-
-    connect(
         m_scheduleSection,
         &ClassScheduleSection::dataChanged,
         this,
@@ -168,26 +160,15 @@ void ClassDetailsPage::buildUi()
         m_pageBody
         );
 
-    m_teacherCard =
-        addSectionCard(
-            m_scrollContentLayout,
-            tr("Korean Teacher"),
-            m_scrollContent
-            );
-
-    m_teacherSection =
-        new TeacherInfoSection(m_teacherCard);
-
-    m_teacherCard->contentLayout()->addWidget(
-        m_teacherSection
-        );
-
     m_detailsCard =
         addSectionCard(
             m_scrollContentLayout,
             tr("Class Details"),
             m_scrollContent
             );
+    m_detailsCard->setObjectName(
+        QStringLiteral("classDetailsCard")
+        );
 
     m_detailsSection =
         new ClassDetailsSection(
@@ -205,6 +186,9 @@ void ClassDetailsPage::buildUi()
             tr("Class Times"),
             m_scrollContent
             );
+    m_scheduleCard->setObjectName(
+        QStringLiteral("classTimesCard")
+        );
 
     m_scheduleSection =
         new ClassScheduleSection(m_scheduleCard);
@@ -228,10 +212,6 @@ void ClassDetailsPage::buildUi()
             return label;
         };
 
-    m_teacherValidationMessage = addValidationMessage(
-        m_teacherCard,
-        QStringLiteral("classTeacherValidationMessage")
-        );
     m_gradeValidationMessage = addValidationMessage(
         m_detailsCard,
         QStringLiteral("classGradeValidationMessage")
@@ -261,11 +241,6 @@ void ClassDetailsPage::buildUi()
         QStringLiteral("classIntensiveScheduleValidationMessage")
         );
 
-    m_validationBinder->registerField(
-        QStringLiteral("teacherId"),
-        m_teacherSection->teacherSelector(),
-        m_teacherValidationMessage
-        );
     m_validationBinder->registerField(
         QStringLiteral("classGrade"),
         m_detailsSection->gradeEditor(),
@@ -370,23 +345,7 @@ void ClassDetailsPage::loadClass(
     m_classroom = classroom;
 
     auto* classService = m_services->classService();
-    auto* teacherService = m_services->teacherService();
     auto* rosterService = m_services->rosterService();
-
-    const Result<QList<Teacher>> teachers = teacherService->teachers();
-    if (!teachers)
-    {
-        DialogServices::showWarning(
-            this,
-            tr("Load Class"),
-            tr("Teachers could not be loaded."),
-            teachers.error()
-            );
-        m_autosave->setLoading(false);
-        clearDatabaseState();
-        return;
-    }
-    m_teacherSection->setTeachers(*teachers);
 
     const ClassInfo info =
         classService->classInfo(
@@ -394,10 +353,6 @@ void ClassDetailsPage::loadClass(
             ).value_or(ClassInfo{});
 
     updateTitle(info);
-
-    m_teacherSection->selectTeacher(
-        info.teacherId
-        );
 
     m_detailsSection->loadInfo(
         info.classGrade,
@@ -431,8 +386,6 @@ void ClassDetailsPage::clearDatabaseState()
     m_autosave->setLoading(true);
 
     m_classroom = {};
-    m_teacherSection->setTeachers({});
-    m_teacherSection->selectTeacher(-1);
     m_detailsSection->loadInfo({}, {}, {}, {}, {}, {}, 0);
     m_scheduleSection->loadSchedules(
         QList<ClassTime>{},
@@ -530,7 +483,6 @@ ClassInfo ClassDetailsPage::classInfoFromForm() const
 {
     ClassInfo info;
     info.classId = m_classroom.id;
-    info.teacherId = m_teacherSection->teacherId();
     info.classGrade = m_detailsSection->grade();
     info.classLevel = m_detailsSection->level();
     info.readingBook = m_detailsSection->readingBook();
@@ -624,6 +576,8 @@ bool ClassDetailsPage::saveClassInfoInternal(
 
     ClassInfo info = classInfoFromForm();
 
+    info.teacherId =
+        currentInfo.teacherId;
     info.notes =
         currentInfo.notes;
 
@@ -699,13 +653,6 @@ bool ClassDetailsPage::saveClassInfoInternal(
 void ClassDetailsPage::refresh()
 {
     BasePage::refresh();
-
-    /*
-    if (m_teacherSection)
-    {
-        m_teacherSection->refresh();
-    }
-    */
 }
 
 void ClassDetailsPage::retranslateUi()
@@ -734,13 +681,6 @@ void ClassDetailsPage::retranslateUi()
         m_pageHeader->setSubtitle(tr("No class selected"));
     }
 
-    if (m_teacherCard)
-    {
-        m_teacherCard->setTitle(
-            tr("Korean Teacher")
-            );
-    }
-
     if (m_detailsCard)
     {
         m_detailsCard->setTitle(
@@ -753,11 +693,6 @@ void ClassDetailsPage::retranslateUi()
         m_scheduleCard->setTitle(
             tr("Class Times")
             );
-    }
-
-    if (m_teacherSection)
-    {
-        m_teacherSection->retranslateUi();
     }
 
     if (m_detailsSection)

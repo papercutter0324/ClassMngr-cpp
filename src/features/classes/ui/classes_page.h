@@ -11,6 +11,7 @@
 #include <QList>
 
 class ApplicationServices;
+class ClassCoTeacherPage;
 class ClassDetailsPage;
 class ClassNotesPage;
 class ClassAnalyticsPage;
@@ -33,6 +34,7 @@ enum class ClassesSection
     Roster,
     Analytics,
     Evaluations,
+    CoTeacher,
     Notes
 };
 
@@ -183,6 +185,7 @@ private:
     RosterEditorWidget* m_rosterEditor = nullptr;
     ClassAnalyticsPage* m_analyticsPage = nullptr;
     SpeakingEvalPage* m_evaluationsPage = nullptr;
+    ClassCoTeacherPage* m_coTeacherPage = nullptr;
     ClassNotesPage* m_notesPage = nullptr;
     ResourcePackLease m_evaluationResourceLease;
 };

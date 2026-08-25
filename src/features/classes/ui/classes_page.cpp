@@ -9,6 +9,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/classes/class_navigation_preferences.h"
+#include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
 #include "features/classes/ui/class_analytics_page.h"
@@ -43,6 +44,11 @@ namespace
 {
 constexpr int MinimumGradeFilterGap = 60;
 
+QString allGradesSelectionKey()
+{
+    return QStringLiteral("__all_grades__");
+}
+
 QString classesSectionIdentifier(ClassesSection section)
 {
     switch (section)
@@ -51,6 +57,7 @@ QString classesSectionIdentifier(ClassesSection section)
     case ClassesSection::Roster: return QStringLiteral("roster");
     case ClassesSection::Analytics: return QStringLiteral("analytics");
     case ClassesSection::Evaluations: return QStringLiteral("evaluations");
+    case ClassesSection::CoTeacher: return QStringLiteral("co_teacher");
     case ClassesSection::Notes: return QStringLiteral("notes");
     }
 
@@ -342,6 +349,9 @@ bool ClassesPage::isEditorInstantiated(
     case ClassesSection::Evaluations:
         return m_evaluationsPage;
 
+    case ClassesSection::CoTeacher:
+        return m_coTeacherPage;
+
     case ClassesSection::Notes:
         return m_notesPage;
     }
@@ -356,6 +366,7 @@ QList<MemoryBreakdownEntry> ClassesPage::memoryBreakdown() const
         + static_cast<quint64>(m_rosterEditor != nullptr)
         + static_cast<quint64>(m_analyticsPage != nullptr)
         + static_cast<quint64>(m_evaluationsPage != nullptr)
+        + static_cast<quint64>(m_coTeacherPage != nullptr)
         + static_cast<quint64>(m_notesPage != nullptr);
 
     return {
@@ -364,7 +375,7 @@ QList<MemoryBreakdownEntry> ClassesPage::memoryBreakdown() const
             QStringLiteral("Classes"),
             static_cast<quint64>(m_classes.size()) * sizeof(Classroom),
             static_cast<quint64>(m_classes.size()) + instantiatedEditors,
-            QStringLiteral("class records=%1; editors=%2/5; active editor=%3; active class=%4")
+            QStringLiteral("class records=%1; editors=%2/6; active editor=%3; active class=%4")
                 .arg(m_classes.size())
                 .arg(instantiatedEditors)
                 .arg(classesSectionIdentifier(m_currentSection))
@@ -437,6 +448,7 @@ void ClassesPage::setSaveMode(
              static_cast<BasePage*>(m_rosterEditor),
              static_cast<BasePage*>(m_analyticsPage),
              static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_coTeacherPage),
              static_cast<BasePage*>(m_notesPage)
          })
     {
@@ -498,6 +510,11 @@ void ClassesPage::clearDatabaseState()
         m_evaluationsPage->clearDatabaseState();
     }
 
+    if (m_coTeacherPage)
+    {
+        m_coTeacherPage->clearDatabaseState();
+    }
+
     if (m_notesPage)
     {
         m_notesPage->clearDatabaseState();
@@ -524,13 +541,14 @@ void ClassesPage::retranslateUi()
             );
     }
 
-    if (m_sectionTabs && m_sectionTabs->count() >= 5)
+    if (m_sectionTabs && m_sectionTabs->count() >= 6)
     {
         m_sectionTabs->setTabText(0, tr("Details"));
         m_sectionTabs->setTabText(1, tr("Roster"));
         m_sectionTabs->setTabText(2, tr("Analytics"));
         m_sectionTabs->setTabText(3, tr("Evaluations"));
-        m_sectionTabs->setTabText(4, tr("Notes"));
+        m_sectionTabs->setTabText(4, tr("Co-Teacher"));
+        m_sectionTabs->setTabText(5, tr("Notes"));
     }
 
     for (BasePage* editor : {
@@ -538,6 +556,7 @@ void ClassesPage::retranslateUi()
              static_cast<BasePage*>(m_rosterEditor),
              static_cast<BasePage*>(m_analyticsPage),
              static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_coTeacherPage),
              static_cast<BasePage*>(m_notesPage)
          })
     {
@@ -574,6 +593,7 @@ void ClassesPage::setEmbeddedDatabaseOpen(bool databaseOpen)
              static_cast<BasePage*>(m_rosterEditor),
              static_cast<BasePage*>(m_analyticsPage),
              static_cast<BasePage*>(m_evaluationsPage),
+             static_cast<BasePage*>(m_coTeacherPage),
              static_cast<BasePage*>(m_notesPage)
          })
     {
@@ -697,6 +717,7 @@ void ClassesPage::buildUi()
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Roster"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Analytics"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Evaluations"));
+    m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Co-Teacher"));
     m_sectionTabs->addTab(tabPage(m_sectionTabs), tr("Notes"));
     navigationLayout->addWidget(m_sectionTabs);
     contentLayout()->addWidget(m_navigationContainer);
@@ -897,6 +918,14 @@ void ClassesPage::rebuildClassTabs(
             m_dayFilter
             );
 
+    if (
+        m_selectedGrade.isNull()
+        && !navigation.allClasses.isEmpty()
+        )
+    {
+        m_selectedGrade = allGradesSelectionKey();
+    }
+
     auto* gradeTabs =
         new NavigationTabWidget(
             NavigationTabKind::Grade,
@@ -962,6 +991,41 @@ void ClassesPage::rebuildClassTabs(
         connectClassTabs(classTabs, group.grade);
         gradeLayout->addWidget(classTabs);
         gradeTabs->addTab(gradePage, group.label);
+    }
+
+    if (!navigation.allClasses.isEmpty())
+    {
+        auto* allGradesPage = new QWidget(gradeTabs);
+        allGradesPage->setProperty(
+            "classGrade",
+            allGradesSelectionKey()
+            );
+        auto* allGradesLayout = new QVBoxLayout(allGradesPage);
+        allGradesLayout->setContentsMargins(0, 0, 0, 0);
+        allGradesLayout->setSpacing(NavigationPillStyle::RowSpacing);
+        allGradesLayout->setAlignment(Qt::AlignTop);
+
+        auto* allClassesTabs =
+            new NavigationTabWidget(
+                NavigationTabKind::Class,
+                QStringLiteral("classesLevelTabBar"),
+                allGradesPage
+                );
+        allClassesTabs->setObjectName("classesLevelTabs");
+        allClassesTabs->setPageSpacing(0);
+
+        for (const ClassTabNavigation::ClassTab& classTab
+             : navigation.allClasses)
+        {
+            allClassesTabs->addTab(
+                tabPage(allClassesTabs, classTab.classId),
+                classTab.label
+                );
+        }
+
+        connectClassTabs(allClassesTabs, allGradesSelectionKey());
+        allGradesLayout->addWidget(allClassesTabs);
+        gradeTabs->addTab(allGradesPage, tr("All"));
     }
 
     connect(
@@ -1454,6 +1518,21 @@ BasePage* ClassesPage::ensureEditor(
         editor = m_evaluationsPage;
         break;
 
+    case ClassesSection::CoTeacher:
+        if (!m_coTeacherPage)
+        {
+            m_coTeacherPage =
+                new ClassCoTeacherPage(m_services, true, m_editorStack);
+            connect(
+                m_coTeacherPage,
+                &ClassCoTeacherPage::classInfoSaved,
+                this,
+                &ClassesPage::handleClassInfoSaved
+                );
+        }
+        editor = m_coTeacherPage;
+        break;
+
     case ClassesSection::Notes:
         if (!m_notesPage)
         {
@@ -1550,6 +1629,10 @@ void ClassesPage::loadActiveEditor()
             m_evaluationsPage->loadEvaluation(classroom, {});
             break;
 
+        case ClassesSection::CoTeacher:
+            m_coTeacherPage->loadClass(classroom);
+            break;
+
         case ClassesSection::Notes:
             m_notesPage->loadClass(classroom);
             break;
@@ -1588,6 +1671,8 @@ void ClassesPage::syncTabsToClass(
     int selectedGradeIndex = -1;
     int selectedClassIndex = -1;
     int fallbackGradeIndex = -1;
+    int allGradesIndex = -1;
+    const QString allGradesKey = allGradesSelectionKey();
 
     for (int gradeIndex = 0;
          gradeIndex < m_classTabs->count();
@@ -1606,6 +1691,10 @@ void ClassesPage::syncTabsToClass(
         }
 
         const QString grade = gradePage->property("classGrade").toString();
+        if (grade == allGradesKey)
+        {
+            allGradesIndex = gradeIndex;
+        }
         if (
             !m_selectedGrade.isNull()
             && grade == m_selectedGrade
@@ -1632,7 +1721,13 @@ void ClassesPage::syncTabsToClass(
                 rememberedIndex = classIndex;
             }
 
-            if (candidateId == classId)
+            if (
+                candidateId == classId
+                && (
+                    grade != allGradesKey
+                    || m_selectedGrade == allGradesKey
+                    )
+                )
             {
                 selectedGradeIndex = gradeIndex;
                 selectedClassIndex = classIndex;
@@ -1685,7 +1780,10 @@ void ClassesPage::syncTabsToClass(
 
     if (fallbackGradeIndex < 0)
     {
-        fallbackGradeIndex = 0;
+        fallbackGradeIndex =
+            allGradesIndex >= 0
+            ? allGradesIndex
+            : 0;
         QWidget* gradePage = m_classTabs->widget(fallbackGradeIndex);
         m_selectedGrade = gradePage
             ? gradePage->property("classGrade").toString()
@@ -1694,6 +1792,7 @@ void ClassesPage::syncTabsToClass(
 
     m_classTabs->setCurrentIndex(fallbackGradeIndex);
     setNavigationSelectionVisible(classId <= 0);
+    m_classTabs->setSelectionVisible(true);
 }
 
 int ClassesPage::currentClassIdFromTabs(
@@ -1777,6 +1876,9 @@ BasePage* ClassesPage::activeEditor() const
 
     case ClassesSection::Evaluations:
         return m_evaluationsPage;
+
+    case ClassesSection::CoTeacher:
+        return m_coTeacherPage;
 
     case ClassesSection::Notes:
         return m_notesPage;
