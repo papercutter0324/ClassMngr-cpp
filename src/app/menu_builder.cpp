@@ -474,6 +474,46 @@ void addNavigationPreferencesTab(
         );
     navigationLayout->addWidget(showMiddleSchoolAnalyticsAndEvaluations);
 
+    auto* evaluationDefaultGroup = new QGroupBox(
+        preferencesText("Initial Analytics and Evaluations"),
+        navigationGroup
+        );
+    auto* evaluationDefaultLayout = new QVBoxLayout(evaluationDefaultGroup);
+    evaluationDefaultLayout->setSpacing(12);
+    const auto evaluationDefaultPolicy =
+        ClassNavigationPreferences::evaluationDefaultPolicy(
+            window && window->services()
+                ? window->services()->settingsService()
+                : nullptr
+            );
+    auto* followTermSchedule = new QRadioButton(
+        preferencesText(
+            "Follow term schedules (use the current term, or the previous evaluation when it is empty)"
+            ),
+        evaluationDefaultGroup
+        );
+    followTermSchedule->setObjectName(
+        QStringLiteral("preferencesNavigationEvaluationDefaultTermSchedule")
+        );
+    followTermSchedule->setChecked(
+        evaluationDefaultPolicy
+        == ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+    evaluationDefaultLayout->addWidget(followTermSchedule);
+    auto* defaultAnalyticsToAll = new QRadioButton(
+        preferencesText("All"),
+        evaluationDefaultGroup
+        );
+    defaultAnalyticsToAll->setObjectName(
+        QStringLiteral("preferencesNavigationEvaluationDefaultAll")
+        );
+    defaultAnalyticsToAll->setChecked(
+        evaluationDefaultPolicy
+        == ClassNavigationPreferences::EvaluationDefaultPolicy::All
+        );
+    evaluationDefaultLayout->addWidget(defaultAnalyticsToAll);
+    navigationLayout->addWidget(evaluationDefaultGroup);
+
     const auto resetPolicy =
         [window](bool dayFilters)
         {
@@ -606,6 +646,35 @@ void addNavigationPreferencesTab(
                 );
             window->refreshNavigationPreferences();
         }
+        );
+    const auto saveEvaluationDefaultPolicy =
+        [window, followTermSchedule](bool checked)
+        {
+            if (!checked)
+            {
+                return;
+            }
+
+            ClassNavigationPreferences::saveEvaluationDefaultPolicy(
+                window && window->services()
+                    ? window->services()->settingsService()
+                    : nullptr,
+                followTermSchedule->isChecked()
+                    ? ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+                    : ClassNavigationPreferences::EvaluationDefaultPolicy::All
+                );
+        };
+    QObject::connect(
+        followTermSchedule,
+        &QRadioButton::toggled,
+        page,
+        saveEvaluationDefaultPolicy
+        );
+    QObject::connect(
+        defaultAnalyticsToAll,
+        &QRadioButton::toggled,
+        page,
+        saveEvaluationDefaultPolicy
         );
 
     tabs->addTab(page, preferencesText("Navigation Bar"));

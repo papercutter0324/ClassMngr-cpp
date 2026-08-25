@@ -13,6 +13,12 @@ enum class SessionResetPolicy
     OnPageLeave
 };
 
+enum class EvaluationDefaultPolicy
+{
+    All,
+    CurrentOrPreviousTerm
+};
+
 [[nodiscard]] ClassTabNavigation::VisibilityScope load(
     SettingsService* settingsService
     );
@@ -29,6 +35,15 @@ void save(
 void saveShowMiddleSchoolAnalyticsAndEvaluations(
     SettingsService* settingsService,
     bool show
+    );
+
+[[nodiscard]] EvaluationDefaultPolicy evaluationDefaultPolicy(
+    SettingsService* settingsService
+    );
+
+void saveEvaluationDefaultPolicy(
+    SettingsService* settingsService,
+    EvaluationDefaultPolicy policy
     );
 
 [[nodiscard]] SessionResetPolicy dayFilterResetPolicy(

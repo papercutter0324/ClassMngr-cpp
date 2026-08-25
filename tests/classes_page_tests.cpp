@@ -120,6 +120,7 @@ private slots:
     void nestedEditorsAreDeferredUntilTheirSectionIsOpened();
     void classDetailsAndCoTeacherTabsSeparateTheirSectionCards();
     void middleSchoolAnalyticsAndEvaluationsTabsFollowPreference();
+    void evaluationDefaultPolicyDefaultsToAllAndPersists();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
@@ -283,6 +284,29 @@ void ClassesPageTests
     {
         QCOMPARE(sectionTabs->tabText(index), enabledLabels.at(index));
     }
+}
+
+void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
+{
+    ApplicationServices services;
+
+    QCOMPARE(
+        ClassNavigationPreferences::evaluationDefaultPolicy(
+            services.settingsService()
+            ),
+        ClassNavigationPreferences::EvaluationDefaultPolicy::All
+        );
+
+    ClassNavigationPreferences::saveEvaluationDefaultPolicy(
+        services.settingsService(),
+        ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+    QCOMPARE(
+        ClassNavigationPreferences::evaluationDefaultPolicy(
+            services.settingsService()
+            ),
+        ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()

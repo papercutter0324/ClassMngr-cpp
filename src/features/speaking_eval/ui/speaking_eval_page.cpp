@@ -101,12 +101,22 @@ void SpeakingEvalPage::loadEvaluations(
             firstEvaluationClassId();
     }
 
+    QString requestedEvaluationName =
+        selectedEvaluationName.trimmed().isEmpty()
+            ? m_evaluationName
+            : selectedEvaluationName;
+    if (
+        m_embedded
+        && requestedEvaluationName.trimmed().isEmpty()
+        && classId > 0
+        )
+    {
+        requestedEvaluationName =
+            EvaluationDefaultSelection::forClass(m_services, classId);
+    }
+
     const QString evaluationName =
-        normalizedEvaluationName(
-            selectedEvaluationName.trimmed().isEmpty()
-                ? m_evaluationName
-                : selectedEvaluationName
-            );
+        normalizedEvaluationName(requestedEvaluationName);
 
     rebuildClassTabs(classId);
 

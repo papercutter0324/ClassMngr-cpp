@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "features/classes/evaluation_default_selection.h"
 #include "features/classes/ui/class_analytics_charts.h"
 #include "features/classes/ui/class_analytics_ranking_delegate.h"
 #include "features/classes/ui/class_analytics_ranking_header.h"
@@ -346,12 +347,25 @@ void ClassAnalyticsPage::buildUi()
 void ClassAnalyticsPage::loadClass(const Classroom& classroom)
 {
     m_classId = classroom.id;
+
+    if (m_embedded && !m_initialEvaluationSelectionApplied)
+    {
+        const QString initialEvaluation =
+            EvaluationDefaultSelection::forClass(m_services, classroom.id);
+        const int index = m_evaluationCombo->findData(initialEvaluation);
+        m_evaluationCombo->blockSignals(true);
+        m_evaluationCombo->setCurrentIndex(index >= 0 ? index : 0);
+        m_evaluationCombo->blockSignals(false);
+        m_initialEvaluationSelectionApplied = true;
+    }
+
     rebuild();
 }
 
 void ClassAnalyticsPage::clearDatabaseState()
 {
     m_classId = -1;
+    m_initialEvaluationSelectionApplied = false;
     clearDisplay();
     showEmpty(true);
 }

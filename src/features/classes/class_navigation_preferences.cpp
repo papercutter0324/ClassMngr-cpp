@@ -10,6 +10,8 @@ const QString ShowMiddleSchoolAnalyticsAndEvaluationsKey =
     QStringLiteral(
         "classes_navigation_show_middle_school_analytics_and_evaluations"
         );
+const QString EvaluationDefaultPolicyKey =
+    QStringLiteral("classes_navigation_evaluation_default_policy");
 const QString DayFilterResetPolicyKey =
     QStringLiteral("classes_navigation_day_filter_reset_policy");
 const QString ClassSelectionResetPolicyKey =
@@ -33,6 +35,25 @@ ClassTabNavigation::VisibilityScope scopeFromSetting(
         == QStringLiteral("all_classes")
         ? ClassTabNavigation::VisibilityScope::AllClasses
         : ClassTabNavigation::VisibilityScope::ActiveSchedule;
+}
+
+QString evaluationDefaultPolicyValue(
+    ClassNavigationPreferences::EvaluationDefaultPolicy policy
+    )
+{
+    return policy
+        == ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        ? QStringLiteral("current_or_previous_term")
+        : QStringLiteral("all");
+}
+
+ClassNavigationPreferences::EvaluationDefaultPolicy
+evaluationDefaultPolicyFromSetting(const QVariant& value)
+{
+    return value.toString().trimmed().toLower()
+        == QStringLiteral("current_or_previous_term")
+        ? ClassNavigationPreferences::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        : ClassNavigationPreferences::EvaluationDefaultPolicy::All;
 }
 }
 
@@ -115,6 +136,43 @@ void saveShowMiddleSchoolAnalyticsAndEvaluations(
             settingsService->save(
                 ShowMiddleSchoolAnalyticsAndEvaluationsKey,
                 show
+                )
+            );
+    }
+}
+
+EvaluationDefaultPolicy evaluationDefaultPolicy(
+    SettingsService* settingsService
+    )
+{
+    if (!settingsService || !settingsService->isAvailable())
+    {
+        return EvaluationDefaultPolicy::All;
+    }
+
+    const Result<QVariant> storedPolicyResult =
+        settingsService->load(EvaluationDefaultPolicyKey);
+    const QVariant storedPolicy = storedPolicyResult.value_or(QVariant());
+    const EvaluationDefaultPolicy policy =
+        evaluationDefaultPolicyFromSetting(storedPolicy);
+    if (!storedPolicy.isValid())
+    {
+        saveEvaluationDefaultPolicy(settingsService, policy);
+    }
+    return policy;
+}
+
+void saveEvaluationDefaultPolicy(
+    SettingsService* settingsService,
+    EvaluationDefaultPolicy policy
+    )
+{
+    if (settingsService && settingsService->isAvailable())
+    {
+        static_cast<void>(
+            settingsService->save(
+                EvaluationDefaultPolicyKey,
+                evaluationDefaultPolicyValue(policy)
                 )
             );
     }

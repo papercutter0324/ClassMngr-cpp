@@ -66,6 +66,7 @@ public:
         ) const;
 
     [[nodiscard]] bool hasCustomYearAfter(int termYear) const;
+    [[nodiscard]] bool hasSavedSchedules() const;
     void setYearSchedules(
         int termYear,
         const AcademicYearSchedule& elementary,

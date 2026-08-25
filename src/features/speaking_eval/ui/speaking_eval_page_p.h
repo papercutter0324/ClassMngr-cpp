@@ -16,6 +16,7 @@
 #include "domain/models/teacher.h"
 #include "data/data_service.h"
 #include "features/classes/class_navigation_preferences.h"
+#include "features/classes/evaluation_default_selection.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"

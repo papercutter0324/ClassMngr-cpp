@@ -408,6 +408,33 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrSpeakingAnalyticsTests
     )
 
+    qt_add_executable(ClassMngrEvaluationDefaultSelectionTests
+        tests/evaluation_default_selection_tests.cpp
+        src/features/calendar/academic_calendar_schedule.cpp
+        src/features/classes/evaluation_default_selection.cpp
+    )
+
+    target_compile_features(ClassMngrEvaluationDefaultSelectionTests
+        PRIVATE
+            cxx_std_23
+    )
+
+    target_include_directories(ClassMngrEvaluationDefaultSelectionTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(ClassMngrEvaluationDefaultSelectionTests
+        PRIVATE
+            Qt6::Core
+            Qt6::Test
+    )
+
+    add_test(
+        NAME ClassMngrEvaluationDefaultSelectionTests
+        COMMAND ClassMngrEvaluationDefaultSelectionTests
+    )
+
     classmngr_add_qt_test(
         NAME ClassAnalyticsRankingModel
         SOURCES

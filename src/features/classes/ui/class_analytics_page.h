@@ -77,6 +77,7 @@ private:
     bool m_embedded = false;
     int m_classId = -1;
     bool m_rebuilding = false;
+    bool m_initialEvaluationSelectionApplied = false;
 
     QWidget* m_dashboardBody = nullptr;
     QLabel* m_heading = nullptr;

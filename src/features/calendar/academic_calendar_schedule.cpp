@@ -324,6 +324,12 @@ bool AcademicCalendarSchedule::hasCustomYearAfter(int termYear) const
         || hasLater(m_middleSchedules);
 }
 
+bool AcademicCalendarSchedule::hasSavedSchedules() const
+{
+    return !m_elementarySchedules.isEmpty()
+        && !m_middleSchedules.isEmpty();
+}
+
 void AcademicCalendarSchedule::setYearSchedules(
     int termYear,
     const AcademicYearSchedule& elementary,
