@@ -46,7 +46,7 @@ MainWindow::MainWindow(
     QWidget* parent
     )
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow())
+    , ui(std::make_unique<Ui::MainWindow>())
     , m_isAdmin(isAdmin)
     , m_startupOptions(startupOptions)
     , m_languageService(languageService)

@@ -142,7 +142,7 @@ private:
     // UI
     // =====================================================
 
-    Ui::MainWindow* ui = nullptr;
+    std::unique_ptr<Ui::MainWindow> ui;
 
     ActionRegistry m_actions;
     std::unique_ptr<FileController> m_fileController;
