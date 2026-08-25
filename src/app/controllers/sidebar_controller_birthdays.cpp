@@ -56,7 +56,8 @@ SidebarController::loadUpcomingBirthdaySchedule(
 
 void SidebarController::showUpcomingBirthdays()
 {
-    const auto schedule = loadUpcomingBirthdaySchedule(QDate::currentDate());
+    const QDate today = QDate::currentDate();
+    const auto schedule = loadUpcomingBirthdaySchedule(today);
     if (!schedule)
     {
         return;
@@ -64,11 +65,29 @@ void SidebarController::showUpcomingBirthdays()
 
     UpcomingBirthdaysDialog dialog(*schedule, m_sidebar);
     dialog.exec();
+
+    if (dialog.dismissForToday())
+    {
+        SettingsManager::instance().set(
+            SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE,
+            today
+            );
+    }
 }
 
 void SidebarController::showUpcomingBirthdaysIfRelevantOnStartup()
 {
-    const auto schedule = loadUpcomingBirthdaySchedule(QDate::currentDate());
+    const QDate today = QDate::currentDate();
+    const QDate dismissedDate =
+        SettingsManager::instance().get(
+            SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE
+            ).toDate();
+    if (dismissedDate == today)
+    {
+        return;
+    }
+
+    const auto schedule = loadUpcomingBirthdaySchedule(today);
     if (!schedule || schedule->isEmpty())
     {
         return;
@@ -76,4 +95,12 @@ void SidebarController::showUpcomingBirthdaysIfRelevantOnStartup()
 
     UpcomingBirthdaysDialog dialog(*schedule, m_sidebar);
     dialog.exec();
+
+    if (dialog.dismissForToday())
+    {
+        SettingsManager::instance().set(
+            SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE,
+            today
+            );
+    }
 }

@@ -6,6 +6,7 @@
 #include <QList>
 
 class QLabel;
+class QCheckBox;
 class QWidget;
 
 class UpcomingBirthdaysDialog final : public DialogShell
@@ -17,6 +18,8 @@ public:
         const UpcomingBirthdaySchedule& schedule,
         QWidget* parent = nullptr
         );
+
+    [[nodiscard]] bool dismissForToday() const;
 
 protected:
     void retranslateDialog() override;
@@ -51,5 +54,6 @@ private:
     QLabel* m_nextWeekTitle = nullptr;
     QLabel* m_thisWeekEmpty = nullptr;
     QLabel* m_nextWeekEmpty = nullptr;
+    QCheckBox* m_dismissForToday = nullptr;
     QList<EntryPresentation> m_entries;
 };

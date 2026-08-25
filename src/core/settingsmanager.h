@@ -81,6 +81,9 @@ public:
         static constexpr auto SHOW_POWERPOINT_DATA_ACCESS_NOTICE =
             "options/showPowerPointDataAccessNotice";
 
+        static constexpr auto UPCOMING_BIRTHDAYS_DISMISSED_DATE =
+            "notifications/upcomingBirthdaysDismissedDate";
+
         static constexpr auto EXCEL_IMPORT_TIMEOUT_SECONDS =
             "imports/excelTimeoutSeconds";
 

@@ -2,6 +2,7 @@
 
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
+#include <QCheckBox>
 #include <QDialogButtonBox>
 #include <QFont>
 #include <QFrame>
@@ -63,6 +64,12 @@ UpcomingBirthdaysDialog::UpcomingBirthdaysDialog(
     scrollArea->setWidget(scrollContent);
     contentLayout()->addWidget(scrollArea, 1);
 
+    m_dismissForToday = new QCheckBox(this);
+    m_dismissForToday->setObjectName(
+        QStringLiteral("upcomingBirthdaysDismissForTodayCheck")
+        );
+    contentLayout()->addWidget(m_dismissForToday);
+
     auto* buttons = addButtonBox(QDialogButtonBox::Close);
     if (auto* closeButton = buttons->button(QDialogButtonBox::Close))
     {
@@ -70,6 +77,11 @@ UpcomingBirthdaysDialog::UpcomingBirthdaysDialog(
     }
 
     updateText();
+}
+
+bool UpcomingBirthdaysDialog::dismissForToday() const
+{
+    return m_dismissForToday && m_dismissForToday->isChecked();
 }
 
 void UpcomingBirthdaysDialog::retranslateDialog()
@@ -244,6 +256,10 @@ void UpcomingBirthdaysDialog::updateText()
     if (m_nextWeekEmpty)
     {
         m_nextWeekEmpty->setText(tr("No birthdays next week."));
+    }
+    if (m_dismissForToday)
+    {
+        m_dismissForToday->setText(tr("Don't show again today"));
     }
 
     for (const EntryPresentation& entry : m_entries)

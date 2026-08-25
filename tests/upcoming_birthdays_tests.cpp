@@ -2,6 +2,7 @@
 #include "features/teacher/upcoming_birthday_schedule.h"
 #include "ui/shared/actions/action_registry.h"
 
+#include <QCheckBox>
 #include <QDialog>
 #include <QLabel>
 #include <QPushButton>
@@ -195,6 +196,8 @@ void UpcomingBirthdaysTests::dialogCentersTodayAndShowsWeeklyEmptyState()
         QStringLiteral("upcomingBirthdaysNextWeekEntry0Name"));
     auto* close = dialog.findChild<QPushButton*>(
         QStringLiteral("upcomingBirthdaysCloseButton"));
+    auto* dismissForToday = dialog.findChild<QCheckBox*>(
+        QStringLiteral("upcomingBirthdaysDismissForTodayCheck"));
 
     QVERIFY(todaySection);
     QVERIFY(!todaySection->isHidden());
@@ -215,10 +218,16 @@ void UpcomingBirthdaysTests::dialogCentersTodayAndShowsWeeklyEmptyState()
     QVERIFY(nextWeekDetail->text().contains(QStringLiteral("GS Team")));
     QVERIFY(nextWeekDetail->text().contains(QStringLiteral("M3")));
     QVERIFY(close);
+    QVERIFY(dismissForToday);
+    QCOMPARE(dismissForToday->text(), QStringLiteral("Don't show again today"));
+    QVERIFY(!dialog.dismissForToday());
+    dismissForToday->setChecked(true);
+    QVERIFY(dialog.dismissForToday());
 
     QSignalSpy finished(&dialog, &QDialog::finished);
     dialog.show();
     QTRY_VERIFY(close->isVisible());
+    QTRY_VERIFY(dismissForToday->isVisible());
     close->click();
     QTRY_COMPARE(finished.count(), 1);
 }
