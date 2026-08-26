@@ -72,6 +72,10 @@ QLabel#signatureImagePreview {
     border-radius: 6px;
 }
 
+QLabel#typedSignatureFontPreview {
+    background-color: #ffffff;
+}
+
 QFrame[role="card"],
 QWidget[role="card"],
 QFrame#sectionCard,
