@@ -200,7 +200,8 @@ bool writeStartupPerformanceMetrics(
                     ? QStringLiteral("launch without a startup database")
                     : QStringLiteral("load the supplied or saved startup database"),
                 QStringLiteral("construct the main window"),
-                QStringLiteral("capture startup-complete and requested settled checkpoints")
+                QStringLiteral("capture startup-complete and requested settled checkpoints"),
+                QStringLiteral("suppress interactive startup prompts during profiling")
             }},
             {QStringLiteral("settleMilliseconds"), mode.settleMilliseconds}
         }
@@ -467,6 +468,7 @@ int main(int argc, char *argv[])
                 !startupPerformance.enabled
                 || startupPerformance.scenario
                     == StartupPerformanceMode::Scenario::Representative,
+            .showStartupBirthdayPrompt = !startupPerformance.enabled,
             .initialDatabasePath = initialDatabasePath,
             .checkpointCallback =
                 [&startupProfiler, &startupPerformance](
@@ -616,8 +618,12 @@ int main(int argc, char *argv[])
                     );
             }
 
+            const int completionDelayMilliseconds =
+                settleMilliseconds > 0
+                    ? settleMilliseconds + 500
+                    : 0;
             QTimer::singleShot(
-                settleMilliseconds,
+                completionDelayMilliseconds,
                 &app,
                 [
                     &startupProfiler,

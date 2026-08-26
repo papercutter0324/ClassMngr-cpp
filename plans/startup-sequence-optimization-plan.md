@@ -76,7 +76,24 @@ Those should remain shared.
 
 ---
 
-# Phase 1 — Establish a Cross-Platform Startup Baseline
+# Phase 1 — Establish a Cross-Platform Startup Baseline — Complete (2026-08-26)
+
+## Captured Windows Representative Baseline
+
+Three representative startup captures using the deterministic `testing-copy.tps`
+profile completed successfully. Interactive birthday prompts were suppressed only
+for the profiling scenario; the normal post-show startup work remained enabled.
+
+| Run | Startup complete | Peak working set | Working set at +30 s | Private usage at +30 s | Pages | ScheduleWidgets | Schedule renders (startup → +30 s) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 6.592 s | 734.6 MiB | 732.5 MiB | 618.2 MiB | 8 / 11 | 3 | 9 → 10 |
+| 2 | 6.623 s | 734.8 MiB | 733.0 MiB | 617.9 MiB | 8 / 11 | 3 | 9 → 10 |
+| 3 | 6.929 s | 734.3 MiB | 732.4 MiB | 618.5 MiB | 8 / 11 | 3 | 9 → 10 |
+
+The reports include shared checkpoint, widget, page, ScheduleWidget, render,
+and deferred-deletion metrics, plus platform-native memory samples. This
+baseline confirms the duplicate schedule construction/rendering and eager-page
+work targeted by Phases 3–5.
 
 ## Objective
 

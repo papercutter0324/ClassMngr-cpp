@@ -982,6 +982,7 @@ void MainWindow::showEvent(QShowEvent* event)
 
         if (
             m_startupOptions.runPostShowStartupTasks
+            && m_startupOptions.showStartupBirthdayPrompt
             && m_services
             && m_services->hasOpenDatabase()
             && m_sidebarController

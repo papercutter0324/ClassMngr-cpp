@@ -194,7 +194,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         );
     QCOMPARE(
         scenario.value(QStringLiteral("actions")).toArray().size(),
-        3
+        4
         );
     QCOMPARE(
         scenario.value(QStringLiteral("settleMilliseconds")).toInt(),

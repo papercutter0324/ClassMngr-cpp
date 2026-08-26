@@ -49,6 +49,7 @@ struct MainWindowStartupOptions
 {
     bool loadMostRecentDatabase = true;
     bool runPostShowStartupTasks = true;
+    bool showStartupBirthdayPrompt = true;
     QString initialDatabasePath;
     std::function<void(const QString&, const QString&)> checkpointCallback;
 };
