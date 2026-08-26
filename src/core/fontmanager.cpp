@@ -679,37 +679,6 @@ void FontManager::applyFontSize(
 
     if (delta == 0)
     {
-        applyGlobalFont(
-            app,
-            localeName
-            );
-
-        const QFont inheritedFont =
-            localeName.startsWith(
-                QStringLiteral("ko"),
-                Qt::CaseInsensitive
-                )
-                ? getKoreanFont()
-                : getUiFont();
-
-        for (QWidget* topLevelWidget : app.topLevelWidgets())
-        {
-            refreshMaterializedInheritedFonts(
-                topLevelWidget,
-                inheritedFont,
-                true
-                );
-        }
-
-        refreshWidgetStyleAndGeometry(
-            app.allWidgets()
-            );
-
-        applyManagedMenuFont(
-            app,
-            inheritedFont
-            );
-
         return;
     }
 

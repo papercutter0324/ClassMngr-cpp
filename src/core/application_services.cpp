@@ -7,12 +7,21 @@
 #include <QDebug>
 
 ApplicationServices::ApplicationServices()
+    : ApplicationServices(nullptr)
+{
+}
+
+ApplicationServices::ApplicationServices(
+    std::unique_ptr<ThemeService> themeService
+    )
 {
     m_dataService =
         std::make_unique<DataService>();
 
     m_themeService =
-        std::make_unique<ThemeService>();
+        themeService
+            ? std::move(themeService)
+            : std::make_unique<ThemeService>();
 
     m_documentCatalog =
         std::make_unique<DocumentCatalog>();

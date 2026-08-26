@@ -288,7 +288,7 @@ private slots:
             );
     }
 
-    void noOpFontSizeReappliesInheritedFonts()
+    void noOpFontSizeLeavesMaterializedFontsUntouched()
     {
         auto* app =
             qobject_cast<QApplication*>(
@@ -311,39 +311,32 @@ private slots:
             FontManager::getPlatformFontSize()
             );
 
-        FontManager::setSizeOffset(
-            fontSizeOffset(FontSize::ExtraLarge)
-            );
-
         explicitLabel.setFont(
             FontManager::getUiFont(10)
             );
 
+        const QFont appFontBefore = app->font();
+        const QFont inheritedFontBefore = inheritedLabel.font();
+        const QFont explicitFontBefore = explicitLabel.font();
+
         QCOMPARE(
-            inheritedLabel.font().pointSize(),
-            FontManager::getPlatformFontSize()
+            FontManager::sizeOffset(),
+            fontSizeOffset(FontSize::Normal)
             );
 
         FontManager::applyFontSize(
             *app,
             QStringLiteral("en_US"),
-            fontSizeOffset(FontSize::ExtraLarge)
+            fontSizeOffset(FontSize::Normal)
             );
 
         QCOMPARE(
-            app->font().pointSize(),
-            FontManager::getPlatformFontSize()
-                + fontSizeOffset(FontSize::ExtraLarge)
+            FontManager::sizeOffset(),
+            fontSizeOffset(FontSize::Normal)
             );
-        QCOMPARE(
-            inheritedLabel.font().pointSize(),
-            FontManager::getPlatformFontSize()
-                + fontSizeOffset(FontSize::ExtraLarge)
-            );
-        QCOMPARE(
-            explicitLabel.font().pointSize(),
-            10 + fontSizeOffset(FontSize::ExtraLarge)
-            );
+        QCOMPARE(app->font(), appFontBefore);
+        QCOMPARE(inheritedLabel.font(), inheritedFontBefore);
+        QCOMPARE(explicitLabel.font(), explicitFontBefore);
     }
 
     void missingPrimaryFamilyUsesFallback()

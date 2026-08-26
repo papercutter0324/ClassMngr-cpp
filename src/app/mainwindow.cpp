@@ -30,10 +30,11 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QDialog>
-#include <QLayout>
 #include <QMenuBar>
 #include <QScreen>
 #include <QTimer>
+
+#include <utility>
 
 // =========================================================
 // Constructor
@@ -50,7 +51,7 @@ MainWindow::MainWindow(
     : QMainWindow(parent)
     , ui(std::make_unique<Ui::MainWindow>())
     , m_isAdmin(isAdmin)
-    , m_startupOptions(startupOptions)
+    , m_startupOptions(std::move(startupOptions))
     , m_languageService(languageService)
     , m_updateController(updateController)
 {
@@ -77,7 +78,6 @@ MainWindow::MainWindow(
 
     progressCallback(tr("Initializing controllers..."));
     connectControllers();
-    recordStartupCheckpoint(QStringLiteral("theme-applied"));
     recordStartupCheckpoint(QStringLiteral("controllers-connected"));
 
     progressCallback(tr("Building menus..."));
@@ -171,7 +171,9 @@ void MainWindow::refreshNavigationPreferences()
 void MainWindow::initializeServices()
 {
     m_services =
-        std::make_unique<ApplicationServices>();
+        std::make_unique<ApplicationServices>(
+            std::move(m_startupOptions.startupThemeService)
+            );
 }
 
 void MainWindow::initializeWindow()
@@ -1007,54 +1009,6 @@ void MainWindow::showEvent(QShowEvent* event)
         }
     }
 
-    if (
-        !m_startupFontSizeRefreshQueued
-        && m_fontSizeController
-        && m_actions.fontSizeState
-        && m_startupOptions.runPostShowStartupTasks
-        )
-    {
-        m_startupFontSizeRefreshQueued =
-            true;
-
-        QTimer::singleShot(
-            0,
-            this,
-            &MainWindow::reapplyStartupFontSize
-            );
-    }
-
-}
-
-void MainWindow::reapplyStartupFontSize()
-{
-    if (!m_fontSizeController || !m_actions.fontSizeState)
-    {
-        return;
-    }
-
-    m_fontSizeController->changeFontSize(
-        m_actions.fontSizeState->current()
-        );
-
-    if (m_sidebarController)
-    {
-        m_sidebarController->refreshAllSidebars();
-    }
-
-    if (m_pages)
-    {
-        m_pages->refreshAll();
-    }
-
-    if (QLayout* mainLayout = layout())
-    {
-        mainLayout->invalidate();
-    }
-
-    updateGeometry();
-    update();
-    repaint();
 }
 
 void MainWindow::showStartupDatabasePage()

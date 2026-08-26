@@ -9,6 +9,7 @@
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
 #include "core/startup_profiler.h"
+#include "core/theme_service.h"
 #include "core/updater/update_service.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
@@ -290,6 +291,14 @@ int main(int argc, char *argv[])
                 ).toInt()
             );
 
+    const Theme savedTheme =
+        themeFromStoredValue(
+            SettingsManager::instance().get(
+                OptionKeys::Theme,
+                static_cast<int>(Theme::SystemDefault)
+                ).toInt()
+            );
+
     if (startupPerformance.enabled)
     {
         startupProfiler.checkpoint(QStringLiteral("preferences-resolved"));
@@ -324,6 +333,15 @@ int main(int argc, char *argv[])
         startupProfiler.checkpoint(QStringLiteral("font-applied"));
     }
     // FontManager::debugDump();
+
+    auto startupThemeService =
+        std::make_unique<ThemeService>();
+    startupThemeService->setTheme(savedTheme);
+
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("theme-applied"));
+    }
 
 
     // =====================================================
@@ -470,6 +488,7 @@ int main(int argc, char *argv[])
                     == StartupPerformanceMode::Scenario::Representative,
             .showStartupBirthdayPrompt = !startupPerformance.enabled,
             .initialDatabasePath = initialDatabasePath,
+            .startupThemeService = std::move(startupThemeService),
             .checkpointCallback =
                 [&startupProfiler, &startupPerformance](
                     const QString& name,

@@ -231,6 +231,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         QStringLiteral("preferences-resolved"),
         QStringLiteral("locale-applied"),
         QStringLiteral("font-applied"),
+        QStringLiteral("theme-applied"),
         QStringLiteral("resource-system-initialized"),
         QStringLiteral("splash-shown"),
         QStringLiteral("services-created"),

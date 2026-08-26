@@ -22,6 +22,10 @@ class ApplicationServices
 public:
     ApplicationServices();
 
+    explicit ApplicationServices(
+        std::unique_ptr<ThemeService> themeService
+        );
+
     ~ApplicationServices();
 
     [[nodiscard]] Status openDatabase(

@@ -14,6 +14,24 @@ enum class Theme
     SystemDefault
 };
 
+constexpr Theme themeFromStoredValue(
+    int value
+    )
+{
+    switch (value)
+    {
+    case static_cast<int>(Theme::Dark):
+        return Theme::Dark;
+
+    case static_cast<int>(Theme::Light):
+        return Theme::Light;
+
+    case static_cast<int>(Theme::SystemDefault):
+    default:
+        return Theme::SystemDefault;
+    }
+}
+
 enum class FontSize
 {
     Small = -2,

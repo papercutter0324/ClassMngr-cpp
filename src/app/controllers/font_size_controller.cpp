@@ -37,10 +37,6 @@ void FontSizeController::connectActions(
 
         changeFontSize(fontSize);
     };
-
-    changeFontSize(
-        actions.fontSizeState->current()
-        );
 }
 
 void FontSizeController::changeFontSize(

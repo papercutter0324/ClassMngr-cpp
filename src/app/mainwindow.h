@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "app/controllers/file_controller.h"
+#include "core/theme_service.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/widgets/sidebar/sidebar_types.h"
 
@@ -51,6 +52,7 @@ struct MainWindowStartupOptions
     bool runPostShowStartupTasks = true;
     bool showStartupBirthdayPrompt = true;
     QString initialDatabasePath;
+    std::unique_ptr<ThemeService> startupThemeService;
     std::function<void(const QString&, const QString&)> checkpointCallback;
 };
 
@@ -134,7 +136,6 @@ private:
         );
 
     void setDefaultSidebarWidth();
-    void reapplyStartupFontSize();
     void showStartupDatabasePage();
     void startInitialSetup();
 
@@ -190,7 +191,6 @@ private:
 
     bool m_isAdmin = false;
     bool m_testingClassesReturnToPersonalSchedule = true;
-    bool m_startupFontSizeRefreshQueued = false;
     bool m_startupBirthdayCheckQueued = false;
     bool m_startupSidebarWidthApplied = false;
     MainWindowStartupOptions m_startupOptions;

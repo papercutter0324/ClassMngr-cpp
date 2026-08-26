@@ -35,11 +35,6 @@ void ThemeController::connectActions(
         changeTheme(theme);
         actions.refreshThemedIcons();
     };
-
-    changeTheme(
-        actions.themeState->current()
-        );
-    actions.refreshThemedIcons();
 }
 
 void ThemeController::changeTheme(

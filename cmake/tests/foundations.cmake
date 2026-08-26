@@ -215,6 +215,18 @@ classmngr_add_qt_test(
     )
 
     classmngr_add_qt_test(
+        NAME StartupVisualSettings
+        SOURCES
+            tests/startup_visual_settings_tests.cpp
+        LIBRARIES
+            Qt6::Core
+            Qt6::Gui
+            Qt6::Test
+            Qt6::Widgets
+        OFFSCREEN
+    )
+
+    classmngr_add_qt_test(
         NAME CheckboxStyle
         SOURCES
             tests/checkbox_style_tests.cpp
