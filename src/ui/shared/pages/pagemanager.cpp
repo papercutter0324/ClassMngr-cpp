@@ -98,18 +98,9 @@ void PageManager::initialize(
 
     registerPageFactories();
 
-    // Keep the lightweight/default pages eager for now. Classes, Campus, and
-    // PDF pages are created only when needed. Calendar remains a lazy child
-    // of My Workspace.
-    ensurePage(PageType::MyWorkspace);
-    ensurePage(PageType::MyClasses);
-    ensurePage(PageType::Schedule);
-    ensurePage(PageType::SubPrep);
-    ensurePage(PageType::TestingClasses);
-    ensurePage(PageType::TeacherInfo);
-    ensurePage(PageType::NativeEnglishTeachers);
-    ensurePage(PageType::GsTeam);
-
+    // Page factories register every navigation destination without creating
+    // its widget tree. My Workspace is the shared initial route; its visible
+    // schedule child is the only page content required at this point.
     showPage(
         PageType::MyWorkspace
         );
@@ -865,9 +856,23 @@ TestingClassesPage* PageManager::testingClassesPage() const
     return m_testingClassesPage;
 }
 
+TestingClassesPage* PageManager::ensureTestingClassesPage()
+{
+    return qobject_cast<TestingClassesPage*>(
+        ensurePage(PageType::TestingClasses)
+        );
+}
+
 TeacherInfoPage* PageManager::teacherPage() const
 {
     return m_teacherPage;
+}
+
+TeacherInfoPage* PageManager::ensureTeacherPage()
+{
+    return qobject_cast<TeacherInfoPage*>(
+        ensurePage(PageType::TeacherInfo)
+        );
 }
 
 StaffDirectoryPage* PageManager::nativeEnglishTeachersPage() const
@@ -875,9 +880,23 @@ StaffDirectoryPage* PageManager::nativeEnglishTeachersPage() const
     return m_nativeEnglishTeachersPage;
 }
 
+StaffDirectoryPage* PageManager::ensureNativeEnglishTeachersPage()
+{
+    return qobject_cast<StaffDirectoryPage*>(
+        ensurePage(PageType::NativeEnglishTeachers)
+        );
+}
+
 StaffDirectoryPage* PageManager::gsTeamPage() const
 {
     return m_gsTeamPage;
+}
+
+StaffDirectoryPage* PageManager::ensureGsTeamPage()
+{
+    return qobject_cast<StaffDirectoryPage*>(
+        ensurePage(PageType::GsTeam)
+        );
 }
 
 CampusDashboardPage* PageManager::campusDashboard() const

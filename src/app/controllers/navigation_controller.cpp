@@ -136,10 +136,16 @@ void NavigationController::handleTeacher(
         return;
     }
 
-    m_pages->teacherPage()
-        ->loadTeacher(
-            *teacher
-            );
+    auto* page = m_pages->ensureTeacherPage();
+
+    if (!page)
+    {
+        return;
+    }
+
+    page->loadTeacher(
+        *teacher
+        );
 
     m_pages->showPage(
         PageType::TeacherInfo
@@ -199,8 +205,8 @@ void NavigationController::handleNavigation(
 
             StaffDirectoryPage* page =
                 data.routeKey == QStringLiteral("native_english_teachers")
-                    ? m_pages->nativeEnglishTeachersPage()
-                    : m_pages->gsTeamPage();
+                    ? m_pages->ensureNativeEnglishTeachersPage()
+                    : m_pages->ensureGsTeamPage();
             if (!page || !page->loadDirectory())
             {
                 return;

@@ -604,20 +604,6 @@ void MainWindow::connectSignals()
         &NavigationController::handleNavigation
         );
 
-    connect(
-        m_pages->schedulePage(),
-        &SchedulePage::classInfoSaved,
-        m_sidebarController.get(),
-        &SidebarController::handleClassInfoSaved
-        );
-
-    connect(
-        m_pages->mySchedulePage(),
-        &SchedulePage::classInfoSaved,
-        m_sidebarController.get(),
-        &SidebarController::handleClassInfoSaved
-        );
-
     const auto connectClassesPage =
         [this](ClassesPage* page)
         {
@@ -644,27 +630,21 @@ void MainWindow::connectSignals()
                 );
         };
 
-    connect(
-        m_pages,
-        &PageManager::pageCreated,
-        this,
-        [connectClassesPage](PageType type, BasePage* page)
+    const auto connectSchedulePage =
+        [this](SchedulePage* page, bool personalSchedule)
         {
-            if (type == PageType::Classes)
+            if (!page)
             {
-                connectClassesPage(qobject_cast<ClassesPage*>(page));
+                return;
             }
-        }
-        );
 
-    if (auto* page = m_pages->classesPage())
-    {
-        connectClassesPage(page);
-    }
+            connect(
+                page,
+                &SchedulePage::classInfoSaved,
+                m_sidebarController.get(),
+                &SidebarController::handleClassInfoSaved
+                );
 
-    const auto connectScheduleImport =
-        [this](SchedulePage* page)
-        {
             connect(
                 page,
                 &SchedulePage::scheduleImportRequested,
@@ -681,23 +661,21 @@ void MainWindow::connectSignals()
                         return;
                     }
 
-                    m_pages->schedulePage()->refresh();
-                    m_pages->mySchedulePage()->refresh();
+                    if (auto* schedule = m_pages->schedulePage())
+                    {
+                        schedule->refresh();
+                    }
+
+                    if (auto* schedule = m_pages->mySchedulePage())
+                    {
+                        schedule->refresh();
+                    }
+
                     m_sidebarController->refreshTeacherSidebar();
                     m_sidebarController->handleClassInfoSaved(-1);
                 }
                 );
-        };
 
-    connectScheduleImport(m_pages->schedulePage());
-    connectScheduleImport(m_pages->mySchedulePage());
-
-    const auto connectTestingClasses =
-        [this](
-            SchedulePage* page,
-            bool personalSchedule
-            )
-        {
             connect(
                 page,
                 &SchedulePage::testingClassesRequested,
@@ -715,11 +693,21 @@ void MainWindow::connectSignals()
 
                     m_testingClassesReturnToPersonalSchedule =
                         personalSchedule;
-                    m_pages->testingClassesPage()->openTestingClass(
+
+                    auto* testingClasses =
+                        m_pages->ensureTestingClassesPage();
+
+                    if (!testingClasses)
+                    {
+                        return;
+                    }
+
+                    testingClasses->openTestingClass(
                         classId,
                         day,
                         startTime
                         );
+
                     m_pages->showPage(
                         PageType::TestingClasses
                         );
@@ -727,61 +715,81 @@ void MainWindow::connectSignals()
                 );
         };
 
-    connectTestingClasses(
-        m_pages->schedulePage(),
-        false
-        );
-    connectTestingClasses(
-        m_pages->mySchedulePage(),
-        true
-        );
-
-    connect(
-        m_pages->testingClassesPage(),
-        &TestingClassesPage::returnToScheduleRequested,
-        this,
-        [this]()
+    const auto connectTestingClassesPage =
+        [this](TestingClassesPage* page)
         {
-            if (!m_pages->confirmCurrentPageCanLeave())
+            if (!page)
             {
                 return;
             }
 
-            if (m_testingClassesReturnToPersonalSchedule)
-            {
-                m_pages->showPage(PageType::MyWorkspace);
-
-                if (auto* workspace = m_pages->myWorkspacePage())
+            connect(
+                page,
+                &TestingClassesPage::returnToScheduleRequested,
+                this,
+                [this]()
                 {
-                    workspace->openTab(WorkspaceTab::Schedule);
-                    workspace->schedulePage()->refresh();
+                    if (!m_pages->confirmCurrentPageCanLeave())
+                    {
+                        return;
+                    }
+
+                    if (m_testingClassesReturnToPersonalSchedule)
+                    {
+                        m_pages->showPage(PageType::MyWorkspace);
+
+                        if (auto* workspace = m_pages->myWorkspacePage())
+                        {
+                            workspace->openTab(WorkspaceTab::Schedule);
+                            workspace->schedulePage()->refresh();
+                        }
+                    }
+                    else
+                    {
+                        m_pages->showPage(PageType::Schedule);
+
+                        if (auto* schedule = m_pages->schedulePage())
+                        {
+                            schedule->refresh();
+                        }
+                    }
                 }
-            }
-            else
-            {
-                m_pages->showPage(PageType::Schedule);
-                m_pages->schedulePage()->refresh();
-            }
-        }
-        );
+                );
 
-    connect(
-        m_pages->testingClassesPage(),
-        &TestingClassesPage::testingDataChanged,
-        this,
-        [this]()
+            connect(
+                page,
+                &TestingClassesPage::testingDataChanged,
+                this,
+                [this]()
+                {
+                    if (auto* schedule = m_pages->schedulePage())
+                    {
+                        schedule->refresh();
+                    }
+
+                    if (auto* schedule = m_pages->mySchedulePage())
+                    {
+                        schedule->refresh();
+                    }
+                }
+                );
+        };
+
+    const auto connectTeacherPage =
+        [this](TeacherInfoPage* page)
         {
-            m_pages->schedulePage()->refresh();
-            m_pages->mySchedulePage()->refresh();
-        }
-        );
+            if (!page)
+            {
+                return;
+            }
 
-    connect(
-        m_pages->teacherPage(),
-        &TeacherInfoPage::teacherSaved,
-        m_sidebarController.get(),
-        &SidebarController::handleTeacherSaved
-        );
+            connect(
+                page,
+                &TeacherInfoPage::teacherSaved,
+                m_sidebarController.get(),
+                &SidebarController::handleTeacherSaved
+                );
+        };
 
     const auto connectCampusDashboard =
         [this](CampusDashboardPage* page)
@@ -803,16 +811,67 @@ void MainWindow::connectSignals()
         m_pages,
         &PageManager::pageCreated,
         this,
-        [connectCampusDashboard](PageType type, BasePage* page)
+        [
+            connectClassesPage,
+            connectSchedulePage,
+            connectTestingClassesPage,
+            connectTeacherPage,
+            connectCampusDashboard
+        ](PageType type, BasePage* page)
         {
-            if (type == PageType::CampusDashboard)
+            switch (type)
             {
+            case PageType::Classes:
+                connectClassesPage(qobject_cast<ClassesPage*>(page));
+                break;
+
+            case PageType::Schedule:
+                connectSchedulePage(qobject_cast<SchedulePage*>(page), false);
+                break;
+
+            case PageType::TestingClasses:
+                connectTestingClassesPage(
+                    qobject_cast<TestingClassesPage*>(page)
+                    );
+                break;
+
+            case PageType::TeacherInfo:
+                connectTeacherPage(qobject_cast<TeacherInfoPage*>(page));
+                break;
+
+            case PageType::CampusDashboard:
                 connectCampusDashboard(
                     qobject_cast<CampusDashboardPage*>(page)
                     );
+                break;
+
+            default:
+                break;
             }
         }
         );
+
+    connectSchedulePage(m_pages->mySchedulePage(), true);
+
+    if (auto* page = m_pages->classesPage())
+    {
+        connectClassesPage(page);
+    }
+
+    if (auto* page = m_pages->schedulePage())
+    {
+        connectSchedulePage(page, false);
+    }
+
+    if (auto* page = m_pages->testingClassesPage())
+    {
+        connectTestingClassesPage(page);
+    }
+
+    if (auto* page = m_pages->teacherPage())
+    {
+        connectTeacherPage(page);
+    }
 
     if (auto* page = m_pages->campusDashboard())
     {

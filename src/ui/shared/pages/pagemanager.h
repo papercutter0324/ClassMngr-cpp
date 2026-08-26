@@ -188,12 +188,16 @@ public:
     ClassesPage* classesPage() const;
     ClassesPage* ensureClassesPage();
     TestingClassesPage* testingClassesPage() const;
+    TestingClassesPage* ensureTestingClassesPage();
 
     TeacherInfoPage* teacherPage() const;
+    TeacherInfoPage* ensureTeacherPage();
 
     StaffDirectoryPage* nativeEnglishTeachersPage() const;
+    StaffDirectoryPage* ensureNativeEnglishTeachersPage();
 
     StaffDirectoryPage* gsTeamPage() const;
+    StaffDirectoryPage* ensureGsTeamPage();
 
     CampusDashboardPage* campusDashboard() const;
     CampusDashboardPage* ensureCampusDashboard();

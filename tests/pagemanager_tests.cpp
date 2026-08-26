@@ -13,6 +13,7 @@ class PageManagerTests : public QObject
 
 private slots:
     void heavyPagesAreDeferredAndReused();
+    void registeredPagesAreCreatedOnFirstUse();
     void leavingPdfViewerReleasesTheDocument();
     void lifecycleReportsUncreatedHiddenAndCurrentPages();
 };
@@ -42,9 +43,24 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
     pages.initialize(&services, false);
 
     QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
-    QVERIFY(!pages.isPageInstantiated(PageType::Classes));
-    QVERIFY(!pages.isPageInstantiated(PageType::CampusDashboard));
-    QVERIFY(!pages.isPageInstantiated(PageType::PdfViewer));
+    QCOMPARE(pages.registeredPageCount(), 11);
+    QCOMPARE(pages.instantiatedPageCount(), 1);
+
+    for (const PageType type : {
+             PageType::MyClasses,
+             PageType::Schedule,
+             PageType::Classes,
+             PageType::TestingClasses,
+             PageType::TeacherInfo,
+             PageType::NativeEnglishTeachers,
+             PageType::GsTeam,
+             PageType::CampusDashboard,
+             PageType::SubPrep,
+             PageType::PdfViewer
+         })
+    {
+        QVERIFY(!pages.isPageInstantiated(type));
+    }
 
     pages.setDatabaseOpen(false);
     pages.clearDatabaseState();
@@ -93,6 +109,42 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
                     );
         }
         ));
+}
+
+void PageManagerTests::registeredPagesAreCreatedOnFirstUse()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.setDatabaseOpen(false);
+
+    const QList<PageType> deferredPages{
+        PageType::MyClasses,
+        PageType::Schedule,
+        PageType::Classes,
+        PageType::TestingClasses,
+        PageType::TeacherInfo,
+        PageType::NativeEnglishTeachers,
+        PageType::GsTeam,
+        PageType::CampusDashboard,
+        PageType::SubPrep,
+        PageType::PdfViewer
+    };
+
+    for (const PageType type : deferredPages)
+    {
+        QVERIFY(!pages.isPageInstantiated(type));
+
+        pages.showPage(type);
+
+        QVERIFY(pages.isPageInstantiated(type));
+        QVERIFY(pages.isCurrentPage(type));
+    }
+
+    QCOMPARE(
+        pages.instantiatedPageCount(),
+        pages.registeredPageCount()
+        );
 }
 
 void PageManagerTests::leavingPdfViewerReleasesTheDocument()

@@ -62,8 +62,15 @@ void SidebarController::addTeacher()
         teacherId
         );
 
-    m_pages->teacherPage()->loadTeacher(
-            *teacher
+    auto* page = m_pages->ensureTeacherPage();
+
+    if (!page)
+    {
+        return;
+    }
+
+    page->loadTeacher(
+        *teacher
         );
 
     m_pages->showPage(
