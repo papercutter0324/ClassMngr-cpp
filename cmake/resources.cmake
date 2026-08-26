@@ -179,6 +179,9 @@ qt_add_resources(ClassMngr app_resources
         resources/assets/fonts/Inter.ttc
         resources/assets/fonts/JustAnotherHand-Regular.ttf
         resources/assets/fonts/PretendardVariable.ttf
+        resources/assets/fonts/DancingScript-wght.ttf
+        resources/assets/fonts/GreatVibes-Regular.ttf
+        resources/assets/fonts/Caveat-wght.ttf
         resources/assets/icons/app_icon.ico
         resources/assets/icons/check.png
         resources/assets/icons/keyboard_dark.svg
