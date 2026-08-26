@@ -159,11 +159,6 @@ ClassesPage::ClassesPage(
 {
     setProperty("role", UiRoles::Classes);
 
-    m_showMiddleSchoolAnalyticsAndEvaluations =
-        ClassNavigationPreferences::showMiddleSchoolAnalyticsAndEvaluations(
-            m_services ? m_services->settingsService() : nullptr
-            );
-
     MemoryUsageDiagnostics::registerMemoryBreakdownProvider(this, this);
     buildUi();
 }
@@ -274,6 +269,7 @@ bool ClassesPage::openClass(
         rebuildSectionTabs();
         setEditorAvailable(false);
         updateHeaderText();
+        markRefreshed();
         return true;
     }
 
@@ -291,6 +287,7 @@ bool ClassesPage::openClass(
     restoreSelections();
     setEditorAvailable(true);
     updateHeaderText();
+    markRefreshed();
     return true;
 }
 
@@ -494,11 +491,8 @@ void ClassesPage::setSaveMode(
 void ClassesPage::refresh()
 {
     BasePage::refresh();
-
-    if (isVisible())
-    {
-        loadClasses();
-    }
+    refreshNavigationPreferences();
+    loadClasses();
 }
 
 void ClassesPage::refreshNavigationPreferences()

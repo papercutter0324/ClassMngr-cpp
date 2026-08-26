@@ -661,12 +661,22 @@ void MainWindow::connectSignals()
 
                     if (auto* schedule = m_pages->schedulePage())
                     {
-                        schedule->refresh();
+                        schedule->markStale();
+
+                        if (schedule->isVisible())
+                        {
+                            schedule->activate();
+                        }
                     }
 
                     if (auto* schedule = m_pages->mySchedulePage())
                     {
-                        schedule->refresh();
+                        schedule->markStale();
+
+                        if (schedule->isVisible())
+                        {
+                            schedule->activate();
+                        }
                     }
 
                     m_sidebarController->refreshTeacherSidebar();
@@ -734,22 +744,26 @@ void MainWindow::connectSignals()
 
                     if (m_testingClassesReturnToPersonalSchedule)
                     {
+                        if (auto* schedule = m_pages->mySchedulePage())
+                        {
+                            schedule->markStale();
+                        }
+
                         m_pages->showPage(PageType::MyWorkspace);
 
                         if (auto* workspace = m_pages->myWorkspacePage())
                         {
                             workspace->openTab(WorkspaceTab::Schedule);
-                            workspace->schedulePage()->refresh();
                         }
                     }
                     else
                     {
-                        m_pages->showPage(PageType::Schedule);
-
                         if (auto* schedule = m_pages->schedulePage())
                         {
-                            schedule->refresh();
+                            schedule->markStale();
                         }
+
+                        m_pages->showPage(PageType::Schedule);
                     }
                 }
                 );
@@ -762,12 +776,12 @@ void MainWindow::connectSignals()
                 {
                     if (auto* schedule = m_pages->schedulePage())
                     {
-                        schedule->refresh();
+                        schedule->markStale();
                     }
 
                     if (auto* schedule = m_pages->mySchedulePage())
                     {
-                        schedule->refresh();
+                        schedule->markStale();
                     }
                 }
                 );
@@ -1112,7 +1126,6 @@ void MainWindow::applyNoDatabaseState()
         if (auto* campus = m_pages->campusDashboard())
         {
             campus->showInformation();
-            campus->refresh();
         }
     }
 
@@ -1149,7 +1162,6 @@ void MainWindow::applyDatabaseLoadedState()
 
         auto* workspace = m_pages->myWorkspacePage();
         workspace->openTab(WorkspaceTab::Schedule);
-        workspace->schedulePage()->loadInitialContent();
     }
 
     if (ui && ui->sidebarWidget)

@@ -5,7 +5,6 @@
 class ApplicationServices;
 class QLabel;
 class QScrollArea;
-class QShowEvent;
 class NavigationTabWidget;
 class QTextEdit;
 class QVBoxLayout;
@@ -24,9 +23,6 @@ public:
     void refresh() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
-
-protected:
-    void showEvent(QShowEvent* event) override;
 
 private:
     void buildUi();

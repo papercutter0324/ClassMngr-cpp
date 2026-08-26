@@ -3,7 +3,6 @@
 #include "ui/shared/styles/roles.h"
 
 #include <QLabel>
-#include <QShowEvent>
 
 MyClassesPage::MyClassesPage(
     ApplicationServices* services,
@@ -14,17 +13,13 @@ MyClassesPage::MyClassesPage(
 {
     setProperty("role", UiRoles::MyInfo);
     buildUi();
-    refreshGeneratedContent();
 }
 
 void MyClassesPage::refresh()
 {
     BasePage::refresh();
 
-    if (isVisible())
-    {
-        refreshGeneratedContent();
-    }
+    refreshGeneratedContent();
 }
 
 void MyClassesPage::clearDatabaseState()
@@ -40,11 +35,5 @@ void MyClassesPage::retranslateUi()
     m_subtitleLabel->setText(
         tr("Review teacher, class, and roster details.")
         );
-    refreshGeneratedContent();
-}
-
-void MyClassesPage::showEvent(QShowEvent* event)
-{
-    BasePage::showEvent(event);
     refreshGeneratedContent();
 }

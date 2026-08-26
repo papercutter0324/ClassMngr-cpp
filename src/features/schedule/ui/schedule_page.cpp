@@ -26,14 +26,6 @@ void SchedulePage::refresh()
 {
     BasePage::refresh();
 
-    if (isVisible() && m_scheduleWidget)
-    {
-        m_scheduleWidget->refreshSchedule();
-    }
-}
-
-void SchedulePage::loadInitialContent()
-{
     if (m_scheduleWidget)
     {
         m_scheduleWidget->refreshSchedule();
@@ -42,9 +34,11 @@ void SchedulePage::loadInitialContent()
 
 void SchedulePage::refreshSchedulePreferences()
 {
-    if (m_scheduleWidget)
+    markStale();
+
+    if (isVisible())
     {
-        m_scheduleWidget->refreshSchedule();
+        activate();
     }
 }
 

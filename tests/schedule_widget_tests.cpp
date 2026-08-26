@@ -156,6 +156,7 @@ void ScheduleWidgetTests
         nullptr,
         ScheduleMode::ReadOnly
         );
+    mirrored.refreshSchedule();
 
     const ScheduleDisplayState state =
         mirrored.displayState();
@@ -215,6 +216,7 @@ void ScheduleWidgetTests::printUsesSelectedTeacherNameLanguage()
         QStringLiteral("true")
         );
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
 
     widget.printSchedule();
     QCOMPARE(ScheduleWidgetTestStubs::printRequestCount, 1);
@@ -292,6 +294,7 @@ void ScheduleWidgetTests
         );
 
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
 
     QVERIFY(!widget.displayState().showAllHours);
 }
@@ -308,6 +311,7 @@ void ScheduleWidgetTests
 
     ApplicationServices services;
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
     QCOMPARE(
         widget.visibleClassIds(),
         QSet<int>({42, 44, 45})
@@ -398,6 +402,7 @@ void ScheduleWidgetTests
         QStringLiteral("true")
         );
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
     auto* testingButton =
         widget.findChild<QPushButton*>(
             QStringLiteral("scheduleTestingModeButton")
@@ -644,6 +649,7 @@ void ScheduleWidgetTests
         nullptr,
         ScheduleMode::ReadOnly
         );
+    widget.refreshSchedule();
 
     auto* controls =
         widget.findChild<QWidget*>(
@@ -710,6 +716,7 @@ void ScheduleWidgetTests
 {
     ApplicationServices services;
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
 
     auto* table =
         widget.findChild<QTableWidget*>(
@@ -787,6 +794,7 @@ void ScheduleWidgetTests
 {
     ApplicationServices services;
     ScheduleWidget widget(&services);
+    widget.refreshSchedule();
 
     QCOMPARE(widget.visibleClassIds(), QSet<int>{42});
 
@@ -832,6 +840,8 @@ void ScheduleWidgetTests
 {
     ApplicationServices services;
     SchedulePage page(&services);
+    page.setDatabaseOpen(true);
+    page.activate();
 
     auto* scrollArea =
         page.findChild<QScrollArea*>();

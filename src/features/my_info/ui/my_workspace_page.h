@@ -34,6 +34,7 @@ public:
     [[nodiscard]] PersonalDetailsPage* personalDetailsPage() const;
     [[nodiscard]] SchedulePage* schedulePage() const;
     [[nodiscard]] CalendarPage* calendarPage() const;
+    CalendarPage* ensureCalendarPage();
 
     void saveData() override;
     bool saveChanges() override;
@@ -44,6 +45,9 @@ public:
     void clearDatabaseState() override;
     void retranslateUi() override;
     void setDatabaseOpen(bool databaseOpen) override;
+    void markStale() override;
+    void activate() override;
+    void deactivate() override;
     [[nodiscard]] PageOutputCapabilities outputCapabilities() const override;
     void printCurrentPage() override;
     void saveCurrentPageAs() override;
@@ -52,6 +56,7 @@ private:
     void buildUi();
     void ensureCalendarInitialized();
     void connectChildPageSignals(BasePage* page);
+    void activateCurrentChildPage();
     [[nodiscard]] BasePage* currentChildPage() const;
     [[nodiscard]] static constexpr int tabIndex(WorkspaceTab tab)
     {
@@ -65,4 +70,5 @@ private:
     SchedulePage* m_schedulePage = nullptr;
     CalendarPage* m_calendarPage = nullptr;
     QLabel* m_calendarPlaceholder = nullptr;
+    BasePage* m_activeChildPage = nullptr;
 };

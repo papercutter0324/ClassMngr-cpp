@@ -83,10 +83,13 @@ private:
     ApplicationServices* m_services = nullptr;
     TestingClass m_savedClass;
     int m_currentClassId{-1};
+    int m_requestedClassId{-1};
     bool m_editorDirty = false;
     AutosaveCoordinator* m_autosave = nullptr;
     QString m_pendingDay;
     QString m_pendingStartTime;
+    QString m_requestedPendingDay;
+    QString m_requestedPendingStartTime;
 
     PageHeader* m_pageHeader = nullptr;
     QLabel* m_nameLabel = nullptr;

@@ -1,4 +1,6 @@
 #include "core/application_services.h"
+#include "features/calendar/ui/calendar_page.h"
+#include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
@@ -16,6 +18,7 @@ private slots:
     void heavyPagesAreDeferredAndReused();
     void scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews();
     void registeredPagesAreCreatedOnFirstUse();
+    void preparingCalendarDoesNotActivateItsHiddenTab();
     void leavingPdfViewerReleasesTheDocument();
     void lifecycleReportsUncreatedHiddenAndCurrentPages();
 };
@@ -165,6 +168,23 @@ void PageManagerTests::registeredPagesAreCreatedOnFirstUse()
         pages.instantiatedPageCount(),
         pages.registeredPageCount()
         );
+}
+
+void PageManagerTests::preparingCalendarDoesNotActivateItsHiddenTab()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.setDatabaseOpen(true);
+
+    auto* workspace = pages.myWorkspacePage();
+    QVERIFY(workspace);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+
+    CalendarPage* calendar = pages.ensureCalendarPage();
+    QVERIFY(calendar);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QVERIFY(calendar->needsRefresh());
 }
 
 void PageManagerTests::leavingPdfViewerReleasesTheDocument()

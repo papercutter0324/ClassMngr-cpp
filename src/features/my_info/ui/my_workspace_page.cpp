@@ -34,10 +34,18 @@ MyWorkspacePage::MyWorkspacePage(
 
 void MyWorkspacePage::openTab(WorkspaceTab tab)
 {
-    if (m_tabs)
+    if (!m_tabs)
     {
-        m_tabs->setCurrentIndex(tabIndex(tab));
+        return;
     }
+
+    if (tab == WorkspaceTab::Calendar)
+    {
+        ensureCalendarInitialized();
+    }
+
+    m_tabs->setCurrentIndex(tabIndex(tab));
+    activateCurrentChildPage();
 }
 
 WorkspaceTab MyWorkspacePage::currentTab() const
@@ -73,6 +81,12 @@ SchedulePage* MyWorkspacePage::schedulePage() const
 
 CalendarPage* MyWorkspacePage::calendarPage() const
 {
+    return m_calendarPage;
+}
+
+CalendarPage* MyWorkspacePage::ensureCalendarPage()
+{
+    ensureCalendarInitialized();
     return m_calendarPage;
 }
 
@@ -121,21 +135,42 @@ void MyWorkspacePage::setSaveMode(SaveMode mode)
 void MyWorkspacePage::refresh()
 {
     BasePage::refresh();
+}
+
+void MyWorkspacePage::markStale()
+{
+    BasePage::markStale();
 
     if (m_personalDetailsPage)
     {
-        m_personalDetailsPage->refresh();
+        m_personalDetailsPage->markStale();
     }
 
     if (m_schedulePage)
     {
-        m_schedulePage->refresh();
+        m_schedulePage->markStale();
     }
 
     if (m_calendarPage)
     {
-        m_calendarPage->refresh();
+        m_calendarPage->markStale();
     }
+}
+
+void MyWorkspacePage::activate()
+{
+    BasePage::activate();
+    activateCurrentChildPage();
+}
+
+void MyWorkspacePage::deactivate()
+{
+    if (m_activeChildPage)
+    {
+        m_activeChildPage->deactivate();
+    }
+
+    BasePage::deactivate();
 }
 
 void MyWorkspacePage::clearDatabaseState()
@@ -292,10 +327,17 @@ void MyWorkspacePage::buildUi()
         this,
         [this](int index)
         {
-            if (index == tabIndex(WorkspaceTab::Calendar))
+            if (
+                index == tabIndex(WorkspaceTab::Calendar)
+                && !m_calendarPage
+                )
             {
                 ensureCalendarInitialized();
+                m_tabs->setCurrentIndex(tabIndex(WorkspaceTab::Calendar));
+                return;
             }
+
+            activateCurrentChildPage();
         }
         );
     openTab(WorkspaceTab::Schedule);
@@ -320,7 +362,6 @@ void MyWorkspacePage::ensureCalendarInitialized()
     connectChildPageSignals(m_calendarPage);
 
     m_tabs->addTab(m_calendarPage, tr("Calendar"));
-    m_tabs->setCurrentIndex(calendarIndex);
 
     if (m_calendarPlaceholder)
     {
@@ -344,6 +385,26 @@ void MyWorkspacePage::connectChildPageSignals(BasePage* page)
             this, &BasePage::newDatabaseRequested);
     connect(page, &BasePage::outputCapabilitiesChanged,
             this, &BasePage::outputCapabilitiesChanged);
+}
+
+void MyWorkspacePage::activateCurrentChildPage()
+{
+    BasePage* page = currentChildPage();
+
+    if (page != m_activeChildPage)
+    {
+        if (m_activeChildPage)
+        {
+            m_activeChildPage->deactivate();
+        }
+
+        m_activeChildPage = page;
+    }
+
+    if (m_activeChildPage)
+    {
+        m_activeChildPage->activate();
+    }
 }
 
 BasePage* MyWorkspacePage::currentChildPage() const

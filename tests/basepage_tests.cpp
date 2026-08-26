@@ -42,6 +42,23 @@ public:
     int databaseClearCount = 0;
 };
 
+class LifecycleTestPage : public BasePage
+{
+public:
+    void refresh() override
+    {
+        ++refreshCount;
+    }
+
+    void releaseFeatureResources() override
+    {
+        ++releaseCount;
+    }
+
+    int refreshCount = 0;
+    int releaseCount = 0;
+};
+
 class NoDatabaseBannerTranslator : public QTranslator
 {
 public:
@@ -122,6 +139,7 @@ private slots:
     void noDatabaseBannerScalesWithFontSize();
     void databaseStateClearHookIsDispatched();
     void outputContractDefaultsToUnsupportedAndSignalsDatabaseChanges();
+    void lifecycleRefreshesOnlyWhenStale();
 };
 
 void BasePageTests::noDatabaseBannerVisibilityAndActions()
@@ -596,6 +614,30 @@ void BasePageTests
 
     page.setDatabaseOpen(false);
     QCOMPARE(capabilitySpy.count(), 2);
+}
+
+void BasePageTests::lifecycleRefreshesOnlyWhenStale()
+{
+    LifecycleTestPage page;
+
+    QVERIFY(!page.needsRefresh());
+
+    page.setDatabaseOpen(true);
+    QVERIFY(page.needsRefresh());
+
+    page.activate();
+    QCOMPARE(page.refreshCount, 1);
+    QVERIFY(!page.needsRefresh());
+
+    page.activate();
+    QCOMPARE(page.refreshCount, 1);
+
+    page.markStale();
+    page.activate();
+    QCOMPARE(page.refreshCount, 2);
+
+    page.deactivate();
+    QCOMPARE(page.releaseCount, 1);
 }
 
 QTEST_MAIN(BasePageTests)

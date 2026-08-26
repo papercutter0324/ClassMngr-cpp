@@ -416,6 +416,32 @@ void BasePage::clearDatabaseState()
 {
 }
 
+void BasePage::markStale()
+{
+    m_needsRefresh = true;
+}
+
+bool BasePage::needsRefresh() const
+{
+    return m_needsRefresh;
+}
+
+void BasePage::activate()
+{
+    if (!m_needsRefresh)
+    {
+        return;
+    }
+
+    refresh();
+    m_needsRefresh = false;
+}
+
+void BasePage::deactivate()
+{
+    releaseFeatureResources();
+}
+
 Status BasePage::prepareForActivation()
 {
     return {};
@@ -464,6 +490,7 @@ void BasePage::setDatabaseOpen(
 
     if (databaseStateChanged)
     {
+        markStale();
         emit outputCapabilitiesChanged();
     }
 }
@@ -545,6 +572,11 @@ void BasePage::setBottomBarVisible(
 bool BasePage::isDatabaseOpen() const
 {
     return m_databaseOpen;
+}
+
+void BasePage::markRefreshed()
+{
+    m_needsRefresh = false;
 }
 
 void BasePage::updateNoDatabaseBannerGeometry()

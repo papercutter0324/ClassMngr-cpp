@@ -254,6 +254,7 @@ BasePage* PageManager::ensurePage(
     addWidget(page);
     connectCommonPageSignals(page);
     applyCurrentState(page);
+    page->markStale();
 
     emit pageCreated(type, page);
     MemoryUsageDiagnostics::recordEvent(
@@ -401,6 +402,11 @@ void PageManager::showPage(
         page
         );
 
+    if (m_databaseStateSet)
+    {
+        page->activate();
+    }
+
     if (pageChanged || firstActivation)
     {
         m_pageLastActivatedAt.insert(type, QDateTime::currentDateTime());
@@ -512,7 +518,7 @@ void PageManager::releaseLeavingPageResources(
 {
     if (page)
     {
-        page->releaseFeatureResources();
+        page->deactivate();
     }
 
     const auto pdfPage =
@@ -724,12 +730,22 @@ void PageManager::refreshSchedulePreferences()
 {
     if (m_schedulePage)
     {
-        m_schedulePage->refreshSchedulePreferences();
+        m_schedulePage->markStale();
+
+        if (isCurrentPage(PageType::Schedule))
+        {
+            m_schedulePage->activate();
+        }
     }
 
     if (SchedulePage* page = mySchedulePage())
     {
-        page->refreshSchedulePreferences();
+        page->markStale();
+
+        if (page->isVisible())
+        {
+            page->activate();
+        }
     }
 }
 
@@ -737,7 +753,12 @@ void PageManager::refreshNavigationPreferences()
 {
     if (m_classesPage)
     {
-        m_classesPage->refreshNavigationPreferences();
+        m_classesPage->markStale();
+
+        if (isCurrentPage(PageType::Classes))
+        {
+            m_classesPage->activate();
+        }
     }
 
 }
@@ -754,8 +775,13 @@ void PageManager::refreshAll()
     {
         if (page)
         {
-            page->refresh();
+            page->markStale();
         }
+    }
+
+    if (auto* page = qobject_cast<BasePage*>(currentWidget()))
+    {
+        page->activate();
     }
 }
 
@@ -812,11 +838,7 @@ CalendarPage* PageManager::ensureCalendarPage()
 {
     if (MyWorkspacePage* workspace = ensureMyWorkspacePage())
     {
-        const WorkspaceTab activeTab = workspace->currentTab();
-        workspace->openTab(WorkspaceTab::Calendar);
-        CalendarPage* calendarPage = workspace->calendarPage();
-        workspace->openTab(activeTab);
-        return calendarPage;
+        return workspace->ensureCalendarPage();
     }
 
     return nullptr;

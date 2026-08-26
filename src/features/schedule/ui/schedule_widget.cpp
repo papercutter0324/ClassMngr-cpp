@@ -62,9 +62,7 @@ ScheduleWidget::ScheduleWidget(
             );
     }
 
-    loadSettings();
     buildUi();
-    loadSchedule();
 }
 
 ScheduleWidget::~ScheduleWidget()
@@ -93,7 +91,6 @@ void ScheduleWidget::clearDatabaseState()
     m_scheduleModel = {};
 
     updateButtons();
-    loadSchedule();
 }
 
 void ScheduleWidget::retranslateUi()

@@ -67,6 +67,14 @@ public:
 
     virtual void clearDatabaseState();
 
+    // A page is refreshed only when an external state change makes its
+    // displayed data stale. PageManager (or a composite page) owns calling
+    // activate() once the page is the active navigation destination.
+    virtual void markStale();
+    [[nodiscard]] bool needsRefresh() const;
+    virtual void activate();
+    virtual void deactivate();
+
     [[nodiscard]] virtual Status prepareForActivation();
     virtual void releaseFeatureResources();
 
@@ -119,6 +127,8 @@ protected:
 
     [[nodiscard]] bool isDatabaseOpen() const;
 
+    void markRefreshed();
+
 
 
 private:
@@ -158,6 +168,8 @@ private:
     bool m_noDatabaseBannerFontUpdateQueued = false;
 
     bool m_databaseOpen = false;
+
+    bool m_needsRefresh = false;
 
     void updateNoDatabaseBannerGeometry();
 

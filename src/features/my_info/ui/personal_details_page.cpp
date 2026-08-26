@@ -11,7 +11,6 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollBar>
-#include <QShowEvent>
 #include <QTimer>
 
 PersonalDetailsPage::PersonalDetailsPage(
@@ -31,15 +30,13 @@ PersonalDetailsPage::PersonalDetailsPage(
         this,
         [this](bool) { saveMyInfoInternal(); }
         );
-
-    loadPageData();
 }
 
 void PersonalDetailsPage::refresh()
 {
     BasePage::refresh();
 
-    if (isVisible() && !m_autosave->isDirty())
+    if (!m_autosave->isDirty())
     {
         loadPageData();
     }
@@ -170,14 +167,4 @@ void PersonalDetailsPage::scrollToTop()
             }
         }
         );
-}
-
-void PersonalDetailsPage::showEvent(QShowEvent* event)
-{
-    BasePage::showEvent(event);
-
-    if (!m_autosave->isDirty())
-    {
-        loadPageData();
-    }
 }

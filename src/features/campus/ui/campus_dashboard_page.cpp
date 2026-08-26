@@ -41,7 +41,6 @@ CampusDashboardPage::CampusDashboardPage(
         &CampusDashboardPage::handleSaveTimeout
         );
 
-    loadCampuses();
 }
 
 void CampusDashboardPage::showAddress()
@@ -164,11 +163,6 @@ QString CampusDashboardPage::currentSectionKey() const
 
 void CampusDashboardPage::refresh()
 {
-    if (!isVisible())
-    {
-        return;
-    }
-
     loadCampuses();
 }
 

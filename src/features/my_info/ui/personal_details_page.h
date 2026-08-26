@@ -17,7 +17,6 @@ class QEvent;
 class QLabel;
 class QLineEdit;
 class QPushButton;
-class QShowEvent;
 class QVBoxLayout;
 class QWidget;
 
@@ -44,7 +43,6 @@ public:
     void scrollToTop();
 
 protected:
-    void showEvent(QShowEvent* event) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private slots:

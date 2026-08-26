@@ -11,7 +11,6 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QScrollArea;
-class QShowEvent;
 class NavigationTabWidget;
 class OnScreenKeyboard;
 class QTextEdit;
@@ -54,10 +53,6 @@ public:
     QString currentSectionKey() const;
 
 protected:
-    void showEvent(
-        QShowEvent* event
-        ) override;
-
     bool eventFilter(
         QObject* watched,
         QEvent* event

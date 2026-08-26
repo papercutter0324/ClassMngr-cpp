@@ -22,7 +22,6 @@ public:
         );
 
     void refresh() override;
-    void loadInitialContent();
     void refreshSchedulePreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;

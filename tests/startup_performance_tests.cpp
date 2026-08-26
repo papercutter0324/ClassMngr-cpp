@@ -264,7 +264,10 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         startupMetrics.value(QStringLiteral("scheduleWidgetsCreated")).toDouble(),
         1.0
         );
-    QVERIFY(startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble() > 0.0);
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble(),
+        0.0
+        );
 
     const QJsonArray events = metrics.value(QStringLiteral("events")).toArray();
     QSet<QString> eventNames;
@@ -287,8 +290,8 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     }
     QVERIFY(eventNames.contains(QStringLiteral("page-created")));
     QVERIFY(eventNames.contains(QStringLiteral("schedule-widget-created")));
-    QVERIFY(eventNames.contains(QStringLiteral("schedule-render-start")));
-    QVERIFY(eventNames.contains(QStringLiteral("schedule-render-end")));
+    QVERIFY(!eventNames.contains(QStringLiteral("schedule-render-start")));
+    QVERIFY(!eventNames.contains(QStringLiteral("schedule-render-end")));
     QVERIFY(startupScheduleDiagnosticPassed);
 
     const QString representativeDatabasePath =
@@ -364,7 +367,27 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         representativeStartupMetrics
             .value(QStringLiteral("scheduleRenderCount"))
             .toDouble(),
-        2.0
+        1.0
+        );
+
+    QSet<QString> representativeEventNames;
+    for (const QJsonValue& value : representativeDocument.object()
+             .value(QStringLiteral("events"))
+             .toArray())
+    {
+        representativeEventNames.insert(
+            value.toObject().value(QStringLiteral("name")).toString()
+            );
+    }
+    QVERIFY(
+        representativeEventNames.contains(
+            QStringLiteral("schedule-render-start")
+            )
+        );
+    QVERIFY(
+        representativeEventNames.contains(
+            QStringLiteral("schedule-render-end")
+            )
         );
 
     const double startupCompleteMs =

@@ -402,6 +402,7 @@ bool StaffDirectoryPage::loadDirectory()
     m_dirty = false;
     m_loading = false;
     updateActions();
+    markRefreshed();
     return true;
 }
 
@@ -608,7 +609,11 @@ void StaffDirectoryPage::setSaveMode(SaveMode mode)
 void StaffDirectoryPage::refresh()
 {
     BasePage::refresh();
-    if (isVisible() && !m_dirty) loadDirectory();
+
+    if (!m_dirty)
+    {
+        loadDirectory();
+    }
 }
 
 void StaffDirectoryPage::clearDatabaseState()

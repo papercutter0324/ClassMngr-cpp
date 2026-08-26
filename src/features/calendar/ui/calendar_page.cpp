@@ -13,7 +13,6 @@
 #include <QQuickWidget>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QShowEvent>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -108,11 +107,6 @@ void CalendarPage::buildUi()
 void CalendarPage::refresh()
 {
     BasePage::refresh();
-
-    if (!isVisible())
-    {
-        return;
-    }
 
     updateCalendarCampusFilter();
 
@@ -227,23 +221,13 @@ void CalendarPage::calendarPreferencesChanged(bool eventsChanged)
     {
         invalidateCalendarData();
     }
-}
 
-void CalendarPage::showEvent(
-    QShowEvent* event
-    )
-{
-    BasePage::showEvent(event);
-    updateCalendarCampusFilter();
+    markStale();
 
-    refreshCalendarData();
-
-    if (m_academicCalendarProvider)
+    if (isVisible())
     {
-        m_academicCalendarProvider->reload();
+        activate();
     }
-
-    refreshUpcomingEvents();
 }
 
 QLabel* CalendarPage::createTopLevelHeading(

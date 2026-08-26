@@ -710,6 +710,8 @@ void SubPrepPageTests
         );
 
     SubPrepPage page(&services);
+    page.setDatabaseOpen(true);
+    page.activate();
     auto* materials =
         page.findChild<QTextEdit*>(
             QStringLiteral("subPrepClassMaterialsEdit")

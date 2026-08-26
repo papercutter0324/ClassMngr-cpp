@@ -28,7 +28,6 @@ SubPrepPage::SubPrepPage(
         &SubPrepPage::autosave
         );
 
-    loadPageData();
 }
 
 void SubPrepPage::saveData()
@@ -64,11 +63,6 @@ void SubPrepPage::discardChanges()
 void SubPrepPage::refresh()
 {
     BasePage::refresh();
-
-    if (!isVisible())
-    {
-        return;
-    }
 
     loadPersonalZoomInformation();
     loadCampuses();
@@ -393,22 +387,6 @@ QString SubPrepPage::currentSectionKey() const
     }
 
     return {};
-}
-
-void SubPrepPage::showEvent(
-    QShowEvent* event
-    )
-{
-    BasePage::showEvent(event);
-
-    loadPersonalZoomInformation();
-    loadCampuses();
-    refreshGeneratedContent();
-
-    if (!m_dirty)
-    {
-        loadStoredSettings();
-    }
 }
 
 bool SubPrepPage::eventFilter(

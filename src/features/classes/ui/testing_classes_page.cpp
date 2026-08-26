@@ -94,8 +94,6 @@ TestingClassesPage::TestingClassesPage(
         this,
         [this](bool) { saveChanges(); }
         );
-    populateTeachers();
-    rebuildClassList();
 }
 
 void TestingClassesPage::openTestingClass(
@@ -104,35 +102,62 @@ void TestingClassesPage::openTestingClass(
     const QString& pendingStartTime
     )
 {
+    m_requestedClassId = classId;
+    m_requestedPendingDay = pendingDay;
+    m_requestedPendingStartTime = pendingStartTime;
+    markStale();
+
+    if (isVisible())
+    {
+        activate();
+    }
+}
+
+void TestingClassesPage::refresh()
+{
+    BasePage::refresh();
+
     populateTeachers();
-    rebuildClassList(classId);
 
-    if (classId > 0)
+    if (hasUnsavedChanges())
     {
-        loadClass(classId);
         return;
     }
 
-    if (
-        !pendingDay.trimmed().isEmpty()
-        && !pendingStartTime.trimmed().isEmpty()
-        )
+    const int requestedClassId = m_requestedClassId;
+    const QString pendingDay = m_requestedPendingDay;
+    const QString pendingStartTime = m_requestedPendingStartTime;
+    m_requestedClassId = -1;
+    m_requestedPendingDay.clear();
+    m_requestedPendingStartTime.clear();
+
+    rebuildClassList(
+        requestedClassId > 0
+            ? requestedClassId
+            : m_currentClassId
+        );
+
+    if (requestedClassId > 0)
     {
-        beginNewClass(
-            pendingDay,
-            pendingStartTime
-            );
+        loadClass(requestedClassId);
         return;
     }
 
-    if (m_classList->count() > 0)
+    if (!pendingDay.trimmed().isEmpty() && !pendingStartTime.trimmed().isEmpty())
+    {
+        beginNewClass(pendingDay, pendingStartTime);
+        return;
+    }
+
+    if (m_currentClassId > 0)
+    {
+        loadClass(m_currentClassId);
+    }
+    else if (m_classList->count() > 0)
     {
         m_classList->setCurrentRow(0);
         loadClass(
-            m_classList
-                ->currentItem()
-                ->data(Qt::UserRole)
-                .toInt()
+            m_classList->currentItem()->data(Qt::UserRole).toInt()
             );
     }
     else
@@ -141,32 +166,16 @@ void TestingClassesPage::openTestingClass(
     }
 }
 
-void TestingClassesPage::refresh()
-{
-    BasePage::refresh();
-
-    if (isVisible())
-    {
-        populateTeachers();
-        if (hasUnsavedChanges())
-        {
-            return;
-        }
-        rebuildClassList(m_currentClassId);
-        if (m_currentClassId > 0)
-        {
-            loadClass(m_currentClassId);
-        }
-    }
-}
-
 void TestingClassesPage::clearDatabaseState()
 {
     m_autosave->setLoading(true);
     m_currentClassId = -1;
+    m_requestedClassId = -1;
     m_savedClass = {};
     m_pendingDay.clear();
     m_pendingStartTime.clear();
+    m_requestedPendingDay.clear();
+    m_requestedPendingStartTime.clear();
     m_editorDirty = false;
     m_classList->clear();
     loadEditorValue({});
