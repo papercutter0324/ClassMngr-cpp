@@ -12,6 +12,7 @@
 #include "core/application_services.h"
 #include "core/appsettings.h"
 #include "core/language_service.h"
+#include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
@@ -55,15 +56,18 @@ MainWindow::MainWindow(
 {
     progressCallback(tr("Creating main window..."));
     ui->setupUi(this);
+    recordStartupCheckpoint(QStringLiteral("main-window-shell-created"));
 
     progressCallback(tr("Initializing application services..."));
     initializeServices();
+    recordStartupCheckpoint(QStringLiteral("services-created"));
 
     progressCallback(tr("Configuring window..."));
     initializeWindow();
 
     progressCallback(tr("Loading pages..."));
     initializePages();
+    recordStartupCheckpoint(QStringLiteral("page-manager-initialized"));
 
     progressCallback(tr("Loading sidebar..."));
     initializeSidebar();
@@ -73,6 +77,8 @@ MainWindow::MainWindow(
 
     progressCallback(tr("Initializing controllers..."));
     connectControllers();
+    recordStartupCheckpoint(QStringLiteral("theme-applied"));
+    recordStartupCheckpoint(QStringLiteral("controllers-connected"));
 
     progressCallback(tr("Building menus..."));
     buildMenus();
@@ -103,6 +109,26 @@ MainWindow::MainWindow(
     {
         applyNoDatabaseState();
     }
+
+    recordStartupCheckpoint(
+        QStringLiteral("database-opened"),
+        m_services && m_services->hasOpenDatabase()
+            ? QStringLiteral("open")
+            : QStringLiteral("unavailable")
+        );
+    recordStartupCheckpoint(QStringLiteral("navigation-data-loaded"));
+    recordStartupCheckpoint(
+        QStringLiteral("startup-page-created"),
+        m_pages
+            ? m_pages->currentPageIdentifier()
+            : QStringLiteral("none")
+        );
+    recordStartupCheckpoint(
+        QStringLiteral("startup-page-loaded"),
+        m_pages
+            ? m_pages->currentPageIdentifier()
+            : QStringLiteral("none")
+        );
 
     progressCallback(tr("Configuring window..."));
 }
@@ -211,6 +237,33 @@ void MainWindow::initializePages()
         m_services.get(),
         m_isAdmin
         );
+
+    if (StartupProfiler::isActive())
+    {
+        StartupProfiler::setActiveApplicationMetricsProvider(
+            [this]()
+            {
+                return StartupApplicationMetrics{
+                    .widgetCount = 0,
+                    .instantiatedPageCount =
+                        m_pages ? m_pages->instantiatedPageCount() : 0,
+                    .registeredPageCount =
+                        m_pages ? m_pages->registeredPageCount() : 0
+                };
+            }
+            );
+    }
+}
+
+void MainWindow::recordStartupCheckpoint(
+    const QString& name,
+    const QString& detail
+    )
+{
+    if (m_startupOptions.checkpointCallback)
+    {
+        m_startupOptions.checkpointCallback(name, detail);
+    }
 }
 
 void MainWindow::initializeSidebar()

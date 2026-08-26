@@ -13,6 +13,14 @@ struct ScheduleTableRenderOptions
     bool showKoreanTeacherEnglishNames = false;
 };
 
+struct ScheduleTableRenderMetrics
+{
+    int tableItemsCreated = 0;
+    int cellWidgetsCreated = 0;
+    int cellWidgetsRemoved = 0;
+    int cellWidgetsQueuedForDeletion = 0;
+};
+
 class ScheduleTableRenderer final
 {
 public:
@@ -20,7 +28,7 @@ public:
         QTableWidget* table
         );
 
-    static void render(
+    [[nodiscard]] static ScheduleTableRenderMetrics render(
         QTableWidget* table,
         const ScheduleViewModel& model,
         const ScheduleTableRenderOptions& options

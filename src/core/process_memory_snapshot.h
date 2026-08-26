@@ -8,13 +8,23 @@
 struct ProcessMemorySnapshot
 {
     bool isAvailable = false;
-    quint64 workingSetBytes = 0;       // Windows: WorkingSetSize
-    quint64 peakWorkingSetBytes = 0;   // Windows: PeakWorkingSetSize
-    quint64 privateUsageBytes = 0;     // Windows: PrivateUsage
-    quint64 pagefileUsageBytes = 0;    // Windows: PagefileUsage
+    // Windows: working set. macOS: resident memory. Linux: RSS.
+    quint64 workingSetBytes = 0;
+    // Windows: peak working set. macOS: peak resident memory. Linux: VmHWM.
+    quint64 peakWorkingSetBytes = 0;
+    // Windows: private usage. macOS: physical footprint. Linux: PSS.
+    quint64 privateUsageBytes = 0;
+    // Windows: pagefile usage. Linux: private dirty memory where available.
+    quint64 pagefileUsageBytes = 0;
     quint32 handleCount = 0;
     quint32 threadCount = 0;
     QDateTime capturedAt;
+
+    // Available on platforms where a more specific private resident value can
+    // be obtained. Windows uses PrivateWorkingSetSize; Linux uses RssAnon.
+    quint64 privateWorkingSetBytes = 0;
+    quint64 privateDirtyBytes = 0;
+    QString platform;
 };
 
 class ProcessMemorySnapshotProvider

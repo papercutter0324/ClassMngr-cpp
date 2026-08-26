@@ -8,6 +8,7 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/resource_paths.h"
 #include "core/settingsmanager.h"
+#include "core/startup_profiler.h"
 #include "core/updater/update_service.h"
 #include "ui/shared/widgets/splash/splashscreen.h"
 #include "ui/shared/constants/options.h"
@@ -30,11 +31,6 @@
 #include <QDebug>
 
 #include <memory>
-
-#if defined(Q_OS_WIN)
-#include <windows.h>
-#include <psapi.h>
-#endif
 
 // Later: move MainWindow construction behind an ApplicationBootstrap class
 
@@ -64,36 +60,23 @@ struct StartupPerformanceMode
 {
     bool enabled = false;
     QString outputPath;
-};
-
-struct ProcessMemoryMetrics
-{
-    qint64 workingSetBytes = -1;
-    qint64 privateBytes = -1;
-};
-
-ProcessMemoryMetrics currentProcessMemoryMetrics()
-{
-#if defined(Q_OS_WIN)
-    PROCESS_MEMORY_COUNTERS_EX counters{};
-    counters.cb = sizeof(counters);
-
-    if (
-        GetProcessMemoryInfo(
-            GetCurrentProcess(),
-            reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
-            sizeof(counters)
-            )
-        )
+    enum class Scenario
     {
-        return {
-            static_cast<qint64>(counters.WorkingSetSize),
-            static_cast<qint64>(counters.PrivateUsage)
-        };
-    }
-#endif
+        Minimal,
+        Representative
+    };
 
-    return {};
+    Scenario scenario = Scenario::Minimal;
+    int settleMilliseconds = 0;
+};
+
+QString startupScenarioName(
+    StartupPerformanceMode::Scenario scenario
+    )
+{
+    return scenario == StartupPerformanceMode::Scenario::Representative
+        ? QStringLiteral("representative-startup")
+        : QStringLiteral("minimal-startup");
 }
 
 StartupPerformanceMode startupPerformanceMode(
@@ -121,15 +104,55 @@ StartupPerformanceMode startupPerformanceMode(
             args.at(outputIndex + 1);
     }
 
+    const int scenarioIndex =
+        args.indexOf(
+            QStringLiteral("--startup-performance-scenario")
+            );
+    if (scenarioIndex >= 0 && scenarioIndex + 1 < args.size())
+    {
+        const QString scenario = args.at(scenarioIndex + 1).trimmed();
+        if (scenario == QStringLiteral("representative"))
+        {
+            mode.scenario = StartupPerformanceMode::Scenario::Representative;
+            mode.settleMilliseconds = 30000;
+        }
+        else if (scenario != QStringLiteral("minimal"))
+        {
+            qWarning().noquote()
+                << QStringLiteral(
+                    "Unknown startup profiling scenario '%1'; using minimal."
+                    ).arg(scenario);
+        }
+    }
+
+    const int settleIndex =
+        args.indexOf(
+            QStringLiteral("--startup-performance-settle-ms")
+            );
+    if (settleIndex >= 0 && settleIndex + 1 < args.size())
+    {
+        bool converted = false;
+        const int settleMilliseconds = args.at(settleIndex + 1).toInt(&converted);
+        if (converted && settleMilliseconds >= 0)
+        {
+            mode.settleMilliseconds = settleMilliseconds;
+        }
+        else
+        {
+            qWarning().noquote()
+                << QStringLiteral(
+                    "Ignoring invalid --startup-performance-settle-ms value '%1'."
+                    ).arg(args.at(settleIndex + 1));
+        }
+    }
+
     return mode;
 }
 
 bool writeStartupPerformanceMetrics(
     const QString& outputPath,
-    qint64 processStartToWindowConstructedMs,
-    qint64 processStartToReadyMs,
-    ProcessMemoryMetrics windowConstructedMemory,
-    ProcessMemoryMetrics readyMemory,
+    const StartupProfiler& profiler,
+    const StartupPerformanceMode& mode,
     int progressUpdates,
     int finalProgress
     )
@@ -153,24 +176,8 @@ bool writeStartupPerformanceMetrics(
         return false;
     }
 
-    QJsonObject metrics;
+    QJsonObject metrics = profiler.reportJson();
 
-    metrics.insert(
-        QStringLiteral("processStartToWindowConstructedMs"),
-        static_cast<double>(processStartToWindowConstructedMs)
-        );
-    metrics.insert(
-        QStringLiteral("processStartToReadyMs"),
-        static_cast<double>(processStartToReadyMs)
-        );
-    metrics.insert(
-        QStringLiteral("windowConstructedWorkingSetBytes"),
-        static_cast<double>(windowConstructedMemory.workingSetBytes)
-        );
-    metrics.insert(
-        QStringLiteral("windowConstructedPrivateBytes"),
-        static_cast<double>(windowConstructedMemory.privateBytes)
-        );
     metrics.insert(
         QStringLiteral("progressUpdates"),
         progressUpdates
@@ -180,36 +187,24 @@ bool writeStartupPerformanceMetrics(
         finalProgress
         );
 
-    QJsonArray checkpoints;
-    checkpoints.append(
-        QJsonObject{
-            {QStringLiteral("name"), QStringLiteral("window-constructed")},
-            {QStringLiteral("elapsedMs"), static_cast<double>(processStartToWindowConstructedMs)},
-            {QStringLiteral("workingSetBytes"), static_cast<double>(windowConstructedMemory.workingSetBytes)},
-            {QStringLiteral("privateBytes"), static_cast<double>(windowConstructedMemory.privateBytes)}
-        }
+    metrics.insert(
+        QStringLiteral("format"),
+        QStringLiteral("classmngr-startup-profile-v2")
         );
-    checkpoints.append(
-        QJsonObject{
-            {QStringLiteral("name"), QStringLiteral("ready")},
-            {QStringLiteral("elapsedMs"), static_cast<double>(processStartToReadyMs)},
-            {QStringLiteral("workingSetBytes"), static_cast<double>(readyMemory.workingSetBytes)},
-            {QStringLiteral("privateBytes"), static_cast<double>(readyMemory.privateBytes)}
-        }
-        );
-    metrics.insert(QStringLiteral("format"), QStringLiteral("classmngr-scenario-report-v1"));
     metrics.insert(
         QStringLiteral("scenario"),
         QJsonObject{
-            {QStringLiteral("name"), QStringLiteral("startup-empty-profile")},
+            {QStringLiteral("name"), startupScenarioName(mode.scenario)},
             {QStringLiteral("actions"), QJsonArray{
-                QStringLiteral("launch with an empty settings profile"),
+                mode.scenario == StartupPerformanceMode::Scenario::Minimal
+                    ? QStringLiteral("launch without a startup database")
+                    : QStringLiteral("load the supplied or saved startup database"),
                 QStringLiteral("construct the main window"),
-                QStringLiteral("wait until the startup-ready checkpoint")
-            }}
+                QStringLiteral("capture startup-complete and requested settled checkpoints")
+            }},
+            {QStringLiteral("settleMilliseconds"), mode.settleMilliseconds}
         }
         );
-    metrics.insert(QStringLiteral("checkpoints"), checkpoints);
 
     file.write(
         QJsonDocument(metrics).toJson(QJsonDocument::Indented)
@@ -226,9 +221,21 @@ bool writeStartupPerformanceMetrics(
 
 int main(int argc, char *argv[])
 {
-    QElapsedTimer processStartupTimer;
+    StartupProfiler startupProfiler;
+    QStringList launchArguments;
+    launchArguments.reserve(argc);
+    for (int index = 0; index < argc; ++index)
+    {
+        launchArguments.append(QString::fromLocal8Bit(argv[index]));
+    }
 
-    processStartupTimer.start();
+    const StartupPerformanceMode startupPerformance =
+        startupPerformanceMode(launchArguments);
+    if (startupPerformance.enabled)
+    {
+        StartupProfiler::activate(&startupProfiler);
+        startupProfiler.checkpoint(QStringLiteral("process-start"));
+    }
 
 #if !defined(Q_OS_MACOS)
     // The custom file-dialog style is for Qt's widget dialog.  On macOS,
@@ -246,13 +253,15 @@ int main(int argc, char *argv[])
         );
 #endif
 
-    const StartupPerformanceMode startupPerformance =
-        startupPerformanceMode(
-            app.arguments()
-            );
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("qapplication-created"));
+    }
 
     const QString initialDatabasePath =
         startupPerformance.enabled
+            && startupPerformance.scenario
+                == StartupPerformanceMode::Scenario::Minimal
             ? QString()
             : startupDatabasePath(
                 app.arguments()
@@ -270,15 +279,7 @@ int main(int argc, char *argv[])
 
     LanguageService languageService;
 
-    languageService.setLanguage(
-        LanguageService::savedLanguage()
-        );
-
-
-
-    // =====================================================
-    // Fonts
-    // =====================================================
+    const Language savedLanguage = LanguageService::savedLanguage();
 
     const FontSize savedFontSize =
         fontSizeFromStoredValue(
@@ -288,6 +289,26 @@ int main(int argc, char *argv[])
                 ).toInt()
             );
 
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("preferences-resolved"));
+    }
+
+    languageService.setLanguage(
+        savedLanguage
+        );
+
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("locale-applied"));
+    }
+
+
+
+    // =====================================================
+    // Fonts
+    // =====================================================
+
     FontManager::setSizeOffset(
         fontSizeOffset(savedFontSize)
         );
@@ -296,6 +317,11 @@ int main(int argc, char *argv[])
         app,
         languageService.loadedLocaleName()
         );
+
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("font-applied"));
+    }
     // FontManager::debugDump();
 
 
@@ -310,6 +336,13 @@ int main(int argc, char *argv[])
         )
     {
         qWarning().noquote() << resourcePackStatus.error();
+    }
+
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(
+            QStringLiteral("resource-system-initialized")
+            );
     }
 
     auto splashLease = ResourcePaths::Splash::acquire();
@@ -327,6 +360,11 @@ int main(int argc, char *argv[])
     splash->show();
 
     app.processEvents();
+
+    if (startupPerformance.enabled)
+    {
+        startupProfiler.checkpoint(QStringLiteral("splash-shown"));
+    }
 
 
 
@@ -384,7 +422,11 @@ int main(int argc, char *argv[])
             )
         );
 
-    if (!startupPerformance.enabled)
+    if (
+        !startupPerformance.enabled
+        || startupPerformance.scenario
+            == StartupPerformanceMode::Scenario::Representative
+        )
     {
         updateController.startStartupCheck();
     }
@@ -417,9 +459,26 @@ int main(int argc, char *argv[])
         &languageService,
         &updateController,
         {
-            .loadMostRecentDatabase = !startupPerformance.enabled,
-            .runPostShowStartupTasks = !startupPerformance.enabled,
-            .initialDatabasePath = initialDatabasePath
+            .loadMostRecentDatabase =
+                !startupPerformance.enabled
+                || startupPerformance.scenario
+                    == StartupPerformanceMode::Scenario::Representative,
+            .runPostShowStartupTasks =
+                !startupPerformance.enabled
+                || startupPerformance.scenario
+                    == StartupPerformanceMode::Scenario::Representative,
+            .initialDatabasePath = initialDatabasePath,
+            .checkpointCallback =
+                [&startupProfiler, &startupPerformance](
+                    const QString& name,
+                    const QString& detail
+                    )
+                {
+                    if (startupPerformance.enabled)
+                    {
+                        startupProfiler.checkpoint(name, detail);
+                    }
+                }
         }
         );
 
@@ -434,13 +493,6 @@ int main(int argc, char *argv[])
         completedStartupSteps
             == AppSettings::StartupProgressSteps
         );
-
-    const qint64 processStartToWindowConstructedMs =
-        processStartupTimer.elapsed();
-    const ProcessMemoryMetrics windowConstructedMemory =
-        currentProcessMemoryMetrics();
-
-
 
     // =====================================================
     // Ensure Minimum Splash Time
@@ -468,9 +520,7 @@ int main(int argc, char *argv[])
             &splashLease,
             &updateController,
             &startupPerformance,
-            &processStartupTimer,
-            processStartToWindowConstructedMs,
-            windowConstructedMemory,
+            &startupProfiler,
             progressUpdates,
             progress
         ]()
@@ -488,6 +538,11 @@ int main(int argc, char *argv[])
 
         window.show();
 
+        if (startupPerformance.enabled)
+        {
+            startupProfiler.checkpoint(QStringLiteral("window-shown"));
+        }
+
         if (preserveUpdateDialogFocus)
         {
             window.setAttribute(
@@ -503,23 +558,86 @@ int main(int argc, char *argv[])
 
         if (startupPerformance.enabled)
         {
-            const bool metricsWritten =
-                writeStartupPerformanceMetrics(
-                    startupPerformance.outputPath,
-                    processStartToWindowConstructedMs,
-                    processStartupTimer.elapsed(),
-                    windowConstructedMemory,
-                    currentProcessMemoryMetrics(),
+            startupProfiler.checkpoint(QStringLiteral("startup-complete"));
+
+            const auto finishPerformanceRun =
+                [
+                    &app,
+                    &startupProfiler,
+                    &startupPerformance,
                     progressUpdates,
                     progress
+                ]()
+                {
+                    const bool metricsWritten =
+                        writeStartupPerformanceMetrics(
+                            startupPerformance.outputPath,
+                            startupProfiler,
+                            startupPerformance,
+                            progressUpdates,
+                            progress
+                            );
+                    app.exit(metricsWritten ? 0 : 2);
+                };
+
+            const int settleMilliseconds =
+                startupPerformance.settleMilliseconds;
+            if (settleMilliseconds >= 1000)
+            {
+                QTimer::singleShot(
+                    1000,
+                    &app,
+                    [&startupProfiler]()
+                    {
+                        startupProfiler.checkpoint(QStringLiteral("settled-1s"));
+                    }
                     );
+            }
+            if (settleMilliseconds >= 5000)
+            {
+                QTimer::singleShot(
+                    5000,
+                    &app,
+                    [&startupProfiler]()
+                    {
+                        startupProfiler.checkpoint(QStringLiteral("settled-5s"));
+                    }
+                    );
+            }
+            if (settleMilliseconds >= 30000)
+            {
+                QTimer::singleShot(
+                    30000,
+                    &app,
+                    [&startupProfiler]()
+                    {
+                        startupProfiler.checkpoint(QStringLiteral("settled-30s"));
+                    }
+                    );
+            }
 
             QTimer::singleShot(
-                0,
+                settleMilliseconds,
                 &app,
-                [&app, metricsWritten]()
+                [
+                    &startupProfiler,
+                    settleMilliseconds,
+                    finishPerformanceRun
+                ]()
                 {
-                    app.exit(metricsWritten ? 0 : 2);
+                    if (
+                        settleMilliseconds > 0
+                        && settleMilliseconds != 1000
+                        && settleMilliseconds != 5000
+                        && settleMilliseconds != 30000
+                        )
+                    {
+                        startupProfiler.checkpoint(
+                            QStringLiteral("settled-final"),
+                            QStringLiteral("elapsedMs=%1").arg(settleMilliseconds)
+                            );
+                    }
+                    finishPerformanceRun();
                 }
                 );
         }

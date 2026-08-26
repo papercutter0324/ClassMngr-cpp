@@ -50,6 +50,7 @@ struct MainWindowStartupOptions
     bool loadMostRecentDatabase = true;
     bool runPostShowStartupTasks = true;
     QString initialDatabasePath;
+    std::function<void(const QString&, const QString&)> checkpointCallback;
 };
 
 // =========================================================
@@ -125,6 +126,11 @@ private:
     void buildMenus();
 
     void connectSignals();
+
+    void recordStartupCheckpoint(
+        const QString& name,
+        const QString& detail = QString()
+        );
 
     void setDefaultSidebarWidth();
     void reapplyStartupFontSize();

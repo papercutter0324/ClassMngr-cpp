@@ -311,10 +311,12 @@ void MemoryUsageTests::platformSnapshotReportsMemoryOnWindows()
     PlatformProcessMemorySnapshotProvider provider;
     const ProcessMemorySnapshot snapshot = provider.snapshot();
 
-#if defined(Q_OS_WIN)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
     QVERIFY(snapshot.isAvailable);
     QVERIFY(snapshot.workingSetBytes > 0);
+#if defined(Q_OS_WIN)
     QVERIFY(snapshot.privateUsageBytes > 0);
+#endif
 #else
     QVERIFY(!snapshot.isAvailable);
 #endif

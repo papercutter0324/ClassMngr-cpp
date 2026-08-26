@@ -39,6 +39,7 @@ public:
         QWidget* parent = nullptr,
         ScheduleMode mode = ScheduleMode::Interactive
         );
+    ~ScheduleWidget() override;
 
     void refreshSchedule();
     void clearDatabaseState();
@@ -97,6 +98,7 @@ private:
         );
     ScheduleViewRequest buildScheduleViewRequest() const;
     ScheduleViewModel buildScheduleModel();
+    [[nodiscard]] QString startupProfilingOwner() const;
 private:
     ApplicationServices* m_services = nullptr;
     ScheduleMode m_mode = ScheduleMode::Interactive;

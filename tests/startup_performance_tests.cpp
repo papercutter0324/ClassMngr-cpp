@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QProcess>
 #include <QProcessEnvironment>
+#include <QSet>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -24,14 +25,6 @@ QString processOutput(
             QString::fromLocal8Bit(process.readAllStandardOutput()),
             QString::fromLocal8Bit(process.readAllStandardError())
             );
-}
-
-double metricValue(
-    const QJsonObject& metrics,
-    const QString& key
-    )
-{
-    return metrics.value(key).toDouble(-1.0);
 }
 
 bool thresholdExceeded(
@@ -191,85 +184,125 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     QCOMPARE(
         metrics.value(QStringLiteral("format")).toString(),
-        QStringLiteral("classmngr-scenario-report-v1")
+        QStringLiteral("classmngr-startup-profile-v2")
         );
     const QJsonObject scenario =
         metrics.value(QStringLiteral("scenario")).toObject();
     QCOMPARE(
         scenario.value(QStringLiteral("name")).toString(),
-        QStringLiteral("startup-empty-profile")
+        QStringLiteral("minimal-startup")
         );
     QCOMPARE(
         scenario.value(QStringLiteral("actions")).toArray().size(),
         3
         );
+    QCOMPARE(
+        scenario.value(QStringLiteral("settleMilliseconds")).toInt(),
+        0
+        );
     const QJsonArray checkpoints =
         metrics.value(QStringLiteral("checkpoints")).toArray();
-    QCOMPARE(checkpoints.size(), 2);
-    QCOMPARE(
-        checkpoints.at(0)
-            .toObject()
-            .value(QStringLiteral("name"))
-            .toString(),
-        QStringLiteral("window-constructed")
-        );
-    QCOMPARE(
-        checkpoints.at(1)
-            .toObject()
-            .value(QStringLiteral("name"))
-            .toString(),
-        QStringLiteral("ready")
-        );
+    QVERIFY(checkpoints.size() >= 17);
 
-    const double windowConstructedMs =
-        metricValue(
-            metrics,
-            QStringLiteral("processStartToWindowConstructedMs")
+    QSet<QString> checkpointNames;
+    QJsonObject startupComplete;
+    for (const QJsonValue& value : checkpoints)
+    {
+        const QJsonObject checkpoint = value.toObject();
+        const QString name = checkpoint.value(QStringLiteral("name")).toString();
+        checkpointNames.insert(name);
+        QVERIFY(checkpoint.value(QStringLiteral("elapsedMs")).toDouble(-1.0) >= 0.0);
+        QVERIFY(checkpoint.value(QStringLiteral("memory")).toObject().contains(
+            QStringLiteral("workingSetBytes")
+            ));
+        QVERIFY(checkpoint.value(QStringLiteral("metrics")).toObject().contains(
+            QStringLiteral("widgetCount")
+            ));
+
+        if (name == QStringLiteral("startup-complete"))
+        {
+            startupComplete = checkpoint;
+        }
+    }
+
+    const QSet<QString> requiredCheckpoints{
+        QStringLiteral("process-start"),
+        QStringLiteral("qapplication-created"),
+        QStringLiteral("preferences-resolved"),
+        QStringLiteral("locale-applied"),
+        QStringLiteral("font-applied"),
+        QStringLiteral("resource-system-initialized"),
+        QStringLiteral("splash-shown"),
+        QStringLiteral("services-created"),
+        QStringLiteral("main-window-shell-created"),
+        QStringLiteral("page-manager-initialized"),
+        QStringLiteral("controllers-connected"),
+        QStringLiteral("database-opened"),
+        QStringLiteral("navigation-data-loaded"),
+        QStringLiteral("startup-page-created"),
+        QStringLiteral("startup-page-loaded"),
+        QStringLiteral("window-shown"),
+        QStringLiteral("startup-complete")
+    };
+    for (const QString& requiredCheckpoint : requiredCheckpoints)
+    {
+        QVERIFY(checkpointNames.contains(requiredCheckpoint));
+    }
+    QVERIFY(!startupComplete.isEmpty());
+
+    const QJsonObject startupMetrics =
+        startupComplete.value(QStringLiteral("metrics")).toObject();
+    QVERIFY(startupMetrics.value(QStringLiteral("widgetCount")).toInt() > 0);
+    QVERIFY(startupMetrics.value(QStringLiteral("registeredPageCount")).toInt() > 0);
+    QVERIFY(startupMetrics.value(QStringLiteral("instantiatedPageCount")).toInt() > 0);
+    QVERIFY(startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt() > 0);
+    QVERIFY(
+        startupMetrics.value(QStringLiteral("scheduleWidgetsCreated")).toDouble()
+            >= startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toDouble()
+        );
+    QVERIFY(startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble() > 0.0);
+
+    const QJsonArray events = metrics.value(QStringLiteral("events")).toArray();
+    QSet<QString> eventNames;
+    for (const QJsonValue& value : events)
+    {
+        eventNames.insert(
+            value.toObject().value(QStringLiteral("name")).toString()
             );
-    const double readyMs =
-        metricValue(
-            metrics,
-            QStringLiteral("processStartToReadyMs")
-            );
-    const double windowConstructedWorkingSetBytes =
-        metricValue(
-            metrics,
-            QStringLiteral("windowConstructedWorkingSetBytes")
-            );
-    const double windowConstructedPrivateBytes =
-        metricValue(
-            metrics,
-            QStringLiteral("windowConstructedPrivateBytes")
-            );
+    }
+    QVERIFY(eventNames.contains(QStringLiteral("page-created")));
+    QVERIFY(eventNames.contains(QStringLiteral("schedule-widget-created")));
+    QVERIFY(eventNames.contains(QStringLiteral("schedule-render-start")));
+    QVERIFY(eventNames.contains(QStringLiteral("schedule-render-end")));
+
+    const double startupCompleteMs =
+        startupComplete.value(QStringLiteral("elapsedMs")).toDouble(-1.0);
     const double progressUpdates =
-        metricValue(
-            metrics,
-            QStringLiteral("progressUpdates")
-            );
+        metrics.value(QStringLiteral("progressUpdates")).toDouble(-1.0);
     const double finalProgress =
-        metricValue(
-            metrics,
-            QStringLiteral("finalProgress")
-            );
+        metrics.value(QStringLiteral("finalProgress")).toDouble(-1.0);
 
-    QVERIFY(windowConstructedMs >= 0.0);
-    QVERIFY(readyMs >= windowConstructedMs);
+    QVERIFY(startupCompleteMs >= 0.0);
     QVERIFY(progressUpdates > 0.0);
     QCOMPARE(finalProgress, 100.0);
-    QVERIFY(processStartToExitMs >= readyMs);
+    QVERIFY(processStartToExitMs >= startupCompleteMs);
 
 #if defined(Q_OS_WIN)
-    QVERIFY(windowConstructedWorkingSetBytes > 0.0);
-    QVERIFY(windowConstructedPrivateBytes > 0.0);
+    const QJsonObject startupMemory =
+        startupComplete.value(QStringLiteral("memory")).toObject();
+    QVERIFY(startupMemory.value(QStringLiteral("workingSetBytes")).toDouble() > 0.0);
+    QVERIFY(startupMemory.value(QStringLiteral("privateUsageBytes")).toDouble() > 0.0);
 #endif
 
     std::printf(
-        "Startup performance: windowConstructed=%.0f ms, ready=%.0f ms, process=%lld ms, workingSet=%.1f MiB, privateBytes=%.1f MiB, progressUpdates=%.0f, finalProgress=%.0f\n",
-        windowConstructedMs,
-        readyMs,
+        "Startup performance: startupComplete=%.0f ms, process=%lld ms, widgets=%d, pages=%d/%d, schedules=%d, renders=%.0f, progressUpdates=%.0f, finalProgress=%.0f\n",
+        startupCompleteMs,
         static_cast<long long>(processStartToExitMs),
-        windowConstructedWorkingSetBytes / (1024.0 * 1024.0),
-        windowConstructedPrivateBytes / (1024.0 * 1024.0),
+        startupMetrics.value(QStringLiteral("widgetCount")).toInt(),
+        startupMetrics.value(QStringLiteral("instantiatedPageCount")).toInt(),
+        startupMetrics.value(QStringLiteral("registeredPageCount")).toInt(),
+        startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
+        startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble(),
         progressUpdates,
         finalProgress
         );
@@ -280,7 +313,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     if (
         thresholdExceeded(
             "CLASSMNGR_STARTUP_WINDOW_MAX_MS",
-            windowConstructedMs,
+            startupCompleteMs,
             &thresholdMessage
             )
         )
@@ -300,7 +333,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     if (
         thresholdExceeded(
             "CLASSMNGR_STARTUP_READY_MAX_MS",
-            readyMs,
+            startupCompleteMs,
             &thresholdMessage
             )
         )

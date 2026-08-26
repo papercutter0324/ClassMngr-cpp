@@ -16,6 +16,14 @@ QString startupDatabasePath(
                 == QStringLiteral(
                     "--startup-performance-output"
                     )
+            || argument
+                == QStringLiteral(
+                    "--startup-performance-scenario"
+                    )
+            || argument
+                == QStringLiteral(
+                    "--startup-performance-settle-ms"
+                    )
             )
         {
             ++index;

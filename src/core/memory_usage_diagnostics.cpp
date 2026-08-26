@@ -67,9 +67,12 @@ QJsonObject snapshotJson(const ProcessMemorySnapshot& snapshot)
         {QStringLiteral("workingSetBytes"), static_cast<double>(snapshot.workingSetBytes)},
         {QStringLiteral("peakWorkingSetBytes"), static_cast<double>(snapshot.peakWorkingSetBytes)},
         {QStringLiteral("privateUsageBytes"), static_cast<double>(snapshot.privateUsageBytes)},
+        {QStringLiteral("privateWorkingSetBytes"), static_cast<double>(snapshot.privateWorkingSetBytes)},
+        {QStringLiteral("privateDirtyBytes"), static_cast<double>(snapshot.privateDirtyBytes)},
         {QStringLiteral("pagefileUsageBytes"), static_cast<double>(snapshot.pagefileUsageBytes)},
         {QStringLiteral("handleCount"), static_cast<int>(snapshot.handleCount)},
-        {QStringLiteral("threadCount"), static_cast<int>(snapshot.threadCount)}
+        {QStringLiteral("threadCount"), static_cast<int>(snapshot.threadCount)},
+        {QStringLiteral("platform"), snapshot.platform}
     };
 }
 }

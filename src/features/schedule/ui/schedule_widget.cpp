@@ -8,6 +8,7 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "features/schedule/schedule_display_mode_preferences.h"
 #include "features/schedule/schedule_settings_preferences.h"
@@ -24,6 +25,7 @@
 #include <QButtonGroup>
 #include <QDebug>
 #include <QDialog>
+#include <QElapsedTimer>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPalette>
@@ -53,9 +55,21 @@ ScheduleWidget::ScheduleWidget(
         QSizePolicy::Fixed
         );
 
+    if (StartupProfiler::isActive())
+    {
+        StartupProfiler::recordScheduleWidgetCreated(
+            startupProfilingOwner()
+            );
+    }
+
     loadSettings();
     buildUi();
     loadSchedule();
+}
+
+ScheduleWidget::~ScheduleWidget()
+{
+    StartupProfiler::recordScheduleWidgetDestroyed();
 }
 
 void ScheduleWidget::refreshSchedule()
@@ -617,10 +631,21 @@ void ScheduleWidget::loadSchedule()
         return;
     }
 
-    m_scheduleModel =
-        buildScheduleModel();
+    const bool profileStartup = StartupProfiler::isActive();
+    const QString profilingOwner = profileStartup
+        ? startupProfilingOwner()
+        : QString();
+    QElapsedTimer renderTimer;
+    if (profileStartup)
+    {
+        renderTimer.start();
+        StartupProfiler::recordScheduleRenderStarted(profilingOwner);
+    }
 
-    ScheduleTableRenderer::render(
+    m_scheduleModel = buildScheduleModel();
+
+    const ScheduleTableRenderMetrics metrics =
+        ScheduleTableRenderer::render(
         m_table,
         m_scheduleModel,
         {
@@ -630,6 +655,38 @@ void ScheduleWidget::loadSchedule()
             m_showKoreanTeacherEnglishNames
         }
         );
+
+    if (profileStartup)
+    {
+        StartupProfiler::recordScheduleRenderCompleted(
+            profilingOwner,
+            renderTimer.elapsed(),
+            metrics.tableItemsCreated,
+            metrics.cellWidgetsCreated,
+            metrics.cellWidgetsRemoved,
+            metrics.cellWidgetsQueuedForDeletion
+            );
+    }
+}
+
+QString ScheduleWidget::startupProfilingOwner() const
+{
+    QString ownerType = QStringLiteral("unowned");
+    for (const QWidget* owner = parentWidget(); owner; owner = owner->parentWidget())
+    {
+        const QString candidate =
+            QString::fromLatin1(owner->metaObject()->className());
+        if (candidate != QStringLiteral("QWidget")
+            && candidate != QStringLiteral("QScrollArea"))
+        {
+            ownerType = candidate;
+            break;
+        }
+    }
+    const QString mode = m_mode == ScheduleMode::Interactive
+        ? QStringLiteral("interactive")
+        : QStringLiteral("read-only");
+    return QStringLiteral("owner=%1; mode=%2").arg(ownerType, mode);
 }
 
 void ScheduleWidget::updateButtons()

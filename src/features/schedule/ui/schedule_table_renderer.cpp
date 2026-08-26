@@ -117,10 +117,12 @@ void configureColumns(
     }
 }
 
-void clearCellWidgets(
+int clearCellWidgets(
     QTableWidget* table
     )
 {
+    int removed = 0;
+
     for (int row = 0; row < table->rowCount(); ++row)
     {
         for (int column = 0; column < table->columnCount(); ++column)
@@ -133,8 +135,11 @@ void clearCellWidgets(
 
             table->removeCellWidget(row, column);
             widget->deleteLater();
+            ++removed;
         }
     }
+
+    return removed;
 }
 
 void updateTableHeight(
@@ -198,7 +203,7 @@ void ScheduleTableRenderer::initialize(
     table->horizontalHeader()->setFocusPolicy(Qt::NoFocus);
 }
 
-void ScheduleTableRenderer::render(
+ScheduleTableRenderMetrics ScheduleTableRenderer::render(
     QTableWidget* table,
     const ScheduleViewModel& model,
     const ScheduleTableRenderOptions& options
@@ -206,8 +211,10 @@ void ScheduleTableRenderer::render(
 {
     if (!table)
     {
-        return;
+        return {};
     }
+
+    ScheduleTableRenderMetrics metrics;
 
     const int headerFontSize =
         options.compactPreview
@@ -236,7 +243,8 @@ void ScheduleTableRenderer::render(
         model.days,
         options.compactPreview
         );
-    clearCellWidgets(table);
+    metrics.cellWidgetsRemoved = clearCellWidgets(table);
+    metrics.cellWidgetsQueuedForDeletion = metrics.cellWidgetsRemoved;
     table->clearContents();
     table->clearSpans();
     table->setRowCount(model.rows.size());
@@ -252,6 +260,7 @@ void ScheduleTableRenderer::render(
         const ScheduleRowView& scheduleRow = model.rows[rowIndex];
         auto* timeItem =
             new QTableWidgetItem(scheduleRow.timeRangeLabel);
+        ++metrics.tableItemsCreated;
         timeItem->setFlags(Qt::ItemIsEnabled);
         timeItem->setData(TimeCellRole, true);
         timeItem->setTextAlignment(Qt::AlignCenter);
@@ -286,6 +295,7 @@ void ScheduleTableRenderer::render(
                     cellWidgetOptions
                     )
                 );
+            ++metrics.cellWidgetsCreated;
         }
 
         table->setRowHeight(
@@ -307,6 +317,7 @@ void ScheduleTableRenderer::render(
             new QTableWidgetItem(
                 translate("No registered class meeting times available.")
                 );
+        ++metrics.tableItemsCreated;
         item->setFlags(Qt::ItemIsEnabled);
         item->setTextAlignment(Qt::AlignCenter);
         table->setItem(0, 0, item);
@@ -315,4 +326,5 @@ void ScheduleTableRenderer::render(
     }
 
     updateTableHeight(table, options);
+    return metrics;
 }

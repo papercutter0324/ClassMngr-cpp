@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "core/memory_usage_diagnostics.h"
 #include "core/resource_paths.h"
+#include "core/startup_profiler.h"
 
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
@@ -268,6 +269,7 @@ BasePage* PageManager::ensurePage(
         QStringLiteral("page-instantiated"),
         pageTypeIdentifier(type)
         );
+    StartupProfiler::recordPageInstantiated(pageTypeIdentifier(type));
     if (recordTiming)
     {
         MemoryUsageDiagnostics::recordTimedOperation(
@@ -563,6 +565,16 @@ bool PageManager::isCurrentPage(
 
     return page != m_pages.cend()
         && page.value() == currentWidget();
+}
+
+int PageManager::instantiatedPageCount() const
+{
+    return m_pages.size();
+}
+
+int PageManager::registeredPageCount() const
+{
+    return m_pageFactories.size();
 }
 
 bool PageManager::confirmCurrentPageCanLeave(

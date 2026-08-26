@@ -100,6 +100,8 @@ public:
     [[nodiscard]] bool isCurrentPage(
         PageType type
         ) const;
+    [[nodiscard]] int instantiatedPageCount() const;
+    [[nodiscard]] int registeredPageCount() const;
     [[nodiscard]] QString currentPageIdentifier() const;
     [[nodiscard]] bool isDatabaseOpen() const;
     [[nodiscard]] static QString pageTypeIdentifier(
