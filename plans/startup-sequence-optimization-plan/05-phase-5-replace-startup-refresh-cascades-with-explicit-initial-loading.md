@@ -2,9 +2,42 @@
 
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 5 only**. Do not start later phases.
 
-# Phase 5 — Replace Startup Refresh Cascades With Explicit Initial Loading
+# Phase 5 — Replace Startup Refresh Cascades With Explicit Initial Loading — Complete (2026-08-27)
 ## Objective
 Make startup a single controlled state transition instead of a series of global refreshes and temporary page/tab changes.
+
+## Completed Implementation
+
+- `applyDatabaseLoadedState()` now owns the normal database startup route. It
+  applies database state, populates the sidebar once, selects My Workspace →
+  Schedule, and explicitly loads that Schedule page's initial content.
+- Removed the duplicate `showStartupDatabasePage()` pass, the temporary My
+  Details tab selection, and startup's `PageManager::refreshAll()` call.
+- My Workspace and Schedule no longer perform full refreshes from their
+  `showEvent()` handlers. Page activation therefore does not repeat the
+  initial visible-page load.
+- `FileController::closeActiveDatabase()` clears page state only when a
+  database was actually open, preventing startup from rendering an unnecessary
+  cleared Schedule before the selected database opens.
+- `ClassMngrStartupPerformanceTests` now runs the representative fixture and
+  asserts exactly two ScheduleWidget render passes: the empty shell render and
+  the single data-backed visible schedule render.
+
+## Validation
+
+- Windows x64 Debug build completed successfully.
+- `ClassMngrStartupVisualSettingsTests`, `ClassMngrScheduleWidgetTests`,
+  `ClassMngrPageManagerTests`, `ClassMngrMyWorkspacePageTests`,
+  `ClassMngrSubPrepPageTests`, `ClassMngrBasePageTests`, and
+  `ClassMngrStartupPerformanceTests` passed.
+- A representative Windows debug capture using `Testing-copy.tps` recorded:
+
+| Startup complete | Peak working set | Working set | Private usage | Widgets | Pages | ScheduleWidgets | Schedule renders |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2.924 s | 202.1 MiB | 200.9 MiB | 130.0 MiB | 213 | 1 / 11 | 1 live / 1 created | 2 |
+
+The startup-complete ScheduleWidget diagnostic passed with one live and one
+created instance.
 
 ## Current Problem
 The current startup path can perform overlapping work resembling:

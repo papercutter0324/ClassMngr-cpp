@@ -8,7 +8,6 @@
 class ApplicationServices;
 class QLabel;
 class QScrollArea;
-class QShowEvent;
 class ScheduleWidget;
 class QWidget;
 
@@ -23,6 +22,7 @@ public:
         );
 
     void refresh() override;
+    void loadInitialContent();
     void refreshSchedulePreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;
@@ -46,11 +46,6 @@ signals:
         const QString& day,
         const QString& startTime
         );
-
-protected:
-    void showEvent(
-        QShowEvent* event
-        ) override;
 
 private:
     void buildUi();

@@ -9,7 +9,6 @@
 #include <QFrame>
 #include <QLabel>
 #include <QScrollArea>
-#include <QShowEvent>
 #include <QVBoxLayout>
 
 SchedulePage::SchedulePage(
@@ -28,6 +27,14 @@ void SchedulePage::refresh()
     BasePage::refresh();
 
     if (isVisible() && m_scheduleWidget)
+    {
+        m_scheduleWidget->refreshSchedule();
+    }
+}
+
+void SchedulePage::loadInitialContent()
+{
+    if (m_scheduleWidget)
     {
         m_scheduleWidget->refreshSchedule();
     }
@@ -107,18 +114,6 @@ void SchedulePage::saveCurrentPageAs()
     if (m_scheduleWidget)
     {
         m_scheduleWidget->saveScheduleAs();
-    }
-}
-
-void SchedulePage::showEvent(
-    QShowEvent* event
-    )
-{
-    BasePage::showEvent(event);
-
-    if (m_scheduleWidget)
-    {
-        m_scheduleWidget->refreshSchedule();
     }
 }
 

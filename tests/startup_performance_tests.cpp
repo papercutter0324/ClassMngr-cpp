@@ -291,6 +291,82 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QVERIFY(eventNames.contains(QStringLiteral("schedule-render-end")));
     QVERIFY(startupScheduleDiagnosticPassed);
 
+    const QString representativeDatabasePath =
+        QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/plans/startup-sequence-optimization-plan/Testing-copy.tps"
+            );
+    QVERIFY2(
+        QFile::exists(representativeDatabasePath),
+        qPrintable(
+            QStringLiteral("Representative database does not exist: %1")
+                .arg(representativeDatabasePath)
+            )
+        );
+
+    const QString representativeMetricsPath =
+        directory.filePath(
+            QStringLiteral("representative-startup-metrics.json")
+            );
+    QProcess representativeProcess;
+    representativeProcess.setProcessEnvironment(environment);
+    representativeProcess.start(
+        appPath,
+        {
+            QStringLiteral("--startup-performance-test"),
+            QStringLiteral("--startup-performance-scenario"),
+            QStringLiteral("representative"),
+            QStringLiteral("--startup-performance-settle-ms"),
+            QStringLiteral("0"),
+            QStringLiteral("--startup-performance-output"),
+            representativeMetricsPath,
+            representativeDatabasePath
+        }
+        );
+    QVERIFY2(
+        representativeProcess.waitForStarted(StartupTimeoutMs),
+        qPrintable(representativeProcess.errorString())
+        );
+    QVERIFY2(
+        representativeProcess.waitForFinished(StartupTimeoutMs),
+        qPrintable(processOutput(representativeProcess))
+        );
+    QCOMPARE(representativeProcess.exitStatus(), QProcess::NormalExit);
+    QVERIFY2(
+        representativeProcess.exitCode() == 0,
+        qPrintable(processOutput(representativeProcess))
+        );
+
+    QFile representativeMetricsFile(representativeMetricsPath);
+    QVERIFY(representativeMetricsFile.open(QIODevice::ReadOnly));
+    const QJsonDocument representativeDocument =
+        QJsonDocument::fromJson(representativeMetricsFile.readAll());
+    QVERIFY(representativeDocument.isObject());
+
+    QJsonObject representativeStartupComplete;
+    for (const QJsonValue& value : representativeDocument.object()
+             .value(QStringLiteral("checkpoints"))
+             .toArray())
+    {
+        const QJsonObject checkpoint = value.toObject();
+        if (checkpoint.value(QStringLiteral("name")).toString()
+            == QStringLiteral("startup-complete"))
+        {
+            representativeStartupComplete = checkpoint;
+            break;
+        }
+    }
+    QVERIFY(!representativeStartupComplete.isEmpty());
+
+    const QJsonObject representativeStartupMetrics =
+        representativeStartupComplete.value(QStringLiteral("metrics")).toObject();
+    QCOMPARE(
+        representativeStartupMetrics
+            .value(QStringLiteral("scheduleRenderCount"))
+            .toDouble(),
+        2.0
+        );
+
     const double startupCompleteMs =
         startupComplete.value(QStringLiteral("elapsedMs")).toDouble(-1.0);
     const double progressUpdates =

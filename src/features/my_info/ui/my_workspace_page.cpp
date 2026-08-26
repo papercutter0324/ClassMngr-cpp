@@ -8,7 +8,6 @@
 #include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QLabel>
-#include <QShowEvent>
 #include <QVBoxLayout>
 
 namespace
@@ -240,12 +239,6 @@ void MyWorkspacePage::saveCurrentPageAs()
     {
         page->saveCurrentPageAs();
     }
-}
-
-void MyWorkspacePage::showEvent(QShowEvent* event)
-{
-    BasePage::showEvent(event);
-    refresh();
 }
 
 void MyWorkspacePage::buildUi()

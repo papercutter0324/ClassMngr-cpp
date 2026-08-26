@@ -853,6 +853,10 @@ bool FileController::exportDatabaseAs(
 
 void FileController::closeActiveDatabase()
 {
+    const bool hadOpenDatabase =
+        m_services
+        && m_services->hasOpenDatabase();
+
     if (m_services)
     {
         m_services->closeDatabase();
@@ -860,7 +864,7 @@ void FileController::closeActiveDatabase()
 
     m_currentFile.clear();
 
-    if (m_window)
+    if (hadOpenDatabase && m_window)
     {
         m_window->clearDatabaseBackedState();
     }

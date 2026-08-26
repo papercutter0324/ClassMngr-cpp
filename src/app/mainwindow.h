@@ -136,7 +136,6 @@ private:
         );
 
     void setDefaultSidebarWidth();
-    void showStartupDatabasePage();
     void startInitialSetup();
 
     void setDatabaseBackedActionsEnabled(

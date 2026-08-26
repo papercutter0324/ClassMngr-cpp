@@ -98,12 +98,10 @@ MainWindow::MainWindow(
         m_fileController->loadDatabaseOnStartup(
             m_startupOptions.initialDatabasePath
             );
-        showStartupDatabasePage();
     }
     else if (m_startupOptions.loadMostRecentDatabase)
     {
         m_fileController->loadMostRecentDatabase();
-        showStartupDatabasePage();
     }
     else
     {
@@ -1070,32 +1068,6 @@ void MainWindow::showEvent(QShowEvent* event)
 
 }
 
-void MainWindow::showStartupDatabasePage()
-{
-    if (
-        !m_services
-        || !m_services->hasOpenDatabase()
-        || !m_pages
-        )
-    {
-        return;
-    }
-
-    m_pages->showPage(PageType::MyWorkspace);
-
-    if (auto* workspace = m_pages->myWorkspacePage())
-    {
-        workspace->openTab(WorkspaceTab::Schedule);
-    }
-
-    if (ui && ui->sidebarWidget)
-    {
-        ui->sidebarWidget->selectMyInfoSection(
-            QStringLiteral("my_workspace")
-            );
-    }
-}
-
 bool MainWindow::confirmCurrentPageCanLeave(
     bool exiting
     ) const
@@ -1174,9 +1146,10 @@ void MainWindow::applyDatabaseLoadedState()
     if (m_pages && m_pages->myWorkspacePage())
     {
         m_pages->showPage(PageType::MyWorkspace);
-        m_pages->refreshAll();
-        m_pages->myWorkspacePage()->openTab(WorkspaceTab::Details);
-        m_pages->myWorkspacePage()->personalDetailsPage()->scrollToTop();
+
+        auto* workspace = m_pages->myWorkspacePage();
+        workspace->openTab(WorkspaceTab::Schedule);
+        workspace->schedulePage()->loadInitialContent();
     }
 
     if (ui && ui->sidebarWidget)

@@ -10,7 +10,6 @@ class PageHeader;
 class PersonalDetailsPage;
 class SchedulePage;
 class QLabel;
-class QShowEvent;
 class QWidget;
 
 enum class WorkspaceTab
@@ -48,9 +47,6 @@ public:
     [[nodiscard]] PageOutputCapabilities outputCapabilities() const override;
     void printCurrentPage() override;
     void saveCurrentPageAs() override;
-
-protected:
-    void showEvent(QShowEvent* event) override;
 
 private:
     void buildUi();
