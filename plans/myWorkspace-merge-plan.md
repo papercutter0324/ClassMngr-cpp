@@ -480,7 +480,7 @@ Remove obsolete architecture after the merged version is stable.
 
 ### Status
 
-In progress — 2026-08-26. Focused automated regression coverage is passing; manual UI and cross-platform checks remain.
+In progress — 2026-08-26. Workspace-specific automated regression coverage passes. The Windows suite is 64/65: the unrelated `ClassMngrCampusMapTests` still fails without diagnostics after a clean rebuild. Manual UI and cross-platform checks remain.
 
 ## Functional Testing
 
