@@ -26,6 +26,7 @@ public:
     void refreshSchedulePreferences();
     void clearDatabaseState() override;
     void retranslateUi() override;
+    void setPageHeaderVisible(bool visible);
     [[nodiscard]] ScheduleDisplayMode displayMode() const;
     [[nodiscard]] PageOutputCapabilities
         outputCapabilities() const override;
@@ -57,6 +58,7 @@ private:
     ApplicationServices* m_services = nullptr;
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;
+    QWidget* m_headerContainer = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     ScheduleWidget* m_scheduleWidget = nullptr;

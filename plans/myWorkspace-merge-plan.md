@@ -269,6 +269,10 @@ This avoids modifying every report, certificate, and export function.
 
 # Phase 5 — Add Lazy-Loaded Calendar
 
+### Status
+
+Completed — 2026-08-26. Calendar is constructed on first tab activation, initially loads only its visible month, and retains previously loaded months for the session.
+
 ### Goal
 Prevent Calendar initialization from slowing down My Workspace startup.
 
@@ -382,6 +386,10 @@ This makes lazy loading explicit and testable.
 ---
 
 # Phase 6 — Consolidate Navigation
+
+### Status
+
+In progress — 2026-08-26.
 
 ### Goal
 Replace the old separate navigation destinations with My Workspace.

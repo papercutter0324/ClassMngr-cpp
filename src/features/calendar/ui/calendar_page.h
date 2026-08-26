@@ -10,6 +10,7 @@
 #include <QDate>
 #include <QHash>
 #include <QList>
+#include <QSet>
 #include <QStringList>
 
 class AcademicCalendarProvider;
@@ -48,6 +49,7 @@ public:
     void refresh() override;
     void clearDatabaseState() override;
     void retranslateUi() override;
+    void setPageHeaderVisible(bool visible);
     void scrollToTop();
     [[nodiscard]] AcademicCalendarProvider* academicCalendarProvider() const;
     void calendarPreferencesChanged(bool eventsChanged);
@@ -114,6 +116,7 @@ private:
         bool existingEvent
         );
     void refreshCalendarData();
+    void ensureUpcomingEventsForScope(UpcomingEventsScope scope);
     void updateCalendarCacheRetention();
     void invalidateCalendarData();
     void ensureNextTenEvents();
@@ -134,6 +137,7 @@ private:
     QList<CalendarEvent> upcomingEventsForScope(
         UpcomingEventsScope scope
         ) const;
+    [[nodiscard]] UpcomingEventsScope currentUpcomingEventsScope() const;
     bool upcomingEventsLoading(
         UpcomingEventsScope scope,
         const QList<CalendarEvent>& events
@@ -195,6 +199,7 @@ private:
     QScrollArea* m_scrollArea = nullptr;
     QWidget* m_scrollContent = nullptr;
     QVBoxLayout* m_scrollContentLayout = nullptr;
+    QWidget* m_pageHeader = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_subtitleLabel = nullptr;
     QLabel* m_upcomingEventsHeading = nullptr;
@@ -208,6 +213,8 @@ private:
     QHash<QString, bool> m_eventTypeFilterStates;
     QDate m_calendarVisibleMonth;
     QDate m_nextTenSearchEnd;
+    QSet<QDate> m_loadedMonths;
+    QList<CalendarEventCache::DateRange> m_onDemandRetainedRanges;
     QList<CalendarEventCache::DateRange> m_lastRecordedRetentionRanges;
     bool m_nextTenSearchComplete = false;
     bool m_nextTenLookupPending = false;

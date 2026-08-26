@@ -22,6 +22,7 @@ class ApplicationServices;
 
 class SchedulePage;
 class CalendarPage;
+class MyWorkspacePage;
 class PersonalDetailsPage;
 class MyClassesPage;
 class ClassesPage;
@@ -40,6 +41,7 @@ class PdfViewerPage;
 
 enum class PageType
 {
+    MyWorkspace,
     PersonalDetails,
     Calendar,
     MySchedule,
@@ -170,6 +172,9 @@ public:
 
     SchedulePage* schedulePage() const;
 
+    MyWorkspacePage* myWorkspacePage() const;
+    MyWorkspacePage* ensureMyWorkspacePage();
+
     PersonalDetailsPage* personalDetailsPage() const;
 
     CalendarPage* calendarPage() const;
@@ -266,6 +271,8 @@ private:
     // =====================================================
 
     SchedulePage* m_schedulePage = nullptr;
+
+    MyWorkspacePage* m_myWorkspacePage = nullptr;
 
     PersonalDetailsPage* m_personalDetailsPage = nullptr;
 

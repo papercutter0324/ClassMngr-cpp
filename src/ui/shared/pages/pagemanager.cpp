@@ -9,6 +9,7 @@
 #include "features/classes/ui/testing_classes_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
+#include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
@@ -60,6 +61,7 @@ QString PageManager::pageTypeIdentifier(PageType type)
 {
     switch (type)
     {
+    case PageType::MyWorkspace: return QStringLiteral("my-workspace");
     case PageType::PersonalDetails: return QStringLiteral("personal-details");
     case PageType::Calendar: return QStringLiteral("calendar");
     case PageType::MySchedule: return QStringLiteral("my-schedule");
@@ -125,6 +127,13 @@ void PageManager::initialize(
 
 void PageManager::registerPageFactories()
 {
+    m_pageFactories[PageType::MyWorkspace] =
+        [this]() -> BasePage*
+        {
+            m_myWorkspacePage = new MyWorkspacePage(m_services, this);
+            return m_myWorkspacePage;
+        };
+
     m_pageFactories[PageType::PersonalDetails] =
         [this]() -> BasePage*
         {
@@ -525,7 +534,8 @@ bool PageManager::usesCampusResources(
     PageType type
     )
 {
-    return type == PageType::PersonalDetails
+    return type == PageType::MyWorkspace
+        || type == PageType::PersonalDetails
         || type == PageType::Calendar
         || type == PageType::CampusDashboard
         || type == PageType::SubPrep;
@@ -796,6 +806,18 @@ void PageManager::retranslatePages()
 SchedulePage* PageManager::schedulePage() const
 {
     return m_schedulePage;
+}
+
+MyWorkspacePage* PageManager::myWorkspacePage() const
+{
+    return m_myWorkspacePage;
+}
+
+MyWorkspacePage* PageManager::ensureMyWorkspacePage()
+{
+    return qobject_cast<MyWorkspacePage*>(
+        ensurePage(PageType::MyWorkspace)
+        );
 }
 
 PersonalDetailsPage* PageManager::personalDetailsPage() const

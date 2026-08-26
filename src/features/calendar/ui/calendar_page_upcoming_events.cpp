@@ -364,8 +364,11 @@ void CalendarPage::buildUpcomingEventsPanel(
         m_upcomingEventsTabs,
         &NavigationTabWidget::currentChanged,
         this,
-        [this](int)
+        [this](int index)
         {
+            ensureUpcomingEventsForScope(
+                static_cast<UpcomingEventsScope>(index)
+                );
             refreshUpcomingEvents();
         }
         );
@@ -746,6 +749,28 @@ QList<CalendarEvent> CalendarPage::upcomingEventsForScope(
 
     return {};
 }
+
+UpcomingEventsScope CalendarPage::currentUpcomingEventsScope() const
+{
+    if (!m_upcomingEventsTabs)
+    {
+        return UpcomingEventsScope::CurrentMonth;
+    }
+
+    switch (m_upcomingEventsTabs->currentIndex())
+    {
+    case static_cast<int>(UpcomingEventsScope::Next30Days):
+        return UpcomingEventsScope::Next30Days;
+
+    case static_cast<int>(UpcomingEventsScope::Next10Events):
+        return UpcomingEventsScope::Next10Events;
+
+    case static_cast<int>(UpcomingEventsScope::CurrentMonth):
+    default:
+        return UpcomingEventsScope::CurrentMonth;
+    }
+}
+
 bool CalendarPage::upcomingEventsLoading(
     UpcomingEventsScope scope,
     const QList<CalendarEvent>& events

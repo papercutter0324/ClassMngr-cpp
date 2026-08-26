@@ -13,6 +13,9 @@ const QString ZoomLoginIdKey = QStringLiteral("myInfo/zoomLoginId");
 const QString ZoomPasswordKey = QStringLiteral("myInfo/zoomPassword");
 const QString ZoomNotAvailableKey = QStringLiteral("myInfo/zoomNotAvailable");
 const QString SignatureImageKey = QStringLiteral("myInfo/signatureImage");
+const QString SignatureModeKey = QStringLiteral("myInfo/signatureMode");
+const QString TypedSignatureTextKey = QStringLiteral("myInfo/typedSignatureText");
+const QString TypedSignatureFontKey = QStringLiteral("myInfo/typedSignatureFont");
 
 const QString LegacyZoomEmailKey =
     QStringLiteral("subPrep/personalZoomEmail");
@@ -90,6 +93,18 @@ PersonalDetails PersonalDetailsRepository::load() const
                     .toLatin1()
                 )
             );
+    details.signatureMode =
+        loadSetting(
+            SignatureModeKey,
+            static_cast<int>(SignatureMode::Image)
+            ).toInt()
+            == static_cast<int>(SignatureMode::Type)
+            ? SignatureMode::Type
+            : SignatureMode::Image;
+    details.typedSignatureText =
+        loadSetting(TypedSignatureTextKey, QString()).toString();
+    details.typedSignatureFont =
+        loadSetting(TypedSignatureFontKey, 0).toInt();
     return details;
 }
 
@@ -106,6 +121,12 @@ bool PersonalDetailsRepository::save(const PersonalDetails& details) const
         {ZoomLoginIdKey, details.zoomLoginId},
         {ZoomPasswordKey, details.zoomPassword},
         {ZoomNotAvailableKey, details.zoomNotAvailable},
+        {
+            SignatureModeKey,
+            static_cast<int>(details.signatureMode)
+        },
+        {TypedSignatureTextKey, details.typedSignatureText},
+        {TypedSignatureFontKey, details.typedSignatureFont},
         {
             SignatureImageKey,
             QString::fromLatin1(

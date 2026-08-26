@@ -428,6 +428,7 @@ void MemoryUsageDialog::buildUi()
     m_pageActionPage = new QComboBox(this);
     m_pageActionPage->setObjectName(QStringLiteral("memoryUsagePageActionPage"));
     for (const PageType type : {
+             PageType::MyWorkspace,
              PageType::PersonalDetails,
              PageType::Calendar,
              PageType::MySchedule,

@@ -77,7 +77,7 @@ public:
 
     virtual void saveCurrentPageAs();
 
-    void setDatabaseOpen(
+    virtual void setDatabaseOpen(
         bool databaseOpen
         );
 

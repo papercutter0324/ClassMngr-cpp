@@ -8,6 +8,12 @@
 
 class SettingsService;
 
+enum class SignatureMode
+{
+    Image = 0,
+    Type = 1
+};
+
 struct PersonalDetails
 {
     QString name;
@@ -16,6 +22,9 @@ struct PersonalDetails
     QString zoomPassword;
     bool zoomNotAvailable = true;
     QByteArray signatureImage;
+    SignatureMode signatureMode = SignatureMode::Image;
+    QString typedSignatureText;
+    int typedSignatureFont = 0;
 };
 
 class PersonalDetailsRepository

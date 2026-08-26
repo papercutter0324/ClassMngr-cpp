@@ -8,6 +8,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "features/my_info/data/personal_details_repository.h"
 #include "features/my_info/data/signature_image_processor.h"
+#include "features/my_info/data/typed_signature_renderer.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
@@ -37,7 +38,7 @@ namespace
 constexpr int UntitledCardTopMargin = 4;
 constexpr int CompactFieldWidth = 170;
 constexpr int MyInformationFieldVerticalPadding = 14;
-constexpr int SignaturePreviewHeight = 220;
+constexpr int SignaturePreviewHeight = 120;
 const QString NotAvailableText =
     QStringLiteral("N/A");
 
@@ -276,6 +277,46 @@ void PersonalDetailsPage::handleZoomNotAvailableChanged(
     setZoomFieldsEnabled();
     handleEditableChanged();
 }
+
+void PersonalDetailsPage::selectSignatureMode()
+{
+    setSignatureMode(
+        sender() == m_signatureTypeModeButton
+            ? SignatureMode::Type
+            : SignatureMode::Image
+        );
+}
+
+void PersonalDetailsPage::selectTypedSignatureFont()
+{
+    const int index = m_typedSignatureFontButtons.indexOf(
+        qobject_cast<QPushButton*>(sender())
+        );
+
+    if (index < 0)
+    {
+        return;
+    }
+
+    const TypedSignatureFont selectedFont =
+        TypedSignature::fontFromStoredValue(index);
+
+    if (m_typedSignatureFont == selectedFont)
+    {
+        return;
+    }
+
+    m_typedSignatureFont = selectedFont;
+    updateTypedSignatureImage();
+    handleEditableChanged();
+}
+
+void PersonalDetailsPage::handleTypedSignatureChanged()
+{
+    updateTypedSignatureImage();
+    handleEditableChanged();
+}
+
 void PersonalDetailsPage::chooseSignatureImage()
 {
     const QStringList patterns =
@@ -331,6 +372,8 @@ void PersonalDetailsPage::chooseSignatureImage()
 
     m_signatureImageData =
         encodedImage;
+    m_signatureMode = SignatureMode::Image;
+    updateSignatureControls();
     updateSignaturePreview();
     handleEditableChanged();
 }
@@ -342,6 +385,7 @@ void PersonalDetailsPage::removeSignatureImage()
     }
 
     m_signatureImageData.clear();
+    updateSignatureControls();
     updateSignaturePreview();
     handleEditableChanged();
 }
@@ -586,7 +630,7 @@ void PersonalDetailsPage::buildSignatureSection()
 
     m_signatureInstructionsLabel =
         new QLabel(
-            tr("Add a PNG or JPEG signature image. Other supported image formats are converted to PNG."),
+            tr("Choose an image file or type your signature."),
             card
             );
     m_signatureInstructionsLabel->setObjectName(
@@ -596,6 +640,36 @@ void PersonalDetailsPage::buildSignatureSection()
     cardLayout->addWidget(
         m_signatureInstructionsLabel
         );
+
+    auto* modeLayout =
+        new QHBoxLayout;
+    modeLayout->setContentsMargins(0, 0, 0, 0);
+    modeLayout->setSpacing(UiConstants::Pages::Spacing);
+
+    m_signatureImageModeButton =
+        new TextFitPushButton(
+            tr("Image"),
+            card
+            );
+    m_signatureImageModeButton->setObjectName(
+        "signatureImageModeButton"
+        );
+    m_signatureImageModeButton->setCheckable(true);
+
+    m_signatureTypeModeButton =
+        new TextFitPushButton(
+            tr("Type"),
+            card
+            );
+    m_signatureTypeModeButton->setObjectName(
+        "signatureTypeModeButton"
+        );
+    m_signatureTypeModeButton->setCheckable(true);
+
+    modeLayout->addWidget(m_signatureImageModeButton);
+    modeLayout->addWidget(m_signatureTypeModeButton);
+    modeLayout->addStretch();
+    cardLayout->addLayout(modeLayout);
 
     m_signaturePreviewLabel =
         new QLabel(card);
@@ -617,6 +691,8 @@ void PersonalDetailsPage::buildSignatureSection()
         m_signaturePreviewLabel
         );
 
+    m_signatureImageControls =
+        new QWidget(card);
     auto* actionsLayout =
         new QHBoxLayout;
     actionsLayout->setContentsMargins(0, 0, 0, 0);
@@ -636,20 +712,118 @@ void PersonalDetailsPage::buildSignatureSection()
             card
             );
 
-    actionsLayout->addWidget(
-        m_chooseSignatureButton
+    actionsLayout->addWidget(m_chooseSignatureButton);
+    actionsLayout->addWidget(m_removeSignatureButton);
+    m_signatureImageControls->setLayout(actionsLayout);
+    cardLayout->addWidget(m_signatureImageControls);
+
+    m_typedSignatureControls =
+        new QWidget(card);
+    auto* typedLayout =
+        new QVBoxLayout(m_typedSignatureControls);
+    typedLayout->setContentsMargins(0, 0, 0, 0);
+    typedLayout->setSpacing(UiConstants::Pages::Spacing);
+
+    m_typedSignatureLabel =
+        createFieldLabel(tr("Type your signature"), m_typedSignatureControls);
+    typedLayout->addWidget(m_typedSignatureLabel);
+
+    m_typedSignatureEdit =
+        new QLineEdit(m_typedSignatureControls);
+    m_typedSignatureEdit->setObjectName("typedSignatureEdit");
+    m_typedSignatureEdit->setPlaceholderText(
+        tr("Type your name")
         );
-    actionsLayout->addWidget(
-        m_removeSignatureButton
-        );
-    cardLayout->addLayout(
-        actionsLayout
-        );
+    typedLayout->addWidget(m_typedSignatureEdit);
+
+    m_typedSignatureFontLabel =
+        createFieldLabel(tr("Choose a style"), m_typedSignatureControls);
+    typedLayout->addWidget(m_typedSignatureFontLabel);
+
+    auto* fontGrid =
+        new QGridLayout;
+    fontGrid->setContentsMargins(0, 0, 0, 0);
+    fontGrid->setHorizontalSpacing(UiConstants::Pages::Spacing);
+    fontGrid->setVerticalSpacing(UiConstants::Pages::Spacing);
+
+    const QList<TypedSignatureFont> signatureFonts = {
+        TypedSignatureFont::JustAnotherHand,
+        TypedSignatureFont::DancingScript,
+        TypedSignatureFont::GreatVibes,
+        TypedSignatureFont::Caveat
+    };
+
+    for (int index = 0; index < signatureFonts.size(); ++index)
+    {
+        const TypedSignatureFont signatureFont =
+            signatureFonts.at(index);
+        auto* fontCard =
+            new QFrame(m_typedSignatureControls);
+        fontCard->setObjectName("signatureFontCard");
+        fontCard->setProperty("role", UiRoles::Card);
+
+        auto* fontCardLayout =
+            new QVBoxLayout(fontCard);
+        fontCardLayout->setContentsMargins(12, 10, 12, 10);
+        fontCardLayout->setSpacing(4);
+
+        auto* fontName =
+            new QLabel(
+                TypedSignature::displayName(signatureFont),
+                fontCard
+                );
+        fontName->setObjectName("signatureFontName");
+        fontCardLayout->addWidget(fontName);
+
+        auto* fontPreview =
+            new QLabel(fontCard);
+        fontPreview->setObjectName("typedSignatureFontPreview");
+        fontPreview->setFixedHeight(64);
+        fontPreview->setAlignment(Qt::AlignCenter);
+        fontCardLayout->addWidget(fontPreview);
+
+        auto* selectButton =
+            new TextFitPushButton(
+                tr("Use this font"),
+                fontCard
+                );
+        selectButton->setObjectName("typedSignatureFontButton");
+        selectButton->setCheckable(true);
+        fontCardLayout->addWidget(selectButton);
+
+        m_typedSignatureFontPreviews.append(fontPreview);
+        m_typedSignatureFontButtons.append(selectButton);
+        fontGrid->addWidget(fontCard, index / 2, index % 2);
+
+        connect(
+            selectButton,
+            &QPushButton::clicked,
+            this,
+            &PersonalDetailsPage::selectTypedSignatureFont
+            );
+    }
+
+    fontGrid->setColumnStretch(0, 1);
+    fontGrid->setColumnStretch(1, 1);
+    typedLayout->addLayout(fontGrid);
+    cardLayout->addWidget(m_typedSignatureControls);
 
     m_scrollContentLayout->addWidget(
         card
         );
 
+    connect(
+        m_signatureImageModeButton,
+        &QPushButton::clicked,
+        this,
+        &PersonalDetailsPage::selectSignatureMode
+        );
+    connect(
+        m_signatureTypeModeButton,
+        &QPushButton::clicked,
+        this,
+        &PersonalDetailsPage::selectSignatureMode
+        );
     connect(
         m_chooseSignatureButton,
         &QPushButton::clicked,
@@ -662,7 +836,15 @@ void PersonalDetailsPage::buildSignatureSection()
         this,
         &PersonalDetailsPage::removeSignatureImage
         );
+    connect(
+        m_typedSignatureEdit,
+        &QLineEdit::textChanged,
+        this,
+        &PersonalDetailsPage::handleTypedSignatureChanged
+        );
 
+    updateSignatureControls();
+    updateTypedSignatureFontOptions();
     updateSignaturePreview();
 }
 void PersonalDetailsPage::loadPageData()
@@ -688,6 +870,7 @@ void PersonalDetailsPage::loadStoredSettings()
     const QSignalBlocker loginBlocker(m_zoomLoginIdEdit);
     const QSignalBlocker passwordBlocker(m_zoomPasswordEdit);
     const QSignalBlocker checkBlocker(m_zoomNotAvailableCheck);
+    const QSignalBlocker typedSignatureBlocker(m_typedSignatureEdit);
 
     const PersonalDetails details =
         PersonalDetailsRepository(settingsService).load();
@@ -758,9 +941,15 @@ void PersonalDetailsPage::loadStoredSettings()
         );
     m_zoomNotAvailableCheck->setChecked(details.zoomNotAvailable);
     m_signatureImageData = details.signatureImage;
+    m_signatureMode = details.signatureMode;
+    m_typedSignatureFont =
+        TypedSignature::fontFromStoredValue(details.typedSignatureFont);
+    m_typedSignatureEdit->setText(details.typedSignatureText);
 
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
+    updateSignatureControls();
+    updateTypedSignatureFontOptions();
     updateSignaturePreview();
 }
 bool PersonalDetailsPage::saveMyInfoInternal()
@@ -789,6 +978,9 @@ bool PersonalDetailsPage::saveMyInfoInternal()
     details.zoomPassword = m_zoomPasswordEdit->text();
     details.zoomNotAvailable = m_zoomNotAvailableCheck->isChecked();
     details.signatureImage = m_signatureImageData;
+    details.signatureMode = m_signatureMode;
+    details.typedSignatureText = m_typedSignatureEdit->text();
+    details.typedSignatureFont = static_cast<int>(m_typedSignatureFont);
 
     if (!PersonalDetailsRepository(settingsService).save(details))
     {
@@ -889,10 +1081,161 @@ void PersonalDetailsPage::updateMyInformationFieldWidths()
         m_zoomPasswordEdit
         );
 }
+void PersonalDetailsPage::setSignatureMode(SignatureMode mode)
+{
+    if (m_signatureMode == mode)
+    {
+        updateSignatureControls();
+        return;
+    }
+
+    m_signatureMode = mode;
+
+    if (m_signatureMode == SignatureMode::Type)
+    {
+        updateTypedSignatureImage();
+    }
+
+    updateSignatureControls();
+    updateSignaturePreview();
+    handleEditableChanged();
+}
+
+void PersonalDetailsPage::updateTypedSignatureImage()
+{
+    if (m_signatureMode != SignatureMode::Type
+        || !m_typedSignatureEdit)
+    {
+        return;
+    }
+
+    m_signatureImageData =
+        TypedSignature::renderForEmbedding(
+            m_typedSignatureEdit->text(),
+            m_typedSignatureFont
+            );
+    updateTypedSignatureFontOptions();
+    updateSignaturePreview();
+}
+
+void PersonalDetailsPage::updateSignatureControls()
+{
+    const bool imageMode = m_signatureMode == SignatureMode::Image;
+
+    if (m_signatureImageModeButton)
+    {
+        m_signatureImageModeButton->setChecked(imageMode);
+    }
+
+    if (m_signatureTypeModeButton)
+    {
+        m_signatureTypeModeButton->setChecked(!imageMode);
+    }
+
+    if (m_signatureImageControls)
+    {
+        m_signatureImageControls->setVisible(imageMode);
+    }
+
+    if (m_typedSignatureControls)
+    {
+        m_typedSignatureControls->setVisible(!imageMode);
+    }
+
+    if (m_chooseSignatureButton)
+    {
+        m_chooseSignatureButton->setText(
+            m_signatureImageData.isEmpty()
+                ? tr("Add Signature Image...")
+                : tr("Replace Signature...")
+            );
+    }
+
+    if (m_removeSignatureButton)
+    {
+        m_removeSignatureButton->setText(tr("Remove"));
+        m_removeSignatureButton->setEnabled(
+            !m_signatureImageData.isEmpty()
+            );
+    }
+}
+
+void PersonalDetailsPage::updateTypedSignatureFontOptions()
+{
+    const QString previewText =
+        m_typedSignatureEdit
+        && !m_typedSignatureEdit->text().trimmed().isEmpty()
+            ? m_typedSignatureEdit->text()
+            : tr("Your Signature");
+
+    for (int index = 0;
+         index < m_typedSignatureFontButtons.size();
+         ++index)
+    {
+        const TypedSignatureFont option =
+            TypedSignature::fontFromStoredValue(index);
+        const bool selected = option == m_typedSignatureFont;
+        QPushButton* const button =
+            m_typedSignatureFontButtons.at(index);
+
+        button->setChecked(selected);
+        button->setText(
+            selected
+                ? tr("Selected")
+                : tr("Use this font")
+            );
+
+        if (index >= m_typedSignatureFontPreviews.size())
+        {
+            continue;
+        }
+
+        QLabel* const preview =
+            m_typedSignatureFontPreviews.at(index);
+        preview->setPixmap(
+            QPixmap::fromImage(
+                TypedSignature::render(
+                    previewText,
+                    option,
+                    QSize(240, 64)
+                    )
+                )
+            );
+    }
+}
+
 void PersonalDetailsPage::updateSignaturePreview()
 {
     if (!m_signaturePreviewLabel)
     {
+        return;
+    }
+
+    const QSize previewSize =
+        m_signaturePreviewLabel
+            ->contentsRect()
+            .adjusted(16, 16, -16, -16)
+            .size();
+
+    if (m_signatureMode == SignatureMode::Type)
+    {
+        const QString typedSignature =
+            m_typedSignatureEdit
+            && !m_typedSignatureEdit->text().trimmed().isEmpty()
+                ? m_typedSignatureEdit->text()
+                : tr("Your Signature");
+
+        const QImage preview =
+            TypedSignature::render(
+                typedSignature,
+                m_typedSignatureFont,
+                previewSize
+                );
+
+        m_signaturePreviewLabel->setText(QString());
+        m_signaturePreviewLabel->setPixmap(
+            QPixmap::fromImage(preview)
+            );
         return;
     }
 
@@ -902,18 +1245,6 @@ void PersonalDetailsPage::updateSignaturePreview()
         m_signaturePreviewLabel->setText(
             tr("No signature image added")
             );
-
-        if (m_chooseSignatureButton)
-        {
-            m_chooseSignatureButton->setText(
-                tr("Add Signature Image...")
-                );
-        }
-
-        if (m_removeSignatureButton)
-        {
-            m_removeSignatureButton->setEnabled(false);
-        }
         return;
     }
 
@@ -925,12 +1256,6 @@ void PersonalDetailsPage::updateSignaturePreview()
         return;
     }
 
-    const QSize previewSize =
-        m_signaturePreviewLabel
-            ->contentsRect()
-            .adjusted(16, 16, -16, -16)
-            .size();
-
     m_signaturePreviewLabel->setText(QString());
     m_signaturePreviewLabel->setPixmap(
         signature.scaled(
@@ -939,18 +1264,6 @@ void PersonalDetailsPage::updateSignaturePreview()
             Qt::SmoothTransformation
             )
         );
-
-    if (m_chooseSignatureButton)
-    {
-        m_chooseSignatureButton->setText(
-            tr("Replace Signature Image...")
-            );
-    }
-
-    if (m_removeSignatureButton)
-    {
-        m_removeSignatureButton->setEnabled(true);
-    }
 }
 void PersonalDetailsPage::clearDirty()
 {

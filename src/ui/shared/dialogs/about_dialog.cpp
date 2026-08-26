@@ -36,6 +36,12 @@ constexpr auto PretendardSourceUrl =
     "https://github.com/orioncactus/pretendard";
 constexpr auto JustAnotherHandSourceUrl =
     "https://github.com/google/fonts/tree/main/apache/justanotherhand";
+constexpr auto DancingScriptSourceUrl =
+    "https://github.com/google/fonts/tree/main/ofl/dancingscript";
+constexpr auto GreatVibesSourceUrl =
+    "https://github.com/google/fonts/tree/main/ofl/greatvibes";
+constexpr auto CaveatSourceUrl =
+    "https://github.com/google/fonts/tree/main/ofl/caveat";
 
 constexpr auto InterLicensePath =
     "licenses/fonts/inter/LICENSE.txt";
@@ -43,6 +49,12 @@ constexpr auto PretendardLicensePath =
     "licenses/fonts/pretendard/LICENSE.txt";
 constexpr auto JustAnotherHandLicensePath =
     "licenses/fonts/just-another-hand/LICENSE.txt";
+constexpr auto DancingScriptLicensePath =
+    "licenses/fonts/dancing-script/LICENSE.txt";
+constexpr auto GreatVibesLicensePath =
+    "licenses/fonts/great-vibes/LICENSE.txt";
+constexpr auto CaveatLicensePath =
+    "licenses/fonts/caveat/LICENSE.txt";
 
 constexpr int DialogWidthSafetyBuffer = 12;
 
@@ -175,6 +187,54 @@ void AboutDialog::showJustAnotherHandLicense()
         );
 }
 
+void AboutDialog::showTypedSignatureFontLicenses()
+{
+    const QList<QPair<QString, QString>> licenses = {
+        {
+            tr("Dancing Script"),
+            QString::fromUtf8(DancingScriptLicensePath)
+        },
+        {
+            tr("Great Vibes"),
+            QString::fromUtf8(GreatVibesLicensePath)
+        },
+        {
+            tr("Caveat"),
+            QString::fromUtf8(CaveatLicensePath)
+        }
+    };
+
+    QStringList licenseText;
+
+    for (const auto& [fontName, relativePath] : licenses)
+    {
+        QFile file(resolveLicensePath(relativePath));
+
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            DialogServices::showWarning(
+                this,
+                tr("License Not Available"),
+                tr("The license file could not be opened:\n%1")
+                    .arg(relativePath)
+                );
+            return;
+        }
+
+        licenseText.append(
+            QStringLiteral("%1\n\n%2")
+                .arg(fontName, QString::fromUtf8(file.readAll()))
+            );
+    }
+
+    LicenseDialog dialog(
+        tr("Typed Signature Font Licenses"),
+        licenseText.join(QStringLiteral("\n\n==========\n\n")),
+        this
+        );
+    dialog.exec();
+}
+
 void AboutDialog::buildUi()
 {
     const QString applicationName =
@@ -284,24 +344,38 @@ void AboutDialog::buildUi()
 
     auto* acknowledgements =
         createLinkLabel(
-            tr("This non-commercial application is built with %1 under Qt's open-source licensing terms and includes the %2, %3, and %4 font families.")
+            tr("This non-commercial application is built with %1 under Qt's open-source licensing terms and includes these font families: %2.")
                 .arg(
                     link(
                         tr("Qt 6"),
                         QString::fromUtf8(QtSourceUrl)
                         ),
-                    link(
-                        tr("Inter"),
-                        QString::fromUtf8(InterSourceUrl)
-                        ),
-                    link(
-                        tr("Pretendard"),
-                        QString::fromUtf8(PretendardSourceUrl)
-                        ),
-                    link(
-                        tr("Just Another Hand"),
-                        QString::fromUtf8(JustAnotherHandSourceUrl)
-                        )
+                    QStringList{
+                        link(
+                            tr("Inter"),
+                            QString::fromUtf8(InterSourceUrl)
+                            ),
+                        link(
+                            tr("Pretendard"),
+                            QString::fromUtf8(PretendardSourceUrl)
+                            ),
+                        link(
+                            tr("Just Another Hand"),
+                            QString::fromUtf8(JustAnotherHandSourceUrl)
+                            ),
+                        link(
+                            tr("Dancing Script"),
+                            QString::fromUtf8(DancingScriptSourceUrl)
+                            ),
+                        link(
+                            tr("Great Vibes"),
+                            QString::fromUtf8(GreatVibesSourceUrl)
+                            ),
+                        link(
+                            tr("Caveat"),
+                            QString::fromUtf8(CaveatSourceUrl)
+                            )
+                    }.join(tr(", "))
                     ),
             this
             );
@@ -346,6 +420,12 @@ void AboutDialog::buildUi()
             this
             );
 
+    auto* typedSignatureFontsLicenseButton =
+        new TextFitPushButton(
+            tr("View Typed Signature Font Licenses"),
+            this
+            );
+
     connect(
         interLicenseButton,
         &QPushButton::clicked,
@@ -368,6 +448,13 @@ void AboutDialog::buildUi()
         );
 
     connect(
+        typedSignatureFontsLicenseButton,
+        &QPushButton::clicked,
+        this,
+        &AboutDialog::showTypedSignatureFontLicenses
+        );
+
+    connect(
         aboutQtButton,
         &QPushButton::clicked,
         this,
@@ -383,6 +470,11 @@ void AboutDialog::buildUi()
     licenseButtonLayout->addWidget(justAnotherHandLicenseButton);
     licenseButtonLayout->addStretch();
 
+    auto* typedSignatureLicenseLayout =
+        new QHBoxLayout;
+    typedSignatureLicenseLayout->addWidget(typedSignatureFontsLicenseButton);
+    typedSignatureLicenseLayout->addStretch();
+
     layout->addLayout(headerLayout);
     layout->setAlignment(headerLayout, Qt::AlignTop);
     layout->addWidget(description);
@@ -392,6 +484,7 @@ void AboutDialog::buildUi()
     layout->addWidget(acknowledgements);
     layout->addWidget(qtLicenseLink);
     layout->addLayout(licenseButtonLayout);
+    layout->addLayout(typedSignatureLicenseLayout);
     addButtonBox(QDialogButtonBox::Close);
 
     const QMargins margins =

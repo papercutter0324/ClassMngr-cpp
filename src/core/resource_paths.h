@@ -221,6 +221,15 @@ inline constexpr auto Pretendard =
 inline constexpr auto JustAnotherHand =
     ":/assets/fonts/JustAnotherHand-Regular.ttf";
 
+inline constexpr auto DancingScript =
+    ":/assets/fonts/DancingScript-wght.ttf";
+
+inline constexpr auto GreatVibes =
+    ":/assets/fonts/GreatVibes-Regular.ttf";
+
+inline constexpr auto Caveat =
+    ":/assets/fonts/Caveat-wght.ttf";
+
 inline QString inter()
 {
     return Detail::resolveResourcePath(
@@ -239,6 +248,27 @@ inline QString justAnotherHand()
 {
     return Detail::resolveResourcePath(
         QString::fromUtf8(JustAnotherHand)
+        );
+}
+
+inline QString dancingScript()
+{
+    return Detail::resolveResourcePath(
+        QString::fromUtf8(DancingScript)
+        );
+}
+
+inline QString greatVibes()
+{
+    return Detail::resolveResourcePath(
+        QString::fromUtf8(GreatVibes)
+        );
+}
+
+inline QString caveat()
+{
+    return Detail::resolveResourcePath(
+        QString::fromUtf8(Caveat)
         );
 }
 }

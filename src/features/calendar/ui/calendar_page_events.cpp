@@ -26,6 +26,8 @@
 #include <QVariant>
 #include <QVBoxLayout>
 
+#include <algorithm>
+
 namespace
 {
 constexpr int UntitledCardTopMargin = 4;
@@ -341,7 +343,12 @@ void CalendarPage::buildCalendarContent()
         [this]()
         {
             refreshUpcomingEvents();
-            ensureNextTenEvents();
+
+            if (currentUpcomingEventsScope()
+                == UpcomingEventsScope::Next10Events)
+            {
+                ensureNextTenEvents();
+            }
         }
         );
     connect(
@@ -469,7 +476,12 @@ void CalendarPage::updateCalendarCampusFilter()
         options.hideStartOfTermEvents
         );
     refreshUpcomingEvents();
-    ensureNextTenEvents();
+
+    if (currentUpcomingEventsScope()
+        == UpcomingEventsScope::Next10Events)
+    {
+        ensureNextTenEvents();
+    }
 }
 
 void CalendarPage::refreshCalendarData()
@@ -501,52 +513,84 @@ void CalendarPage::refreshCalendarData()
     const QDate visibleMonthEnd =
         visibleMonth.addMonths(1).addDays(-1);
 
+    m_loadedMonths.insert(visibleMonth);
+    updateCalendarCacheRetention();
+
     m_calendarCache->requestRange(
         visibleMonth,
         visibleMonthEnd,
         CalendarEventCache::Priority::Foreground
         );
-    m_calendarCache->requestRange(
-        today,
-        today.addDays(30),
-        CalendarEventCache::Priority::Foreground
-        );
 
-    const QDate prefetchStart =
-        visibleMonth.addMonths(1);
-    const QDate prefetchEnd =
-        visibleMonth.addMonths(5).addDays(-1);
+    refreshUpcomingEvents();
+}
 
-    m_calendarCache->requestRange(
-        prefetchStart,
-        prefetchEnd,
-        CalendarEventCache::Priority::Background
-        );
+void CalendarPage::ensureUpcomingEventsForScope(
+    UpcomingEventsScope scope
+    )
+{
+    if (!m_calendarCache || scope == UpcomingEventsScope::CurrentMonth)
+    {
+        return;
+    }
+
+    const QString databasePath =
+        m_services
+            ? m_services->currentDatabasePath()
+            : QString();
+
+    if (databasePath.isEmpty())
+    {
+        return;
+    }
+
+    const QDate today = QDate::currentDate();
+
+    if (scope == UpcomingEventsScope::Next30Days)
+    {
+        const CalendarEventCache::DateRange range{
+            today,
+            today.addDays(30)
+        };
+
+        if (!m_onDemandRetainedRanges.contains(range))
+        {
+            m_onDemandRetainedRanges.append(range);
+        }
+
+        updateCalendarCacheRetention();
+        m_calendarCache->requestRange(
+            range.startDate,
+            range.endDate,
+            CalendarEventCache::Priority::Foreground
+            );
+        return;
+    }
 
     if (!m_nextTenSearchEnd.isValid())
     {
-        const QDate currentMonth(
-            today.year(),
-            today.month(),
-            1
-            );
-
         m_nextTenSearchEnd =
-            currentMonth.addMonths(5).addDays(-1);
+            QDate(today.year(), today.month(), 1)
+                .addMonths(1)
+                .addDays(-1);
+    }
 
-        if (visibleMonth != currentMonth)
-        {
-            m_calendarCache->requestRange(
-                currentMonth,
-                m_nextTenSearchEnd,
-                CalendarEventCache::Priority::Background
-                );
-        }
+    const CalendarEventCache::DateRange range{
+        today,
+        m_nextTenSearchEnd
+    };
+
+    if (!m_onDemandRetainedRanges.contains(range))
+    {
+        m_onDemandRetainedRanges.append(range);
     }
 
     updateCalendarCacheRetention();
-
-    refreshUpcomingEvents();
+    m_calendarCache->requestRange(
+        range.startDate,
+        range.endDate,
+        CalendarEventCache::Priority::Foreground
+        );
     ensureNextTenEvents();
 }
 
@@ -557,40 +601,27 @@ void CalendarPage::updateCalendarCacheRetention()
         return;
     }
 
-    const QDate today = QDate::currentDate();
-    const QDate visibleMonth =
-        m_calendarVisibleMonth.isValid()
-            ? m_calendarVisibleMonth
-            : QDate(today.year(), today.month(), 1);
-
     QList<CalendarEventCache::DateRange> retainedRanges;
-    retainedRanges.append(
-        {
-            visibleMonth,
-            visibleMonth.addMonths(1).addDays(-1)
-        }
-        );
-    retainedRanges.append(
-        {
-            today,
-            today.addDays(30)
-        }
-        );
-    retainedRanges.append(
-        {
-            visibleMonth.addMonths(1),
-            visibleMonth.addMonths(5).addDays(-1)
-        }
-        );
+    QList<QDate> loadedMonths = m_loadedMonths.values();
+    std::sort(loadedMonths.begin(), loadedMonths.end());
 
-    if (m_nextTenSearchEnd.isValid())
+    for (const QDate& month : loadedMonths)
     {
         retainedRanges.append(
             {
-                today,
-                m_nextTenSearchEnd
+                month,
+                month.addMonths(1).addDays(-1)
             }
             );
+    }
+
+    for (const CalendarEventCache::DateRange& range :
+         m_onDemandRetainedRanges)
+    {
+        if (!retainedRanges.contains(range))
+        {
+            retainedRanges.append(range);
+        }
     }
 
     m_calendarCache->setRetainedRanges(retainedRanges);
@@ -625,6 +656,8 @@ void CalendarPage::invalidateCalendarData()
     m_nextTenSearchEnd = {};
     m_nextTenSearchComplete = false;
     m_nextTenLookupPending = false;
+    m_loadedMonths.clear();
+    m_onDemandRetainedRanges.clear();
     m_calendarCache->invalidate();
     refreshCalendarData();
 }
@@ -699,6 +732,17 @@ void CalendarPage::handleNextEventMonthFound(
 
     m_nextTenSearchEnd =
         firstOfMonth.addMonths(1).addDays(-1);
+
+    const CalendarEventCache::DateRange range{
+        QDate::currentDate(),
+        m_nextTenSearchEnd
+    };
+
+    if (!m_onDemandRetainedRanges.contains(range))
+    {
+        m_onDemandRetainedRanges.append(range);
+    }
+
     updateCalendarCacheRetention();
     m_calendarCache->requestRange(
         firstOfMonth,

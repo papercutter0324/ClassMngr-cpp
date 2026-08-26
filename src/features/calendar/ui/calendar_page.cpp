@@ -52,8 +52,10 @@ void CalendarPage::buildUi()
         );
     m_scrollContentLayout->setAlignment(Qt::AlignTop);
 
+    m_pageHeader =
+        new QWidget(m_scrollContent);
     auto* headerLayout =
-        new QVBoxLayout;
+        new QVBoxLayout(m_pageHeader);
     headerLayout->setContentsMargins(
         UiConstants::Pages::HeaderMargin,
         UiConstants::Pages::HeaderMargin,
@@ -91,7 +93,7 @@ void CalendarPage::buildUi()
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
-    m_scrollContentLayout->addLayout(headerLayout);
+    m_scrollContentLayout->addWidget(m_pageHeader);
     m_scrollContentLayout->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
         );
@@ -182,6 +184,14 @@ void CalendarPage::retranslateUi()
     }
 
     refreshUpcomingEvents();
+}
+
+void CalendarPage::setPageHeaderVisible(bool visible)
+{
+    if (m_pageHeader)
+    {
+        m_pageHeader->setVisible(visible);
+    }
 }
 
 void CalendarPage::scrollToTop()

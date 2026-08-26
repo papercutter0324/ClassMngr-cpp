@@ -71,6 +71,14 @@ void SchedulePage::retranslateUi()
     }
 }
 
+void SchedulePage::setPageHeaderVisible(bool visible)
+{
+    if (m_headerContainer)
+    {
+        m_headerContainer->setVisible(visible);
+    }
+}
+
 ScheduleDisplayMode SchedulePage::displayMode() const
 {
     return m_scheduleWidget
@@ -153,8 +161,9 @@ void SchedulePage::buildUi()
     m_scrollArea->setWidget(m_scrollContent);
     contentLayout()->addWidget(m_scrollArea);
 
+    m_headerContainer = new QWidget(m_scrollContent);
     auto* headerLayout =
-        new QVBoxLayout;
+        new QVBoxLayout(m_headerContainer);
     headerLayout->setContentsMargins(
         UiConstants::Pages::HeaderMargin,
         UiConstants::Pages::HeaderMargin,
@@ -192,7 +201,7 @@ void SchedulePage::buildUi()
 
     headerLayout->addWidget(m_titleLabel);
     headerLayout->addWidget(m_subtitleLabel);
-    scrollContentLayout->addLayout(headerLayout);
+    scrollContentLayout->addWidget(m_headerContainer);
     scrollContentLayout->addSpacing(
         UiConstants::Pages::HeaderContentSpacing
         );

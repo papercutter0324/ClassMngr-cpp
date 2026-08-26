@@ -75,8 +75,18 @@ void PersonalDetailsPage::clearDatabaseState()
     }
 
     m_signatureImageData.clear();
+    m_signatureMode = SignatureMode::Image;
+    m_typedSignatureFont = TypedSignatureFont::JustAnotherHand;
+
+    if (m_typedSignatureEdit)
+    {
+        m_typedSignatureEdit->clear();
+    }
+
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
+    updateSignatureControls();
+    updateTypedSignatureFontOptions();
     updateSignaturePreview();
 
     m_autosave->setLoading(false);
@@ -92,20 +102,23 @@ void PersonalDetailsPage::retranslateUi()
     m_myInformationHeading->setText(tr("My Information"));
     m_signatureHeading->setText(tr("Signature"));
     m_signatureInstructionsLabel->setText(
-        tr("Add a PNG or JPEG signature image. Other supported image formats are converted to PNG.")
+        tr("Choose an image file or type your signature.")
         );
-    m_chooseSignatureButton->setText(
-        m_signatureImageData.isEmpty()
-            ? tr("Add Signature Image...")
-            : tr("Replace Signature Image...")
+    m_signatureImageModeButton->setText(tr("Image"));
+    m_signatureTypeModeButton->setText(tr("Type"));
+    m_typedSignatureLabel->setText(tr("Type your signature"));
+    m_typedSignatureFontLabel->setText(tr("Choose a style"));
+    m_typedSignatureEdit->setPlaceholderText(
+        tr("Type your name")
         );
-    m_removeSignatureButton->setText(tr("Remove"));
     m_nameLabel->setText(tr("My Name"));
     m_campusLabel->setText(tr("My Campus"));
     m_zoomLoginIdLabel->setText(tr("Zoom Login ID"));
     m_zoomPasswordLabel->setText(tr("Zoom Password"));
     m_zoomLabel->setText(tr("Zoom"));
     m_zoomNotAvailableCheck->setText(tr("N/A"));
+    updateSignatureControls();
+    updateTypedSignatureFontOptions();
     updateSignaturePreview();
 }
 
@@ -134,6 +147,14 @@ void PersonalDetailsPage::discardChanges()
 void PersonalDetailsPage::setSaveMode(SaveMode mode)
 {
     m_autosave->setSaveMode(mode);
+}
+
+void PersonalDetailsPage::setPageHeaderVisible(bool visible)
+{
+    if (m_pageHeader)
+    {
+        m_pageHeader->setVisible(visible);
+    }
 }
 
 void PersonalDetailsPage::scrollToTop()

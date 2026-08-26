@@ -16,6 +16,7 @@ private slots:
     void showInterLicense();
     void showJustAnotherHandLicense();
     void showPretendardLicense();
+    void showTypedSignatureFontLicenses();
 
 private:
     void buildUi();

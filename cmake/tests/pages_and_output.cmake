@@ -8,6 +8,26 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+classmngr_add_qt_test(
+    NAME MyWorkspacePage
+    SOURCES
+        tests/my_workspace_page_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
+classmngr_add_qt_test(
+    NAME TypedSignatureRenderer
+    SOURCES
+        tests/typed_signature_renderer_tests.cpp
+    LIBRARIES
+        Qt6::Test
+        Qt6::Widgets
+    OFFSCREEN
+)
+
 qt_add_executable(ClassMngrClassesPageTests
         tests/classes_page_tests.cpp
         tests/schedule_widget_test_stubs.cpp
