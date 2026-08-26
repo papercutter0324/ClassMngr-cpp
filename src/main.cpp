@@ -580,6 +580,7 @@ int main(int argc, char *argv[])
         if (startupPerformance.enabled)
         {
             startupProfiler.checkpoint(QStringLiteral("startup-complete"));
+            StartupProfiler::recordStartupCompleteScheduleWidgetDiagnostic();
 
             const auto finishPerformanceRun =
                 [

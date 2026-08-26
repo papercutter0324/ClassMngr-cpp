@@ -193,6 +193,27 @@ void StartupProfiler::recordScheduleWidgetDestroyed()
     }
 }
 
+void StartupProfiler::recordStartupCompleteScheduleWidgetDiagnostic()
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        const StartupApplicationMetrics metrics =
+            profiler->applicationMetrics();
+        const bool hasExpectedScheduleWidgetCount =
+            metrics.liveScheduleWidgetCount == 1
+            && metrics.scheduleWidgetsCreated == 1;
+
+        profiler->recordEvent(
+            QStringLiteral("schedule-widget-startup-diagnostic"),
+            QStringLiteral("expected=1; live=%1; created=%2; passed=%3")
+                .arg(metrics.liveScheduleWidgetCount)
+                .arg(metrics.scheduleWidgetsCreated)
+                .arg(hasExpectedScheduleWidgetCount ? QStringLiteral("true")
+                                                    : QStringLiteral("false"))
+            );
+    }
+}
+
 void StartupProfiler::recordScheduleRenderStarted(const QString& owner)
 {
     if (StartupProfiler* profiler = activeProfiler())

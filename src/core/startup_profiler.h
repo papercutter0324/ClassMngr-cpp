@@ -75,6 +75,7 @@ public:
     static void recordPageInstantiated(const QString& pageIdentifier);
     static void recordScheduleWidgetCreated(const QString& owner);
     static void recordScheduleWidgetDestroyed();
+    static void recordStartupCompleteScheduleWidgetDiagnostic();
     static void recordScheduleRenderStarted(const QString& owner);
     static void recordScheduleRenderCompleted(
         const QString& owner,

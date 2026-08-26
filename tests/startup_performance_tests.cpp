@@ -256,25 +256,40 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QVERIFY(startupMetrics.value(QStringLiteral("widgetCount")).toInt() > 0);
     QVERIFY(startupMetrics.value(QStringLiteral("registeredPageCount")).toInt() > 0);
     QVERIFY(startupMetrics.value(QStringLiteral("instantiatedPageCount")).toInt() > 0);
-    QVERIFY(startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt() > 0);
-    QVERIFY(
-        startupMetrics.value(QStringLiteral("scheduleWidgetsCreated")).toDouble()
-            >= startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toDouble()
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
+        1
+        );
+    QCOMPARE(
+        startupMetrics.value(QStringLiteral("scheduleWidgetsCreated")).toDouble(),
+        1.0
         );
     QVERIFY(startupMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble() > 0.0);
 
     const QJsonArray events = metrics.value(QStringLiteral("events")).toArray();
     QSet<QString> eventNames;
+    bool startupScheduleDiagnosticPassed = false;
     for (const QJsonValue& value : events)
     {
-        eventNames.insert(
-            value.toObject().value(QStringLiteral("name")).toString()
-            );
+        const QJsonObject event = value.toObject();
+        const QString eventName =
+            event.value(QStringLiteral("name")).toString();
+        eventNames.insert(eventName);
+
+        if (
+            eventName == QStringLiteral("schedule-widget-startup-diagnostic")
+            && event.value(QStringLiteral("detail")).toString()
+                == QStringLiteral("expected=1; live=1; created=1; passed=true")
+            )
+        {
+            startupScheduleDiagnosticPassed = true;
+        }
     }
     QVERIFY(eventNames.contains(QStringLiteral("page-created")));
     QVERIFY(eventNames.contains(QStringLiteral("schedule-widget-created")));
     QVERIFY(eventNames.contains(QStringLiteral("schedule-render-start")));
     QVERIFY(eventNames.contains(QStringLiteral("schedule-render-end")));
+    QVERIFY(startupScheduleDiagnosticPassed);
 
     const double startupCompleteMs =
         startupComplete.value(QStringLiteral("elapsedMs")).toDouble(-1.0);

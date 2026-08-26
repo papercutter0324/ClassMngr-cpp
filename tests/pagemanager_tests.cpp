@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "features/schedule/ui/schedule_widget.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
@@ -13,6 +14,7 @@ class PageManagerTests : public QObject
 
 private slots:
     void heavyPagesAreDeferredAndReused();
+    void scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews();
     void registeredPagesAreCreatedOnFirstUse();
     void leavingPdfViewerReleasesTheDocument();
     void lifecycleReportsUncreatedHiddenAndCurrentPages();
@@ -109,6 +111,24 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
                     );
         }
         ));
+}
+
+void PageManagerTests::scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+
+    QCOMPARE(pages.findChildren<ScheduleWidget*>().size(), 1);
+
+    pages.showPage(PageType::Schedule);
+    QCOMPARE(pages.findChildren<ScheduleWidget*>().size(), 2);
+
+    pages.showPage(PageType::MyWorkspace);
+    QCOMPARE(pages.findChildren<ScheduleWidget*>().size(), 2);
+
+    pages.showPage(PageType::SubPrep);
+    QCOMPARE(pages.findChildren<ScheduleWidget*>().size(), 3);
 }
 
 void PageManagerTests::registeredPagesAreCreatedOnFirstUse()
