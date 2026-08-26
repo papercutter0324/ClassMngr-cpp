@@ -82,11 +82,11 @@ void SidebarStructureTests::classesPageContainsNoIndividualEntries()
         );
     QVERIFY(tree);
 
-    QTreeWidgetItem* myInformation =
-        topLevelWithKey(tree, QStringLiteral("my_info_information"));
-    QVERIFY(myInformation);
-    QCOMPARE(myInformation->text(0), QStringLiteral("My Information"));
-    QCOMPARE(myInformation->childCount(), 0);
+    QTreeWidgetItem* workspace =
+        topLevelWithKey(tree, QStringLiteral("my_workspace"));
+    QVERIFY(workspace);
+    QCOMPARE(workspace->text(0), QStringLiteral("My Workspace"));
+    QCOMPARE(workspace->childCount(), 0);
 
     QTreeWidgetItem* classesPage =
         topLevelWithKey(tree, QStringLiteral("classes"));
@@ -187,9 +187,7 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
     QVERIFY(tree);
 
     const QStringList expectedKeys{
-        QStringLiteral("my_info_information"),
-        QStringLiteral("my_info_schedule"),
-        QStringLiteral("my_info_calendar"),
+        QStringLiteral("my_workspace"),
         QStringLiteral("classes"),
         QStringLiteral("sub_prep"),
         QStringLiteral("co_teachers"),
@@ -207,24 +205,13 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
         QCOMPARE(item->data(0, KeyRole).toString(), expectedKeys.at(index));
     }
 
-    QTreeWidgetItem* calendar =
-        topLevelWithKey(tree, QStringLiteral("my_info_calendar"));
-    QVERIFY(calendar);
-    QCOMPARE(calendar->text(0), QStringLiteral("Calendar"));
+    QTreeWidgetItem* workspace =
+        topLevelWithKey(tree, QStringLiteral("my_workspace"));
+    QVERIFY(workspace);
+    QCOMPARE(workspace->text(0), QStringLiteral("My Workspace"));
     QCOMPARE(
         static_cast<NodeType>(
-            calendar->data(0, Qt::UserRole).toInt()
-            ),
-        NodeType::Page
-        );
-
-    QTreeWidgetItem* schedule =
-        topLevelWithKey(tree, QStringLiteral("my_info_schedule"));
-    QVERIFY(schedule);
-    QCOMPARE(schedule->text(0), QStringLiteral("Schedule"));
-    QCOMPARE(
-        static_cast<NodeType>(
-            schedule->data(0, Qt::UserRole).toInt()
+            workspace->data(0, Qt::UserRole).toInt()
             ),
         NodeType::Page
         );
@@ -232,19 +219,19 @@ void SidebarStructureTests::topLevelOrderAndSubPrepStructure()
     sidebar.selectMyInfoSection(QStringLiteral("my_info_calendar"));
     QCOMPARE(
         sidebar.selectedKeys(),
-        QStringList({QStringLiteral("my_info_calendar")})
+        QStringList({QStringLiteral("my_workspace")})
         );
 
     sidebar.selectMyInfoSection(QStringLiteral("my_info_information"));
     QCOMPARE(
         sidebar.selectedKeys(),
-        QStringList({QStringLiteral("my_info_information")})
+        QStringList({QStringLiteral("my_workspace")})
         );
 
     sidebar.selectMyInfoSection(QStringLiteral("my_info_schedule"));
     QCOMPARE(
         sidebar.selectedKeys(),
-        QStringList({QStringLiteral("my_info_schedule")})
+        QStringList({QStringLiteral("my_workspace")})
         );
 
     QTreeWidgetItem* subPrep =

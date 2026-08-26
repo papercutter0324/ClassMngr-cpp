@@ -13,20 +13,8 @@ QList<TreeNodeSpec> treeStructure()
     return
     {
         {
-            "my_info_information",
-            QObject::tr("My Information"),
-            NodeType::Page
-        },
-
-        {
-            "my_info_schedule",
-            QObject::tr("Schedule"),
-            NodeType::Page
-        },
-
-        {
-            "my_info_calendar",
-            QObject::tr("Calendar"),
+            "my_workspace",
+            QObject::tr("My Workspace"),
             NodeType::Page
         },
 

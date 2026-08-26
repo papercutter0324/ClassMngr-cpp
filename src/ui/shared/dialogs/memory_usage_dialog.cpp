@@ -429,9 +429,6 @@ void MemoryUsageDialog::buildUi()
     m_pageActionPage->setObjectName(QStringLiteral("memoryUsagePageActionPage"));
     for (const PageType type : {
              PageType::MyWorkspace,
-             PageType::PersonalDetails,
-             PageType::Calendar,
-             PageType::MySchedule,
              PageType::MyClasses,
              PageType::Schedule,
              PageType::Classes,

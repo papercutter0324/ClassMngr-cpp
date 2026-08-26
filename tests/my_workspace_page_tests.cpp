@@ -16,8 +16,8 @@ private slots:
     void createsNamedTabsWithScheduleSelectedByDefault();
     void opensTabsThroughNamedIdentifiers();
     void preservesChildPagesWhenSwitchingTabs();
-    void createsCalendarOnlyWhenItsTabIsOpened();
-    void isAvailableAsALazyTopLevelPage();
+    void defersCalendarConstructionWhileOtherTabsAreOpen();
+    void isAvailableAsTheDefaultTopLevelPage();
     void receivesTheTopLevelDatabaseState();
 };
 
@@ -46,9 +46,6 @@ void MyWorkspacePageTests::opensTabsThroughNamedIdentifiers()
     page.openTab(WorkspaceTab::Details);
     QCOMPARE(page.currentTab(), WorkspaceTab::Details);
 
-    page.openTab(WorkspaceTab::Calendar);
-    QCOMPARE(page.currentTab(), WorkspaceTab::Calendar);
-
     page.openTab(WorkspaceTab::Schedule);
     QCOMPARE(page.currentTab(), WorkspaceTab::Schedule);
 }
@@ -60,34 +57,31 @@ void MyWorkspacePageTests::preservesChildPagesWhenSwitchingTabs()
     SchedulePage* const schedule = page.schedulePage();
 
     page.openTab(WorkspaceTab::Details);
-    page.openTab(WorkspaceTab::Calendar);
     page.openTab(WorkspaceTab::Schedule);
 
     QCOMPARE(page.personalDetailsPage(), details);
     QCOMPARE(page.schedulePage(), schedule);
 }
 
-void MyWorkspacePageTests::createsCalendarOnlyWhenItsTabIsOpened()
+void MyWorkspacePageTests::defersCalendarConstructionWhileOtherTabsAreOpen()
 {
     MyWorkspacePage page(nullptr);
 
     QVERIFY(!page.calendarPage());
 
-    page.openTab(WorkspaceTab::Calendar);
+    page.openTab(WorkspaceTab::Details);
+    page.openTab(WorkspaceTab::Schedule);
 
-    QVERIFY(page.calendarPage());
-    QCOMPARE(page.currentTab(), WorkspaceTab::Calendar);
+    QVERIFY(!page.calendarPage());
 }
 
-void MyWorkspacePageTests::isAvailableAsALazyTopLevelPage()
+void MyWorkspacePageTests::isAvailableAsTheDefaultTopLevelPage()
 {
     ApplicationServices services;
     PageManager pages;
     pages.initialize(&services, false);
 
-    QVERIFY(!pages.isPageInstantiated(PageType::MyWorkspace));
-
-    pages.showPage(PageType::MyWorkspace);
+    QVERIFY(pages.isPageInstantiated(PageType::MyWorkspace));
 
     QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
     QVERIFY(pages.myWorkspacePage());

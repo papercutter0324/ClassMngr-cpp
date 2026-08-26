@@ -42,9 +42,6 @@ class PdfViewerPage;
 enum class PageType
 {
     MyWorkspace,
-    PersonalDetails,
-    Calendar,
-    MySchedule,
     MyClasses,
     Schedule,
     Classes,
@@ -273,12 +270,6 @@ private:
     SchedulePage* m_schedulePage = nullptr;
 
     MyWorkspacePage* m_myWorkspacePage = nullptr;
-
-    PersonalDetailsPage* m_personalDetailsPage = nullptr;
-
-    CalendarPage* m_calendarPage = nullptr;
-
-    SchedulePage* m_mySchedulePage = nullptr;
 
     MyClassesPage* m_myClassesPage = nullptr;
 

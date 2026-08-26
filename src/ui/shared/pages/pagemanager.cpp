@@ -7,10 +7,8 @@
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/classes/ui/testing_classes_page.h"
-#include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
-#include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "features/sub_prep/ui/sub_prep_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
@@ -62,9 +60,6 @@ QString PageManager::pageTypeIdentifier(PageType type)
     switch (type)
     {
     case PageType::MyWorkspace: return QStringLiteral("my-workspace");
-    case PageType::PersonalDetails: return QStringLiteral("personal-details");
-    case PageType::Calendar: return QStringLiteral("calendar");
-    case PageType::MySchedule: return QStringLiteral("my-schedule");
     case PageType::MyClasses: return QStringLiteral("my-classes");
     case PageType::Schedule: return QStringLiteral("schedule");
     case PageType::Classes: return QStringLiteral("classes");
@@ -102,10 +97,10 @@ void PageManager::initialize(
 
     registerPageFactories();
 
-    // Keep the lightweight/default pages eager for now. The more expensive
-    // Calendar, Classes, Campus, and PDF pages are created only when needed.
-    ensurePage(PageType::PersonalDetails);
-    ensurePage(PageType::MySchedule);
+    // Keep the lightweight/default pages eager for now. Classes, Campus, and
+    // PDF pages are created only when needed. Calendar remains a lazy child
+    // of My Workspace.
+    ensurePage(PageType::MyWorkspace);
     ensurePage(PageType::MyClasses);
     ensurePage(PageType::Schedule);
     ensurePage(PageType::SubPrep);
@@ -115,7 +110,7 @@ void PageManager::initialize(
     ensurePage(PageType::GsTeam);
 
     showPage(
-        PageType::PersonalDetails
+        PageType::MyWorkspace
         );
 }
 
@@ -132,28 +127,6 @@ void PageManager::registerPageFactories()
         {
             m_myWorkspacePage = new MyWorkspacePage(m_services, this);
             return m_myWorkspacePage;
-        };
-
-    m_pageFactories[PageType::PersonalDetails] =
-        [this]() -> BasePage*
-        {
-            m_personalDetailsPage =
-                new PersonalDetailsPage(m_services, this);
-            return m_personalDetailsPage;
-        };
-
-    m_pageFactories[PageType::Calendar] =
-        [this]() -> BasePage*
-        {
-            m_calendarPage = new CalendarPage(m_services, this);
-            return m_calendarPage;
-        };
-
-    m_pageFactories[PageType::MySchedule] =
-        [this]() -> BasePage*
-        {
-            m_mySchedulePage = new SchedulePage(m_services, this);
-            return m_mySchedulePage;
         };
 
     m_pageFactories[PageType::MyClasses] =
@@ -535,8 +508,6 @@ bool PageManager::usesCampusResources(
     )
 {
     return type == PageType::MyWorkspace
-        || type == PageType::PersonalDetails
-        || type == PageType::Calendar
         || type == PageType::CampusDashboard
         || type == PageType::SubPrep;
 }
@@ -753,9 +724,9 @@ void PageManager::refreshSchedulePreferences()
         m_schedulePage->refreshSchedulePreferences();
     }
 
-    if (m_mySchedulePage)
+    if (SchedulePage* page = mySchedulePage())
     {
-        m_mySchedulePage->refreshSchedulePreferences();
+        page->refreshSchedulePreferences();
     }
 }
 
@@ -822,24 +793,34 @@ MyWorkspacePage* PageManager::ensureMyWorkspacePage()
 
 PersonalDetailsPage* PageManager::personalDetailsPage() const
 {
-    return m_personalDetailsPage;
+    return m_myWorkspacePage
+        ? m_myWorkspacePage->personalDetailsPage()
+        : nullptr;
 }
 
 CalendarPage* PageManager::calendarPage() const
 {
-    return m_calendarPage;
+    return m_myWorkspacePage
+        ? m_myWorkspacePage->calendarPage()
+        : nullptr;
 }
 
 CalendarPage* PageManager::ensureCalendarPage()
 {
-    return qobject_cast<CalendarPage*>(
-        ensurePage(PageType::Calendar)
-        );
+    if (MyWorkspacePage* workspace = ensureMyWorkspacePage())
+    {
+        workspace->openTab(WorkspaceTab::Calendar);
+        return workspace->calendarPage();
+    }
+
+    return nullptr;
 }
 
 SchedulePage* PageManager::mySchedulePage() const
 {
-    return m_mySchedulePage;
+    return m_myWorkspacePage
+        ? m_myWorkspacePage->schedulePage()
+        : nullptr;
 }
 
 MyClassesPage* PageManager::myClassesPage() const

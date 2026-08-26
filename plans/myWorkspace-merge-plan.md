@@ -389,7 +389,7 @@ This makes lazy loading explicit and testable.
 
 ### Status
 
-In progress — 2026-08-26.
+Completed — 2026-08-26. Navigation now exposes one My Workspace destination; legacy routes open the appropriate embedded tab.
 
 ### Goal
 Replace the old separate navigation destinations with My Workspace.
@@ -449,6 +449,10 @@ when appropriate.
 
 # Phase 7 — Cleanup and Refactoring
 
+### Status
+
+Completed — 2026-08-26. Obsolete standalone Details, Schedule, and Calendar page registrations and page types have been removed.
+
 ### Goal
 Remove obsolete architecture after the merged version is stable.
 
@@ -473,6 +477,10 @@ Remove obsolete architecture after the merged version is stable.
 ---
 
 # Phase 8 — Final Testing and Polish
+
+### Status
+
+In progress — 2026-08-26. Focused automated regression coverage is passing; manual UI and cross-platform checks remain.
 
 ## Functional Testing
 

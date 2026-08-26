@@ -41,8 +41,7 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
 
     pages.initialize(&services, false);
 
-    QVERIFY(pages.isCurrentPage(PageType::PersonalDetails));
-    QVERIFY(!pages.isPageInstantiated(PageType::Calendar));
+    QVERIFY(pages.isCurrentPage(PageType::MyWorkspace));
     QVERIFY(!pages.isPageInstantiated(PageType::Classes));
     QVERIFY(!pages.isPageInstantiated(PageType::CampusDashboard));
     QVERIFY(!pages.isPageInstantiated(PageType::PdfViewer));
@@ -60,11 +59,10 @@ void PageManagerTests::heavyPagesAreDeferredAndReused()
     QVERIFY(pages.isCurrentPage(PageType::PdfViewer));
     QVERIFY(pages.isPageInstantiated(PageType::PdfViewer));
     QCOMPARE(pdfPageCreations, 1);
-    QVERIFY(!pages.isPageInstantiated(PageType::Calendar));
     QVERIFY(!pages.isPageInstantiated(PageType::Classes));
     QVERIFY(!pages.isPageInstantiated(PageType::CampusDashboard));
 
-    pages.showPage(PageType::PersonalDetails);
+    pages.showPage(PageType::MyWorkspace);
     pages.showPage(PageType::PdfViewer);
 
     QCOMPARE(pages.pdfViewerPage(), firstViewer);
@@ -134,7 +132,7 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
     QVERIFY(pages.outputCapabilities().printEnabled);
     QVERIFY(pages.outputCapabilities().saveAsEnabled);
 
-    pages.showPage(PageType::PersonalDetails);
+    pages.showPage(PageType::MyWorkspace);
 
     QVERIFY(!viewer->hasLoadedDocument());
     QVERIFY(viewer->currentFilePath().isEmpty());
@@ -192,25 +190,22 @@ void PageManagerTests::lifecycleReportsUncreatedHiddenAndCurrentPages()
     };
 
     const QList<PageLifecycleEntry> initial = pages.pageLifecycle();
-    const auto calendar = findPage(initial, QStringLiteral("calendar"));
-    QVERIFY(calendar != initial.cend());
-    QCOMPARE(calendar->state, PageLifecycleState::Uncreated);
-    QVERIFY(!calendar->createdAt.isValid());
+    QVERIFY(findPage(initial, QStringLiteral("calendar")) == initial.cend());
 
-    const auto personal = findPage(initial, QStringLiteral("personal-details"));
-    QVERIFY(personal != initial.cend());
-    QCOMPARE(personal->state, PageLifecycleState::Current);
-    QVERIFY(personal->createdAt.isValid());
-    QVERIFY(personal->lastActivatedAt.isValid());
+    const auto workspace = findPage(initial, QStringLiteral("my-workspace"));
+    QVERIFY(workspace != initial.cend());
+    QCOMPARE(workspace->state, PageLifecycleState::Current);
+    QVERIFY(workspace->createdAt.isValid());
+    QVERIFY(workspace->lastActivatedAt.isValid());
 
     pages.showPage(PageType::PdfViewer);
     const QList<PageLifecycleEntry> afterNavigation = pages.pageLifecycle();
-    const auto hiddenPersonal = findPage(
+    const auto hiddenWorkspace = findPage(
         afterNavigation,
-        QStringLiteral("personal-details")
+        QStringLiteral("my-workspace")
         );
-    QVERIFY(hiddenPersonal != afterNavigation.cend());
-    QCOMPARE(hiddenPersonal->state, PageLifecycleState::Hidden);
+    QVERIFY(hiddenWorkspace != afterNavigation.cend());
+    QCOMPARE(hiddenWorkspace->state, PageLifecycleState::Hidden);
     const auto viewer = findPage(afterNavigation, QStringLiteral("pdf-viewer"));
     QVERIFY(viewer != afterNavigation.cend());
     QCOMPARE(viewer->state, PageLifecycleState::Current);

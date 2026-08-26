@@ -23,6 +23,7 @@
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "features/my_info/ui/my_workspace_page.h"
 #include "ui/shared/dialogs/about_dialog.h"
 #include "ui/shared/dialogs/memory_usage_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -691,17 +692,21 @@ void MainWindow::connectSignals()
                 return;
             }
 
-            m_pages->showPage(
-                m_testingClassesReturnToPersonalSchedule
-                    ? PageType::MySchedule
-                    : PageType::Schedule
-                );
-            (
-                m_testingClassesReturnToPersonalSchedule
-                    ? m_pages->mySchedulePage()
-                    : m_pages->schedulePage()
-                )
-                ->refresh();
+            if (m_testingClassesReturnToPersonalSchedule)
+            {
+                m_pages->showPage(PageType::MyWorkspace);
+
+                if (auto* workspace = m_pages->myWorkspacePage())
+                {
+                    workspace->openTab(WorkspaceTab::Schedule);
+                    workspace->schedulePage()->refresh();
+                }
+            }
+            else
+            {
+                m_pages->showPage(PageType::Schedule);
+                m_pages->schedulePage()->refresh();
+            }
         }
         );
 
@@ -887,7 +892,12 @@ void MainWindow::startInitialSetup()
     if (m_pages)
     {
         m_pages->refreshAll();
-        m_pages->showPage(PageType::MySchedule);
+        m_pages->showPage(PageType::MyWorkspace);
+
+        if (auto* workspace = m_pages->myWorkspacePage())
+        {
+            workspace->openTab(WorkspaceTab::Schedule);
+        }
     }
 
     if (m_sidebarController)
@@ -898,7 +908,7 @@ void MainWindow::startInitialSetup()
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->selectMyInfoSection(
-            QStringLiteral("my_info_schedule")
+            QStringLiteral("my_workspace")
             );
     }
 }
@@ -1004,12 +1014,17 @@ void MainWindow::showStartupDatabasePage()
         return;
     }
 
-    m_pages->showPage(PageType::MySchedule);
+    m_pages->showPage(PageType::MyWorkspace);
+
+    if (auto* workspace = m_pages->myWorkspacePage())
+    {
+        workspace->openTab(WorkspaceTab::Schedule);
+    }
 
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->selectMyInfoSection(
-            QStringLiteral("my_info_schedule")
+            QStringLiteral("my_workspace")
             );
     }
 }
@@ -1089,17 +1104,18 @@ void MainWindow::applyDatabaseLoadedState()
         m_sidebarController->refreshAllSidebars();
     }
 
-    if (m_pages && m_pages->personalDetailsPage())
+    if (m_pages && m_pages->myWorkspacePage())
     {
-        m_pages->showPage(PageType::PersonalDetails);
+        m_pages->showPage(PageType::MyWorkspace);
         m_pages->refreshAll();
-        m_pages->personalDetailsPage()->scrollToTop();
+        m_pages->myWorkspacePage()->openTab(WorkspaceTab::Details);
+        m_pages->myWorkspacePage()->personalDetailsPage()->scrollToTop();
     }
 
     if (ui && ui->sidebarWidget)
     {
         ui->sidebarWidget->selectMyInfoSection(
-            QStringLiteral("my_info_information")
+            QStringLiteral("my_workspace")
             );
     }
 }

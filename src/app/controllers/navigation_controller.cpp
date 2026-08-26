@@ -8,6 +8,7 @@
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_classes_page.h"
+#include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -302,7 +303,8 @@ void NavigationController::handleNavigation(
         }
 
         if (
-            data.routeKey == QStringLiteral("my_info_information")
+            data.routeKey == QStringLiteral("my_workspace")
+            || data.routeKey == QStringLiteral("my_info_information")
             || data.routeKey == QStringLiteral("my_info_schedule")
             || data.routeKey == QStringLiteral("my_info_calendar")
             )
@@ -474,57 +476,64 @@ void NavigationController::handleMyInfo(
     const QString sectionKey =
         data.routeKey;
 
-    PageType targetPageType =
-        PageType::PersonalDetails;
-    QString selectedSectionKey =
-        QStringLiteral("my_info_information");
+    if (sectionKey == QStringLiteral("my_info_class_information"))
+    {
+        const bool alreadyShowingClasses =
+            m_pages->isCurrentPage(PageType::MyClasses);
 
-    if (sectionKey == QStringLiteral("my_info_schedule"))
-    {
-        targetPageType =
-            PageType::MySchedule;
-        selectedSectionKey =
-            QStringLiteral("my_info_schedule");
+        if (!alreadyShowingClasses && !m_pages->confirmCurrentPageCanLeave())
+        {
+            return;
+        }
+
+        m_pages->showPage(PageType::MyClasses);
+        return;
     }
-    else if (sectionKey == QStringLiteral("my_info_class_information"))
+
+    WorkspaceTab tab = WorkspaceTab::Schedule;
+
+    if (sectionKey == QStringLiteral("my_info_information"))
     {
-        targetPageType =
-            PageType::MyClasses;
-        selectedSectionKey =
-            QStringLiteral("my_info_class_information");
+        tab = WorkspaceTab::Details;
     }
     else if (sectionKey == QStringLiteral("my_info_calendar"))
     {
-        targetPageType =
-            PageType::Calendar;
-        selectedSectionKey =
-            QStringLiteral("my_info_calendar");
+        tab = WorkspaceTab::Calendar;
     }
 
-    const bool alreadyShowingTarget =
-        m_pages->isCurrentPage(targetPageType);
+    const bool alreadyShowingWorkspace =
+        m_pages->isCurrentPage(PageType::MyWorkspace);
 
-    if (!alreadyShowingTarget && !m_pages->confirmCurrentPageCanLeave())
+    if (!alreadyShowingWorkspace && !m_pages->confirmCurrentPageCanLeave())
     {
         return;
     }
 
-    m_pages->showPage(targetPageType);
+    m_pages->showPage(PageType::MyWorkspace);
+
+    auto* workspace = m_pages->myWorkspacePage();
+
+    if (!workspace)
+    {
+        return;
+    }
+
+    workspace->openTab(tab);
 
     m_sidebar->selectMyInfoSection(
-        selectedSectionKey
+        QStringLiteral("my_workspace")
         );
 
-    if (sectionKey == QStringLiteral("my_info_calendar"))
+    if (tab == WorkspaceTab::Calendar)
     {
-        if (auto* calendar = m_pages->calendarPage())
+        if (auto* calendar = workspace->calendarPage())
         {
             calendar->scrollToTop();
         }
     }
-    else if (sectionKey == QStringLiteral("my_info_information"))
+    else if (tab == WorkspaceTab::Details)
     {
-        m_pages->personalDetailsPage()->scrollToTop();
+        workspace->personalDetailsPage()->scrollToTop();
     }
 }
 

@@ -261,24 +261,35 @@ void Sidebar::selectByKeys(
         return;
     }
 
-    if (teacherId > 0 && keys.contains(QStringLiteral("teacher")))
+    QStringList normalizedKeys = keys;
+
+    if (
+        normalizedKeys.first() == QStringLiteral("my_info_information")
+        || normalizedKeys.first() == QStringLiteral("my_info_schedule")
+        || normalizedKeys.first() == QStringLiteral("my_info_calendar")
+        )
+    {
+        normalizedKeys[0] = QStringLiteral("my_workspace");
+    }
+
+    if (teacherId > 0 && normalizedKeys.contains(QStringLiteral("teacher")))
     {
         selectTeacher(teacherId);
         return;
     }
 
     QTreeWidgetItem* item =
-        m_nodes.value(keys.first(), nullptr);
+        m_nodes.value(normalizedKeys.first(), nullptr);
 
     if (!item)
     {
         return;
     }
 
-    for (int index = 1; index < keys.size(); ++index)
+    for (int index = 1; index < normalizedKeys.size(); ++index)
     {
         const QString key =
-            keys.at(index);
+            normalizedKeys.at(index);
 
         item =
             childWithKey(
