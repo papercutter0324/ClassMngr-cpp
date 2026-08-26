@@ -119,9 +119,6 @@ void ThemeService::applyTheme(
 
     if (m_hasAppliedTheme && m_currentTheme == theme)
     {
-        refreshThemeProperties(
-            themeKey(theme)
-            );
         return;
     }
 

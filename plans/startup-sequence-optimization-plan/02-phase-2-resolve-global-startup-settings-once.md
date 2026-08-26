@@ -2,11 +2,23 @@
 
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 2 only**. Do not start later phases.
 
-# Phase 2 — Resolve Global Startup Settings Once
+# Phase 2 — Resolve Global Startup Settings Once — Complete (2026-08-27)
 ## Objective
 Apply locale, font, theme, and other application-wide visual settings once, before constructing the majority of the widget tree.
 
 This behavior should be identical on all platforms unless a platform-specific workaround is genuinely required.
+
+## Completed Implementation
+
+- Startup resolves language, font size, and theme before constructing
+  `MainWindow`; the already-applied `ThemeService` is transferred into
+  `ApplicationServices` rather than recreated.
+- `FontSizeController` now only connects future action changes, and the
+  post-show font-size reapplication plus its global refresh/repaint cascade is
+  removed.
+- An unchanged font-size or resolved theme request is a true no-op, avoiding
+  application-wide font traversal or theme repolishing.
+- Runtime font, language, and theme changes retain their existing paths.
 
 ## Current Problem
 The startup sequence currently performs repeated application-wide visual processing, including repeated font-size application and post-show restyling.
@@ -147,5 +159,18 @@ Normal startup performs:
 - zero application-wide post-show font reapply;
 
 - zero startup-wide restyle solely because controllers were connected.
+
+## Validation
+
+- Windows x64 Debug build completed successfully.
+- `ClassMngrFontManagerTests`, `ClassMngrStartupVisualSettingsTests`, and
+  `ClassMngrStartupPerformanceTests` passed.
+- An isolated minimal-startup capture records font application at 190 ms and
+  theme application at 222 ms, both with zero widgets instantiated. Controllers
+  connect later at 925 ms. The remaining eager page/schedule counts are scope
+  for Phases 3–5.
+- The Phase 1 representative `testing-copy.tps` fixture is not present in this
+  worktree, so its three-run memory comparison must be repeated when that
+  deterministic input is available.
 
 ---

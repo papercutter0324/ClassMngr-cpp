@@ -16,6 +16,7 @@ class StartupVisualSettingsTests : public QObject
 
 private slots:
     void controllerConnectionsLeaveStartupSettingsApplied();
+    void unchangedThemeDoesNotRestyleWidgets();
 };
 
 void StartupVisualSettingsTests
@@ -95,6 +96,38 @@ void StartupVisualSettingsTests
     settings.set(themeKey, savedTheme);
     settings.set(fontSizeKey, savedFontSize);
     settings.sync();
+}
+
+void StartupVisualSettingsTests::unchangedThemeDoesNotRestyleWidgets()
+{
+    ThemeService themeService;
+    themeService.setTheme(Theme::Dark);
+
+    QWidget widget;
+    widget.setProperty("theme", QStringLiteral("unchanged"));
+
+    QSignalSpy themeChanges(
+        &themeService,
+        static_cast<void (ThemeService::*)(Theme)>(
+            &ThemeService::themeChanged
+            )
+        );
+
+    themeService.setTheme(Theme::Dark);
+
+    QCOMPARE(themeChanges.count(), 0);
+    QCOMPARE(
+        widget.property("theme").toString(),
+        QStringLiteral("unchanged")
+        );
+
+    themeService.setTheme(Theme::Light);
+
+    QCOMPARE(themeChanges.count(), 1);
+    QCOMPARE(
+        widget.property("theme").toString(),
+        QStringLiteral("light")
+        );
 }
 
 QTEST_MAIN(StartupVisualSettingsTests)
