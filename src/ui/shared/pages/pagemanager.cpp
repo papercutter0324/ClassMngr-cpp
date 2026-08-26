@@ -809,8 +809,11 @@ CalendarPage* PageManager::ensureCalendarPage()
 {
     if (MyWorkspacePage* workspace = ensureMyWorkspacePage())
     {
+        const WorkspaceTab activeTab = workspace->currentTab();
         workspace->openTab(WorkspaceTab::Calendar);
-        return workspace->calendarPage();
+        CalendarPage* calendarPage = workspace->calendarPage();
+        workspace->openTab(activeTab);
+        return calendarPage;
     }
 
     return nullptr;

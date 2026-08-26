@@ -17,6 +17,7 @@ private slots:
     void opensTabsThroughNamedIdentifiers();
     void preservesChildPagesWhenSwitchingTabs();
     void defersCalendarConstructionWhileOtherTabsAreOpen();
+    void initializesCalendarWithoutChangingTheActiveWorkspaceTab();
     void isAvailableAsTheDefaultTopLevelPage();
     void receivesTheTopLevelDatabaseState();
 };
@@ -73,6 +74,28 @@ void MyWorkspacePageTests::defersCalendarConstructionWhileOtherTabsAreOpen()
     page.openTab(WorkspaceTab::Schedule);
 
     QVERIFY(!page.calendarPage());
+}
+
+void MyWorkspacePageTests::initializesCalendarWithoutChangingTheActiveWorkspaceTab()
+{
+    ApplicationServices services;
+    PageManager pages;
+    pages.initialize(&services, false);
+
+    MyWorkspacePage* const workspace = pages.myWorkspacePage();
+    QVERIFY(workspace);
+
+    for (const WorkspaceTab tab : {
+             WorkspaceTab::Details,
+             WorkspaceTab::Schedule,
+             WorkspaceTab::Calendar
+         })
+    {
+        workspace->openTab(tab);
+
+        QVERIFY(pages.ensureCalendarPage());
+        QCOMPARE(workspace->currentTab(), tab);
+    }
 }
 
 void MyWorkspacePageTests::isAvailableAsTheDefaultTopLevelPage()
