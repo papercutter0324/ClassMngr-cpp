@@ -33,6 +33,10 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
+#include <windows.h>
+#endif
+
 namespace
 {
 constexpr auto GeometrySettingsKey = "ui/developer/memoryUsageDialog/geometry";
@@ -111,6 +115,9 @@ void MemoryUsageDialog::retranslateUi()
     setWindowTitle(tr("Memory Usage Monitor"));
     m_captureBaselineButton->setText(tr("Capture baseline"));
     m_resetPeakButton->setText(tr("Reset peak"));
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
+    m_trimWorkingSetButton->setText(tr("Trim Working Set"));
+#endif
     m_markerButton->setText(tr("Add marker..."));
     m_copySummaryButton->setText(tr("Copy summary"));
     m_exportJsonButton->setText(tr("Export JSON..."));
@@ -472,6 +479,9 @@ void MemoryUsageDialog::buildUi()
 
     m_captureBaselineButton = addButton(QStringLiteral("memoryUsageCaptureBaselineButton"));
     m_resetPeakButton = addButton(QStringLiteral("memoryUsageResetPeakButton"));
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
+    m_trimWorkingSetButton = addButton(QStringLiteral("memoryUsageTrimWorkingSetButton"));
+#endif
     m_markerButton = addButton(QStringLiteral("memoryUsageAddMarkerButton"));
     m_copySummaryButton = addButton(QStringLiteral("memoryUsageCopySummaryButton"));
     m_exportJsonButton = addButton(QStringLiteral("memoryUsageExportJsonButton"));
@@ -486,6 +496,17 @@ void MemoryUsageDialog::buildUi()
     connect(m_refreshInterval, &QComboBox::currentIndexChanged, this, &MemoryUsageDialog::updateTimerInterval);
     connect(m_captureBaselineButton, &QPushButton::clicked, this, &MemoryUsageDialog::captureBaseline);
     connect(m_resetPeakButton, &QPushButton::clicked, this, &MemoryUsageDialog::resetPeak);
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
+    connect(m_trimWorkingSetButton, &QPushButton::clicked, this, []
+        {
+            SetProcessWorkingSetSize(
+                GetCurrentProcess(),
+                static_cast<SIZE_T>(-1),
+                static_cast<SIZE_T>(-1)
+                );
+        }
+        );
+#endif
     connect(m_markerButton, &QPushButton::clicked, this, &MemoryUsageDialog::promptForMarker);
     connect(m_copySummaryButton, &QPushButton::clicked, this, &MemoryUsageDialog::copySummary);
     connect(m_exportJsonButton, &QPushButton::clicked, this, &MemoryUsageDialog::exportJson);

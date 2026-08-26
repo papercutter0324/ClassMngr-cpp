@@ -99,6 +99,9 @@ private:
     QComboBox* m_pageActionPage = nullptr;
     QPushButton* m_captureBaselineButton = nullptr;
     QPushButton* m_resetPeakButton = nullptr;
+#if defined(Q_OS_WIN) && defined(QT_DEBUG)
+    QPushButton* m_trimWorkingSetButton = nullptr;
+#endif
     QPushButton* m_markerButton = nullptr;
     QPushButton* m_copySummaryButton = nullptr;
     QPushButton* m_exportJsonButton = nullptr;
