@@ -27,6 +27,12 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrBasePageTests
     )
 
+    set_tests_properties(
+        ClassMngrBasePageTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_executable(ClassMngrSchedulePrintModelTests
         tests/schedule_print_model_tests.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp

@@ -34,6 +34,12 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/campus/ui/campus_map_preview.cpp
     )
 
+    file(GLOB_RECURSE CLASSMNGR_CAMPUS_MAP_IMAGES CONFIGURE_DEPENDS
+        "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.png"
+        "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.jpg"
+        "${PROJECT_SOURCE_DIR}/resources/assets/campuses/*.jpeg"
+    )
+
     qt_add_resources(ClassMngrCampusMapTests campus_map_test_resources
         PREFIX "/"
         BASE "${PROJECT_SOURCE_DIR}/resources"
@@ -62,6 +68,12 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     add_test(
         NAME ClassMngrCampusMapTests
         COMMAND ClassMngrCampusMapTests
+    )
+
+    set_tests_properties(
+        ClassMngrCampusMapTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrCampusDashboardPageTests

@@ -4,7 +4,7 @@
 
 # Phase 12 — Platform-Specific Validation
 
-> **Status:** In progress — Windows validation started 2026-08-27.
+> **Status:** In progress — Windows and macOS validation completed 2026-08-27; Linux remains pending.
 
 ## Validation Record
 
@@ -42,15 +42,48 @@ lifecycle.
   registration now sets that directory; it still needs a regenerated CTest
   configuration and rerun.
 
+### macOS arm64 host — representative startup
+
+The shared startup profiler was run from the universal `macos-clang-debug`
+build against `Testing-copy.tps`, using the offscreen platform and a five-
+second settling period. macOS reports resident memory as the working-set
+equivalent, `phys_footprint` as physical/private footprint, and `internal` as
+the private resident/internal value.
+
+| Checkpoint | Elapsed | Resident memory | Peak resident | Physical footprint | Private resident/internal | Widgets | Pages | Schedule widgets | Schedule renders |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `startup-complete` | 2,608 ms | 104.0 MiB | 104.2 MiB | 38.6 MiB | 38.1 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+| `settled-1s` | 3,615 ms | 106.6 MiB | 106.6 MiB | 41.0 MiB | 40.5 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+| `settled-5s` | 7,511 ms | 106.6 MiB | 106.7 MiB | 41.0 MiB | 40.5 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+
+- Peak-to-steady resident-memory ratio: **1.000x**.
+- Resident memory grew by 2.6 MiB between `startup-complete` and the
+  one-second settled checkpoint, then remained flat through five seconds;
+  physical footprint showed the same bounded settling behavior.
+- Widget, page, schedule-widget, and schedule-render counts did not change
+  after `startup-complete`. The startup profile has exactly one completion
+  checkpoint.
+- `ClassMngrStartupPerformanceTests` passed for both the no-database and
+  explicit representative-database scenarios. The measured startup duration
+  was **2,608 ms**.
+
+### macOS behavioral validation
+
+- Passed the focused **16/16** test subset covering startup visual settings,
+  FontManager, PageManager, navigation/sidebar, ScheduleWidget, BasePage,
+  Calendar, Campus, Sub Prep/PDF, memory metrics, and database file format.
+- macOS test registration now uses the offscreen platform for BasePage and
+  CampusMap window tests. CampusMap’s test resource image glob was restored
+  after dynamic resource loading removed its former definition; this keeps
+  test-only assets available without changing application startup behavior.
+- No macOS-specific page lifecycle or startup architecture was introduced.
+
 ### Pending platform runs
 
-- macOS: run `macos-clang-debug`, then collect resident memory, physical
-  footprint, peak resident memory, startup duration, and structural counts.
 - Linux: run `linux-gcc-debug`, then collect RSS, PSS, private resident/dirty
   memory, peak RSS, startup duration, and structural counts.
-- On both platforms, execute the same startup-performance and targeted
-  behavioral tests used above. No platform-specific page lifecycle has been
-  introduced.
+- On Linux, execute the same startup-performance and targeted behavioral tests
+  used above. No platform-specific page lifecycle has been introduced.
 
 ## Objective
 Verify that the shared optimized startup architecture behaves correctly and efficiently on Windows, macOS, and Linux.
