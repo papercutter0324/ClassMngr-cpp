@@ -43,7 +43,12 @@ private slots:
     void standardSizesAreExplicit()
     {
         QCOMPARE(FontManager::stdEnglishFont, 14);
-        QCOMPARE(FontManager::stdKoreanFont, 15);
+        QCOMPARE(
+            FontManager::stdKoreanFont,
+            FontManager::koreanPointSizeForEnglish(
+                FontManager::stdEnglishFont
+                )
+            );
     }
 
     void standardFontsUseExpectedFamiliesAndSizes()
@@ -66,7 +71,9 @@ private slots:
             ));
         QCOMPARE(
             korean.pointSize(),
-            FontManager::stdKoreanFont
+            FontManager::koreanPointSizeForEnglish(
+                english.pointSize()
+                )
             );
 
         QVERIFY(english.families().size() >= 2);
@@ -79,6 +86,43 @@ private slots:
             QStringLiteral("Inter"),
             Qt::CaseInsensitive
             ));
+    }
+
+    void koreanFontFollowsUiFontSizeRule()
+    {
+        const QList<int> offsets{
+            -2,
+            0,
+            2,
+            4
+        };
+
+        for (const int offset : offsets)
+        {
+            FontManager::setSizeOffset(offset);
+
+            const QFont english =
+                FontManager::getUiFont(
+                    FontManager::stdEnglishFont
+                    );
+            const QFont korean =
+                FontManager::getKoreanFontForUiFont(
+                    english
+                    );
+
+            QCOMPARE(
+                korean.pointSize(),
+                FontManager::koreanPointSizeForEnglish(
+                    english.pointSize()
+                    )
+                );
+            QCOMPARE(
+                FontManager::getKoreanFont().pointSize(),
+                FontManager::koreanPointSizeForEnglish(
+                    FontManager::getUiFont().pointSize()
+                    )
+                );
+        }
     }
 
     void koreanFontPreservesRequestedStyle()
@@ -146,6 +190,12 @@ private slots:
             QCOMPARE(
                 FontManager::getUiFont().pointSize(),
                 FontManager::getPlatformFontSize() + offset
+                );
+            QCOMPARE(
+                FontManager::getKoreanFont().pointSize(),
+                FontManager::koreanPointSizeForEnglish(
+                    FontManager::getUiFont().pointSize()
+                    )
                 );
         }
     }
@@ -240,7 +290,9 @@ private slots:
             ));
         QCOMPARE(
             inheritedLabel.font().pointSize(),
-            FontManager::stdKoreanFont + 4
+            FontManager::koreanPointSizeForEnglish(
+                FontManager::getUiFont().pointSize()
+                )
             );
         QVERIFY(explicitLabel.font().family().contains(
             QStringLiteral("Inter"),
@@ -377,7 +429,9 @@ private slots:
             ));
         QCOMPARE(
             app->font().pointSize(),
-            FontManager::stdKoreanFont
+            FontManager::koreanPointSizeForEnglish(
+                FontManager::getUiFont().pointSize()
+                )
             );
 
         FontManager::applyGlobalFont(
