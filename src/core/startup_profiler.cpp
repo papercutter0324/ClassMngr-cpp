@@ -48,6 +48,57 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
         }
     };
 }
+
+QJsonObject peakMemoryJson(
+    const QList<StartupCheckpoint>& checkpoints
+    )
+{
+    ProcessMemorySnapshot peak;
+
+    for (const StartupCheckpoint& checkpoint : checkpoints)
+    {
+        const ProcessMemorySnapshot& memory = checkpoint.memory;
+
+        peak.isAvailable = peak.isAvailable || memory.isAvailable;
+        if (peak.platform.isEmpty())
+        {
+            peak.platform = memory.platform;
+        }
+        peak.workingSetBytes = qMax(
+            peak.workingSetBytes,
+            memory.workingSetBytes
+            );
+        peak.peakWorkingSetBytes = qMax(
+            peak.peakWorkingSetBytes,
+            memory.peakWorkingSetBytes
+            );
+        peak.privateUsageBytes = qMax(
+            peak.privateUsageBytes,
+            memory.privateUsageBytes
+            );
+        peak.privateWorkingSetBytes = qMax(
+            peak.privateWorkingSetBytes,
+            memory.privateWorkingSetBytes
+            );
+        peak.privateDirtyBytes = qMax(
+            peak.privateDirtyBytes,
+            memory.privateDirtyBytes
+            );
+        peak.pagefileUsageBytes = qMax(
+            peak.pagefileUsageBytes,
+            memory.pagefileUsageBytes
+            );
+        peak.handleCount = qMax(peak.handleCount, memory.handleCount);
+        peak.threadCount = qMax(peak.threadCount, memory.threadCount);
+    }
+
+    QJsonObject result = memoryJson(peak);
+    result.insert(
+        QStringLiteral("checkpointSampleCount"),
+        checkpoints.size()
+        );
+    return result;
+}
 }
 
 StartupProfiler::StartupProfiler()
@@ -154,7 +205,8 @@ QJsonObject StartupProfiler::reportJson() const
 
     return {
         {QStringLiteral("checkpoints"), checkpoints},
-        {QStringLiteral("events"), events}
+        {QStringLiteral("events"), events},
+        {QStringLiteral("peakMemory"), peakMemoryJson(m_checkpoints)}
     };
 }
 

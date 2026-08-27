@@ -64,7 +64,15 @@ be compared across revisions:
    the home page, then allow a short settling interval before exporting JSON.
 
 The automated `--startup-performance-test` run writes
-`classmngr-scenario-report-v1`: it records the empty-profile startup actions
-and memory/timing checkpoints for window construction and ready state. Treat
-these as repeatable report artifacts, not fixed CI limits until several
-controlled baselines exist.
+`classmngr-startup-profile-v2`. Its representative scenario uses the
+synthetic, checked-in `Testing-copy.tps` profile and records structural,
+native-memory, and timing metrics at `window-shown`, `startup-complete`, and
+`settled-5s`. The root `peakMemory` object retains both sampled and
+platform-reported peak memory values.
+
+`ClassMngrStartupPerformanceTests` verifies that this representative route
+keeps exactly one My Workspace page and one ScheduleWidget, with no Sub Prep,
+PDF Viewer, or Campus Dashboard construction through the five-second
+checkpoint. It prints each platform's measurements for trend comparison.
+Treat those measurements as repeatable report artifacts, not cross-platform
+CI limits, until several controlled baselines exist for that platform.
