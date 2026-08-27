@@ -371,6 +371,7 @@ void TestingClassesPageTests
     TestingClassesPage page(&services);
     page.setDatabaseOpen(true);
     page.openTestingClass(*created);
+    page.activate();
 
     auto* tabs = page.findChild<QTabWidget*>(
         QStringLiteral("testingClassesTabs")

@@ -79,6 +79,12 @@ CalendarEvent calendarEvent(
     event.endDate = endDate;
     return event;
 }
+
+void activatePage(SubPrepPage& page)
+{
+    page.setDatabaseOpen(true);
+    page.activate();
+}
 }
 
 class SubPrepPageTests : public QObject
@@ -134,6 +140,7 @@ void SubPrepPageTests
 {
     ApplicationServices services;
     SubPrepPage page(&services);
+    activatePage(page);
 
     auto* scrollArea =
         page.findChild<QScrollArea*>();
@@ -434,6 +441,7 @@ void SubPrepPageTests
 
     ApplicationServices services;
     SubPrepPage page(&services);
+    activatePage(page);
 
     auto* gradeTabs =
         page.findChild<NavigationTabWidget*>(
@@ -521,6 +529,7 @@ void SubPrepPageTests
 
     {
         SubPrepPage fresh(&services);
+        activatePage(fresh);
         auto* grading =
             fresh.findChild<QTextEdit*>(
                 QStringLiteral("subPrepGradingInstructionsEdit")
@@ -556,6 +565,7 @@ void SubPrepPageTests
         );
 
     SubPrepPage existing(&services);
+    activatePage(existing);
     auto* grading =
         existing.findChild<QTextEdit*>(
             QStringLiteral("subPrepGradingInstructionsEdit")
@@ -618,6 +628,7 @@ void SubPrepPageTests
         );
 
     SubPrepPage unavailable(&services);
+    activatePage(unavailable);
     QCOMPARE(
         unavailable
             .findChild<QLineEdit*>(
@@ -641,6 +652,7 @@ void SubPrepPageTests
         );
 
     SubPrepPage available(&services);
+    activatePage(available);
     QCOMPARE(
         available
             .findChild<QLineEdit*>(
@@ -674,6 +686,7 @@ void SubPrepPageTests
         );
 
     SubPrepPage legacy(&legacyServices);
+    activatePage(legacy);
     QCOMPARE(
         legacy
             .findChild<QLineEdit*>(
