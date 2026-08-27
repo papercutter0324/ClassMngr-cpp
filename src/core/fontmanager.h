@@ -21,7 +21,20 @@ class FontManager
 {
 public:
     static constexpr int stdEnglishFont = 14;
-    static constexpr int stdKoreanFont = 15;
+    // Pretendard's point size is intentionally one point larger than the
+    // corresponding Inter size.  Keep this relationship centralized so
+    // per-script rendering stays consistent at every user font preference.
+    static constexpr int KoreanPointSizeDelta = 1;
+
+    static constexpr int stdKoreanFont =
+        stdEnglishFont + KoreanPointSizeDelta;
+
+    static constexpr int koreanPointSizeForEnglish(
+        int englishPointSize
+        )
+    {
+        return englishPointSize + KoreanPointSizeDelta;
+    }
 
     // =====================================================
     // Setup
@@ -53,9 +66,15 @@ public:
         );
 
     static QFont getKoreanFont(
-        int size = stdKoreanFont,
+        int size = -1,
         int weight = QFont::Normal,
         bool italic = false
+        );
+
+    // Builds a Pretendard font from an already-resolved Inter font.  The
+    // input size is final, so the saved size offset must not be applied again.
+    static QFont getKoreanFontForUiFont(
+        const QFont& englishFont
         );
 
     static QColor getThemedTextColor(

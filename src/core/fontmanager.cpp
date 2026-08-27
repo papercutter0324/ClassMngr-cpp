@@ -504,14 +504,21 @@ QFont FontManager::getKoreanFont(
     bool italic
     )
 {
+    if (size < 0)
+    {
+        QFont font = getKoreanFontForUiFont(
+            getUiFont()
+            );
+        font.setWeight(
+            static_cast<QFont::Weight>(weight)
+            );
+        font.setItalic(italic);
+        return font;
+    }
+
     if (!s_loaded)
     {
         loadFonts();
-    }
-
-    if (size < 0)
-    {
-        size = stdKoreanFont;
     }
 
     size = adjustedPointSize(size);
@@ -522,6 +529,31 @@ QFont FontManager::getKoreanFont(
         size,
         weight,
         italic
+        );
+}
+
+QFont FontManager::getKoreanFontForUiFont(
+    const QFont& englishFont
+    )
+{
+    if (!s_loaded)
+    {
+        loadFonts();
+    }
+
+    const QFont resolvedEnglishFont =
+        englishFont.pointSize() > 0
+            ? englishFont
+            : getUiFont();
+
+    return buildFont(
+        s_pretendardFamily,
+        s_interFamily,
+        koreanPointSizeForEnglish(
+            resolvedEnglishFont.pointSize()
+            ),
+        resolvedEnglishFont.weight(),
+        resolvedEnglishFont.italic()
         );
 }
 

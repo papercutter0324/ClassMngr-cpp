@@ -63,19 +63,12 @@ QList<QTextLayout::FormatRange> textFormats(
             return;
         }
 
-        const int pointSize =
-            baseFont.pointSize() > 0
-                ? baseFont.pointSize()
-                : FontManager::stdKoreanFont;
-
         QTextLayout::FormatRange range;
         range.start = rangeStart;
         range.length = rangeEnd - rangeStart;
         range.format.setFont(
-            FontManager::getKoreanFont(
-                pointSize,
-                QFont::Normal,
-                baseFont.italic()
+            FontManager::getKoreanFontForUiFont(
+                baseFont
                 )
             );
         range.format.setForeground(color);
@@ -366,9 +359,20 @@ QSize SidebarMarqueeDelegate::sizeHint(
             index
             );
 
+    const QFont englishFont =
+        option.font.pointSize() > 0
+            ? option.font
+            : m_tree
+                ? m_tree->font()
+                : FontManager::getUiFont(
+                    FontManager::stdEnglishFont
+                    );
+
     const int koreanTextHeight =
         QFontMetrics(
-            FontManager::getKoreanFont()
+            FontManager::getKoreanFontForUiFont(
+                englishFont
+                )
             ).height();
 
     size.setHeight(
