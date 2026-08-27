@@ -30,6 +30,22 @@
   timing limits remain environment-controlled until stable platform-specific
   baselines exist.
 
+## Windows x64 Debug Validation (2026-08-27)
+
+The rebuilt Debug application and `ClassMngrStartupPerformanceTests` passed
+with the offscreen platform and the deterministic representative profile.
+This is a Windows platform baseline for trend comparison, not a cross-platform
+CI limit.
+
+| Checkpoint | Elapsed | Working set | Peak working set | Private usage | Widgets | Pages | ScheduleWidgets | Renders |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `window-shown` | 2.984 s | 191.3 MiB | 191.4 MiB | 128.3 MiB | 230 | 1 / 11 | 1 / 1 created | 1 |
+| `startup-complete` | 3.011 s | 190.4 MiB | 191.8 MiB | 127.3 MiB | 225 | 1 / 11 | 1 / 1 created | 1 |
+| `settled-5s` | 8.149 s | 209.3 MiB | 209.7 MiB | 146.1 MiB | 225 | 1 / 11 | 1 / 1 created | 1 |
+
+The report's `peakMemory` object recorded a 209.7 MiB platform peak. No page
+or schedule construction occurred after `startup-complete`.
+
 ## macOS arm64 Validation (2026-08-27)
 
 The rebuilt Release application and `ClassMngrStartupPerformanceTests` passed
