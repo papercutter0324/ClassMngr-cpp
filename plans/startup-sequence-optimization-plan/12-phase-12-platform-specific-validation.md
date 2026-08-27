@@ -3,6 +3,55 @@
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 12 only**. Do not start later phases.
 
 # Phase 12 — Platform-Specific Validation
+
+> **Status:** In progress — Windows validation started 2026-08-27.
+
+## Validation Record
+
+### Windows x64 Debug — representative startup
+
+The shared startup profiler was run against `Testing-copy.tps` with the
+offscreen platform and a five-second settling period.  The same profiler
+captures Windows working/private memory, macOS resident/physical footprint,
+and Linux RSS/PSS/private-dirty metrics without changing the startup
+lifecycle.
+
+| Checkpoint | Elapsed | Working set | Peak working set | Private usage | Private working set | Widgets | Pages | Schedule widgets | Schedule renders |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `startup-complete` | 2,960 ms | 189.8 MiB | 191.2 MiB | 126.8 MiB | 119.3 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+| `settled-1s` | 4,065 ms | 208.6 MiB | 208.6 MiB | 145.6 MiB | 137.5 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+| `settled-5s` | 8,066 ms | 208.6 MiB | 209.1 MiB | 145.6 MiB | 137.5 MiB | 213 | 1 / 11 | 1 / 1 created | 1 |
+
+- Peak-to-steady working-set ratio: **1.002x**.
+- The settled 63.1 MiB gap between working set and private usage (71.2 MiB
+  versus private working set) has no matching growth in widget, page, or
+  schedule metrics. It is therefore resident/shared/cache behavior, not an
+  unexplained private-allocation startup tail.
+- The startup profile has one `startup-complete` checkpoint and no page
+  creation afterward.
+- `ClassMngrStartupPerformanceTests` passed for the no-database and explicit
+  representative-database scenarios.
+
+### Windows behavioral validation
+
+- Passed targeted tests for startup visual settings, FontManager,
+  ScheduleWidget, BasePage, Calendar, Campus, Sub Prep/PDF, memory metrics,
+  database file format, and the startup-performance path.
+- PageManager validation revealed that its CTest registration needs the
+  project-root working directory for runtime assets. The shared test
+  registration now sets that directory; it still needs a regenerated CTest
+  configuration and rerun.
+
+### Pending platform runs
+
+- macOS: run `macos-clang-debug`, then collect resident memory, physical
+  footprint, peak resident memory, startup duration, and structural counts.
+- Linux: run `linux-gcc-debug`, then collect RSS, PSS, private resident/dirty
+  memory, peak RSS, startup duration, and structural counts.
+- On both platforms, execute the same startup-performance and targeted
+  behavioral tests used above. No platform-specific page lifecycle has been
+  introduced.
+
 ## Objective
 Verify that the shared optimized startup architecture behaves correctly and efficiently on Windows, macOS, and Linux.
 

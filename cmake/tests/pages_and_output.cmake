@@ -6,6 +6,7 @@ classmngr_add_qt_test(
         Qt6::Test
         Qt6::Widgets
     OFFSCREEN
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
 )
 
 classmngr_add_qt_test(
