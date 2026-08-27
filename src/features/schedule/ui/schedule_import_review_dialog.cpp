@@ -363,6 +363,7 @@ bool ScheduleImportReviewDialog::prepare()
         && m_preview.inventory.hasIntensiveHours
         );
     m_updateIntensiveRadio->setChecked(true);
+    m_previewWidget->refreshDisplaySettings();
     m_previewWidget->setPreviewModel(
         previewModel(
             m_preview.user,

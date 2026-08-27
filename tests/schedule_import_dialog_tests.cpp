@@ -2323,6 +2323,15 @@ void ScheduleImportDialogTests
         );
 }
 
-QTEST_MAIN(ScheduleImportDialogTests)
+int main(int argc, char** argv)
+{
+    qputenv(
+        "QT_QPA_PLATFORM",
+        QByteArrayLiteral("offscreen")
+        );
+    QApplication app(argc, argv);
+    ScheduleImportDialogTests tests;
+    return QTest::qExec(&tests, argc, argv);
+}
 
 #include "schedule_import_dialog_tests.moc"
