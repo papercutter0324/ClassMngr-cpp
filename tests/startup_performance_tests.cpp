@@ -320,7 +320,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             QStringLiteral("--startup-performance-scenario"),
             QStringLiteral("representative"),
             QStringLiteral("--startup-performance-settle-ms"),
-            QStringLiteral("0"),
+            QStringLiteral("5000"),
             QStringLiteral("--startup-performance-output"),
             representativeMetricsPath,
             representativeDatabasePath
@@ -347,6 +347,8 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QVERIFY(representativeDocument.isObject());
 
     QJsonObject representativeStartupComplete;
+    QJsonObject representativeSettledOneSecond;
+    QJsonObject representativeSettledFiveSeconds;
     for (const QJsonValue& value : representativeDocument.object()
              .value(QStringLiteral("checkpoints"))
              .toArray())
@@ -356,10 +358,21 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             == QStringLiteral("startup-complete"))
         {
             representativeStartupComplete = checkpoint;
-            break;
+        }
+        else if (checkpoint.value(QStringLiteral("name")).toString()
+                 == QStringLiteral("settled-1s"))
+        {
+            representativeSettledOneSecond = checkpoint;
+        }
+        else if (checkpoint.value(QStringLiteral("name")).toString()
+                 == QStringLiteral("settled-5s"))
+        {
+            representativeSettledFiveSeconds = checkpoint;
         }
     }
     QVERIFY(!representativeStartupComplete.isEmpty());
+    QVERIFY(!representativeSettledOneSecond.isEmpty());
+    QVERIFY(!representativeSettledFiveSeconds.isEmpty());
 
     const QJsonObject representativeStartupMetrics =
         representativeStartupComplete.value(QStringLiteral("metrics")).toObject();
@@ -369,6 +382,35 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             .toDouble(),
         1.0
         );
+
+    for (const QJsonObject& settledCheckpoint : {
+            representativeSettledOneSecond,
+            representativeSettledFiveSeconds
+        })
+    {
+        const QJsonObject settledMetrics =
+            settledCheckpoint.value(QStringLiteral("metrics")).toObject();
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("widgetCount")).toInt(),
+            representativeStartupMetrics
+                .value(QStringLiteral("widgetCount")).toInt()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("instantiatedPageCount")).toInt(),
+            representativeStartupMetrics
+                .value(QStringLiteral("instantiatedPageCount")).toInt()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("registeredPageCount")).toInt(),
+            representativeStartupMetrics
+                .value(QStringLiteral("registeredPageCount")).toInt()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("scheduleRenderCount")).toDouble(),
+            representativeStartupMetrics
+                .value(QStringLiteral("scheduleRenderCount")).toDouble()
+            );
+    }
 
     QSet<QString> representativeEventNames;
     for (const QJsonValue& value : representativeDocument.object()

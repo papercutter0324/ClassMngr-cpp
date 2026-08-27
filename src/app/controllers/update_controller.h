@@ -5,7 +5,6 @@
 
 class ActionRegistry;
 class MainWindow;
-class SplashScreen;
 class UpdateDialog;
 class UpdateService;
 struct UpdateCheckResult;
@@ -24,16 +23,14 @@ public:
         MainWindow* window,
         ActionRegistry& actions
         );
-    void setSplashScreen(
-        SplashScreen* splash
-        );
-    void startStartupCheck();
+    void startAutomaticCheck();
     void setStartupComplete();
 
     [[nodiscard]] bool hasVisibleDialog() const;
 
 private:
     [[nodiscard]] bool automaticChecksEnabled() const;
+    void runStartupMaintenance();
     [[nodiscard]] bool isVersionSkipped(
         const QString& version
         ) const;
@@ -49,15 +46,13 @@ private:
     UpdateDialog* ensureDialog(
         bool automaticPrompt
         );
-    void yieldSplashToDialog();
-    void restoreSplashAfterDialog();
 
 private:
     UpdateService* m_service = nullptr;
     QPointer<MainWindow> m_window;
-    QPointer<SplashScreen> m_splash;
     QPointer<UpdateDialog> m_dialog;
-    bool m_startupCheckStarted = false;
+    bool m_automaticCheckStarted = false;
+    bool m_startupMaintenanceRun = false;
     bool m_startupComplete = false;
     bool m_automaticPromptSuppressed = false;
 };

@@ -8,7 +8,6 @@
 #include "core/updater/version.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
-#include "ui/shared/widgets/splash/splashscreen.h"
 
 #include <QAction>
 #include <QDialog>
@@ -23,10 +22,6 @@ UpdateController::UpdateController(
     , m_service(service)
 {
     Q_ASSERT(m_service);
-
-    UpdateDownloader::cleanupDownloads(
-        UpdateDownloader::CleanupMode::OrphansOnly
-        );
 
     connect(
         m_service,
@@ -169,20 +164,27 @@ void UpdateController::attachMainWindow(
     }
 }
 
-void UpdateController::setSplashScreen(
-    SplashScreen* splash
-    )
+void UpdateController::runStartupMaintenance()
 {
-    m_splash =
-        splash;
-}
-
-void UpdateController::startStartupCheck()
-{
-    if (m_startupCheckStarted || !m_service)
+    if (m_startupMaintenanceRun)
     {
         return;
     }
+
+    m_startupMaintenanceRun = true;
+    UpdateDownloader::cleanupDownloads(
+        UpdateDownloader::CleanupMode::OrphansOnly
+        );
+}
+
+void UpdateController::startAutomaticCheck()
+{
+    if (m_automaticCheckStarted || !m_service)
+    {
+        return;
+    }
+
+    runStartupMaintenance();
 
     const UpdateConfiguration configuration =
         m_service->configuration();
@@ -195,7 +197,7 @@ void UpdateController::startStartupCheck()
         return;
     }
 
-    m_startupCheckStarted =
+    m_automaticCheckStarted =
         true;
     m_service->checkForUpdates(
         UpdateService::CheckPolicy::Force
@@ -206,41 +208,9 @@ void UpdateController::setStartupComplete()
 {
     m_startupComplete =
         true;
-    m_splash =
-        nullptr;
 
     if (m_dialog)
     {
-        // An automatic prompt can appear while the splash is still visible,
-        // before the main window is ready to own it.  Once the main window is
-        // shown, make that dialog its child window so showing the main window
-        // cannot place itself above the update prompt.
-        if (
-            m_window
-            && m_dialog->parentWidget() != m_window
-            )
-        {
-            const bool wasVisible =
-                m_dialog->isVisible();
-            const Qt::WindowFlags windowFlags =
-                m_dialog->windowFlags();
-
-            m_dialog->setParent(
-                m_window,
-                windowFlags
-                );
-
-            // QWidget::setParent() hides a visible widget.  Restore the
-            // prompt after assigning its owner, so it remains in front of
-            // the main window during the startup handoff.
-            if (wasVisible)
-            {
-                m_dialog->show();
-                m_dialog->raise();
-                m_dialog->activateWindow();
-            }
-        }
-
         m_dialog->setStartupComplete(true);
     }
 }
@@ -253,6 +223,8 @@ bool UpdateController::hasVisibleDialog() const
 
 void UpdateController::showManualUpdateDialog()
 {
+    runStartupMaintenance();
+
     UpdateDialog* dialog =
         ensureDialog(false);
 
@@ -266,8 +238,6 @@ void UpdateController::showAutomaticUpdateDialog()
 {
     UpdateDialog* dialog =
         ensureDialog(true);
-
-    yieldSplashToDialog();
 
     dialog->show();
     dialog->raise();
@@ -342,8 +312,6 @@ UpdateDialog* UpdateController::ensureDialog(
                 m_automaticPromptSuppressed =
                     true;
             }
-
-            restoreSplashAfterDialog();
         }
         );
 
@@ -359,35 +327,4 @@ UpdateDialog* UpdateController::ensureDialog(
         );
 
     return dialog;
-}
-
-void UpdateController::yieldSplashToDialog()
-{
-    if (!m_splash || m_startupComplete)
-    {
-        return;
-    }
-
-    m_splash->setWindowFlag(
-        Qt::WindowStaysOnTopHint,
-        false
-        );
-    m_splash->show();
-    m_splash->lower();
-}
-
-void UpdateController::restoreSplashAfterDialog()
-{
-    if (!m_splash || m_startupComplete)
-    {
-        return;
-    }
-
-    m_splash->setWindowFlag(
-        Qt::WindowStaysOnTopHint,
-        true
-        );
-    m_splash->show();
-    m_splash->raise();
-    m_splash->activateWindow();
 }

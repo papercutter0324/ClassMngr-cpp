@@ -49,8 +49,6 @@ class LanguageService;
 struct MainWindowStartupOptions
 {
     bool loadMostRecentDatabase = true;
-    bool runPostShowStartupTasks = true;
-    bool showStartupBirthdayPrompt = true;
     QString initialDatabasePath;
     std::unique_ptr<ThemeService> startupThemeService;
     std::function<void(const QString&, const QString&)> checkpointCallback;
@@ -95,6 +93,10 @@ public:
     void refreshSchedulePreferences();
 
     void refreshNavigationPreferences();
+
+    void attachUpdateController(
+        UpdateController* updateController
+        );
 
     bool confirmCurrentPageCanLeave(
         bool exiting = false
@@ -190,7 +192,6 @@ private:
 
     bool m_isAdmin = false;
     bool m_testingClassesReturnToPersonalSchedule = true;
-    bool m_startupBirthdayCheckQueued = false;
     bool m_startupSidebarWidthApplied = false;
     MainWindowStartupOptions m_startupOptions;
     LanguageService* m_languageService = nullptr;

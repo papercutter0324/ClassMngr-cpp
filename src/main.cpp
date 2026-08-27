@@ -425,33 +425,6 @@ int main(int argc, char *argv[])
 
     startupTimer.start();
 
-    UpdateService updateService;
-    UpdateController updateController(
-        &updateService,
-        &app
-        );
-    updateController.setSplashScreen(
-        splash.get()
-        );
-
-    updateProgress(
-        QCoreApplication::translate(
-            "MainWindow",
-            "Checking for updates..."
-            )
-        );
-
-    if (
-        !startupPerformance.enabled
-        || startupPerformance.scenario
-            == StartupPerformanceMode::Scenario::Representative
-        )
-    {
-        updateController.startStartupCheck();
-    }
-
-
-
     // =====================================================
     // Main Window
     // =====================================================
@@ -472,21 +445,19 @@ int main(int argc, char *argv[])
 
     app.setWindowIcon(getAppIcon());
 
+    std::unique_ptr<UpdateService> updateService;
+    std::unique_ptr<UpdateController> updateController;
+
     MainWindow window(
         updateProgress,
         isAdminMode(app.arguments()),
         &languageService,
-        &updateController,
+        nullptr,
         {
             .loadMostRecentDatabase =
                 !startupPerformance.enabled
                 || startupPerformance.scenario
                     == StartupPerformanceMode::Scenario::Representative,
-            .runPostShowStartupTasks =
-                !startupPerformance.enabled
-                || startupPerformance.scenario
-                    == StartupPerformanceMode::Scenario::Representative,
-            .showStartupBirthdayPrompt = !startupPerformance.enabled,
             .initialDatabasePath = initialDatabasePath,
             .startupThemeService = std::move(startupThemeService),
             .checkpointCallback =
@@ -539,6 +510,7 @@ int main(int argc, char *argv[])
             &window,
             &splash,
             &splashLease,
+            &updateService,
             &updateController,
             &startupPerformance,
             &startupProfiler,
@@ -546,17 +518,6 @@ int main(int argc, char *argv[])
             progress
         ]()
     {
-        const bool preserveUpdateDialogFocus =
-            updateController.hasVisibleDialog();
-
-        if (preserveUpdateDialogFocus)
-        {
-            window.setAttribute(
-                Qt::WA_ShowWithoutActivating,
-                true
-                );
-        }
-
         window.show();
 
         if (startupPerformance.enabled)
@@ -564,18 +525,30 @@ int main(int argc, char *argv[])
             startupProfiler.checkpoint(QStringLiteral("window-shown"));
         }
 
-        if (preserveUpdateDialogFocus)
-        {
-            window.setAttribute(
-                Qt::WA_ShowWithoutActivating,
-                false
-                );
-        }
-
         splash.reset();
         splashLease->reset();
-        updateController.setSplashScreen(nullptr);
-        updateController.setStartupComplete();
+
+        // The main window is now visible.  Delay updater construction,
+        // download cleanup, and the automatic network check until the event
+        // loop is idle; no hidden feature initialization is scheduled here.
+        if (!startupPerformance.enabled)
+        {
+            QTimer::singleShot(
+                0,
+                &window,
+                [&app, &window, &updateService, &updateController]
+                {
+                    updateService = std::make_unique<UpdateService>();
+                    updateController = std::make_unique<UpdateController>(
+                        updateService.get(),
+                        &app
+                        );
+                    window.attachUpdateController(updateController.get());
+                    updateController->setStartupComplete();
+                    updateController->startAutomaticCheck();
+                }
+                );
+        }
 
         if (startupPerformance.enabled)
         {

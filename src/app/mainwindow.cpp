@@ -32,8 +32,6 @@
 #include <QDialog>
 #include <QMenuBar>
 #include <QScreen>
-#include <QTimer>
-
 #include <utility>
 
 // =========================================================
@@ -163,6 +161,21 @@ void MainWindow::refreshNavigationPreferences()
     if (m_pages)
     {
         m_pages->refreshNavigationPreferences();
+    }
+}
+
+void MainWindow::attachUpdateController(
+    UpdateController* updateController
+    )
+{
+    m_updateController = updateController;
+
+    if (m_updateController)
+    {
+        m_updateController->attachMainWindow(
+            this,
+            m_actions
+            );
     }
 }
 
@@ -329,10 +342,7 @@ void MainWindow::connectControllers()
 
     if (m_updateController)
     {
-        m_updateController->attachMainWindow(
-            this,
-            m_actions
-            );
+        attachUpdateController(m_updateController);
     }
 
     m_languageController =
@@ -1048,38 +1058,6 @@ void MainWindow::showEvent(QShowEvent* event)
         m_startupSidebarWidthApplied = true;
         setDefaultSidebarWidth();
     }
-
-    if (!m_startupBirthdayCheckQueued)
-    {
-        m_startupBirthdayCheckQueued = true;
-
-        if (
-            m_startupOptions.runPostShowStartupTasks
-            && m_startupOptions.showStartupBirthdayPrompt
-            && m_services
-            && m_services->hasOpenDatabase()
-            && m_sidebarController
-            )
-        {
-            QTimer::singleShot(
-                0,
-                this,
-                [this]
-                {
-                    if (
-                        m_services
-                        && m_services->hasOpenDatabase()
-                        && m_sidebarController
-                        )
-                    {
-                        m_sidebarController
-                            ->showUpcomingBirthdaysIfRelevantOnStartup();
-                    }
-                }
-                );
-        }
-    }
-
 }
 
 bool MainWindow::confirmCurrentPageCanLeave(

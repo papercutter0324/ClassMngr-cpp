@@ -40,8 +40,6 @@ public:
     void refreshTeacherSidebar();
     void refreshAllSidebars();
 
-    void showUpcomingBirthdaysIfRelevantOnStartup();
-
 public slots:
 
     void handleClassInfoSaved(
