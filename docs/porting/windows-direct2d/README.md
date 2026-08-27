@@ -37,8 +37,8 @@ behavior changes while the port is in progress.
 | Source and test inventory | initial pass complete | keep it synchronized with Qt behavior changes |
 | Parity matrix | seeded | every cell must have evidence before cutover |
 | Database fixtures | generated, SHA-pinned corpus with executable semantic/migration verification | commit fixtures; record Linux Qt and native-engine result digests |
-| Screenshots, IME, UIA, and output samples | ledger, metadata-sidecar tooling, and opt-in native Windows capture target ready | artifacts captured and verified on the Qt baseline |
-| Performance | three x64 Release GUI samples captured; ARM64 runtime pending | establish ARM64 equivalents and page/scroll/output samples |
+| Screenshots, IME, UIA, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, and 16 validated current-HEAD Qt captures | capture the remaining ledger states and manually review input/accessibility/output evidence |
+| Performance | historical x64 Release budget plus three current x64 Debug GUI samples; ARM64 runtime pending | approve a current Release baseline, establish ARM64 equivalents, and capture page/scroll/output samples |
 | Build preservation | Phase 0 fixture and visual targets compile on Windows x64 Debug | run the full x64, ARM64, and Linux validation unchanged |
 
 The capture target is opt-in through
