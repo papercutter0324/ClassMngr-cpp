@@ -231,12 +231,16 @@ void StartupProfiler::recordScheduleRenderCompleted(
     int tableItemsCreated,
     int cellWidgetsCreated,
     int cellWidgetsRemoved,
-    int cellWidgetsQueuedForDeletion
+    int cellWidgetsQueuedForDeletion,
+    bool fullRender
     )
 {
     if (StartupProfiler* profiler = activeProfiler())
     {
-        ++profiler->m_scheduleMetrics.scheduleRenderCount;
+        if (fullRender)
+        {
+            ++profiler->m_scheduleMetrics.scheduleRenderCount;
+        }
         profiler->m_scheduleMetrics.scheduleTableItemsCreated +=
             static_cast<quint64>(qMax(0, tableItemsCreated));
         profiler->m_scheduleMetrics.scheduleCellWidgetsCreated +=
@@ -247,9 +251,10 @@ void StartupProfiler::recordScheduleRenderCompleted(
             static_cast<quint64>(qMax(0, cellWidgetsQueuedForDeletion));
         profiler->recordEvent(
             QStringLiteral("schedule-render-end"),
-            QStringLiteral("%1; elapsedMs=%2; tableItemsCreated=%3; cellWidgetsCreated=%4; cellWidgetsRemoved=%5; cellWidgetsQueuedForDeletion=%6")
+            QStringLiteral("%1; elapsedMs=%2; fullRender=%3; tableItemsCreated=%4; cellWidgetsCreated=%5; cellWidgetsRemoved=%6; cellWidgetsQueuedForDeletion=%7")
                 .arg(owner)
                 .arg(elapsedMilliseconds)
+                .arg(fullRender ? QStringLiteral("true") : QStringLiteral("false"))
                 .arg(tableItemsCreated)
                 .arg(cellWidgetsCreated)
                 .arg(cellWidgetsRemoved)

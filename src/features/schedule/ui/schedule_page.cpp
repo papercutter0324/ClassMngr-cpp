@@ -68,7 +68,14 @@ void SchedulePage::retranslateUi()
 
     if (m_scheduleWidget)
     {
-        m_scheduleWidget->retranslateUi();
+        if (isVisible())
+        {
+            m_scheduleWidget->retranslateUi();
+        }
+        else
+        {
+            markStale();
+        }
     }
 }
 

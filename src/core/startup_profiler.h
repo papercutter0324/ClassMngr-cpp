@@ -83,7 +83,8 @@ public:
         int tableItemsCreated,
         int cellWidgetsCreated,
         int cellWidgetsRemoved,
-        int cellWidgetsQueuedForDeletion
+        int cellWidgetsQueuedForDeletion,
+        bool fullRender
         );
 
 private:

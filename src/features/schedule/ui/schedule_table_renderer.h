@@ -15,6 +15,7 @@ struct ScheduleTableRenderOptions
 
 struct ScheduleTableRenderMetrics
 {
+    bool fullRender = false;
     int tableItemsCreated = 0;
     int cellWidgetsCreated = 0;
     int cellWidgetsRemoved = 0;
@@ -25,6 +26,10 @@ class ScheduleTableRenderer final
 {
 public:
     static void initialize(
+        QTableWidget* table
+        );
+
+    static void invalidate(
         QTableWidget* table
         );
 

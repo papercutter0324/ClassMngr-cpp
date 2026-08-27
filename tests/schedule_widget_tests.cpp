@@ -3,6 +3,7 @@
 #include "data/data_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "features/schedule/ui/schedule_page.h"
+#include "features/schedule/ui/schedule_table_renderer.h"
 #include "features/schedule/schedule_settings_preferences.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
@@ -64,6 +65,46 @@ void saveSettingOrFail(
     QVERIFY(dataService);
     QVERIFY(dataService->saveSetting(key, value).has_value());
 }
+
+ScheduleViewModel rendererTestModel(
+    const QString& mondaySlotState = scheduleEssaySlotState()
+    )
+{
+    ScheduleViewModel model;
+    model.days = {
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday")
+    };
+
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("16:00");
+    row.timeRangeLabel = QStringLiteral("4:00 PM - 4:50 PM");
+
+    ScheduleCellView monday;
+    monday.day = QStringLiteral("Monday");
+    monday.timeLabel = row.timeLabel;
+    monday.defaultSlotState = scheduleEssaySlotState();
+    monday.slotState = mondaySlotState;
+    monday.slotTogglingEnabled = true;
+
+    ScheduleCellView tuesday;
+    tuesday.day = QStringLiteral("Tuesday");
+    tuesday.timeLabel = row.timeLabel;
+    tuesday.defaultSlotState = scheduleEmptySlotState();
+    tuesday.slotState = scheduleEmptySlotState();
+    ScheduleEntry entry;
+    entry.classId = 42;
+    entry.teacherKr = QStringLiteral("김선생");
+    entry.teacherEn = QStringLiteral("Susan");
+    entry.roomNumber = QStringLiteral("413");
+    entry.classGrade = QStringLiteral("E4");
+    entry.classLevel = QStringLiteral("Hercules");
+    tuesday.entries.append(entry);
+
+    row.cells = {monday, tuesday};
+    model.rows.append(row);
+    return model;
+}
 }
 
 class ScheduleWidgetTests : public QObject
@@ -86,6 +127,7 @@ private slots:
     void timeColumnAndHeaderAreNonInteractive();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
+    void rendererSkipsUnchangedAndUpdatesOnlyChangedCells();
 };
 
 void ScheduleWidgetTests::init()
@@ -866,6 +908,52 @@ void ScheduleWidgetTests
 
     QCOMPARE(schedule->height(), scheduleHeight);
     QVERIFY(scrollArea->verticalScrollBar()->maximum() > 0);
+}
+
+void ScheduleWidgetTests
+    ::rendererSkipsUnchangedAndUpdatesOnlyChangedCells()
+{
+    QTableWidget table;
+    ScheduleTableRenderer::initialize(&table);
+
+    const ScheduleTableRenderOptions options{.cellParent = &table};
+    const ScheduleViewModel initial = rendererTestModel();
+    const ScheduleTableRenderMetrics first =
+        ScheduleTableRenderer::render(&table, initial, options);
+    QVERIFY(first.fullRender);
+
+    QTableWidgetItem* const timeItem = table.item(0, 0);
+    QWidget* const mondayWidget = table.cellWidget(0, 1);
+    QWidget* const tuesdayWidget = table.cellWidget(0, 2);
+    QVERIFY(timeItem);
+    QVERIFY(mondayWidget);
+    QVERIFY(tuesdayWidget);
+
+    ScheduleViewModel changed =
+        rendererTestModel(scheduleLunchSlotState());
+    const ScheduleTableRenderMetrics partial =
+        ScheduleTableRenderer::render(&table, changed, options);
+    QVERIFY(!partial.fullRender);
+    QCOMPARE(partial.tableItemsCreated, 0);
+    QCOMPARE(partial.cellWidgetsCreated, 1);
+    QCOMPARE(partial.cellWidgetsRemoved, 1);
+    QCOMPARE(table.item(0, 0), timeItem);
+    QCOMPARE(table.cellWidget(0, 2), tuesdayWidget);
+
+    QWidget* const updatedMondayWidget = table.cellWidget(0, 1);
+    QVERIFY(updatedMondayWidget);
+    QVERIFY(updatedMondayWidget != mondayWidget);
+
+    const ScheduleTableRenderMetrics unchanged =
+        ScheduleTableRenderer::render(&table, changed, options);
+    QVERIFY(!unchanged.fullRender);
+    QCOMPARE(unchanged.tableItemsCreated, 0);
+    QCOMPARE(unchanged.cellWidgetsCreated, 0);
+    QCOMPARE(unchanged.cellWidgetsRemoved, 0);
+    QCOMPARE(unchanged.cellWidgetsQueuedForDeletion, 0);
+    QCOMPARE(table.item(0, 0), timeItem);
+    QCOMPARE(table.cellWidget(0, 1), updatedMondayWidget);
+    QCOMPARE(table.cellWidget(0, 2), tuesdayWidget);
 }
 
 QTEST_MAIN(ScheduleWidgetTests)

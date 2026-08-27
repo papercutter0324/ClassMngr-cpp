@@ -96,6 +96,7 @@ void ScheduleWidget::clearDatabaseState()
 void ScheduleWidget::retranslateUi()
 {
     updateButtons();
+    ScheduleTableRenderer::invalidate(m_table);
     loadSchedule();
 }
 
@@ -661,7 +662,8 @@ void ScheduleWidget::loadSchedule()
             metrics.tableItemsCreated,
             metrics.cellWidgetsCreated,
             metrics.cellWidgetsRemoved,
-            metrics.cellWidgetsQueuedForDeletion
+            metrics.cellWidgetsQueuedForDeletion,
+            metrics.fullRender
             );
     }
 }
