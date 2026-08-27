@@ -7,6 +7,7 @@ if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
             "$<TARGET_FILE:Qt6::windeployqt>"
             --qmldir "${PROJECT_SOURCE_DIR}/src/features/calendar/ui/qml"
             --skip-plugin-types qmltooling
+            --include-plugins qoffscreen
             --exclude-plugins qsqlibase,qsqlmimer,qsqloci,qsqlodbc,qsqlpsql
             --translations en,ko
             ${CLASSMNGR_WINDEPLOYQT_TARGET_ARGS}

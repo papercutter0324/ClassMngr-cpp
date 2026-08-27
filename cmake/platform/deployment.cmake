@@ -150,6 +150,7 @@ if(WIN32)
     )
     string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
         "    NO_TRANSLATIONS\n"
+        "    INCLUDE_PLUGINS qoffscreen\n"
         "    EXCLUDE_PLUGIN_TYPES qmltooling\n"
         "    EXCLUDE_PLUGINS qsqlibase qsqlmimer qsqloci qsqlodbc qsqlpsql\n"
     )

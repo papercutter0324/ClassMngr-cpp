@@ -246,7 +246,10 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
         [](const MemoryUsageHistoryEntry& entry)
         {
             return entry.kind == MemoryUsageHistoryEntryKind::Event
-                && entry.eventType == QStringLiteral("timing")
+                && (
+                    entry.eventType == QStringLiteral("timing")
+                    || entry.eventType == QStringLiteral("slow-operation")
+                    )
                 && entry.eventDetail.contains(QStringLiteral("pdf-open"));
         }
         ));
@@ -256,7 +259,10 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
         [](const MemoryUsageHistoryEntry& entry)
         {
             return entry.kind == MemoryUsageHistoryEntryKind::Event
-                && entry.eventType == QStringLiteral("timing")
+                && (
+                    entry.eventType == QStringLiteral("timing")
+                    || entry.eventType == QStringLiteral("slow-operation")
+                    )
                 && entry.eventDetail.contains(QStringLiteral("pdf-release"));
         }
         ));

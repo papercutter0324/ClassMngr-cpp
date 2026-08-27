@@ -32,15 +32,47 @@ lifecycle.
 - `ClassMngrStartupPerformanceTests` passed for the no-database and explicit
   representative-database scenarios.
 
+### Windows x64 Release — representative and saved-database startup
+
+The Release executable was rebuilt after the profiler/deployment changes and
+run with the same offscreen platform and five-second settling period. The
+Windows build-tree and install-time deployment rules now explicitly include
+Qt's `qoffscreen` platform plugin; without it, headless Release launches
+failed with “no platform could be initialized” because deployment provided
+only `qwindows.dll`.
+
+| Scenario/checkpoint | Elapsed | Working set | Peak working set | Private usage | Private working set | Widgets | Pages | Schedule widgets | Schedule renders |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| explicit `Testing-copy.tps`, `startup-complete` | 2,962 ms | 143.3 MiB | 144.8 MiB | 124.6 MiB | 94.9 MiB | 212 | 1 / 11 | 1 / 1 created | 1 |
+| explicit `Testing-copy.tps`, `settled-1s` | 4,024 ms | 158.3 MiB | 158.3 MiB | 143.3 MiB | 109.7 MiB | 212 | 1 / 11 | 1 / 1 created | 1 |
+| explicit `Testing-copy.tps`, `settled-5s` | 8,054 ms | 158.3 MiB | 158.8 MiB | 143.3 MiB | 109.7 MiB | 212 | 1 / 11 | 1 / 1 created | 1 |
+
+- The Release peak-to-steady working-set ratio was **1.003x**; steady
+  private usage remained below the 150–175 MiB engineering target and peak
+  working set remained below the 250 MiB target.
+- A follow-up representative run with no positional database, reusing the
+  settings written by the explicit run, recorded
+  `database-opened(detail=open)`, confirming most-recent-database startup.
+  It reached `startup-complete` once at 2,821 ms with 212 widgets and 1 / 11
+  instantiated/registered pages.
+- A clean empty-settings Release run recorded
+  `database-opened(detail=unavailable)` and one `startup-complete` checkpoint
+  at 2,856 ms, confirming no-database startup.
+
 ### Windows behavioral validation
 
 - Passed targeted tests for startup visual settings, FontManager,
   ScheduleWidget, BasePage, Calendar, Campus, Sub Prep/PDF, memory metrics,
   database file format, and the startup-performance path.
-- PageManager validation revealed that its CTest registration needs the
-  project-root working directory for runtime assets. The shared test
-  registration now sets that directory; it still needs a regenerated CTest
-  configuration and rerun.
+- PageManager validation now runs from the project root so runtime assets are
+  found, and its PDF timing assertions accept either the normal timing or
+  slow-operation diagnostic classification.
+- The full Windows Debug CTest run completed **64 / 66** tests. The two
+  remaining failures are isolated, non-startup tests: the schedule-import
+  preview expected eight columns but observed six after preference changes,
+  and CampusMap's bundled-image test observed zero loaded images (with its
+  decode diagnostic classified as slow-operation). They do not alter the
+  startup profiler results above and remain follow-up test-fixture work.
 
 ### macOS arm64 host — representative startup
 
