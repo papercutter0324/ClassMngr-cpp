@@ -3,6 +3,28 @@
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 11 only**. Do not start later phases.
 
 # Phase 11 — Introduce Explicit Startup Completion
+
+> **Status:** Complete — implemented and verified 2026-08-27.
+
+## Completed Implementation
+
+- Centralized the startup-to-normal-operation handoff in one completion
+  transition.
+- Splash destruction and resource-lease release now precede the final startup
+  checkpoint.
+- Optional updater work is queued only after `startup-complete`; the updater
+  controller also enforces that ordering.
+- Startup profiling verifies a single `startup-complete` checkpoint, stable
+  settled widget/page/schedule counts, and no page instantiation afterward.
+
+## Validation
+
+- Windows x64 Debug build completed successfully.
+- `ClassMngrStartupPerformanceTests` passed for minimal and representative
+  startup scenarios.
+- Latest minimal profile: `startup-complete` at 2,955 ms, 433 widgets, 2 of 11
+  pages instantiated, 1 schedule widget, and 0 startup renders.
+
 ## Objective
 Define one clear point where initialization ends and normal application operation begins.
 

@@ -206,6 +206,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
 
     QSet<QString> checkpointNames;
     QJsonObject startupComplete;
+    int startupCompleteCount = 0;
     for (const QJsonValue& value : checkpoints)
     {
         const QJsonObject checkpoint = value.toObject();
@@ -222,6 +223,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         if (name == QStringLiteral("startup-complete"))
         {
             startupComplete = checkpoint;
+            ++startupCompleteCount;
         }
     }
 
@@ -250,6 +252,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         QVERIFY(checkpointNames.contains(requiredCheckpoint));
     }
     QVERIFY(!startupComplete.isEmpty());
+    QCOMPARE(startupCompleteCount, 1);
 
     const QJsonObject startupMetrics =
         startupComplete.value(QStringLiteral("metrics")).toObject();
@@ -272,12 +275,20 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     const QJsonArray events = metrics.value(QStringLiteral("events")).toArray();
     QSet<QString> eventNames;
     bool startupScheduleDiagnosticPassed = false;
+    const double startupCompleteElapsedMilliseconds =
+        startupComplete.value(QStringLiteral("elapsedMs")).toDouble();
     for (const QJsonValue& value : events)
     {
         const QJsonObject event = value.toObject();
         const QString eventName =
             event.value(QStringLiteral("name")).toString();
         eventNames.insert(eventName);
+
+        QVERIFY(
+            eventName != QStringLiteral("page-created")
+            || event.value(QStringLiteral("elapsedMs")).toDouble()
+                <= startupCompleteElapsedMilliseconds
+            );
 
         if (
             eventName == QStringLiteral("schedule-widget-startup-diagnostic")
@@ -349,6 +360,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
     QJsonObject representativeStartupComplete;
     QJsonObject representativeSettledOneSecond;
     QJsonObject representativeSettledFiveSeconds;
+    int representativeStartupCompleteCount = 0;
     for (const QJsonValue& value : representativeDocument.object()
              .value(QStringLiteral("checkpoints"))
              .toArray())
@@ -358,6 +370,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             == QStringLiteral("startup-complete"))
         {
             representativeStartupComplete = checkpoint;
+            ++representativeStartupCompleteCount;
         }
         else if (checkpoint.value(QStringLiteral("name")).toString()
                  == QStringLiteral("settled-1s"))
@@ -371,6 +384,7 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
         }
     }
     QVERIFY(!representativeStartupComplete.isEmpty());
+    QCOMPARE(representativeStartupCompleteCount, 1);
     QVERIFY(!representativeSettledOneSecond.isEmpty());
     QVERIFY(!representativeSettledFiveSeconds.isEmpty());
 
@@ -410,15 +424,43 @@ void StartupPerformanceTests::reportsStartupMetricsAndHonorsThresholds()
             representativeStartupMetrics
                 .value(QStringLiteral("scheduleRenderCount")).toDouble()
             );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("liveScheduleWidgetCount")).toInt(),
+            representativeStartupMetrics
+                .value(QStringLiteral("liveScheduleWidgetCount")).toInt()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("scheduleWidgetsCreated")).toDouble(),
+            representativeStartupMetrics
+                .value(QStringLiteral("scheduleWidgetsCreated")).toDouble()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("scheduleTableItemsCreated")).toDouble(),
+            representativeStartupMetrics
+                .value(QStringLiteral("scheduleTableItemsCreated")).toDouble()
+            );
+        QCOMPARE(
+            settledMetrics.value(QStringLiteral("scheduleCellWidgetsCreated")).toDouble(),
+            representativeStartupMetrics
+                .value(QStringLiteral("scheduleCellWidgetsCreated")).toDouble()
+            );
     }
 
     QSet<QString> representativeEventNames;
+    const double representativeStartupCompleteElapsedMilliseconds =
+        representativeStartupComplete.value(QStringLiteral("elapsedMs")).toDouble();
     for (const QJsonValue& value : representativeDocument.object()
              .value(QStringLiteral("events"))
              .toArray())
     {
-        representativeEventNames.insert(
-            value.toObject().value(QStringLiteral("name")).toString()
+        const QJsonObject event = value.toObject();
+        const QString eventName =
+            event.value(QStringLiteral("name")).toString();
+        representativeEventNames.insert(eventName);
+        QVERIFY(
+            eventName != QStringLiteral("page-created")
+            || event.value(QStringLiteral("elapsedMs")).toDouble()
+                <= representativeStartupCompleteElapsedMilliseconds
             );
     }
     QVERIFY(

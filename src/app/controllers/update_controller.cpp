@@ -179,7 +179,15 @@ void UpdateController::runStartupMaintenance()
 
 void UpdateController::startAutomaticCheck()
 {
-    if (m_automaticCheckStarted || !m_service)
+    // The application-wide startup-complete transition is the only point at
+    // which background update work may begin.  Keeping the guard here makes
+    // that ordering hold even if this controller is reused by another
+    // bootstrap path.
+    if (
+        !m_startupComplete
+        || m_automaticCheckStarted
+        || !m_service
+        )
     {
         return;
     }

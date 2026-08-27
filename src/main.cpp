@@ -504,12 +504,10 @@ int main(int argc, char *argv[])
     // Finish Startup
     // =====================================================
 
-    auto finish =
+    auto runPostStartupTasks =
         [
             &app,
             &window,
-            &splash,
-            &splashLease,
             &updateService,
             &updateController,
             &startupPerformance,
@@ -518,7 +516,124 @@ int main(int argc, char *argv[])
             progress
         ]()
     {
+        // These tasks intentionally run in a later event-loop turn, after
+        // startup-complete.  They must not construct application pages or
+        // refresh global visual state.
+        if (!startupPerformance.enabled)
+        {
+            updateService = std::make_unique<UpdateService>();
+            updateController = std::make_unique<UpdateController>(
+                updateService.get(),
+                &app
+                );
+            window.attachUpdateController(updateController.get());
+            updateController->setStartupComplete();
+            updateController->startAutomaticCheck();
+            return;
+        }
+
+        const auto finishPerformanceRun =
+            [
+                &app,
+                &startupProfiler,
+                &startupPerformance,
+                progressUpdates,
+                progress
+            ]()
+        {
+            const bool metricsWritten =
+                writeStartupPerformanceMetrics(
+                    startupPerformance.outputPath,
+                    startupProfiler,
+                    startupPerformance,
+                    progressUpdates,
+                    progress
+                    );
+            app.exit(metricsWritten ? 0 : 2);
+        };
+
+        const int settleMilliseconds =
+            startupPerformance.settleMilliseconds;
+        if (settleMilliseconds >= 1000)
+        {
+            QTimer::singleShot(
+                1000,
+                &app,
+                [&startupProfiler]()
+                {
+                    startupProfiler.checkpoint(QStringLiteral("settled-1s"));
+                }
+                );
+        }
+        if (settleMilliseconds >= 5000)
+        {
+            QTimer::singleShot(
+                5000,
+                &app,
+                [&startupProfiler]()
+                {
+                    startupProfiler.checkpoint(QStringLiteral("settled-5s"));
+                }
+                );
+        }
+        if (settleMilliseconds >= 30000)
+        {
+            QTimer::singleShot(
+                30000,
+                &app,
+                [&startupProfiler]()
+                {
+                    startupProfiler.checkpoint(QStringLiteral("settled-30s"));
+                }
+                );
+        }
+
+        const int completionDelayMilliseconds =
+            settleMilliseconds > 0
+                ? settleMilliseconds + 500
+                : 0;
+        QTimer::singleShot(
+            completionDelayMilliseconds,
+            &app,
+            [
+                &startupProfiler,
+                settleMilliseconds,
+                finishPerformanceRun
+            ]()
+            {
+                if (
+                    settleMilliseconds > 0
+                    && settleMilliseconds != 1000
+                    && settleMilliseconds != 5000
+                    && settleMilliseconds != 30000
+                    )
+                {
+                    startupProfiler.checkpoint(
+                        QStringLiteral("settled-final"),
+                        QStringLiteral("elapsedMs=%1").arg(settleMilliseconds)
+                        );
+                }
+                finishPerformanceRun();
+            }
+            );
+    };
+
+    // This is the single transition from startup to normal operation.  The
+    // splash and its resource lease are gone before the checkpoint is taken,
+    // and all optional work is queued only after that snapshot.
+    auto finish =
+        [
+            &app,
+            &window,
+            &splash,
+            &splashLease,
+            &startupPerformance,
+            &startupProfiler,
+            runPostStartupTasks
+        ]()
+    {
         window.show();
+        Q_ASSERT(window.isVisible());
 
         if (startupPerformance.enabled)
         {
@@ -528,118 +643,17 @@ int main(int argc, char *argv[])
         splash.reset();
         splashLease->reset();
 
-        // The main window is now visible.  Delay updater construction,
-        // download cleanup, and the automatic network check until the event
-        // loop is idle; no hidden feature initialization is scheduled here.
-        if (!startupPerformance.enabled)
-        {
-            QTimer::singleShot(
-                0,
-                &window,
-                [&app, &window, &updateService, &updateController]
-                {
-                    updateService = std::make_unique<UpdateService>();
-                    updateController = std::make_unique<UpdateController>(
-                        updateService.get(),
-                        &app
-                        );
-                    window.attachUpdateController(updateController.get());
-                    updateController->setStartupComplete();
-                    updateController->startAutomaticCheck();
-                }
-                );
-        }
-
         if (startupPerformance.enabled)
         {
             startupProfiler.checkpoint(QStringLiteral("startup-complete"));
             StartupProfiler::recordStartupCompleteScheduleWidgetDiagnostic();
-
-            const auto finishPerformanceRun =
-                [
-                    &app,
-                    &startupProfiler,
-                    &startupPerformance,
-                    progressUpdates,
-                    progress
-                ]()
-                {
-                    const bool metricsWritten =
-                        writeStartupPerformanceMetrics(
-                            startupPerformance.outputPath,
-                            startupProfiler,
-                            startupPerformance,
-                            progressUpdates,
-                            progress
-                            );
-                    app.exit(metricsWritten ? 0 : 2);
-                };
-
-            const int settleMilliseconds =
-                startupPerformance.settleMilliseconds;
-            if (settleMilliseconds >= 1000)
-            {
-                QTimer::singleShot(
-                    1000,
-                    &app,
-                    [&startupProfiler]()
-                    {
-                        startupProfiler.checkpoint(QStringLiteral("settled-1s"));
-                    }
-                    );
-            }
-            if (settleMilliseconds >= 5000)
-            {
-                QTimer::singleShot(
-                    5000,
-                    &app,
-                    [&startupProfiler]()
-                    {
-                        startupProfiler.checkpoint(QStringLiteral("settled-5s"));
-                    }
-                    );
-            }
-            if (settleMilliseconds >= 30000)
-            {
-                QTimer::singleShot(
-                    30000,
-                    &app,
-                    [&startupProfiler]()
-                    {
-                        startupProfiler.checkpoint(QStringLiteral("settled-30s"));
-                    }
-                    );
-            }
-
-            const int completionDelayMilliseconds =
-                settleMilliseconds > 0
-                    ? settleMilliseconds + 500
-                    : 0;
-            QTimer::singleShot(
-                completionDelayMilliseconds,
-                &app,
-                [
-                    &startupProfiler,
-                    settleMilliseconds,
-                    finishPerformanceRun
-                ]()
-                {
-                    if (
-                        settleMilliseconds > 0
-                        && settleMilliseconds != 1000
-                        && settleMilliseconds != 5000
-                        && settleMilliseconds != 30000
-                        )
-                    {
-                        startupProfiler.checkpoint(
-                            QStringLiteral("settled-final"),
-                            QStringLiteral("elapsedMs=%1").arg(settleMilliseconds)
-                            );
-                    }
-                    finishPerformanceRun();
-                }
-                );
         }
+
+        QTimer::singleShot(
+            0,
+            &app,
+            runPostStartupTasks
+            );
     };
 
     auto startFinish = [&splash, &finish]()
