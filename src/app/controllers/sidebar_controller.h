@@ -100,6 +100,10 @@ private:
         loadUpcomingBirthdaySchedule(const QDate& referenceDate) const;
 
     void updateActionStates();
+    void updateActionStates(
+        bool hasClasses,
+        bool hasTeachers
+        );
 
     void saveClassExport(
         const QList<int>& classIds,

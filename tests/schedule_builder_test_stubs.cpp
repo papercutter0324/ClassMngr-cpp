@@ -14,6 +14,11 @@ Result<QList<Classroom>> ClassService::classes() const
     return {};
 }
 
+Result<QList<ClassInfo>> ClassService::scheduleClassInfos() const
+{
+    return {};
+}
+
 Result<ClassInfo> ClassService::classInfo(
     int
     ) const

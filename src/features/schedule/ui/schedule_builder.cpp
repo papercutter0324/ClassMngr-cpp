@@ -74,20 +74,15 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
     int earliestHour = 0;
     int scheduleOffset = 0;
 
-    const Result<QList<Classroom>> classes =
-        m_classService->classes();
-    if (!classes)
+    const Result<QList<ClassInfo>> classInfos =
+        m_classService->scheduleClassInfos();
+    if (!classInfos)
     {
-        return std::unexpected(classes.error());
+        return std::unexpected(classInfos.error());
     }
 
-    for (const Classroom& classroom : *classes)
+    for (const ClassInfo& info : *classInfos)
     {
-        const ClassInfo info =
-            m_classService->classInfo(
-                classroom.id
-                ).value_or(ClassInfo{});
-
         const QList<ClassTime>& times =
             useIntensive
                 ? info.intensiveTimes
@@ -154,7 +149,7 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
                 {
                     day,
                     startTime,
-                    toEntry(classroom.id, info)
+                    toEntry(info.classId, info)
                 }
                 );
         }

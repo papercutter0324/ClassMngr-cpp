@@ -3,6 +3,9 @@
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 10 only**. Do not start later phases.
 
 # Phase 10 — Make Startup Data Queries Efficient
+
+> **Status:** Complete — implemented and verified 2026-08-27.
+
 ## Objective
 Avoid repeated database calls and repeated transformation of data required by the initial shell.
 

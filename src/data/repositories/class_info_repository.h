@@ -4,6 +4,7 @@
 #include "core/result.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
+#include "domain/models/class_teacher_assignment.h"
 
 #include <QList>
 #include <QSqlDatabase>
@@ -28,6 +29,11 @@ public:
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
         );
+
+    [[nodiscard]] Result<QList<ClassTeacherAssignment>>
+        loadClassTeacherAssignments();
+
+    [[nodiscard]] Result<QList<ClassInfo>> loadScheduleClassInfos();
 
     [[nodiscard]] Result<QList<ClassConflict>> getClassTimeConflicts(
         int classId,

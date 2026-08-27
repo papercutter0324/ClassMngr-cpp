@@ -5,6 +5,7 @@
 #include "domain/models/calendar_event.h"
 #include "domain/models/class_conflict.h"
 #include "domain/models/class_info.h"
+#include "domain/models/class_teacher_assignment.h"
 #include "domain/models/class_transfer.h"
 #include "domain/models/classroom.h"
 #include "domain/models/gs_team_member.h"
@@ -100,6 +101,9 @@ public:
     using FeatureService::FeatureService;
     [[nodiscard]] Result<int> create(const QString& name) const;
     [[nodiscard]] Result<QList<Classroom>> classes() const;
+    [[nodiscard]] Result<QList<ClassTeacherAssignment>>
+        classTeacherAssignments() const;
+    [[nodiscard]] Result<QList<ClassInfo>> scheduleClassInfos() const;
     [[nodiscard]] Result<Classroom> classroom(int classId) const;
     [[nodiscard]] Status rename(int classId, const QString& name) const;
     [[nodiscard]] Status remove(int classId) const;

@@ -27,14 +27,15 @@ void SidebarController::refreshTeacherSidebar()
 
     const Result<QList<Teacher>> teachers =
         teacherService->teachers();
-    const Result<QList<Classroom>> loadedClasses = classes->classes();
-    if (!teachers || !loadedClasses)
+    const Result<QList<ClassTeacherAssignment>> assignments =
+        classes->classTeacherAssignments();
+    if (!teachers || !assignments)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Load Teachers"),
             tr("Teachers and their classes could not be loaded."),
-            !teachers ? teachers.error() : loadedClasses.error()
+            !teachers ? teachers.error() : assignments.error()
             );
         updateActionStates();
         return;
@@ -56,15 +57,10 @@ void SidebarController::refreshTeacherSidebar()
     QSet<int> myTeacherIds;
     QList<Teacher> myTeachers;
 
-    for (const Classroom& classroom : *loadedClasses)
+    for (const ClassTeacherAssignment& assignment : *assignments)
     {
-        const ClassInfo classInfo =
-            classes->classInfo(
-                classroom.id
-                ).value_or(ClassInfo{});
-
         const int teacherId =
-            classInfo.teacherId;
+            assignment.teacherId;
 
         if (
             teacherId <= 0
@@ -111,7 +107,10 @@ void SidebarController::refreshTeacherSidebar()
             );
     }
 
-    updateActionStates();
+    updateActionStates(
+        !assignments->isEmpty(),
+        !teachers->isEmpty()
+        );
 }
 
 void SidebarController::refreshAllSidebars()

@@ -423,6 +423,25 @@ Result<QList<Classroom>> ClassService::classes() const
         : Result<QList<Classroom>>(std::unexpected(unavailableError()));
 }
 
+Result<QList<ClassTeacherAssignment>>
+ClassService::classTeacherAssignments() const
+{
+    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    {
+        return repository->loadClassTeacherAssignments();
+    }
+    return std::unexpected(unavailableError());
+}
+
+Result<QList<ClassInfo>> ClassService::scheduleClassInfos() const
+{
+    if (auto* repository = session() ? session()->classInfoRepository() : nullptr)
+    {
+        return repository->loadScheduleClassInfos();
+    }
+    return std::unexpected(unavailableError());
+}
+
 Result<Classroom> ClassService::classroom(int classId) const
 {
     if (auto* repository = session() ? session()->classRepository() : nullptr)

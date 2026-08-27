@@ -210,75 +210,66 @@ void SidebarController::updateActionStates()
 
     if (!classes || !teachers)
     {
-        if (m_actions->importClasses)
-        {
-            m_actions->importClasses->setEnabled(false);
-        }
-
-        if (m_actions->exportClasses)
-        {
-            m_actions->exportClasses->setEnabled(false);
-        }
-
-        if (m_actions->deleteClass)
-        {
-            m_actions->deleteClass->setEnabled(false);
-        }
-
-        if (m_actions->deleteTeacher)
-        {
-            m_actions->deleteTeacher->setEnabled(false);
-        }
-
-        if (m_actions->importTeachers)
-        {
-            m_actions->importTeachers->setEnabled(false);
-        }
-
-        if (m_actions->upcomingBirthdays)
-        {
-            m_actions->upcomingBirthdays->setEnabled(false);
-        }
-
+        updateActionStates(false, false);
         return;
-    }
-
-    if (m_actions->importClasses)
-    {
-        m_actions->importClasses->setEnabled(true);
-    }
-
-    if (m_actions->importTeachers)
-    {
-        m_actions->importTeachers->setEnabled(true);
-    }
-
-    if (m_actions->upcomingBirthdays)
-    {
-        m_actions->upcomingBirthdays->setEnabled(true);
     }
 
     const Result<QList<Classroom>> loadedClasses = classes->classes();
     const Result<QList<Teacher>> loadedTeachers = teachers->teachers();
 
+    updateActionStates(
+        loadedClasses && !loadedClasses->isEmpty(),
+        loadedTeachers && !loadedTeachers->isEmpty()
+        );
+}
+
+void SidebarController::updateActionStates(
+    bool hasClasses,
+    bool hasTeachers
+    )
+{
+    if (!m_actions)
+    {
+        return;
+    }
+
+    const bool servicesAvailable =
+        openClassService(m_services)
+        && openTeacherService(m_services);
+
+    if (m_actions->importClasses)
+    {
+        m_actions->importClasses->setEnabled(servicesAvailable);
+    }
+
+    if (m_actions->importTeachers)
+    {
+        m_actions->importTeachers->setEnabled(servicesAvailable);
+    }
+
+    if (m_actions->upcomingBirthdays)
+    {
+        m_actions->upcomingBirthdays->setEnabled(servicesAvailable);
+    }
+
     if (m_actions->exportClasses)
     {
         m_actions->exportClasses->setEnabled(
-            loadedClasses && !loadedClasses->isEmpty()
+            servicesAvailable && hasClasses
             );
     }
 
     if (m_actions->deleteClass)
     {
         m_actions->deleteClass->setEnabled(
-            loadedClasses && !loadedClasses->isEmpty()
+            servicesAvailable && hasClasses
             );
     }
 
     if (m_actions->deleteTeacher)
     {
         m_actions->deleteTeacher->setEnabled(
-            loadedTeachers && !loadedTeachers->isEmpty()
+            servicesAvailable && hasTeachers
             );
     }
 }

@@ -150,6 +150,8 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
     qt_add_executable(ClassMngrTestingClassRepositoryTests
         tests/testing_class_repository_tests.cpp
         src/data/database/database_transaction.cpp
+        src/data/database/sql_query_utils.cpp
+        src/data/repositories/class_info_repository.cpp
         src/data/repositories/class_repository.cpp
         src/data/repositories/testing_class_repository.cpp
         src/domain/models/classroom.cpp

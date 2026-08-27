@@ -1,4 +1,5 @@
 #include "data/repositories/class_repository.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/testing_class_repository.h"
 
 #include <QSqlDatabase>
@@ -15,6 +16,7 @@ private slots:
     void persistsEverySupportedMixedLevel();
     void exposesTestingWorkspaceGradeAndLevelChoices();
     void createsClassAndAssignmentAtomically();
+    void loadsRegularClassTeacherAssignmentsInOneSnapshot();
 };
 
 namespace
@@ -453,6 +455,71 @@ void TestingClassRepositoryTests
             ));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 0);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::loadsRegularClassTeacherAssignmentsInOneSnapshot()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_sidebar_snapshot");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        ClassRepository classRepository(database);
+        const int firstClassId =
+            classRepository.createClass(QStringLiteral("Alpha")).value_or(-1);
+        const int secondClassId =
+            classRepository.createClass(QStringLiteral("Beta")).value_or(-1);
+        const int testingClassId =
+            classRepository.createClass(QStringLiteral("Testing")).value_or(-1);
+        QVERIFY(firstClassId > 0);
+        QVERIFY(secondClassId > 0);
+        QVERIFY(testingClassId > 0);
+
+        auto insertAssignment = [&](int classId, const QVariant& teacherId)
+        {
+            QSqlQuery query(database);
+            query.prepare(
+                QStringLiteral(
+                    "INSERT INTO class_info (class_id, teacher_id) VALUES (?, ?)"
+                    )
+                );
+            query.addBindValue(classId);
+            query.addBindValue(teacherId);
+            return query.exec();
+        };
+
+        QVERIFY(insertAssignment(firstClassId, 11));
+        QVERIFY(insertAssignment(secondClassId, QVariant()));
+        QVERIFY(insertAssignment(testingClassId, 22));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(
+            QStringLiteral(
+                "INSERT INTO testing_classes (class_id, room) VALUES (%1, 'T1')"
+                ).arg(testingClassId)
+            ));
+
+        ClassInfoRepository repository(database);
+        const auto assignments = repository.loadClassTeacherAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(assignments->size(), 2);
+        QCOMPARE(assignments->at(0).classId, firstClassId);
+        QCOMPARE(assignments->at(0).teacherId, 11);
+        QCOMPARE(assignments->at(1).classId, secondClassId);
+        QCOMPARE(assignments->at(1).teacherId, -1);
+
+        database.close();
     }
 
     QSqlDatabase::removeDatabase(connectionName);
