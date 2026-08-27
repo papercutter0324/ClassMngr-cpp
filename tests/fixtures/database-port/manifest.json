@@ -1,0 +1,133 @@
+{
+  "format": "classmngr-database-port-fixtures-v1",
+  "schemaVersion": 6,
+  "generatorTarget": "ClassMngrDatabasePortFixtureGenerator",
+  "fixtures": [
+    {
+      "id": "empty",
+      "file": "empty.tps",
+      "sha256": "a7afd09e2f290838f5e2ed87703c81a8fe0e40996d8e89846a2b5f274bb0a35a",
+      "kind": "current",
+      "expect": "opens as an empty schema-v6 profile",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "teachers": 0,
+        "classes": 0,
+        "calendarEvents": 0,
+        "campuses": 0
+      }
+    },
+    {
+      "id": "typical",
+      "file": "typical.tps",
+      "sha256": "d0446d78ecde09cb9cd0f649f3a34a7597bdc69f2a921c3bc4401534f3e3ff06",
+      "kind": "current",
+      "expect": "round-trips English and Korean teacher, class, roster, calendar, campus, and speaking-evaluation data",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "teacher": {
+          "english": "Fixture Teacher",
+          "korean": "대표 교사"
+        },
+        "className": "Fixture Class / 수업",
+        "rosterRows": 2,
+        "calendarTitle": "Fixture Event / 행사",
+        "campusName": "Fixture Campus",
+        "speakingEvaluation": "First Semester"
+      }
+    },
+    {
+      "id": "large",
+      "file": "large.tps",
+      "sha256": "fafad77d87ee740bbdd53e1b1e6ed3c5b7916acf5a3c880575eab2d465df2df5",
+      "kind": "current",
+      "expect": "contains a 1,000-row roster for virtualized-table and performance checks",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 1000
+      }
+    },
+    {
+      "id": "legacy-v2",
+      "file": "legacy-v2.db",
+      "sha256": "35cce84fca3f0d60144b188b1a071637b2f7082e86bb107b077beb554cbd0fee",
+      "kind": "legacy",
+      "expect": "migrates to schema v6 and repairs the unassigned teacher",
+      "semantic": {
+        "sourceSchemaVersion": 2,
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "repairsUnassignedTeacherToNull": true,
+        "backupSuffix": ".pre-schema-v4-backup"
+      }
+    },
+    {
+      "id": "legacy-v5",
+      "file": "legacy-v5.db",
+      "sha256": "24b35ba1673c65dc9390854fac692f48471a9c481e5c9524c0d47a3d63e9bb22",
+      "kind": "legacy",
+      "expect": "migrates to schema v6 and creates the v6 pre-migration backup",
+      "semantic": {
+        "sourceSchemaVersion": 5,
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "backupSuffix": ".pre-schema-v6-backup"
+      }
+    },
+    {
+      "id": "migration-invalid",
+      "file": "migration-invalid.db",
+      "sha256": "ca61ee51d2d284e4eb696765cfc3f22076bc70fb9ae171cc0988a69e46712ca0",
+      "kind": "failure",
+      "expect": "rejects invalid legacy data without mutation",
+      "semantic": {
+        "sourceSchemaVersion": 2,
+        "opens": false,
+        "errorContains": "unsupported internet type",
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "id": "migration-rollback",
+      "file": "migration-rollback.db",
+      "sha256": "898d0aae740bec3780e60c944fca205bfa1a267463d1d244dfa55e837f39d9f5",
+      "kind": "failure",
+      "expect": "rolls back a partial constrained-table migration",
+      "semantic": {
+        "opens": false,
+        "schemaVersionAfterFailure": 3,
+        "errorContains": "Database migration 4",
+        "sourceDataPreserved": true,
+        "backupSuffix": ".pre-schema-v4-backup"
+      }
+    },
+    {
+      "id": "newer-schema",
+      "file": "newer-schema.tps",
+      "sha256": "5c00ec6c19b616059711b0c7a3e11b5884e8b622547622bb9d01bb43ee4b9f73",
+      "kind": "failure",
+      "expect": "rejects a schema version newer than v6 without mutation",
+      "semantic": {
+        "sourceSchemaVersion": 7,
+        "opens": false,
+        "errorContains": "schema version 7",
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "id": "corrupt",
+      "file": "corrupt.tps",
+      "sha256": "11626154acb504b3d0f0358f9e67e428cd1abcd10671466137e2f78ba761576c",
+      "kind": "failure",
+      "expect": "fails to open a non-SQLite file safely",
+      "semantic": {
+        "opens": false,
+        "sourceUnchanged": true
+      }
+    }
+  ]
+}

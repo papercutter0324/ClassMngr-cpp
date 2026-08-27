@@ -19,6 +19,11 @@ endif()
 include(CTest)
 include(GNUInstallDirs)
 
+option(CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS
+    "Build the interactive Windows Qt Phase 0 visual-capture test target"
+    OFF
+)
+
 add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
     $<$<CXX_COMPILER_ID:MSVC>:/MP>
