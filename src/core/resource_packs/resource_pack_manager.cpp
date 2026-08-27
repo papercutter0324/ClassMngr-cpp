@@ -331,7 +331,14 @@ Status ResourcePackManager::stagePack(
         QFile::remove(finalPath);
         return std::unexpected(QStringLiteral("Unable to commit resource-pack metadata."));
     }
-    m_installedPacks.insert(artifact.id, {QFileInfo(finalPath).absoluteFilePath(), artifact.version});
+    m_installedPacks.insert(
+        artifact.id,
+        {
+            QFileInfo(finalPath).absoluteFilePath(),
+            artifact.version,
+            artifact.sha256.toLower()
+        }
+        );
     return {};
 }
 
@@ -377,12 +384,27 @@ Status ResourcePackManager::discoverInstalledPack(const Definition& packDefiniti
         return std::unexpected(QStringLiteral("Metadata for resource pack '%1' is invalid.").arg(packDefinition.id));
     }
     const QString filePath = QDir(m_storageDirectory).filePath(fileName);
-    if (!QFileInfo::exists(filePath)
-        || sha256ForFile(filePath).compare(expectedHash, Qt::CaseInsensitive) != 0)
+    const QFileInfo fileInfo(filePath);
+    if (!fileInfo.isFile())
     {
         return std::unexpected(QStringLiteral("Resource pack '%1' failed its integrity check.").arg(packDefinition.id));
     }
-    m_installedPacks.insert(packDefinition.id, {QFileInfo(filePath).absoluteFilePath(), *version});
+    m_installedPacks.insert(
+        packDefinition.id,
+        {fileInfo.absoluteFilePath(), *version, expectedHash}
+        );
+    return {};
+}
+
+Status ResourcePackManager::validateInstalledPack(
+    const QString& packId,
+    const InstalledPack& pack
+    ) const
+{
+    if (sha256ForFile(pack.filePath).compare(pack.expectedHash, Qt::CaseInsensitive) != 0)
+    {
+        return std::unexpected(QStringLiteral("Resource pack '%1' failed its integrity check.").arg(packId));
+    }
     return {};
 }
 
@@ -392,7 +414,14 @@ Status ResourcePackManager::mount(const Definition& packDefinition)
     {
         return {};
     }
-    const auto installed = m_installedPacks.constFind(packDefinition.id);
+    auto installed = m_installedPacks.constFind(packDefinition.id);
+    if (installed != m_installedPacks.cend()
+        && !validateInstalledPack(packDefinition.id, *installed))
+    {
+        discardInstalledPack(packDefinition.id);
+        installed = m_installedPacks.cend();
+    }
+
     const QString filePath = installed != m_installedPacks.cend()
         ? installed->filePath
         : QDir(m_baselineDirectory).filePath(packDefinition.id + QStringLiteral(".rcc"));
@@ -420,6 +449,24 @@ Status ResourcePackManager::mount(const Definition& packDefinition)
             .arg(packDefinition.id, version.toString())
         );
     return {};
+}
+
+void ResourcePackManager::discardInstalledPack(
+    const QString& packId
+    )
+{
+    const auto installed = m_installedPacks.find(packId);
+    if (installed == m_installedPacks.end())
+    {
+        return;
+    }
+
+    const QString filePath = installed->filePath;
+    m_installedPacks.erase(installed);
+    QFile::remove(filePath);
+    QFile::remove(
+        QDir(m_storageDirectory).filePath(packId + QStringLiteral(".json"))
+        );
 }
 
 void ResourcePackManager::release(const QString& packId)

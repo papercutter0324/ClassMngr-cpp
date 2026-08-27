@@ -3,6 +3,9 @@
 > **Codex scope:** Read `00-START-HERE.md` plus this file. Implement and validate **Phase 9 only**. Do not start later phases.
 
 # Phase 9 — Refine Resource-Pack Initialization
+
+> **Status:** Complete — validated 2026-08-27.
+
 ## Objective
 Ensure feature resource packs are discovered, validated, and mounted only as needed.
 

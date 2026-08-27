@@ -386,7 +386,11 @@ void ResourcePackTests::fallsBackToBaselineWhenUpdateIsInvalid()
         temporaryDirectory.path(),
         baselineDirectory.path()
         );
-    QVERIFY(!manager.initialize().has_value());
+    // Metadata discovery is deliberately lightweight. The corrupt artifact
+    // remains unmounted until it is requested, when its checksum is checked
+    // and the baseline pack is used instead.
+    QVERIFY(manager.initialize().has_value());
+    QVERIFY(!manager.isMounted(QStringLiteral("campuses")));
 
     auto lease = manager.acquire(QStringLiteral("campuses"));
     QVERIFY(lease.has_value());
@@ -394,6 +398,10 @@ void ResourcePackTests::fallsBackToBaselineWhenUpdateIsInvalid()
     QVERIFY(marker.open(QIODevice::ReadOnly));
     QCOMPARE(marker.readAll().trimmed(), QByteArrayLiteral("external campus pack"));
     lease->reset();
+    QVERIFY(!QFileInfo::exists(stagedPath));
+    QVERIFY(!QFileInfo::exists(
+        temporaryDirectory.filePath(QStringLiteral("campuses.json"))
+        ));
 }
 
 void ResourcePackTests::failsWhenNoValidPackExists()

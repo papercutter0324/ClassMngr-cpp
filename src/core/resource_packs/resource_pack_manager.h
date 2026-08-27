@@ -53,7 +53,8 @@ public:
         QString baselineDirectory = QString()
         );
 
-    // Performs file-system discovery only. It never registers an RCC.
+    // Performs lightweight metadata discovery only. It never reads or
+    // registers an RCC artifact.
     [[nodiscard]] Status initialize();
 
     [[nodiscard]] Result<ResourcePackLease> acquire(
@@ -87,6 +88,7 @@ private:
     {
         QString filePath;
         Version version;
+        QString expectedHash;
     };
 
     struct MountedPack
@@ -99,7 +101,12 @@ private:
 
     [[nodiscard]] const Definition* definition(const QString& packId) const;
     [[nodiscard]] Status discoverInstalledPack(const Definition& definition);
+    [[nodiscard]] Status validateInstalledPack(
+        const QString& packId,
+        const InstalledPack& pack
+        ) const;
     [[nodiscard]] Status mount(const Definition& definition);
+    void discardInstalledPack(const QString& packId);
     void release(const QString& packId);
     void removeStalePackFiles() const;
 
