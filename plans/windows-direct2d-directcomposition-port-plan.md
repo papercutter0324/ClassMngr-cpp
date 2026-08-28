@@ -17,6 +17,14 @@ therefore includes a small ClassMngr Windows presentation layer built on Win32,
 Direct2D 1.3, DirectWrite, WIC, DirectComposition, UI Automation, and native system
 services.
 
+## Current Handoff
+
+The current Phase 0 state, evidence provenance, reproducible Windows commands,
+and next-device checklist are maintained in
+[docs/porting/windows-direct2d/current-status.md](../docs/porting/windows-direct2d/current-status.md).
+Keep that record updated when a new capture run, build revision, or validation
+result changes the Phase 0 gate.
+
 ## Current-State Findings
 
 - `ClassMngrBuildSettings` currently links every production object library to

@@ -27,6 +27,9 @@ behavior changes while the port is in progress.
   dialog, command, and high-risk editor has a stable artifact prefix and state.
 - [Performance budget and measurement protocol](phase-0/performance-baseline.md).
 - [Initial Windows x64 baseline result](phase-0/baseline-results.md).
+- [Current cross-device status and handoff](current-status.md) — validated
+  revision, evidence provenance, remaining Phase 0 work, and reproduction
+  commands.
 - [Port foundation ADR](../adr/0001-windows-native-port-foundations.md) — the
   frozen architectural choices that constrain all later phases.
 
