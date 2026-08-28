@@ -7,15 +7,10 @@ progress; its exit gate has not been claimed.
 
 ## Repository snapshot
 
-- Branch: `NativeWindowsPort`, ahead of `origin/NativeWindowsPort` by five
-  commits when this record was created.
-- HEAD: `e483053` (`Add artifacts folder for cross device development`).
-- The current handoff and artifact commits contain evidence/documentation
-  changes relative to the last product source revision, `b34a357`; no native
-  Direct2D/DirectComposition target has been implemented yet.
-- The working tree was clean before this handoff file and its links were
-  added. The handoff documentation is the pending change to commit before
-  switching devices.
+- Branch: `NativeWindowsPort`, at `origin/NativeWindowsPort`.
+- HEAD: `d9732c8` (`Phase 0 Linux verification done`).
+- The current product source still has no native Direct2D/DirectComposition
+  target; this status file and the capture artifacts are Phase 0 evidence.
 
 ## Phase 0 completed evidence
 
@@ -28,8 +23,20 @@ progress; its exit gate has not been claimed.
 - Windows x64 Debug non-visual validation passed 67/67 tests, including the
   database-port fixture tests.
 - The visual target passed 16/16 scenarios with
-  `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=100`. Every sidecar in the run
-  reports 100% display scale and `sourceRevision: b34a357`.
+  `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=100` on the replacement computer
+  with one active 2560x1600 monitor. The final run is
+  `20260828T083829986Z-18036`; every promoted sidecar reports 100% display
+  scale, a 1270x1040 capture window, and `sourceRevision: d9732c8`.
+- The same visual target passed 16/16 scenarios with
+  `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=150` on the current 150%-scaled
+  displays. The validated run is
+  `20260828T080550115Z-12884`; every sidecar reports 150% display scale and
+  `sourceRevision: d9732c8`. The stable 100% baseline remains retained for
+  cross-scale comparison.
+- The same visual target passed 16/16 scenarios with
+  `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=200` on one active monitor. The
+  validated run is `20260828T091020942Z-21232`; every sidecar reports 200%
+  display scale, a 1270x780 capture window, and `sourceRevision: d9732c8`.
 - Phase 0 contract validation passes: 80 capture rows, 21 parity rows, and
   nine fixtures.
 - The current x64 Debug startup probe has three runs at approximately 3.4 s
@@ -57,17 +64,20 @@ progress; its exit gate has not been claimed.
 
 ## Current visual evidence
 
-The latest validated capture run is:
+The latest validated 200% capture run is:
 
 ```text
-artifacts/phase0/windows-qt-visual/20260828T025557225Z-39876/
+artifacts/phase0/windows-qt-visual/20260828T091020942Z-21232/
 ```
 
-It contains 16 PNG/JSON pairs. The artifact directory is ignored and is not
-carried by Git; another device must either copy it separately or recapture it.
-The capture was produced from the `b34a357` product build. Since `b4a4efd` is
-documentation-only, the captured product source is unchanged, but a strict
-current-HEAD provenance run should rebuild the target first.
+It contains 16 PNG/JSON pairs, validated against the Phase 0 artifact
+contract. The stable 100% baseline at
+`artifacts/phase0/windows-qt-visual/20260828T025557225Z-39876/` was replaced
+with the single-monitor run `20260828T083829986Z-18036` so the canonical
+evidence no longer includes the previous second-monitor capture. The validated
+150% companion remains at
+`artifacts/phase0/windows-qt-visual/20260828T080550115Z-12884/`; the 200% run
+was generated on the same single-monitor setup.
 
 ## Remaining Phase 0 work
 
@@ -75,8 +85,9 @@ current-HEAD provenance run should rebuild the target first.
    validation, error, modal, print/PDF, and output flows.
 2. Perform manual keyboard-only, Korean IME, UI Automation/Narrator,
    high-contrast, focus-restoration, and unsaved-change checks.
-3. Complete light-theme and 150%/200% DPI evidence; the 100% automated matrix
-   has been recaptured.
+3. Complete manual review of the 100%/150%/200% DPI evidence; all three
+   automated matrices have been captured and validated on the replacement
+   computer.
 4. Resolve and rerun the two Linux diagnostics failures above, then validate
    the retained Qt product on macOS and run Windows ARM64 tests on ARM64
    hardware.
@@ -86,12 +97,12 @@ current-HEAD provenance run should rebuild the target first.
 ## Reproduce on another Windows device
 
 From the repository root, with the required Qt 6.11.1 kit, Visual Studio,
-Windows SDK, and an interactive monitor configured at 100% scaling:
+Windows SDK, and an interactive monitor configured at 100% or 150% scaling:
 
 ```powershell
 cmake --preset windows-x64-phase0-visual
 cmake --build build/windows-x64-phase0-visual --config Debug --target ClassMngrWindowsQtVisualCaptureTests --parallel 2
-$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "100"
+$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "100" # or "150"
 ctest --test-dir build/windows-x64-phase0-visual -C Debug -R ClassMngrWindowsQtVisualCaptureTests --output-on-failure
 ```
 

@@ -57,6 +57,7 @@ endif()
 if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
     classmngr_add_qt_test(
         NAME WindowsQtVisualCapture
+        MANUAL_FINALIZATION
         SOURCES
             tests/windows/visual_scenario_registry.cpp
             tests/windows/windows_qt_visual_capture_tests.cpp
@@ -71,6 +72,13 @@ if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
             "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
         WORKING_DIRECTORY
             "${PROJECT_SOURCE_DIR}"
+    )
+
+    # Keep the native capture executable DPI-aware so Qt observes the real
+    # per-monitor scale instead of Windows DPI virtualization.
+    target_sources(ClassMngrWindowsQtVisualCaptureTests
+        PRIVATE
+            resources/windows/ClassMngrQtVisualCapture.manifest
     )
 
     add_dependencies(
@@ -134,6 +142,10 @@ if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
             resources/assets/translations/ClassMngr_en_US.ts
             resources/assets/translations/ClassMngr_ko_KR.ts
     )
+
+    # Finalize after all target sources are present so Qt honors the custom
+    # manifest instead of generating its DPI-unaware default.
+    qt_finalize_target(ClassMngrWindowsQtVisualCaptureTests)
 
     set_tests_properties(
         ClassMngrWindowsQtVisualCaptureTests

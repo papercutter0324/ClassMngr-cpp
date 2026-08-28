@@ -3,7 +3,10 @@ include_guard(GLOBAL)
 # Declare a QtTest executable with the project-wide target and CTest defaults.
 # Feature-specific resources and platform libraries remain next to the call site.
 function(classmngr_add_qt_test)
-    set(options OFFSCREEN)
+    set(options
+        OFFSCREEN
+        MANUAL_FINALIZATION
+    )
     set(one_value_arguments
         NAME
         WORKING_DIRECTORY
@@ -56,7 +59,13 @@ function(classmngr_add_qt_test)
     list(FILTER test_sources EXCLUDE REGEX "^${PROJECT_SOURCE_DIR}/src/")
     list(FILTER test_sources EXCLUDE REGEX "^src/")
 
+    set(qt_executable_options)
+    if(CLASSMNGR_TEST_MANUAL_FINALIZATION)
+        list(APPEND qt_executable_options MANUAL_FINALIZATION)
+    endif()
+
     qt_add_executable("${target}"
+        ${qt_executable_options}
         ${test_sources}
     )
 

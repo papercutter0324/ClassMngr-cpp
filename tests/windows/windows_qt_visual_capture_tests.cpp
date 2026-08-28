@@ -157,7 +157,10 @@ int displayScalePercent(const QScreen* screen)
         return 0;
     }
 
-    return qRound((screen->logicalDotsPerInchX() / 96.0) * 100.0);
+    // On Windows, logicalDotsPerInchX() remains the 96-DPI design baseline
+    // even when the monitor is scaled. The device-pixel ratio is the Qt value
+    // that reflects the effective per-monitor scale used by the native window.
+    return qRound(screen->devicePixelRatio() * 100.0);
 }
 
 QString sha256ForFile(const QString& filePath)
