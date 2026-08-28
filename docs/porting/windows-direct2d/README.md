@@ -47,22 +47,26 @@ support are also deferred from the current roadmap.
 | Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 11 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
 | Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, 16 validated baseline Qt captures per DPI run, and a 28-scenario expanded run covering populated, empty, large, dirty, validation, and error editor states at 150% | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
 | Performance | historical x64 Release budget plus three current x64 Debug GUI samples | approve a current x64 Release baseline and capture page/scroll/output samples; ARM64 is deferred |
-| Build preservation | macOS universal Qt Debug/Release validation passed; Linux Qt Debug configured and rebuilt with 65/67 tests passing and two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures; macOS and Windows x64 validation is complete |
+| Build preservation | macOS universal Qt Debug/Release validation passed; Linux Qt Debug and Release configured, rebuilt, and tested 67/67 | no Linux-specific gate remains; retain green regression validation as the port advances |
 
 The capture target is opt-in through
 `CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS`; it requires an interactive
 Windows display and never treats the offscreen Qt platform as authoritative.
 The Phase 0 additions do not change product behavior or database schema.
 
-## Linux validation
+## Linux validation — complete
 
-The retained Linux Qt product was configured and rebuilt from the
+The Linux-specific Phase 0 retained-platform gate is complete. The retained
+Linux Qt product was configured and rebuilt from the
 `linux-gcc-debug` preset with Qt 6.11.1. The database-port verifier passed all
-eleven checked-in fixtures. The full Qt test suite passed 65 of 67 tests when run
-with `QT_QPA_PLATFORM=offscreen` and normal loopback access; the two remaining
-failures are the Linux `/proc` memory snapshot assertion and the dependent
-startup-memory assertion. Details and the recorded result are in
-the [cross-device status record](current-status.md).
+eleven checked-in fixtures, and the full Qt test suite passed 67/67 tests when
+run with `QT_QPA_PLATFORM=offscreen` and normal loopback access. The Linux
+`/proc` memory reader was corrected to read procfs content until
+`QFile::readLine()` reaches its actual EOF; the memory snapshot and dependent
+startup-memory tests now pass. The Linux Release preset also builds and tests
+67/67; its installed XCB bundle launches successfully, and its archive
+checksum verifies. Details and the recorded result are in the
+[cross-device status record](current-status.md).
 
 The validation commands are:
 

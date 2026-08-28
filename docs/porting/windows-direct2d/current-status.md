@@ -8,7 +8,7 @@ progress; its exit gate has not been claimed.
 ## Repository snapshot
 
 - Branch: `NativeWindowsPort`, at `origin/NativeWindowsPort`.
-- HEAD: `4615cbd` (`Phase 0: Further capture coverage`).
+- HEAD: `9e9b15f` (`Fix the /proc memory reader code`).
 - The current product source still has no native Direct2D/DirectComposition
   target; this status file and the capture artifacts are Phase 0 evidence.
 - The current Phase 0 release gate is x64 only. ARM64 build compatibility is
@@ -67,22 +67,27 @@ progress; its exit gate has not been claimed.
   compatibility evidence. No ARM64 runtime validation is planned in the
   current roadmap.
 
-## Linux Qt validation
+## Linux Qt validation — complete
 
+- The Linux-specific Phase 0 retained-platform gate is complete.
 - `cmake --preset linux-gcc-debug` configured successfully with Qt 6.11.1;
   the retained `ClassMngr` executable and all 67 registered test targets
   rebuilt successfully.
 - `ClassMngrDatabasePortFixtureTests` passed, verifying all eleven checked-in
   database fixtures and their migration/rollback expectations.
-- The complete Linux Qt Debug suite passed 65/67 tests when run with
+- The complete Linux Qt Debug suite passed 67/67 tests when run with
   `QT_QPA_PLATFORM=offscreen` and normal loopback access. All updater tests
   passed once the local HTTP test server was allowed to bind.
-- The two remaining failures are the Linux memory snapshot assertion at
-  `tests/memory_usage_tests.cpp:315` and the dependent startup-memory
-  assertion at `tests/startup_performance_tests.cpp:658`. The Linux provider
-  reads `/proc` pseudo-files with `QFile::atEnd()`, which sees their reported
-  zero size and returns an unavailable sample. No Linux source was changed by
-  this validation run.
+- The Linux Qt Release preset also configured and built successfully; its
+  complete CTest suite passed 67/67 with loopback access.
+- Release installation and deployment succeeded with bundled Qt libraries,
+  QML files, plugins, translations, licenses, and resource packs. The
+  installed XCB bundle launched successfully on the host display, and the
+  generated Linux archive checksum verified.
+- The Linux `/proc` memory reader now reads until `QFile::readLine()` returns a
+  null value instead of using `QFile::atEnd()`, whose zero-size result for
+  procfs files caused unavailable snapshots. The memory snapshot and
+  dependent startup-memory tests pass.
 
 ## macOS Qt validation
 
@@ -152,7 +157,7 @@ It contains 28 PNG/JSON pairs at 150% display scale and is validated against
 the Phase 0 artifact contract. It is exploratory evidence until the required
 visual/manual review is complete.
 
-The repository HEAD is `4615cbd`; the promoted 100%/150%/200% capture sidecars
+The repository HEAD is `9e9b15f`; the promoted 100%/150%/200% capture sidecars
 correctly retain their captured-product `sourceRevision: d9732c8`. The
 expanded editor run records `sourceRevision: fb4f268` and is automated evidence
 pending visual/manual review; it is not yet a reviewed/stable golden matrix.
@@ -168,9 +173,7 @@ pending visual/manual review; it is not yet a reviewed/stable golden matrix.
 3. Complete manual review of the 100%/150%/200% DPI evidence; all three
    automated matrices have been captured and validated on the replacement
    computer.
-4. Resolve and rerun the two Linux diagnostics failures above; retained macOS
-   Qt validation is complete.
-5. Collect a current Windows x64 Release baseline plus resize, scrolling,
+4. Collect a current Windows x64 Release baseline plus resize, scrolling,
    first-paint, output, and device-recovery measurements.
 
 ## Reproduce on another Windows device
