@@ -39,15 +39,36 @@ behavior changes while the port is in progress.
 | --- | --- | --- |
 | Source and test inventory | initial pass complete | keep it synchronized with Qt behavior changes |
 | Parity matrix | seeded | every cell must have evidence before cutover |
-| Database fixtures | generated, SHA-pinned corpus with executable semantic/migration verification | commit fixtures; record Linux Qt and native-engine result digests |
+| Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 9 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
 | Screenshots, IME, UIA, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, and 16 validated current-HEAD Qt captures | capture the remaining ledger states and manually review input/accessibility/output evidence |
 | Performance | historical x64 Release budget plus three current x64 Debug GUI samples; ARM64 runtime pending | approve a current Release baseline, establish ARM64 equivalents, and capture page/scroll/output samples |
-| Build preservation | Phase 0 fixture and visual targets compile; 67/67 Windows x64 Debug non-visual tests pass | run the full x64, ARM64, and Linux validation unchanged |
+| Build preservation | Linux Qt Debug configured and rebuilt; 65/67 tests pass, with two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures, then complete macOS and Windows x64/ARM64 validation unchanged |
 
 The capture target is opt-in through
 `CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS`; it requires an interactive
 Windows display and never treats the offscreen Qt platform as authoritative.
 The Phase 0 additions do not change product behavior or database schema.
+
+## Linux validation
+
+The retained Linux Qt product was configured and rebuilt from the
+`linux-gcc-debug` preset with Qt 6.11.1. The database-port verifier passed all
+nine checked-in fixtures. The full Qt test suite passed 65 of 67 tests when run
+with `QT_QPA_PLATFORM=offscreen` and normal loopback access; the two remaining
+failures are the Linux `/proc` memory snapshot assertion and the dependent
+startup-memory assertion. Details and the exact current-HEAD result are in
+the [cross-device status record](current-status.md).
+
+The validation commands are:
+
+```bash
+cmake --preset linux-gcc-debug
+cmake --build build/linux-gcc-debug -j2
+build/linux-gcc-debug/ClassMngrDatabasePortFixtureGenerator \
+  --verify-directory tests/fixtures/database-port
+env QT_QPA_PLATFORM=offscreen \
+  ctest --test-dir build/linux-gcc-debug --output-on-failure
+```
 
 Validate the checked-in Phase 0 ledgers and fixture hashes with:
 

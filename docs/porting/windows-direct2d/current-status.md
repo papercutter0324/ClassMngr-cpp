@@ -9,10 +9,10 @@ progress; its exit gate has not been claimed.
 
 - Branch: `NativeWindowsPort`, ahead of `origin/NativeWindowsPort` by five
   commits when this record was created.
-- HEAD: `b4a4efd` (`Pase 0 - Initial visual capture at 100% DPI`).
-- `b4a4efd` contains documentation-only changes relative to the last product
-  source revision, `b34a357`; no native Direct2D/DirectComposition target has
-  been implemented yet.
+- HEAD: `e483053` (`Add artifacts folder for cross device development`).
+- The current handoff and artifact commits contain evidence/documentation
+  changes relative to the last product source revision, `b34a357`; no native
+  Direct2D/DirectComposition target has been implemented yet.
 - The working tree was clean before this handoff file and its links were
   added. The handoff documentation is the pending change to commit before
   switching devices.
@@ -38,6 +38,23 @@ progress; its exit gate has not been claimed.
 - Windows ARM64 Qt compilation/linking was established, but ARM64 runtime
   validation has not been performed.
 
+## Linux Qt validation
+
+- `cmake --preset linux-gcc-debug` configured successfully with Qt 6.11.1;
+  the retained `ClassMngr` executable and all 67 registered test targets
+  rebuilt successfully.
+- `ClassMngrDatabasePortFixtureTests` passed, verifying all nine checked-in
+  database fixtures and their migration/rollback expectations.
+- The complete Linux Qt Debug suite passed 65/67 tests when run with
+  `QT_QPA_PLATFORM=offscreen` and normal loopback access. All updater tests
+  passed once the local HTTP test server was allowed to bind.
+- The two remaining failures are the Linux memory snapshot assertion at
+  `tests/memory_usage_tests.cpp:315` and the dependent startup-memory
+  assertion at `tests/startup_performance_tests.cpp:658`. The Linux provider
+  reads `/proc` pseudo-files with `QFile::atEnd()`, which sees their reported
+  zero size and returns an unavailable sample. No Linux source was changed by
+  this validation run.
+
 ## Current visual evidence
 
 The latest validated capture run is:
@@ -60,8 +77,9 @@ current-HEAD provenance run should rebuild the target first.
    high-contrast, focus-restoration, and unsaved-change checks.
 3. Complete light-theme and 150%/200% DPI evidence; the 100% automated matrix
    has been recaptured.
-4. Revalidate the retained Qt product on Linux/macOS and run Windows ARM64
-   tests on ARM64 hardware.
+4. Resolve and rerun the two Linux diagnostics failures above, then validate
+   the retained Qt product on macOS and run Windows ARM64 tests on ARM64
+   hardware.
 5. Collect a current Windows x64 Release baseline and equivalent ARM64,
    resize, scrolling, first-paint, output, and device-recovery measurements.
 

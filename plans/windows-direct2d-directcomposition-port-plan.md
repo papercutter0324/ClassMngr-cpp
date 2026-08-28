@@ -202,10 +202,19 @@ Create short ADRs before implementation for these decisions:
    printing/export, and performance status. Set explicit budgets for startup,
    steady-state memory, resize latency, scrolling, first paint, and device
    recovery based on the current release.
+10. Run the retained Qt regression validation before claiming the Phase 0 gate.
+    On Linux, configure and build the normal Qt preset, verify all checked-in
+    database-port fixtures, and run the full Qt test suite with required local
+    test services available. Record platform-specific failures as open gate
+    items. Do not change or weaken retained Linux/macOS behavior solely to
+    satisfy the Windows port; route unrelated fixes through normal product
+    work.
 
 **Exit gate:** the behavior inventory, fixtures, parity matrix, and reproducible
 Windows Qt evidence set exist; every capture scenario proves show/capture/close
-cleanup; and the current Windows, macOS, and Linux Qt builds pass unchanged.
+cleanup; and the retained Windows, macOS, and Linux Qt builds pass unchanged.
+Any retained-platform regression or fixture-validation failure keeps the gate
+open.
 
 ### Phase 1 — Split the Build Without Changing Products
 
