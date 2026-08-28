@@ -14,7 +14,8 @@ enum class WindowsQtCaptureSurface
     RegisteredPage,
     WorkspaceTab,
     Menu,
-    ClassSection
+    ClassSection,
+    Dialog
 };
 
 enum class WindowsQtCaptureMutation
@@ -41,6 +42,7 @@ struct WindowsQtCaptureScenario
     ClassesSection classSection = ClassesSection::Details;
     WindowsQtCaptureMutation mutation = WindowsQtCaptureMutation::None;
     WorkspaceTab workspaceTab = WorkspaceTab::Details;
+    QString dialogId;
     QString menuTitle;
     Theme theme = Theme::Light;
     Language language = Language::English;

@@ -152,7 +152,11 @@ if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
         ClassMngrWindowsQtVisualCaptureTests
         PROPERTIES
             LABELS "phase0;windows;visual"
-            TIMEOUT 180
+            # The scenario registry includes app-owned dialogs in addition to
+            # the page/editor matrix. Use CLASSMNGR_PHASE0_SCENARIO_FILTER to
+            # run a focused subset when an interactive runner has a tighter
+            # wall-clock budget.
+            TIMEOUT 600
     )
 endif()
 

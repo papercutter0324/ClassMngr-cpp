@@ -1,14 +1,44 @@
 #include "visual_scenario_registry.h"
 
+#include "app/menu_builder.h"
 #include "app/mainwindow.h"
+#include "app/services/feature_services.h"
+#include "core/application_services.h"
 #include "core/build_info.h"
 #include "core/fontmanager.h"
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/settingsmanager.h"
 #include "core/theme_service.h"
+#include "core/updater/update_service.h"
+#include "domain/models/calendar_event.h"
+#include "domain/models/class_transfer.h"
+#include "domain/models/speaking_evaluation.h"
+#include "features/calendar/ui/calendar_event_dialog.h"
+#include "features/classes/ui/class_export_dialog.h"
+#include "features/classes/ui/class_import_dialog.h"
+#include "features/roster/ui/roster_print_dialog.h"
 #include "features/roster/ui/roster_model.h"
+#include "features/schedule/ui/schedule_editor_dialog.h"
+#include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_dialog.h"
+#include "features/schedule/ui/schedule_print_dialog.h"
+#include "features/schedule/ui/testing_assignment_dialog.h"
+#include "features/setup/ui/initial_setup_wizard.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
+#include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "features/sub_prep/ui/sub_prep_print_dialog.h"
+#include "features/teacher/ui/teacher_import_dialog.h"
+#include "features/teacher/ui/upcoming_birthdays_dialog.h"
+#include "ui/shared/dialogs/about_dialog.h"
+#include "ui/shared/dialogs/license_dialog.h"
+#include "ui/shared/dialogs/memory_usage_dialog.h"
+#include "ui/shared/dialogs/record_selection_dialog.h"
+#include "ui/shared/dialogs/update_dialog.h"
+#include "ui/shared/printing/pdf_print_dialog.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
 
@@ -19,6 +49,8 @@
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QEvent>
 #include <QEventLoop>
 #include <QFile>
@@ -28,10 +60,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPixmap>
 #include <QPoint>
+#include <QPdfDocument>
 #include <QRect>
 #include <QSaveFile>
 #include <QScreen>
@@ -214,6 +249,529 @@ QString workspaceTabName(WorkspaceTab tab)
     }
 
     return QStringLiteral("Workspace");
+}
+
+int firstClassId(
+    ApplicationServices* services,
+    QString* errorMessage
+    )
+{
+    if (!services || !services->classService())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral(
+                "The scenario requires an available class service."
+                );
+        }
+        return -1;
+    }
+
+    const Result<QList<Classroom>> classes = services->classService()->classes();
+    if (!classes)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = classes.error();
+        }
+        return -1;
+    }
+
+    if (classes->isEmpty())
+    {
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral(
+                "The deterministic fixture contains no classes."
+                );
+        }
+        return -1;
+    }
+
+    return classes->first().id;
+}
+
+CalendarEvent captureCalendarEvent(bool existing)
+{
+    CalendarEvent event;
+    event.id = existing ? 17 : -1;
+    event.title = existing
+        ? QStringLiteral("Faculty Workshop")
+        : QStringLiteral("New Semester");
+    event.eventType = QStringLiteral("Workshop");
+    event.timeStatus = QStringLiteral("Timed");
+    event.startDate = QDate(2026, 8, 31);
+    event.startTime = QTime(16, 0);
+    event.endDate = QDate(2026, 8, 31);
+    event.endTime = QTime(17, 30);
+    return event;
+}
+
+ClassTransferPackage captureClassTransferPackage()
+{
+    ClassTransferPackage package;
+    package.exportedAtUtc = QDateTime(
+        QDate(2026, 8, 28),
+        QTime(9, 0),
+        Qt::UTC
+        );
+
+    ClassTransferClass transferClass;
+    transferClass.key = QStringLiteral("phase0-class");
+    transferClass.name = QStringLiteral("Phase 0 English Class");
+    transferClass.info.classGrade = QStringLiteral("E6");
+    transferClass.info.classLevel = QStringLiteral("Helios");
+    transferClass.info.roomNumber = QStringLiteral("Room 201");
+    transferClass.info.readingBook = QStringLiteral("Reading Explorer 3");
+    transferClass.info.essayBook = QStringLiteral("6A");
+    package.classes.append(transferClass);
+
+    return package;
+}
+
+UpcomingBirthdaySchedule captureBirthdaySchedule(bool populated)
+{
+    UpcomingBirthdaySchedule schedule;
+    if (!populated)
+    {
+        return schedule;
+    }
+
+    schedule.today.append({
+        .date = QDate(2026, 8, 29),
+        .displayName = QStringLiteral("Kim Min-jun"),
+        .position = QStringLiteral("Korean Teacher"),
+        .group = UpcomingBirthdayGroup::KoreanTeacher
+    });
+    schedule.thisWeek.append({
+        .date = QDate(2026, 8, 31),
+        .displayName = QStringLiteral("Alex Smith"),
+        .position = QStringLiteral("Native English Teacher"),
+        .group = UpcomingBirthdayGroup::NativeEnglishTeacher
+    });
+    schedule.nextWeek.append({
+        .date = QDate(2026, 9, 7),
+        .displayName = QStringLiteral("Park Ji-hye"),
+        .position = QStringLiteral("GS Team"),
+        .group = UpcomingBirthdayGroup::GsTeam
+    });
+    return schedule;
+}
+
+ScheduleImportReviewRequest captureScheduleImportReviewRequest()
+{
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.profileName = QStringLiteral("Phase 0 Teacher");
+    request.user.name = QStringLiteral("Phase 0 Teacher");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("phase0-teacher");
+    candidate.teacherKr = QStringLiteral("Phase 0 Teacher");
+    candidate.rooms = {QStringLiteral("201")};
+    candidate.classGrade = QStringLiteral("E6");
+    candidate.classLevel = QStringLiteral("Orion");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    request.user.classes = {candidate};
+    return request;
+}
+
+QList<SpeakingEvalBatchReportService::StudentReport>
+captureSpeakingReports()
+{
+    SpeakingEvalBatchReportService::StudentReport first;
+    first.displayName = QStringLiteral("Alice Example (예시 학생)");
+    first.sourceRow = 0;
+    first.report.englishName = QStringLiteral("Alice Example");
+    first.report.koreanName = QStringLiteral("예시 학생");
+    first.report.classLabel = QStringLiteral("E6 Helios");
+    first.report.nativeTeacher = QStringLiteral("Alex Smith");
+    first.report.koreanTeacher = QStringLiteral("Kim Min-jun");
+    first.report.date = QStringLiteral("August 29, 2026");
+    first.report.comments = QStringLiteral(
+        "Alice participates actively and communicates her ideas clearly."
+        );
+    first.report.notes = QStringLiteral("Phase 0 deterministic report fixture");
+    first.report.grade = 6;
+    first.report.scores = {
+        QStringLiteral("A"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("A"),
+        QStringLiteral("A"),
+        QStringLiteral("A")
+    };
+
+    SpeakingEvalBatchReportService::StudentReport second = first;
+    second.displayName = QStringLiteral("Bob Example (예시 학생)");
+    second.sourceRow = 1;
+    second.report.englishName = QStringLiteral("Bob Example");
+    second.report.koreanName = QStringLiteral("예시 학생");
+    second.report.comments = QStringLiteral(
+        "Bob is steadily improving his fluency and classroom confidence."
+        );
+    second.report.scores = {
+        QStringLiteral("B+"),
+        QStringLiteral("A"),
+        QStringLiteral("B"),
+        QStringLiteral("A"),
+        QStringLiteral("B+"),
+        QStringLiteral("A")
+    };
+
+    return {first, second};
+}
+
+std::unique_ptr<QDialog> createDialogScenario(
+    const WindowsQtCaptureScenario& scenario,
+    MainWindow* window,
+    const QString& temporaryRoot,
+    QString* errorMessage
+    )
+{
+    ApplicationServices* services = window ? window->services() : nullptr;
+
+    if (scenario.dialogId == QStringLiteral("initial-setup"))
+    {
+        return std::make_unique<InitialSetupWizard>(services, window);
+    }
+
+    if (scenario.dialogId == QStringLiteral("calendar-event-new"))
+    {
+        return std::make_unique<CalendarEventDialog>(
+            captureCalendarEvent(false),
+            false,
+            true,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("calendar-event-edit"))
+    {
+        return std::make_unique<CalendarEventDialog>(
+            captureCalendarEvent(true),
+            true,
+            true,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("calendar-event-validation"))
+    {
+        return std::make_unique<CalendarEventDialog>(
+            captureCalendarEvent(true),
+            true,
+            true,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("class-import"))
+    {
+        const ClassTransferPackage package = captureClassTransferPackage();
+        ClassImportPreview preview;
+        ClassImportClassPreview classPreview;
+        classPreview.packageClassIndex = 0;
+        preview.classes.append(classPreview);
+        return std::make_unique<ClassImportDialog>(
+            nullptr,
+            nullptr,
+            package,
+            preview,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("class-export"))
+    {
+        return std::make_unique<ClassExportDialog>(
+            scenario.databaseOpen && services
+                ? services->classService()
+                : nullptr,
+            scenario.databaseOpen && services
+                ? services->teacherService()
+                : nullptr,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("teacher-import-invalid"))
+    {
+        auto dialog = std::make_unique<TeacherImportDialog>(window);
+        dialog->setFilePath(
+            QDir(temporaryRoot).filePath(QStringLiteral("missing-teachers.xlsx"))
+            );
+        return dialog;
+    }
+
+    if (
+        scenario.dialogId == QStringLiteral("upcoming-birthdays-populated")
+        || scenario.dialogId == QStringLiteral("upcoming-birthdays-empty")
+        )
+    {
+        return std::make_unique<UpcomingBirthdaysDialog>(
+            captureBirthdaySchedule(
+                scenario.dialogId
+                    == QStringLiteral("upcoming-birthdays-populated")
+                ),
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("schedule-editor"))
+    {
+        const int classId = firstClassId(services, errorMessage);
+        if (classId < 0)
+        {
+            return nullptr;
+        }
+        return std::make_unique<ScheduleEditorDialog>(
+            services,
+            classId,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("schedule-import-invalid"))
+    {
+        auto dialog = std::make_unique<ScheduleImportDialog>(services, window);
+        dialog->setFilePath(
+            QDir(temporaryRoot).filePath(QStringLiteral("missing-schedule.xlsx"))
+            );
+        return dialog;
+    }
+
+    if (scenario.dialogId == QStringLiteral("schedule-import-review"))
+    {
+        auto dialog = std::make_unique<ScheduleImportReviewDialog>(
+            services,
+            captureScheduleImportReviewRequest(),
+            window
+            );
+        if (!dialog->prepare())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "The deterministic schedule-import review request could not be prepared."
+                    );
+            }
+            return nullptr;
+        }
+        return dialog;
+    }
+
+    if (scenario.dialogId == QStringLiteral("testing-assignment"))
+    {
+        if (!services || !services->scheduleService())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "The scenario requires an available schedule service."
+                    );
+            }
+            return nullptr;
+        }
+        return std::make_unique<TestingAssignmentDialog>(
+            services->scheduleService(),
+            nullptr,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("schedule-print"))
+    {
+        return std::make_unique<SchedulePrintDialog>(
+            SchedulePrintDialog::Action::SaveAs,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("roster-print"))
+    {
+        const int classId = firstClassId(services, errorMessage);
+        if (classId < 0)
+        {
+            return nullptr;
+        }
+        return std::make_unique<RosterPrintDialog>(
+            services,
+            classId,
+            RosterTemplatePrintService::Scope::CurrentClass,
+            RosterPrintDialog::Action::SaveAs,
+            window,
+            true
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("speaking-notes"))
+    {
+        return std::make_unique<SpeakingEvalNotesDialog>(
+            QStringLiteral("Private note for the deterministic fixture."),
+            QStringLiteral("A report comment for the deterministic fixture."),
+            SpeakingEvalNotesDialog::InitialSection::Notes,
+            window,
+            QStringLiteral("Alice Example"),
+            QStringLiteral("예시 학생")
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("speaking-ai-batch"))
+    {
+        return std::make_unique<SpeakingEvalAiBatchDialog>(
+            captureSpeakingReports(),
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("speaking-batch-export"))
+    {
+        return std::make_unique<SpeakingEvalBatchExportDialog>(
+            captureSpeakingReports(),
+            0,
+            temporaryRoot,
+            SpeakingEvalBatchExportDialog::Mode::SaveAs,
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("speaking-report"))
+    {
+        return std::make_unique<SpeakingEvalReportDialog>(
+            captureSpeakingReports(),
+            0,
+            window,
+            true
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("sub-prep-print"))
+    {
+        QList<CalendarEvent> events{
+            captureCalendarEvent(true)
+        };
+        return std::make_unique<SubPrepPrintDialog>(
+            events,
+            QDate(2026, 8, 29),
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("pdf-print"))
+    {
+        const QString documentPath = QDir::current().filePath(
+            QStringLiteral(
+                "resources/assets/documents/Book Reports/Book Report Grading.pdf"
+                )
+            );
+        auto* document = new QPdfDocument(window);
+        if (document->load(documentPath) != QPdfDocument::Error::None)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Unable to load the deterministic PDF document: %1"
+                    ).arg(documentPath);
+            }
+            delete document;
+            return nullptr;
+        }
+
+        const PdfPrintDialogSupport::RenderFunction renderFunction =
+            [](QPrinter&, const PdfPrintDialogSupport::RenderOptions&)
+            {
+                return PdfPrintService::Result{
+                    PdfPrintService::Status::Canceled,
+                    QString()
+                };
+            };
+        return std::make_unique<PdfPrintDialog>(
+            window,
+            document,
+            documentPath,
+            renderFunction,
+            0,
+            QPageLayout::Portrait,
+            false,
+            QPageSize::A4,
+            false
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("record-selection"))
+    {
+        return std::make_unique<RecordSelectionDialog>(
+            QStringLiteral("Select a record"),
+            QStringLiteral("Choose the record to inspect."),
+            QList<QPair<QString, int>>{
+                {QStringLiteral("Alice Example"), 101},
+                {QStringLiteral("Bob Example"), 102}
+            },
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("about"))
+    {
+        return std::make_unique<AboutDialog>(window);
+    }
+
+    if (scenario.dialogId == QStringLiteral("license"))
+    {
+        return std::make_unique<LicenseDialog>(
+            QStringLiteral("Phase 0 Fixture License"),
+            QStringLiteral(
+                "This deterministic capture fixture is provided for Phase 0 "
+                "visual evidence."
+                ),
+            window
+            );
+    }
+
+    if (scenario.dialogId == QStringLiteral("update-error"))
+    {
+        UpdateConfiguration configuration;
+        configuration.releasesApiUrl = QUrl();
+        auto* updateService = new UpdateService(configuration, window);
+        auto dialog = std::make_unique<UpdateDialog>(
+            updateService,
+            true,
+            window
+            );
+        updateService->checkForUpdates(UpdateService::CheckPolicy::Force);
+        return dialog;
+    }
+
+    if (scenario.dialogId == QStringLiteral("preferences"))
+    {
+        return MenuBuilder::createPreferencesDialog(window);
+    }
+
+    if (scenario.dialogId == QStringLiteral("memory-usage"))
+    {
+        return std::make_unique<MemoryUsageDialog>(
+            window,
+            nullptr,
+            nullptr,
+            services,
+            nullptr
+            );
+    }
+
+    if (errorMessage)
+    {
+        *errorMessage = QStringLiteral(
+            "No automated dialog factory exists for '%1'."
+            ).arg(scenario.dialogId);
+    }
+    return nullptr;
 }
 } // namespace
 
@@ -425,6 +983,13 @@ void WindowsQtVisualCaptureTests::scenarioRegistryIsComplete()
                 break;
             }
             break;
+
+        case WindowsQtCaptureSurface::Dialog:
+            QVERIFY2(!scenario.dialogId.isEmpty(), qPrintable(
+                QStringLiteral("Dialog scenario has no dialog ID: %1")
+                    .arg(scenario.id)
+                ));
+            break;
         }
     }
 
@@ -468,11 +1033,54 @@ void WindowsQtVisualCaptureTests::capture_data()
 {
     QTest::addColumn<QString>("scenarioId");
 
+    const QString filter =
+        qEnvironmentVariable("CLASSMNGR_PHASE0_SCENARIO_FILTER").trimmed();
+    const QStringList filters = filter.split(
+        QLatin1Char(','),
+        Qt::SkipEmptyParts
+        );
+    int selectedCount = 0;
+
     for (const WindowsQtCaptureScenario& scenario :
          windowsQtCaptureScenarios())
     {
+        bool selected = filters.isEmpty();
+        for (const QString& candidate : filters)
+        {
+            const QString trimmed = candidate.trimmed();
+            if (
+                trimmed == scenario.id
+                || (
+                    trimmed.endsWith(QLatin1Char('*'))
+                    && scenario.id.startsWith(
+                        trimmed.left(trimmed.size() - 1)
+                        )
+                    )
+                )
+            {
+                selected = true;
+                break;
+            }
+        }
+
+        if (!selected)
+        {
+            continue;
+        }
+
         const QByteArray rowName = scenario.id.toUtf8();
         QTest::newRow(rowName.constData()) << scenario.id;
+        ++selectedCount;
+    }
+
+    if (!filters.isEmpty())
+    {
+        QVERIFY2(selectedCount > 0,
+            qPrintable(
+                QStringLiteral(
+                    "CLASSMNGR_PHASE0_SCENARIO_FILTER selected no scenarios: %1"
+                    ).arg(filter)
+                ));
     }
 }
 
@@ -610,6 +1218,8 @@ void WindowsQtVisualCaptureTests::capture()
 
     QMenu* openMenu = nullptr;
     ClassesPage* classesForScenario = nullptr;
+    std::unique_ptr<QDialog> capturedDialog;
+    QWidget* captureTarget = window.get();
     switch (scenario->surface)
     {
     case WindowsQtCaptureSurface::RegisteredPage:
@@ -704,6 +1314,85 @@ void WindowsQtVisualCaptureTests::capture()
                 .arg(scenario->menuTitle)
             );
         break;
+
+    case WindowsQtCaptureSurface::Dialog:
+        break;
+    }
+
+    if (scenario->surface == WindowsQtCaptureSurface::Dialog)
+    {
+        QString dialogError;
+        capturedDialog = createDialogScenario(
+            *scenario,
+            window.get(),
+            databaseRoot.path(),
+            &dialogError
+            );
+        QVERIFY2(
+            capturedDialog,
+            qPrintable(
+                QStringLiteral("Unable to construct dialog for %1: %2")
+                    .arg(scenario->id, dialogError)
+                )
+            );
+
+        capturedDialog->show();
+        capturedDialog->raise();
+        capturedDialog->activateWindow();
+        QVERIFY2(
+            QTest::qWaitForWindowExposed(capturedDialog.get(), 15000),
+            qPrintable(
+                QStringLiteral("Dialog was not exposed: %1")
+                    .arg(scenario->id)
+                )
+            );
+        captureTarget = capturedDialog.get();
+        actions.append(
+            QStringLiteral("Show %1 dialog and wait for native exposure")
+                .arg(scenario->dialogId)
+            );
+
+        if (scenario->dialogId == QStringLiteral("calendar-event-validation"))
+        {
+            auto* titleEdit = capturedDialog->findChild<QLineEdit*>(
+                QStringLiteral("calendarEventTitleEdit")
+                );
+            QVERIFY2(titleEdit, "Calendar event title editor was not found.");
+            titleEdit->clear();
+            capturedDialog->accept();
+            QTRY_VERIFY_WITH_TIMEOUT(
+                capturedDialog->isVisible(),
+                3000
+                );
+            actions.append(
+                QStringLiteral("Submit an empty calendar event and retain validation state")
+                );
+        }
+
+        if (scenario->dialogId == QStringLiteral("class-export"))
+        {
+            auto* classList = capturedDialog->findChild<QListWidget*>(
+                QStringLiteral("classExportList")
+                );
+            QVERIFY2(classList, "Class export list was not found.");
+            if (classList->count() > 0)
+            {
+                classList->item(0)->setCheckState(Qt::Checked);
+                actions.append(
+                    QStringLiteral("Select the first class for export")
+                    );
+            }
+        }
+
+        if (
+            scenario->dialogId == QStringLiteral("teacher-import-invalid")
+            || scenario->dialogId == QStringLiteral("schedule-import-invalid")
+            )
+        {
+            actions.append(
+                QStringLiteral("Wait for deterministic invalid-input validation")
+                );
+        }
     }
 
     if (scenario->surface == WindowsQtCaptureSurface::ClassSection)
@@ -972,9 +1661,7 @@ void WindowsQtVisualCaptureTests::capture()
     QTest::qWait(SettleMilliseconds);
     QApplication::processEvents(QEventLoop::AllEvents, 100);
 
-    QScreen* screen = openMenu && openMenu->screen()
-        ? openMenu->screen()
-        : window->screen();
+    QScreen* screen = captureTarget ? captureTarget->screen() : nullptr;
     QVERIFY2(screen, "No screen is associated with the captured window.");
 
     const int actualScalePercent = displayScalePercent(screen);
@@ -999,9 +1686,9 @@ void WindowsQtVisualCaptureTests::capture()
         QCOMPARE(actualScalePercent, expectedScale);
     }
 
-    const WId captureWindowId = openMenu
-        ? openMenu->winId()
-        : window->winId();
+    const WId captureWindowId = captureTarget
+        ? captureTarget->winId()
+        : 0;
     QVERIFY(captureWindowId != 0);
 
     const QPixmap pixmap = screen->grabWindow(captureWindowId);
@@ -1012,17 +1699,20 @@ void WindowsQtVisualCaptureTests::capture()
     QVERIFY(image.width() > 0);
     QVERIFY(image.height() > 0);
 
-    QSet<QRgb> sampleColors;
-    const int xStep = qMax(1, image.width() / 10);
-    const int yStep = qMax(1, image.height() / 10);
-    for (int y = 0; y < image.height(); y += yStep)
+    const QRgb firstPixel = image.pixel(0, 0);
+    bool hasPixelVariation = false;
+    for (int y = 0; y < image.height() && !hasPixelVariation; ++y)
     {
-        for (int x = 0; x < image.width(); x += xStep)
+        for (int x = 0; x < image.width(); ++x)
         {
-            sampleColors.insert(image.pixel(x, y));
+            if (image.pixel(x, y) != firstPixel)
+            {
+                hasPixelVariation = true;
+                break;
+            }
         }
     }
-    QVERIFY2(sampleColors.size() > 1, "Captured surface is uniformly blank.");
+    QVERIFY2(hasPixelVariation, "Captured surface is uniformly blank.");
 
     const QString baseName = QStringLiteral("%1__%2__%3__%4__%5")
         .arg(
@@ -1045,13 +1735,21 @@ void WindowsQtVisualCaptureTests::capture()
     QVERIFY(imageFile.commit());
     actions.append(QStringLiteral("Capture native Windows window pixels"));
 
-    const QSize capturedWindowSize = window->size();
-    const QRect capturedWindowBounds = window->frameGeometry();
+    const QSize capturedWindowSize = captureTarget->size();
+    const QRect capturedWindowBounds = captureTarget->frameGeometry();
 
     if (openMenu)
     {
         openMenu->close();
         QTRY_VERIFY_WITH_TIMEOUT(!openMenu->isVisible(), 3000);
+    }
+
+    if (capturedDialog)
+    {
+        capturedDialog->close();
+        QTRY_VERIFY_WITH_TIMEOUT(!capturedDialog->isVisible(), 3000);
+        capturedDialog.reset();
+        drainDeferredDeletes();
     }
 
     if (

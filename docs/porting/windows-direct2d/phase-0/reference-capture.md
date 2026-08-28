@@ -81,6 +81,26 @@ Validate a capture store before linking artifacts in the ledger:
   -RequireVerified
 ```
 
+## Automated Windows Qt visual lane
+
+The opt-in Windows Qt capture target includes deterministic app-owned dialog
+scenarios in addition to the page/editor matrix. Run the full dialog subset
+with a fixed display scale:
+
+```powershell
+$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "150"
+$env:CLASSMNGR_PHASE0_SCENARIO_FILTER = "dialog.*"
+ctest --test-dir build/windows-x64-phase0-visual -C Debug `
+  -R ClassMngrWindowsQtVisualCaptureTests --output-on-failure
+```
+
+The filter accepts comma-separated scenario IDs and prefix patterns ending in
+`*`, for example `dialog.about.default,dialog.preferences.*`. Automated
+captures are evidence with `verification: captured`; promote them to
+`verified` only after the required visual, keyboard, IME, and output review.
+Native Windows file/folder/printer dialogs, Korean IME composition, and
+keyboard-only evidence remain separate manual or platform-automation lanes.
+
 ## Manual workflow
 
 1. Build the current Qt Windows product from a clean settings root and open a
