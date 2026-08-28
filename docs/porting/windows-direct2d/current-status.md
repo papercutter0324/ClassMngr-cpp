@@ -1,6 +1,6 @@
 # Windows Direct2D/DirectComposition port — current status
 
-Last recorded: 2026-08-28 (Asia/Seoul)
+Last recorded: 2026-08-29 (Asia/Seoul)
 
 This is the cross-device handoff for the Windows port. Phase 0 is still in
 progress; its exit gate has not been claimed.
@@ -8,7 +8,7 @@ progress; its exit gate has not been claimed.
 ## Repository snapshot
 
 - Branch: `NativeWindowsPort`, at `origin/NativeWindowsPort`.
-- HEAD: `fb4f268` (`Phase 0 - Prepare automation to capture additional information`).
+- HEAD: `4615cbd` (`Phase 0: Further capture coverage`).
 - The current product source still has no native Direct2D/DirectComposition
   target; this status file and the capture artifacts are Phase 0 evidence.
 - The current Phase 0 release gate is x64 only. ARM64 build compatibility is
@@ -75,6 +75,46 @@ progress; its exit gate has not been claimed.
   zero size and returns an unavailable sample. No Linux source was changed by
   this validation run.
 
+## macOS Qt validation
+
+Validated 2026-08-29 on macOS 26.6.2 using Qt 6.11.1, CMake 4.3.3, AppleClang
+21.0.0, and an arm64 host. The Debug and Release builds used the universal
+`arm64;x86_64` architecture setting and the macOS 13.0 deployment target.
+
+- A clean-source Debug configure and rebuild completed successfully, including
+  the retained `ClassMngr` application, shared runtime, and all 68 registered
+  test targets.
+- `ClassMngrDatabasePortFixtureTests` passed all eleven checked-in fixtures, including
+  migration, rollback, and Korean-text semantic checks.
+- The complete retained Qt CTest suite passed **68/68** in 29.89 seconds with
+  loopback access enabled. The Initial Setup wizard test runs with Cocoa on
+  Apple platforms because Qt 6.11.1 aborts when `QWizard` is forced through
+  the offscreen plugin; other platforms retain their existing headless setup.
+- A clean universal Release build completed successfully; `lipo -info`
+  confirmed both `arm64` and `x86_64` slices.
+- The only repository change for this validation is the test-platform
+  selection in `cmake/tests/foundations.cmake`; application source,
+  database schema, and macOS release settings were not changed.
+
+The reproducible validation commands are:
+
+```bash
+export QT_MACOS_PREFIX=/Users/papercutter0324/Qt/6.11.1/macos
+cmake --preset macos-clang-debug
+cmake --build build/macos-clang-debug --parallel 2
+build/macos-clang-debug/ClassMngrDatabasePortFixtureGenerator \
+  --verify-directory tests/fixtures/database-port
+env QT_QPA_PLATFORM=offscreen \
+  ctest --test-dir build/macos-clang-debug --output-on-failure
+
+cmake --preset macos-clang-release
+cmake --build build/macos-clang-release --parallel 2
+```
+
+Run the suite on an interactive macOS session with permission for its local
+loopback test server; the Cocoa wizard case cannot be validated by an
+offscreen-only runner.
+
 ## Current visual evidence
 
 The latest validated expanded capture run is:
@@ -93,7 +133,7 @@ evidence no longer includes the previous second-monitor capture. The validated
 `artifacts/phase0/windows-qt-visual/20260828T080550115Z-12884/`; the 200% run
 was generated on the same single-monitor setup.
 
-The repository HEAD is `fb4f268`; the promoted 100%/150%/200% capture sidecars
+The repository HEAD is `4615cbd`; the promoted 100%/150%/200% capture sidecars
 correctly retain their captured-product `sourceRevision: d9732c8`. The
 expanded editor run records `sourceRevision: fb4f268` and is automated evidence
 pending visual/manual review; it is not yet a reviewed/stable golden matrix.
@@ -108,8 +148,8 @@ pending visual/manual review; it is not yet a reviewed/stable golden matrix.
 3. Complete manual review of the 100%/150%/200% DPI evidence; all three
    automated matrices have been captured and validated on the replacement
    computer.
-4. Resolve and rerun the two Linux diagnostics failures above, then validate
-   the retained Qt product on macOS.
+4. Resolve and rerun the two Linux diagnostics failures above; retained macOS
+   Qt validation is complete.
 5. Collect a current Windows x64 Release baseline plus resize, scrolling,
    first-paint, output, and device-recovery measurements.
 

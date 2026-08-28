@@ -47,7 +47,7 @@ support are also deferred from the current roadmap.
 | Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 11 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
 | Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, 16 validated baseline Qt captures per DPI run, and a 28-scenario expanded run covering populated, empty, large, dirty, validation, and error editor states at 150% | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
 | Performance | historical x64 Release budget plus three current x64 Debug GUI samples | approve a current x64 Release baseline and capture page/scroll/output samples; ARM64 is deferred |
-| Build preservation | Linux Qt Debug configured and rebuilt; 65/67 tests pass, with two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures, then complete macOS and Windows x64 validation unchanged |
+| Build preservation | macOS universal Qt Debug/Release validation passed; Linux Qt Debug configured and rebuilt with 65/67 tests passing and two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures; macOS and Windows x64 validation is complete |
 
 The capture target is opt-in through
 `CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS`; it requires an interactive
@@ -58,7 +58,7 @@ The Phase 0 additions do not change product behavior or database schema.
 
 The retained Linux Qt product was configured and rebuilt from the
 `linux-gcc-debug` preset with Qt 6.11.1. The database-port verifier passed all
-nine checked-in fixtures. The full Qt test suite passed 65 of 67 tests when run
+eleven checked-in fixtures. The full Qt test suite passed 65 of 67 tests when run
 with `QT_QPA_PLATFORM=offscreen` and normal loopback access; the two remaining
 failures are the Linux `/proc` memory snapshot assertion and the dependent
 startup-memory assertion. Details and the recorded result are in
@@ -74,6 +74,30 @@ build/linux-gcc-debug/ClassMngrDatabasePortFixtureGenerator \
 env QT_QPA_PLATFORM=offscreen \
   ctest --test-dir build/linux-gcc-debug --output-on-failure
 ```
+
+## macOS validation
+
+The retained macOS Qt product was configured and rebuilt from the universal
+`macos-clang-debug` preset with Qt 6.11.1. The database-port verifier passed
+all eleven checked-in fixtures, and the complete retained Qt suite passed
+68/68 on an interactive macOS 26.6.2 arm64 host. The universal Release app
+also built successfully with `arm64;x86_64` slices. Details and the recorded
+environment are in the [cross-device status record](current-status.md).
+
+The validation commands are:
+
+```bash
+export QT_MACOS_PREFIX=/Users/papercutter0324/Qt/6.11.1/macos
+cmake --preset macos-clang-debug
+cmake --build build/macos-clang-debug --parallel 2
+build/macos-clang-debug/ClassMngrDatabasePortFixtureGenerator \
+  --verify-directory tests/fixtures/database-port
+env QT_QPA_PLATFORM=offscreen \
+  ctest --test-dir build/macos-clang-debug --output-on-failure
+```
+
+The macOS Initial Setup wizard test is assigned the Cocoa platform by CMake;
+the updater cases require local loopback binding.
 
 Validate the checked-in Phase 0 ledgers and fixture hashes with:
 
