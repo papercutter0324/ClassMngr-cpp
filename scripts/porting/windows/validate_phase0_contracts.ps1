@@ -35,7 +35,7 @@ foreach ($requiredContract in @(
     }
 }
 
-$validCaptureStates = @("pending", "in-progress", "captured", "verified", "blocked")
+$validCaptureStates = @("pending", "in-progress", "captured", "verified", "blocked", "deferred")
 $ledger = Import-Csv -LiteralPath $ledgerPath
 if ($ledger.Count -eq 0)
 {

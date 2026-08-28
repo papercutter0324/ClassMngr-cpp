@@ -5,17 +5,23 @@
 Replace the Windows Qt application shell and UI with a native C++23 Windows
 application rendered with Direct2D 1.3 and composed with DirectComposition, while
 preserving ClassMngr behavior, `.tps` database compatibility, English/Korean
-input, x64 and ARM64 releases, and the current update and installer workflows.
+input, x64 releases, and the current update and installer workflows.
 macOS and Linux continue to use the existing Qt application and release
 workflows. The completed Windows package must not deploy Qt Widgets, Qt Quick,
 QML, Qt PDF, or other Qt runtime libraries.
+
+The current Windows delivery scope is x64. Existing ARM64 builds are
+unofficial, best-effort compatibility only; official ARM64 runtime validation,
+performance baselines, release packaging, and parity gates are deferred to a
+later roadmap decision.
 
 This is a native-platform port, not a change to Qt's rendering backend.
 DirectComposition manages surfaces and visual composition but does not provide
 controls, layout, text editing, accessibility, dialogs, or printing. The port
 therefore includes a small ClassMngr Windows presentation layer built on Win32,
-Direct2D 1.3, DirectWrite, WIC, DirectComposition, UI Automation, and native system
-services.
+Direct2D 1.3, DirectWrite, WIC, DirectComposition, and native system services.
+UI Automation, Narrator, and high-contrast support are deferred from the
+current roadmap.
 
 ## Current Handoff
 
@@ -44,10 +50,10 @@ result changes the Phase 0 gate.
   editable schedule/roster/evaluation tables, PDF viewing and printing, report
   generation, file dialogs, spreadsheet imports, resource packs, signed
   updates, PowerPoint automation, themes, translations, and Korean input.
-- Windows currently supports x64 and ARM64, uses an Inno Setup installer, and
-  has Windows-specific signature verification, updater, memory diagnostics,
-  print-dialog, and PowerPoint code that should be preserved or replaced
-  deliberately.
+- Windows currently has an x64 release workflow and unofficial ARM64 build
+  compatibility, uses an Inno Setup installer, and has Windows-specific
+  signature verification, updater, memory diagnostics, print-dialog, and
+  PowerPoint code that should be preserved or replaced deliberately.
 
 ## Target Architecture
 
@@ -66,7 +72,7 @@ ClassMngrEngine (portable C++23, no Qt or platform UI types)
     |       +-- Linux Qt executable and platform services
     |
     +-- ClassMngrWindowsNative
-            |-- Win32 application/window/input/accessibility shell
+            |-- Win32 application/window/input shell
             |-- Direct2D 1.3 + DirectWrite + WIC renderer
             |-- DirectComposition visual tree and animations
             |-- Windows platform-service implementations
@@ -74,8 +80,8 @@ ClassMngrEngine (portable C++23, no Qt or platform UI types)
 ```
 
 The engine owns product rules and database transactions. Presentation targets
-own navigation, view state, platform dialogs, rendering, input, accessibility,
-printing, and OS integration. No Windows UI type crosses into the engine, and
+own navigation, view state, platform dialogs, rendering, input, printing, and
+OS integration. No Windows UI type crosses into the engine, and
 no Qt type crosses the engine's public boundary.
 
 Recommended repository layout after the boundary is established:
@@ -88,7 +94,7 @@ src/platform/qt/linux/      # retained Linux Qt platform services
 src/platform/windows/       # native Windows executable and UI
 tests/engine/               # platform-neutral contract tests
 tests/qt/                   # retained macOS/Linux Qt UI tests
-tests/windows/              # renderer, UIA, integration, and UI tests
+tests/windows/              # renderer, keyboard/input, integration, and UI tests
 ```
 
 Move files only as they become portable; do not perform a repository-wide
@@ -108,6 +114,9 @@ rename before the new target can compile.
 - Visual parity means equivalent information, state, workflow, and critical
   geometry. Native Windows controls, focus cues, font metrics, and system
   dialogs may remain idiomatic instead of copying Qt pixels.
+- UI Automation, Narrator, and high-contrast support are deferred from the
+  current roadmap. They remain possible future work, but do not block the x64
+  port or its Phase 0 evidence gate.
 
 ## Architecture Decisions to Record First
 
@@ -130,12 +139,12 @@ Create short ADRs before implementation for these decisions:
    boundaries. SQLite uses the SQLite C API rather than Qt SQL. Select and pin
    one portable JSON implementation after a license and footprint review.
 4. **Retained view model:** one lightweight semantic view tree drives layout,
-   hit testing, focus traversal, painting invalidation, and UI Automation peers.
-   It is not a general-purpose toolkit; it implements only ClassMngr controls.
+   hit testing, focus traversal, and painting invalidation. It is not a
+   general-purpose toolkit; it implements only ClassMngr controls. UI
+   Automation peers are deferred from the current roadmap.
 5. **Text entry:** use native edit controls initially where practical. Custom
    editors must integrate Text Services Framework/IME, selection, clipboard,
-   undo, and accessibility before replacing native editors. Korean input is a
-   release gate.
+   undo before replacing native editors. Korean input is a release gate.
 6. **Compatibility:** `.tps` schema, migrations, resource-pack manifest,
    update metadata/signatures, and user-visible export formats remain shared
    contracts. Platform-native implementations must pass the same fixtures.
@@ -190,18 +199,19 @@ Create short ADRs before implementation for these decisions:
    the native Windows UI to copy Qt or cross-platform typography pixel for
    pixel.
 7. Record nonvisual evidence alongside the images: keyboard-only flows,
-   English/Korean IME composition, UI Automation names/roles/order, high-
-   contrast behavior, print/PDF samples, focus restoration, and unsaved-change
-   rules. Use event/semantic assertions where a screenshot cannot prove the
-   requirement.
+   English/Korean IME composition, print/PDF samples, focus restoration, and
+   unsaved-change rules. Use event/semantic assertions where a screenshot
+   cannot prove the requirement. UI Automation, Narrator, and high-contrast
+   evidence are deferred from the current roadmap.
 8. Create cross-platform database fixtures covering empty, typical, large,
    legacy `.db`, current `.tps`, migration failure, and rollback cases. Verify
    byte-level or semantic round trips as appropriate.
-9. Define a parity matrix for Windows x64 and ARM64. Each feature records data
-   read/write parity, input/accessibility, visual evidence, error behavior,
-   printing/export, and performance status. Set explicit budgets for startup,
-   steady-state memory, resize latency, scrolling, first paint, and device
-   recovery based on the current release.
+9. Define an x64 parity matrix. Each feature records data read/write parity,
+   keyboard/input, visual evidence, error behavior, printing/export, and
+   performance status. ARM64 columns may record unofficial build compatibility
+   for future reference, but are not a current gate. Set explicit x64 budgets
+   for startup, steady-state memory, resize latency, scrolling, first paint,
+   and device recovery based on the current release.
 10. Run the retained Qt regression validation before claiming the Phase 0 gate.
     On Linux, configure and build the normal Qt preset, verify all checked-in
     database-port fixtures, and run the full Qt test suite with required local
@@ -232,12 +242,13 @@ open.
    link the retained Qt application; a native-only Windows configure must not
    call `find_package(Qt6)` or inherit `ClassMngrBuildSettings`. The native
    target links the required SDK libraries explicitly, including Direct2D,
-   DirectWrite, D3D11, DXGI, DirectComposition, WIC/COM, UI Automation, and
-   Windows security APIs. Legacy Windows Qt transition builds remain opt-in.
-5. Add presets for native Windows x64/ARM64 debug and release builds that do
-   not require a Qt prefix. Keep the macOS and Linux Qt presets, release jobs,
-   deployment tooling, and installers unchanged; retain the current Windows Qt
-   presets until cutover.
+   DirectWrite, D3D11, DXGI, DirectComposition, WIC/COM, and Windows security
+   APIs. Legacy Windows Qt transition builds remain opt-in.
+5. Add presets for native Windows x64 debug and release builds that do not
+   require a Qt prefix. ARM64 presets may remain available for unofficial build
+   compatibility, but are not release or CI gates. Keep the macOS and Linux Qt
+   presets, release jobs, deployment tooling, and installers unchanged; retain
+   the current Windows Qt presets until cutover.
 6. Make resource and translation generation callable without `rcc`, QML
    tooling, or Qt Linguist on the native target. During transition, generate
    both the Qt resources and native resource manifests from the same inputs.
@@ -313,10 +324,9 @@ loaded. The macOS and Linux Qt apps use that engine for the migrated slices.
 
 **Exit gate:** a resizable, DPI-correct, themeable test window renders and
 animates through Direct2D 1.3/DirectComposition, survives device loss, produces
-a repeatable show/capture/close evidence artifact, and passes x64/ARM64 smoke
-tests.
+a repeatable show/capture/close evidence artifact, and passes x64 smoke tests.
 
-### Phase 4 — Implement the Semantic Control, Input, and Accessibility Layer
+### Phase 4 — Implement the Semantic Control and Input Layer
 
 1. Implement only the primitives required by the feature inventory: stacks,
    grids, scroll containers, split/navigation panes, text, images, buttons,
@@ -327,19 +337,18 @@ tests.
    HWND edit controls positioned over composed content or a proven TSF-backed
    editor. Do not ship a custom text editor lacking IME composition, Unicode
    grapheme navigation, selection, clipboard, undo/redo, and password rules.
-4. Map the semantic view tree to UI Automation providers with names, roles,
-   state, value/range/table patterns, relationships, focus events, and live
-   regions. Test with Narrator, Accessibility Insights, high contrast, and
-   keyboard-only navigation.
-5. Respect system metrics for reduced motion, contrast, text scaling, cursor
-   size, locale, input language, and double-click timing. Preserve the existing
+4. Preserve semantic relationships needed for layout, focus traversal, and
+   input routing. UI Automation providers, Narrator validation, and
+   high-contrast support are deferred to a future roadmap decision.
+5. Respect system metrics for reduced motion, text scaling, cursor size,
+   locale, input language, and double-click timing. Preserve the existing
    English/Korean UI language switch without replacing the active IME.
 6. Add layout and behavior tests that do not depend on pixels: measurement,
-   hit testing, focus order, commands, selection, scrolling, validation, and
-   accessibility properties.
+   hit testing, focus order, commands, selection, scrolling, and validation.
 
-**Exit gate:** a control gallery passes keyboard, Korean IME, Narrator, high
-contrast, 100–300% DPI, touch, and automated semantic tests.
+**Exit gate:** a control gallery passes keyboard, Korean IME, 100–300% DPI,
+touch, and automated semantic tests. UI Automation, Narrator, and
+high-contrast validation are deferred.
 
 ### Phase 5 — Port the Shell and First Read-Only Feature Slice
 
@@ -358,8 +367,8 @@ contrast, 100–300% DPI, touch, and automated semantic tests.
 5. Add matching Qt/native scenarios to the Phase 0 harness for the shell and
    first slice. Each side must independently show, settle, capture, close, and
    clean up. Review paired artifacts for content, state, clipping, hierarchy,
-   and interaction affordances while adopting native Windows focus and
-   accessibility conventions.
+   and interaction affordances while adopting native Windows focus and input
+   conventions.
 
 **Exit gate:** users can launch, create/open a database, navigate the native
 shell, and complete the chosen read-only feature with parity.
@@ -367,7 +376,7 @@ shell, and complete the chosen read-only feature with parity.
 ### Phase 6 — Port Data-Entry Features by Risk
 
 Port each slice end to end, including loading, editing, validation, autosave,
-undo/redo, conflicts, empty/error states, and accessibility. Suggested order:
+undo/redo, conflicts, and empty/error states. Suggested order:
 
 1. personal details and teacher directories;
 2. class details and notes;
@@ -377,16 +386,15 @@ undo/redo, conflicts, empty/error states, and accessibility. Suggested order:
 6. speaking-evaluation grid, analytics, AI-comment workflow, and batch flows;
 7. substitute-preparation and bundled-document workflows.
 
-For virtualized tables, retain only visible row/cell visuals, expose table/grid
-UIA patterns, support selection and keyboard editing, and keep model mutation
-in engine use cases. Exercise large datasets, rapid navigation, and unsaved
-changes at every slice gate.
+For virtualized tables, retain only visible row/cell visuals, support selection
+and keyboard editing, and keep model mutation in engine use cases. Exercise
+large datasets, rapid navigation, and unsaved changes at every slice gate.
 
 When a slice has a visual-parity question, first add or extend a deterministic
 capture scenario for the exact page, dialog, menu, or transient state under
 review. The Qt and native versions must both complete the show/capture/close
 lifecycle. Pair image review with semantic assertions; do not accept a picture
-as proof of focus order, accessible names, saved data, or IME correctness.
+as proof of focus order, saved data, or IME correctness.
 
 **Exit gate:** the parity matrix is complete for all interactive features and
 the native app can safely edit databases also used by the macOS/Linux Qt app.
@@ -418,9 +426,9 @@ and failure-path tests without Qt.
 
 ### Phase 8 — Harden, Package, and Cut Over
 
-1. Run unit, integration, UI Automation, render-golden, database compatibility,
-   import/export, updater, installer, and long-session soak tests on x64 and
-   ARM64 hardware. Include GPU device loss and WARP fallback.
+1. Run unit, integration, render-golden, database compatibility, import/export,
+   updater, installer, and long-session soak tests on x64 hardware. Include GPU
+   device loss and WARP fallback. ARM64 runtime validation is deferred.
 2. Profile cold/warm startup, first navigation, resize, table scrolling, large
    PDF use, report generation, working set, committed memory, GPU memory, and
    handles. Investigate regressions against Phase 0 budgets.
@@ -451,8 +459,8 @@ and failure-path tests without Qt.
   tests that show the requested surface, wait for stable presentation, capture
   a manifested image, close it, and verify cleanup. Images supplement semantic
   and behavioral assertions rather than replacing them.
-- **Interaction:** semantic view tests, Windows UI Automation end-to-end tests,
-  keyboard-only flows, Korean and English IME, touch, and drag/drop.
+- **Interaction:** semantic view tests, keyboard-only flows, Korean and English
+  IME, touch, and drag/drop. UI Automation end-to-end tests are deferred.
 - **Reliability:** device removal, display hot-plug, sleep/resume, low memory,
   denied files, corrupt databases/resources, network loss, cancellation, and
   forced update/report failures.
@@ -463,9 +471,10 @@ and failure-path tests without Qt.
 
 - **Accidentally building a general-purpose UI toolkit:** restrict primitives
   to inventoried ClassMngr needs and deliver vertical product slices early.
-- **IME or accessibility regression in custom controls:** use native editors
-  first, design UIA semantics with the view tree, and make Korean/Narrator tests
-  phase gates rather than end-stage polish.
+- **IME regression in custom controls:** use native editors first and make
+  Korean input tests phase gates rather than end-stage polish. UI Automation,
+  Narrator, and high-contrast work are deferred rather than implied by the
+  control implementation.
 - **Engine extraction destabilizes the retained Qt platforms:** migrate one use
   case at a time, retain Qt adapters, and require macOS and Linux regression
   tests on every engine change.
@@ -488,9 +497,8 @@ The Windows port is complete when:
 
 - the release executable and installer contain no Qt runtime or Qt-generated
   QML/resource dependency;
-- all parity-matrix workflows pass on x64 and ARM64, including Korean input,
-  keyboard navigation, Narrator, high contrast, printing, PDF, PowerPoint,
-  updates, and resource packs;
+- all applicable parity-matrix workflows pass on x64, including Korean input,
+  keyboard navigation, printing, PDF, PowerPoint, updates, and resource packs;
 - `.tps` databases and supported exports round-trip with both the macOS and
   Linux Qt builds;
 - Direct2D 1.3/DirectComposition device loss and WARP fallback are reliable;
@@ -498,3 +506,6 @@ The Windows port is complete when:
   budgets; and
 - the macOS and Linux Qt builds and their release workflows remain supported
   and green.
+
+Official ARM64 releases and UI Automation/Narrator/high-contrast support are
+explicitly deferred from these completion criteria to a later roadmap phase.

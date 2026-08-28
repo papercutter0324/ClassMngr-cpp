@@ -18,7 +18,7 @@ and completed/cancelled output.
 | Scaling | 100%, 150%, 200% Windows display scaling |
 | Window | default size plus narrow/short and large layouts where the feature resizes |
 | Language/input | English UI/input and Korean UI/input; test Hangul composition, commit, backspace, arrows, selection, clipboard, undo/redo |
-| Keyboard/accessibility | keyboard-only focus order and Escape/default behavior; Narrator name/role/state/value for each interactive control |
+| Keyboard | keyboard-only focus order and Escape/default behavior |
 | Output | representative PDF/print preview/export files containing English and Korean text |
 
 ## Artifact naming
@@ -34,11 +34,16 @@ language, font-size setting, window size, and exact action sequence.
 
 [`capture-ledger.csv`](capture-ledger.csv) is the source-backed checklist for
 the inventory. Each row supplies a stable artifact prefix and starts `pending`.
-Use `in-progress`, `captured`, `verified`, or `blocked` while preserving a short
-reason in its notes field. A row is `verified` only when all its required
-states, input/accessibility observations, and output artifact (where required)
-are represented by redacted metadata. The ledger records references and status;
-screenshots, PDFs, recordings, and raw diagnostics remain external artifacts.
+Use `in-progress`, `captured`, `verified`, `blocked`, or `deferred` while
+preserving a short reason in its notes field. A row is `verified` only when all
+its required states, keyboard/input observations, and output artifact (where
+required) are represented by redacted metadata. Deferred rows are retained as
+future-scope inventory and do not block the current x64 Phase 0 gate. The
+ledger records references and status; screenshots, PDFs, recordings, and raw
+diagnostics remain external artifacts.
+
+The deferred `platform.screen-reader` ledger row is retained only as a future
+roadmap inventory anchor; it is not a current Phase 0 evidence requirement.
 
 ## Metadata sidecars and validation
 
@@ -65,8 +70,9 @@ SHA-256.
   -Action "Navigate to Calendar"
 ```
 
-Replace the generated `TODO` observations with the actual keyboard, IME/UIA,
-and review notes, then set `verification` to `verified` only after review.
+Replace the generated `TODO` observations with the actual keyboard, IME, and
+review notes, then set `verification` to `verified` only after review. UI
+Automation, Narrator, and high-contrast observations are deferred.
 Validate a capture store before linking artifacts in the ledger:
 
 ```powershell
@@ -83,16 +89,15 @@ Validate a capture store before linking artifacts in the ledger:
    matrix. Do not use private production data.
 3. Take the screenshot only after async work has settled; preserve the visible
    focus ring when keyboard navigation is under test.
-4. Record Narrator output/Accessibility Insights observations in the metadata,
-   including missing names or unexpected focus changes.
-5. For Korean IME, record the active IME and the exact composition sequence;
+4. For Korean IME, record the active IME and the exact composition sequence;
    screenshots must show preedit and committed text when the control exposes
    it.
-6. For print/PDF/export, retain the source fixture, output checksum, and
+5. For print/PDF/export, retain the source fixture, output checksum, and
    operation settings; visually inspect Korean glyphs, margins, pagination,
    tables, images, and cancellation/failure cleanup.
 
 The first native screen cannot be declared equivalent on pixels alone: it must
-also match the recorded workflow, data mutation, error, input, and accessibility
-contract. Native Windows control appearance may differ where it follows platform
-conventions; information hierarchy and behavior may not.
+also match the recorded workflow, data mutation, error, and input contract.
+Native Windows control appearance may differ where it follows platform
+conventions; information hierarchy and behavior may not. UI Automation,
+Narrator, and high-contrast support are outside the current comparison scope.

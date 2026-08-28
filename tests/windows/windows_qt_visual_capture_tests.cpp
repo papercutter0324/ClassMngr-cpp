@@ -872,7 +872,10 @@ void WindowsQtVisualCaptureTests::writeCaptureMetadata(
         );
     observations.insert(
         QStringLiteral("accessibility"),
-        QStringLiteral("Manual UI Automation and screen-reader review remains pending.")
+        QStringLiteral(
+            "UI Automation, screen-reader, and high-contrast evidence are "
+            "deferred from the current roadmap."
+            )
         );
     observations.insert(
         QStringLiteral("notes"),

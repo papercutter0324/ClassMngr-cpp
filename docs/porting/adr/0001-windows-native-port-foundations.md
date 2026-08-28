@@ -13,8 +13,9 @@
    graphics interfaces are `ID2D1Factory3`, `ID2D1Device2`, and
    `ID2D1DeviceContext2` from `d2d1_3.h`. Native common dialogs are used for
    files, folders, and printing.
-2. The native product supports Windows 10 version 1703 (build 15063) and later
-   plus Windows 11, x64 and ARM64. Version 1703 is the functional runtime
+2. The native product's current release gate supports Windows 10 version 1703 (build 15063) and later plus Windows 11 on x64. ARM64 builds remain
+   unofficial, best-effort compatibility; official ARM64 validation and
+   releases are deferred. Version 1703 is the functional runtime
    floor because the required Per-Monitor DPI Awareness V2 mode is first
    available there; `ID2D1DeviceContext2` independently requires Windows 10.
    The Phase 1 build SDK is pinned to `10.0.26100.0`, which is installed on the
@@ -45,12 +46,12 @@
    choosing and pinning a JSON library requires a separate license/footprint
    review.
 4. One small semantic view tree is the source for layout, hit testing, focus,
-   invalidation, rendering, and UI Automation. It implements only controls in
-   the Phase 0 inventory; it is not a general-purpose widget toolkit.
+   invalidation, and rendering. It implements only controls in the Phase 0
+   inventory; it is not a general-purpose widget toolkit. UI Automation,
+   Narrator, and high-contrast support are deferred from the current roadmap.
 5. Editable text starts with native edit controls where possible. A custom
    editor cannot replace them until it passes Korean IME, Unicode-grapheme
-   navigation, selection, clipboard, undo/redo, password, and accessibility
-   checks.
+   navigation, selection, clipboard, undo/redo, and password checks.
 6. `.tps` schema/migrations, legacy `.db` migration behavior, resource-pack
    manifests, update metadata/signatures, and supported exports are shared
    contracts. Windows presentation code never issues ad hoc SQL.
@@ -67,10 +68,10 @@
 - Phase 3 owns device-loss recovery, WARP fallback, Per-Monitor DPI Awareness
   V2, and DirectComposition scheduling; they may not be delegated to a UI
   framework.
-- UIA and Korean IME are first-class parity requirements, not finish-stage
-  polish.
-- The Phase 0 matrix and fixture corpus become release inputs for both
-  architectures.
+- Korean IME is a first-class parity requirement, not finish-stage polish.
+  UI Automation, Narrator, and high-contrast support are future roadmap work.
+- The Phase 0 matrix and fixture corpus become x64 release inputs; ARM64
+  entries are informational until a later support decision.
 
 ## Evidence
 

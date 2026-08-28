@@ -5,15 +5,15 @@ on the same fixture and hardware class. The startup values below are
 provisional Windows x64 budgets from three historical Qt **Release** GUI runs
 recorded in
 [baseline-results.md](baseline-results.md): the slowest observed value plus 20%
-headroom, rounded up. ARM64 must establish an equivalent baseline before the
-native target can advance beyond a smoke shell.
+headroom, rounded up. ARM64 build compatibility is unofficial and does not
+require a runtime or performance baseline in the current roadmap.
 
-The current-branch Qt **Debug** probe was also rebuilt and sampled three times
-at revision `b34a357`; its results are recorded in the current-probe section of
+The recorded Qt **Debug** probe was rebuilt and sampled three times at revision
+`b34a357`; its results are in the current-probe section of
 [baseline-results.md](baseline-results.md). It is diagnostic evidence only and
 does not replace the Release budget.
 
-| Metric | Scenario | Provisional x64/ARM64 budget | Current probe |
+| Metric | Scenario | Provisional x64 budget | Current probe |
 | --- | --- | --- | --- |
 | Startup to window constructed | empty settings profile | <= 2,200 ms | `--startup-performance-test` |
 | Startup to ready | empty settings profile | <= 4,500 ms | `--startup-performance-test` |
@@ -30,8 +30,8 @@ does not replace the Release budget.
 The existing `ClassMngrStartupPerformanceTests` invokes the app with an empty
 settings root and writes `classmngr-scenario-report-v1`. It records process
 start-to-window construction, start-to-ready, and Windows working-set/private
-bytes at both checkpoints. Run it three times per architecture in a quiet
-machine state, retaining the report and host metadata.
+bytes at both checkpoints. Run it three times on x64 in a quiet machine state,
+retaining the report and host metadata. ARM64 collection is deferred.
 
 ```powershell
 ctest --test-dir build/windows-x64-debug -C Debug -R StartupPerformance --output-on-failure

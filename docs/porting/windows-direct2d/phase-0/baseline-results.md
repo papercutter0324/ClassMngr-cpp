@@ -22,11 +22,11 @@ The initial x64 budgets in
 900 MiB working set, and 800 MiB private bytes. The debug/offscreen CTest
 startup scenario is deliberately not substituted for this GUI desktop baseline.
 
-## Current Windows x64 Debug startup probe
+## Recorded Windows x64 Debug startup probe
 
 Source revision: `b34a357` (2026-08-28). These samples were collected after
-reconfiguring and rebuilding the current HEAD. They are a current-branch
-diagnostic and do not replace the approved Release budget above. `window-shown`
+reconfiguring and rebuilding that revision. They are recorded diagnostic
+evidence and do not replace the approved Release budget above. `window-shown`
 is the first visible frame checkpoint; `startup-complete` is the ready
 checkpoint. Memory values are sampled at `startup-complete`.
 
@@ -42,11 +42,12 @@ Raw reports and host metadata are retained in
 The three-run maximum peak was 703.9 MiB working set and 599.6 MiB private
 bytes at 100% display scaling. No budget was changed from this diagnostic.
 
-ARM64, navigation, resize, scrolling, first paint, PDF/report, and
-device-recovery measurements remain pending. Those scenarios require the
-fixture corpus and later native telemetry described in the Phase 0 plan.
+Navigation, resize, scrolling, first paint, PDF/report, and device-recovery
+measurements remain pending. Those x64 scenarios require the fixture corpus and
+later native telemetry described in the Phase 0 plan. ARM64 runtime and
+performance measurements are deferred because ARM64 support is unofficial.
 
-## Windows ARM64 Debug compile baseline
+## Unofficial Windows ARM64 Debug build compatibility
 
 On this x64 Windows build host, the installed Qt `6.11.1` ARM64 kit and Visual
 Studio ARM64 compiler configured and built the existing Qt `ClassMngr` target:
@@ -58,9 +59,9 @@ cmake --build build/windows-arm64-debug --config Debug --target ClassMngr --para
 
 The resulting `build/windows-arm64-debug/Debug/ClassMngr.exe` is 49,259,008
 bytes and has PE machine value `0xAA64` (ARM64). This establishes that the
-current Qt target compiles and links for ARM64 with Windows SDK `10.0.26100.0`;
-it is not a substitute for running tests, capturing UI evidence, or collecting
-performance on ARM64 hardware.
+current Qt target compiles and links for ARM64 with Windows SDK `10.0.26100.0`.
+This is informational only: ARM64 runtime testing, visual evidence, and
+performance collection are deferred until ARM64 becomes an official target.
 
 ## Unchanged Qt build baseline
 
@@ -76,11 +77,11 @@ pass when that build input exists.
 The schema, data-service lifecycle, imports, page manager, dialogs, print/PDF,
 speaking-evaluation, startup-performance, and file-format tests passed in that
 run. The same 63-test x64 Debug suite was revalidated after finalizing the
-fixture corpus and Phase 0 contract tooling. This host has now compiled the
-existing Qt product for ARM64, but Linux and Windows ARM64 runtime validation
-remain unavailable and have not yet been performed.
+fixture corpus and Phase 0 contract tooling. This host has also compiled the
+existing Qt product for ARM64 as unofficial compatibility evidence; no ARM64
+runtime validation is planned in the current roadmap.
 
-## Current HEAD validation note
+## Recorded Windows x64 validation note
 
 At revision `b34a357`, the affected targets were rebuilt before validation.
 The focused campus-map and schedule-import dialog tests passed, followed by a

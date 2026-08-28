@@ -8,9 +8,13 @@ progress; its exit gate has not been claimed.
 ## Repository snapshot
 
 - Branch: `NativeWindowsPort`, at `origin/NativeWindowsPort`.
-- HEAD: `d9732c8` (`Phase 0 Linux verification done`).
+- HEAD: `f39fbdf` (`Phase 0 - Visual captures at 100, 150, ans 200 percent DPI`).
 - The current product source still has no native Direct2D/DirectComposition
   target; this status file and the capture artifacts are Phase 0 evidence.
+- The current Phase 0 release gate is x64 only. ARM64 build compatibility is
+  unofficial and informational; ARM64 runtime validation, baselines, and
+  release support are deferred. UI Automation, Narrator, and high-contrast
+  support are also deferred from the current roadmap.
 
 ## Phase 0 completed evidence
 
@@ -42,8 +46,9 @@ progress; its exit gate has not been claimed.
 - The current x64 Debug startup probe has three runs at approximately 3.4 s
   startup and a maximum peak of 703.9 MiB working set / 599.6 MiB private
   bytes. These are diagnostic values, not the approved Release budget.
-- Windows ARM64 Qt compilation/linking was established, but ARM64 runtime
-  validation has not been performed.
+- Windows ARM64 Qt compilation/linking was established as unofficial build
+  compatibility evidence. No ARM64 runtime validation is planned in the
+  current roadmap.
 
 ## Linux Qt validation
 
@@ -79,30 +84,35 @@ evidence no longer includes the previous second-monitor capture. The validated
 `artifacts/phase0/windows-qt-visual/20260828T080550115Z-12884/`; the 200% run
 was generated on the same single-monitor setup.
 
+The repository HEAD is `f39fbdf`; the promoted capture sidecars correctly
+retain their captured-product `sourceRevision: d9732c8`. Do not relabel those
+artifacts as a newer product build without recapturing them.
+
 ## Remaining Phase 0 work
 
 1. Capture and review the remaining ledger states, including populated,
    validation, error, modal, print/PDF, and output flows.
-2. Perform manual keyboard-only, Korean IME, UI Automation/Narrator,
-   high-contrast, focus-restoration, and unsaved-change checks.
+2. Perform manual keyboard-only, Korean IME, focus-restoration, and
+   unsaved-change checks. UI Automation, Narrator, and high-contrast work are
+   deferred from the current roadmap.
 3. Complete manual review of the 100%/150%/200% DPI evidence; all three
    automated matrices have been captured and validated on the replacement
    computer.
 4. Resolve and rerun the two Linux diagnostics failures above, then validate
-   the retained Qt product on macOS and run Windows ARM64 tests on ARM64
-   hardware.
-5. Collect a current Windows x64 Release baseline and equivalent ARM64,
-   resize, scrolling, first-paint, output, and device-recovery measurements.
+   the retained Qt product on macOS.
+5. Collect a current Windows x64 Release baseline plus resize, scrolling,
+   first-paint, output, and device-recovery measurements.
 
 ## Reproduce on another Windows device
 
 From the repository root, with the required Qt 6.11.1 kit, Visual Studio,
-Windows SDK, and an interactive monitor configured at 100% or 150% scaling:
+Windows SDK, and an interactive monitor configured at 100%, 150%, or 200%
+scaling:
 
 ```powershell
 cmake --preset windows-x64-phase0-visual
 cmake --build build/windows-x64-phase0-visual --config Debug --target ClassMngrWindowsQtVisualCaptureTests --parallel 2
-$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "100" # or "150"
+$env:CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT = "100" # or "150" or "200"
 ctest --test-dir build/windows-x64-phase0-visual -C Debug -R ClassMngrWindowsQtVisualCaptureTests --output-on-failure
 ```
 

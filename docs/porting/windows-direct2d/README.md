@@ -11,18 +11,23 @@ the Phase 0 additions. Update
 the affected contract and its evidence location whenever a user-visible Qt
 behavior changes while the port is in progress.
 
+The current Windows release gate is x64 only. ARM64 build compatibility is
+unofficial and informational; official ARM64 runtime validation, performance,
+and release support are deferred. UI Automation, Narrator, and high-contrast
+support are also deferred from the current roadmap.
+
 ## Phase 0 deliverables
 
 - [Feature and workflow inventory](phase-0/feature-inventory.md) — pages,
   commands, dialogs, output, platform behavior, source evidence, and capture
   status.
-- [Windows parity matrix](phase-0/parity-matrix.csv) — the x64/ARM64 completion
-  gate for each feature surface.
+- [Windows parity matrix](phase-0/parity-matrix.csv) — the x64 completion gate
+  for each feature surface; ARM64 columns are informational only.
 - [Parity matrix guide](phase-0/parity-matrix-guide.md) — evidence vocabulary,
   baseline versus native status, and the completion rule.
 - [Database fixture contract](phase-0/database-fixture-contract.md) — required
   portable `.tps`/legacy `.db` fixtures, semantic digests, and rollback cases.
-- [Visual, input, and accessibility capture protocol](phase-0/reference-capture.md).
+- [Visual and input capture protocol](phase-0/reference-capture.md).
 - [Source-backed capture ledger](phase-0/capture-ledger.csv) — each page,
   dialog, command, and high-risk editor has a stable artifact prefix and state.
 - [Performance budget and measurement protocol](phase-0/performance-baseline.md).
@@ -38,11 +43,11 @@ behavior changes while the port is in progress.
 | Area | State | Gate to advance |
 | --- | --- | --- |
 | Source and test inventory | initial pass complete | keep it synchronized with Qt behavior changes |
-| Parity matrix | seeded | every cell must have evidence before cutover |
+| Parity matrix | seeded | every applicable x64 cell must have evidence before cutover; ARM64 is informational |
 | Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 9 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
-| Screenshots, IME, UIA, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, and 16 validated current-HEAD Qt captures | capture the remaining ledger states and manually review input/accessibility/output evidence |
-| Performance | historical x64 Release budget plus three current x64 Debug GUI samples; ARM64 runtime pending | approve a current Release baseline, establish ARM64 equivalents, and capture page/scroll/output samples |
-| Build preservation | Linux Qt Debug configured and rebuilt; 65/67 tests pass, with two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures, then complete macOS and Windows x64/ARM64 validation unchanged |
+| Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, and 16 validated Qt captures per DPI run | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
+| Performance | historical x64 Release budget plus three current x64 Debug GUI samples | approve a current x64 Release baseline and capture page/scroll/output samples; ARM64 is deferred |
+| Build preservation | Linux Qt Debug configured and rebuilt; 65/67 tests pass, with two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures, then complete macOS and Windows x64 validation unchanged |
 
 The capture target is opt-in through
 `CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS`; it requires an interactive
@@ -56,7 +61,7 @@ The retained Linux Qt product was configured and rebuilt from the
 nine checked-in fixtures. The full Qt test suite passed 65 of 67 tests when run
 with `QT_QPA_PLATFORM=offscreen` and normal loopback access; the two remaining
 failures are the Linux `/proc` memory snapshot assertion and the dependent
-startup-memory assertion. Details and the exact current-HEAD result are in
+startup-memory assertion. Details and the recorded result are in
 the [cross-device status record](current-status.md).
 
 The validation commands are:

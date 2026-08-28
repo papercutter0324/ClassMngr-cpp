@@ -126,6 +126,7 @@ speaking-evaluation report and batch service, and startup performance. See the
 
 For every page, dialog, and command above, capture light/dark at 100%, 150%,
 and 200% DPI; keyboard-only focus order; English and Korean IME composition;
-screen-reader name/role/value; empty/loading/error/populated/dirty states; and
-output or error artifacts where applicable. Use
+empty/loading/error/populated/dirty states; and output or error artifacts where
+applicable. UI Automation, Narrator, and high-contrast evidence are deferred
+from the current roadmap. Use
 [reference-capture.md](reference-capture.md) for the exact artifact layout.
