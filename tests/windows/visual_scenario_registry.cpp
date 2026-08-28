@@ -124,6 +124,54 @@ const QList<WindowsQtCaptureScenario>& windowsQtCaptureScenarios()
             .databaseOpen = true
         },
         {
+            .id = QStringLiteral("editor.class-details.populated"),
+            .ledgerId = QStringLiteral("editor.class-details"),
+            .artifactPrefix = QStringLiteral("class-details"),
+            .state = QStringLiteral("populated"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Details,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.roster.populated"),
+            .ledgerId = QStringLiteral("editor.roster"),
+            .artifactPrefix = QStringLiteral("roster"),
+            .state = QStringLiteral("populated"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Roster,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.class-analytics.populated"),
+            .ledgerId = QStringLiteral("editor.class-analytics"),
+            .artifactPrefix = QStringLiteral("class-analytics"),
+            .state = QStringLiteral("populated"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Analytics,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.speaking-evaluation.populated"),
+            .ledgerId = QStringLiteral("editor.speaking-evaluation"),
+            .artifactPrefix = QStringLiteral("speaking-evaluation"),
+            .state = QStringLiteral("populated"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Evaluations,
+            .databaseOpen = true
+        },
+        {
             .id = QStringLiteral("platform.theme-dpi"),
             .ledgerId = QStringLiteral("platform.theme-dpi"),
             .artifactPrefix = QStringLiteral("theme-dpi"),

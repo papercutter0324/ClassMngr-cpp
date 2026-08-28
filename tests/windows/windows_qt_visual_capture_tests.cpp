@@ -387,6 +387,15 @@ void WindowsQtVisualCaptureTests::scenarioRegistryIsComplete()
                     .arg(scenario.id)
                 ));
             break;
+
+        case WindowsQtCaptureSurface::ClassSection:
+            QVERIFY2(scenario.pageType == PageType::Classes,
+                "Class-section scenarios must target Classes.");
+            QVERIFY2(!scenario.fixtureFile.isEmpty(), qPrintable(
+                QStringLiteral("Class-section scenario has no database fixture: %1")
+                    .arg(scenario.id)
+                ));
+            break;
         }
     }
 
@@ -603,6 +612,41 @@ void WindowsQtVisualCaptureTests::capture()
         actions.append(
             QStringLiteral("Open %1 workspace tab")
                 .arg(workspaceTabName(scenario->workspaceTab))
+            );
+        break;
+    }
+
+    case WindowsQtCaptureSurface::ClassSection:
+    {
+        pages->showPage(PageType::Classes);
+        QTRY_COMPARE_WITH_TIMEOUT(
+            pages->currentPageIdentifier(),
+            PageManager::pageTypeIdentifier(PageType::Classes),
+            5000
+            );
+
+        ClassesPage* classes = pages->classesPage();
+        QVERIFY2(classes, "Classes page was not created by its production entry point.");
+        QVERIFY2(
+            classes->openClass(-1, scenario->classSection),
+            qPrintable(
+                QStringLiteral("Unable to open a populated class for %1")
+                    .arg(scenario->id)
+                )
+            );
+        QVERIFY2(classes->currentClassId() > 0,
+            "Class-section scenario did not select a class.");
+        QCOMPARE(classes->currentSection(), scenario->classSection);
+        QVERIFY2(
+            classes->isEditorInstantiated(scenario->classSection),
+            qPrintable(
+                QStringLiteral("Requested class editor was not instantiated: %1")
+                    .arg(scenario->id)
+                )
+            );
+        actions.append(
+            QStringLiteral("Open Classes page and select class section %1")
+                .arg(static_cast<int>(scenario->classSection))
             );
         break;
     }

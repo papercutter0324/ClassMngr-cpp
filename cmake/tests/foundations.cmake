@@ -88,6 +88,7 @@ if(WIN32 AND CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS)
         ClassMngrfilesResourcePack
         ClassMngrimagesResourcePack
         ClassMngrsplashResourcePack
+        ClassMngrtemplatesResourcePack
     )
 
     qt_add_resources(ClassMngrWindowsQtVisualCaptureTests
