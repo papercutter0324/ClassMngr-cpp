@@ -84,6 +84,46 @@ progress; its exit gate has not been claimed.
   zero size and returns an unavailable sample. No Linux source was changed by
   this validation run.
 
+## macOS Qt validation
+
+Validated 2026-08-29 on macOS 26.6.2 using Qt 6.11.1, CMake 4.3.3, AppleClang
+21.0.0, and an arm64 host. The Debug and Release builds used the universal
+`arm64;x86_64` architecture setting and the macOS 13.0 deployment target.
+
+- A clean-source Debug configure and rebuild completed successfully, including
+  the retained `ClassMngr` application, shared runtime, and all 68 registered
+  test targets.
+- `ClassMngrDatabasePortFixtureTests` passed all eleven checked-in fixtures, including
+  migration, rollback, and Korean-text semantic checks.
+- The complete retained Qt CTest suite passed **68/68** in 29.89 seconds with
+  loopback access enabled. The Initial Setup wizard test runs with Cocoa on
+  Apple platforms because Qt 6.11.1 aborts when `QWizard` is forced through
+  the offscreen plugin; other platforms retain their existing headless setup.
+- A clean universal Release build completed successfully; `lipo -info`
+  confirmed both `arm64` and `x86_64` slices.
+- The only repository change for this validation is the test-platform
+  selection in `cmake/tests/foundations.cmake`; application source,
+  database schema, and macOS release settings were not changed.
+
+The reproducible validation commands are:
+
+```bash
+export QT_MACOS_PREFIX=/Users/papercutter0324/Qt/6.11.1/macos
+cmake --preset macos-clang-debug
+cmake --build build/macos-clang-debug --parallel 2
+build/macos-clang-debug/ClassMngrDatabasePortFixtureGenerator \
+  --verify-directory tests/fixtures/database-port
+env QT_QPA_PLATFORM=offscreen \
+  ctest --test-dir build/macos-clang-debug --output-on-failure
+
+cmake --preset macos-clang-release
+cmake --build build/macos-clang-release --parallel 2
+```
+
+Run the suite on an interactive macOS session with permission for its local
+loopback test server; the Cocoa wizard case cannot be validated by an
+offscreen-only runner.
+
 ## Current visual evidence
 
 The latest validated editor capture run is:
@@ -128,8 +168,8 @@ pending visual/manual review; it is not yet a reviewed/stable golden matrix.
 3. Complete manual review of the 100%/150%/200% DPI evidence; all three
    automated matrices have been captured and validated on the replacement
    computer.
-4. Resolve and rerun the two Linux diagnostics failures above, then validate
-   the retained Qt product on macOS.
+4. Resolve and rerun the two Linux diagnostics failures above; retained macOS
+   Qt validation is complete.
 5. Collect a current Windows x64 Release baseline plus resize, scrolling,
    first-paint, output, and device-recovery measurements.
 

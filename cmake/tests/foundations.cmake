@@ -188,6 +188,17 @@ qt_add_resources(ClassMngrDialogShellTests dialog_shell_keyboard_test_resources
         resources/assets/icons/keyboard_light.svg
 )
 
+# QWizard's macOS implementation requires the Cocoa platform: Qt 6.11.1
+# aborts in its native wizard-pixmap path when this test is forced through
+# the offscreen plugin. Keep the test headless on other platforms.
+if(APPLE)
+    set(CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT
+        "QT_QPA_PLATFORM=cocoa")
+else()
+    set(CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen")
+endif()
+
 classmngr_add_qt_test(
     NAME InitialSetupWizard
     SOURCES
@@ -195,7 +206,8 @@ classmngr_add_qt_test(
     LIBRARIES
         Qt6::Test
         Qt6::Widgets
-    OFFSCREEN
+    ENVIRONMENT
+        ${CLASSMNGR_INITIAL_SETUP_WIZARD_ENVIRONMENT}
 )
 
 qt_add_resources(ClassMngrInitialSetupWizardTests initial_setup_keyboard_test_resources
