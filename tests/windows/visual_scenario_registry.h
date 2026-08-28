@@ -17,6 +17,16 @@ enum class WindowsQtCaptureSurface
     ClassSection
 };
 
+enum class WindowsQtCaptureMutation
+{
+    None,
+    ClassDetailsDirty,
+    ClassDetailsValidation,
+    RosterDirty,
+    SpeakingEvaluationDirty,
+    SpeakingEvaluationError
+};
+
 struct WindowsQtCaptureScenario
 {
     QString id;
@@ -29,6 +39,7 @@ struct WindowsQtCaptureScenario
         WindowsQtCaptureSurface::RegisteredPage;
     PageType pageType = PageType::MyWorkspace;
     ClassesSection classSection = ClassesSection::Details;
+    WindowsQtCaptureMutation mutation = WindowsQtCaptureMutation::None;
     WorkspaceTab workspaceTab = WorkspaceTab::Details;
     QString menuTitle;
     Theme theme = Theme::Light;

@@ -44,8 +44,8 @@ support are also deferred from the current roadmap.
 | --- | --- | --- |
 | Source and test inventory | initial pass complete | keep it synchronized with Qt behavior changes |
 | Parity matrix | seeded | every applicable x64 cell must have evidence before cutover; ARM64 is informational |
-| Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 9 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
-| Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, 16 validated baseline Qt captures per DPI run, and a 20-scenario supplemental run with populated-editor coverage at 150% | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
+| Database fixtures | generated, SHA-pinned corpus; Linux Qt verifier passed all 11 fixtures | record Linux Qt/native-engine semantic result digests when the cross-platform harness and native engine are available |
+| Screenshots, keyboard/IME, and output samples | ledger, metadata-sidecar tooling, opt-in native Windows capture target, 16 validated baseline Qt captures per DPI run, and a 28-scenario expanded run covering populated, empty, large, dirty, validation, and error editor states at 150% | capture the remaining ledger states and manually review keyboard, IME, and output evidence; UIA/Narrator/high contrast are deferred |
 | Performance | historical x64 Release budget plus three current x64 Debug GUI samples | approve a current x64 Release baseline and capture page/scroll/output samples; ARM64 is deferred |
 | Build preservation | Linux Qt Debug configured and rebuilt; 65/67 tests pass, with two diagnostics failures recorded in [current-status](current-status.md) | resolve the Linux diagnostics failures, then complete macOS and Windows x64 validation unchanged |
 

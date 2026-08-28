@@ -1223,7 +1223,15 @@ void MainWindow::onSidebarItemSelected(
 // Destructor
 // =========================================================
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    // PageManager and its lazily-created pages keep a non-owning pointer to
+    // ApplicationServices.  They are QObject children of MainWindow, so Qt
+    // would otherwise destroy them from MainWindow's base destructor after
+    // the m_services member has already been released.
+    delete m_pages;
+    m_pages = nullptr;
+}
 
 
 

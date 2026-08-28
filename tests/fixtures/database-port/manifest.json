@@ -21,7 +21,7 @@
     {
       "id": "typical",
       "file": "typical.tps",
-      "sha256": "d0446d78ecde09cb9cd0f649f3a34a7597bdc69f2a921c3bc4401534f3e3ff06",
+      "sha256": "99232578785ccda1c055d634c98e0acbd505b1e4ffb59ff6836530343c2380f6",
       "kind": "current",
       "expect": "round-trips English and Korean teacher, class, roster, calendar, campus, and speaking-evaluation data",
       "semantic": {
@@ -35,15 +35,28 @@
         "rosterRows": 2,
         "calendarTitle": "Fixture Event / 행사",
         "campusName": "Fixture Campus",
-        "speakingEvaluation": "First Semester"
+      "speakingEvaluation": "Winter"
+      }
+    },
+    {
+      "id": "roster-large",
+      "file": "roster-large.tps",
+      "sha256": "47feac8d6591bb8600ac2307e640996f0f819a640311fe2e8af99de23e35499c",
+      "kind": "current",
+      "expect": "contains the maximum 25-row roster editor fixture with valid bilingual names",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 25
       }
     },
     {
       "id": "large",
       "file": "large.tps",
-      "sha256": "fafad77d87ee740bbdd53e1b1e6ed3c5b7916acf5a3c880575eab2d465df2df5",
+      "sha256": "edb04a191f0917d039b4cd835bdae9d7c33ae4f35947cd59ce5f838e87dcf9ff",
       "kind": "current",
-      "expect": "contains a 1,000-row roster for virtualized-table and performance checks",
+      "expect": "contains a 1,000-row roster and scored Winter evaluation for virtualized-table and performance checks",
       "semantic": {
         "opens": true,
         "schemaVersionAfterOpen": 6,
@@ -52,9 +65,23 @@
       }
     },
     {
+      "id": "analytics-empty",
+      "file": "analytics-empty.tps",
+      "sha256": "46509c9bfb8bf3b22a20e6ba5c9a1eca1681361f45d6b99444fca9cf6a1dea96",
+      "kind": "current",
+      "expect": "contains a class and roster without speaking-evaluation records for the analytics empty state",
+      "semantic": {
+        "opens": true,
+        "schemaVersionAfterOpen": 6,
+        "className": "Fixture Class / 수업",
+        "rosterRows": 2,
+        "speakingEvaluations": 0
+      }
+    },
+    {
       "id": "legacy-v2",
       "file": "legacy-v2.db",
-      "sha256": "35cce84fca3f0d60144b188b1a071637b2f7082e86bb107b077beb554cbd0fee",
+      "sha256": "dc70a7c03660266eed4906a7a31c7c0c98195372f4b85450e583125fde51436a",
       "kind": "legacy",
       "expect": "migrates to schema v6 and repairs the unassigned teacher",
       "semantic": {
@@ -68,7 +95,7 @@
     {
       "id": "legacy-v5",
       "file": "legacy-v5.db",
-      "sha256": "24b35ba1673c65dc9390854fac692f48471a9c481e5c9524c0d47a3d63e9bb22",
+      "sha256": "ae2fc7dee6c20230298c54b93626a0ffe7e3514c40108247203e667258618672",
       "kind": "legacy",
       "expect": "migrates to schema v6 and creates the v6 pre-migration backup",
       "semantic": {

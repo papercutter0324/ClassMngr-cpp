@@ -20,9 +20,9 @@ progress; its exit gate has not been claimed.
 
 - Architecture decision record, feature inventory, parity matrix, fixture
   contract, capture protocol, and performance protocol are present.
-- The fixture corpus contains nine SHA-pinned fixtures and executable semantic
+- The fixture corpus contains eleven SHA-pinned fixtures and executable semantic
   and migration checks.
-- The opt-in Windows Qt visual target covers 20 scenarios and performs the
+- The opt-in Windows Qt visual target covers 28 scenarios and performs the
   production show/settle/capture/close/cleanup lifecycle.
 - Windows x64 Debug non-visual validation passed 67/67 tests, including the
   database-port fixture tests.
@@ -41,14 +41,16 @@ progress; its exit gate has not been claimed.
   `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=200` on one active monitor. The
   validated run is `20260828T091020942Z-21232`; every sidecar reports 200%
   display scale, a 1270x780 capture window, and `sourceRevision: d9732c8`.
-- After adding deterministic populated editor coverage, the rebuilt visual
-  target passed 20/20 scenarios in supplemental run
-  `20260828T111746729Z-1336`. The four new class-section artifacts report
-  150% display scale and `sourceRevision: fb4f268`; the artifact and contract
-  validators both pass. Manual review and the remaining editor states are
-  still pending.
+- The expanded visual target passed 28/28 scenarios in final run
+  `20260828T123139612Z-10236` at 150% display scale. It covers populated,
+  empty, large, dirty, validation, and error states for the Classes editors;
+  all 28 PNG/JSON pairs pass the artifact validator and report
+  `sourceRevision: fb4f268`. Manual review and keyboard/IME evidence remain
+  pending. The run takes 172.16 seconds against the current 180-second CTest
+  timeout, so the matrix should be split or given more timeout margin before
+  further growth.
 - Phase 0 contract validation passes: 80 capture rows, 21 parity rows, and
-  nine fixtures.
+  eleven fixtures.
 - The current x64 Debug startup probe has three runs at approximately 3.4 s
   startup and a maximum peak of 703.9 MiB working set / 599.6 MiB private
   bytes. These are diagnostic values, not the approved Release budget.
@@ -61,7 +63,7 @@ progress; its exit gate has not been claimed.
 - `cmake --preset linux-gcc-debug` configured successfully with Qt 6.11.1;
   the retained `ClassMngr` executable and all 67 registered test targets
   rebuilt successfully.
-- `ClassMngrDatabasePortFixtureTests` passed, verifying all nine checked-in
+- `ClassMngrDatabasePortFixtureTests` passed, verifying all eleven checked-in
   database fixtures and their migration/rollback expectations.
 - The complete Linux Qt Debug suite passed 65/67 tests when run with
   `QT_QPA_PLATFORM=offscreen` and normal loopback access. All updater tests
@@ -75,14 +77,15 @@ progress; its exit gate has not been claimed.
 
 ## Current visual evidence
 
-The latest validated 200% capture run is:
+The latest validated expanded capture run is:
 
 ```text
-artifacts/phase0/windows-qt-visual/20260828T091020942Z-21232/
+artifacts/phase0/windows-qt-visual/20260828T123139612Z-10236/
 ```
 
-It contains 16 PNG/JSON pairs, validated against the Phase 0 artifact
-contract. The stable 100% baseline at
+It contains 28 PNG/JSON pairs, validated against the Phase 0 artifact
+contract, at 150% display scale. The validated 100%/150%/200% baseline runs
+remain available for cross-scale comparison. The stable 100% baseline at
 `artifacts/phase0/windows-qt-visual/20260828T025557225Z-39876/` was replaced
 with the single-monitor run `20260828T083829986Z-18036` so the canonical
 evidence no longer includes the previous second-monitor capture. The validated
@@ -92,8 +95,8 @@ was generated on the same single-monitor setup.
 
 The repository HEAD is `fb4f268`; the promoted 100%/150%/200% capture sidecars
 correctly retain their captured-product `sourceRevision: d9732c8`. The
-supplemental populated-editor run records `sourceRevision: fb4f268`, but it is
-not a reviewed/stable replacement for the promoted matrix.
+expanded editor run records `sourceRevision: fb4f268` and is automated evidence
+pending visual/manual review; it is not yet a reviewed/stable golden matrix.
 
 ## Remaining Phase 0 work
 

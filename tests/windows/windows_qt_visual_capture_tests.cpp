@@ -7,10 +7,15 @@
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/settingsmanager.h"
 #include "core/theme_service.h"
+#include "features/roster/ui/roster_model.h"
+#include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "ui/shared/state/option_state_keys.h"
+#include "ui/shared/widgets/sections/class_details_section.h"
 
 #include <QAction>
+#include <QAbstractItemModel>
 #include <QApplication>
+#include <QComboBox>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
@@ -22,6 +27,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
 #include <QPixmap>
@@ -35,6 +41,7 @@
 #include <QSysInfo>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTableView>
 #include <QThreadPool>
 #include <QStringList>
 #include <QWidget>
@@ -395,6 +402,28 @@ void WindowsQtVisualCaptureTests::scenarioRegistryIsComplete()
                 QStringLiteral("Class-section scenario has no database fixture: %1")
                     .arg(scenario.id)
                 ));
+            switch (scenario.mutation)
+            {
+            case WindowsQtCaptureMutation::None:
+                break;
+
+            case WindowsQtCaptureMutation::ClassDetailsDirty:
+            case WindowsQtCaptureMutation::ClassDetailsValidation:
+                QVERIFY2(scenario.classSection == ClassesSection::Details,
+                    "Class-details mutations must target the Details section.");
+                break;
+
+            case WindowsQtCaptureMutation::RosterDirty:
+                QVERIFY2(scenario.classSection == ClassesSection::Roster,
+                    "Roster mutations must target the Roster section.");
+                break;
+
+            case WindowsQtCaptureMutation::SpeakingEvaluationDirty:
+            case WindowsQtCaptureMutation::SpeakingEvaluationError:
+                QVERIFY2(scenario.classSection == ClassesSection::Evaluations,
+                    "Speaking-evaluation mutations must target Evaluations.");
+                break;
+            }
             break;
         }
     }
@@ -580,6 +609,7 @@ void WindowsQtVisualCaptureTests::capture()
     };
 
     QMenu* openMenu = nullptr;
+    ClassesPage* classesForScenario = nullptr;
     switch (scenario->surface)
     {
     case WindowsQtCaptureSurface::RegisteredPage:
@@ -627,6 +657,11 @@ void WindowsQtVisualCaptureTests::capture()
 
         ClassesPage* classes = pages->classesPage();
         QVERIFY2(classes, "Classes page was not created by its production entry point.");
+        classesForScenario = classes;
+        if (scenario->mutation != WindowsQtCaptureMutation::None)
+        {
+            classes->setSaveMode(SaveMode::Manual);
+        }
         QVERIFY2(
             classes->openClass(-1, scenario->classSection),
             qPrintable(
@@ -669,6 +704,265 @@ void WindowsQtVisualCaptureTests::capture()
                 .arg(scenario->menuTitle)
             );
         break;
+    }
+
+    if (scenario->surface == WindowsQtCaptureSurface::ClassSection)
+    {
+        QVERIFY(classesForScenario);
+
+        switch (scenario->mutation)
+        {
+        case WindowsQtCaptureMutation::None:
+            if (scenario->classSection == ClassesSection::Details)
+            {
+                auto* details = window->findChild<ClassDetailsSection*>();
+                QVERIFY2(details, "Class-details section was not instantiated.");
+
+                if (scenario->state == QStringLiteral("populated"))
+                {
+                    QCOMPARE(details->grade(), QStringLiteral("E6"));
+                    QCOMPARE(details->level(), QStringLiteral("Helios"));
+                    QCOMPARE(details->readingBook(), QStringLiteral("Reading Explorer 3"));
+                    QCOMPARE(details->essayBook(), QStringLiteral("6A"));
+                    actions.append(
+                        QStringLiteral("Assert populated class-details fixture values")
+                        );
+                }
+            }
+            else if (scenario->classSection == ClassesSection::Roster)
+            {
+                auto* table = window->findChild<QTableView*>(
+                    QStringLiteral("rosterTable")
+                    );
+                QVERIFY2(table, "Roster table was not instantiated.");
+                auto* model = qobject_cast<RosterModel*>(table->model());
+                QVERIFY2(model, "Roster table did not expose its production model.");
+
+                const int englishColumn = model->englishNameColumn();
+                QVERIFY(englishColumn >= 0);
+                if (scenario->state == QStringLiteral("large"))
+                {
+                    QCOMPARE(model->rowCount(), 25);
+                    QCOMPARE(
+                        model->data(
+                            model->index(model->rowCount() - 1, englishColumn),
+                            Qt::DisplayRole
+                            ).toString(),
+                        QStringLiteral("Student Y")
+                        );
+                    actions.append(
+                        QStringLiteral(
+                            "Assert the fixed 25-row editor surface backed by the 1,000-row fixture"
+                            )
+                        );
+                }
+            }
+            else if (scenario->classSection == ClassesSection::Analytics)
+            {
+                const auto hasVisibleEmptyMessage = [&window]()
+                {
+                    for (QLabel* label : window->findChildren<QLabel*>())
+                    {
+                        if (
+                            label
+                            && label->isVisible()
+                            && label->text().contains(
+                                QStringLiteral("No scored speaking evaluations")
+                                )
+                            )
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+                if (scenario->state == QStringLiteral("empty"))
+                {
+                    QTRY_VERIFY_WITH_TIMEOUT(hasVisibleEmptyMessage(), 5000);
+                    actions.append(
+                        QStringLiteral("Assert the analytics empty state")
+                        );
+                }
+                else if (scenario->state == QStringLiteral("populated"))
+                {
+                    QTRY_VERIFY_WITH_TIMEOUT(!hasVisibleEmptyMessage(), 5000);
+                    actions.append(
+                        QStringLiteral("Assert scored analytics are visible")
+                        );
+                }
+            }
+            else if (scenario->classSection == ClassesSection::Evaluations)
+            {
+                auto* table = window->findChild<QTableView*>(
+                    QStringLiteral("classEvaluationsTable")
+                    );
+                QVERIFY2(table, "Speaking-evaluation table was not instantiated.");
+                auto* model = qobject_cast<SpeakingEvalModel*>(table->model());
+                QVERIFY2(
+                    model,
+                    "Speaking-evaluation table did not expose its production model."
+                    );
+
+                const int nameColumn =
+                    SpeakingEval::toInt(SpeakingEvalColumn::EnglishName);
+                const int expectedNames =
+                    scenario->state == QStringLiteral("large") ? 25 : 2;
+                int populatedNames = 0;
+                for (int row = 0; row < model->rowCount(); ++row)
+                {
+                    if (!model->data(model->index(row, nameColumn)).toString().isEmpty())
+                    {
+                        ++populatedNames;
+                    }
+                }
+                QVERIFY2(
+                    populatedNames >= expectedNames,
+                    qPrintable(
+                        QStringLiteral(
+                            "Expected at least %1 populated evaluation rows, got %2."
+                            )
+                            .arg(expectedNames)
+                            .arg(populatedNames)
+                        )
+                    );
+                actions.append(
+                    QStringLiteral("Assert populated speaking-evaluation rows")
+                    );
+            }
+            break;
+
+        case WindowsQtCaptureMutation::ClassDetailsDirty:
+        {
+            auto* details = window->findChild<ClassDetailsSection*>();
+            QVERIFY2(details, "Class-details section was not instantiated.");
+            auto* readingBook = details->readingBookEditor();
+            QVERIFY(readingBook);
+            const int editedIndex = readingBook->findText(
+                QStringLiteral("Reading Explorer 4")
+                );
+            QVERIFY2(
+                editedIndex >= 0,
+                "The deterministic class-details fixture has no alternate reading book."
+                );
+            readingBook->setCurrentIndex(editedIndex);
+            QTRY_VERIFY_WITH_TIMEOUT(
+                classesForScenario->hasUnsavedChanges(),
+                5000
+                );
+            actions.append(
+                QStringLiteral("Change the reading book and retain unsaved class-details state")
+                );
+            break;
+        }
+
+        case WindowsQtCaptureMutation::ClassDetailsValidation:
+        {
+            auto* details = window->findChild<ClassDetailsSection*>();
+            QVERIFY2(details, "Class-details section was not instantiated.");
+            auto* level = details->levelEditor();
+            QVERIFY(level);
+            const int emptyIndex = level->findText(QString());
+            QVERIFY(emptyIndex >= 0);
+            level->setCurrentIndex(emptyIndex);
+
+            auto* validation = window->findChild<QLabel*>(
+                QStringLiteral("classLevelValidationMessage")
+                );
+            QVERIFY2(validation, "Class-details validation label was not instantiated.");
+            QTRY_VERIFY_WITH_TIMEOUT(
+                !validation->text().trimmed().isEmpty(),
+                5000
+                );
+            actions.append(
+                QStringLiteral("Clear the class level and assert validation feedback")
+                );
+            break;
+        }
+
+        case WindowsQtCaptureMutation::RosterDirty:
+        {
+            auto* table = window->findChild<QTableView*>(
+                QStringLiteral("rosterTable")
+                );
+            QVERIFY2(table, "Roster table was not instantiated.");
+            auto* model = qobject_cast<RosterModel*>(table->model());
+            QVERIFY2(model, "Roster table did not expose its production model.");
+            const int englishColumn = model->englishNameColumn();
+            QVERIFY(englishColumn >= 0);
+            QVERIFY(model->setData(
+                model->index(0, englishColumn),
+                QStringLiteral("Fixture Edited Student"),
+                Qt::EditRole
+                ));
+            QTRY_VERIFY_WITH_TIMEOUT(
+                classesForScenario->hasUnsavedChanges(),
+                5000
+                );
+            QVERIFY(model->isDirty());
+            actions.append(
+                QStringLiteral("Edit the first roster name and retain unsaved state")
+                );
+            break;
+        }
+
+        case WindowsQtCaptureMutation::SpeakingEvaluationDirty:
+        case WindowsQtCaptureMutation::SpeakingEvaluationError:
+        {
+            auto* table = window->findChild<QTableView*>(
+                QStringLiteral("classEvaluationsTable")
+                );
+            QVERIFY2(table, "Speaking-evaluation table was not instantiated.");
+            auto* model = qobject_cast<SpeakingEvalModel*>(table->model());
+            QVERIFY2(
+                model,
+                "Speaking-evaluation table did not expose its production model."
+                );
+
+            const int grammarColumn =
+                SpeakingEval::toInt(SpeakingEvalColumn::Grammar);
+            const QString value =
+                scenario->mutation == WindowsQtCaptureMutation::SpeakingEvaluationError
+                    ? QStringLiteral("INVALID")
+                    : QStringLiteral("A");
+            QVERIFY(model->setData(
+                model->index(0, grammarColumn),
+                value,
+                Qt::EditRole
+                ));
+            QTRY_VERIFY_WITH_TIMEOUT(
+                classesForScenario->hasUnsavedChanges(),
+                5000
+                );
+            QVERIFY(model->isDirty());
+
+            if (scenario->mutation == WindowsQtCaptureMutation::SpeakingEvaluationError)
+            {
+                QVERIFY(!model->errorsForCell(0, grammarColumn).isEmpty());
+                auto* validation = window->findChild<QLabel*>(
+                    QStringLiteral("speakingEvalValidationMessage")
+                    );
+                QVERIFY2(
+                    validation,
+                    "Speaking-evaluation validation label was not instantiated."
+                    );
+                QTRY_VERIFY_WITH_TIMEOUT(
+                    !validation->text().trimmed().isEmpty(),
+                    5000
+                    );
+                actions.append(
+                    QStringLiteral("Enter an invalid score and assert evaluation errors")
+                    );
+            }
+            else
+            {
+                actions.append(
+                    QStringLiteral("Edit the first evaluation score and retain unsaved state")
+                    );
+            }
+            break;
+        }
+        }
     }
 
     actions.append(
@@ -758,6 +1052,22 @@ void WindowsQtVisualCaptureTests::capture()
     {
         openMenu->close();
         QTRY_VERIFY_WITH_TIMEOUT(!openMenu->isVisible(), 3000);
+    }
+
+    if (
+        classesForScenario
+        && scenario->mutation != WindowsQtCaptureMutation::None
+        )
+    {
+        classesForScenario->discardChanges();
+        QVERIFY2(
+            !classesForScenario->hasUnsavedChanges(),
+            qPrintable(
+                QStringLiteral("Unable to discard synthetic changes after %1")
+                    .arg(scenario->id)
+                )
+            );
+        actions.append(QStringLiteral("Discard synthetic changes before teardown"));
     }
 
     QVERIFY(window->close());

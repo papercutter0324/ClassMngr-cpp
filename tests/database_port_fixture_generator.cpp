@@ -9,6 +9,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QStringList>
 #include <QTemporaryDir>
 #include <QTime>
 #include <QUuid>
@@ -34,7 +35,9 @@ struct FixtureVerification
 const QList<FixtureDefinition> FixtureDefinitions{
     {QStringLiteral("empty.tps")},
     {QStringLiteral("typical.tps")},
+    {QStringLiteral("roster-large.tps")},
     {QStringLiteral("large.tps")},
+    {QStringLiteral("analytics-empty.tps")},
     {QStringLiteral("legacy-v2.db")},
     {QStringLiteral("legacy-v5.db")},
     {QStringLiteral("migration-invalid.db")},
@@ -47,6 +50,38 @@ QString connectionName()
 {
     return QStringLiteral("database-port-fixture-")
         + QUuid::createUuid().toString(QUuid::WithoutBraces);
+}
+
+QString fixtureKoreanName(int row)
+{
+    static const QStringList names{
+        QStringLiteral("김민준"),
+        QStringLiteral("이서연"),
+        QStringLiteral("박지호"),
+        QStringLiteral("최수빈"),
+        QStringLiteral("정도윤"),
+        QStringLiteral("강하은"),
+        QStringLiteral("조현우"),
+        QStringLiteral("윤서아"),
+        QStringLiteral("장예준"),
+        QStringLiteral("한유진")
+    };
+
+    return names.at(row % names.size());
+}
+
+QString fixtureEnglishName(int row)
+{
+    QString suffix;
+    int value = row + 1;
+    while (value > 0)
+    {
+        --value;
+        suffix.prepend(QChar('A' + (value % 26)));
+        value /= 26;
+    }
+
+    return QStringLiteral("Student %1").arg(suffix);
 }
 
 bool requireStatus(const Status& status, QString* error)
@@ -85,7 +120,8 @@ bool ensureOutputPathsAreAvailable(const QString& outputDirectory, QString* erro
 bool createProfile(
     const QString& filePath,
     int rosterRowCount,
-    QString* error
+    QString* error,
+    bool includeSpeakingEvaluation = true
     )
 {
     DataService service;
@@ -123,8 +159,10 @@ bool createProfile(
     ClassInfo classInfo;
     classInfo.classId = *classId;
     classInfo.teacherId = *teacherId;
-    classInfo.classGrade = QStringLiteral("Grade 6");
-    classInfo.classLevel = QStringLiteral("Advanced");
+    classInfo.classGrade = QStringLiteral("E6");
+    classInfo.classLevel = QStringLiteral("Helios");
+    classInfo.readingBook = QStringLiteral("Reading Explorer 3");
+    classInfo.essayBook = QStringLiteral("6A");
     classInfo.notes = QStringLiteral("Fixture class notes / 수업 메모");
     classInfo.classTimes.append({
         QStringLiteral("Tuesday"),
@@ -154,8 +192,8 @@ bool createProfile(
     for (int row = 0; row < rosterRowCount; ++row)
     {
         roster.rows.append({
-            QStringLiteral("Student %1").arg(row + 1),
-            QStringLiteral("학생 %1").arg(row + 1)
+            fixtureEnglishName(row),
+            fixtureKoreanName(row)
             });
     }
     if (!requireStatus(service.saveRoster(*classId, roster), error))
@@ -163,21 +201,50 @@ bool createProfile(
         return false;
     }
 
-    SpeakingEvalRows evaluation = SpeakingEval::emptyRows();
-    evaluation[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
-        QStringLiteral("Student 1");
-    evaluation[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
-        QStringLiteral("학생 1");
-    if (!requireStatus(
-            service.saveSpeakingEval(
-                *classId,
-                QStringLiteral("First Semester"),
-                evaluation
-                ),
-            error
-            ))
+    if (includeSpeakingEvaluation)
     {
-        return false;
+        const QStringList scores{
+            QStringLiteral("A+"),
+            QStringLiteral("A"),
+            QStringLiteral("B+"),
+            QStringLiteral("B"),
+            QStringLiteral("C")
+        };
+        SpeakingEvalRows evaluation = SpeakingEval::emptyRows();
+        const int evaluatedRowCount =
+            qMin(rosterRowCount, SpeakingEval::RowCount);
+        for (int row = 0; row < evaluatedRowCount; ++row)
+        {
+            evaluation[row][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+                fixtureEnglishName(row);
+            evaluation[row][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+                fixtureKoreanName(row);
+
+            const QString score = scores.at(row % scores.size());
+            for (const SpeakingEvalColumn column : {
+                     SpeakingEvalColumn::Grammar,
+                     SpeakingEvalColumn::Pronunciation,
+                     SpeakingEvalColumn::Fluency,
+                     SpeakingEvalColumn::Manner,
+                     SpeakingEvalColumn::Content,
+                     SpeakingEvalColumn::OverallEffort
+                 })
+            {
+                evaluation[row][SpeakingEval::toInt(column)] = score;
+            }
+        }
+
+        if (!requireStatus(
+                service.saveSpeakingEval(
+                    *classId,
+                    QStringLiteral("Winter"),
+                    evaluation
+                    ),
+                error
+                ))
+        {
+            return false;
+        }
     }
 
     CampusRecord campus;
@@ -296,7 +363,18 @@ bool createFixtures(const QString& outputDirectory, QString* error)
     const QDir directory(outputDirectory);
     if (!createEmptyProfile(directory.filePath(QStringLiteral("empty.tps")), error)
         || !createProfile(directory.filePath(QStringLiteral("typical.tps")), 2, error)
+        || !createProfile(directory.filePath(QStringLiteral("roster-large.tps")), 25, error)
         || !createProfile(directory.filePath(QStringLiteral("large.tps")), 1'000, error))
+    {
+        return false;
+    }
+
+    if (!createProfile(
+            directory.filePath(QStringLiteral("analytics-empty.tps")),
+            2,
+            error,
+            false
+            ))
     {
         return false;
     }
@@ -495,7 +573,7 @@ bool verifyFixtureSemantics(
                     QStringLiteral(
                         "SELECT evaluation_name FROM speaking_evaluations WHERE class_id=1"
                         ),
-                    QStringLiteral("First Semester"),
+                    QStringLiteral("Winter"),
                     fixtureName,
                     error
                     );
@@ -515,6 +593,60 @@ bool verifyFixtureSemantics(
                         "SELECT COUNT(DISTINCT row_index) FROM roster_data WHERE class_id=1"
                         ),
                     QStringLiteral("1000"),
+                    fixtureName,
+                    error
+                    );
+        }
+        else if (fixtureName == QStringLiteral("roster-large.tps"))
+        {
+            verified = requireSqlValue(
+                database,
+                QStringLiteral("PRAGMA user_version"),
+                QStringLiteral("6"),
+                fixtureName,
+                error
+                )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT COUNT(DISTINCT row_index) FROM roster_data WHERE class_id=1"
+                        ),
+                    QStringLiteral("25"),
+                    fixtureName,
+                    error
+                    );
+        }
+        else if (fixtureName == QStringLiteral("analytics-empty.tps"))
+        {
+            verified = requireSqlValue(
+                database,
+                QStringLiteral("PRAGMA user_version"),
+                QStringLiteral("6"),
+                fixtureName,
+                error
+                )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral("SELECT name FROM classes WHERE id=1"),
+                    QStringLiteral("Fixture Class / 수업"),
+                    fixtureName,
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT COUNT(DISTINCT row_index) FROM roster_data WHERE class_id=1"
+                        ),
+                    QStringLiteral("2"),
+                    fixtureName,
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral(
+                        "SELECT COUNT(*) FROM speaking_evaluations WHERE class_id=1"
+                        ),
+                    QStringLiteral("0"),
                     fixtureName,
                     error
                     );
@@ -743,7 +875,9 @@ bool verifyFixtures(const QString& fixtureDirectory, QString* error)
     const QList<FixtureVerification> expectations{
         {QStringLiteral("empty.tps"), true, false, std::nullopt},
         {QStringLiteral("typical.tps"), true, false, std::nullopt},
+        {QStringLiteral("roster-large.tps"), true, false, std::nullopt},
         {QStringLiteral("large.tps"), true, false, std::nullopt},
+        {QStringLiteral("analytics-empty.tps"), true, false, std::nullopt},
         {QStringLiteral("legacy-v2.db"), true, false, std::nullopt},
         {QStringLiteral("legacy-v5.db"), true, false, std::nullopt},
         {QStringLiteral("migration-invalid.db"), false, true, std::nullopt},

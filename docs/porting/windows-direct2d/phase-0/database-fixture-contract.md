@@ -37,6 +37,8 @@ documented rollback v3/data-preservation outcome.
 | --- | --- | --- | --- |
 | `empty.tps` | new/empty database | create and open, then initialize schema | v6 schema, foreign keys enabled, empty semantic digest |
 | `typical.tps` | current profile | read/write teacher, class, schedule, roster, calendar, campus, and speaking-evaluation data including Korean | semantic round trip after Windows write and Linux Qt write |
+| `analytics-empty.tps` | current profile without speaking-evaluation records | analytics empty-state rendering with a populated class and roster | v6 schema, class/roster semantic values, and zero speaking-evaluation records |
+| `roster-large.tps` | current profile at the editor’s 25-row limit | clean maximum-size roster editor rendering with bilingual names | v6 schema, class name, and 25 roster rows |
 | `large.tps` | current profile | virtualized roster/evaluation/schedule reads and save | fixed row counts, digest, latency/memory samples |
 | `legacy-v2.db` | legacy profile | migrate v2 through v6 and repair the historical unassigned-teacher value | v6 digest plus `.pre-schema-v4-backup` |
 | `legacy-v5.db` | profile at v5 | migrate row-index constraint change | v6 digest plus `.pre-schema-v6-backup` |

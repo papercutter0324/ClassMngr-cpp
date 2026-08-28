@@ -136,6 +136,32 @@ const QList<WindowsQtCaptureScenario>& windowsQtCaptureScenarios()
             .databaseOpen = true
         },
         {
+            .id = QStringLiteral("editor.class-details.dirty"),
+            .ledgerId = QStringLiteral("editor.class-details"),
+            .artifactPrefix = QStringLiteral("class-details-dirty"),
+            .state = QStringLiteral("dirty"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Details,
+            .mutation = WindowsQtCaptureMutation::ClassDetailsDirty,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.class-details.validation"),
+            .ledgerId = QStringLiteral("editor.class-details"),
+            .artifactPrefix = QStringLiteral("class-details-validation"),
+            .state = QStringLiteral("validation"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Details,
+            .mutation = WindowsQtCaptureMutation::ClassDetailsValidation,
+            .databaseOpen = true
+        },
+        {
             .id = QStringLiteral("editor.roster.populated"),
             .ledgerId = QStringLiteral("editor.roster"),
             .artifactPrefix = QStringLiteral("roster"),
@@ -145,6 +171,31 @@ const QList<WindowsQtCaptureScenario>& windowsQtCaptureScenarios()
             .surface = WindowsQtCaptureSurface::ClassSection,
             .pageType = PageType::Classes,
             .classSection = ClassesSection::Roster,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.roster.large"),
+            .ledgerId = QStringLiteral("editor.roster"),
+            .artifactPrefix = QStringLiteral("roster-large"),
+            .state = QStringLiteral("large"),
+            .fixtureId = QStringLiteral("roster-large"),
+            .fixtureFile = QStringLiteral("roster-large.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Roster,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.roster.dirty"),
+            .ledgerId = QStringLiteral("editor.roster"),
+            .artifactPrefix = QStringLiteral("roster-dirty"),
+            .state = QStringLiteral("dirty"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Roster,
+            .mutation = WindowsQtCaptureMutation::RosterDirty,
             .databaseOpen = true
         },
         {
@@ -160,6 +211,18 @@ const QList<WindowsQtCaptureScenario>& windowsQtCaptureScenarios()
             .databaseOpen = true
         },
         {
+            .id = QStringLiteral("editor.class-analytics.empty"),
+            .ledgerId = QStringLiteral("editor.class-analytics"),
+            .artifactPrefix = QStringLiteral("class-analytics-empty"),
+            .state = QStringLiteral("empty"),
+            .fixtureId = QStringLiteral("analytics-empty"),
+            .fixtureFile = QStringLiteral("analytics-empty.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Analytics,
+            .databaseOpen = true
+        },
+        {
             .id = QStringLiteral("editor.speaking-evaluation.populated"),
             .ledgerId = QStringLiteral("editor.speaking-evaluation"),
             .artifactPrefix = QStringLiteral("speaking-evaluation"),
@@ -169,6 +232,44 @@ const QList<WindowsQtCaptureScenario>& windowsQtCaptureScenarios()
             .surface = WindowsQtCaptureSurface::ClassSection,
             .pageType = PageType::Classes,
             .classSection = ClassesSection::Evaluations,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.speaking-evaluation.large"),
+            .ledgerId = QStringLiteral("editor.speaking-evaluation"),
+            .artifactPrefix = QStringLiteral("speaking-evaluation-large"),
+            .state = QStringLiteral("large"),
+            .fixtureId = QStringLiteral("large"),
+            .fixtureFile = QStringLiteral("large.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Evaluations,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.speaking-evaluation.dirty"),
+            .ledgerId = QStringLiteral("editor.speaking-evaluation"),
+            .artifactPrefix = QStringLiteral("speaking-evaluation-dirty"),
+            .state = QStringLiteral("dirty"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Evaluations,
+            .mutation = WindowsQtCaptureMutation::SpeakingEvaluationDirty,
+            .databaseOpen = true
+        },
+        {
+            .id = QStringLiteral("editor.speaking-evaluation.error"),
+            .ledgerId = QStringLiteral("editor.speaking-evaluation"),
+            .artifactPrefix = QStringLiteral("speaking-evaluation-error"),
+            .state = QStringLiteral("error"),
+            .fixtureId = QStringLiteral("typical"),
+            .fixtureFile = QStringLiteral("typical.tps"),
+            .surface = WindowsQtCaptureSurface::ClassSection,
+            .pageType = PageType::Classes,
+            .classSection = ClassesSection::Evaluations,
+            .mutation = WindowsQtCaptureMutation::SpeakingEvaluationError,
             .databaseOpen = true
         },
         {
