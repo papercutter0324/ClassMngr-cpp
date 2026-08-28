@@ -34,11 +34,14 @@ language, font-size setting, window size, and exact action sequence.
 
 [`capture-ledger.csv`](capture-ledger.csv) is the source-backed checklist for
 the inventory. Each row supplies a stable artifact prefix and starts `pending`.
-Use `in-progress`, `captured`, `verified`, `blocked`, or `deferred` while
-preserving a short reason in its notes field. A row is `verified` only when all
-its required states, keyboard/input observations, and output artifact (where
-required) are represented by redacted metadata. Deferred rows are retained as
-future-scope inventory and do not block the current x64 Phase 0 gate. The
+Use `in-progress`, `captured`, `verified`, `accepted`, `blocked`, or `deferred`
+while preserving a short reason in its notes field. A row is `verified` only
+when all its required states, keyboard/input observations, and output artifact
+(where required) are represented by redacted metadata. Use `accepted` when the
+product owner explicitly accepts a representative or source-backed current
+Qt behavior and no additional pre-native capture is justified; the notes must
+state the acceptance scope and any native follow-up. Deferred rows are retained
+as future-scope inventory and do not block the current x64 Phase 0 gate. The
 ledger records references and status; screenshots, PDFs, recordings, and raw
 diagnostics remain external artifacts.
 
@@ -98,8 +101,11 @@ The filter accepts comma-separated scenario IDs and prefix patterns ending in
 `*`, for example `dialog.about.default,dialog.preferences.*`. Automated
 captures are evidence with `verification: captured`; promote them to
 `verified` only after the required visual, keyboard, IME, and output review.
-Native Windows file/folder/printer dialogs, Korean IME composition, and
-keyboard-only evidence remain separate manual or platform-automation lanes.
+Owner acceptance may instead be recorded in the ledger as `accepted` when the
+baseline is already familiar and representative. Native Windows
+file/folder/printer dialogs, native output behavior, and native control focus
+remain separate implementation acceptance lanes. The current Qt Korean IME
+baseline is owner-accepted; the native controls must still prove IME support.
 
 ## Manual workflow
 

@@ -2,13 +2,15 @@
 
 Source baseline: `48fc5c5` (the branch state before the Phase 0 additions).
 `PageManager` is the primary screen registry; `ActionRegistry`, `MenuBuilder`, feature `ui` sources, and registered
-Qt tests are the command and behavior evidence. “Capture” deliberately reports
-what still has to be observed on the Qt product.
+Qt tests are the command and behavior evidence. “Capture” records the available
+Qt observation or the remaining native comparison target.
 
 The companion [capture ledger](capture-ledger.csv) assigns every named page,
 dialog, menu/context command, and high-risk editor a stable artifact prefix and
-capture status. It is the operational record for this inventory; do not mark a
-row complete until its redacted metadata and required evidence exist.
+capture status. It is the operational record for this inventory. A row may be
+marked `accepted` when the product owner has explicitly accepted a
+representative or source-backed Qt baseline and any native follow-up is named;
+that acceptance does not establish native parity.
 
 ## Product pages and navigation
 
@@ -22,20 +24,20 @@ coordinator must retain this distinction and preserve instantiated-page state.
 
 | Page identifier | Current Qt page / major surface | Construction | Evidence | Capture |
 | --- | --- | --- | --- | --- |
-| `my-workspace` | My Information shell with Details, My Schedule, and Calendar tabs | initial | `features/my_info/ui/my_workspace_page.*` | pending |
-| `personal-details` | My Information / personal details, signature | embedded in My Workspace | `features/my_info/ui/personal_details_page.*` | pending |
-| `calendar` | academic calendar, events, preferences, upcoming events | embedded/lazy child | `features/calendar/ui/calendar_page.*` | pending |
-| `my-schedule` | personal schedule | embedded in My Workspace | `features/schedule/ui/schedule_page.*` | pending |
-| `my-classes` | personal classes | registered/lazy | `features/my_info/ui/my_classes_page.*` | pending |
-| `schedule` | class schedule, table and print | registered/lazy | `features/schedule/ui/schedule_*` | pending |
-| `classes` | class details, notes, roster and navigation tabs | registered/lazy | `features/classes/ui/classes_page.*` | pending |
-| `testing-classes` | testing classes and roster assignment | registered/lazy | `features/classes/ui/testing_classes_page.*` | pending |
-| `teacher-info` | teacher directory/detail | registered/lazy | `features/teacher/ui/teacher_info_page.*` | pending |
-| `native-english-teachers` | staff directory: Native English Teachers | registered/lazy | `features/teacher/ui/staff_directory_page.*` | pending |
-| `gs-team` | staff directory: GS Team | registered/lazy | `features/teacher/ui/staff_directory_page.*` | pending |
-| `campus-dashboard` | campus data, map, directions, housing and address | registered/lazy | `features/campus/ui/campus_dashboard_page_*` | pending |
-| `sub-prep` | substitute-preparation and document workflows | registered/lazy | `features/sub_prep/ui/sub_prep_page.*` | pending |
-| `pdf-viewer` | bundled/user PDF viewing and output controls | registered/lazy | `ui/shared/pages/pdf_viewer_page.*` | pending |
+| `my-workspace` | My Information shell with Details, My Schedule, and Calendar tabs | initial | `features/my_info/ui/my_workspace_page.*` | accepted |
+| `personal-details` | My Information / personal details, signature | embedded in My Workspace | `features/my_info/ui/personal_details_page.*` | accepted |
+| `calendar` | academic calendar, events, preferences, upcoming events | embedded/lazy child | `features/calendar/ui/calendar_page.*` | accepted |
+| `my-schedule` | personal schedule | embedded in My Workspace | `features/schedule/ui/schedule_page.*` | accepted |
+| `my-classes` | personal classes | registered/lazy | `features/my_info/ui/my_classes_page.*` | accepted |
+| `schedule` | class schedule, table and print | registered/lazy | `features/schedule/ui/schedule_*` | accepted |
+| `classes` | class details, notes, roster and navigation tabs | registered/lazy | `features/classes/ui/classes_page.*` | accepted |
+| `testing-classes` | testing classes and roster assignment | registered/lazy | `features/classes/ui/testing_classes_page.*` | accepted |
+| `teacher-info` | teacher directory/detail | registered/lazy | `features/teacher/ui/teacher_info_page.*` | accepted |
+| `native-english-teachers` | staff directory: Native English Teachers | registered/lazy | `features/teacher/ui/staff_directory_page.*` | accepted |
+| `gs-team` | staff directory: GS Team | registered/lazy | `features/teacher/ui/staff_directory_page.*` | accepted |
+| `campus-dashboard` | campus data, map, directions, housing and address | registered/lazy | `features/campus/ui/campus_dashboard_page_*` | accepted |
+| `sub-prep` | substitute-preparation and document workflows | registered/lazy | `features/sub_prep/ui/sub_prep_page.*` | accepted |
+| `pdf-viewer` | bundled/user PDF viewing and output controls | registered/lazy | `ui/shared/pages/pdf_viewer_page.*` | accepted |
 
 Navigation also includes sidebar class/teacher tree operations and its context
 menus (`ui/shared/widgets/sidebar/*`, `app/controllers/sidebar_controller.*`).
@@ -124,9 +126,9 @@ speaking-evaluation report and batch service, and startup performance. See the
 
 ## Required manual capture state
 
-For every page, dialog, and command above, capture light/dark at 100%, 150%,
-and 200% DPI; keyboard-only focus order; English and Korean IME composition;
-empty/loading/error/populated/dirty states; and output or error artifacts where
-applicable. UI Automation, Narrator, and high-contrast evidence are deferred
-from the current roadmap. Use
+These are the full native comparison targets. Before the native target exists,
+use representative captures and explicit owner acceptance for repeated or
+well-known Qt behavior, and carry native-only differences forward to the
+relevant slice gate. UI Automation, Narrator, and high-contrast evidence are
+deferred from the current roadmap. Use
 [reference-capture.md](reference-capture.md) for the exact artifact layout.

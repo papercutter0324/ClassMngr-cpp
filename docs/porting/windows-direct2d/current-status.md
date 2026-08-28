@@ -2,8 +2,10 @@
 
 Last recorded: 2026-08-29 (Asia/Seoul)
 
-This is the cross-device handoff for the Windows port. Phase 0 is still in
-progress; its exit gate has not been claimed.
+This is the cross-device handoff for the Windows port. The Phase 0 baseline
+gate was accepted by the product owner on 2026-08-29. Phase 1 build-split work
+may proceed; native-platform parity checks remain carry-forward work for the
+corresponding implementation slices.
 
 ## Repository snapshot
 
@@ -46,8 +48,9 @@ progress; its exit gate has not been claimed.
   `20260828T123139612Z-10236` at 150% display scale. It covers populated,
   empty, large, dirty, validation, and error states for the Classes editors;
   all 28 PNG/JSON pairs pass the artifact validator and report
-  `sourceRevision: fb4f268`. Manual review and keyboard/IME evidence remain
-  pending. The run took 172.16 seconds against the then-current 180-second
+  `sourceRevision: fb4f268`. The product owner reviewed the captures and
+  accepted them as matching normal application use; no additional pre-native
+  visual recapture is required. The run took 172.16 seconds against the then-current 180-second
   CTest timeout; the source timeout is now 600 seconds and focused filters are
   available before further matrix growth.
 - The app-owned dialog subset now passes 28/28 scenarios in combined run
@@ -55,9 +58,13 @@ progress; its exit gate has not been claimed.
   deterministic initial-setup, calendar, class/teacher transfer, schedule,
   print-options, speaking-evaluation, substitute-preparation, record,
   updater, Preferences, About, License, and memory-monitor surfaces. All 28
-  PNG/JSON pairs pass the artifact validator. These are automated candidate
-  captures pending visual/manual promotion; native file/folder/printer
-  interaction and keyboard/IME evidence remain separate.
+  PNG/JSON pairs pass the artifact validator. The product owner reviewed the
+  captures and accepted them as representative current-Qt evidence. Native
+  file/folder/printer interaction and native control behavior remain separate
+  implementation acceptance work.
+- The product owner confirms that Korean IME composition works in routine use
+  with the current Qt application. This closes the current-Qt baseline
+  question; native editable controls must still prove equivalent IME behavior.
 - Phase 0 contract validation passes: 80 capture rows, 21 parity rows, and
   eleven fixtures.
 - The current x64 Debug startup probe has three runs at approximately 3.4 s
@@ -88,6 +95,9 @@ progress; its exit gate has not been claimed.
   null value instead of using `QFile::atEnd()`, whose zero-size result for
   procfs files caused unavailable snapshots. The memory snapshot and
   dependent startup-memory tests pass.
+- The recent Linux diagnostics pull is included in this handoff; its
+  diagnostics are considered complete and no Linux diagnostics item blocks
+  Phase 1.
 
 ## macOS Qt validation
 
@@ -154,27 +164,25 @@ artifacts/phase0/windows-qt-visual/20260828T155125967Z-14692/
 ```
 
 It contains 28 PNG/JSON pairs at 150% display scale and is validated against
-the Phase 0 artifact contract. It is exploratory evidence until the required
-visual/manual review is complete.
+the Phase 0 artifact contract. It is an owner-accepted current-Qt baseline;
+it does not claim native parity.
 
 The repository HEAD is `9e9b15f`; the promoted 100%/150%/200% capture sidecars
 correctly retain their captured-product `sourceRevision: d9732c8`. The
-expanded editor run records `sourceRevision: fb4f268` and is automated evidence
-pending visual/manual review; it is not yet a reviewed/stable golden matrix.
+expanded editor run records `sourceRevision: fb4f268` and is an owner-accepted
+current-Qt baseline; it is not native parity or a requirement for a pixel-
+identical native implementation.
 
-## Remaining Phase 0 work
+## Carry-forward native implementation validation
 
-1. Review the new 28-dialog candidate run and capture the still-missing ledger
-   variants (duplicate/valid/cancelled/progress states, command flows, output
-   artifacts, and native file/folder/printer interactions).
-2. Perform manual keyboard-only, Korean IME, focus-restoration, and
-   unsaved-change checks. UI Automation, Narrator, and high-contrast work are
-   deferred from the current roadmap.
-3. Complete manual review of the 100%/150%/200% DPI evidence; all three
-   automated matrices have been captured and validated on the replacement
-   computer.
-4. Collect a current Windows x64 Release baseline plus resize, scrolling,
-   first-paint, output, and device-recovery measurements.
+1. Validate the native file/folder/printer services, command flows, output
+   artifacts, and native control focus as each Phase 1+ feature slice is
+   implemented.
+2. Re-test Korean IME, focus restoration, and unsaved-change behavior on the
+   native controls. The current Qt baseline is owner-accepted; this is not a
+   waiver of the native input gate.
+3. Collect native Windows x64 Release, resize, scrolling, first-paint, output,
+   and device-recovery measurements when the native target can produce them.
 
 ## Reproduce on another Windows device
 

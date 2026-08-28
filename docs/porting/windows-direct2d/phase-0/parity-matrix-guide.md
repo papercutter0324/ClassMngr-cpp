@@ -19,9 +19,12 @@ rather than used as a shortcut.
 artifacts needed before a native comparison can be reviewed. `evidence` names
 the source, test, or result document that establishes the scope.
 
-`phase0_baseline` may be `source-inventory`, `startup-x64-captured`,
-`fixtures-verified-x64`, or `pending`. It describes only the current Qt
-baseline. `native_status` remains `not-started` until a native target produces
+`phase0_baseline` may be `source-inventory`, `owner-accepted-qt`,
+`startup-x64-captured`, `fixtures-verified-x64`, or `pending`. It describes
+only the current Qt baseline. `owner-accepted-qt` records an explicit product
+owner decision that representative current-product behavior is sufficient for
+the pre-native contract; it does not claim that the future native target has
+parity. `native_status` remains `not-started` until a native target produces
 comparable x64 evidence. UI Automation, Narrator, and high-contrast support
 are deferred and must not be inferred from the keyboard/input column.
 
@@ -46,7 +49,10 @@ data, text input, output, or error behavior.
 
 Phase 0 does not require native `pass` results. It requires that each matrix
 row has a source baseline, linked capture-ledger scope, and an unambiguous
-comparison rule. The eventual cutover gate requires every applicable x64 field
-to have reviewed evidence; source code citations alone never satisfy that gate.
-Official ARM64 support requires a separate future parity decision.
+comparison rule. A representative capture or explicit owner acceptance may
+close the pre-native baseline for repeated/shared behavior; it must not be
+used to claim native parity. The eventual cutover gate requires every
+applicable x64 field to have reviewed evidence; source code citations or owner
+assumptions alone never satisfy that gate. Official ARM64 support requires a
+separate future parity decision.
 

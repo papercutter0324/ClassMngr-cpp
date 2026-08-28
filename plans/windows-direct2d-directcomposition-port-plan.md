@@ -162,6 +162,13 @@ Create short ADRs before implementation for these decisions:
 
 ### Phase 0 — Build the Evidence Harness and Establish Port Contracts
 
+Phase 0 evidence is risk-based rather than an exhaustive capture of every
+combination. A representative capture or an explicit product-owner acceptance
+may cover repeated/shared current-Qt behavior when the source and fixtures show
+that no distinct contract is being omitted. Native Windows shell dialogs,
+native output, and native control input remain implementation acceptance work;
+this scope decision does not waive their later parity gates.
+
 1. Inventory every screen, nested page, dialog, menu command, shortcut,
    drag/drop path, import/export operation, background job, and platform-
    specific behavior. Start with the 11 registered `PageManager` destinations,
@@ -221,10 +228,13 @@ Create short ADRs before implementation for these decisions:
     work.
 
 **Exit gate:** the behavior inventory, fixtures, parity matrix, and reproducible
-Windows Qt evidence set exist; every capture scenario proves show/capture/close
-cleanup; and the retained Windows, macOS, and Linux Qt builds pass unchanged.
-Any retained-platform regression or fixture-validation failure keeps the gate
-open.
+Windows Qt evidence set exist; every automated capture scenario proves
+show/capture/close cleanup; the product owner has accepted the representative
+current-Qt baseline or the ledger records the required artifact; and the
+retained Windows, macOS, and Linux Qt builds pass unchanged. Native-specific
+follow-up may remain in the ledger as `deferred` carry-forward work and does
+not block the Phase 1 build split. Any retained-platform regression or
+fixture-validation failure keeps the gate open.
 
 ### Phase 1 — Split the Build Without Changing Products
 

@@ -35,7 +35,7 @@ foreach ($requiredContract in @(
     }
 }
 
-$validCaptureStates = @("pending", "in-progress", "captured", "verified", "blocked", "deferred")
+$validCaptureStates = @("pending", "in-progress", "captured", "verified", "accepted", "blocked", "deferred")
 $ledger = Import-Csv -LiteralPath $ledgerPath
 if ($ledger.Count -eq 0)
 {
@@ -77,6 +77,7 @@ $expectedMatrixColumns = @(
 )
 $validBaselineStates = @(
     "source-inventory",
+    "owner-accepted-qt",
     "startup-x64-captured",
     "fixtures-verified-x64",
     "pending"
