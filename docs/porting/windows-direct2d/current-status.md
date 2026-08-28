@@ -8,7 +8,7 @@ progress; its exit gate has not been claimed.
 ## Repository snapshot
 
 - Branch: `NativeWindowsPort`, at `origin/NativeWindowsPort`.
-- HEAD: `f39fbdf` (`Phase 0 - Visual captures at 100, 150, ans 200 percent DPI`).
+- HEAD: `fb4f268` (`Phase 0 - Prepare automation to capture additional information`).
 - The current product source still has no native Direct2D/DirectComposition
   target; this status file and the capture artifacts are Phase 0 evidence.
 - The current Phase 0 release gate is x64 only. ARM64 build compatibility is
@@ -22,7 +22,7 @@ progress; its exit gate has not been claimed.
   contract, capture protocol, and performance protocol are present.
 - The fixture corpus contains nine SHA-pinned fixtures and executable semantic
   and migration checks.
-- The opt-in Windows Qt visual target covers 16 scenarios and performs the
+- The opt-in Windows Qt visual target covers 20 scenarios and performs the
   production show/settle/capture/close/cleanup lifecycle.
 - Windows x64 Debug non-visual validation passed 67/67 tests, including the
   database-port fixture tests.
@@ -31,7 +31,7 @@ progress; its exit gate has not been claimed.
   with one active 2560x1600 monitor. The final run is
   `20260828T083829986Z-18036`; every promoted sidecar reports 100% display
   scale, a 1270x1040 capture window, and `sourceRevision: d9732c8`.
-- The same visual target passed 16/16 scenarios with
+  - The same visual target passed 16/16 scenarios with
   `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=150` on the current 150%-scaled
   displays. The validated run is
   `20260828T080550115Z-12884`; every sidecar reports 150% display scale and
@@ -41,6 +41,12 @@ progress; its exit gate has not been claimed.
   `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=200` on one active monitor. The
   validated run is `20260828T091020942Z-21232`; every sidecar reports 200%
   display scale, a 1270x780 capture window, and `sourceRevision: d9732c8`.
+- After adding deterministic populated editor coverage, the rebuilt visual
+  target passed 20/20 scenarios in supplemental run
+  `20260828T111746729Z-1336`. The four new class-section artifacts report
+  150% display scale and `sourceRevision: fb4f268`; the artifact and contract
+  validators both pass. Manual review and the remaining editor states are
+  still pending.
 - Phase 0 contract validation passes: 80 capture rows, 21 parity rows, and
   nine fixtures.
 - The current x64 Debug startup probe has three runs at approximately 3.4 s
@@ -84,9 +90,10 @@ evidence no longer includes the previous second-monitor capture. The validated
 `artifacts/phase0/windows-qt-visual/20260828T080550115Z-12884/`; the 200% run
 was generated on the same single-monitor setup.
 
-The repository HEAD is `f39fbdf`; the promoted capture sidecars correctly
-retain their captured-product `sourceRevision: d9732c8`. Do not relabel those
-artifacts as a newer product build without recapturing them.
+The repository HEAD is `fb4f268`; the promoted 100%/150%/200% capture sidecars
+correctly retain their captured-product `sourceRevision: d9732c8`. The
+supplemental populated-editor run records `sourceRevision: fb4f268`, but it is
+not a reviewed/stable replacement for the promoted matrix.
 
 ## Remaining Phase 0 work
 
