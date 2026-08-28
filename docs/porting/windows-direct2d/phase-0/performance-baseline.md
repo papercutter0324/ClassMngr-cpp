@@ -9,7 +9,7 @@ headroom, rounded up. ARM64 must establish an equivalent baseline before the
 native target can advance beyond a smoke shell.
 
 The current-branch Qt **Debug** probe was also rebuilt and sampled three times
-at revision `3f2cf53`; its results are recorded in the current-probe section of
+at revision `b34a357`; its results are recorded in the current-probe section of
 [baseline-results.md](baseline-results.md). It is diagnostic evidence only and
 does not replace the Release budget.
 

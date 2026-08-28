@@ -24,22 +24,22 @@ startup scenario is deliberately not substituted for this GUI desktop baseline.
 
 ## Current Windows x64 Debug startup probe
 
-Source revision: `3f2cf53` (2026-08-28). These samples were collected after
-rebuilding the current HEAD. They are a current-branch diagnostic and do not
-replace the approved Release budget above. `window-shown` is the first visible
-frame checkpoint; `startup-complete` is the ready checkpoint. Memory values are
-sampled at `startup-complete`.
+Source revision: `b34a357` (2026-08-28). These samples were collected after
+reconfiguring and rebuilding the current HEAD. They are a current-branch
+diagnostic and do not replace the approved Release budget above. `window-shown`
+is the first visible frame checkpoint; `startup-complete` is the ready
+checkpoint. Memory values are sampled at `startup-complete`.
 
 Raw reports and host metadata are retained in
-`artifacts/phase0/windows-x64-debug/run-00{7,8,9}/` (ignored build artifact).
+`artifacts/phase0/windows-x64-debug/run-01{0,1,2}/` (ignored build artifact).
 
 | Run | Window shown | Startup complete | Working set | Private bytes |
 | --- | ---: | ---: | ---: | ---: |
-| 007 | 3,439 ms | 3,480 ms | 701.3 MiB | 598.3 MiB |
-| 008 | 3,427 ms | 3,471 ms | 701.4 MiB | 598.5 MiB |
-| 009 | 3,419 ms | 3,462 ms | 701.1 MiB | 598.2 MiB |
+| 010 | 3,352 ms | 3,397 ms | 701.5 MiB | 598.2 MiB |
+| 011 | 3,382 ms | 3,431 ms | 700.8 MiB | 598.3 MiB |
+| 012 | 3,356 ms | 3,402 ms | 701.0 MiB | 598.3 MiB |
 
-The three-run maximum peak was 703.7 MiB working set and 599.9 MiB private
+The three-run maximum peak was 703.9 MiB working set and 599.6 MiB private
 bytes at 100% display scaling. No budget was changed from this diagnostic.
 
 ARM64, navigation, resize, scrolling, first paint, PDF/report, and
@@ -82,10 +82,18 @@ remain unavailable and have not yet been performed.
 
 ## Current HEAD validation note
 
-After rebuilding the affected targets at revision `3f2cf53`,
-`ClassMngrCampusMapTests` passed. `ClassMngrScheduleImportDialogTests` remains
-a reproducible existing Qt-baseline failure in
-`reviewPreviewUsesSavedScheduleDisplaySettings`: the preview table has 6
-columns where the test expects 8. No Phase 0 code was changed to mask this
-failure; it must be resolved or explicitly dispositioned before claiming an
-unchanged full-suite baseline.
+At revision `b34a357`, the affected targets were rebuilt before validation.
+The focused campus-map and schedule-import dialog tests passed, followed by a
+complete Windows x64 Debug non-visual CTest run:
+
+```powershell
+ctest --test-dir build/windows-x64-debug -C Debug -LE visual --output-on-failure
+```
+
+All 67 registered non-visual tests passed, including
+`ClassMngrDatabasePortFixtureTests`. The earlier 6-vs-8-column schedule-import
+failure was stale target output; no Phase 0 product behavior was changed to
+address it. The reconfigured opt-in Windows Qt visual target also passed all 16
+capture cases with `CLASSMNGR_PHASE0_DISPLAY_SCALE_PERCENT=100`; its 16 PNG/JSON
+sidecar pairs were validated under
+`artifacts/phase0/windows-qt-visual/20260828T025557225Z-39876/`.
