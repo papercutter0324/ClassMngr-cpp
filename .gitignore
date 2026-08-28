@@ -59,4 +59,4 @@ data/app.db
 data/app.tps
 .DS_Store
 .continue/
-artifacts/
+# artifacts/
