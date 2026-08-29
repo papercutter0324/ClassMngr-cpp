@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed engine errors, UTF-8 path rules, and the Qt-free SQLite C API foundation are extracted; schema and use-case extraction remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, and native-English/GS-team directory services are extracted; broader models, imports, reports, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -96,19 +96,21 @@ Last updated: 2026-08-30 (Asia/Seoul)
 
 Phase 1 is complete and Phase 2 is now in progress. The Qt-free engine already
 contains the `SemanticVersion` seed slice and typed standard-library result and
-error contracts. The first database slices now move file-format rules and a
-SQLite connection/transaction boundary behind Qt-free APIs, with the retained
-Qt code still operational. The next active gate is schema migration and
-`OpenDatabase` use-case extraction with cross-platform fixture evidence.
+error contracts. The database boundary now owns file-format rules, SQLite
+connection/transaction behavior, six-version schema migration, `OpenDatabase`,
+Qt-free class CRUD, validated teacher CRUD, and the native-English/GS-team
+directory services, with the retained Qt code still operational. The next
+active gate is extracting broader domain models, validators, imports, and
+report/use-case boundaries with cross-platform fixture evidence.
 
-1. Extend the typed engine error contract where schema and persistence slices
-   need domain-specific diagnostics.
-2. Extract the existing schema manager into portable migrations with prepared
-   statements, transactions, busy handling, and rollback evidence.
-3. Extract `OpenDatabase` and the first representative CRUD use case so both
-   presentation stacks consume engine workflows rather than repositories.
-4. Add headless x64/x86 engine tests for schema creation, migration,
-   rollback, and representative database round trips.
+1. Extend the typed engine error and validation contracts where remaining
+   domain and import slices need domain-specific diagnostics.
+2. Extract the remaining domain models and validators, keeping rules in the
+   Qt-free engine rather than in presentation adapters.
+3. Migrate import, scheduling, calendar, and report-model use cases behind
+   engine boundaries that both presentation stacks can consume.
+4. Add cross-platform fixture round trips for each migrated persistence slice,
+   including Windows-written and Qt-written databases.
 5. Keep the retained Qt adapters and Windows, Linux, and macOS Qt suites
    green while each slice moves.
 
@@ -282,6 +284,31 @@ After meaningful work:
   with the architecture-matched SQLite dependency, and the narrowed engine
   source audit found no Qt, WinUI, WinRT, Direct2D/DirectWrite, or Win32 UI
   dependency.
+- **2026-08-30 — Schema, OpenDatabase, and first CRUD slice added.** The
+  engine now owns the existing six-version schema/migration sequence, including
+  preflight rejection, atomic rollback, and file-backed migration backup. The
+  `OpenDatabase` use case opens and migrates a UTF-8 path, and the first
+  Qt-free `Classroom`/`ClassRepository` slice covers representative CRUD. All
+  four local Windows engine lanes pass the schema and class-repository tests;
+  retained Qt schema-manager and updater tests remain green. Phase 2 remains
+  open for broader model, validator, use-case, import, and cross-platform
+  fixture extraction.
+- **2026-08-30 — Teacher model and validated use case added.** The engine now
+  owns the standard-library `Teacher` model, Qt-free validation result,
+  English/Korean name normalization, phone/birthday/enum rules, and a
+  parameterized `TeacherService` CRUD boundary with transactional assignment
+  cleanup. All four Windows lanes passed the six-suite headless engine sweep
+  plus WinUI staging and manifest checks; retained Qt schema-manager and
+  updater tests also passed. Phase 2 remains open for broader models, imports,
+  reports, adapters, and cross-platform fixture round trips.
+- **2026-08-30 — Teacher directory services added.** The engine now owns
+  native-English-teacher and GS-team directory models and atomic save/list
+  services, including the retained position ordering and independent
+  case-insensitive name uniqueness rules. All four Windows lanes passed the
+  eight-suite headless engine sweep plus WinUI staging and manifest checks;
+  the retained Qt teacher-import regression also passed. Phase 2 remains open
+  for broader models, imports, reports, adapters, and cross-platform fixture
+  round trips.
 
 ## Shared Completion Rules
 

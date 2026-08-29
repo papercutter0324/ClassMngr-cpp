@@ -173,6 +173,36 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSqliteDatabaseTests
         )
     endif()
+    if(TARGET ClassMngrEngineDatabaseSchemaTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineDatabaseSchemaTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineClassRepositoryTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassRepositoryTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineTeacherServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineTeacherServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineNativeEnglishTeacherServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineNativeEnglishTeacherServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineGsTeamServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineGsTeamServiceTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

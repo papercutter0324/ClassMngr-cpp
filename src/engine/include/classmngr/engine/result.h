@@ -18,6 +18,7 @@ enum class ErrorCode
     Schema,
     Migration,
     Constraint,
+    NotFound,
     Unsupported,
     Cancelled,
     Internal
@@ -57,6 +58,8 @@ struct Error
         return "migration";
     case ErrorCode::Constraint:
         return "constraint";
+    case ErrorCode::NotFound:
+        return "not-found";
     case ErrorCode::Unsupported:
         return "unsupported";
     case ErrorCode::Cancelled:

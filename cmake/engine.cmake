@@ -25,6 +25,27 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_file_format.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sqlite_database.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sqlite_database.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/database_schema.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_schema.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/open_database.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/open_database.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_repository.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_repository.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/classroom.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/teacher.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/validation_result.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/validation_result.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/teacher_validator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher_validator.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/teacher_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/native_english_teacher_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/native_english_teacher.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/native_english_teacher_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/gs_team_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_member.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_service.h"
 )
 
 target_link_libraries(ClassMngrEngine
@@ -162,5 +183,90 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSqliteDatabaseTests
         COMMAND ClassMngrEngineSqliteDatabaseTests
+    )
+
+    add_executable(ClassMngrEngineDatabaseSchemaTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/database_schema_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineDatabaseSchemaTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineDatabaseSchemaTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineDatabaseSchemaTests
+        COMMAND ClassMngrEngineDatabaseSchemaTests
+    )
+
+    add_executable(ClassMngrEngineClassRepositoryTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_repository_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassRepositoryTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassRepositoryTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassRepositoryTests
+        COMMAND ClassMngrEngineClassRepositoryTests
+    )
+
+    add_executable(ClassMngrEngineTeacherServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/teacher_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineTeacherServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineTeacherServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineTeacherServiceTests
+        COMMAND ClassMngrEngineTeacherServiceTests
+    )
+
+    add_executable(ClassMngrEngineNativeEnglishTeacherServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/native_english_teacher_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineNativeEnglishTeacherServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineNativeEnglishTeacherServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineNativeEnglishTeacherServiceTests
+        COMMAND ClassMngrEngineNativeEnglishTeacherServiceTests
+    )
+
+    add_executable(ClassMngrEngineGsTeamServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/gs_team_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineGsTeamServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineGsTeamServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineGsTeamServiceTests
+        COMMAND ClassMngrEngineGsTeamServiceTests
     )
 endif()
