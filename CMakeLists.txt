@@ -12,6 +12,12 @@ project(ClassMngr
     LANGUAGES CXX
 )
 
+if(WIN32 AND NOT CMAKE_GENERATOR STREQUAL "Visual Studio 18 2026")
+    message(FATAL_ERROR
+        "Windows builds must use the Visual Studio 18 2026 generator."
+    )
+endif()
+
 if(WIN32)
     enable_language(RC)
 endif()

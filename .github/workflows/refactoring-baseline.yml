@@ -23,7 +23,7 @@ jobs:
       matrix:
         include:
           - name: Windows 11 x64 Debug
-            runner: windows-2022
+            runner: windows-2025-vs2026
             preset: windows-x64-debug
             build_dir: build/windows-x64-debug
             configuration: Debug
@@ -82,7 +82,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
           python -m aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 --outputdir C:\Qt --modules qtpdf
-          "CMAKE_GENERATOR=Visual Studio 17 2022" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CMAKE_GENERATOR=Visual Studio 18 2026" | Out-File -FilePath $env:GITHUB_ENV -Append
           "QT_MSVC_X64_PREFIX=C:\Qt\$env:QT_VERSION\msvc2022_64" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Install Qt on Linux

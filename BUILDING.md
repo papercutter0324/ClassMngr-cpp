@@ -20,7 +20,7 @@ ClassMngr is built with CMake, C++23, and Qt 6. Release installs run Qt's deploy
 * Ninja for Linux and macOS preset builds
 * Linux only: `patchelf`, used by Qt's deployment tooling
 * Linux only: a configured CUPS or system printer stack for printing
-* Windows only: Visual Studio or Build Tools with the Desktop development with C++ workload
+* Windows only: Visual Studio 2026 or Build Tools 2026 with the Desktop development with C++ workload
 
 When configuring CMake, set `CMAKE_PREFIX_PATH` to the Qt kit directory that contains `lib/cmake/Qt6`. Common examples are:
 
@@ -44,17 +44,17 @@ winget install --id Ninja-build.Ninja -e
 winget install --id JRSoftware.InnoSetup -e
 ```
 
-Install Visual Studio or Visual Studio Build Tools with the C++ workload. In the installer, select:
+Install Visual Studio 2026 or Visual Studio Build Tools 2026 with the C++ workload. In the installer, select:
 
 * Desktop development with C++
 * MSVC C++ compiler for your target architecture
 * Windows SDK
 * C++ CMake tools for Windows
 
-With `winget`, start the Build Tools installation with:
+With `winget`, start the Visual Studio 2026 Build Tools installation with:
 
 ```powershell
-winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install --id Microsoft.VisualStudio.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
 Open VS Code and install these extensions:
@@ -77,6 +77,10 @@ $env:QT_MSVC_X64_PREFIX = $qtX64Prefix
 ```
 
 Use the local path for the machine, such as `C:\Qt\6.11.1\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+
+The `msvc2022_*` Qt kit names are Qt package identifiers and do not select the
+Visual Studio generator. Windows builds use the VS 2026 `v145` toolset described
+below.
 
 Open the project from an x64 Native Tools Command Prompt or Developer PowerShell so MSVC is available to VS Code:
 
@@ -114,12 +118,15 @@ To build every locally available Windows installer and its SHA-256 checksum file
 
 Installers are written under `dist` as `ClassMngr-<version>-win-{x64,arm64}.exe`. They install the matching Visual C++ runtime prerequisite and support in-place upgrades through a shared application identity.
 
-The Windows presets use the Visual Studio generator configured in `CMakePresets.json`. If CMake reports that the generator is not installed, either install the matching Visual Studio or Build Tools version, or update the preset to the Visual Studio generator installed on your machine.
+The Windows presets use the `Visual Studio 18 2026` generator and `v145`
+toolset configured in `CMakePresets.json`. The Windows presets therefore require
+CMake 4.2 or newer. Linux and macOS continue to use their existing Ninja
+presets and CMake baseline.
 
 ### WinUI 3 Phase 1 bootstrap
 
 The isolated Windows WinUI lane is unpackaged and self-contained. It does not
-discover or deploy Qt. It requires Visual Studio 2022 with the Desktop
+discover or deploy Qt. It requires Visual Studio 2026 with the Desktop
 development with C++ workload, the Windows 10.0.26100.0 SDK, CMake, NuGet, and
 PowerShell. The project pins the stable
 [`Microsoft.WindowsAppSDK` 2.4.0](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads),

@@ -19,6 +19,7 @@ from the retained Qt product.
 | Windows SDK MSIX build tools | `1.7.251221100` | Native MSBuild packaging targets |
 | C++/WinRT | `3.0.260818.1` | XAML projection and generated runtime-class code |
 | Windows SDK | `10.0.26100.0` | MSVC target SDK selected by the CMake presets |
+| Visual Studio | `18 2026` | CMake generator; uses the `v145` MSVC toolset |
 | Windows SDK Build Tools | `10.0.26100.4654` | Native MSBuild/SDK build targets |
 | Windows minimum | `10.0.17763.0` | Windows 10 version 1809 floor |
 

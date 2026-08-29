@@ -35,14 +35,14 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Keep the native job on the same Visual Studio generation as the retained
+  # Keep the native job on the Visual Studio 2026 generation as the retained
   # Windows Qt release job.  No Qt package or Qt prefix is installed here.
-  CMAKE_GENERATOR: "Visual Studio 17 2022"
+  CMAKE_GENERATOR: "Visual Studio 18 2026"
 
 jobs:
   build:
     name: Windows x64 native foundation
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     timeout-minutes: 45
 
     steps:
