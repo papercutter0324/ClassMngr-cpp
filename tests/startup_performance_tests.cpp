@@ -189,7 +189,7 @@ void StartupPerformanceTests
              FixtureTableExpectation{"intensive_slot_states", 3},
              FixtureTableExpectation{"roster_columns", 8},
              FixtureTableExpectation{"roster_data", 24},
-             FixtureTableExpectation{"app_settings", 12}
+             FixtureTableExpectation{"app_settings", 16}
          })
     {
         QVERIFY2(

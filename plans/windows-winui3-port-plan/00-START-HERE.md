@@ -83,11 +83,11 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, and the retained Windows Qt Debug suite (69/69) pass. GitHub runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds and staged smoke tests pass. The retained Qt route passes 68/68 non-visual tests; the explicit 69-test visual lane is 68/69 because this host is at 125% DPI. The hosted lane now captures an x86 Release idle-memory report; runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
-| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current native shell. |
+| [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
 | [Phase 6 — Data-entry feature migration](phase-6-data-entry-feature-migration.md) | **Not started** | Port vertical slices in the risk order defined by the phase file. |
 | [Phase 7 — Media, output, and OS services](phase-7-media-output-and-os-services.md) | **Not started** | PDF, printing, exports, updates, and PowerPoint remain Qt-owned. |
 | [Phase 8 — Hardening, packaging, and cutover](phase-8-hardening-packaging-and-cutover.md) | **Not started** | The Qt Windows release remains public until this phase passes. |
@@ -111,10 +111,10 @@ evidence. It requires all of the following:
    and record worst-case peak usage before considering release support.
 7. Keep the retained Windows, macOS, and Linux Qt products green.
 
-The existing `ClassMngrWindowsNative` Win32 shell and Direct2D SDK capability
-test are provisional Phase 1 evidence. They are not the target presentation
-architecture and may be removed after equivalent WinUI build, manifest,
-deployment, and smoke-test coverage exists.
+The former provisional Win32 shell and Direct2D SDK capability test were
+removed after equivalent WinUI build, manifest, deployment, and smoke-test
+coverage was established. Historical evidence remains under
+[`docs/porting/windows-direct2d`](../../docs/porting/windows-direct2d/README.md).
 
 ## Completed Evidence Carried Forward
 
@@ -126,8 +126,9 @@ deployment, and smoke-test coverage exists.
 - Retained Windows, Linux, and macOS Qt validation passed at the Phase 0/1
   handoff recorded in the historical status file.
 - A Qt-free `ClassMngrEngine` target and ordinary engine test executable exist.
-- Native-only Debug and Release configurations, staging, manifest checks, and
-  a separate native CI workflow exist locally.
+- The former provisional native-shell evidence is retained only as historical
+  material under `docs/porting/windows-direct2d`; active Windows bootstrap
+  validation is now owned by the WinUI lane.
 
 Historical evidence remains under
 [`docs/porting/windows-direct2d`](../../docs/porting/windows-direct2d/README.md).
@@ -154,8 +155,8 @@ After meaningful work:
 
 - **2026-08-29 — Direction changed to WinUI 3.** The accepted Phase 0 evidence
   and completed generic build-boundary work are retained. Phase 1 remains in
-  progress because the provisional Win32 shell has not yet been replaced by a
-  WinUI 3 C++/WinRT application or validated with Windows App SDK deployment.
+  progress for hosted WinUI execution, owner interaction review, and memory
+  evidence.
 - **2026-08-29 — x86 build support added.** Phase 1 now requires x64 and x86
   Debug/Release builds, tests, and self-contained staging. x64 remains the
   release gate; publishing an x86 installer remains a separate decision.
@@ -188,13 +189,31 @@ After meaningful work:
   architecture, self-contained-runtime, Qt-absence, engine, input, theme, and
   DPI checks. Hosted runner execution and owner-reviewed interactive evidence
   remain open.
-- **2026-08-29 — Retained Windows Qt validation refreshed.** After rebuilding
-  the stale fixture and startup-settings test targets, the Windows Qt Debug
-  CTest suite ran all 69 tests successfully, including the visual-capture and
-  startup-performance gates. The startup controller now reapplies the loaded
-  font-size setting when its actions are connected. The retained Windows Qt
-  Release product also rebuilt successfully with its deployed runtime.
-  Detailed matrix and environment notes are in
+- **2026-08-29 — Provisional native lane retired.** The obsolete Win32 shell,
+  Direct2D SDK capability gate, and native-only presets/workflow were removed
+  after the WinUI lane established equivalent local build, staging, manifest,
+  and smoke coverage. Its resource verifier was replaced by a generic
+  resource-manifest CTest used by WinUI; the shared catalog manifest remains
+  because WinUI consumes it.
+- **2026-08-29 — Retained Qt regression rerun after cleanup.** The current
+  Windows Qt Debug route passed all 68 non-visual tests after the provisional
+  native lane was removed. The explicit Phase 0 visual lane passed 68 of 69;
+  its only failure was the required 100/150/200% capture gate on this host's
+  125% display scale. The startup fixture expectation was corrected from 12 to
+  16 `app_settings` rows to match the committed fixture, and startup
+  performance then passed.
+- **2026-08-29 — Hosted memory capture wired into the WinUI lane.** The
+  Windows runner now records and uploads an x86 Release idle-memory report
+  after stage verification. A representative import/report/PDF/large-data
+  peak workload remains intentionally open because the bootstrap has no such
+  feature slice yet.
+- **2026-08-29 — Retained Windows Qt validation refreshed.** The startup
+  controller still reapplies the loaded font-size setting when its actions are
+  connected, and the retained Windows Qt Release product previously rebuilt
+  successfully with its deployed runtime. The current fresh Debug/visual
+  result is recorded above: 68/68 non-visual tests pass, with only the
+  125%-scale visual-capture gate open. Detailed matrix and environment notes
+  are in
   [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
 
 ## Shared Completion Rules

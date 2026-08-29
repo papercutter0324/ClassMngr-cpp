@@ -124,6 +124,28 @@ jobs:
           dist/ClassMngr-windows-winui-${{ matrix.stage_arch }}/${{ matrix.configuration }}
           -Platform ${{ matrix.platform }}
 
+      - name: Measure x86 idle memory
+        if: matrix.platform == 'Win32' && matrix.configuration == 'Release'
+        shell: pwsh
+        run: >-
+          pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass
+          -File scripts/measure_windows_winui_memory.ps1
+          -StageDirectory
+          dist/ClassMngr-windows-winui-${{ matrix.stage_arch }}/${{ matrix.configuration }}
+          -Platform ${{ matrix.platform }}
+          -WarmupSeconds 5
+          -SampleSeconds 15
+          -ReportPath
+          artifacts/phase1-memory-${{ matrix.stage_arch }}-${{ matrix.configuration }}.json
+
+      - name: Upload x86 memory report
+        if: matrix.platform == 'Win32' && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ClassMngr-windows-winui-${{ matrix.stage_arch }}-${{ matrix.configuration }}-memory
+          path: artifacts/phase1-memory-${{ matrix.stage_arch }}-${{ matrix.configuration }}.json
+          if-no-files-found: error
+
       - name: Upload WinUI stage
         uses: actions/upload-artifact@v4
         with:

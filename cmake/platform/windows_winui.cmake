@@ -132,7 +132,7 @@ function(classmngr_add_windows_winui_target)
             -GeneratedIncludeDirectory
                 "${CLASSMNGR_WINUI_GENERATED_INCLUDE_DIRECTORY}"
             -ResourceFile "${CLASSMNGR_WINUI_RESOURCE_FILE}"
-            -ResourceManifest "${CLASSMNGR_NATIVE_RESOURCE_MANIFEST}"
+            -ResourceManifest "${CLASSMNGR_RESOURCE_MANIFEST}"
             -ProjectRoot "${PROJECT_SOURCE_DIR}"
             -MinimumWindowsVersion "${CLASSMNGR_WINUI_MIN_WINDOWS_VERSION}"
             -WindowsAppSdkVersion "${CLASSMNGR_WINUI_WINDOWS_APP_SDK_VERSION}"
@@ -154,7 +154,7 @@ function(classmngr_add_windows_winui_target)
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         DEPENDS
             ClassMngrEngine
-            ClassMngrNativeResourceManifest
+            ClassMngrResourceManifest
         USES_TERMINAL
     )
 
@@ -175,7 +175,18 @@ function(classmngr_add_windows_winui_target)
                     "${CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT}/$<CONFIG>"
                 -Platform "${CLASSMNGR_WINUI_PLATFORM}"
         )
+        add_test(
+            NAME ClassMngrWindowsWinUIResourceManifestTests
+            COMMAND "${CMAKE_COMMAND}"
+                -DCLASSMNGR_PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+                -DCLASSMNGR_RESOURCE_MANIFEST=${CLASSMNGR_RESOURCE_MANIFEST}
+                -P "${PROJECT_SOURCE_DIR}/cmake/verify_resource_manifest.cmake"
+        )
         set_tests_properties(ClassMngrWindowsWinUIStageTests
+            PROPERTIES
+                LABELS "windows;winui;phase1"
+        )
+        set_tests_properties(ClassMngrWindowsWinUIResourceManifestTests
             PROPERTIES
                 LABELS "windows;winui;phase1"
         )

@@ -1,8 +1,0 @@
-#include <windows.h>
-
-#define IDI_CLASSMNGR_NATIVE 101
-
-IDI_CLASSMNGR_NATIVE ICON "@PROJECT_SOURCE_DIR@/resources/assets/icons/app_icon.ico"
-
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST
-    "@CMAKE_CURRENT_BINARY_DIR@/generated/ClassMngrNative.manifest"

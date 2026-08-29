@@ -99,36 +99,6 @@
       }
     },
     {
-      "name": "windows-x64-native-base",
-      "hidden": true,
-      "inherits": "windows-msvc-base",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
-      "cacheVariables": {
-        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
-        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
-        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
-        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "ON",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-native-x64"
-      }
-    },
-    {
-      "name": "windows-x64-native-debug",
-      "displayName": "Windows x64 Native Debug",
-      "inherits": "windows-x64-native-base"
-    },
-    {
-      "name": "windows-x64-native-release",
-      "displayName": "Windows x64 Native Release",
-      "inherits": "windows-x64-native-base",
-      "cacheVariables": {
-        "BUILD_TESTING": "OFF",
-        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-native-x64"
-      }
-    },
-    {
       "name": "windows-x64-winui-base",
       "hidden": true,
       "inherits": "windows-msvc-base",
@@ -142,7 +112,6 @@
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
         "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
         "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
-        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "OFF",
         "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
         "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x64"
       }
@@ -174,7 +143,6 @@
         "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
         "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
         "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
-        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "OFF",
         "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
         "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x86"
       }
@@ -309,16 +277,6 @@
       ]
     },
     {
-      "name": "windows-x64-native-debug",
-      "configurePreset": "windows-x64-native-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-x64-native-release",
-      "configurePreset": "windows-x64-native-release",
-      "configuration": "Release"
-    },
-    {
       "name": "windows-x64-winui-debug",
       "configurePreset": "windows-x64-winui-debug",
       "configuration": "Debug",
@@ -348,14 +306,6 @@
       "configuration": "Release",
       "targets": [
         "ClassMngrWindowsWinUI"
-      ]
-    },
-    {
-      "name": "windows-x64-native-release-install",
-      "configurePreset": "windows-x64-native-release",
-      "configuration": "Release",
-      "targets": [
-        "INSTALL"
       ]
     },
     {

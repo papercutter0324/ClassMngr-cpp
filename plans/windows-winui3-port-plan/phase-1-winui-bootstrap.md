@@ -10,15 +10,16 @@ continues to build and test.
 
 ## Existing Foundation to Preserve
 
-- Product selection separates Qt desktop and Windows-native configurations.
+- Product selection separates Qt desktop and WinUI configurations.
 - `ClassMngrEngine` is Qt/Win32-free and has an ordinary CTest executable.
-- A provisional `ClassMngrWindowsNative` shell proves native-only configure,
-  resources, manifests, staging, and binary smoke tests.
+- The WinUI 3 bootstrap lane proves Qt-free configure, resources, manifests,
+  staging, and binary smoke tests.
 - The retained Windows Qt transition target and its tests remain operational.
-- Native Debug/Release presets and a native foundation workflow exist.
+- WinUI Debug/Release presets and a dedicated build workflow exist.
 
-These are useful boundary tests, but the provisional Win32/Direct2D shell is
-not the target UI.
+The former provisional Win32/Direct2D shell and SDK capability gate were
+removed after equivalent WinUI coverage was established. The historical
+evidence remains under `docs/porting/windows-direct2d`.
 
 ## Build Architecture
 
@@ -46,7 +47,7 @@ not the target UI.
 2. Select unpackaged, self-contained Windows App SDK deployment for the
    development and initial release path. Preserve Inno Setup ownership of
    shortcuts, uninstall, file associations, and update handoff.
-3. Update the native manifest and installer checks to enforce Windows 10 1809
+3. Update the WinUI manifest and installer checks to enforce Windows 10 1809
    or the pinned SDK's newer supported floor.
 4. Retain the distinct development executable name, AppUserModelID, settings
    namespace, staging directory, and copied-database rule.
@@ -67,15 +68,15 @@ not the target UI.
 11. Capture x86 startup, steady-state, and representative peak memory. The
     steady-state target is 200 MiB; define a separate safe peak budget from
     PDF, import, report, and large-data measurements before publishing x86.
-12. After equivalent WinUI checks exist, remove the provisional window class,
-   Direct2D capability gate, and SDK links that are not consumed by a retained
-   specialized renderer.
+12. Remove the provisional window class, Direct2D capability gate, and SDK
+    links that are not consumed by a retained specialized renderer after
+    equivalent WinUI checks exist. (Completed for the bootstrap lane.)
 13. Keep Windows Qt, Linux Qt, and macOS Qt regression and packaging routes
     green throughout the conversion.
 
 ## Validation
 
-- Fresh native restore/build contains no Qt discovery or Qt binary imports.
+- Fresh WinUI restore/build contains no Qt discovery or Qt binary imports.
 - Engine tests run independently of the WinUI app.
 - Debug and Release WinUI builds pass on Windows x64 and x86.
 - Each architecture links only matching engine, Windows App SDK, VC runtime,

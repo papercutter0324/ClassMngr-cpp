@@ -33,11 +33,6 @@ option(CLASSMNGR_BUILD_QT_DESKTOP
     ON
 )
 
-option(CLASSMNGR_BUILD_WINDOWS_NATIVE
-    "Build the provisional Windows-native desktop shell"
-    OFF
-)
-
 option(CLASSMNGR_BUILD_WINDOWS_WINUI
     "Build the Windows WinUI 3 desktop application"
     OFF
@@ -51,12 +46,6 @@ option(CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION
     "Build the retained Windows Qt product during native-port transition"
     ${_classmngr_windows_qt_transition_default}
 )
-
-if(CLASSMNGR_BUILD_WINDOWS_NATIVE AND NOT WIN32)
-    message(FATAL_ERROR
-        "CLASSMNGR_BUILD_WINDOWS_NATIVE is supported only on Windows."
-    )
-endif()
 
 if(CLASSMNGR_BUILD_WINDOWS_WINUI AND NOT WIN32)
     message(FATAL_ERROR
@@ -72,11 +61,8 @@ if(CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION
 endif()
 
 if(NOT CLASSMNGR_BUILD_QT_DESKTOP
-   AND NOT CLASSMNGR_BUILD_WINDOWS_NATIVE
    AND NOT CLASSMNGR_BUILD_WINDOWS_WINUI)
-    message(FATAL_ERROR
-        "At least one product must be enabled: Qt desktop, Windows native, or Windows WinUI."
-    )
+    message(FATAL_ERROR "At least one product must be enabled: Qt desktop or Windows WinUI.")
 endif()
 
 option(CLASSMNGR_ENABLE_WINDOWS_QT_VISUAL_CAPTURE_TESTS
@@ -196,7 +182,6 @@ configure_file(
 )
 
 message(STATUS "ClassMngr Qt desktop: ${CLASSMNGR_BUILD_QT_DESKTOP}")
-message(STATUS "ClassMngr Windows native: ${CLASSMNGR_BUILD_WINDOWS_NATIVE}")
 message(STATUS "ClassMngr Windows WinUI: ${CLASSMNGR_BUILD_WINDOWS_WINUI}")
 message(STATUS "ClassMngr Windows Qt transition: ${CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION}")
 
@@ -299,96 +284,6 @@ if(CLASSMNGR_BUILD_QT_DESKTOP)
 
         classmngr_finalize_test_targets()
     endif()
-endif()
-
-if(CLASSMNGR_BUILD_WINDOWS_NATIVE)
-    include(cmake/platform/windows_native.cmake)
-    include(cmake/native_resources.cmake)
-
-    set(CLASSMNGR_NATIVE_TARGET ClassMngrWindowsNative)
-    set(CLASSMNGR_NATIVE_MANIFEST
-        "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrNative.manifest"
-    )
-    set(CLASSMNGR_NATIVE_RC
-        "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrNative.rc"
-    )
-    configure_file(
-        resources/windows/ClassMngrNative.manifest.in
-        "${CLASSMNGR_NATIVE_MANIFEST}"
-        @ONLY
-    )
-    configure_file(
-        resources/windows/ClassMngrNative.rc.in
-        "${CLASSMNGR_NATIVE_RC}"
-        @ONLY
-    )
-    add_executable(${CLASSMNGR_NATIVE_TARGET} WIN32
-        src/platform/windows/native/main.cpp
-        src/platform/windows/native/native_application.cpp
-        src/platform/windows/native/native_application.h
-        src/platform/windows/native/native_identity.h
-        ${CLASSMNGR_NATIVE_RC}
-    )
-    set_target_properties(${CLASSMNGR_NATIVE_TARGET}
-        PROPERTIES
-            OUTPUT_NAME ClassMngrNative
-    )
-    # The native RC file carries the reviewed manifest.  Suppress MSVC's
-    # automatic manifest so the linker does not embed a second RT_MANIFEST
-    # resource with the same name.
-    target_link_options(${CLASSMNGR_NATIVE_TARGET}
-        PRIVATE
-            /MANIFEST:NO
-    )
-    target_link_libraries(${CLASSMNGR_NATIVE_TARGET}
-        PRIVATE
-            ClassMngrEngine
-            ClassMngrCommonBuildSettings
-            ClassMngrWindowsNativeSdk
-    )
-
-    add_dependencies(${CLASSMNGR_NATIVE_TARGET}
-        ClassMngrWindowsNativeSdkCapabilityTests
-        ClassMngrNativeResourceManifest
-    )
-
-    if(BUILD_TESTING)
-        add_test(
-            NAME ClassMngrWindowsNativeShellSmokeTests
-            COMMAND ${CLASSMNGR_NATIVE_TARGET} --phase1-smoke-test
-        )
-        add_test(
-            NAME ClassMngrWindowsNativeManifestTests
-            COMMAND ${CLASSMNGR_NATIVE_TARGET} --phase1-manifest-test
-        )
-        add_test(
-            NAME ClassMngrWindowsNativeResourceManifestTests
-            COMMAND "${CMAKE_COMMAND}"
-                -DCLASSMNGR_PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
-                -DCLASSMNGR_NATIVE_RESOURCE_MANIFEST=${CLASSMNGR_NATIVE_RESOURCE_MANIFEST}
-                -P "${PROJECT_SOURCE_DIR}/cmake/verify_native_resource_manifest.cmake"
-        )
-    endif()
-
-    install(TARGETS ${CLASSMNGR_NATIVE_TARGET}
-        RUNTIME DESTINATION .
-    )
-    install(FILES
-        ${CLASSMNGR_NATIVE_RESOURCE_MANIFEST}
-        DESTINATION resources
-    )
-    install(FILES
-        licenses/fonts/inter/LICENSE.txt
-        DESTINATION licenses/fonts/inter
-    )
-    install(FILES
-        licenses/fonts/pretendard/LICENSE.txt
-        DESTINATION licenses/fonts/pretendard
-    )
-    install(FILES
-        licenses/fonts/just-another-hand/LICENSE.txt
-        DESTINATION licenses/fonts/just-another-hand
-    )
 endif()
 
 if(CLASSMNGR_BUILD_WINDOWS_WINUI)
