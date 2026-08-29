@@ -238,6 +238,10 @@ fixture-validation failure keeps the gate open.
 
 ### Phase 1 — Split the Build Without Changing Products
 
+The implementation-ready sequence, target names, ownership boundaries,
+preservation checks, native SDK gate, and CI acceptance criteria are in the
+[detailed Phase 1 CMake-port plan](windows-direct2d-phase-1-cmake-port-plan.md).
+
 1. Add `ClassMngrEngine` and narrow adapter targets to CMake. Initially, the
    engine may contain only a small proven slice; it must never link a Qt target.
 2. Keep one shared Qt desktop target for macOS and Linux, preserving the public

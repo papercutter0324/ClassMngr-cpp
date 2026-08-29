@@ -1,17 +1,15 @@
 #include "version.h"
 
-#include <QRegularExpression>
-
-#include <tuple>
-
 Version::Version(
     int majorVersion,
     int minorVersion,
     int patchVersion
     )
-    : m_majorVersion(majorVersion)
-    , m_minorVersion(minorVersion)
-    , m_patchVersion(patchVersion)
+    : m_value(
+        majorVersion,
+        minorVersion,
+        patchVersion
+        )
 {
 }
 
@@ -19,54 +17,22 @@ Result<Version> Version::parse(
     const QString& text
     )
 {
-    static const QRegularExpression pattern(
-        QStringLiteral(R"(^(\d+)\.(\d+)\.(\d+)$)")
-        );
-
-    const QRegularExpressionMatch match =
-        pattern.match(
-            text.trimmed()
+    const auto parsed =
+        classmngr::engine::SemanticVersion::parse(
+            text.trimmed().toStdString()
             );
 
-    if (!match.hasMatch())
+    if (!parsed)
     {
         return std::unexpected(
-            QStringLiteral("Version must use x.x.x format.")
-            );
-    }
-
-    bool ok = false;
-    const int majorVersion =
-        match.captured(1).toInt(&ok);
-    if (!ok)
-    {
-        return std::unexpected(
-            QStringLiteral("Invalid major version.")
-            );
-    }
-
-    const int minorVersion =
-        match.captured(2).toInt(&ok);
-    if (!ok)
-    {
-        return std::unexpected(
-            QStringLiteral("Invalid minor version.")
-            );
-    }
-
-    const int patchVersion =
-        match.captured(3).toInt(&ok);
-    if (!ok)
-    {
-        return std::unexpected(
-            QStringLiteral("Invalid patch version.")
+            QString::fromStdString(parsed.error())
             );
     }
 
     return Version(
-        majorVersion,
-        minorVersion,
-        patchVersion
+        parsed->majorVersion(),
+        parsed->minorVersion(),
+        parsed->patchVersion()
         );
 }
 
@@ -77,32 +43,27 @@ QString Version::toString() const
         return QString();
     }
 
-    return QStringLiteral("%1.%2.%3")
-        .arg(m_majorVersion)
-        .arg(m_minorVersion)
-        .arg(m_patchVersion);
+    return QString::fromStdString(m_value.toString());
 }
 
 bool Version::isValid() const
 {
-    return m_majorVersion >= 0
-        && m_minorVersion >= 0
-        && m_patchVersion >= 0;
+    return m_value.isValid();
 }
 
 int Version::majorVersion() const
 {
-    return m_majorVersion;
+    return m_value.majorVersion();
 }
 
 int Version::minorVersion() const
 {
-    return m_minorVersion;
+    return m_value.minorVersion();
 }
 
 int Version::patchVersion() const
 {
-    return m_patchVersion;
+    return m_value.patchVersion();
 }
 
 bool operator<(
@@ -110,16 +71,7 @@ bool operator<(
     const Version& rhs
     )
 {
-    return std::tie(
-        lhs.m_majorVersion,
-        lhs.m_minorVersion,
-        lhs.m_patchVersion
-        )
-        < std::tie(
-            rhs.m_majorVersion,
-            rhs.m_minorVersion,
-            rhs.m_patchVersion
-            );
+    return lhs.m_value < rhs.m_value;
 }
 
 bool operator!=(

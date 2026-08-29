@@ -37,6 +37,9 @@ support are also deferred from the current roadmap.
   commands.
 - [Port foundation ADR](../adr/0001-windows-native-port-foundations.md) — the
   frozen architectural choices that constrain all later phases.
+- [Detailed Phase 1 CMake-port plan](../../../plans/windows-direct2d-phase-1-cmake-port-plan.md)
+  — target boundaries, migration order, validation, and release isolation for
+  the next implementation phase.
 
 ## Current status
 

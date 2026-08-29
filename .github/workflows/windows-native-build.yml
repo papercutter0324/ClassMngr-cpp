@@ -1,0 +1,157 @@
+name: Windows Native Foundation Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-native-build.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/windows/**"
+      - "resources/catalog/**"
+      - "src/engine/**"
+      - "src/platform/windows/**"
+      - "tests/**"
+  pull_request:
+    paths:
+      - ".github/workflows/windows-native-build.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/windows/**"
+      - "resources/catalog/**"
+      - "src/engine/**"
+      - "src/platform/windows/**"
+      - "tests/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-windows-native-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep the native job on the same Visual Studio generation as the retained
+  # Windows Qt release job.  No Qt package or Qt prefix is installed here.
+  CMAKE_GENERATOR: "Visual Studio 17 2022"
+
+jobs:
+  build:
+    name: Windows x64 native foundation
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Remove inherited Qt environment
+        shell: pwsh
+        run: |
+          Get-ChildItem Env: | Where-Object {
+            $_.Name -eq "CMAKE_PREFIX_PATH" -or $_.Name -match "^QT_"
+          } | ForEach-Object {
+            Remove-Item -LiteralPath "Env:$($_.Name)"
+          }
+          Write-Host "Native job has no Qt package, Qt prefix, or Qt environment variables."
+
+      - name: Configure native Debug (fresh, no Qt)
+        shell: pwsh
+        run: cmake --fresh --preset windows-x64-native-debug
+
+      - name: Build native Debug
+        shell: pwsh
+        run: cmake --build --preset windows-x64-native-debug --parallel 2
+
+      - name: Test native Debug
+        shell: pwsh
+        run: ctest --test-dir build/windows-x64-native-debug -C Debug --output-on-failure
+
+      - name: Configure native Release (fresh, no Qt)
+        shell: pwsh
+        run: cmake --fresh --preset windows-x64-native-release
+
+      - name: Build and install native Release
+        shell: pwsh
+        run: cmake --build --preset windows-x64-native-release-install --parallel 2
+
+      - name: Verify native cache, PE, imports, manifest, and install tree
+        shell: pwsh
+        run: |
+          $cache = Get-Content -Raw "build/windows-x64-native-release/CMakeCache.txt"
+          if ($cache -match "(?im)^Qt6[^=]*_DIR:") {
+            throw "A Qt package entry was created in the native-only CMake cache."
+          }
+
+          $stage = Join-Path $env:GITHUB_WORKSPACE "dist/ClassMngr-windows-native-x64"
+          $executable = Join-Path $stage "ClassMngrNative.exe"
+          if (-not (Test-Path -LiteralPath $executable)) {
+            throw "Native executable was not installed: $executable"
+          }
+
+          $smoke = Start-Process -FilePath $executable `
+            -ArgumentList "--phase1-smoke-test" -Wait -PassThru -WindowStyle Hidden
+          if ($smoke.ExitCode -ne 0) {
+            throw "Installed native shell smoke test failed with exit code $($smoke.ExitCode)."
+          }
+
+          $manifest = Start-Process -FilePath $executable `
+            -ArgumentList "--phase1-manifest-test" -Wait -PassThru -WindowStyle Hidden
+          if ($manifest.ExitCode -ne 0) {
+            throw "Installed native manifest test failed with exit code $($manifest.ExitCode)."
+          }
+
+          $forbiddenFiles = Get-ChildItem -LiteralPath $stage -Recurse -File | Where-Object {
+            $_.Name -match "(?i)^Qt6.*\.dll$" -or
+            $_.Name -match "(?i)^ClassMngr\.exe$" -or
+            $_.Name -match "(?i)^qt\.conf$"
+          }
+          $forbiddenDirectories = Get-ChildItem -LiteralPath $stage -Recurse -Directory | Where-Object {
+            $_.Name -in @("plugins", "qml", "translations")
+          }
+          if ($forbiddenFiles -or $forbiddenDirectories) {
+            $found = @($forbiddenFiles) + @($forbiddenDirectories) |
+              ForEach-Object { $_.FullName }
+            throw "Qt or retained-product files leaked into native install: $($found -join ', ')"
+          }
+
+          $dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+          if (-not $dumpbin) {
+            $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio/Installer/vswhere.exe"
+            if (Test-Path -LiteralPath $vswhere) {
+              $vsInstall = & $vswhere -latest -products * `
+                -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+                -property installationPath
+              if ($vsInstall) {
+                $dumpbin = Get-ChildItem -LiteralPath (Join-Path $vsInstall "VC/Tools/MSVC") `
+                  -Filter dumpbin.exe -Recurse -File |
+                  Where-Object { $_.FullName -match "Hostx64/x64" } |
+                  Select-Object -First 1
+              }
+            }
+          }
+          if (-not $dumpbin) {
+            throw "Visual Studio dumpbin.exe was not found for the native PE gate."
+          }
+
+          $dumpbinPath = if ($dumpbin -is [System.IO.FileInfo]) {
+            $dumpbin.FullName
+          } elseif ($dumpbin.Path) {
+            $dumpbin.Path
+          } else {
+            $dumpbin.Source
+          }
+          $headers = & $dumpbinPath /headers $executable | Out-String
+          if ($headers -notmatch "machine \(x64\)") {
+            throw "The installed native executable is not an x64 PE image."
+          }
+          $dependents = & $dumpbinPath /dependents $executable | Out-String
+          if ($dependents -match "(?im)Qt6") {
+            throw "The native executable imports a Qt6 binary."
+          }
+
+          Write-Host "Native install verified at $stage"

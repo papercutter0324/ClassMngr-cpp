@@ -173,6 +173,43 @@ expanded editor run records `sourceRevision: fb4f268` and is an owner-accepted
 current-Qt baseline; it is not native parity or a requirement for a pixel-
 identical native implementation.
 
+## Phase 1 build-boundary implementation — local evidence
+
+Phase 1 implementation is in progress in the working tree on top of HEAD
+`9e9b15f`; this section records build-boundary evidence only and does not
+promote native feature parity or close the Phase 1 cross-platform gate.
+
+- Product selection now supports a Qt-only retained route, a dual-build
+  transition route, and a Windows x64 native-only route. The native-only
+  configure reports Qt desktop `OFF`, Windows native `ON`, and Qt transition
+  `OFF`; its fresh Debug and Release caches contain zero `Qt6*_DIR` entries.
+- `ClassMngrEngine` is a Qt/Win32-free static library containing the extracted
+  semantic-version parser/comparator. Its ordinary CTest executable passes,
+  and the retained `ClassMngrUpdaterTests` adapter/network test target passes
+  after the extraction.
+- The native Windows foundation selects SDK `10.0.26100.0`, compiles the
+  Direct2D 1.3 capability guard, embeds the reviewed manifest, and builds the
+  minimal `ClassMngrNative.exe` shell. Native Debug CTest passes **5/5**:
+  engine, SDK capability, shell smoke, embedded manifest, and catalog-backed
+  resource-manifest verification.
+- Native Release installation and post-install smoke/manifest checks pass.
+  The stage is `dist/ClassMngr-windows-native-x64/` and contains the native
+  executable, a 190-entry SHA-256 resource manifest, and the three font
+  licenses; it contains no Qt DLLs, QML/plugins/translations directories,
+  `qt.conf`, or retained `ClassMngr.exe`. Local `dumpbin` inspection reports
+  an x64 PE image with no Qt imports.
+- A separate Windows native foundation workflow has been added. It installs
+  no Qt, configures fresh native Debug/Release trees, runs the native gates,
+  installs the Release stage, and checks the cache, PE architecture, imports,
+  manifest, and Qt-free install tree. It has not yet run on GitHub Actions.
+- The retained Windows Qt transition target still builds as `ClassMngr.exe`.
+  The complete retained Windows Qt non-visual CTest suite passes **68/68**
+  locally, and the opt-in Phase 0 visual-capture target rebuilds successfully
+  through the transition graph. The earlier isolated speaking-evaluation
+  batch-report failure was a clipboard timing limitation in a non-interactive
+  invocation; the ordered suite passes it, so no retained-platform failure is
+  currently attributed to the Phase 1 engine/build changes.
+
 ## Carry-forward native implementation validation
 
 1. Validate the native file/folder/printer services, command flows, output

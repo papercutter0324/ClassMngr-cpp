@@ -1,25 +1,10 @@
 include_guard(GLOBAL)
 
-add_library(ClassMngrBuildSettings INTERFACE)
+add_library(ClassMngrQtBuildSettings INTERFACE)
 
-target_compile_features(ClassMngrBuildSettings
+target_link_libraries(ClassMngrQtBuildSettings
     INTERFACE
-        cxx_std_23
-)
-
-target_include_directories(ClassMngrBuildSettings
-    INTERFACE
-        "${PROJECT_SOURCE_DIR}/src"
-        "${CMAKE_CURRENT_BINARY_DIR}/generated"
-)
-
-target_compile_definitions(ClassMngrBuildSettings
-    INTERFACE
-        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-)
-
-target_link_libraries(ClassMngrBuildSettings
-    INTERFACE
+        ClassMngrCommonBuildSettings
         Qt6::Concurrent
         Qt6::Core
         Qt6::Gui
@@ -36,6 +21,15 @@ target_link_libraries(ClassMngrBuildSettings
         ZLIB::ZLIB
 )
 
+target_compile_definitions(ClassMngrQtBuildSettings
+    INTERFACE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+
+# Keep the old target name as an alias for focused downstream test fragments
+# while all project-owned targets use the explicit Qt name.
+add_library(ClassMngrBuildSettings ALIAS ClassMngrQtBuildSettings)
+
 function(classmngr_add_production_objects target directory)
     file(GLOB_RECURSE sources CONFIGURE_DEPENDS
         "${PROJECT_SOURCE_DIR}/${directory}/*.cpp"
@@ -46,7 +40,7 @@ function(classmngr_add_production_objects target directory)
     add_library("${target}" OBJECT ${sources})
     target_link_libraries("${target}"
         PRIVATE
-            ClassMngrBuildSettings
+            ClassMngrQtBuildSettings
     )
     set_target_properties("${target}"
         PROPERTIES
@@ -62,7 +56,7 @@ classmngr_add_production_objects(ClassMngrUiShared src/ui)
 classmngr_add_production_objects(ClassMngrFeatures src/features)
 classmngr_add_production_objects(ClassMngrAppServices src/app)
 
-add_library(ClassMngrRuntime STATIC
+add_library(ClassMngrQtRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrCore>
     $<TARGET_OBJECTS:ClassMngrData>
     $<TARGET_OBJECTS:ClassMngrDomain>
@@ -71,10 +65,13 @@ add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrAppServices>
 )
 
-target_link_libraries(ClassMngrRuntime
+target_link_libraries(ClassMngrQtRuntime
     PUBLIC
-        ClassMngrBuildSettings
+        ClassMngrQtBuildSettings
+        ClassMngrEngine
 )
+
+add_library(ClassMngrRuntime ALIAS ClassMngrQtRuntime)
 
 # macOS test doubles cannot override symbols from a static archive with the
 # current Apple linker. A flat-namespace shared runtime reuses the production
@@ -92,7 +89,8 @@ if(APPLE AND BUILD_TESTING)
 
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
-            ClassMngrBuildSettings
+            ClassMngrQtBuildSettings
+            ClassMngrEngine
     )
 
     target_link_options(ClassMngrTestRuntime
@@ -102,7 +100,7 @@ if(APPLE AND BUILD_TESTING)
 endif()
 
 if(WIN32)
-    target_link_libraries(ClassMngrRuntime
+    target_link_libraries(ClassMngrQtRuntime
         PUBLIC
             Bcrypt
             Crypt32
@@ -110,12 +108,12 @@ if(WIN32)
     )
 endif()
 
-target_sources(ClassMngr
+target_sources(${CLASSMNGR_QT_DESKTOP_TARGET}
     PRIVATE
         "${PROJECT_SOURCE_DIR}/src/main.cpp"
 )
 
-target_link_libraries(ClassMngr
+target_link_libraries(${CLASSMNGR_QT_DESKTOP_TARGET}
     PRIVATE
         ClassMngrRuntime
 )

@@ -345,7 +345,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     add_dependencies(
         ClassMngrStartupPerformanceTests
-        ClassMngr
+        ${CLASSMNGR_QT_DESKTOP_TARGET}
     )
 
     target_compile_features(ClassMngrStartupPerformanceTests
@@ -395,7 +395,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         ClassMngrStartupPerformanceTests
         PROPERTIES
         ENVIRONMENT
-            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>"
+            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:${CLASSMNGR_QT_DESKTOP_TARGET}>"
     )
 
     if(WIN32)

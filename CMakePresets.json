@@ -97,6 +97,36 @@
       }
     },
     {
+      "name": "windows-x64-native-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
+        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-native-x64"
+      }
+    },
+    {
+      "name": "windows-x64-native-debug",
+      "displayName": "Windows x64 Native Debug",
+      "inherits": "windows-x64-native-base"
+    },
+    {
+      "name": "windows-x64-native-release",
+      "displayName": "Windows x64 Native Release",
+      "inherits": "windows-x64-native-base",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-windows-native-x64"
+      }
+    },
+    {
       "name": "windows-arm64-base",
       "hidden": true,
       "inherits": [
@@ -207,6 +237,24 @@
     {
       "name": "windows-x64-release-install",
       "configurePreset": "windows-x64-release",
+      "configuration": "Release",
+      "targets": [
+        "INSTALL"
+      ]
+    },
+    {
+      "name": "windows-x64-native-debug",
+      "configurePreset": "windows-x64-native-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-x64-native-release",
+      "configurePreset": "windows-x64-native-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-x64-native-release-install",
+      "configurePreset": "windows-x64-native-release",
       "configuration": "Release",
       "targets": [
         "INSTALL"
