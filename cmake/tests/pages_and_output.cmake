@@ -401,6 +401,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrSidebarStructureTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test

@@ -265,6 +265,7 @@ classmngr_add_qt_test(
 
     target_link_libraries(ClassMngrUpdaterTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Network
             Qt6::Test
@@ -324,6 +325,7 @@ classmngr_add_qt_test(
 
     target_link_libraries(ClassMngrResourcePackTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )

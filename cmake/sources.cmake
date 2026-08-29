@@ -40,6 +40,7 @@ function(classmngr_add_production_objects target directory)
     add_library("${target}" OBJECT ${sources})
     target_link_libraries("${target}"
         PRIVATE
+            ClassMngrCommonBuildSettings
             ClassMngrQtBuildSettings
     )
     set_target_properties("${target}"

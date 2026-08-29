@@ -118,6 +118,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrCampusDashboardPageTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test
@@ -292,6 +293,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
