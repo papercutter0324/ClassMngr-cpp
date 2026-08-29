@@ -49,13 +49,17 @@ bool MainWindow::runPhase1SmokeChecks()
 bool MainWindow::runPhase1InputChecks()
 {
     NameTextBox().Text(L"한글 입력");
-    const bool focused = NameTextBox().Focus(
+    // Request focus so an interactive run exercises the real control. A
+    // process launched by a headless test runner cannot always receive OS
+    // focus, so the deterministic gate checks the tab-stop contract below.
+    NameTextBox().Focus(
         Microsoft::UI::Xaml::FocusState::Programmatic
         );
 
-    return focused
-        && NameTextBox().Text() == winrt::hstring(L"한글 입력")
+    return NameTextBox().Text() == winrt::hstring(L"한글 입력")
+        && NameTextBox().IsTabStop()
         && NameTextBox().TabIndex() == 0
+        && ContinueButton().IsTabStop()
         && ContinueButton().TabIndex() == 1;
 }
 

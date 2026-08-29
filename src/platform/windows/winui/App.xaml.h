@@ -1,7 +1,7 @@
 #pragma once
 
-#include "App.xaml.g.h"
 #include "pch.h"
+#include "App.xaml.g.h"
 
 namespace winrt::ClassMngrWinUI::implementation
 {
@@ -19,12 +19,3 @@ private:
 };
 
 } // namespace winrt::ClassMngrWinUI::implementation
-
-namespace winrt::ClassMngrWinUI::factory_implementation
-{
-
-struct App : AppT<App, implementation::App>
-{
-};
-
-} // namespace winrt::ClassMngrWinUI::factory_implementation

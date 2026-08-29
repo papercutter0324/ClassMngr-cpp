@@ -42,7 +42,6 @@
                 x:Name="ContinueButton"
                 Content="Continue"
                 Click="ContinueButton_Click"
-                IsDefault="True"
                 TabIndex="1"
                 HorizontalAlignment="Left"
                 AutomationProperties.Name="Continue" />

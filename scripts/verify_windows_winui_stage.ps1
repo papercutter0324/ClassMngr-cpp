@@ -42,21 +42,30 @@ function Resolve-CommandPath {
 
 function Resolve-VsInstallationPath {
     $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
-    if ([string]::IsNullOrWhiteSpace($programFilesX86)) {
-        $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles')
-    }
-    if ([string]::IsNullOrWhiteSpace($programFilesX86)) {
-        return $null
-    }
+    $programFiles = [Environment]::GetEnvironmentVariable('ProgramFiles')
+    $vswhere = $null
+    foreach ($programFilesRoot in @($programFilesX86, $programFiles)) {
+        if ([string]::IsNullOrWhiteSpace($programFilesRoot)) {
+            continue
+        }
 
-    $vswhere = Join-Path $programFilesX86 'Microsoft Visual Studio\Installer\vswhere.exe'
-    if (-not (Test-Path -LiteralPath $vswhere)) {
+        $candidate = Join-Path $programFilesRoot 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            $vswhere = $candidate
+            break
+        }
+    }
+    if ($null -eq $vswhere) {
+        $vswhere = Resolve-CommandPath -Names @('vswhere.exe', 'vswhere')
+    }
+    if ($null -eq $vswhere) {
         return $null
     }
 
     $installationPath = & $vswhere `
         -latest `
         -products * `
+        -version '[18.0,19.0)' `
         -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
         -property installationPath |
         Select-Object -First 1
@@ -68,39 +77,42 @@ function Resolve-VsInstallationPath {
 }
 
 function Resolve-DumpbinPath {
-    $fromPath = Resolve-CommandPath -Names @('dumpbin.exe', 'dumpbin')
-    if ($null -ne $fromPath) {
-        return $fromPath
-    }
-
     $installationPath = Resolve-VsInstallationPath
-    if ($null -eq $installationPath) {
-        throw 'Visual Studio installation could not be resolved for dumpbin.exe.'
-    }
-
-    $msvcRoot = Join-Path $installationPath 'VC\Tools\MSVC'
-    if (-not (Test-Path -LiteralPath $msvcRoot)) {
-        throw "MSVC tools directory was not found: $msvcRoot"
-    }
-
-    $latestTools = Get-ChildItem -LiteralPath $msvcRoot -Directory |
-        Sort-Object -Property Name -Descending |
-        Select-Object -First 1
-    if ($null -eq $latestTools) {
-        throw "No MSVC toolset directory was found under: $msvcRoot"
-    }
-
-    $candidates = @(
-        (Join-Path $latestTools.FullName 'bin\Hostx64\x64\dumpbin.exe'),
-        (Join-Path $latestTools.FullName 'bin\Hostx64\x86\dumpbin.exe')
-    )
-    foreach ($candidate in $candidates) {
-        if (Test-Path -LiteralPath $candidate) {
-            return $candidate
+    if ($null -ne $installationPath) {
+        $platform = if ($Platform -eq 'Win32') { 'Win32' } else { 'x64' }
+        $toolsetPath = Join-Path $installationPath `
+            "MSBuild\Microsoft\VC\v180\Platforms\$platform\PlatformToolsets\v145"
+        if (-not (Test-Path -LiteralPath $toolsetPath -PathType Container)) {
+            throw "Visual Studio 2026 v145 toolset was not found for ${Platform}: $toolsetPath"
         }
+
+        $msvcRoot = Join-Path $installationPath 'VC\Tools\MSVC'
+        if (-not (Test-Path -LiteralPath $msvcRoot)) {
+            throw "MSVC tools directory was not found: $msvcRoot"
+        }
+
+        $latestTools = Get-ChildItem -LiteralPath $msvcRoot -Directory |
+            Where-Object { $_.Name -match '^14\.5' } |
+            Sort-Object -Property Name -Descending |
+            Select-Object -First 1
+        if ($null -eq $latestTools) {
+            throw "No VS 2026 MSVC 14.5x toolset directory was found under: $msvcRoot"
+        }
+
+        $candidates = @(
+            (Join-Path $latestTools.FullName 'bin\Hostx64\x64\dumpbin.exe'),
+            (Join-Path $latestTools.FullName 'bin\Hostx64\x86\dumpbin.exe')
+        )
+        foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate) {
+                return $candidate
+            }
+        }
+
+        throw "dumpbin.exe was not found under: $($latestTools.FullName)"
     }
 
-    throw "dumpbin.exe was not found under: $($latestTools.FullName)"
+    throw 'Visual Studio 2026 installation could not be resolved for dumpbin.exe.'
 }
 
 function Get-PeMachine {

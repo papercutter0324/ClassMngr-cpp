@@ -147,8 +147,8 @@ if (-not (Test-Path -LiteralPath $reportDirectory)) {
 }
 $report | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $ReportPath -Encoding UTF8
 
-Write-Host ("WinUI memory report: {0} MiB steady-state peak, {1} MiB process " +
-    "peak; target {2} MiB. Report: {3}" -f `
+Write-Host (("WinUI memory report: {0} MiB steady-state peak, {1} MiB process " +
+    "peak; target {2} MiB. Report: {3}") -f `
     $steadyStatePeakMiB,
     $peakWorkingSetMiB,
     $SteadyStateTargetMiB,

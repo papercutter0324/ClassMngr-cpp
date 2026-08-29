@@ -121,14 +121,16 @@ Installers are written under `dist` as `ClassMngr-<version>-win-{x64,arm64}.exe`
 The Windows presets use the `Visual Studio 18 2026` generator and `v145`
 toolset configured in `CMakePresets.json`. The Windows presets therefore require
 CMake 4.2 or newer. Linux and macOS continue to use their existing Ninja
-presets and CMake baseline.
+presets and CMake baseline. Existing Windows build directories created with a
+different Visual Studio generator must be reconfigured with `cmake --fresh`.
 
 ### WinUI 3 Phase 1 bootstrap
 
 The isolated Windows WinUI lane is unpackaged and self-contained. It does not
 discover or deploy Qt. It requires Visual Studio 2026 with the Desktop
 development with C++ workload, the Windows 10.0.26100.0 SDK, CMake, NuGet, and
-PowerShell. The project pins the stable
+PowerShell. NuGet may be installed on `PATH` or supplied as
+`build/tools/nuget.exe`; the CI job provisions it explicitly. The project pins the
 [`Microsoft.WindowsAppSDK` 2.4.0](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads),
 [`Microsoft.Windows.CppWinRT` 3.0.260818.1](https://www.nuget.org/packages/Microsoft.Windows.CppWinRT/3.0.260818.1),
 and [`Microsoft.Windows.SDK.BuildTools` 10.0.26100.4654](https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools/10.0.26100.4654)
@@ -138,7 +140,8 @@ From a Visual Studio Developer PowerShell, build and test the x64 Debug
 bootstrap with:
 
 ```powershell
-cmake --preset windows-x64-winui-debug
+./scripts/verify_windows_vs2026.ps1
+cmake --fresh --preset windows-x64-winui-debug
 cmake --build --preset windows-x64-winui-debug --parallel 2
 ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
 ```

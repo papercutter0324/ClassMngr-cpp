@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MainWindow.g.h"
 #include "pch.h"
+#include "MainWindow.g.h"
 
 #include "classmngr/engine/semantic_version.h"
 

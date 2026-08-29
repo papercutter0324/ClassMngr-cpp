@@ -83,7 +83,7 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Pinned WinUI 3 C++/WinRT project, engine-backed representative form, self-contained staging scripts, x64/x86 presets, and CI are present. Clean runner builds, interactive evidence, and x86 memory measurements remain. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, and an idle x86 memory sample pass. GitHub runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -94,9 +94,10 @@ Last updated: 2026-08-29 (Asia/Seoul)
 
 ## Current Focus
 
-The active phase is Phase 1. The next accepted checkpoint is now a clean Windows
-runner execution of the bootstrap lane, followed by the remaining interactive
-and memory evidence. It requires all of the following:
+The active phase is Phase 1. The next accepted checkpoint is a clean Windows
+runner execution of the Visual Studio 18 2026/v145 bootstrap lane, followed by
+owner-reviewed interaction evidence and representative x86 peak-memory
+evidence. It requires all of the following:
 
 1. Pin a stable Windows App SDK and C++/WinRT toolchain.
 2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
@@ -163,6 +164,25 @@ After meaningful work:
   Qt-free engine, and has architecture-specific self-contained staging,
   smoke verification, and x64/x86 CI presets. Runner and owner-reviewed
   interaction evidence remain open.
+- **2026-08-29 — Windows toolchain retargeted.** All active Windows CMake
+  presets and workflows now target the `Visual Studio 18 2026` generator and
+  `v145` toolset, using the dedicated `windows-2025-vs2026` CI image. Linux and
+  macOS presets remain unchanged.
+- **2026-08-29 — VS 2026 preflight hardened.** WinUI orchestration and stage
+  verification now resolve only a VS 18 installation, require the selected
+  x64/Win32 `v145` toolset, and reject mismatched MSBuild or `dumpbin` paths.
+- **2026-08-29 — Runner toolchain preflight added.** The WinUI CI lane now
+  verifies the VS 18 installation, x64/Win32 `v145` toolsets, MSBuild, and the
+  pinned Windows SDK before configuring CMake.
+- **2026-08-29 — Local VS 2026 matrix validated (eaeb62f plus working tree).**
+  On the installed Visual Studio 2026 Community toolchain, x64 and x86
+  Debug/Release WinUI stages built with `v145`; engine and staged WinUI CTest
+  gates passed for all four configurations. The Win32 Release memory helper
+  recorded 68.30 MiB startup, 71.00 MiB steady-state peak, and 71.00 MiB
+  process peak against the 200 MiB steady-state target. GitHub runner execution,
+  DPI/keyboard-focus/Korean-IME owner review, and representative peak-budget
+  evidence remain open. Detailed results are in
+  [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
 
 ## Shared Completion Rules
 

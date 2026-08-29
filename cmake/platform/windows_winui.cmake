@@ -94,8 +94,11 @@ configure_file(
     @ONLY
 )
 
+# Prefer the inbox Windows PowerShell executable.  It is available on every
+# supported Windows development host and avoids resolving the WindowsApps
+# App Execution Alias for pwsh, which is not always executable by build tools.
 find_program(CLASSMNGR_WINUI_POWERSHELL_EXECUTABLE
-    NAMES pwsh powershell
+    NAMES powershell pwsh
 )
 if(NOT CLASSMNGR_WINUI_POWERSHELL_EXECUTABLE)
     message(FATAL_ERROR

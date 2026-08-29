@@ -157,7 +157,7 @@
       "displayName": "Windows x64 WinUI Release",
       "inherits": "windows-x64-winui-base",
       "cacheVariables": {
-        "BUILD_TESTING": "OFF"
+        "BUILD_TESTING": "ON"
       }
     },
     {
@@ -189,7 +189,7 @@
       "displayName": "Windows x86 WinUI Release",
       "inherits": "windows-x86-winui-base",
       "cacheVariables": {
-        "BUILD_TESTING": "OFF"
+        "BUILD_TESTING": "ON"
       }
     },
     {

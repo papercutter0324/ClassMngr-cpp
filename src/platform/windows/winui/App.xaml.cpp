@@ -5,6 +5,7 @@
 #include "winui_identity.h"
 
 #include <shellapi.h>
+#include <shobjidl_core.h>
 
 #include <string>
 #include <string_view>
@@ -94,7 +95,7 @@ bool verifyEmbeddedManifest()
 }
 
 void scheduleTestExit(
-    Microsoft::UI::Xaml::Window const& window,
+    winrt::Microsoft::UI::Xaml::Window const& window,
     bool passed
     )
 {
@@ -146,7 +147,9 @@ void App::OnLaunched(
     {
         const bool queued = m_window.DispatcherQueue().TryEnqueue(
             [this, smokeTest, inputTest, themeTest]() {
-                auto* mainWindow = winrt::get_self<MainWindow>(m_window);
+                auto* mainWindow = winrt::get_self<MainWindow>(
+                    m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
+                    );
                 bool passed = true;
                 if (smokeTest)
                 {

@@ -30,6 +30,10 @@ WinUI bootstrap imports only the WinUI/runtime component targets; unrelated
 Windows App SDK AI, ML, Search, and Widgets targets are not part of this lane.
 The Windows App SDK self-contained properties are kept in
 [`ClassMngrWinUI.vcxproj`](../../../src/platform/windows/winui/ClassMngrWinUI.vcxproj).
+The build orchestration resolves a Visual Studio 18 installation through
+`vswhere`, requires the selected platform's `v145` toolset, and passes that
+toolset explicitly to MSBuild. The stage verifier applies the same VS 2026
+constraint before resolving `dumpbin.exe`.
 
 ## Project boundary
 
@@ -51,18 +55,32 @@ absence of Qt files/imports.
 ## Local commands
 
 ```powershell
-cmake --preset windows-x64-winui-debug
+./scripts/verify_windows_vs2026.ps1
+cmake --fresh --preset windows-x64-winui-debug
 cmake --build --preset windows-x64-winui-debug --parallel 2
 ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
 
-cmake --preset windows-x86-winui-debug
+cmake --fresh --preset windows-x86-winui-debug
 cmake --build --preset windows-x86-winui-debug --parallel 2
 ctest --test-dir build/windows-x86-winui-debug -C Debug --output-on-failure
+
+cmake --fresh --preset windows-x64-winui-release
+cmake --build --preset windows-x64-winui-release --parallel 2
+ctest --test-dir build/windows-x64-winui-release -C Release --output-on-failure
+
+cmake --fresh --preset windows-x86-winui-release
+cmake --build --preset windows-x86-winui-release --parallel 2
+ctest --test-dir build/windows-x86-winui-release -C Release --output-on-failure
 ```
 
-Release presets use `BUILD_TESTING=OFF` but still build the same self-contained
-application stage. The CI matrix exercises all four architecture/configuration
-combinations and uploads each stage separately.
+Release presets keep the engine and staged WinUI tests enabled. The CI matrix
+exercises all four architecture/configuration combinations and uploads each
+stage separately.
+
+The latest local matrix and memory result are recorded in the
+[Phase 1 local validation record](phase1-local-validation.md). It is evidence
+for the bootstrap lane, not a Phase 1 acceptance record; interactive and clean
+runner gates remain open.
 
 To collect the initial idle-process memory evidence for an installed stage,
 run the measurement helper from a Windows desktop session. It records both the
@@ -84,11 +102,13 @@ The bootstrap source contains a representative Korean text form and explicit
 light/dark, focus, and manifest smoke modes. The following evidence must still
 be collected on a Windows runner before Phase 1 can be accepted:
 
-- clean x64 and x86 Debug/Release builds and launches;
+- clean x64 and x86 Debug/Release builds and launches (the local matrix now
+  passes; clean-runner confirmation remains);
 - owner-reviewed light/dark, 100%/150%/200% DPI, keyboard focus, and Korean IME
   results;
-- x86 steady-state and peak working-set measurements against the shared
-  200 MiB target;
+- representative x86 steady-state and peak working-set measurements against
+  the shared 200 MiB target (the latest local idle baseline is 71.00 MiB; a
+  representative peak-budget run remains);
 - retained Windows, macOS, and Linux Qt validation after the new lane lands.
 
 No public updater or installer metadata is changed by this bootstrap.

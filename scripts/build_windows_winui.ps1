@@ -81,6 +81,10 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$visualStudioVersionRange = '[18.0,19.0)'
+$visualStudioToolset = 'v145'
+$visualStudioWindowsSdkVersion = '10.0.26100.0'
+
 function Get-AbsolutePath {
     param([Parameter(Mandatory = $true)][string] $Path)
 
@@ -132,38 +136,120 @@ function Resolve-CommandPath {
     return $null
 }
 
-function Resolve-MSBuildPath {
-    $fromPath = Resolve-CommandPath -Names @('msbuild.exe', 'MSBuild')
+function Resolve-NuGetPath {
+    param([Parameter(Mandatory = $true)][string] $ProjectRootPath)
+
+    $fromPath = Resolve-CommandPath -Names @('nuget.exe', 'nuget')
     if ($null -ne $fromPath) {
         return $fromPath
     }
 
+    $repoLocalNuGet = Join-Path $ProjectRootPath 'build\tools\nuget.exe'
+    if (Test-Path -LiteralPath $repoLocalNuGet -PathType Leaf) {
+        return $repoLocalNuGet
+    }
+
+    return $null
+}
+
+function Resolve-VsWherePath {
     $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
-    if ([string]::IsNullOrWhiteSpace($programFilesX86)) {
-        $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles')
-    }
-    if ([string]::IsNullOrWhiteSpace($programFilesX86)) {
-        throw 'Could not locate Program Files to resolve Visual Studio.'
-    }
+    $programFiles = [Environment]::GetEnvironmentVariable('ProgramFiles')
+    foreach ($programFilesRoot in @($programFilesX86, $programFiles)) {
+        if ([string]::IsNullOrWhiteSpace($programFilesRoot)) {
+            continue
+        }
 
-    $vswhere = Join-Path $programFilesX86 'Microsoft Visual Studio\Installer\vswhere.exe'
-    if (Test-Path -LiteralPath $vswhere) {
-        $installationPath = & $vswhere `
-            -latest `
-            -products * `
-            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-            -property installationPath |
-            Select-Object -First 1
-
-        if (-not [string]::IsNullOrWhiteSpace([string] $installationPath)) {
-            $candidate = Join-Path ([string] $installationPath).Trim() 'MSBuild\Current\Bin\MSBuild.exe'
-            if (Test-Path -LiteralPath $candidate) {
-                return $candidate
-            }
+        $candidate = Join-Path $programFilesRoot 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
         }
     }
 
-    throw 'MSBuild was not found. Open a Visual Studio Developer Command Prompt or install the C++ workload.'
+    return Resolve-CommandPath -Names @('vswhere.exe', 'vswhere')
+}
+
+function Resolve-VsInstallationPath {
+    $vswhere = Resolve-VsWherePath
+    if ($null -eq $vswhere) {
+        return $null
+    }
+
+    $installationPaths = & $vswhere `
+        -all `
+        -products * `
+        -version $visualStudioVersionRange `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath
+
+    foreach ($candidate in $installationPaths) {
+        $installationPath = ([string] $candidate).Trim()
+        if ([string]::IsNullOrWhiteSpace($installationPath)) {
+            continue
+        }
+
+        $msbuildPath = Join-Path $installationPath 'MSBuild\Current\Bin\MSBuild.exe'
+        if (-not (Test-Path -LiteralPath $msbuildPath -PathType Leaf)) {
+            continue
+        }
+
+        $supportsWinUI = $true
+        foreach ($candidatePlatform in @('x64', 'Win32')) {
+            $toolsetPath = Join-Path $installationPath `
+                "MSBuild\Microsoft\VC\v180\Platforms\$candidatePlatform\PlatformToolsets\$visualStudioToolset"
+            $windowsStoreToolsetPath = Join-Path $installationPath `
+                "MSBuild\Microsoft\VC\v180\Application Type\Windows Store\10.0\Platforms\$candidatePlatform\PlatformToolsets\$visualStudioToolset"
+            if (-not (Test-Path -LiteralPath $toolsetPath -PathType Container) `
+                -or -not (Test-Path -LiteralPath $windowsStoreToolsetPath -PathType Container)) {
+                $supportsWinUI = $false
+                break
+            }
+        }
+
+        if ($supportsWinUI) {
+            return $installationPath
+        }
+    }
+
+    return $null
+}
+
+function Assert-VisualStudioToolset {
+    $installationPath = Resolve-VsInstallationPath
+    if ($null -eq $installationPath) {
+        throw 'Visual Studio 2026 with the C++ workload could not be resolved.'
+    }
+
+    $platform = if ($Platform -eq 'Win32') { 'Win32' } else { 'x64' }
+    $toolsetPath = Join-Path $installationPath `
+        "MSBuild\Microsoft\VC\v180\Platforms\$platform\PlatformToolsets\$visualStudioToolset"
+    if (-not (Test-Path -LiteralPath $toolsetPath -PathType Container)) {
+        throw "Visual Studio 2026 was found, but the $visualStudioToolset toolset for $Platform was not found: $toolsetPath"
+    }
+
+    $windowsStoreToolsetPath = Join-Path $installationPath `
+        "MSBuild\Microsoft\VC\v180\Application Type\Windows Store\10.0\Platforms\$platform\PlatformToolsets\$visualStudioToolset"
+    if (-not (Test-Path -LiteralPath $windowsStoreToolsetPath -PathType Container)) {
+        throw "Visual Studio 2026 was found, but the Windows Store $visualStudioToolset toolset for $Platform was not found: $windowsStoreToolsetPath"
+    }
+
+    $msbuildPath = Join-Path $installationPath 'MSBuild\Current\Bin\MSBuild.exe'
+    if (-not (Test-Path -LiteralPath $msbuildPath -PathType Leaf)) {
+        throw "Visual Studio 2026 was found, but MSBuild was not found: $msbuildPath"
+    }
+
+    return $installationPath
+}
+
+function Resolve-MSBuildPath {
+    param([Parameter(Mandatory = $true)][string] $InstallationPath)
+
+    $candidate = Join-Path $InstallationPath 'MSBuild\Current\Bin\MSBuild.exe'
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        return $candidate
+    }
+
+    throw "MSBuild was not found in the Visual Studio 2026 installation: $InstallationPath"
 }
 
 function Assert-PackageFiles {
@@ -206,18 +292,19 @@ Ensure-Directory -Path $outputPath
 Ensure-Directory -Path $intermediatePath
 Ensure-Directory -Path $generatedFilesPath
 
-$nuget = Resolve-CommandPath -Names @('nuget.exe', 'nuget')
+$nuget = Resolve-NuGetPath -ProjectRootPath $projectRootPath
 if ($null -eq $nuget) {
-    throw 'nuget.exe was not found. Install NuGet or run the GitHub Actions setup-nuget step.'
+    throw 'nuget.exe was not found. Install NuGet, place it at build/tools/nuget.exe, or run the GitHub Actions setup-nuget step.'
 }
 
-$msbuild = Resolve-MSBuildPath
+$visualStudioInstallationPath = Assert-VisualStudioToolset
+$msbuild = Resolve-MSBuildPath -InstallationPath $visualStudioInstallationPath
+Write-Host "Using Visual Studio 2026 ($visualStudioToolset) from $visualStudioInstallationPath"
 
 Write-Host "Restoring pinned WinUI packages into $packagesPath"
 & $nuget restore $projectFilePath `
     -PackagesDirectory $packagesPath `
     -ConfigFile $nugetConfigPath `
-    -DependencyVersion Lowest `
     -NonInteractive
 if ($LASTEXITCODE -ne 0) {
     throw "NuGet restore failed with exit code $LASTEXITCODE."
@@ -310,7 +397,10 @@ $msbuildArguments = @(
     "/p:ClassMngrEngineIncludeDirectory=$engineIncludePath",
     "/p:ClassMngrWinUIGeneratedIncludeDirectory=$generatedIncludePath",
     "/p:ClassMngrWinUIResourceFile=$resourceFilePath",
+    "/p:WindowsTargetPlatformVersion=$visualStudioWindowsSdkVersion",
+    "/p:TargetPlatformVersion=$visualStudioWindowsSdkVersion",
     "/p:WindowsTargetPlatformMinVersion=$MinimumWindowsVersion",
+    "/p:PlatformToolset=$visualStudioToolset",
     "/p:OutDir=$outputProperty",
     "/p:IntDir=$intermediateProperty",
     '/p:WindowsPackageType=None',
