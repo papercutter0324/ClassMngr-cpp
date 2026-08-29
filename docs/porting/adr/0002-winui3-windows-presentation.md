@@ -32,8 +32,12 @@
 6. The WinUI development product retains an isolated executable identity,
    AppUserModelID, settings namespace, install stage, and copied-database rule
    until cutover.
-7. Windows x64 is the release gate. ARM64 release support remains deferred
-   until runtime, performance, packaging, and parity evidence exists.
+7. Windows x64 is the release gate. Windows x86 is a required build-and-test
+   target with Debug/Release configurations, engine and application smoke
+   tests, architecture-correct self-contained staging, and memory evidence.
+   Publishing an x86 installer or updater artifact requires a separate demand
+   and release-support decision. ARM64 release support remains deferred until
+   runtime, performance, packaging, and parity evidence exists.
 
 ## Consequences
 
@@ -45,6 +49,12 @@
 - Windows App SDK packages and C++/WinRT build inputs are pinned and restored
   deterministically. Self-contained output is checked in staging and on a
   clean supported Windows installation.
+- Native dependencies and generated outputs are architecture-specific. CI
+  builds x64 and x86 without mixing libraries, generated files, runtime
+  packages, or staging directories.
+- x86 must meet the shared 200 MiB steady-state memory target and record a
+  separately approved worst-case peak before it can be considered for public
+  release.
 - The existing minimal Win32 shell and Direct2D capability test are temporary
   Phase 1 evidence. Remove them after equivalent WinUI launch, manifest,
   deployment, and smoke coverage exists.

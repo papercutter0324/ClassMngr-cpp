@@ -22,7 +22,7 @@ ClassMngrEngine (portable C++23; no Qt, WinUI, WinRT, or Win32 UI types)
     |       |-- macOS Qt application and adapters
     |       +-- Linux Qt application and adapters
     |
-    +-- ClassMngrWindowsWinUI
+    +-- ClassMngrWindowsWinUI (x64 release; x86 build/test support)
             |-- WinUI 3 XAML presentation
             |-- C++/WinRT view models and adapters
             |-- Windows App SDK lifecycle and resources
@@ -46,9 +46,12 @@ other specialized drawing surface.
 - Development and initial release packaging are unpackaged and self-contained,
   preserving the existing Inno Setup and signed-installer update workflow.
   Package identity may be reconsidered only through a separate ADR.
-- Windows x64 is the release gate. ARM64 remains build-only and non-blocking
-  until a separate support decision supplies runtime, performance, and package
-  evidence.
+- Windows x64 is the release gate. Windows x86 is a required build-and-test
+  target with Debug and Release configurations, engine tests, application
+  smoke tests, and self-contained staging. An x86 public installer or updater
+  artifact requires a separate demand and release-support decision.
+- ARM64 remains build-only and non-blocking until a separate support decision
+  supplies runtime, performance, and package evidence.
 - The Qt Windows product remains the shipping fallback until WinUI parity and
   cutover gates pass. Development builds use isolated identity, settings, and
   copied databases.
@@ -80,7 +83,7 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Qt-free engine/build split, minimal Win32 shell, native staging, and local tests exist. Replace the provisional shell with a pinned WinUI 3 C++/WinRT app and prove self-contained deployment. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Qt-free engine/build split, minimal Win32 shell, native staging, and local tests exist. Replace the provisional shell with a pinned WinUI 3 C++/WinRT app and prove self-contained x64/x86 builds. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -97,12 +100,14 @@ following:
 1. Pin a stable Windows App SDK and C++/WinRT toolchain.
 2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
    discover or load Qt.
-3. Prove Debug and Release builds from a clean machine/runner.
-4. Prove unpackaged, self-contained installation and launch through an
-   isolated development stage.
+3. Prove x64 and x86 Debug and Release builds from a clean machine/runner.
+4. Prove architecture-correct, unpackaged, self-contained staging and launch
+   for x64 and x86.
 5. Exercise light/dark theme, DPI, keyboard focus, and Korean IME in a small
    representative form.
-6. Keep the retained Windows, macOS, and Linux Qt products green.
+6. Measure x86 memory behavior against the shared 200 MiB steady-state target
+   and record worst-case peak usage before considering release support.
+7. Keep the retained Windows, macOS, and Linux Qt products green.
 
 The existing `ClassMngrWindowsNative` Win32 shell and Direct2D SDK capability
 test are provisional Phase 1 evidence. They are not the target presentation
@@ -146,6 +151,9 @@ After meaningful work:
   and completed generic build-boundary work are retained. Phase 1 remains in
   progress because the provisional Win32 shell has not yet been replaced by a
   WinUI 3 C++/WinRT application or validated with Windows App SDK deployment.
+- **2026-08-29 — x86 build support added.** Phase 1 now requires x64 and x86
+  Debug/Release builds, tests, and self-contained staging. x64 remains the
+  release gate; publishing an x86 installer remains a separate decision.
 
 ## Shared Completion Rules
 
@@ -156,4 +164,7 @@ After meaningful work:
 - Screenshots supplement semantic and behavioral assertions; they do not prove
   focus, persistence, IME, or accessibility behavior.
 - The WinUI target must not load or deploy Qt.
+- Windows-owned source and approved dependencies must build for x64 and x86.
+  An exception requires an explicit plan update with replacement or isolation
+  work; silently dropping x86 is not permitted.
 - The retained Qt products must remain releasable until Windows cutover.

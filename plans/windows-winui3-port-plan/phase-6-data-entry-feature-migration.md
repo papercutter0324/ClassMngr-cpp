@@ -31,6 +31,8 @@ Port and accept each slice end to end before beginning several more:
   focus restoration, and unsaved-change rules.
 - Use virtualized controls for large row/cell collections.
 - Add paired Qt/WinUI visual scenarios plus semantic and persistence tests.
+- Keep x64 and x86 feature builds and integration tests green for every
+  migrated slice; architecture-specific code requires matching coverage.
 - Verify Windows-to-Qt and Qt-to-Windows database round trips.
 
 ## Exit Gate

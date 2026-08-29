@@ -36,6 +36,9 @@ integration paths with reviewed engine and Windows implementations.
   temporary files bounded.
 - Update and resource-pack signature, rollback, offline, cancellation, and
   partial-download tests pass.
+- PDF, image, archive, networking, signature, PowerPoint, and other native
+  dependencies build for both x64 and x86; architecture-specific smoke tests
+  reject missing or mixed-bitness binaries.
 - No Windows release path loads Qt PDF, Qt PrintSupport, Qt Network, QML, or
   another Qt runtime component.
 

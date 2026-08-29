@@ -35,8 +35,8 @@ Extract vertical slices instead of mechanically converting every Qt type.
 
 - Configure-time and source audits reject Qt, WinUI, WinRT, and Win32 UI
   dependencies in engine public or private code.
-- Headless engine tests cover rules, migrations, rollback, imports, and report
-  models without loading a UI framework.
+- Headless x64 and x86 engine tests cover rules, migrations, rollback, imports,
+  and report models without loading a UI framework.
 - Windows writes are readable by macOS/Linux Qt, and Qt writes are readable by
   Windows, across every supported fixture.
 - Migrated Qt features pass existing tests through adapters before duplicate

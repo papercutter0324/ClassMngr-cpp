@@ -11,6 +11,8 @@ release channel, cut Windows over safely, and retain a tested rollback path.
 
 1. Run unit, engine, integration, UI, visual, database, import/export, updater,
    installer, and long-session soak tests on supported x64 hardware.
+   Keep x86 Debug/Release builds, engine tests, feature integration tests, and
+   staged application smoke tests green as a required compatibility lane.
 2. Profile cold/warm startup, first navigation, resize, large-grid scrolling,
    PDF use, report generation, working/private memory, GPU memory, handles, and
    package footprint against approved budgets.
@@ -30,6 +32,10 @@ release channel, cut Windows over safely, and retain a tested rollback path.
 9. Keep macOS/Linux Qt source, resources, tests, and release workflows intact.
 10. Record final architecture, dependency, license, support-floor, and
     known-limitations reviews.
+11. Record whether verified user demand justifies promoting x86 from supported
+    build output to a signed installer/update artifact. Promotion requires
+    architecture-specific performance, dependency, installation, upgrade, and
+    rollback evidence; it is not implied by build support.
 
 ## Completion Criteria
 
@@ -37,6 +43,12 @@ release channel, cut Windows over safely, and retain a tested rollback path.
   dependency.
 - All applicable parity workflows pass on Windows x64, including Korean input,
   keyboard navigation, output, updates, PowerPoint, and failure recovery.
+- Windows x86 Debug and Release configurations compile, test, and launch from
+  architecture-correct self-contained stages with no mixed-bitness or Qt
+  dependency.
+- The 200 MiB steady-state memory target is measured on x64 and x86, and x86
+  worst-case peak usage remains within its separately approved address-space
+  budget.
 - `.tps` databases and supported exports round-trip with macOS/Linux Qt.
 - Startup, interaction, memory, accessibility, reliability, and package-size
   budgets are met.
