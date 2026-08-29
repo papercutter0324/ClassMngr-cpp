@@ -33,6 +33,20 @@ The stage verifier also passed the embedded-manifest, compiled-XAML/MRT,
 architecture, self-contained-runtime, and Qt-absence checks for each tested
 lane. The WinUI-only CMake caches contain no Qt package entries.
 
+## Retained Windows Qt validation
+
+The retained Windows Qt Debug suite was rebuilt and run with all 69 CTest
+entries passing, including the Windows visual-capture and startup-performance
+gates. The startup-settings test also confirms that the font-size controller
+reapplies the setting loaded by `ActionRegistry` when its actions are connected.
+The retained Windows Qt Release product was also rebuilt successfully with its
+deployed Qt runtime.
+
+The local run used `CLASSMNGR_SETTINGS_ROOT` pointing into the build tree,
+because the restricted validation environment cannot write the default
+registry-backed `QSettings` location. This override is test-only; the normal
+Windows application settings location remains unchanged.
+
 ## x86 memory baseline
 
 Command:

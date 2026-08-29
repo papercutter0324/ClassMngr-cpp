@@ -83,7 +83,7 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, and an idle x86 memory sample pass. GitHub runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, and the retained Windows Qt Debug suite (69/69) pass. GitHub runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -182,6 +182,14 @@ After meaningful work:
   process peak against the 200 MiB steady-state target. GitHub runner execution,
   DPI/keyboard-focus/Korean-IME owner review, and representative peak-budget
   evidence remain open. Detailed results are in
+  [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
+- **2026-08-29 — Retained Windows Qt validation refreshed.** After rebuilding
+  the stale fixture and startup-settings test targets, the Windows Qt Debug
+  CTest suite ran all 69 tests successfully, including the visual-capture and
+  startup-performance gates. The startup controller now reapplies the loaded
+  font-size setting when its actions are connected. The retained Windows Qt
+  Release product also rebuilt successfully with its deployed runtime.
+  Detailed matrix and environment notes are in
   [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
 
 ## Shared Completion Rules
