@@ -209,6 +209,18 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassInfoServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineClassScheduleServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassScheduleServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineClassTransferServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassTransferServiceTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

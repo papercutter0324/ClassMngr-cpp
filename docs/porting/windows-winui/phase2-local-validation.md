@@ -56,6 +56,20 @@ parsing, duplicate-slot and interval-order diagnostics, color and note-length
 rules, teacher-join read fields, empty-class defaults, and one transaction for
 the class row plus regular and intensive time rows.
 
+The schedule read slice now also includes a Qt-free `ClassScheduleService`.
+It provides regular-class teacher assignments, renderer-neutral schedule
+snapshots with regular and intensive times, testing-class filtering, and
+typed conflict detection for candidate and stored intervals, including
+overnight handling and the existing class-name fallback.
+
+The class-transfer slice now includes Qt-free package models and a
+`ClassTransferService`. It preserves versioned teacher/class keys, package
+shape validation, teacher and class match previews, create/replace/skip
+resolution rules, regular/intensive schedule preflight, roster and speaking
+evaluation child-table transfer, export identity stripping, and one
+transaction for teacher, class, and child-row writes. The retained Qt JSON and
+file codec remains an adapter at this boundary; it does not own import rules.
+
 ## Local validation
 
 | Lane | Result |
@@ -93,23 +107,38 @@ the class row plus regular and intensive time rows.
 | Windows x64 Release class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
 | Windows x86 Debug class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
 | Windows x86 Release class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
+| Windows x64 Debug class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x64 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x86 Debug class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x86 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x64 Debug class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
+| Windows x64 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
+| Windows x86 Debug class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
+| Windows x86 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
+| Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
+| Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
+| Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
 All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. Each lane's integrated
-sweep passed all nine engine suites plus both WinUI staging and manifest checks.
-The new class-information implementation compiled and passed in all four
-engine lanes, and all four staged WinUI targets rebuilt successfully with the
-new engine dependency. The retained Qt class-information lifecycle regression
-also passed, alongside the existing schema-manager, updater, and
-teacher-import coverage. A narrowed source audit found no Qt, WinUI, WinRT,
+sweep passed all eleven engine suites plus both WinUI staging and manifest
+checks. The class-information, schedule-read, and class-transfer
+implementations compiled and passed in all four engine lanes, and all four
+staged WinUI targets rebuilt successfully with the new engine dependency. The
+retained Qt class-information, assignment, and class-transfer regressions also
+passed, alongside the existing schema-manager, updater, and teacher-import
+coverage. A narrowed source audit found no Qt, WinUI, WinRT,
 Direct2D/DirectWrite, or Win32 UI dependency in `src/engine`.
+The complete retained Windows Qt non-visual CTest sweep also passed all 78
+registered tests after the engine test executables were rebuilt in the Qt
+build tree.
 
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The next work is
-extracting schedule conflict and aggregate read models, migrating imports and
-report models, connecting retained Qt adapters to the new use-case boundaries,
-and producing cross-platform fixture round trips.
+migrating schedule imports and report models, connecting retained Qt adapters
+to the new use-case boundaries, and producing cross-platform fixture round
+trips.

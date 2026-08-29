@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, and class-information validation/persistence are extracted; scheduling aggregates, imports, reports, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, and class-transfer workflows are extracted; schedule imports, reports, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -99,10 +99,10 @@ contains the `SemanticVersion` seed slice and typed standard-library result and
 error contracts. The database boundary now owns file-format rules, SQLite
 connection/transaction behavior, six-version schema migration, `OpenDatabase`,
 Qt-free class CRUD, validated teacher CRUD, the native-English/GS-team
-directory services, and validated class-information persistence, with the
-retained Qt code still operational. The next active gate is extracting
-scheduling aggregates, imports, and report/use-case boundaries with
-cross-platform fixture evidence.
+directory services, validated class-information persistence, and schedule
+reads/conflicts, and class-transfer workflows, with the retained Qt code still
+operational. The next active gate is extracting schedule-import and report/use-
+case boundaries with cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -319,6 +319,28 @@ After meaningful work:
   class-information lifecycle regression also passed. Phase 2 remains open
   for schedule conflict aggregates, imports, reports, adapters, and
   cross-platform fixture round trips.
+- **2026-08-30 — Class schedule service added.** The engine now owns regular
+  class teacher assignments, renderer-neutral schedule snapshots, testing
+  class filtering, and candidate/stored conflict detection for regular and
+  intensive intervals. All four Windows lanes passed the ten-suite headless
+  engine sweep plus WinUI staging and manifest checks; the retained Qt
+  assignment and lifecycle regressions also passed. Phase 2 remains open for
+  schedule imports, reports, adapters, and cross-platform fixture round trips.
+- **2026-08-30 — Class transfer service added.** The engine now owns the
+  versioned class-package models, export reads, match previews, teacher/class
+  create-replace-skip planning, schedule preflight, roster and
+  speaking-evaluation child-table writes, and transactional import behavior.
+  All four Windows lanes passed the eleven-suite headless engine sweep plus
+  WinUI staging and manifest checks; the retained Qt class-transfer regression
+  also passed. The Qt JSON/file codec remains an adapter, and Phase 2 remains
+  open for schedule imports, report models, adapter wiring, and
+  cross-platform fixture round trips.
+- **2026-08-30 — Transfer regression matrix refreshed.** The four WinUI
+  Debug/Release x64/x86 lanes each passed all 13 CTest entries, including the
+  new class-transfer service and stage checks. The retained Windows Qt
+  non-visual suite passed all 78 registered tests, including the existing
+  class-transfer path. Phase 2 remains open for schedule-import/report
+  models, adapter wiring, and cross-platform fixture round trips.
 
 ## Shared Completion Rules
 

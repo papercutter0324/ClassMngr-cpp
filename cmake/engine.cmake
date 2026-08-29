@@ -55,6 +55,12 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_validator.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_info_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_schedule_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_transfer_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer_service.h"
 )
 
 target_link_libraries(ClassMngrEngine
@@ -294,5 +300,39 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassInfoServiceTests
         COMMAND ClassMngrEngineClassInfoServiceTests
+    )
+
+    add_executable(ClassMngrEngineClassScheduleServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_schedule_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassScheduleServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassScheduleServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassScheduleServiceTests
+        COMMAND ClassMngrEngineClassScheduleServiceTests
+    )
+
+    add_executable(ClassMngrEngineClassTransferServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_transfer_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassTransferServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassTransferServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassTransferServiceTests
+        COMMAND ClassMngrEngineClassTransferServiceTests
     )
 endif()
