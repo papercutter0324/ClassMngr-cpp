@@ -85,8 +85,10 @@ evidence remains under `docs/porting/windows-direct2d`.
   checks pass.
 - Self-contained staging contains all required Windows App SDK components and
   launches on a clean supported Windows environment for x64 and x86.
-- x86 smoke and memory reports record the 200 MiB steady-state result and the
-  measured worst-case peak; x86 publication is not part of this phase.
+- x86 smoke and idle-memory reports record the 200 MiB steady-state result.
+  Representative feature-workload peak measurements are intentionally deferred
+  until a realistic feature slice exists; no x86 release peak-budget claim is
+  made by this phase.
 - Running the x86 lane under WOW64 is sufficient for build support. A public
   x86 release additionally requires validation on an actual supported 32-bit
   Windows installation.

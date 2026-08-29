@@ -53,6 +53,13 @@ and [macOS universal](https://github.com/papercutter0324/ClassMngr-cpp/actions/r
 workflows also passed their build, package, and artifact upload checks for the
 same revision.
 
+## Owner interaction review
+
+The owner reported that the x64 Release stage passed the required Light/Dark,
+100%/150%/200% DPI, keyboard-focus, and Korean-IME checks. The stage verifier
+also passed for
+`dist/ClassMngr-windows-winui-x64/Release`.
+
 ## Retained Windows Qt validation
 
 The normal retained Windows Qt Debug route contains 68 tests; all 68 passed
@@ -78,6 +85,36 @@ set under
 sidecars passed the repository validator. This automated validation does not
 replace owner review of the PNG captures.
 
+On 2026-08-30, after the Windows display scale was manually set to 100%, the
+visual-capture target was freshly configured and rebuilt with VS 2026/v145.
+The full capture run passed (`1/1` CTest target, 64.55 seconds), and produced
+56 metadata sidecars under
+`artifacts/phase0/windows-qt-visual/20260829T150959409Z-25956/`. The
+repository validator accepted all 56 sidecars. This automated 100% capture
+pass was followed by a good owner review of the PNG captures.
+
+A subsequent 150% run, followed by one retry, did not produce a complete
+passing capture. The first attempt ended at 57 passed and 2 failed cases; the
+retry ended at 55 passed and 4 failed cases. The failures were native
+`qWaitForWindowExposed` timeouts, including a geometry warning for the
+`LG ULTRAGEAR+` monitor, rather than display-scale assertion failures. The
+latest partial output is under
+`artifacts/phase0/windows-qt-visual/20260829T151739696Z-4248/`; its 52
+sidecars all report 150%, and the repository validator accepted all 52. This
+automation output is not claimed as green because of the native exposure
+failures. The owner explicitly accepts the reviewed 150% PNG output as a full
+visual-gate pass; the exposure failures remain a documented
+automation/environment exception rather than a visual defect.
+
+The 200% run completed successfully on the same host. The full capture target
+passed (`1/1` CTest target, 75.27 seconds) and produced 56 metadata sidecars
+under `artifacts/phase0/windows-qt-visual/20260829T152306133Z-24800/`. Every
+sidecar records `displayScalePercent: 200`, and the repository validator
+accepted all 56 sidecars. The owner reports that the complete 100% and 200%
+PNG sets, together with the available 150% PNGs from the partial runs, appear
+visually good. This review is recorded separately from the incomplete 150%
+automation run.
+
 The local run used `CLASSMNGR_SETTINGS_ROOT` pointing into the build tree,
 because the restricted validation environment cannot write the default
 registry-backed `QSettings` location. This override is test-only; the normal
@@ -102,16 +139,22 @@ The generated report recorded:
 - process peak working set: 71.00 MiB;
 - steady-state target: 200 MiB (pass).
 
-This is an idle-stage baseline. It does not establish the separate
-representative peak budget required for import, reporting, PDF, or large-data
-workloads. The
+This is an idle-stage baseline. Representative peak measurements for import,
+reporting, PDF, or large-data workloads are intentionally deferred because
+those feature slices do not exist in this bootstrap stage. The
 [`windows-winui-build.yml`](../../../.github/workflows/windows-winui-build.yml)
 workflow now repeats this x86 Release capture on the hosted runner and uploads
 the JSON report as a separate artifact.
 
-## Open acceptance evidence
+A subsequent local capture is recorded in
+[`phase1-memory-local-x86-release.json`](../../../artifacts/phase1-memory-local-x86-release.json):
+67.52 MiB startup working set and 68.14 MiB steady-state/process peak, also
+within the 200 MiB steady-state target. This remains an idle baseline rather
+than representative feature-workload evidence, and no x86 release peak-budget
+claim is made.
 
-- owner-reviewed light/dark rendering at 100%, 150%, and 200% DPI;
-- interactive keyboard focus and Korean IME composition;
-- representative x86 peak-memory measurements and budget decision;
-- retained Windows Qt visual review.
+## Deferred follow-up evidence
+
+- representative x86 peak-memory measurements and budget decision, to be
+  collected when a realistic feature workload exists and before any x86
+  release-support decision.

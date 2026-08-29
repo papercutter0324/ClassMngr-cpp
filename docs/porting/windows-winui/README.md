@@ -79,8 +79,14 @@ stage separately.
 
 The latest local matrix and memory result, together with the hosted runner
 result, are recorded in the [Phase 1 validation record](phase1-local-validation.md).
-The clean runner gate and retained Linux/macOS validation pass; owner review
-and representative peak-memory evidence remain open for Phase 1 acceptance.
+The clean runner gate, retained Linux/macOS validation, and owner interaction
+review pass. The retained Windows Qt visual target passes at the manually
+selected 100% and 200% display scales; representative peak-memory evidence
+is intentionally deferred until a realistic feature workload exists. Owner
+review of the complete 100% and 200% PNG sets and the
+available 150% PNGs is good and is accepted as a full visual-gate pass. The
+150% automation exposure failures remain documented as an environment
+exception. No x86 release peak-budget claim is made at this bootstrap stage.
 
 To collect the initial idle-process memory evidence for an installed stage,
 run the measurement helper from a Windows desktop session. It records both the
@@ -96,19 +102,17 @@ steady-state sample maximum and the process peak, and enforces the shared
 The generated JSON report is an input to the separate peak-budget decision;
 this bootstrap does not claim an x86 release budget from a single idle sample.
 
-## Remaining Phase 1 evidence
+## Deferred follow-up evidence
 
 The bootstrap source contains a representative Korean text form and explicit
 light/dark, input/focus-contract, manifest, and live-layout DPI smoke modes.
-The following evidence must still be collected before Phase 1 can be accepted:
+The following evidence is intentionally deferred until the corresponding
+feature workloads exist:
 
-- owner-reviewed light/dark, 100%/150%/200% DPI, keyboard focus, and Korean IME
-  results;
 - representative x86 steady-state and peak working-set measurements against
-  the shared 200 MiB target (the latest local idle baseline is 71.00 MiB; the
+  the shared 200 MiB target (the latest local idle baseline is 68.14 MiB; the
   hosted idle report is uploaded, but a representative peak-budget run
-  remains);
-- retained Windows Qt visual review. The hosted retained Linux and macOS Qt
-  build/package checks pass.
+  is deferred until a realistic feature slice exists and must precede any x86
+  release-support decision).
 
 No public updater or installer metadata is changed by this bootstrap.

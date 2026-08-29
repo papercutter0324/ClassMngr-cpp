@@ -78,12 +78,12 @@ Status vocabulary:
 
 ## Progress Dashboard
 
-Last updated: 2026-08-29 (Asia/Seoul)
+Last updated: 2026-08-30 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local and hosted VS 2026/v145 x64/x86 Debug/Release builds and staged smoke tests pass. The retained Qt route passes 68/68 non-visual tests; the explicit 69-test visual lane is 68/69 because this host is at 125% DPI. Hosted Linux x64 and macOS universal retained validation also pass, and the hosted x86 Release idle-memory report is uploaded. Owner-reviewed interaction evidence and representative x86 peak-budget evidence remain. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -94,11 +94,14 @@ Last updated: 2026-08-29 (Asia/Seoul)
 
 ## Current Focus
 
-The active phase is Phase 1. The clean Windows runner checkpoint for the Visual
-Studio 18 2026/v145 bootstrap lane has passed, as have the retained Linux and
-macOS hosted checks. The next accepted checkpoints are owner-reviewed
-interaction evidence and representative x86 peak-memory evidence. It requires
-all of the following:
+Phase 1 is complete. The clean Windows runner checkpoint for the Visual Studio
+18 2026/v145 bootstrap lane passed, as did the retained Linux and macOS hosted
+checks. Owner review accepts the available Qt PNGs, including 150% output, as
+a full visual-gate pass; the 150% native-exposure failures remain documented
+as an automation/environment exception. Representative x86 peak-memory
+evidence is intentionally deferred until a realistic feature slice exists and
+must be collected before any x86 release-support decision. The next active
+phase is Phase 2.
 
 1. Pin a stable Windows App SDK and C++/WinRT toolchain.
 2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
@@ -108,8 +111,9 @@ all of the following:
    for x64 and x86.
 5. Exercise light/dark theme, DPI, keyboard focus, and Korean IME in a small
    representative form.
-6. Measure x86 memory behavior against the shared 200 MiB steady-state target
-   and record worst-case peak usage before considering release support.
+6. Record the x86 idle/steady-state baseline against the shared 200 MiB target;
+   defer representative worst-case peak usage until a realistic feature slice
+   exists and before considering x86 release support.
 7. Keep the retained Windows, macOS, and Linux Qt products green.
 
 The former provisional Win32 shell and Direct2D SDK capability test were
@@ -214,6 +218,14 @@ After meaningful work:
   Debug and Release. The x86 Release idle-memory report was uploaded as a
   separate artifact. The retained Linux x64 Release and macOS universal runs
   also passed their build, package, and upload checks.
+- **2026-08-29 — WinUI owner review passed.** The owner reported all required
+  light/dark, 100%/150%/200% DPI, keyboard-focus, and Korean-IME checks passed
+  against the x64 Release stage. The x64 stage verifier also passed for
+  `dist/ClassMngr-windows-winui-x64/Release`.
+- **2026-08-29 — x86 idle-memory capture refreshed.** The Win32 Release stage
+  recorded 67.52 MiB startup working set and 68.14 MiB steady-state/process
+  peak, within the shared 200 MiB steady-state target. This remains an idle
+  baseline; representative feature-workload peak evidence is still open.
 - **2026-08-29 — Retained Windows Qt validation refreshed.** The startup
   controller still reapplies the loaded font-size setting when its actions are
   connected, and the retained Windows Qt Release product previously rebuilt
@@ -222,6 +234,34 @@ After meaningful work:
   125%-scale visual-capture gate open. Detailed matrix and environment notes
   are in
   [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
+- **2026-08-30 — Retained Windows Qt visual capture rerun at 100%.** After the
+  host display scale was manually set to 100%, the VS 2026/v145 Debug visual
+  target passed its full CTest run in 64.55 seconds. It produced 56 metadata
+  sidecars under
+  `artifacts/phase0/windows-qt-visual/20260829T150959409Z-25956/`, and the
+  repository validator accepted all 56. Owner review of the PNGs is good;
+  representative x86 peak-memory evidence remains open.
+- **2026-08-30 — Retained Windows Qt 150% capture attempted.** The full run
+  and one retry ended with native `qWaitForWindowExposed` failures (57/2 and
+  55/4 passed/failed), not scale assertion failures. The latest partial set
+  has 52 valid 150% sidecars under
+  `artifacts/phase0/windows-qt-visual/20260829T151739696Z-4248/`; it is
+  diagnostic for automation and is not counted as a green automated test
+  gate; the owner visual-gate acceptance is recorded below.
+- **2026-08-30 — Retained Windows Qt visual capture completed at 200%.** The
+  full VS 2026/v145 Debug visual target passed in 75.27 seconds and produced
+  56 valid 200% sidecars under
+  `artifacts/phase0/windows-qt-visual/20260829T152306133Z-24800/`. Owner
+  review reports the complete 100% and 200% PNG sets and the available 150%
+  PNGs appear good. The owner accepts the 150% visual gate despite its
+  documented native-exposure automation exception. Representative x86
+  peak-memory evidence is intentionally deferred until a realistic feature
+  slice exists and before any x86 release-support decision.
+- **2026-08-30 — Representative peak-memory evidence deferred.** The bootstrap
+  has no realistic import, reporting, PDF, or large-data workload, so the
+  representative x86 peak measurement and budget decision are deferred to the
+  first applicable feature slice. The existing idle baseline is retained, and
+  Phase 1 is complete without making an x86 release peak-budget claim.
 
 ## Shared Completion Rules
 
