@@ -20,12 +20,42 @@ target_include_directories(ClassMngrCommonBuildSettings
 add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/semantic_version.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/semantic_version.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/result.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/database_file_format.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_file_format.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/sqlite_database.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sqlite_database.h"
 )
 
 target_link_libraries(ClassMngrEngine
     PUBLIC
         ClassMngrCommonBuildSettings
 )
+
+if(WIN32)
+    # winsqlite3 is the same published SQLite C API used by the portable
+    # implementation and is available for both required Windows platforms.
+    target_link_libraries(ClassMngrEngine
+        PUBLIC
+            winsqlite3
+    )
+else()
+    find_package(SQLite3 REQUIRED)
+    if(TARGET SQLite::SQLite3)
+        target_link_libraries(ClassMngrEngine PUBLIC SQLite::SQLite3)
+    elseif(TARGET SQLite3::SQLite3)
+        target_link_libraries(ClassMngrEngine PUBLIC SQLite3::SQLite3)
+    else()
+        target_include_directories(ClassMngrEngine
+            PUBLIC
+                ${SQLite3_INCLUDE_DIRS}
+        )
+        target_link_libraries(ClassMngrEngine
+            PUBLIC
+                ${SQLite3_LIBRARIES}
+        )
+    endif()
+endif()
 
 # Keep the first extracted slice honest as the native build grows.  This
 # audit runs at configure time, so a future Qt dependency cannot be hidden in
@@ -98,5 +128,39 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineTests
         COMMAND ClassMngrEngineTests
+    )
+
+    add_executable(ClassMngrEngineDatabaseFileFormatTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/database_file_format_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineDatabaseFileFormatTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineDatabaseFileFormatTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineDatabaseFileFormatTests
+        COMMAND ClassMngrEngineDatabaseFileFormatTests
+    )
+
+    add_executable(ClassMngrEngineSqliteDatabaseTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/sqlite_database_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSqliteDatabaseTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSqliteDatabaseTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSqliteDatabaseTests
+        COMMAND ClassMngrEngineSqliteDatabaseTests
     )
 endif()

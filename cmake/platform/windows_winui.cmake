@@ -161,6 +161,18 @@ function(classmngr_add_windows_winui_target)
     if(TARGET ClassMngrEngineTests)
         add_dependencies(${classmngr_winui_target} ClassMngrEngineTests)
     endif()
+    if(TARGET ClassMngrEngineDatabaseFileFormatTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineDatabaseFileFormatTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSqliteDatabaseTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSqliteDatabaseTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

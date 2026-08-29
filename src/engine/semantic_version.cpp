@@ -43,7 +43,7 @@ bool isDigits(std::string_view text)
     return true;
 }
 
-std::expected<int, std::string> parseComponent(
+Result<int> parseComponent(
     std::string_view text,
     std::string_view componentName
     )
@@ -60,9 +60,12 @@ std::expected<int, std::string> parseComponent(
         || result.ptr != text.data() + text.size()
         || value < 0)
     {
-        return std::unexpected(
+        return std::unexpected(Error{
+            result.ec == std::errc::result_out_of_range
+                ? ErrorCode::NumericOverflow
+                : ErrorCode::InvalidFormat,
             "Invalid " + std::string(componentName) + " version."
-            );
+            });
     }
 
     return value;
@@ -80,7 +83,7 @@ SemanticVersion::SemanticVersion(
 {
 }
 
-std::expected<SemanticVersion, std::string> SemanticVersion::parse(
+Result<SemanticVersion> SemanticVersion::parse(
     std::string_view text
     )
 {
@@ -98,7 +101,10 @@ std::expected<SemanticVersion, std::string> SemanticVersion::parse(
         || normalized.find('.', secondSeparator + 1)
             != std::string_view::npos)
     {
-        return std::unexpected("Version must use x.x.x format.");
+        return std::unexpected(Error{
+            ErrorCode::InvalidFormat,
+            "Version must use x.x.x format."
+            });
     }
 
     const std::string_view major = normalized.substr(0, firstSeparator);
@@ -110,7 +116,10 @@ std::expected<SemanticVersion, std::string> SemanticVersion::parse(
 
     if (!isDigits(major) || !isDigits(minor) || !isDigits(patch))
     {
-        return std::unexpected("Version must use x.x.x format.");
+        return std::unexpected(Error{
+            ErrorCode::InvalidFormat,
+            "Version must use x.x.x format."
+            });
     }
 
     const auto parsedMajor = parseComponent(major, "major");

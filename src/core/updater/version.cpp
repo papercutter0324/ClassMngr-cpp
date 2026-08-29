@@ -25,7 +25,7 @@ Result<Version> Version::parse(
     if (!parsed)
     {
         return std::unexpected(
-            QString::fromStdString(parsed.error())
+            QString::fromStdString(parsed.error().message)
             );
     }
 

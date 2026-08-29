@@ -6,6 +6,7 @@
 namespace
 {
 using classmngr::engine::SemanticVersion;
+using classmngr::engine::ErrorCode;
 
 bool expect(
     bool condition,
@@ -35,6 +36,23 @@ int main()
         passed &= expect(parsed->minorVersion() == 2, "minor component changed");
         passed &= expect(parsed->patchVersion() == 3, "patch component changed");
     }
+
+    const auto malformed = SemanticVersion::parse("1.2");
+    passed &= expect(
+        malformed.error().code == ErrorCode::InvalidFormat,
+        "malformed version did not return a typed format error"
+        );
+
+    const auto overflowing = SemanticVersion::parse("2147483648.0.0");
+    passed &= expect(
+        overflowing.error().code == ErrorCode::NumericOverflow,
+        "overflowing version did not return a typed numeric error"
+        );
+
+    passed &= expect(
+        classmngr::engine::errorCodeName(ErrorCode::Database) == "database",
+        "database error code name changed"
+        );
 
     for (const std::string_view invalid : {
              "",

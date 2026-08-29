@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed engine errors, UTF-8 path rules, and the Qt-free SQLite C API foundation are extracted; schema and use-case extraction remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -94,27 +94,23 @@ Last updated: 2026-08-30 (Asia/Seoul)
 
 ## Current Focus
 
-Phase 1 is complete. The clean Windows runner checkpoint for the Visual Studio
-18 2026/v145 bootstrap lane passed, as did the retained Linux and macOS hosted
-checks. Owner review accepts the available Qt PNGs, including 150% output, as
-a full visual-gate pass; the 150% native-exposure failures remain documented
-as an automation/environment exception. Representative x86 peak-memory
-evidence is intentionally deferred until a realistic feature slice exists and
-must be collected before any x86 release-support decision. The next active
-phase is Phase 2.
+Phase 1 is complete and Phase 2 is now in progress. The Qt-free engine already
+contains the `SemanticVersion` seed slice and typed standard-library result and
+error contracts. The first database slices now move file-format rules and a
+SQLite connection/transaction boundary behind Qt-free APIs, with the retained
+Qt code still operational. The next active gate is schema migration and
+`OpenDatabase` use-case extraction with cross-platform fixture evidence.
 
-1. Pin a stable Windows App SDK and C++/WinRT toolchain.
-2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
-   discover or load Qt.
-3. Prove x64 and x86 Debug and Release builds from a clean machine/runner.
-4. Prove architecture-correct, unpackaged, self-contained staging and launch
-   for x64 and x86.
-5. Exercise light/dark theme, DPI, keyboard focus, and Korean IME in a small
-   representative form.
-6. Record the x86 idle/steady-state baseline against the shared 200 MiB target;
-   defer representative worst-case peak usage until a realistic feature slice
-   exists and before considering x86 release support.
-7. Keep the retained Windows, macOS, and Linux Qt products green.
+1. Extend the typed engine error contract where schema and persistence slices
+   need domain-specific diagnostics.
+2. Extract the existing schema manager into portable migrations with prepared
+   statements, transactions, busy handling, and rollback evidence.
+3. Extract `OpenDatabase` and the first representative CRUD use case so both
+   presentation stacks consume engine workflows rather than repositories.
+4. Add headless x64/x86 engine tests for schema creation, migration,
+   rollback, and representative database round trips.
+5. Keep the retained Qt adapters and Windows, Linux, and macOS Qt suites
+   green while each slice moves.
 
 The former provisional Win32 shell and Direct2D SDK capability test were
 removed after equivalent WinUI build, manifest, deployment, and smoke-test
@@ -134,6 +130,10 @@ coverage was established. Historical evidence remains under
 - The former provisional native-shell evidence is retained only as historical
   material under `docs/porting/windows-direct2d`; active Windows bootstrap
   validation is now owned by the WinUI lane.
+- The Qt-free engine contains the `SemanticVersion` seed slice, typed result /
+  error contracts, the UTF-8 database file-format contract, and the SQLite C
+  API foundation. The entry-slice test result is recorded in
+  [`phase2-local-validation.md`](../../docs/porting/windows-winui/phase2-local-validation.md).
 
 Historical evidence remains under
 [`docs/porting/windows-direct2d`](../../docs/porting/windows-direct2d/README.md).
@@ -262,6 +262,26 @@ After meaningful work:
   representative x86 peak measurement and budget decision are deferred to the
   first applicable feature slice. The existing idle baseline is retained, and
   Phase 1 is complete without making an x86 release peak-budget claim.
+- **2026-08-30 — Phase 2 started.** The database file-format rules were
+  extracted into the Qt-free engine as a UTF-8 standard-library contract. The
+  retained Qt implementation is now an adapter, and dedicated x64 Debug and
+  x86 Release headless engine tests pass. Portable SQLite/session/schema and
+  use-case extraction remain; Phase 2 is not complete. Detailed evidence is
+  in [`phase2-local-validation.md`](../../docs/porting/windows-winui/phase2-local-validation.md).
+- **2026-08-30 — Portable database foundation added.** `ClassMngrEngine` now
+  exposes typed errors, an opaque SQLite database boundary, prepared UTF-8
+  parameter binding, typed row mapping, a five-second busy timeout, foreign
+  key setup, schema-version primitives, and RAII transactions. Windows uses
+  the architecture-correct Windows SDK `winsqlite3` library; non-Windows
+  configuration uses CMake's SQLite3 target. All four local Windows engine
+  lanes pass the new SQLite test. Schema migration and `OpenDatabase` remain
+  open, so Phase 2 is not complete.
+- **2026-08-30 — Phase 2 foundation integrated validation.** The x64 Debug
+  CTest sweep passed all three headless engine suites and both WinUI staging /
+  manifest checks. The x64 Debug and x86 Release staged WinUI targets rebuilt
+  with the architecture-matched SQLite dependency, and the narrowed engine
+  source audit found no Qt, WinUI, WinRT, Direct2D/DirectWrite, or Win32 UI
+  dependency.
 
 ## Shared Completion Rules
 

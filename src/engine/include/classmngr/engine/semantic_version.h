@@ -1,7 +1,8 @@
 #pragma once
 
+#include "classmngr/engine/result.h"
+
 #include <compare>
-#include <expected>
 #include <string>
 #include <string_view>
 
@@ -18,7 +19,7 @@ public:
         int patchVersion
         );
 
-    [[nodiscard]] static std::expected<SemanticVersion, std::string> parse(
+    [[nodiscard]] static Result<SemanticVersion> parse(
         std::string_view text
         );
 
