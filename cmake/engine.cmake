@@ -46,6 +46,15 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/gs_team_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_member.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_info_config.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_config.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_time_validator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_time_validator.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_info_validator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_validator.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_info_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_service.h"
 )
 
 target_link_libraries(ClassMngrEngine
@@ -268,5 +277,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineGsTeamServiceTests
         COMMAND ClassMngrEngineGsTeamServiceTests
+    )
+
+    add_executable(ClassMngrEngineClassInfoServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_info_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassInfoServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassInfoServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassInfoServiceTests
+        COMMAND ClassMngrEngineClassInfoServiceTests
     )
 endif()

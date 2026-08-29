@@ -203,6 +203,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineGsTeamServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineClassInfoServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassInfoServiceTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

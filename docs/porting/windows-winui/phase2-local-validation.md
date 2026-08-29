@@ -48,6 +48,14 @@ the existing directory normalization, position-priority ordering,
 case-insensitive duplicate-name rules, parameterized upserts/deletes, and
 atomic save behavior for the native-English and GS-team tables.
 
+The class-information slice now includes Qt-free `ClassTime` and `ClassInfo`
+models, the canonical grade/level/book configuration, schedule and class-info
+validators, and a validated `ClassInfoService` boundary. It preserves
+case-insensitive choice normalization, strict 24-hour and 12-hour schedule
+parsing, duplicate-slot and interval-order diagnostics, color and note-length
+rules, teacher-join read fields, empty-class defaults, and one transaction for
+the class row plus regular and intensive time rows.
+
 ## Local validation
 
 | Lane | Result |
@@ -81,21 +89,27 @@ atomic save behavior for the native-English and GS-team tables.
 | Windows x64 Release GS-team directory test | Passed: `ClassMngrEngineGsTeamServiceTests` |
 | Windows x86 Debug GS-team directory test | Passed: `ClassMngrEngineGsTeamServiceTests` |
 | Windows x86 Release GS-team directory test | Passed: `ClassMngrEngineGsTeamServiceTests` |
+| Windows x64 Debug class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
+| Windows x64 Release class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
+| Windows x86 Debug class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
+| Windows x86 Release class-information service test | Passed: `ClassMngrEngineClassInfoServiceTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
+| Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 
 All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. Each lane's integrated
-sweep passed all eight engine suites plus both WinUI staging and manifest checks.
-The retained Qt adapter compiled and passed its existing Qt test, and all four
-staged WinUI targets rebuilt successfully with the new engine dependency. The
-x64 Debug retained Qt schema-manager, updater, and teacher-import tests also
-passed against the expanded engine library. A narrowed source audit found no
-Qt, WinUI, WinRT, Direct2D/DirectWrite, or Win32 UI dependency in `src/engine`.
+sweep passed all nine engine suites plus both WinUI staging and manifest checks.
+The new class-information implementation compiled and passed in all four
+engine lanes, and all four staged WinUI targets rebuilt successfully with the
+new engine dependency. The retained Qt class-information lifecycle regression
+also passed, alongside the existing schema-manager, updater, and
+teacher-import coverage. A narrowed source audit found no Qt, WinUI, WinRT,
+Direct2D/DirectWrite, or Win32 UI dependency in `src/engine`.
 
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The next work is
-extracting the remaining domain models and validators, migrating imports and
+extracting schedule conflict and aggregate read models, migrating imports and
 report models, connecting retained Qt adapters to the new use-case boundaries,
-and producing a cross-platform fixture round trip.
+and producing cross-platform fixture round trips.
