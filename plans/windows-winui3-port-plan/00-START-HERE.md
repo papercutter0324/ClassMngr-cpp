@@ -83,7 +83,7 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local VS 2026/v145 x64/x86 Debug/Release builds and staged smoke tests pass. The retained Qt route passes 68/68 non-visual tests; the explicit 69-test visual lane is 68/69 because this host is at 125% DPI. The hosted lane now captures an x86 Release idle-memory report; runner execution, owner-reviewed interaction evidence, and representative x86 peak-budget evidence remain. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Local and hosted VS 2026/v145 x64/x86 Debug/Release builds and staged smoke tests pass. The retained Qt route passes 68/68 non-visual tests; the explicit 69-test visual lane is 68/69 because this host is at 125% DPI. Linux x64 retained validation also passes; the hosted x86 Release idle-memory report is uploaded. Owner-reviewed interaction evidence and representative x86 peak-budget evidence remain. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -94,10 +94,11 @@ Last updated: 2026-08-29 (Asia/Seoul)
 
 ## Current Focus
 
-The active phase is Phase 1. The next accepted checkpoint is a clean Windows
-runner execution of the Visual Studio 18 2026/v145 bootstrap lane, followed by
+The active phase is Phase 1. The clean Windows runner checkpoint for the Visual
+Studio 18 2026/v145 bootstrap lane has passed. The next accepted checkpoints are
 owner-reviewed interaction evidence and representative x86 peak-memory
-evidence. It requires all of the following:
+evidence; the retained macOS hosted check is still running. It requires all of
+the following:
 
 1. Pin a stable Windows App SDK and C++/WinRT toolchain.
 2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
@@ -207,6 +208,12 @@ After meaningful work:
   after stage verification. A representative import/report/PDF/large-data
   peak workload remains intentionally open because the bootstrap has no such
   feature slice yet.
+- **2026-08-29 — Hosted Windows bootstrap gate passed.** GitHub Actions run #2
+  on `windows-2025-vs2026` passed the VS 2026/v145 preflight, configure, build,
+  Qt-free cache, CTest, self-contained-stage, and upload steps for x64 and x86
+  Debug and Release. The x86 Release idle-memory report was uploaded as a
+  separate artifact. The retained Linux x64 Release run also passed; the
+  retained macOS universal run is still in progress.
 - **2026-08-29 — Retained Windows Qt validation refreshed.** The startup
   controller still reapplies the loaded font-size setting when its actions are
   connected, and the retained Windows Qt Release product previously rebuilt

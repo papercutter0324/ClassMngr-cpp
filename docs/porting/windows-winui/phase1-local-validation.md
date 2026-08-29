@@ -40,6 +40,18 @@ corresponding Debug stages were also re-verified successfully. Each WinUI CTest
 lane additionally verifies the generated resource manifest against the catalog
 file list, sizes, and SHA-256 hashes.
 
+## Hosted runner validation
+
+Commit `e4887b6` was validated by GitHub Actions run #2 on the
+`windows-2025-vs2026` runner. The x64 and x86 Debug and Release jobs all passed
+the VS 2026/v145 preflight, configure, build, Qt-free cache, CTest,
+self-contained-stage, and artifact-upload steps. The x86 Release job also
+uploaded `ClassMngr-windows-winui-x86-Release-memory`.
+
+The retained Linux x64 Release workflow passed its build, package, and artifact
+upload checks for the same revision. The retained macOS universal workflow was
+still running when this record was written.
+
 ## Retained Windows Qt validation
 
 The normal retained Windows Qt Debug route contains 68 tests; all 68 passed
@@ -98,8 +110,8 @@ the JSON report as a separate artifact.
 
 ## Open acceptance evidence
 
-- clean execution on the `windows-2025-vs2026` GitHub runner;
 - owner-reviewed light/dark rendering at 100%, 150%, and 200% DPI;
 - interactive keyboard focus and Korean IME composition;
 - representative x86 peak-memory measurements and budget decision;
-- retained Windows, Linux, and macOS Qt validation after the lane lands.
+- retained Windows Qt visual review, plus completion of the retained macOS
+  hosted validation.
