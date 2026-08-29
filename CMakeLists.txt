@@ -28,7 +28,12 @@ option(CLASSMNGR_BUILD_QT_DESKTOP
 )
 
 option(CLASSMNGR_BUILD_WINDOWS_NATIVE
-    "Build the Windows-native desktop shell"
+    "Build the provisional Windows-native desktop shell"
+    OFF
+)
+
+option(CLASSMNGR_BUILD_WINDOWS_WINUI
+    "Build the Windows WinUI 3 desktop application"
     OFF
 )
 
@@ -47,6 +52,12 @@ if(CLASSMNGR_BUILD_WINDOWS_NATIVE AND NOT WIN32)
     )
 endif()
 
+if(CLASSMNGR_BUILD_WINDOWS_WINUI AND NOT WIN32)
+    message(FATAL_ERROR
+        "CLASSMNGR_BUILD_WINDOWS_WINUI is supported only on Windows."
+    )
+endif()
+
 if(CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION
    AND (NOT WIN32 OR NOT CLASSMNGR_BUILD_QT_DESKTOP))
     message(FATAL_ERROR
@@ -54,9 +65,11 @@ if(CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION
     )
 endif()
 
-if(NOT CLASSMNGR_BUILD_QT_DESKTOP AND NOT CLASSMNGR_BUILD_WINDOWS_NATIVE)
+if(NOT CLASSMNGR_BUILD_QT_DESKTOP
+   AND NOT CLASSMNGR_BUILD_WINDOWS_NATIVE
+   AND NOT CLASSMNGR_BUILD_WINDOWS_WINUI)
     message(FATAL_ERROR
-        "At least one product must be enabled: Qt desktop or Windows native."
+        "At least one product must be enabled: Qt desktop, Windows native, or Windows WinUI."
     )
 endif()
 
@@ -178,6 +191,7 @@ configure_file(
 
 message(STATUS "ClassMngr Qt desktop: ${CLASSMNGR_BUILD_QT_DESKTOP}")
 message(STATUS "ClassMngr Windows native: ${CLASSMNGR_BUILD_WINDOWS_NATIVE}")
+message(STATUS "ClassMngr Windows WinUI: ${CLASSMNGR_BUILD_WINDOWS_WINUI}")
 message(STATUS "ClassMngr Windows Qt transition: ${CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION}")
 
 # The portable engine is deliberately configured before either presentation
@@ -369,4 +383,11 @@ if(CLASSMNGR_BUILD_WINDOWS_NATIVE)
         licenses/fonts/just-another-hand/LICENSE.txt
         DESTINATION licenses/fonts/just-another-hand
     )
+endif()
+
+if(CLASSMNGR_BUILD_WINDOWS_WINUI)
+    include(cmake/platform/windows_winui.cmake)
+    include(cmake/native_resources.cmake)
+
+    classmngr_add_windows_winui_target()
 endif()

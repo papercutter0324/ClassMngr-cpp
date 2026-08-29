@@ -127,6 +127,70 @@
       }
     },
     {
+      "name": "windows-x64-winui-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
+        "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x64"
+      }
+    },
+    {
+      "name": "windows-x64-winui-debug",
+      "displayName": "Windows x64 WinUI Debug",
+      "inherits": "windows-x64-winui-base"
+    },
+    {
+      "name": "windows-x64-winui-release",
+      "displayName": "Windows x64 WinUI Release",
+      "inherits": "windows-x64-winui-base",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "windows-x86-winui-base",
+      "hidden": true,
+      "inherits": "windows-msvc-base",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "Win32",
+        "strategy": "set"
+      },
+      "cacheVariables": {
+        "CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION": "10.0.26100.0",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "CLASSMNGR_BUILD_QT_DESKTOP": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_QT_TRANSITION": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_NATIVE": "OFF",
+        "CLASSMNGR_BUILD_WINDOWS_WINUI": "ON",
+        "CLASSMNGR_WINDOWS_WINUI_STAGE_ROOT": "${sourceDir}/dist/ClassMngr-windows-winui-x86"
+      }
+    },
+    {
+      "name": "windows-x86-winui-debug",
+      "displayName": "Windows x86 WinUI Debug",
+      "inherits": "windows-x86-winui-base"
+    },
+    {
+      "name": "windows-x86-winui-release",
+      "displayName": "Windows x86 WinUI Release",
+      "inherits": "windows-x86-winui-base",
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
       "name": "windows-arm64-base",
       "hidden": true,
       "inherits": [
@@ -251,6 +315,38 @@
       "name": "windows-x64-native-release",
       "configurePreset": "windows-x64-native-release",
       "configuration": "Release"
+    },
+    {
+      "name": "windows-x64-winui-debug",
+      "configurePreset": "windows-x64-winui-debug",
+      "configuration": "Debug",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x64-winui-release",
+      "configurePreset": "windows-x64-winui-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x86-winui-debug",
+      "configurePreset": "windows-x86-winui-debug",
+      "configuration": "Debug",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
+    },
+    {
+      "name": "windows-x86-winui-release",
+      "configurePreset": "windows-x86-winui-release",
+      "configuration": "Release",
+      "targets": [
+        "ClassMngrWindowsWinUI"
+      ]
     },
     {
       "name": "windows-x64-native-release-install",

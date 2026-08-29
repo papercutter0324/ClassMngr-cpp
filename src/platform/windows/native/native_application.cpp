@@ -81,7 +81,7 @@ int NativeApplication::run(const std::vector<std::wstring>& arguments)
     {
         MessageBoxW(
             nullptr,
-            L"ClassMngr Native requires Windows 10 version 1703 (build 15063) or later.",
+            L"ClassMngr Native requires Windows 10 version 1809 (build 17763) or later.",
             L"ClassMngr Native",
             MB_OK | MB_ICONERROR
             );
@@ -198,7 +198,7 @@ bool NativeApplication::isSupportedWindowsVersion() const
 
     return version.dwMajorVersion > 10
         || (version.dwMajorVersion == 10
-            && version.dwBuildNumber >= 15063);
+            && version.dwBuildNumber >= 17763);
 }
 
 bool NativeApplication::verifyEmbeddedManifest() const

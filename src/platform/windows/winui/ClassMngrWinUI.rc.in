@@ -1,0 +1,5 @@
+#include <windows.h>
+
+#define IDI_CLASSMNGR_WINUI 101
+
+IDI_CLASSMNGR_WINUI ICON "@PROJECT_SOURCE_DIR@/resources/assets/icons/app_icon.ico"

@@ -83,7 +83,7 @@ Last updated: 2026-08-29 (Asia/Seoul)
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
-| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Qt-free engine/build split, minimal Win32 shell, native staging, and local tests exist. Replace the provisional shell with a pinned WinUI 3 C++/WinRT app and prove self-contained x64/x86 builds. |
+| [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **In progress** | Pinned WinUI 3 C++/WinRT project, engine-backed representative form, self-contained staging scripts, x64/x86 presets, and CI are present. Clean runner builds, interactive evidence, and x86 memory measurements remain. |
 | [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **Not started** | `SemanticVersion` is the seed slice; database and use-case extraction remain. |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
@@ -94,8 +94,9 @@ Last updated: 2026-08-29 (Asia/Seoul)
 
 ## Current Focus
 
-The active phase is Phase 1. The next accepted checkpoint requires all of the
-following:
+The active phase is Phase 1. The next accepted checkpoint is now a clean Windows
+runner execution of the bootstrap lane, followed by the remaining interactive
+and memory evidence. It requires all of the following:
 
 1. Pin a stable Windows App SDK and C++/WinRT toolchain.
 2. Add a WinUI 3 XAML application that calls `ClassMngrEngine` and does not
@@ -132,6 +133,9 @@ Historical evidence remains under
 The directory name records the original approach; it does not define the new
 presentation architecture.
 
+The current WinUI bootstrap evidence and pinned inputs are recorded under
+[`docs/porting/windows-winui`](../../docs/porting/windows-winui/README.md).
+
 ## Progress Update Rule
 
 After meaningful work:
@@ -154,6 +158,11 @@ After meaningful work:
 - **2026-08-29 — x86 build support added.** Phase 1 now requires x64 and x86
   Debug/Release builds, tests, and self-contained staging. x64 remains the
   release gate; publishing an x86 installer remains a separate decision.
+- **2026-08-29 — WinUI bootstrap lane added.** A pinned Windows App SDK /
+  C++/WinRT MSBuild project now contains the real XAML shell, calls the
+  Qt-free engine, and has architecture-specific self-contained staging,
+  smoke verification, and x64/x86 CI presets. Runner and owner-reviewed
+  interaction evidence remain open.
 
 ## Shared Completion Rules
 

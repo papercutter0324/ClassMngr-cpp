@@ -95,7 +95,10 @@ cmake --build --preset windows-x64-release-install
 
 Release presets run `windeployqt` after building. The install preset copies the standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins, QML files, and license files.
 
-ClassMngr supports x64 and ARM64 Windows; it does not produce a Win32 build. Build an x64 installer with:
+The retained Qt product supports x64 and ARM64 Windows; it does not produce a
+Win32 public installer. The WinUI Phase 1 lane separately builds and tests an
+x86/Win32 stage, but that stage is not a public installer target. Build an x64
+installer with:
 
 ```powershell
 cmake --build --preset windows-x64-release-installer
@@ -112,6 +115,33 @@ To build every locally available Windows installer and its SHA-256 checksum file
 Installers are written under `dist` as `ClassMngr-<version>-win-{x64,arm64}.exe`. They install the matching Visual C++ runtime prerequisite and support in-place upgrades through a shared application identity.
 
 The Windows presets use the Visual Studio generator configured in `CMakePresets.json`. If CMake reports that the generator is not installed, either install the matching Visual Studio or Build Tools version, or update the preset to the Visual Studio generator installed on your machine.
+
+### WinUI 3 Phase 1 bootstrap
+
+The isolated Windows WinUI lane is unpackaged and self-contained. It does not
+discover or deploy Qt. It requires Visual Studio 2022 with the Desktop
+development with C++ workload, the Windows 10.0.26100.0 SDK, CMake, NuGet, and
+PowerShell. The project pins the stable
+[`Microsoft.WindowsAppSDK` 2.4.0](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads),
+[`Microsoft.Windows.CppWinRT` 3.0.260818.1](https://www.nuget.org/packages/Microsoft.Windows.CppWinRT/3.0.260818.1),
+and [`Microsoft.Windows.SDK.BuildTools` 10.0.26100.4654](https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools/10.0.26100.4654)
+packages in `src/platform/windows/winui/packages.config`.
+
+From a Visual Studio Developer PowerShell, build and test the x64 Debug
+bootstrap with:
+
+```powershell
+cmake --preset windows-x64-winui-debug
+cmake --build --preset windows-x64-winui-debug --parallel 2
+ctest --test-dir build/windows-x64-winui-debug -C Debug --output-on-failure
+```
+
+The x64 Release lane and the required x86/Win32 lanes use the corresponding
+`windows-x64-winui-release`, `windows-x86-winui-debug`, and
+`windows-x86-winui-release` presets. Each stage is written below
+`dist/ClassMngr-windows-winui-{x64,x86}/<Debug|Release>` and is verified by
+`scripts/verify_windows_winui_stage.ps1`. The x86 stage is a build-and-test
+artifact only; it is not a public installer target.
 
 ## macOS
 
