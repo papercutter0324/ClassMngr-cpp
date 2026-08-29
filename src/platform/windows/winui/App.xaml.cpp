@@ -143,29 +143,41 @@ void App::OnLaunched(
     const bool smokeTest = commandLineContains(L"--phase1-smoke-test");
     const bool inputTest = commandLineContains(L"--phase1-input-test");
     const bool themeTest = commandLineContains(L"--phase1-theme-test");
-    if (smokeTest || inputTest || themeTest)
+    const bool dpiTest = commandLineContains(L"--phase1-dpi-test");
+    if (smokeTest || inputTest || themeTest || dpiTest)
     {
-        const bool queued = m_window.DispatcherQueue().TryEnqueue(
-            [this, smokeTest, inputTest, themeTest]() {
-                auto* mainWindow = winrt::get_self<MainWindow>(
-                    m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
-                    );
-                bool passed = true;
-                if (smokeTest)
-                {
-                    passed = mainWindow->runPhase1SmokeChecks();
-                }
-                else if (inputTest)
-                {
-                    passed = mainWindow->runPhase1InputChecks();
-                }
-                else if (themeTest)
-                {
-                    passed = mainWindow->runPhase1ThemeChecks();
-                }
-                scheduleTestExit(m_window, passed);
+        const auto runChecks = [this, smokeTest, inputTest, themeTest, dpiTest]() {
+            auto* mainWindow = winrt::get_self<MainWindow>(
+                m_window.as<::winrt::ClassMngrWinUI::MainWindow>()
+                );
+            bool passed = true;
+            if (smokeTest)
+            {
+                passed = mainWindow->runPhase1SmokeChecks();
             }
-            );
+            else if (inputTest)
+            {
+                passed = mainWindow->runPhase1InputChecks();
+            }
+            else if (themeTest)
+            {
+                passed = mainWindow->runPhase1ThemeChecks();
+            }
+            else if (dpiTest)
+            {
+                passed = mainWindow->runPhase1DpiChecks();
+            }
+            scheduleTestExit(m_window, passed);
+        };
+
+        const bool queued = dpiTest
+            ? m_window.DispatcherQueue().TryEnqueue(
+                Microsoft::UI::Dispatching::DispatcherQueuePriority::Low,
+                runChecks
+                )
+            : m_window.DispatcherQueue().TryEnqueue(
+                runChecks
+                );
         if (!queued)
         {
             ExitProcess(ERROR_INVALID_DATA);

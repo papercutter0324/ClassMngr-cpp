@@ -31,7 +31,12 @@ architecture-specific executable and Windows App SDK runtime payload.
 
 The stage verifier also passed the embedded-manifest, compiled-XAML/MRT,
 architecture, self-contained-runtime, and Qt-absence checks for each tested
-lane. The WinUI-only CMake caches contain no Qt package entries.
+lane. Its input smoke mode now verifies the text input scope used by the
+Korean-language form, and its DPI smoke mode verifies a live XamlRoot scale and
+non-zero layout. The WinUI-only CMake caches contain no Qt package entries.
+The x64 and Win32/x86 Release stages were subsequently re-verified; each
+passed the manifest, engine, input, theme, and DPI smoke modes. The
+corresponding Debug stages were also re-verified successfully.
 
 ## Retained Windows Qt validation
 

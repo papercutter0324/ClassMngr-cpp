@@ -56,7 +56,26 @@ bool MainWindow::runPhase1InputChecks()
         Microsoft::UI::Xaml::FocusState::Programmatic
         );
 
+    const auto inputScope = NameTextBox().InputScope();
+    if (!inputScope)
+    {
+        return false;
+    }
+
+    bool hasTextInputScope = false;
+    const auto inputScopeNames = inputScope.Names();
+    for (uint32_t index = 0; index < inputScopeNames.Size(); ++index)
+    {
+        if (inputScopeNames.GetAt(index).NameValue()
+            == Microsoft::UI::Xaml::Input::InputScopeNameValue::Text)
+        {
+            hasTextInputScope = true;
+            break;
+        }
+    }
+
     return NameTextBox().Text() == winrt::hstring(L"한글 입력")
+        && hasTextInputScope
         && NameTextBox().IsTabStop()
         && NameTextBox().TabIndex() == 0
         && ContinueButton().IsTabStop()
@@ -75,6 +94,15 @@ bool MainWindow::runPhase1ThemeChecks()
 
     RootGrid().RequestedTheme(Microsoft::UI::Xaml::ElementTheme::Default);
     return lightTheme && darkTheme;
+}
+
+bool MainWindow::runPhase1DpiChecks()
+{
+    const auto xamlRoot = RootGrid().XamlRoot();
+    return static_cast<bool>(xamlRoot)
+        && xamlRoot.RasterizationScale() > 0.0
+        && RootGrid().ActualWidth() > 0.0
+        && RootGrid().ActualHeight() > 0.0;
 }
 
 void MainWindow::ContinueButton_Click(

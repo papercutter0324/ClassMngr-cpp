@@ -99,8 +99,9 @@ this bootstrap does not claim an x86 release budget from a single idle sample.
 ## Remaining Phase 1 evidence
 
 The bootstrap source contains a representative Korean text form and explicit
-light/dark, focus, and manifest smoke modes. The following evidence must still
-be collected on a Windows runner before Phase 1 can be accepted:
+light/dark, input/focus-contract, manifest, and live-layout DPI smoke modes.
+The following evidence must still be collected on a Windows runner before
+Phase 1 can be accepted:
 
 - clean x64 and x86 Debug/Release builds and launches (the local matrix now
   passes; clean-runner confirmation remains);

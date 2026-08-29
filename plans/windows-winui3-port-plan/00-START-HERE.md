@@ -183,6 +183,11 @@ After meaningful work:
   DPI/keyboard-focus/Korean-IME owner review, and representative peak-budget
   evidence remain open. Detailed results are in
   [`phase1-local-validation.md`](../../docs/porting/windows-winui/phase1-local-validation.md).
+- **2026-08-29 — All WinUI stages re-verified locally.** The staged x64 and
+  Win32/x86 Debug and Release applications each passed the manifest,
+  architecture, self-contained-runtime, Qt-absence, engine, input, theme, and
+  DPI checks. Hosted runner execution and owner-reviewed interactive evidence
+  remain open.
 - **2026-08-29 — Retained Windows Qt validation refreshed.** After rebuilding
   the stale fixture and startup-settings test targets, the Windows Qt Debug
   CTest suite ran all 69 tests successfully, including the visual-capture and

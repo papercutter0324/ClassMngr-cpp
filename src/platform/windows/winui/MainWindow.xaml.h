@@ -15,6 +15,7 @@ struct MainWindow : MainWindowT<MainWindow>
     [[nodiscard]] bool runPhase1SmokeChecks();
     [[nodiscard]] bool runPhase1InputChecks();
     [[nodiscard]] bool runPhase1ThemeChecks();
+    [[nodiscard]] bool runPhase1DpiChecks();
 
     void ContinueButton_Click(
         Windows::Foundation::IInspectable const& sender,
