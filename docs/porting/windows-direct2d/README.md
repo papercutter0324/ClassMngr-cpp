@@ -1,10 +1,11 @@
-# Windows Direct2D/DirectComposition port — Phase 0
+# Windows Native Port — Phase 0 Historical Evidence
 
 This directory freezes the Qt Windows application's externally observable
-contracts before the native Windows target is introduced. It is the working
-evidence for Phase 0 of
-[`plans/windows-direct2d-directcomposition-port-plan.md`](../../../plans/windows-direct2d-directcomposition-port-plan.md),
-not a claim that the Phase 0 exit gate has passed.
+contracts before the native Windows target is introduced. It is retained as
+the accepted Phase 0 evidence for the
+[WinUI 3 port plan](../../../plans/windows-winui3-port-plan/00-START-HERE.md).
+The directory name records the original Direct2D/DirectComposition direction;
+it does not prescribe the replacement presentation framework.
 
 The source inventory was taken from revision `48fc5c5`, the branch state before
 the Phase 0 additions. Update
@@ -35,11 +36,15 @@ support are also deferred from the current roadmap.
 - [Current cross-device status and handoff](current-status.md) — validated
   revision, evidence provenance, remaining Phase 0 work, and reproduction
   commands.
-- [Port foundation ADR](../adr/0001-windows-native-port-foundations.md) — the
-  frozen architectural choices that constrain all later phases.
-- [Detailed Phase 1 CMake-port plan](../../../plans/windows-direct2d-phase-1-cmake-port-plan.md)
-  — target boundaries, migration order, validation, and release isolation for
-  the next implementation phase.
+- [Original port foundation ADR](../adr/0001-windows-native-port-foundations.md)
+  — retained engine, data-contract, and isolation foundations plus the
+  superseded Direct2D presentation decision.
+- [Current WinUI 3 presentation ADR](../adr/0002-winui3-windows-presentation.md)
+  — the Windows UI, support-floor, and deployment choices that govern the
+  current plan.
+- [Current WinUI 3 Phase 1 plan](../../../plans/windows-winui3-port-plan/phase-1-winui-bootstrap.md)
+  — target boundaries, Windows App SDK bootstrap, validation, and release
+  isolation for the active implementation phase.
 
 ## Current status
 

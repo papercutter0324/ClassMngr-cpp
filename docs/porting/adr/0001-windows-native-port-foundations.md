@@ -1,9 +1,15 @@
 # ADR 0001: Windows native port foundations
 
-- Status: accepted for the port.
+- Status: superseded in part by
+  [ADR 0002](0002-winui3-windows-presentation.md).
 - Date: 2026-08-23
 - Scope: `ClassMngrWindowsNative` after Phase 1; the existing Qt products are
   unchanged by this ADR.
+
+ADR 0002 replaces this record's Direct2D/DirectComposition presentation,
+Windows 10 version 1703 floor, custom semantic control tree, and editable-text
+decisions. The portable engine, shared data-contract, and development-isolation
+decisions remain in force as historical foundations.
 
 ## Decision
 

@@ -1,6 +1,11 @@
-# Windows Direct2D/DirectComposition port — current status
+# Windows Native Port — Historical Phase 0/1 Handoff
 
 Last recorded: 2026-08-29 (Asia/Seoul)
+
+> This file preserves the evidence state at the point the presentation
+> direction changed from a custom Direct2D/DirectComposition UI to WinUI 3.
+> Current progress is tracked only in
+> [`plans/windows-winui3-port-plan/00-START-HERE.md`](../../../plans/windows-winui3-port-plan/00-START-HERE.md).
 
 This is the cross-device handoff for the Windows port. The Phase 0 baseline
 gate was accepted by the product owner on 2026-08-29. Phase 1 build-split work
@@ -261,4 +266,4 @@ and the checked-in contracts with:
 - [Baseline results](phase-0/baseline-results.md)
 - [Capture ledger](phase-0/capture-ledger.csv)
 - [Performance baseline](phase-0/performance-baseline.md)
-- [Port plan](../../../plans/windows-direct2d-directcomposition-port-plan.md)
+- [Current WinUI 3 port plan](../../../plans/windows-winui3-port-plan/00-START-HERE.md)
