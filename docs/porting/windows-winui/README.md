@@ -77,10 +77,10 @@ Release presets keep the engine and staged WinUI tests enabled. The CI matrix
 exercises all four architecture/configuration combinations and uploads each
 stage separately.
 
-The latest local matrix and memory result are recorded in the
-[Phase 1 local validation record](phase1-local-validation.md). It is evidence
-for the bootstrap lane, not a Phase 1 acceptance record; interactive and clean
-runner gates remain open.
+The latest local matrix and memory result, together with the hosted runner
+result, are recorded in the [Phase 1 validation record](phase1-local-validation.md).
+The clean runner gate and retained Linux/macOS validation pass; owner review
+and representative peak-memory evidence remain open for Phase 1 acceptance.
 
 To collect the initial idle-process memory evidence for an installed stage,
 run the measurement helper from a Windows desktop session. It records both the
@@ -100,16 +100,15 @@ this bootstrap does not claim an x86 release budget from a single idle sample.
 
 The bootstrap source contains a representative Korean text form and explicit
 light/dark, input/focus-contract, manifest, and live-layout DPI smoke modes.
-The following evidence must still be collected on a Windows runner before
-Phase 1 can be accepted:
+The following evidence must still be collected before Phase 1 can be accepted:
 
-- clean x64 and x86 Debug/Release builds and launches (the local matrix now
-  passes; clean-runner confirmation remains);
 - owner-reviewed light/dark, 100%/150%/200% DPI, keyboard focus, and Korean IME
   results;
 - representative x86 steady-state and peak working-set measurements against
-  the shared 200 MiB target (the latest local idle baseline is 71.00 MiB; a
-  representative peak-budget run remains);
-- retained Windows, macOS, and Linux Qt validation after the new lane lands.
+  the shared 200 MiB target (the latest local idle baseline is 71.00 MiB; the
+  hosted idle report is uploaded, but a representative peak-budget run
+  remains);
+- retained Windows Qt visual review. The hosted retained Linux and macOS Qt
+  build/package checks pass.
 
 No public updater or installer metadata is changed by this bootstrap.

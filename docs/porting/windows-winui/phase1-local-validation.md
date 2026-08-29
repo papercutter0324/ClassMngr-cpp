@@ -42,15 +42,16 @@ file list, sizes, and SHA-256 hashes.
 
 ## Hosted runner validation
 
-Commit `e4887b6` was validated by GitHub Actions run #2 on the
-`windows-2025-vs2026` runner. The x64 and x86 Debug and Release jobs all passed
-the VS 2026/v145 preflight, configure, build, Qt-free cache, CTest,
+Commit `e4887b6` was validated by [GitHub Actions run #2](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/33255348376)
+on the `windows-2025-vs2026` runner. The x64 and x86 Debug and Release jobs
+all passed the VS 2026/v145 preflight, configure, build, Qt-free cache, CTest,
 self-contained-stage, and artifact-upload steps. The x86 Release job also
 uploaded `ClassMngr-windows-winui-x86-Release-memory`.
 
-The retained Linux x64 Release workflow passed its build, package, and artifact
-upload checks for the same revision. The retained macOS universal workflow was
-still running when this record was written.
+The retained [Linux x64 Release](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/33255348382)
+and [macOS universal](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/33255348426)
+workflows also passed their build, package, and artifact upload checks for the
+same revision.
 
 ## Retained Windows Qt validation
 
@@ -113,5 +114,4 @@ the JSON report as a separate artifact.
 - owner-reviewed light/dark rendering at 100%, 150%, and 200% DPI;
 - interactive keyboard focus and Korean IME composition;
 - representative x86 peak-memory measurements and budget decision;
-- retained Windows Qt visual review, plus completion of the retained macOS
-  hosted validation.
+- retained Windows Qt visual review.
