@@ -325,6 +325,140 @@ std::string lastPathComponent(std::string_view path)
     const std::size_t slash = clean.find_last_of('/');
     return slash == std::string::npos ? clean : clean.substr(slash + 1);
 }
+
+bool endsWithIgnoreAsciiCase(
+    std::string_view value,
+    std::string_view suffix
+    )
+{
+    if (value.size() < suffix.size())
+    {
+        return false;
+    }
+
+    const std::size_t offset = value.size() - suffix.size();
+    for (std::size_t index = 0; index < suffix.size(); ++index)
+    {
+        if (std::tolower(
+                static_cast<unsigned char>(value[offset + index])
+                )
+            != std::tolower(
+                static_cast<unsigned char>(suffix[index])
+                ))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string normalizedExtension(std::string_view extension)
+{
+    std::string result = trimAsciiWhitespace(extension);
+    if (!result.empty() && result.front() != '.')
+    {
+        result.insert(result.begin(), '.');
+    }
+    return result;
+}
+
+std::string sanitizedFileName(
+    std::string_view value,
+    char replacement
+    )
+{
+    std::string result = trimAsciiWhitespace(value);
+    for (char& character : result)
+    {
+        const unsigned char code = static_cast<unsigned char>(character);
+        if (code < 0x20
+            || code == 0x7f
+            || character == '\\'
+            || character == '/'
+            || character == ':'
+            || character == '*'
+            || character == '?'
+            || character == '"'
+            || character == '<'
+            || character == '>'
+            || character == '|')
+        {
+            character = replacement;
+        }
+    }
+
+    while (!result.empty()
+           && (result.back() == ' ' || result.back() == '.'))
+    {
+        result.pop_back();
+    }
+    return result;
+}
+
+bool isWindowsReservedFileName(std::string_view value)
+{
+    const std::size_t dot = value.find('.');
+    const std::string stem = std::string(value.substr(0, dot));
+    static constexpr std::string_view reservedNames[] = {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
+        "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5",
+        "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+
+    for (const std::string_view reserved : reservedNames)
+    {
+        if (equalsIgnoreAsciiCase(stem, reserved))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string limitUtf8Bytes(
+    std::string_view value,
+    std::size_t maximumBytes
+    )
+{
+    if (value.size() <= maximumBytes)
+    {
+        return std::string(value);
+    }
+
+    std::size_t boundary = 0;
+    while (boundary < value.size())
+    {
+        const unsigned char lead =
+            static_cast<unsigned char>(value[boundary]);
+        std::size_t width = 1;
+        if ((lead & 0x80U) == 0)
+        {
+            width = 1;
+        }
+        else if ((lead & 0xE0U) == 0xC0U)
+        {
+            width = 2;
+        }
+        else if ((lead & 0xF0U) == 0xE0U)
+        {
+            width = 3;
+        }
+        else if ((lead & 0xF8U) == 0xF0U)
+        {
+            width = 4;
+        }
+
+        if (boundary + width > maximumBytes
+            || boundary + width > value.size())
+        {
+            break;
+        }
+        boundary += width;
+    }
+
+    return std::string(value.substr(0, boundary));
+}
 } // namespace
 
 std::string SpeakingEvaluationReportOutputPolicy::defaultDirectory(
@@ -411,6 +545,55 @@ std::string SpeakingEvaluationReportOutputPolicy::batchArchivePath(
         fallbackName
         );
     return joinPath(directory, baseName + ".zip");
+}
+
+std::string SpeakingEvaluationReportOutputPolicy::studentFileName(
+    std::string_view englishName,
+    std::string_view koreanName,
+    std::string_view extension,
+    std::string_view fallbackName,
+    char replacement
+    )
+{
+    const std::string english = trimAsciiWhitespace(englishName);
+    const std::string korean = trimAsciiWhitespace(koreanName);
+    std::string baseName;
+    if (!english.empty() && !korean.empty())
+    {
+        baseName = english + " (" + korean + ')';
+    }
+    else
+    {
+        baseName = !english.empty() ? english : korean;
+    }
+
+    const std::string suffix = normalizedExtension(extension);
+    while (!suffix.empty() && endsWithIgnoreAsciiCase(baseName, suffix))
+    {
+        baseName.resize(baseName.size() - suffix.size());
+    }
+
+    baseName = sanitizedFileName(
+        simplifiedAsciiWhitespace(baseName),
+        replacement
+        );
+    if (baseName.empty())
+    {
+        baseName = sanitizedFileName(
+            simplifiedAsciiWhitespace(fallbackName),
+            replacement
+            );
+    }
+    if (baseName.empty())
+    {
+        baseName = "Document";
+    }
+    if (isWindowsReservedFileName(baseName))
+    {
+        baseName.insert(baseName.begin(), '_');
+    }
+
+    return limitUtf8Bytes(baseName, 240) + suffix;
 }
 
 } // namespace classmngr::engine

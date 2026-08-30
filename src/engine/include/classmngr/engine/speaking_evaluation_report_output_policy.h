@@ -25,6 +25,16 @@ public:
         std::string_view outputDirectory,
         std::string_view fallbackName = "Speaking Evaluation Reports"
         );
+
+    // The inputs are expected to be UTF-8. Unicode normalization is supplied
+    // by presentation adapters that already own the platform text type.
+    [[nodiscard]] static std::string studentFileName(
+        std::string_view englishName,
+        std::string_view koreanName,
+        std::string_view extension = ".pdf",
+        std::string_view fallbackName = "Student",
+        char replacement = '-'
+        );
 };
 
 } // namespace classmngr::engine

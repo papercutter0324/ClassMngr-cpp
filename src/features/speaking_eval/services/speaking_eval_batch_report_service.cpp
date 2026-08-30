@@ -8,7 +8,8 @@
 #include "speaking_eval_powerpoint_scripts.h"
 #include "speaking_eval_powerpoint_workspace.h"
 
-#include "core/utils/file_name_utils.h"
+#include "classmngr/engine/speaking_evaluation_batch_report_policy.h"
+
 #include "core/zip_archive_writer.h"
 #include "core/resource_paths.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -21,6 +22,8 @@
 #include <QPageSize>
 #include <QSaveFile>
 #include <QTemporaryDir>
+
+#include <cstddef>
 
 namespace SpeakingEvalBatchReportService
 {
@@ -93,6 +96,72 @@ bool writeUtf8File(
     }
 
     return true;
+}
+
+classmngr::engine::SpeakingEvaluationBatchReportRequest
+portableBatchReportRequest(
+    const Request& request
+    )
+{
+    classmngr::engine::SpeakingEvaluationBatchReportRequest portable;
+    portable.reportCount = static_cast<std::size_t>(request.reports.size());
+    portable.renderer =
+        request.renderer == Renderer::PowerPoint
+            ? classmngr::engine::SpeakingEvaluationReportRenderer::PowerPoint
+            : classmngr::engine::SpeakingEvaluationReportRenderer::Internal;
+    portable.savePdf = request.savePdf;
+    portable.printReports = request.printReports;
+    portable.keepIndividualPdfFiles = request.keepIndividualPdfFiles;
+    portable.hasOutputDirectory =
+        !request.outputDirectory.trimmed().isEmpty();
+    portable.hasExactOutputFilePath =
+        !request.outputFilePath.trimmed().isEmpty();
+    portable.reportTemplates.reserve(request.reports.size());
+    for (const StudentReport& report : request.reports)
+    {
+        portable.reportTemplates.push_back(report.report.reportTemplate);
+    }
+    return portable;
+}
+
+QString batchReportPolicyErrorMessage(
+    const classmngr::engine::Error& error
+    )
+{
+    if (error.message == "no-reports")
+    {
+        return QObject::tr("There are no student reports to export.");
+    }
+    if (error.message == "output-mode-required")
+    {
+        return QObject::tr("Choose PDF saving, printing, or both.");
+    }
+    if (error.message == "pdf-destination-required")
+    {
+        return QObject::tr("Choose a destination for the PDF reports.");
+    }
+    if (error.message == "exact-file-requires-single-report")
+    {
+        return QObject::tr(
+            "An exact PDF file can be selected only for one report."
+            );
+    }
+    if (error.message == "mixed-powerpoint-templates")
+    {
+        return QObject::tr(
+            "All reports in a PowerPoint batch must use the same template."
+            );
+    }
+    if (error.message == "template-count-mismatch")
+    {
+        return QObject::tr(
+            "The PowerPoint batch has an incomplete template description."
+            );
+    }
+    return QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        );
 }
 
 
@@ -424,36 +493,17 @@ Result exportReports(
     const Request& request
     )
 {
-    if (request.reports.isEmpty())
-    {
-        return failed(QObject::tr("There are no student reports to export."));
-    }
-
-    if (!request.savePdf && !request.printReports)
-    {
-        return failed(QObject::tr("Choose PDF saving, printing, or both."));
-    }
-
-    if (request.savePdf
-        && request.outputDirectory.trimmed().isEmpty()
-        && request.outputFilePath.trimmed().isEmpty())
-    {
-        return failed(QObject::tr("Choose a destination for the PDF reports."));
-    }
-
-    if (
-        request.renderer == Renderer::PowerPoint
-        && !SpeakingEvalPowerPointJobModel::usesSingleTemplate(
-            request.reports
-            )
-        )
-    {
-        return failed(
-            QObject::tr(
-                "All reports in a PowerPoint batch must use the same template."
-                )
+    const auto batchPlanResult =
+        classmngr::engine::SpeakingEvaluationBatchReportPolicy::plan(
+            portableBatchReportRequest(request)
             );
+    if (!batchPlanResult)
+    {
+        return failed(batchReportPolicyErrorMessage(batchPlanResult.error()));
     }
+
+    const classmngr::engine::SpeakingEvaluationBatchReportPlan& batchPlan =
+        *batchPlanResult;
 
     if (request.renderer == Renderer::PowerPoint
         && !isPowerPointRendererAvailable())
@@ -461,12 +511,8 @@ Result exportReports(
         return failed(powerPointRendererAvailabilityMessage());
     }
 
-    const bool creatingBatchArchive =
-        request.savePdf && request.reports.size() > 1;
-    const bool savingIndividualPdfFiles =
-        request.savePdf
-        && (!creatingBatchArchive
-            || request.keepIndividualPdfFiles);
+    const bool creatingBatchArchive = batchPlan.createsBatchArchive;
+    const bool savingIndividualPdfFiles = batchPlan.savesIndividualPdfFiles;
 
     QStringList targetPaths;
     QString targetArchivePath;

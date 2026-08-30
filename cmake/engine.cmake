@@ -67,6 +67,10 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_model.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_template.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_template.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_batch_report_policy.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_batch_report_policy.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_powerpoint_job_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_powerpoint_job_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_output_policy.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_output_policy.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_content.cpp"
@@ -427,6 +431,40 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSpeakingEvaluationReportTemplateTests
         COMMAND ClassMngrEngineSpeakingEvaluationReportTemplateTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_batch_report_policy_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+        COMMAND ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_powerpoint_job_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
+        COMMAND ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
     )
 
     add_executable(ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests

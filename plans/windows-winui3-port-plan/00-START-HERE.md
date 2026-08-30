@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output policy, content assembly, AI prompt rules, template policy, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report/export models, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report/export adapters and models plus fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -104,8 +104,9 @@ reads/conflicts, schedule-import workflows, class-transfer workflows, the
 speaking-evaluation overall-grade report rule, the schedule report model, and
 the by-day/daily/per-class roster report model, the sub-prep pagination policy,
 academic calendar recurrence rules, and calendar-event normalization and campus
-filtering, speaking-evaluation report metadata, and speaking-evaluation output
-policy, content assembly, AI prompt rules, and template policy,
+filtering, speaking-evaluation report metadata, output policy, content
+assembly, AI prompt rules, template policy, batch-export policy, PowerPoint
+job content, and student filename policy,
 with the retained Qt code still operational. The next active gate is
 extracting the remaining report/export use cases and connecting the retained
 adapters with cross-platform fixture evidence.
@@ -448,6 +449,30 @@ After meaningful work:
   passed in all four x64/x86 Debug/Release lanes, the retained offscreen
   batch-report regression passed, and the integrated WinUI sweep passed all
   twenty-three engine suites plus staging and manifest checks (25/25).
+- **2026-08-30 — Speaking-evaluation batch-export policy extracted.** The
+  Qt-free policy now owns report-count, output-mode, PDF-destination, and
+  exact-file validation, PowerPoint template homogeneity, and archive versus
+  individual-PDF decisions. The retained Qt batch service maps typed policy
+  failures to localized messages while retaining filesystem, rendering,
+  printing, and Office work. Its headless test and retained offscreen
+  batch-report regression passed; all four integrated WinUI sweeps passed
+  twenty-four engine suites plus staging and manifest checks (26/26).
+- **2026-08-30 — Speaking-evaluation PowerPoint job content extracted.** The
+  Qt-free job service now owns renderer-neutral field mapping, UTF-8 paths and
+  signature bytes, overall-grade calculation, path-count validation, and
+  homogeneous template validation. The retained Qt job model converts that
+  content and keeps NFC normalization, comment measurement, resource paths,
+  JSON, and Office arguments at the adapter edge. Its headless test and
+  retained offscreen batch-report regression passed; all four integrated
+  WinUI sweeps passed twenty-five engine suites plus staging and manifest
+  checks (27/27).
+- **2026-08-30 — Speaking-evaluation student filename policy extracted.** The
+  portable output policy now owns student PDF name composition, reserved-name
+  protection, unsafe-character replacement, suffix normalization, fallback
+  naming, and the UTF-8 length limit. Qt keeps native-text normalization,
+  directory creation, collision checks, and atomic commits. The existing
+  output-policy test and retained offscreen batch-report regression passed;
+  all four WinUI sweeps remained green at 27/27.
 
 ## Shared Completion Rules
 

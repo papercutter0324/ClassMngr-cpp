@@ -1,6 +1,7 @@
 #include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
 #include <iostream>
+#include <string>
 #include <string_view>
 
 namespace
@@ -82,6 +83,46 @@ int main()
             "C:/Documents/Speaking Evals/Winter"
             ) == "C:/Documents/Speaking Evals/Winter/Winter.zip",
         "batch archive path changed"
+        );
+
+    passed &= expect(
+        SpeakingEvaluationReportOutputPolicy::studentFileName(
+            "Jane: Doe",
+            "\xEA\xB9\x80/\xEC\xB2\xA0\xEC\x88\x98"
+            ) == "Jane- Doe (\xEA\xB9\x80-\xEC\xB2\xA0\xEC\x88\x98).pdf",
+        "unsafe student filename changed"
+        );
+    passed &= expect(
+        SpeakingEvaluationReportOutputPolicy::studentFileName(
+            "Report.PDF",
+            {}
+            ) == "Report.pdf",
+        "existing PDF suffix was not normalized"
+        );
+    passed &= expect(
+        SpeakingEvaluationReportOutputPolicy::studentFileName(
+            "CON",
+            {}
+            ) == "_CON.pdf",
+        "Windows reserved student filename was not protected"
+        );
+    passed &= expect(
+        SpeakingEvaluationReportOutputPolicy::studentFileName(
+            {},
+            {}
+            ) == "Student.pdf",
+        "empty student filename did not use its fallback"
+        );
+
+    const std::string longName(300, 'A');
+    const std::string limitedName =
+        SpeakingEvaluationReportOutputPolicy::studentFileName(
+            longName,
+            {}
+            );
+    passed &= expect(
+        limitedName.size() == 244,
+        "student filename UTF-8 length limit changed"
         );
 
     return passed ? 0 : 1;

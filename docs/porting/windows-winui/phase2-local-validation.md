@@ -146,6 +146,25 @@ retained Qt template header and PowerPoint job model convert that policy to
 Qt geometry, resource-pack paths, and automation arguments; asset decoding,
 text measurement, JSON transport, and drawing remain adapters.
 
+The speaking-evaluation batch-report policy now owns report-count, output-mode,
+PDF-destination, and exact-file validation, PowerPoint template-homogeneity
+checks, and archive/individual-output decisions. The retained Qt batch service
+converts its request and maps typed policy failures to localized messages while
+retaining filesystem commits, PDF rendering, printing, and Office automation.
+
+The speaking-evaluation PowerPoint job service now owns renderer-neutral job
+content assembly: report-field mapping, UTF-8 paths and signature bytes,
+overall-grade calculation, path-count validation, and homogeneous template
+validation. The retained Qt job model converts the engine job to Qt values and
+continues to own NFC normalization, comment text measurement, resource paths,
+JSON serialization, and Office automation arguments.
+
+The portable speaking-evaluation output policy now also owns student PDF
+filename composition, reserved-name protection, unsafe-character replacement,
+case-insensitive suffix normalization, fallback naming, and the UTF-8 length
+limit. Qt normalizes its native text before calling the policy; directory
+creation, collision checks, and atomic file commits remain Qt-owned.
+
 ## Local validation
 
 | Lane | Result |
@@ -203,10 +222,10 @@ text measurement, JSON transport, and drawing remain adapters.
 | Windows x64 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
 | Windows x86 Debug speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
 | Windows x86 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
-| Windows x64 Debug speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
-| Windows x64 Release speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
-| Windows x86 Debug speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
-| Windows x86 Release speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x64 Debug speaking-evaluation output/filename-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x64 Release speaking-evaluation output/filename-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x86 Debug speaking-evaluation output/filename-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x86 Release speaking-evaluation output/filename-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
 | Windows x64 Debug speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
 | Windows x64 Release speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
 | Windows x86 Debug speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
@@ -219,6 +238,14 @@ text measurement, JSON transport, and drawing remain adapters.
 | Windows x64 Release speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
 | Windows x86 Debug speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
 | Windows x86 Release speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
+| Windows x64 Debug speaking-evaluation batch-report policy test | Passed: `ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests` |
+| Windows x64 Release speaking-evaluation batch-report policy test | Passed: `ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests` |
+| Windows x86 Debug speaking-evaluation batch-report policy test | Passed: `ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests` |
+| Windows x86 Release speaking-evaluation batch-report policy test | Passed: `ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests` |
+| Windows x64 Debug speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
+| Windows x64 Release speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
+| Windows x86 Debug speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
+| Windows x86 Release speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -260,9 +287,10 @@ speaking-evaluation report metadata model, speaking-evaluation report content,
 speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
-template-policy implementations compiled and passed in all four engine lanes.
-Each lane's integrated sweep then passed all twenty-three engine suites plus
-both WinUI staging and manifest checks (25/25). The
+template-policy, batch-report policy, and PowerPoint job service
+implementations compiled and passed in all four engine lanes. Each lane's
+integrated sweep then passed all twenty-five engine suites plus both WinUI
+staging and manifest checks (27/27). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
@@ -283,6 +311,6 @@ build tree.
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The next work is
-migrating the remaining report/export models, connecting retained Qt adapters
-to the extracted use-case boundaries, and producing cross-platform fixture
-round trips.
+migrating the remaining report/export adapters and models, connecting retained
+Qt adapters to the extracted use-case boundaries, and producing cross-platform
+fixture round trips.

@@ -245,6 +245,18 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSpeakingEvaluationReportTemplateTests
         )
     endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationBatchReportPolicyTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests)
         add_dependencies(
             ${classmngr_winui_target}

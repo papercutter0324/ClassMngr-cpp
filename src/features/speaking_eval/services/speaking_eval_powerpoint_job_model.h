@@ -81,7 +81,4 @@ struct BatchJob
     const QString& cancelPath
     );
 
-[[nodiscard]] bool usesSingleTemplate(
-    const QList<SpeakingEvalBatchReportService::StudentReport>& reports
-    );
 }
