@@ -121,6 +121,12 @@ recognition, and literal campus-code token matching. The retained Qt event
 model and filter delegate through UTF-8 adapters; event storage, date/time
 values, and UI presentation remain in the existing adapters.
 
+The speaking-evaluation report boundary now includes a Qt-free metadata model
+for elementary-grade parsing, class labels, advanced-template selection, and
+deterministic report dates. Its output-policy companion owns schedule-aware
+destination folders and batch archive paths; Qt supplies standard-path lookup,
+localized fallbacks, and Unicode-safe student filenames at the adapter edge.
+
 ## Local validation
 
 | Lane | Result |
@@ -178,6 +184,10 @@ values, and UI presentation remain in the existing adapters.
 | Windows x64 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
 | Windows x86 Debug speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
 | Windows x86 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
+| Windows x64 Debug speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x64 Release speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x86 Debug speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
+| Windows x86 Release speaking-evaluation output-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -216,11 +226,11 @@ CTest selections with no Qt-dependent test process. The new schedule-import
 service test passed in x64/x86 Debug and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service,
 speaking-evaluation report metadata model, academic-calendar schedule,
-calendar-event rules, class-information,
+calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, and class-transfer
 implementations compiled and passed in all four engine lanes. Each lane's
-integrated sweep then passed all nineteen engine suites plus both WinUI staging
-and manifest checks (21/21). The
+integrated sweep then passed all twenty engine suites plus both WinUI staging
+and manifest checks (22/22). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
