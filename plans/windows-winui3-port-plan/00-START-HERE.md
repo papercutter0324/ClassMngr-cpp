@@ -84,7 +84,7 @@ Last updated: 2026-08-31 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, and package-planning policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, and package-planning policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -109,7 +109,7 @@ filtering, speaking-evaluation report metadata, output policy, content
 assembly, AI prompt rules, template policy, batch-export policy, PowerPoint
   job content, student filename policy, schedule-report print labels, and the
   sub-prep class-information report model, class/teacher naming,
-  upcoming-birthday scheduling, class analytics, and the sub-prep
+  upcoming-birthday scheduling, class analytics, roster validation, and the sub-prep
   package-planning policy,
 with the retained Qt code still operational. The committed eleven-case
 database-port corpus now passes the Qt-free engine read, migration, write,
@@ -556,6 +556,17 @@ After meaningful work:
   against Qt 6.11/MSVC, and the complete integrated WinUI sweeps passed all
   thirty-two engine suites plus staging and manifest checks (34/34). Phase 2
   remains open for the remaining report/export adapter/model migration and
+  broader per-slice fixture coverage.
+- **2026-08-31 — Roster validation extracted.** The Qt-free `Roster` and
+  `RosterValidator` boundaries now own canonical column normalization,
+  UTF-8 cell cleanup, row/column limits, required student names,
+  English/Korean validation, duplicate-pair detection, and typed row/column
+  diagnostics. The retained Qt validator is a conversion adapter; table
+  editing and presentation remain Qt-owned. Its headless test passed in all
+  four x64/x86 Debug/Release lanes, the retained Qt adapter passed a Qt
+  6.11/MSVC compile-only check, and the integrated WinUI sweeps passed all
+  thirty-three engine suites plus staging and manifest checks (35/35). Phase
+  2 remains open for the remaining report/export adapter/model migration and
   broader per-slice fixture coverage.
 
 ## Shared Completion Rules

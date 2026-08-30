@@ -17,6 +17,8 @@ struct ValidationIssue
     std::string code;
     std::string field;
     ValidationSeverity severity = ValidationSeverity::Error;
+    int row = -1;
+    int column = -1;
 
     [[nodiscard]] bool isWarning() const noexcept
     {

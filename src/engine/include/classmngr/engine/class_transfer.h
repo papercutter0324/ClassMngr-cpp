@@ -1,6 +1,7 @@
 #pragma once
 
 #include "classmngr/engine/class_info.h"
+#include "classmngr/engine/roster.h"
 #include "classmngr/engine/teacher.h"
 
 #include <chrono>
@@ -15,13 +16,6 @@ inline constexpr std::size_t SpeakingEvaluationRowCount = 25;
 inline constexpr std::size_t SpeakingEvaluationColumnCount = 11;
 
 using SpeakingEvaluationRows = std::vector<std::vector<std::string>>;
-
-struct Roster
-{
-    std::vector<std::string> columns;
-    std::vector<int> columnWidths;
-    std::vector<std::vector<std::string>> rows;
-};
 
 struct ClassTransferEvaluation
 {

@@ -103,6 +103,14 @@ service owns the shared English/Korean matching rules. The retained Qt
 analytics service and student-name utility now convert values at the edge;
 the ranking table, charts, localization, and widget behavior remain Qt-owned.
 
+The roster-model/validation slice now includes Qt-free `Roster` and
+`RosterValidator` boundaries. It owns canonical English/Korean/season columns
+(including the `Autumn` to `Fall` alias), UTF-8 whitespace normalization,
+column and row limits, required names, English/Korean shape and length rules,
+duplicate-pair detection, and row/column diagnostics. The retained Qt
+validator converts `QString` values and issues at the edge; the table model,
+editing behavior, and presentation remain Qt-owned.
+
 The speaking-evaluation report slice now includes a Qt-free
 `SpeakingEvaluationReportService` for the six-metric overall-grade rule. It
 preserves the retained `C` through `A+` mapping, the 0.4 fractional-average
@@ -292,6 +300,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
 | Windows x86 Debug class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
 | Windows x86 Release class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
+| Windows x64 Debug roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
+| Windows x64 Release roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
+| Windows x86 Debug roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
+| Windows x86 Release roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
 | Windows x64 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
@@ -362,6 +374,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
 | Retained Windows Qt analytics adapter compile check | Passed: Qt 6.11/MSVC compile-only checks for `speaking_analytics.cpp` and `student_name_utils.cpp` |
+| Retained Windows Qt roster validation adapter compile check | Passed: Qt 6.11/MSVC compile-only check for `roster_validator.cpp` |
 | Retained Windows Qt speaking-evaluation report widget | Passed: `ClassMngrSpeakingEvalReportWidgetTests` |
 | Retained Windows Qt schedule-builder regression | Passed: `ClassMngrScheduleBuilderTests` |
 | Retained Windows Qt schedule-model regression | Passed: `ClassMngrSchedulePrintModelTests` |
@@ -391,7 +404,7 @@ eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-two engine suites plus both WinUI staging and manifest checks (34/34).
+thirty-three engine suites plus both WinUI staging and manifest checks (35/35).
 The
 retained Qt schedule-import, schedule-builder, and upcoming-birthday
 regression also passed, alongside the existing class-information, assignment,
@@ -399,7 +412,7 @@ class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep class-information and
 pagination adapters,
 academic-calendar, calendar-event, speaking-evaluation report metadata,
-class-analytics, and
+class-analytics, roster-validation, and
 speaking-evaluation report content and AI prompt adapters, schema-manager,
 updater, and teacher-import
 coverage. The
