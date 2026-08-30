@@ -65,6 +65,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_model.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_model.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_template.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_template.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_output_policy.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_output_policy.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_content.cpp"
@@ -408,6 +410,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSpeakingEvaluationReportModelTests
         COMMAND ClassMngrEngineSpeakingEvaluationReportModelTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingEvaluationReportTemplateTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_report_template_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationReportTemplateTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationReportTemplateTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationReportTemplateTests
+        COMMAND ClassMngrEngineSpeakingEvaluationReportTemplateTests
     )
 
     add_executable(ClassMngrEngineSpeakingEvaluationReportOutputPolicyTests

@@ -82,8 +82,8 @@ The speaking-evaluation report slice now includes a Qt-free
 preserves the retained `C` through `A+` mapping, the 0.4 fractional-average
 rounding threshold, and `N/A` handling for incomplete or invalid metrics. The
 retained report assembler, report widget, and roster score-import path now
-delegate this calculation to the engine; drawing, PDF, and PowerPoint layout
-remain presentation adapters.
+delegate this calculation to the engine; rendering, PDF, and PowerPoint
+resource/drawing details remain presentation adapters.
 
 The schedule-report slice now includes a Qt-free `ScheduleReportService` and
 renderer-neutral schedule model. It preserves visible-day ordering, regular
@@ -138,6 +138,13 @@ The speaking-evaluation AI prompt service now owns observation-line
 normalization, student/classmate name redaction, prompt eligibility and
 composition, and batch-response marker parsing. The retained Qt AI prompt
 callers only convert Qt values and expose the engine results to the dialogs.
+
+The speaking-evaluation template-policy slice now owns the Standard and
+Advanced template enum, page and signature geometry, PowerPoint resource
+identifiers, score-table placement and shape, and neutral fill colors. The
+retained Qt template header and PowerPoint job model convert that policy to
+Qt geometry, resource-pack paths, and automation arguments; asset decoding,
+text measurement, JSON transport, and drawing remain adapters.
 
 ## Local validation
 
@@ -208,6 +215,10 @@ callers only convert Qt values and expose the engine results to the dialogs.
 | Windows x64 Release speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
 | Windows x86 Debug speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
 | Windows x86 Release speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
+| Windows x64 Debug speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
+| Windows x64 Release speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
+| Windows x86 Debug speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
+| Windows x86 Release speaking-evaluation template-policy test | Passed: `ClassMngrEngineSpeakingEvaluationReportTemplateTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -248,10 +259,10 @@ report service, schedule-report service, roster-report service,
 speaking-evaluation report metadata model, speaking-evaluation report content,
 speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
-schedule-read, schedule-import, and class-transfer implementations compiled
-and passed in all four engine lanes. Each lane's integrated sweep then passed
-all twenty-two engine suites plus both WinUI staging and manifest checks
-(24/24). The
+schedule-read, schedule-import, class-transfer, and speaking-evaluation
+template-policy implementations compiled and passed in all four engine lanes.
+Each lane's integrated sweep then passed all twenty-three engine suites plus
+both WinUI staging and manifest checks (25/25). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
@@ -272,6 +283,6 @@ build tree.
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The next work is
-migrating the remaining report content and pagination models, connecting
-retained Qt adapters to the extracted use-case boundaries, and producing
-cross-platform fixture round trips.
+migrating the remaining report/export models, connecting retained Qt adapters
+to the extracted use-case boundaries, and producing cross-platform fixture
+round trips.

@@ -1,16 +1,12 @@
 #pragma once
 
+#include "classmngr/engine/speaking_evaluation_report_template.h"
+
 #include <string>
 #include <string_view>
 
 namespace classmngr::engine
 {
-
-enum class SpeakingEvaluationReportTemplate
-{
-    Standard,
-    Advanced
-};
 
 class SpeakingEvaluationReportModel final
 {

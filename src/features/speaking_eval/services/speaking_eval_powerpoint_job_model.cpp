@@ -3,6 +3,8 @@
 #include "speaking_eval_batch_report_service.h"
 #include "speaking_eval_report_data_assembler.h"
 
+#include "classmngr/engine/speaking_evaluation_report_template.h"
+
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
 #include <QDir>
@@ -27,32 +29,37 @@ TemplateProfile templateProfile(
     const QString& documentsRoot
     )
 {
-    const SpeakingEvalReportTemplateLayout& layout =
-        speakingEvalReportTemplateLayout(reportTemplate);
+    const classmngr::engine::SpeakingEvaluationReportTemplatePolicy& policy =
+        classmngr::engine::SpeakingEvaluationReportTemplateService::policy(
+            reportTemplate
+            );
 
     TemplateProfile profile;
     profile.reportTemplate = reportTemplate;
     profile.resourcePath = QDir(documentsRoot).filePath(
-        layout.powerPointResourcePath
+        QString::fromUtf8(
+            policy.powerPointResourcePath.data(),
+            static_cast<qsizetype>(policy.powerPointResourcePath.size())
+            )
         );
-    profile.signatureBounds = layout.signatureBounds;
-    profile.signatureAlignsBottomLeft =
-        layout.signatureAlignsBottomLeft;
-
-    if (layout.usesAdvancedScoreTable)
-    {
-        profile.scoreTableOnMaster = false;
-        profile.scoreTableName = QStringLiteral("Report_Table");
-        profile.minimumTableColumns = 7;
-        profile.firstGradeColumn = 3;
-        profile.neutralFillRed = 229;
-        profile.neutralFillGreen = 229;
-        profile.neutralFillBlue = 231;
-    }
-    else
-    {
-        profile.scoreTableName = QStringLiteral("Grades & Scores");
-    }
+    profile.signatureBounds = QRectF(
+        policy.signatureBounds.left,
+        policy.signatureBounds.top,
+        policy.signatureBounds.width,
+        policy.signatureBounds.height
+        );
+    profile.signatureAlignsBottomLeft = policy.signatureAlignsBottomLeft;
+    profile.scoreTableOnMaster = policy.scoreTableOnMaster;
+    profile.scoreTableName = QString::fromUtf8(
+        policy.scoreTableName.data(),
+        static_cast<qsizetype>(policy.scoreTableName.size())
+        );
+    profile.minimumTableRows = policy.minimumTableRows;
+    profile.minimumTableColumns = policy.minimumTableColumns;
+    profile.firstGradeColumn = policy.firstGradeColumn;
+    profile.neutralFillRed = policy.neutralFillRed;
+    profile.neutralFillGreen = policy.neutralFillGreen;
+    profile.neutralFillBlue = policy.neutralFillBlue;
 
     return profile;
 }
