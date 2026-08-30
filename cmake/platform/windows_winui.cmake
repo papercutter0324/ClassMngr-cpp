@@ -233,6 +233,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSpeakingEvaluationReportServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationReportModelTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationReportModelTests
+        )
+    endif()
     if(TARGET ClassMngrEngineScheduleReportServiceTests)
         add_dependencies(
             ${classmngr_winui_target}
@@ -255,6 +261,12 @@ function(classmngr_add_windows_winui_target)
         add_dependencies(
             ${classmngr_winui_target}
             ClassMngrEngineAcademicCalendarTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineCalendarEventRulesTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineCalendarEventRulesTests
         )
     endif()
 

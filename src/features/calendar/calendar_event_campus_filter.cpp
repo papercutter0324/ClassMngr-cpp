@@ -1,49 +1,28 @@
 #include "calendar_event_campus_filter.h"
 
-#include <QRegularExpression>
+#include <string>
+#include <vector>
 
 namespace
 {
-QStringList normalizedCodes(
+std::vector<std::string> toPortableCodes(
     const QStringList& codes
     )
 {
-    QStringList values;
+    std::vector<std::string> values;
+    values.reserve(static_cast<std::size_t>(codes.size()));
 
     for (const QString& code : codes)
     {
-        const QString normalized =
-            code.trimmed().toUpper();
-
-        if (!normalized.isEmpty())
+        const QByteArray utf8 = code.toUtf8();
+        if (!utf8.trimmed().isEmpty())
         {
-            values.append(normalized);
+            values.emplace_back(utf8.constData(),
+                                static_cast<std::size_t>(utf8.size()));
         }
     }
 
-    values.removeDuplicates();
-    values.sort();
-
     return values;
-}
-
-bool containsCode(
-    const QString& title,
-    const QString& code
-    )
-{
-    if (code.isEmpty())
-    {
-        return false;
-    }
-
-    const QRegularExpression pattern(
-        QStringLiteral("(^|[^A-Z0-9])%1([^A-Z0-9]|$)")
-            .arg(QRegularExpression::escape(code)),
-        QRegularExpression::CaseInsensitiveOption
-        );
-
-    return pattern.match(title).hasMatch();
 }
 }
 
@@ -56,44 +35,11 @@ bool eventMatchesCampus(
     bool showAllCampuses
     )
 {
-    if (showAllCampuses)
-    {
-        return true;
-    }
-
-    const QString title =
-        event.title.trimmed();
-    if (title.isEmpty())
-    {
-        return true;
-    }
-
-    const QStringList allCodes =
-        normalizedCodes(allCampusCodes);
-    const QStringList currentCodes =
-        normalizedCodes(currentCampusCodes);
-
-    if (allCodes.isEmpty() || currentCodes.isEmpty())
-    {
-        return true;
-    }
-
-    bool containsAnyKnownCampus = false;
-
-    for (const QString& code : allCodes)
-    {
-        if (!containsCode(title, code))
-        {
-            continue;
-        }
-
-        containsAnyKnownCampus = true;
-        if (currentCodes.contains(code))
-        {
-            return true;
-        }
-    }
-
-    return !containsAnyKnownCampus;
+    return classmngr::engine::CalendarEventRules::eventMatchesCampus(
+        event.title.toUtf8().toStdString(),
+        toPortableCodes(currentCampusCodes),
+        toPortableCodes(allCampusCodes),
+        showAllCampuses
+        );
 }
 }

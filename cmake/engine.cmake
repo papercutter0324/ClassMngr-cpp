@@ -63,6 +63,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_model.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_model.h"
     "${PROJECT_SOURCE_DIR}/src/engine/schedule_report_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_report.h"
     "${PROJECT_SOURCE_DIR}/src/engine/roster_report_service.cpp"
@@ -71,6 +73,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
     "${PROJECT_SOURCE_DIR}/src/engine/academic_calendar.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/academic_calendar.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_rules.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/calendar_event_rules.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_transfer_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer_service.h"
@@ -383,6 +387,23 @@ if(BUILD_TESTING)
         COMMAND ClassMngrEngineSpeakingEvaluationReportServiceTests
     )
 
+    add_executable(ClassMngrEngineSpeakingEvaluationReportModelTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_report_model_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationReportModelTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationReportModelTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationReportModelTests
+        COMMAND ClassMngrEngineSpeakingEvaluationReportModelTests
+    )
+
     add_executable(ClassMngrEngineScheduleReportServiceTests
         "${PROJECT_SOURCE_DIR}/tests/engine/schedule_report_service_tests.cpp"
     )
@@ -449,5 +470,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineAcademicCalendarTests
         COMMAND ClassMngrEngineAcademicCalendarTests
+    )
+
+    add_executable(ClassMngrEngineCalendarEventRulesTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/calendar_event_rules_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineCalendarEventRulesTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineCalendarEventRulesTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineCalendarEventRulesTests
+        COMMAND ClassMngrEngineCalendarEventRulesTests
     )
 endif()

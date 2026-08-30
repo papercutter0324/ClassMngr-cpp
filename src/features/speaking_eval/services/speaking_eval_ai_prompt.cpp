@@ -1,5 +1,7 @@
 #include "speaking_eval_ai_prompt.h"
 
+#include "classmngr/engine/speaking_evaluation_report_model.h"
+
 #include <QHash>
 #include <QRegularExpression>
 #include <QSet>
@@ -177,19 +179,9 @@ int speakingEvalElementaryGrade(
     const QString& classGrade
     )
 {
-    QString normalized =
-        classGrade.trimmed().toUpper();
-    if (normalized.startsWith(QLatin1Char('E')))
-    {
-        normalized.remove(0, 1);
-    }
-
-    bool validNumber = false;
-    const int grade =
-        normalized.toInt(&validNumber);
-    return validNumber && grade >= 4 && grade <= 6
-        ? grade
-        : 0;
+    return classmngr::engine::SpeakingEvaluationReportModel::elementaryGrade(
+        classGrade.toStdString()
+        );
 }
 
 QStringList speakingEvalAiObservationItems(

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "classmngr/engine/calendar_event_rules.h"
+
 #include <QDate>
 #include <QString>
 #include <QStringList>
@@ -42,12 +44,11 @@ inline QString normalizedCalendarEventType(
     const QString& eventType
     )
 {
-    const QString trimmed =
-        eventType.trimmed();
-
-    return calendarEventTypes().contains(trimmed)
-        ? trimmed
-        : QStringLiteral("Other");
+    const std::string normalized =
+        classmngr::engine::CalendarEventRules::normalizedEventType(
+            eventType.toUtf8().toStdString()
+            );
+    return QString::fromUtf8(normalized.c_str());
 }
 
 inline QStringList calendarEventTimeStatuses()
@@ -63,26 +64,19 @@ inline QString normalizedCalendarEventTimeStatus(
     const QString& timeStatus
     )
 {
-    const QString trimmed =
-        timeStatus.trimmed();
-
-    return calendarEventTimeStatuses().contains(trimmed)
-        ? trimmed
-        : QStringLiteral("Timed");
+    const std::string normalized =
+        classmngr::engine::CalendarEventRules::normalizedTimeStatus(
+            timeStatus.toUtf8().toStdString()
+            );
+    return QString::fromUtf8(normalized.c_str());
 }
 
 inline bool isStartOfTermCalendarEvent(
     const CalendarEvent& event
     )
 {
-    const QString title =
-        event.title.simplified().toLower();
-
-    return normalizedCalendarEventType(event.eventType) == QStringLiteral("Other")
-        && (
-            title == QStringLiteral("new semester")
-            || title == QStringLiteral("start of term")
-            || title == QStringLiteral("term start")
-            || title == QStringLiteral("term starts")
-            );
+    return classmngr::engine::CalendarEventRules::isStartOfTerm(
+        event.title.toUtf8().toStdString(),
+        event.eventType.toUtf8().toStdString()
+        );
 }

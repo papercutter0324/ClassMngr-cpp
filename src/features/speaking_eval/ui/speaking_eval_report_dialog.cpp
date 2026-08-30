@@ -1,6 +1,8 @@
 #include "speaking_eval_report_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "classmngr/engine/speaking_evaluation_report_model.h"
+
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "core/settingsmanager.h"
@@ -32,15 +34,16 @@ QString speakingEvalReportDate(
     SpeakingEvalReportTemplate reportTemplate
     )
 {
-    if (reportTemplate == SpeakingEvalReportTemplate::Advanced)
-    {
-        return date.toString(QStringLiteral("MMM. yyyy"));
-    }
-
-    return date.toString(
-        date.month() >= 5 && date.month() <= 7
-            ? QStringLiteral("MMMM yyyy")
-            : QStringLiteral("MMM. yyyy")
+    const auto portableTemplate =
+        reportTemplate == SpeakingEvalReportTemplate::Advanced
+            ? classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
+            : classmngr::engine::SpeakingEvaluationReportTemplate::Standard;
+    return QString::fromStdString(
+        classmngr::engine::SpeakingEvaluationReportModel::reportDate(
+            date.year(),
+            static_cast<unsigned>(date.month()),
+            portableTemplate
+            )
         );
 }
 
@@ -237,52 +240,25 @@ QString classLabel(
     const ClassInfo& info
     )
 {
-    QStringList parts;
-
-    if (!info.classGrade.trimmed().isEmpty())
-    {
-        parts.append(info.classGrade.trimmed());
-    }
-
-    if (!info.classLevel.trimmed().isEmpty())
-    {
-        parts.append(info.classLevel.trimmed());
-    }
-
-    return parts.join(QLatin1Char(' '));
+    return QString::fromStdString(
+        classmngr::engine::SpeakingEvaluationReportModel::classLabel(
+            info.classGrade.toStdString(),
+            info.classLevel.toStdString()
+            )
+        );
 }
 
 SpeakingEvalReportTemplate reportTemplateForClass(
     const ClassInfo& info
     )
 {
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
-
-    const bool usesAdvancedTemplate = (
-               grade.compare(
-                   QStringLiteral("E5"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Athena"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               )
-        || (
-               grade.compare(
-                   QStringLiteral("E6"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Song's"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               );
-
-    return usesAdvancedTemplate
+    const auto portableTemplate =
+        classmngr::engine::SpeakingEvaluationReportModel::templateForClass(
+            info.classGrade.toStdString(),
+            info.classLevel.toStdString()
+            );
+    return portableTemplate
+            == classmngr::engine::SpeakingEvaluationReportTemplate::Advanced
         ? SpeakingEvalReportTemplate::Advanced
         : SpeakingEvalReportTemplate::Standard;
 }

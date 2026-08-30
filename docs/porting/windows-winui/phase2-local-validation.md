@@ -115,6 +115,12 @@ continuity, term/week lookup, saved-schedule validation, and the existing
 settings semantics. The retained Qt schedule class is now a conversion and
 JSON adapter; locale formatting and settings access remain Qt-owned.
 
+The calendar-event slice now includes a Qt-free `CalendarEventRules`
+boundary for exact event-type/time-status normalization, start-of-term
+recognition, and literal campus-code token matching. The retained Qt event
+model and filter delegate through UTF-8 adapters; event storage, date/time
+values, and UI presentation remain in the existing adapters.
+
 ## Local validation
 
 | Lane | Result |
@@ -168,6 +174,10 @@ JSON adapter; locale formatting and settings access remain Qt-owned.
 | Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
+| Windows x64 Debug speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
+| Windows x64 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
+| Windows x86 Debug speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
+| Windows x86 Release speaking-evaluation report model test | Passed: `ClassMngrEngineSpeakingEvaluationReportModelTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -184,6 +194,10 @@ JSON adapter; locale formatting and settings access remain Qt-owned.
 | Windows x64 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x86 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x86 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
+| Windows x64 Debug calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
+| Windows x64 Release calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
+| Windows x86 Debug calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
+| Windows x86 Release calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
@@ -201,16 +215,18 @@ source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. The new schedule-import
 service test passed in x64/x86 Debug and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service,
-academic-calendar schedule, class-information, schedule-read, schedule-import,
-and class-transfer
+speaking-evaluation report metadata model, academic-calendar schedule,
+calendar-event rules, class-information,
+schedule-read, schedule-import, and class-transfer
 implementations compiled and passed in all four engine lanes. Each lane's
-integrated sweep then passed all seventeen engine suites plus both WinUI staging
-and manifest checks (19/19). The
+integrated sweep then passed all nineteen engine suites plus both WinUI staging
+and manifest checks (21/21). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep pagination adapter,
-academic-calendar adapter, schema-manager, updater, and teacher-import
+academic-calendar, calendar-event, and speaking-evaluation report metadata
+adapters, schema-manager, updater, and teacher-import
 coverage. The
 batch-report target was also exercised offscreen;
 a normal desktop run was blocked only by the host clipboard being
