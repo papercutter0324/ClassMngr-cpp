@@ -227,6 +227,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassTransferServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineSpeakingAnalyticsTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingAnalyticsTests
+        )
+    endif()
     if(TARGET ClassMngrEngineSpeakingEvaluationReportServiceTests)
         add_dependencies(
             ${classmngr_winui_target}

@@ -95,6 +95,14 @@ evaluation child-table transfer, export identity stripping, and one
 transaction for teacher, class, and child-row writes. The retained Qt JSON and
 file codec remains an adapter at this boundary; it does not own import rules.
 
+The class-analytics slice now includes a Qt-free `SpeakingAnalyticsService`
+for evaluation-name discovery, grade conversion and rounding, consolidated
+criterion distributions, class-shape summaries, roster filtering, student
+rankings, and year-to-date points. The portable student-name normalization
+service owns the shared English/Korean matching rules. The retained Qt
+analytics service and student-name utility now convert values at the edge;
+the ranking table, charts, localization, and widget behavior remain Qt-owned.
+
 The speaking-evaluation report slice now includes a Qt-free
 `SpeakingEvaluationReportService` for the six-metric overall-grade rule. It
 preserves the retained `C` through `A+` mapping, the 0.4 fractional-average
@@ -280,6 +288,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Windows x86 Debug class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Windows x86 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
+| Windows x64 Debug class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
+| Windows x64 Release class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
+| Windows x86 Debug class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
+| Windows x86 Release class-analytics service test | Passed: `ClassMngrEngineSpeakingAnalyticsTests` |
 | Windows x64 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
@@ -349,6 +361,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
+| Retained Windows Qt analytics adapter compile check | Passed: Qt 6.11/MSVC compile-only checks for `speaking_analytics.cpp` and `student_name_utils.cpp` |
 | Retained Windows Qt speaking-evaluation report widget | Passed: `ClassMngrSpeakingEvalReportWidgetTests` |
 | Retained Windows Qt schedule-builder regression | Passed: `ClassMngrScheduleBuilderTests` |
 | Retained Windows Qt schedule-model regression | Passed: `ClassMngrSchedulePrintModelTests` |
@@ -378,14 +391,15 @@ eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-one engine suites plus both WinUI staging and manifest checks (33/33).
+thirty-two engine suites plus both WinUI staging and manifest checks (34/34).
 The
 retained Qt schedule-import, schedule-builder, and upcoming-birthday
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep class-information and
 pagination adapters,
-academic-calendar, calendar-event, speaking-evaluation report metadata, and
+academic-calendar, calendar-event, speaking-evaluation report metadata,
+class-analytics, and
 speaking-evaluation report content and AI prompt adapters, schema-manager,
 updater, and teacher-import
 coverage. The

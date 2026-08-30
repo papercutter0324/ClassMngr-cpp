@@ -36,6 +36,10 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_naming.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_naming.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/student_name.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/student_name.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_analytics.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_analytics.h"
     "${PROJECT_SOURCE_DIR}/src/engine/upcoming_birthday_schedule.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/upcoming_birthday_schedule.h"
     "${PROJECT_SOURCE_DIR}/src/engine/validation_result.cpp"
@@ -322,6 +326,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineUpcomingBirthdayScheduleTests
         COMMAND ClassMngrEngineUpcomingBirthdayScheduleTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingAnalyticsTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_analytics_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingAnalyticsTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingAnalyticsTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingAnalyticsTests
+        COMMAND ClassMngrEngineSpeakingAnalyticsTests
     )
 
     add_executable(ClassMngrEngineNativeEnglishTeacherServiceTests

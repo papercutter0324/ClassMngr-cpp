@@ -1,12 +1,34 @@
 #include "student_name_utils.h"
 
+#include "classmngr/engine/student_name.h"
+
+#include <QByteArray>
 #include <QRegularExpression>
 #include <QSet>
+
+#include <string_view>
 
 namespace StudentNameUtils
 {
 namespace
 {
+std::string toUtf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+QString fromUtf8(std::string_view value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
 bool containsNonAsciiCharacters(const QString& value)
 {
     for (const QChar character : value)
@@ -54,98 +76,11 @@ bool containsInvalidKoreanCharacters(const QString& value)
 
 QString normalizeEnglishName(const QString& value)
 {
-    static const QRegularExpression spacedHyphenExpression(
-        QStringLiteral("\\s*-\\s*")
+    return fromUtf8(
+        classmngr::engine::StudentNameService::normalizeEnglish(
+            toUtf8(value)
+            )
         );
-    static const QRegularExpression repeatedHyphenExpression(
-        QStringLiteral("-{2,}")
-        );
-    static const QRegularExpression repeatedPeriodExpression(
-        QStringLiteral("\\.{2,}")
-        );
-    static const QRegularExpression spacedPeriodExpression(
-        QStringLiteral("\\s*\\.\\s*")
-        );
-    static const QRegularExpression joinedInitialsExpression(
-        QStringLiteral("\\b([A-Za-z])[.-]+-?[.-]*([A-Za-z])\\b")
-        );
-    static const QRegularExpression adjacentInitialsExpression(
-        QStringLiteral("\\b([A-Za-z])\\. ?([A-Za-z])\\.")
-        );
-
-    if (value.trimmed().isEmpty())
-    {
-        return {};
-    }
-
-    // Preserve malformed input so callers that normalize before validating do
-    // not accidentally turn it into a different, valid name.
-    if (containsNonAsciiCharacters(value)
-        || containsInvalidEnglishCharacters(value))
-    {
-        return value.trimmed();
-    }
-
-    QString filtered;
-    filtered.reserve(value.size());
-    for (const QChar character : value)
-    {
-        const ushort code = character.unicode();
-        if ((code >= 'A' && code <= 'Z')
-            || (code >= 'a' && code <= 'z')
-            || code == '.' || code == '-')
-        {
-            filtered.append(character);
-        }
-        else if (character.isSpace())
-        {
-            filtered.append(QLatin1Char(' '));
-        }
-    }
-
-    QString cleaned = filtered.simplified();
-    cleaned.replace(spacedHyphenExpression, QStringLiteral("-"));
-    cleaned.replace(repeatedHyphenExpression, QStringLiteral("-"));
-    cleaned.replace(repeatedPeriodExpression, QStringLiteral("."));
-    cleaned.replace(spacedPeriodExpression, QStringLiteral("."));
-    cleaned.replace(joinedInitialsExpression, QStringLiteral("\\1.\\2"));
-
-    QString result;
-    QString token;
-    QChar previousSeparator;
-    const auto flushToken = [&result, &token, &previousSeparator]()
-    {
-        if (token.isEmpty())
-        {
-            return;
-        }
-        const QString lower = token.toLower();
-        result += result.isEmpty()
-                || previousSeparator == QLatin1Char(' ')
-                || previousSeparator == QLatin1Char('.')
-            ? lower.left(1).toUpper() + lower.mid(1)
-            : lower;
-        token.clear();
-    };
-
-    for (const QChar character : cleaned)
-    {
-        if (character == QLatin1Char(' ')
-            || character == QLatin1Char('.')
-            || character == QLatin1Char('-'))
-        {
-            flushToken();
-            result.append(character);
-            previousSeparator = character;
-        }
-        else
-        {
-            token.append(character);
-        }
-    }
-    flushToken();
-    result.replace(adjacentInitialsExpression, QStringLiteral("\\1.\\2."));
-    return result.trimmed();
 }
 
 
@@ -153,84 +88,33 @@ QString normalizeKoreanName(
     const QString& value
     )
 {
-    static const QRegularExpression suffixExpression(
-        QStringLiteral("\\(([A-Za-z])\\)\\s*$")
+    return fromUtf8(
+        classmngr::engine::StudentNameService::normalizeKorean(
+            toUtf8(value)
+            )
         );
-
-    // As with English names, invalid input must remain visible to validation.
-    if (containsInvalidKoreanCharacters(value))
-    {
-        return value.trimmed();
-    }
-
-    const QRegularExpressionMatch suffixMatch =
-        suffixExpression.match(value);
-
-    const QString suffix =
-        suffixMatch.hasMatch()
-            ? suffixMatch.captured(1).toUpper()
-            : QString();
-
-    const QString source =
-        suffixMatch.hasMatch()
-            ? value.left(suffixMatch.capturedStart())
-            : value;
-
-    QString normalized;
-    normalized.reserve(source.size());
-
-    for (const QChar character : source)
-    {
-        const ushort code =
-            character.unicode();
-
-        if (code >= 0xAC00 && code <= 0xD7A3)
-        {
-            normalized.append(character);
-        }
-    }
-
-    if (!normalized.isEmpty() && suffix.size() == 1)
-    {
-        normalized += QStringLiteral("(%1)")
-            .arg(suffix);
-    }
-
-    return normalized;
 }
 
 QString baseKoreanName(
     const QString& value
     )
 {
-    static const QRegularExpression suffixExpression(
-        QStringLiteral("\\([A-Z]\\)$")
+    return fromUtf8(
+        classmngr::engine::StudentNameService::baseKorean(
+            toUtf8(value)
+            )
         );
-
-    QString normalized =
-        normalizeKoreanName(value);
-
-    normalized.remove(suffixExpression);
-
-    return normalized;
 }
 
 QString koreanNameSuffix(
     const QString& value
     )
 {
-    static const QRegularExpression suffixExpression(
-        QStringLiteral("\\(([A-Z])\\)$")
+    return fromUtf8(
+        classmngr::engine::StudentNameService::koreanSuffix(
+            toUtf8(value)
+            )
         );
-
-    const QRegularExpressionMatch match =
-        suffixExpression.match(
-            normalizeKoreanName(value)
-            );
-
-    return match.hasMatch()
-        ? match.captured(1)
-        : QString();
 }
 
 QString namePairKey(
