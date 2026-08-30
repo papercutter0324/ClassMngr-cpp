@@ -2,17 +2,82 @@
 
 #include <QJsonArray>
 #include <QJsonValue>
+#include <QMap>
 
 #include <algorithm>
+#include <chrono>
+#include <map>
 
 namespace
 {
-constexpr int DaysPerWeek = 7;
-constexpr int MaximumTermWeeks = 53;
+using PortableCalendarDate = classmngr::engine::CalendarDate;
+using PortableSchedule = classmngr::engine::AcademicYearSchedule;
+using PortableScheduleMap =
+    classmngr::engine::AcademicCalendarSchedule::ScheduleMap;
 
-int termIndex(AcademicTerm term)
+PortableCalendarDate toPortableDate(const QDate& date)
 {
-    return static_cast<int>(term);
+    if (!date.isValid())
+    {
+        return {};
+    }
+
+    return {
+        std::chrono::year{date.year()},
+        std::chrono::month{static_cast<unsigned>(date.month())},
+        std::chrono::day{static_cast<unsigned>(date.day())}
+    };
+}
+
+QDate toQtDate(const PortableCalendarDate& date)
+{
+    if (!date.ok())
+    {
+        return {};
+    }
+
+    return QDate(
+        static_cast<int>(date.year()),
+        static_cast<int>(static_cast<unsigned>(date.month())),
+        static_cast<int>(static_cast<unsigned>(date.day()))
+        );
+}
+
+classmngr::engine::SchoolLevel toPortableSchoolLevel(SchoolLevel level)
+{
+    return level == SchoolLevel::Elementary
+        ? classmngr::engine::SchoolLevel::Elementary
+        : classmngr::engine::SchoolLevel::Middle;
+}
+
+classmngr::engine::AcademicTerm toPortableTerm(AcademicTerm term)
+{
+    return static_cast<classmngr::engine::AcademicTerm>(
+        static_cast<int>(term)
+        );
+}
+
+AcademicTerm toQtTerm(classmngr::engine::AcademicTerm term)
+{
+    return static_cast<AcademicTerm>(static_cast<int>(term));
+}
+
+PortableSchedule toPortableSchedule(const AcademicYearSchedule& schedule)
+{
+    return {
+        schedule.termYear,
+        toPortableDate(schedule.winterStart),
+        schedule.weeks
+    };
+}
+
+AcademicYearSchedule toQtSchedule(const PortableSchedule& schedule)
+{
+    return {
+        schedule.termYear,
+        toQtDate(schedule.winterStart),
+        schedule.weeks
+    };
 }
 
 QJsonObject scheduleToJson(const AcademicYearSchedule& schedule)
@@ -55,12 +120,7 @@ bool scheduleFromJson(
     const QJsonArray weeks =
         object.value(QStringLiteral("weeks")).toArray();
 
-    if (
-        termYear < AcademicCalendarSchedule::FirstTermYear
-        || !winterStart.isValid()
-        || winterStart.dayOfWeek() != Qt::Monday
-        || weeks.size() != AcademicTermCount
-        )
+    if (weeks.size() != AcademicTermCount)
     {
         return false;
     }
@@ -68,16 +128,14 @@ bool scheduleFromJson(
     AcademicYearSchedule parsed;
     parsed.termYear = termYear;
     parsed.winterStart = winterStart;
-
     for (int index = 0; index < AcademicTermCount; ++index)
     {
-        const int count = weeks.at(index).toInt();
-        if (count < 1 || count > MaximumTermWeeks)
-        {
-            return false;
-        }
+        parsed.weeks[index] = weeks.at(index).toInt();
+    }
 
-        parsed.weeks[index] = count;
+    if (!parsed.isValid())
+    {
+        return false;
     }
 
     *schedule = parsed;
@@ -103,13 +161,11 @@ bool loadProfile(
 
     QMap<int, AcademicYearSchedule> parsed;
     const QJsonObject profile = profileValue.toObject();
-
     for (auto iterator = profile.begin(); iterator != profile.end(); ++iterator)
     {
         bool yearOk = false;
         const int termYear = iterator.key().toInt(&yearOk);
         AcademicYearSchedule schedule;
-
         if (
             !yearOk
             || !scheduleFromJson(termYear, iterator.value(), &schedule)
@@ -125,90 +181,62 @@ bool loadProfile(
     return true;
 }
 
-QJsonObject profileToJson(
+PortableScheduleMap toPortableSchedules(
     const QMap<int, AcademicYearSchedule>& schedules
     )
 {
-    QJsonObject profile;
-
+    PortableScheduleMap result;
     for (auto iterator = schedules.cbegin(); iterator != schedules.cend(); ++iterator)
     {
+        result.insert({iterator.key(), toPortableSchedule(iterator.value())});
+    }
+    return result;
+}
+
+QJsonObject profileToJson(const PortableScheduleMap& schedules)
+{
+    QJsonObject profile;
+    for (const auto& [termYear, schedule] : schedules)
+    {
         profile.insert(
-            QString::number(iterator.key()),
-            scheduleToJson(iterator.value())
+            QString::number(termYear),
+            scheduleToJson(toQtSchedule(schedule))
             );
     }
-
     return profile;
 }
 }
 
 bool AcademicYearSchedule::isValid() const
 {
-    if (
-        termYear < AcademicCalendarSchedule::FirstTermYear
-        || !winterStart.isValid()
-        || winterStart.dayOfWeek() != Qt::Monday
-        )
-    {
-        return false;
-    }
-
-    return std::ranges::all_of(
-        weeks,
-        [](int count)
-        {
-            return count >= 1 && count <= MaximumTermWeeks;
-        }
-        );
+    return toPortableSchedule(*this).isValid();
 }
 
 QDate AcademicYearSchedule::termStart(AcademicTerm term) const
 {
-    if (!isValid())
-    {
-        return {};
-    }
-
-    QDate start = winterStart;
-    for (int index = 0; index < termIndex(term); ++index)
-    {
-        start = start.addDays(weeks[index] * DaysPerWeek);
-    }
-
-    return start;
+    return toQtDate(
+        toPortableSchedule(*this).termStart(toPortableTerm(term))
+        );
 }
 
 QDate AcademicYearSchedule::endDate() const
 {
-    if (!isValid())
-    {
-        return {};
-    }
-
-    int totalWeeks = 0;
-    for (const int count : weeks)
-    {
-        totalWeeks += count;
-    }
-
-    return winterStart.addDays(totalWeeks * DaysPerWeek);
+    return toQtDate(toPortableSchedule(*this).endDate());
 }
 
 QDate AcademicCalendarSchedule::initialWinterStart()
 {
-    return QDate(2025, 12, 29);
+    return toQtDate(
+        classmngr::engine::AcademicCalendarSchedule::initialWinterStart()
+        );
 }
 
 std::array<int, AcademicTermCount>
 AcademicCalendarSchedule::defaultWeeks(SchoolLevel level)
 {
-    if (level == SchoolLevel::Elementary)
-    {
-        return {11, 19, 11, 11};
-    }
-
-    return {11, 19, 4, 18};
+    return classmngr::engine::AcademicCalendarSchedule::defaultWeeks(
+        toPortableSchoolLevel(level)
+        );
 }
 
 AcademicYearSchedule AcademicCalendarSchedule::yearSchedule(
@@ -216,37 +244,12 @@ AcademicYearSchedule AcademicCalendarSchedule::yearSchedule(
     int termYear
     ) const
 {
-    if (termYear < FirstTermYear)
-    {
-        return {};
-    }
-
-    const ScheduleMap& customSchedules = schedules(level);
-    AcademicYearSchedule current{
-        FirstTermYear,
-        initialWinterStart(),
-        defaultWeeks(level)
-    };
-
-    for (int year = FirstTermYear; year <= termYear; ++year)
-    {
-        if (year > FirstTermYear)
-        {
-            current = {
-                year,
-                current.endDate(),
-                defaultWeeks(level)
-            };
-        }
-
-        const auto custom = customSchedules.constFind(year);
-        if (custom != customSchedules.cend())
-        {
-            current = custom.value();
-        }
-    }
-
-    return current;
+    return toQtSchedule(
+        m_engine.yearSchedule(
+            toPortableSchoolLevel(level),
+            termYear
+            )
+        );
 }
 
 AcademicYearSchedule AcademicCalendarSchedule::defaultYearSchedule(
@@ -254,21 +257,12 @@ AcademicYearSchedule AcademicCalendarSchedule::defaultYearSchedule(
     int termYear
     ) const
 {
-    if (termYear < FirstTermYear)
-    {
-        return {};
-    }
-
-    const QDate winterStart =
-        termYear == FirstTermYear
-            ? initialWinterStart()
-            : yearSchedule(level, termYear - 1).endDate();
-
-    return {
-        termYear,
-        winterStart,
-        defaultWeeks(level)
-    };
+    return toQtSchedule(
+        m_engine.defaultYearSchedule(
+            toPortableSchoolLevel(level),
+            termYear
+            )
+        );
 }
 
 AcademicTermPosition AcademicCalendarSchedule::termAt(
@@ -276,58 +270,29 @@ AcademicTermPosition AcademicCalendarSchedule::termAt(
     const QDate& date
     ) const
 {
-    if (!date.isValid() || date < initialWinterStart())
-    {
-        return {};
-    }
+    const classmngr::engine::AcademicTermPosition position =
+        m_engine.termAt(
+            toPortableSchoolLevel(level),
+            toPortableDate(date)
+            );
 
-    AcademicYearSchedule schedule = yearSchedule(level, FirstTermYear);
-    int termYear = FirstTermYear;
-
-    while (date >= schedule.endDate())
-    {
-        ++termYear;
-        schedule = yearSchedule(level, termYear);
-    }
-
-    for (int index = AcademicTermCount - 1; index >= 0; --index)
-    {
-        const AcademicTerm term = static_cast<AcademicTerm>(index);
-        const QDate start = schedule.termStart(term);
-
-        if (date >= start)
-        {
-            const int week = start.daysTo(date) / DaysPerWeek + 1;
-            return {
-                true,
-                termYear,
-                term,
-                week,
-                start.addDays((week - 1) * DaysPerWeek)
-            };
-        }
-    }
-
-    return {};
+    return {
+        position.valid,
+        position.termYear,
+        toQtTerm(position.term),
+        position.week,
+        toQtDate(position.weekStart)
+    };
 }
 
 bool AcademicCalendarSchedule::hasCustomYearAfter(int termYear) const
 {
-    const auto hasLater =
-        [termYear](const ScheduleMap& schedules)
-        {
-            const auto iterator = schedules.upperBound(termYear);
-            return iterator != schedules.cend();
-        };
-
-    return hasLater(m_elementarySchedules)
-        || hasLater(m_middleSchedules);
+    return m_engine.hasCustomYearAfter(termYear);
 }
 
 bool AcademicCalendarSchedule::hasSavedSchedules() const
 {
-    return !m_elementarySchedules.isEmpty()
-        && !m_middleSchedules.isEmpty();
+    return m_engine.hasSavedSchedules();
 }
 
 void AcademicCalendarSchedule::setYearSchedules(
@@ -336,100 +301,16 @@ void AcademicCalendarSchedule::setYearSchedules(
     const AcademicYearSchedule& middle
     )
 {
-    if (
-        termYear < FirstTermYear
-        || !elementary.isValid()
-        || !middle.isValid()
-        || elementary.termYear != termYear
-        || middle.termYear != termYear
-        )
-    {
-        return;
-    }
-
-    AcademicYearSchedule previousElementary;
-    AcademicYearSchedule previousMiddle;
-
-    if (termYear > FirstTermYear)
-    {
-        previousElementary =
-            yearSchedule(SchoolLevel::Elementary, termYear - 1);
-        previousMiddle =
-            yearSchedule(SchoolLevel::Middle, termYear - 1);
-
-        auto alignPreviousFall =
-            [](AcademicYearSchedule* previous, const QDate& nextWinterStart)
-            {
-                if (!previous)
-                {
-                    return false;
-                }
-
-                const QDate fallStart =
-                    previous->termStart(AcademicTerm::Fall);
-                const int days = fallStart.daysTo(nextWinterStart);
-                const int weeks = days / DaysPerWeek;
-
-                if (
-                    days <= 0
-                    || days % DaysPerWeek != 0
-                    || weeks > MaximumTermWeeks
-                    )
-                {
-                    return false;
-                }
-
-                previous->weeks[termIndex(AcademicTerm::Fall)] = weeks;
-                return true;
-            };
-
-        if (
-            !alignPreviousFall(
-                &previousElementary,
-                elementary.winterStart
-                )
-            || !alignPreviousFall(
-                &previousMiddle,
-                middle.winterStart
-                )
-            )
-        {
-            return;
-        }
-    }
-
-    while (!m_elementarySchedules.isEmpty()
-           && m_elementarySchedules.lastKey() > termYear)
-    {
-        m_elementarySchedules.remove(m_elementarySchedules.lastKey());
-    }
-
-    while (!m_middleSchedules.isEmpty()
-           && m_middleSchedules.lastKey() > termYear)
-    {
-        m_middleSchedules.remove(m_middleSchedules.lastKey());
-    }
-
-    if (termYear > FirstTermYear)
-    {
-        m_elementarySchedules.insert(
-            termYear - 1,
-            previousElementary
-            );
-        m_middleSchedules.insert(
-            termYear - 1,
-            previousMiddle
-            );
-    }
-
-    m_elementarySchedules.insert(termYear, elementary);
-    m_middleSchedules.insert(termYear, middle);
+    m_engine.setYearSchedules(
+        termYear,
+        toPortableSchedule(elementary),
+        toPortableSchedule(middle)
+        );
 }
 
 void AcademicCalendarSchedule::clear()
 {
-    m_elementarySchedules.clear();
-    m_middleSchedules.clear();
+    m_engine.clear();
 }
 
 QJsonObject AcademicCalendarSchedule::toJson() const
@@ -444,11 +325,19 @@ QJsonObject AcademicCalendarSchedule::toJson() const
             QJsonObject{
                 {
                     QStringLiteral("elementary"),
-                    profileToJson(m_elementarySchedules)
+                    profileToJson(
+                        m_engine.customSchedules(
+                            classmngr::engine::SchoolLevel::Elementary
+                            )
+                        )
                 },
                 {
                     QStringLiteral("middle"),
-                    profileToJson(m_middleSchedules)
+                    profileToJson(
+                        m_engine.customSchedules(
+                            classmngr::engine::SchoolLevel::Middle
+                            )
+                        )
                 }
             }
         }
@@ -471,10 +360,9 @@ bool AcademicCalendarSchedule::fromJson(const QJsonObject& root)
         return false;
     }
 
-    ScheduleMap elementary;
-    ScheduleMap middle;
+    QMap<int, AcademicYearSchedule> elementary;
+    QMap<int, AcademicYearSchedule> middle;
     const QJsonObject profiles = profilesValue.toObject();
-
     if (
         !loadProfile(
             profiles,
@@ -492,23 +380,14 @@ bool AcademicCalendarSchedule::fromJson(const QJsonObject& root)
         return false;
     }
 
-    m_elementarySchedules = elementary;
-    m_middleSchedules = middle;
+    if (!m_engine.replaceSchedules(
+            toPortableSchedules(elementary),
+            toPortableSchedules(middle)
+            ))
+    {
+        clear();
+        return false;
+    }
+
     return true;
-}
-
-const AcademicCalendarSchedule::ScheduleMap&
-AcademicCalendarSchedule::schedules(SchoolLevel level) const
-{
-    return level == SchoolLevel::Elementary
-        ? m_elementarySchedules
-        : m_middleSchedules;
-}
-
-AcademicCalendarSchedule::ScheduleMap&
-AcademicCalendarSchedule::schedules(SchoolLevel level)
-{
-    return level == SchoolLevel::Elementary
-        ? m_elementarySchedules
-        : m_middleSchedules;
 }

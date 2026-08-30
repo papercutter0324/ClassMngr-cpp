@@ -108,6 +108,13 @@ page. The retained Qt renderer delegates these decisions through a small
 adapter while keeping text measurement, page counting, PDF geometry, and
 drawing Qt-owned.
 
+The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
+model using standard-library calendar dates. It preserves default elementary
+and middle-school term lengths, custom-year rollover, previous-fall
+continuity, term/week lookup, saved-schedule validation, and the existing
+settings semantics. The retained Qt schedule class is now a conversion and
+JSON adapter; locale formatting and settings access remain Qt-owned.
+
 ## Local validation
 
 | Lane | Result |
@@ -173,6 +180,10 @@ drawing Qt-owned.
 | Windows x64 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x86 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x86 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
+| Windows x64 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
+| Windows x64 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
+| Windows x86 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
+| Windows x86 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
@@ -190,15 +201,17 @@ source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. The new schedule-import
 service test passed in x64/x86 Debug and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service,
-class-information, schedule-read, schedule-import, and class-transfer
+academic-calendar schedule, class-information, schedule-read, schedule-import,
+and class-transfer
 implementations compiled and passed in all four engine lanes. Each lane's
-integrated sweep then passed all sixteen engine suites plus both WinUI staging
-and manifest checks (18/18). The
+integrated sweep then passed all seventeen engine suites plus both WinUI staging
+and manifest checks (19/19). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep pagination adapter,
-schema-manager, updater, and teacher-import coverage. The
+academic-calendar adapter, schema-manager, updater, and teacher-import
+coverage. The
 batch-report target was also exercised offscreen;
 a normal desktop run was blocked only by the host clipboard being
 owned/unavailable in two existing AI UI cases. A narrowed source audit found

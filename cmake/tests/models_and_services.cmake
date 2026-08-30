@@ -437,6 +437,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrEvaluationDefaultSelectionTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )

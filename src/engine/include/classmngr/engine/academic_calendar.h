@@ -1,11 +1,11 @@
 #pragma once
 
-#include "classmngr/engine/academic_calendar.h"
-
-#include <QDate>
-#include <QJsonObject>
-
 #include <array>
+#include <chrono>
+#include <map>
+
+namespace classmngr::engine
+{
 
 enum class SchoolLevel
 {
@@ -22,16 +22,17 @@ enum class AcademicTerm
 };
 
 inline constexpr int AcademicTermCount = 4;
+using CalendarDate = std::chrono::year_month_day;
 
 struct AcademicYearSchedule
 {
     int termYear = 0;
-    QDate winterStart;
+    CalendarDate winterStart{};
     std::array<int, AcademicTermCount> weeks{};
 
     [[nodiscard]] bool isValid() const;
-    [[nodiscard]] QDate termStart(AcademicTerm term) const;
-    [[nodiscard]] QDate endDate() const;
+    [[nodiscard]] CalendarDate termStart(AcademicTerm term) const;
+    [[nodiscard]] CalendarDate endDate() const;
 };
 
 struct AcademicTermPosition
@@ -40,15 +41,16 @@ struct AcademicTermPosition
     int termYear = 0;
     AcademicTerm term = AcademicTerm::Winter;
     int week = 0;
-    QDate weekStart;
+    CalendarDate weekStart{};
 };
 
 class AcademicCalendarSchedule
 {
 public:
     static constexpr int FirstTermYear = 2026;
+    using ScheduleMap = std::map<int, AcademicYearSchedule>;
 
-    [[nodiscard]] static QDate initialWinterStart();
+    [[nodiscard]] static CalendarDate initialWinterStart();
     [[nodiscard]] static std::array<int, AcademicTermCount> defaultWeeks(
         SchoolLevel level
         );
@@ -63,7 +65,7 @@ public:
         ) const;
     [[nodiscard]] AcademicTermPosition termAt(
         SchoolLevel level,
-        const QDate& date
+        const CalendarDate& date
         ) const;
 
     [[nodiscard]] bool hasCustomYearAfter(int termYear) const;
@@ -74,10 +76,24 @@ public:
         const AcademicYearSchedule& middle
         );
 
+    // Used by presentation adapters when loading the existing settings
+    // format.  Validation stays in the portable schedule model.
+    [[nodiscard]] bool replaceSchedules(
+        const ScheduleMap& elementary,
+        const ScheduleMap& middle
+        );
+    [[nodiscard]] const ScheduleMap& customSchedules(
+        SchoolLevel level
+        ) const;
+
     void clear();
-    [[nodiscard]] QJsonObject toJson() const;
-    [[nodiscard]] bool fromJson(const QJsonObject& root);
 
 private:
-    classmngr::engine::AcademicCalendarSchedule m_engine;
+    [[nodiscard]] const ScheduleMap& schedules(SchoolLevel level) const;
+    [[nodiscard]] ScheduleMap& schedules(SchoolLevel level);
+
+    ScheduleMap m_elementarySchedules;
+    ScheduleMap m_middleSchedules;
 };
+
+} // namespace classmngr::engine

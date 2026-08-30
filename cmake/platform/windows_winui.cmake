@@ -251,6 +251,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSubPrepPaginationTests
         )
     endif()
+    if(TARGET ClassMngrEngineAcademicCalendarTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineAcademicCalendarTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

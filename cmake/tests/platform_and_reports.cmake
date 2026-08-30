@@ -16,6 +16,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrAcademicCalendarTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql
