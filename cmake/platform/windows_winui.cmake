@@ -215,10 +215,40 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassScheduleServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineScheduleImportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineScheduleImportServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineClassTransferServiceTests)
         add_dependencies(
             ${classmngr_winui_target}
             ClassMngrEngineClassTransferServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationReportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationReportServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineScheduleReportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineScheduleReportServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineRosterReportServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineRosterReportServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSubPrepPaginationTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSubPrepPaginationTests
         )
     endif()
 

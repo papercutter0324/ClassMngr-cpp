@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, and class-transfer workflows are extracted; schedule imports, reports, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, speaking-evaluation grade calculation, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report models, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -100,9 +100,13 @@ error contracts. The database boundary now owns file-format rules, SQLite
 connection/transaction behavior, six-version schema migration, `OpenDatabase`,
 Qt-free class CRUD, validated teacher CRUD, the native-English/GS-team
 directory services, validated class-information persistence, and schedule
-reads/conflicts, and class-transfer workflows, with the retained Qt code still
-operational. The next active gate is extracting schedule-import and report/use-
-case boundaries with cross-platform fixture evidence.
+reads/conflicts, schedule-import workflows, class-transfer workflows, the
+speaking-evaluation overall-grade report rule, the schedule report model, and
+the by-day/daily/per-class roster report model, and the sub-prep pagination
+policy,
+with the retained Qt code still operational. The next active gate is
+extracting the remaining report content/pagination use cases and connecting
+the retained adapters with cross-platform fixture evidence.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -341,6 +345,51 @@ After meaningful work:
   non-visual suite passed all 78 registered tests, including the existing
   class-transfer path. Phase 2 remains open for schedule-import/report
   models, adapter wiring, and cross-platform fixture round trips.
+- **2026-08-30 — Schedule-import service added.** The engine now owns the
+  workbook-neutral schedule-import models, teacher/class match ranking,
+  meeting-pattern rules, plan and stale-target validation, normal snapshot
+  replacement, intensive preserve/replace behavior, slot-state snapshots,
+  profile-name policy, and transactional schedule writes. The retained
+  workbook parser remains the Qt adapter. The new headless service test and
+  the complete 14-test engine/WinUI staging sweep passed in all four WinUI
+  Debug/Release x64/x86 lanes; the retained Qt schedule-import regression
+  also passed. Phase 2 remains open for report models, adapter wiring, and
+  cross-platform fixture round trips.
+- **2026-08-30 — Speaking-evaluation report grade rule extracted.** The
+  Qt-free `SpeakingEvaluationReportService` now owns the six-metric overall
+  grade calculation, including the retained fractional rounding threshold and
+  invalid-score `N/A` behavior. The retained Qt report assembler, report
+  widget, and roster score-import path delegate to the engine. The new engine
+  test passed in all four x64/x86 Debug/Release lanes; the integrated WinUI
+  sweeps passed 15/15, and the retained report-widget test passed. Remaining
+  Phase 2 work is report content/pagination models, adapter wiring, and
+  cross-platform fixture round trips.
+- **2026-08-30 — Schedule report model extracted.** The Qt-free
+  `ScheduleReportService` now owns the renderer-neutral grid model, slot-state
+  defaults and overrides, intensive trimming, testing assignments and
+  suppression, summary counts, teacher-room labels, and 12/24-hour range
+  formatting. The retained Qt schedule view model delegates through a
+  conversion adapter; schedule/PDF and sub-prep report regressions passed.
+  The integrated WinUI sweep passed all fourteen engine suites plus staging
+  and manifest checks (16/16) in x64/x86 Debug and Release.
+- **2026-08-30 — Roster report model extracted.** The Qt-free
+  `RosterReportService` now owns the by-day, daily, and per-class cell-value
+  models, time-slot mapping, duplicate-slot validation, daily overflow page
+  keys, teacher/room and Zoom fallback labels, student limits, and
+  per-class extra-column filtering/caps. The retained Qt roster service now
+  converts into the portable model while keeping PDF geometry and drawing as
+  adapters. The engine test passed in all four x64/x86 Debug/Release lanes,
+  the retained Qt roster PDF regression passed, and the integrated WinUI
+  sweep passed all fifteen engine suites plus staging and manifest checks
+  (17/17).
+- **2026-08-30 — Sub-prep pagination policy extracted.** The Qt-free
+  `SubPrepPaginationService` now owns teacher-section page-span detection,
+  the "Sub Notes" new-page threshold, and fallback last-page placement. The
+  retained Qt renderer delegates those decisions while keeping text
+  measurement and PDF drawing in the adapter. The engine test passed in all
+  four x64/x86 Debug/Release lanes, the retained Qt sub-prep PDF regression
+  passed, and the integrated WinUI sweep passed all sixteen engine suites plus
+  staging and manifest checks (18/18).
 
 ## Shared Completion Rules
 

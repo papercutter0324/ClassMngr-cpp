@@ -62,6 +62,13 @@ snapshots with regular and intensive times, testing-class filtering, and
 typed conflict detection for candidate and stored intervals, including
 overnight handling and the existing class-name fallback.
 
+The schedule-import slice now includes Qt-free workbook-neutral models and a
+`ScheduleImportService`. The retained workbook parser remains a Qt adapter;
+the engine owns teacher/class match ranking, course meeting-pattern rules,
+plan validation, stale-target checks, normal snapshot replacement, intensive
+preserve/replace modes, intensive slot-state snapshots, profile-name policy,
+and transactional schedule writes.
+
 The class-transfer slice now includes Qt-free package models and a
 `ClassTransferService`. It preserves versioned teacher/class keys, package
 shape validation, teacher and class match previews, create/replace/skip
@@ -69,6 +76,37 @@ resolution rules, regular/intensive schedule preflight, roster and speaking
 evaluation child-table transfer, export identity stripping, and one
 transaction for teacher, class, and child-row writes. The retained Qt JSON and
 file codec remains an adapter at this boundary; it does not own import rules.
+
+The speaking-evaluation report slice now includes a Qt-free
+`SpeakingEvaluationReportService` for the six-metric overall-grade rule. It
+preserves the retained `C` through `A+` mapping, the 0.4 fractional-average
+rounding threshold, and `N/A` handling for incomplete or invalid metrics. The
+retained report assembler, report widget, and roster score-import path now
+delegate this calculation to the engine; drawing, PDF, and PowerPoint layout
+remain presentation adapters.
+
+The schedule-report slice now includes a Qt-free `ScheduleReportService` and
+renderer-neutral schedule model. It preserves visible-day ordering, regular
+and intensive slot defaults, persisted overrides, intensive outer-row
+trimming, testing-mode suppression and assignments, summary counts,
+teacher-room labels, and deterministic 12/24-hour range labels. The retained
+Qt schedule view model is now a conversion adapter; schedule PDF and sub-prep
+drawing remain Qt-owned.
+
+The roster-report slice now includes a Qt-free `RosterReportService` for the
+by-day, daily, and per-class-with-extra-info cell-value models. It preserves
+time-slot mapping, duplicate-slot diagnostics, stable daily ordering and
+overflow page keys, teacher/room and Zoom fallback labels, student limits,
+extra-column filtering/caps, and UTF-8 report values. The retained Qt roster
+service converts domain data into the engine model; PDF geometry, templates,
+and drawing remain Qt-owned.
+
+The sub-prep pagination slice now includes a Qt-free
+`SubPrepPaginationService` for teacher-section page-span detection, the
+"Sub Notes" new-page threshold, and fallback placement on the last document
+page. The retained Qt renderer delegates these decisions through a small
+adapter while keeping text measurement, page counting, PDF geometry, and
+drawing Qt-owned.
 
 ## Local validation
 
@@ -111,26 +149,60 @@ file codec remains an adapter at this boundary; it does not own import rules.
 | Windows x64 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
 | Windows x86 Debug class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
 | Windows x86 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x64 Debug schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
+| Windows x64 Release schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
+| Windows x86 Debug schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
+| Windows x86 Release schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
 | Windows x64 Debug class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Windows x64 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Windows x86 Debug class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
 | Windows x86 Release class-transfer service test | Passed: `ClassMngrEngineClassTransferServiceTests` |
+| Windows x64 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
+| Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
+| Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
+| Windows x86 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
+| Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
+| Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
+| Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
+| Windows x86 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
+| Windows x64 Debug roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
+| Windows x64 Release roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
+| Windows x86 Debug roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
+| Windows x86 Release roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
+| Windows x64 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
+| Windows x64 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
+| Windows x86 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
+| Windows x86 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
+| Retained Windows Qt speaking-evaluation report widget | Passed: `ClassMngrSpeakingEvalReportWidgetTests` |
+| Retained Windows Qt schedule-model regression | Passed: `ClassMngrSchedulePrintModelTests` |
+| Retained Windows Qt schedule-PDF regression | Passed: `ClassMngrSchedulePrintPdfTests` |
+| Retained Windows Qt sub-prep report regressions | Passed: `ClassMngrSubPrepPrintPdfTests`, `ClassMngrSubPrepPackageServiceTests` |
+| Retained Windows Qt roster report regression | Passed: `ClassMngrRosterTemplatePrintServiceTests` |
+| Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
 All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
-CTest selections with no Qt-dependent test process. Each lane's integrated
-sweep passed all eleven engine suites plus both WinUI staging and manifest
-checks. The class-information, schedule-read, and class-transfer
-implementations compiled and passed in all four engine lanes, and all four
-staged WinUI targets rebuilt successfully with the new engine dependency. The
-retained Qt class-information, assignment, and class-transfer regressions also
-passed, alongside the existing schema-manager, updater, and teacher-import
-coverage. A narrowed source audit found no Qt, WinUI, WinRT,
+CTest selections with no Qt-dependent test process. The new schedule-import
+service test passed in x64/x86 Debug and Release. The speaking-evaluation
+report service, schedule-report service, roster-report service,
+class-information, schedule-read, schedule-import, and class-transfer
+implementations compiled and passed in all four engine lanes. Each lane's
+integrated sweep then passed all sixteen engine suites plus both WinUI staging
+and manifest checks (18/18). The
+retained Qt schedule-import
+regression also passed, alongside the existing class-information, assignment,
+class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
+report-widget regressions, including the sub-prep pagination adapter,
+schema-manager, updater, and teacher-import coverage. The
+batch-report target was also exercised offscreen;
+a normal desktop run was blocked only by the host clipboard being
+owned/unavailable in two existing AI UI cases. A narrowed source audit found
+no Qt, WinUI, WinRT,
 Direct2D/DirectWrite, or Win32 UI dependency in `src/engine`.
 The complete retained Windows Qt non-visual CTest sweep also passed all 78
 registered tests after the engine test executables were rebuilt in the Qt
@@ -139,6 +211,6 @@ build tree.
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The next work is
-migrating schedule imports and report models, connecting retained Qt adapters
-to the new use-case boundaries, and producing cross-platform fixture round
-trips.
+migrating the remaining report content and pagination models, connecting
+retained Qt adapters to the extracted use-case boundaries, and producing
+cross-platform fixture round trips.

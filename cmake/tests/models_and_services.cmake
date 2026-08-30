@@ -51,6 +51,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSchedulePrintModelTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )
@@ -109,6 +110,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSchedulePrintPdfTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -143,6 +145,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSubPrepPrintPdfTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -189,6 +192,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSubPrepPackageServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -266,6 +270,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrRosterTemplatePrintServiceTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

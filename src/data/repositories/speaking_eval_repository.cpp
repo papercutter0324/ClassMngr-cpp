@@ -1,5 +1,6 @@
 #include "speaking_eval_repository.h"
 
+#include "classmngr/engine/speaking_evaluation_report_service.h"
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 
@@ -355,22 +356,6 @@ Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
         return scores;
     }
 
-    const QHash<QString, int> gradeToNumber{
-        { QStringLiteral("C"), 1 },
-        { QStringLiteral("B"), 2 },
-        { QStringLiteral("B+"), 3 },
-        { QStringLiteral("A"), 4 },
-        { QStringLiteral("A+"), 5 }
-    };
-
-    const QHash<int, QString> numberToGrade{
-        { 1, QStringLiteral("C") },
-        { 2, QStringLiteral("B") },
-        { 3, QStringLiteral("B+") },
-        { 4, QStringLiteral("A") },
-        { 5, QStringLiteral("A+") }
-    };
-
     const QList<int> scoreColumns{
         SpeakingEval::toInt(SpeakingEvalColumn::Grammar),
         SpeakingEval::toInt(SpeakingEvalColumn::Pronunciation),
@@ -400,62 +385,21 @@ Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
             continue;
         }
 
-        QList<int> numericScores;
-        bool valid = true;
+        classmngr::engine::SpeakingEvaluationScores portableScores;
 
-        for (int column : scoreColumns)
+        for (int index = 0; index < scoreColumns.size(); ++index)
         {
             const QString value =
-                row[column].trimmed();
-
-            if (!gradeToNumber.contains(value))
-            {
-                valid = false;
-                break;
-            }
-
-            numericScores.append(
-                gradeToNumber.value(value)
-                );
+                row[scoreColumns.at(index)].trimmed();
+            portableScores[static_cast<std::size_t>(index)] =
+                value.toStdString();
         }
 
-        QString finalGrade =
-            QStringLiteral("N/A");
-
-        if (valid && numericScores.size() == scoreColumns.size())
-        {
-            int sum = 0;
-
-            for (int score : numericScores)
-            {
-                sum += score;
-            }
-
-            const double average =
-                static_cast<double>(sum)
-                / numericScores.size();
-
-            int rounded =
-                static_cast<int>(average);
-
-            if (average - rounded >= 0.4)
-            {
-                ++rounded;
-            }
-
-            rounded =
-                qBound(
-                    1,
-                    rounded,
-                    5
-                    );
-
-            finalGrade =
-                numberToGrade.value(
-                    rounded,
-                    QStringLiteral("N/A")
-                    );
-        }
+        const QString finalGrade = QString::fromStdString(
+            classmngr::engine::SpeakingEvaluationReportService::overallGrade(
+                portableScores
+                )
+            );
 
         scores.append(
             {

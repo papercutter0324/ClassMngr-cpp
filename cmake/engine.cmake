@@ -58,6 +58,17 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/class_schedule_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/schedule_import_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/schedule_report_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_report.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/roster_report_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_report.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_pagination.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_transfer_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer_service.h"
@@ -319,6 +330,23 @@ if(BUILD_TESTING)
         COMMAND ClassMngrEngineClassScheduleServiceTests
     )
 
+    add_executable(ClassMngrEngineScheduleImportServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/schedule_import_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineScheduleImportServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineScheduleImportServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineScheduleImportServiceTests
+        COMMAND ClassMngrEngineScheduleImportServiceTests
+    )
+
     add_executable(ClassMngrEngineClassTransferServiceTests
         "${PROJECT_SOURCE_DIR}/tests/engine/class_transfer_service_tests.cpp"
     )
@@ -334,5 +362,73 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassTransferServiceTests
         COMMAND ClassMngrEngineClassTransferServiceTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingEvaluationReportServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_report_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationReportServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationReportServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationReportServiceTests
+        COMMAND ClassMngrEngineSpeakingEvaluationReportServiceTests
+    )
+
+    add_executable(ClassMngrEngineScheduleReportServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/schedule_report_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineScheduleReportServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineScheduleReportServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineScheduleReportServiceTests
+        COMMAND ClassMngrEngineScheduleReportServiceTests
+    )
+
+    add_executable(ClassMngrEngineRosterReportServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/roster_report_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineRosterReportServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineRosterReportServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineRosterReportServiceTests
+        COMMAND ClassMngrEngineRosterReportServiceTests
+    )
+
+    add_executable(ClassMngrEngineSubPrepPaginationTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/sub_prep_pagination_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSubPrepPaginationTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSubPrepPaginationTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSubPrepPaginationTests
+        COMMAND ClassMngrEngineSubPrepPaginationTests
     )
 endif()
