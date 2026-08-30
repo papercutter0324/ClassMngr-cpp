@@ -94,6 +94,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_report.h"
     "${PROJECT_SOURCE_DIR}/src/engine/roster_report_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_report.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/roster_report_template.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_report_template.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_pagination.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_class_information_service.cpp"
@@ -652,6 +654,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineRosterReportServiceTests
         COMMAND ClassMngrEngineRosterReportServiceTests
+    )
+
+    add_executable(ClassMngrEngineRosterReportTemplateTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/roster_report_template_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineRosterReportTemplateTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineRosterReportTemplateTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineRosterReportTemplateTests
+        COMMAND ClassMngrEngineRosterReportTemplateTests
     )
 
     add_executable(ClassMngrEngineSubPrepPaginationTests

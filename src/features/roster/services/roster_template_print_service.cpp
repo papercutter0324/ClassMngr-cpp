@@ -2,6 +2,7 @@
 
 #include "app/services/feature_services.h"
 #include "classmngr/engine/roster_report.h"
+#include "classmngr/engine/roster_report_template.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -133,15 +134,99 @@ QList<RosterCellValue> fromPortableRosterValues(
     return values;
 }
 
+classmngr::engine::RosterReportTemplate toPortableTemplate(
+    TemplateId templateId
+    )
+{
+    switch (templateId)
+    {
+    case TemplateId::Daily:
+        return classmngr::engine::RosterReportTemplate::Daily;
+
+    case TemplateId::PerClassWithExtraInfo:
+        return classmngr::engine::RosterReportTemplate::PerClassWithExtraInfo;
+
+    case TemplateId::ByDay:
+    default:
+        return classmngr::engine::RosterReportTemplate::ByDay;
+    }
+}
+
+TemplateId fromPortableTemplate(
+    classmngr::engine::RosterReportTemplate templateId
+    )
+{
+    switch (templateId)
+    {
+    case classmngr::engine::RosterReportTemplate::Daily:
+        return TemplateId::Daily;
+
+    case classmngr::engine::RosterReportTemplate::PerClassWithExtraInfo:
+        return TemplateId::PerClassWithExtraInfo;
+
+    case classmngr::engine::RosterReportTemplate::ByDay:
+    default:
+        return TemplateId::ByDay;
+    }
+}
+
+classmngr::engine::RosterReportScope toPortableScope(
+    Scope scope
+    )
+{
+    switch (scope)
+    {
+    case Scope::CurrentClass:
+        return classmngr::engine::RosterReportScope::CurrentClass;
+
+    case Scope::SelectedClasses:
+        return classmngr::engine::RosterReportScope::SelectedClasses;
+
+    case Scope::AllClasses:
+    default:
+        return classmngr::engine::RosterReportScope::AllClasses;
+    }
+}
+
+std::vector<int> toPortableClassIds(
+    const QList<int>& classIds
+    )
+{
+    std::vector<int> portable;
+    portable.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        portable.push_back(classId);
+    }
+    return portable;
+}
+
+std::vector<int> toPortableAvailableClassIds(
+    const QList<Classroom>& classes
+    )
+{
+    std::vector<int> portable;
+    portable.reserve(classes.size());
+    for (const Classroom& classroom : classes)
+    {
+        portable.push_back(classroom.id);
+    }
+    return portable;
+}
+
 } // namespace
 
 QList<TemplateId> availableTemplateIds()
 {
-    return {
-        TemplateId::ByDay,
-        TemplateId::Daily,
-        TemplateId::PerClassWithExtraInfo
-    };
+    const std::vector<classmngr::engine::RosterReportTemplate> templates =
+        classmngr::engine::RosterReportTemplateService::availableTemplates();
+    QList<TemplateId> result;
+    result.reserve(static_cast<qsizetype>(templates.size()));
+    for (const auto templateId : templates)
+    {
+        result.append(fromPortableTemplate(templateId));
+    }
+    return result;
 }
 
 QString templateDisplayName(
@@ -155,18 +240,11 @@ QPageLayout::Orientation templateOrientation(
     TemplateId templateId
     )
 {
-    switch (templateId)
-    {
-    case TemplateId::PerClassWithExtraInfo:
-        return QPageLayout::Portrait;
-
-    case TemplateId::Daily:
-        return QPageLayout::Portrait;
-
-    case TemplateId::ByDay:
-    default:
-        return QPageLayout::Landscape;
-    }
+    return classmngr::engine::RosterReportTemplateService::orientation(
+               toPortableTemplate(templateId)
+               ) == classmngr::engine::RosterReportOrientation::Landscape
+        ? QPageLayout::Landscape
+        : QPageLayout::Portrait;
 }
 
 QPageSize::PageSizeId templatePageSize(
@@ -290,39 +368,19 @@ QList<int> resolveClassIds(
     const QList<Classroom>& classes
     )
 {
+    const std::vector<int> portableIds =
+        classmngr::engine::RosterReportTemplateService::resolveClassIds(
+            toPortableScope(scope),
+            currentClassId,
+            toPortableClassIds(selectedClassIds),
+            toPortableAvailableClassIds(classes)
+            );
     QList<int> ids;
-
-    switch (scope)
+    ids.reserve(static_cast<qsizetype>(portableIds.size()));
+    for (const int classId : portableIds)
     {
-    case Scope::CurrentClass:
-        if (currentClassId > 0)
-        {
-            ids.append(currentClassId);
-        }
-        break;
-
-    case Scope::SelectedClasses:
-        for (int classId : selectedClassIds)
-        {
-            if (classId > 0 && !ids.contains(classId))
-            {
-                ids.append(classId);
-            }
-        }
-        break;
-
-    case Scope::AllClasses:
-    default:
-        for (const Classroom& classroom : classes)
-        {
-            if (classroom.id > 0 && !ids.contains(classroom.id))
-            {
-                ids.append(classroom.id);
-            }
-        }
-        break;
+        ids.append(classId);
     }
-
     return ids;
 }
 

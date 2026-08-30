@@ -135,6 +135,13 @@ extra-column filtering/caps, and UTF-8 report values. The retained Qt roster
 service converts domain data into the engine model; PDF geometry, templates,
 and drawing remain Qt-owned.
 
+The roster-report template-policy slice now includes a Qt-free
+`RosterReportTemplateService` for stable template ordering, report orientation,
+and all/current/selected class-id resolution. The retained Qt roster-print
+service converts its `TemplateId` and scope values at the boundary while
+keeping localized titles, page-size selection, PDF rendering, and drawing
+presentation-owned.
+
 The sub-prep report slice now includes a Qt-free
 `SubPrepClassInformationService` for meeting-time compaction, visible-class
 filtering, teacher grouping, grade/level/time ordering, and renderer-neutral
@@ -348,6 +355,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
 | Windows x86 Debug roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
 | Windows x86 Release roster report service test | Passed: `ClassMngrEngineRosterReportServiceTests` |
+| Windows x64 Debug roster report template-policy test | Passed: `ClassMngrEngineRosterReportTemplateTests` |
+| Windows x64 Release roster report template-policy test | Passed: `ClassMngrEngineRosterReportTemplateTests` |
+| Windows x86 Debug roster report template-policy test | Passed: `ClassMngrEngineRosterReportTemplateTests` |
+| Windows x86 Release roster report template-policy test | Passed: `ClassMngrEngineRosterReportTemplateTests` |
 | Windows x64 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x64 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x86 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
@@ -389,7 +400,8 @@ All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. The new schedule-import
 and schedule-builder service tests passed in x64/x86 Debug and Release. The speaking-evaluation
-report service, schedule-report service, roster-report service,
+report service, schedule-report service, roster-report service, roster-report
+template policy,
 speaking-evaluation report metadata model, speaking-evaluation report content,
 speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
@@ -404,7 +416,7 @@ eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-three engine suites plus both WinUI staging and manifest checks (35/35).
+thirty-four engine suites plus both WinUI staging and manifest checks (36/36).
 The
 retained Qt schedule-import, schedule-builder, and upcoming-birthday
 regression also passed, alongside the existing class-information, assignment,
