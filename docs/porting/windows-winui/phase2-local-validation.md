@@ -73,6 +73,13 @@ class/teacher labels and ordering. The retained Qt `SidebarNodeNaming` file is
 now a conversion adapter, so package planning and the existing Qt screens use
 the same UTF-8 naming rules.
 
+The upcoming-birthday slice now includes a Qt-free
+`UpcomingBirthdaySchedule`. It owns birthday parsing, the today/this-week/
+next-week date windows, calendar-year rollover, non-leap-year February 29
+fallback, staff grouping, display-name fallback, and deterministic ordering.
+The retained Qt schedule converts the three staff collections and keeps the
+dialog presentation in Qt.
+
 The schedule-import slice now includes Qt-free workbook-neutral models and a
 `ScheduleImportService`. The retained workbook parser remains a Qt adapter;
 the engine owns teacher/class match ranking, course meeting-pattern rules,
@@ -241,6 +248,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
 | Windows x86 Debug class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
 | Windows x86 Release class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
+| Windows x64 Debug upcoming-birthday schedule test | Passed: `ClassMngrEngineUpcomingBirthdayScheduleTests` |
+| Windows x64 Release upcoming-birthday schedule test | Passed: `ClassMngrEngineUpcomingBirthdayScheduleTests` |
+| Windows x86 Debug upcoming-birthday schedule test | Passed: `ClassMngrEngineUpcomingBirthdayScheduleTests` |
+| Windows x86 Release upcoming-birthday schedule test | Passed: `ClassMngrEngineUpcomingBirthdayScheduleTests` |
 | Windows x64 Debug native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
 | Windows x64 Release native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
 | Windows x86 Debug native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
@@ -334,6 +345,7 @@ schema version and bilingual teacher/class values.
 | Windows x86 Debug calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
 | Windows x86 Release calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
+| Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
@@ -357,18 +369,18 @@ speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
 template-policy, batch-report policy, PowerPoint job service, and sub-prep
-class-information, schedule-builder, class/teacher naming, and Sub Prep
-package-planning implementations compiled and passed in all four engine lanes.
-The new class-naming and Sub Prep package-planning tests also passed in all
-four lanes. The Qt-free
+class-information, schedule-builder, class/teacher naming, upcoming-birthday,
+and Sub Prep package-planning implementations compiled and passed in all four
+engine lanes. The new class-naming, upcoming-birthday, and Sub Prep
+package-planning tests also passed in all four lanes. The Qt-free
 fixture round-trip test also passed in all four lanes against the committed
 eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty engine suites plus both WinUI staging and manifest checks (32/32).
+thirty-one engine suites plus both WinUI staging and manifest checks (33/33).
 The
-retained Qt schedule-import and schedule-builder
+retained Qt schedule-import, schedule-builder, and upcoming-birthday
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep class-information and

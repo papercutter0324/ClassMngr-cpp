@@ -36,6 +36,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_naming.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_naming.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/upcoming_birthday_schedule.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/upcoming_birthday_schedule.h"
     "${PROJECT_SOURCE_DIR}/src/engine/validation_result.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/validation_result.h"
     "${PROJECT_SOURCE_DIR}/src/engine/teacher_validator.cpp"
@@ -303,6 +305,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassNamingServiceTests
         COMMAND ClassMngrEngineClassNamingServiceTests
+    )
+
+    add_executable(ClassMngrEngineUpcomingBirthdayScheduleTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/upcoming_birthday_schedule_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineUpcomingBirthdayScheduleTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineUpcomingBirthdayScheduleTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineUpcomingBirthdayScheduleTests
+        COMMAND ClassMngrEngineUpcomingBirthdayScheduleTests
     )
 
     add_executable(ClassMngrEngineNativeEnglishTeacherServiceTests

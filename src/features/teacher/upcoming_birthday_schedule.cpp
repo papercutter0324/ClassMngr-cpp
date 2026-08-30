@@ -1,138 +1,126 @@
 #include "upcoming_birthday_schedule.h"
 
-#include <algorithm>
+#include "classmngr/engine/upcoming_birthday_schedule.h"
+
+#include <QByteArray>
+
+#include <chrono>
+#include <string>
+#include <vector>
 
 namespace
 {
-QDate parseBirthday(const QString& birthday)
+using PortableBirthday = classmngr::engine::UpcomingBirthday;
+using PortableBirthdayGroup =
+    classmngr::engine::UpcomingBirthdayGroup;
+using PortableGsTeamMember = classmngr::engine::GsTeamMember;
+using PortableNativeEnglishTeacher =
+    classmngr::engine::NativeEnglishTeacher;
+using PortableSchedule = classmngr::engine::UpcomingBirthdaySchedule;
+using PortableTeacher = classmngr::engine::Teacher;
+using PortableDate = classmngr::engine::CalendarDate;
+
+std::string toUtf8(const QString& value)
 {
-    return QDate::fromString(
-        QStringLiteral("2000-%1").arg(birthday.trimmed()),
-        QStringLiteral("yyyy-MM-dd")
-        );
-}
-
-QDate occurrenceForYear(const QDate& birthday, int year)
-{
-    QDate occurrence(year, birthday.month(), birthday.day());
-
-    if (!occurrence.isValid()
-        && birthday.month() == 2
-        && birthday.day() == 29)
-    {
-        occurrence = QDate(year, 2, 28);
-    }
-
-    return occurrence;
-}
-
-QDate nextOccurrenceInRange(
-    const QDate& birthday,
-    const QDate& rangeStart,
-    const QDate& rangeEnd
-    )
-{
-    for (int year = rangeStart.year(); year <= rangeEnd.year(); ++year)
-    {
-        const QDate occurrence = occurrenceForYear(birthday, year);
-        if (occurrence >= rangeStart && occurrence <= rangeEnd)
-        {
-            return occurrence;
-        }
-    }
-
-    return {};
-}
-
-bool birthdayLessThan(
-    const UpcomingBirthday& left,
-    const UpcomingBirthday& right
-    )
-{
-    if (left.date != right.date)
-    {
-        return left.date < right.date;
-    }
-
-    const int nameComparison = QString::localeAwareCompare(
-        left.displayName,
-        right.displayName
-        );
-    if (nameComparison != 0)
-    {
-        return nameComparison < 0;
-    }
-
-    if (left.group != right.group)
-    {
-        return static_cast<int>(left.group) < static_cast<int>(right.group);
-    }
-
-    return QString::localeAwareCompare(left.position, right.position) < 0;
-}
-
-void appendBirthday(
-    UpcomingBirthdaySchedule* schedule,
-    const QString& birthdayValue,
-    const QString& displayNameValue,
-    const QString& position,
-    UpcomingBirthdayGroup group,
-    const QDate& referenceDate,
-    const QDate& thisWeekEnd,
-    const QDate& nextWeekEnd
-    )
-{
-    if (!schedule)
-    {
-        return;
-    }
-
-    const QDate birthday = parseBirthday(birthdayValue);
-    const QString displayName = displayNameValue.trimmed();
-    if (!birthday.isValid() || displayName.isEmpty())
-    {
-        return;
-    }
-
-    const QDate occurrence = nextOccurrenceInRange(
-        birthday,
-        referenceDate,
-        nextWeekEnd
-        );
-    if (!occurrence.isValid())
-    {
-        return;
-    }
-
-    const UpcomingBirthday entry{
-        occurrence,
-        displayName,
-        position.trimmed(),
-        group
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
     };
-
-    if (occurrence == referenceDate)
-    {
-        schedule->today.append(entry);
-    }
-    else if (occurrence <= thisWeekEnd)
-    {
-        schedule->thisWeek.append(entry);
-    }
-    else
-    {
-        schedule->nextWeek.append(entry);
-    }
 }
 
-void sortBirthdays(QList<UpcomingBirthday>* birthdays)
+PortableDate toPortable(const QDate& value)
 {
-    if (birthdays)
+    if (!value.isValid())
     {
-        std::sort(birthdays->begin(), birthdays->end(), birthdayLessThan);
+        return {};
+    }
+
+    return {
+        std::chrono::year{value.year()},
+        std::chrono::month{static_cast<unsigned>(value.month())},
+        std::chrono::day{static_cast<unsigned>(value.day())}
+    };
+}
+
+QDate fromPortable(const PortableDate& value)
+{
+    if (!value.ok())
+    {
+        return {};
+    }
+
+    return {
+        static_cast<int>(value.year()),
+        static_cast<int>(static_cast<unsigned>(value.month())),
+        static_cast<int>(static_cast<unsigned>(value.day()))
+    };
+}
+
+PortableTeacher toPortable(const Teacher& source)
+{
+    PortableTeacher result;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.preferredRomanization = toUtf8(source.preferredRomanization);
+    result.preferredName = toUtf8(source.preferredName);
+    result.birthday = toUtf8(source.birthday);
+    return result;
+}
+
+PortableNativeEnglishTeacher toPortable(
+    const NativeEnglishTeacher& source
+    )
+{
+    PortableNativeEnglishTeacher result;
+    result.name = toUtf8(source.name);
+    result.position = toUtf8(source.position);
+    result.birthday = toUtf8(source.birthday);
+    return result;
+}
+
+PortableGsTeamMember toPortable(const GsTeamMember& source)
+{
+    PortableGsTeamMember result;
+    result.name = toUtf8(source.name);
+    result.koreanName = toUtf8(source.koreanName);
+    result.position = toUtf8(source.position);
+    result.birthday = toUtf8(source.birthday);
+    return result;
+}
+
+UpcomingBirthdayGroup fromPortable(PortableBirthdayGroup group)
+{
+    switch (group)
+    {
+    case PortableBirthdayGroup::NativeEnglishTeacher:
+        return UpcomingBirthdayGroup::NativeEnglishTeacher;
+
+    case PortableBirthdayGroup::GsTeam:
+        return UpcomingBirthdayGroup::GsTeam;
+
+    case PortableBirthdayGroup::KoreanTeacher:
+    default:
+        return UpcomingBirthdayGroup::KoreanTeacher;
     }
 }
+
+UpcomingBirthday fromPortable(const PortableBirthday& source)
+{
+    return {
+        fromPortable(source.date),
+        QString::fromUtf8(
+            source.displayName.data(),
+            static_cast<qsizetype>(source.displayName.size())
+            ),
+        QString::fromUtf8(
+            source.position.data(),
+            static_cast<qsizetype>(source.position.size())
+            ),
+        fromPortable(source.group)
+    };
 }
+} // namespace
 
 bool UpcomingBirthdaySchedule::isEmpty() const
 {
@@ -146,65 +134,50 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     const QDate& referenceDate
     )
 {
-    UpcomingBirthdaySchedule result;
-
-    if (!referenceDate.isValid())
-    {
-        return result;
-    }
-
-    const QDate thisWeekEnd = referenceDate.addDays(
-        7 - referenceDate.dayOfWeek()
-        );
-    const QDate nextWeekEnd = thisWeekEnd.addDays(7);
-
+    std::vector<PortableTeacher> portableTeachers;
+    portableTeachers.reserve(static_cast<std::size_t>(teachers.size()));
     for (const Teacher& teacher : teachers)
     {
-        appendBirthday(
-            &result,
-            teacher.birthday,
-            teacher.preferredDisplayName(),
-            {},
-            UpcomingBirthdayGroup::KoreanTeacher,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+        portableTeachers.push_back(toPortable(teacher));
     }
 
+    std::vector<PortableNativeEnglishTeacher> portableNativeTeachers;
+    portableNativeTeachers.reserve(
+        static_cast<std::size_t>(nativeEnglishTeachers.size())
+        );
     for (const NativeEnglishTeacher& teacher : nativeEnglishTeachers)
     {
-        appendBirthday(
-            &result,
-            teacher.birthday,
-            teacher.name,
-            teacher.position,
-            UpcomingBirthdayGroup::NativeEnglishTeacher,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+        portableNativeTeachers.push_back(toPortable(teacher));
     }
 
+    std::vector<PortableGsTeamMember> portableGsTeamMembers;
+    portableGsTeamMembers.reserve(
+        static_cast<std::size_t>(gsTeamMembers.size())
+        );
     for (const GsTeamMember& member : gsTeamMembers)
     {
-        const QString displayName = member.name.trimmed().isEmpty()
-            ? member.koreanName
-            : member.name;
-        appendBirthday(
-            &result,
-            member.birthday,
-            displayName,
-            member.position,
-            UpcomingBirthdayGroup::GsTeam,
-            referenceDate,
-            thisWeekEnd,
-            nextWeekEnd
-            );
+        portableGsTeamMembers.push_back(toPortable(member));
     }
 
-    sortBirthdays(&result.today);
-    sortBirthdays(&result.thisWeek);
-    sortBirthdays(&result.nextWeek);
+    const PortableSchedule portable = PortableSchedule::build(
+        portableTeachers,
+        portableNativeTeachers,
+        portableGsTeamMembers,
+        toPortable(referenceDate)
+        );
+
+    UpcomingBirthdaySchedule result;
+    const auto append = [](const std::vector<PortableBirthday>& source,
+                           QList<UpcomingBirthday>* destination)
+    {
+        destination->reserve(static_cast<qsizetype>(source.size()));
+        for (const PortableBirthday& birthday : source)
+        {
+            destination->append(fromPortable(birthday));
+        }
+    };
+    append(portable.today, &result.today);
+    append(portable.thisWeek, &result.thisWeek);
+    append(portable.nextWeek, &result.nextWeek);
     return result;
 }
