@@ -292,6 +292,7 @@ qt_add_executable(ClassMngrClassesPageTests
 
     target_link_libraries(ClassMngrSubPrepPageTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

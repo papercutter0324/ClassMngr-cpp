@@ -1,6 +1,6 @@
 # Phase 2 local validation record
 
-Date: 2026-08-30 (Asia/Seoul)
+Date: 2026-08-31 (Asia/Seoul)
 
 Scope: Phase 2 portable-engine slices on the clean Phase 1 working tree.
 
@@ -62,6 +62,12 @@ snapshots with regular and intensive times, testing-class filtering, and
 typed conflict detection for candidate and stored intervals, including
 overnight handling and the existing class-name fallback.
 
+The schedule-builder slice now includes a Qt-free `ScheduleBuilderService`.
+It owns schedule-time parsing, visible-day filtering, regular versus intensive
+range selection, `:05`/`:55` offset handling, and renderer-neutral entry
+assembly. The retained Qt `ScheduleBuilder` only loads the existing class
+information service and converts values at the presentation boundary.
+
 The schedule-import slice now includes Qt-free workbook-neutral models and a
 `ScheduleImportService`. The retained workbook parser remains a Qt adapter;
 the engine owns teacher/class match ranking, course meeting-pattern rules,
@@ -101,8 +107,14 @@ extra-column filtering/caps, and UTF-8 report values. The retained Qt roster
 service converts domain data into the engine model; PDF geometry, templates,
 and drawing remain Qt-owned.
 
-The sub-prep pagination slice now includes a Qt-free
-`SubPrepPaginationService` for teacher-section page-span detection, the
+The sub-prep report slice now includes a Qt-free
+`SubPrepClassInformationService` for meeting-time compaction, visible-class
+filtering, teacher grouping, grade/level/time ordering, and renderer-neutral
+class details. The retained Qt model converts its value types at the edge;
+localized day abbreviations, drawing, and PDF concerns remain
+presentation-owned. The same slice
+also includes a Qt-free `SubPrepPaginationService` for teacher-section
+page-span detection, the
 "Sub Notes" new-page threshold, and fallback placement on the last document
 page. The retained Qt renderer delegates these decisions through a small
 adapter while keeping text measurement, page counting, PDF geometry, and
@@ -162,8 +174,30 @@ JSON serialization, and Office automation arguments.
 The portable speaking-evaluation output policy now also owns student PDF
 filename composition, reserved-name protection, unsafe-character replacement,
 case-insensitive suffix normalization, fallback naming, and the UTF-8 length
-limit. Qt normalizes its native text before calling the policy; directory
-creation, collision checks, and atomic file commits remain Qt-owned.
+limit. It also plans the ordered batch filename list and rejects generated
+name collisions before rendering. Qt normalizes its native text before calling
+the policy; directory creation, filesystem collision checks, and atomic file
+commits remain Qt-owned.
+
+The schedule-report service now also owns the deterministic class-line format
+used by schedule cells and PDF output, plus the bilingual Excel day labels and
+Excel time-range compaction. Qt keeps font selection, colors, page geometry,
+and drawing in the retained renderer.
+
+The Qt-free engine now also exercises the committed eleven-case database-port
+fixture corpus. The fixture test opens current and legacy profiles, verifies
+representative bilingual class-transfer payloads plus calendar/campus rows,
+checks migration backups and failure rollback, and writes, closes, reopens,
+and imports a typical profile through the engine boundaries. Historical fixture
+values that are readable but not valid for a new validated write are
+canonicalized only in the test write payload, matching the existing engine
+validation contract.
+
+The retained Qt fixture verifier now adds explicit two-direction checks without
+modifying the committed corpus: a temporary Qt `DataService` profile is opened
+and inspected through the engine, and a temporary engine-written profile is
+opened and inspected through Qt `QSQLITE` queries. Both checks assert the
+schema version and bilingual teacher/class values.
 
 ## Local validation
 
@@ -206,6 +240,10 @@ creation, collision checks, and atomic file commits remain Qt-owned.
 | Windows x64 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
 | Windows x86 Debug class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
 | Windows x86 Release class-schedule service test | Passed: `ClassMngrEngineClassScheduleServiceTests` |
+| Windows x64 Debug schedule-builder service test | Passed: `ClassMngrEngineScheduleBuilderServiceTests` |
+| Windows x64 Release schedule-builder service test | Passed: `ClassMngrEngineScheduleBuilderServiceTests` |
+| Windows x86 Debug schedule-builder service test | Passed: `ClassMngrEngineScheduleBuilderServiceTests` |
+| Windows x86 Release schedule-builder service test | Passed: `ClassMngrEngineScheduleBuilderServiceTests` |
 | Windows x64 Debug schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
 | Windows x64 Release schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
 | Windows x86 Debug schedule-import service test | Passed: `ClassMngrEngineScheduleImportServiceTests` |
@@ -246,6 +284,10 @@ creation, collision checks, and atomic file commits remain Qt-owned.
 | Windows x64 Release speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
 | Windows x86 Debug speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
 | Windows x86 Release speaking-evaluation PowerPoint job test | Passed: `ClassMngrEngineSpeakingEvaluationPowerPointJobServiceTests` |
+| Windows x64 Debug database fixture round-trip test | Passed: `ClassMngrEngineDatabaseFixtureRoundTripTests` |
+| Windows x64 Release database fixture round-trip test | Passed: `ClassMngrEngineDatabaseFixtureRoundTripTests` |
+| Windows x86 Debug database fixture round-trip test | Passed: `ClassMngrEngineDatabaseFixtureRoundTripTests` |
+| Windows x86 Release database fixture round-trip test | Passed: `ClassMngrEngineDatabaseFixtureRoundTripTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -258,6 +300,10 @@ creation, collision checks, and atomic file commits remain Qt-owned.
 | Windows x64 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x86 Debug sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
 | Windows x86 Release sub-prep pagination service test | Passed: `ClassMngrEngineSubPrepPaginationTests` |
+| Windows x64 Debug sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
+| Windows x64 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
+| Windows x86 Debug sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
+| Windows x86 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
 | Windows x64 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x64 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x86 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
@@ -271,30 +317,39 @@ creation, collision checks, and atomic file commits remain Qt-owned.
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
 | Retained Windows Qt class-transfer regression | Passed: `ClassMngrClassTransferTests` |
 | Retained Windows Qt speaking-evaluation report widget | Passed: `ClassMngrSpeakingEvalReportWidgetTests` |
+| Retained Windows Qt schedule-builder regression | Passed: `ClassMngrScheduleBuilderTests` |
 | Retained Windows Qt schedule-model regression | Passed: `ClassMngrSchedulePrintModelTests` |
 | Retained Windows Qt schedule-PDF regression | Passed: `ClassMngrSchedulePrintPdfTests` |
 | Retained Windows Qt sub-prep report regressions | Passed: `ClassMngrSubPrepPrintPdfTests`, `ClassMngrSubPrepPackageServiceTests` |
 | Retained Windows Qt roster report regression | Passed: `ClassMngrRosterTemplatePrintServiceTests` |
+| Retained Windows Qt database-port interoperability regression | Passed: `ClassMngrDatabasePortFixtureTests` with temporary Qt-written → engine-read and engine-written → Qt-read profiles |
 | Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
 All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
 CTest selections with no Qt-dependent test process. The new schedule-import
-service test passed in x64/x86 Debug and Release. The speaking-evaluation
+and schedule-builder service tests passed in x64/x86 Debug and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service,
 speaking-evaluation report metadata model, speaking-evaluation report content,
 speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
-template-policy, batch-report policy, and PowerPoint job service
-implementations compiled and passed in all four engine lanes. Each lane's
-integrated sweep then passed all twenty-five engine suites plus both WinUI
-staging and manifest checks (27/27). The
-retained Qt schedule-import
+template-policy, batch-report policy, PowerPoint job service, and sub-prep
+class-information and schedule-builder
+implementations compiled and passed in all four engine lanes. The Qt-free
+fixture round-trip test also passed in all four lanes against the committed
+eleven-case database-port corpus, including engine write/reopen and class-
+transfer import coverage. The retained Qt fixture verifier additionally passed
+the explicit temporary Qt-written → engine-read and engine-written → Qt-read
+checks. Each lane's integrated sweep then passed all
+twenty-eight engine suites plus both WinUI staging and manifest checks (30/30).
+The
+retained Qt schedule-import and schedule-builder
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
-report-widget regressions, including the sub-prep pagination adapter,
+report-widget regressions, including the sub-prep class-information and
+pagination adapters,
 academic-calendar, calendar-event, speaking-evaluation report metadata, and
 speaking-evaluation report content and AI prompt adapters, schema-manager,
 updater, and teacher-import
@@ -310,7 +365,10 @@ build tree.
 
 ## Remaining Phase 2 work
 
-This is an in-progress record, not the Phase 2 exit gate. The next work is
-migrating the remaining report/export adapters and models, connecting retained
-Qt adapters to the extracted use-case boundaries, and producing cross-platform
-fixture round trips.
+This is an in-progress record, not the Phase 2 exit gate. The committed
+fixture corpus now has Qt-generated read, migration, and engine write/reopen
+coverage on Windows, plus explicit temporary Qt-written → engine-read and
+engine-written → Qt-read checks. The next work is migrating the remaining
+report/export adapters and models, connecting retained Qt adapters to the
+extracted use-case boundaries, and extending fixture evidence across each
+migrated persistence slice.

@@ -285,6 +285,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrSubPrepClassInformationModelTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )

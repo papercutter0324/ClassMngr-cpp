@@ -59,6 +59,25 @@ std::string collapseAsciiWhitespace(std::string_view value)
     return result;
 }
 
+void replaceAll(
+    std::string* value,
+    std::string_view from,
+    std::string_view to
+    )
+{
+    if (!value || from.empty())
+    {
+        return;
+    }
+
+    std::size_t offset = 0;
+    while ((offset = value->find(from, offset)) != std::string::npos)
+    {
+        value->replace(offset, from.size(), to);
+        offset += to.size();
+    }
+}
+
 std::string upperAscii(std::string_view value)
 {
     std::string result(value);
@@ -416,6 +435,50 @@ std::string ScheduleReportService::rangeLabel(
     }
 
     return startDisplay + "\n- " + endDisplay;
+}
+
+std::string ScheduleReportService::classLine(
+    std::string_view classGrade,
+    std::string_view classLevel,
+    bool compact
+    )
+{
+    const std::string grade = trimAscii(classGrade);
+    const std::string level = trimAscii(classLevel);
+    if (grade.empty())
+    {
+        return level;
+    }
+    if (level.empty())
+    {
+        return grade;
+    }
+    return grade + (compact ? "-" : " - ") + level;
+}
+
+std::string ScheduleReportService::excelDayLabel(std::string_view day)
+{
+    if (day == "Monday") return "\xEC\x9B\x94(MON)";
+    if (day == "Tuesday") return "\xED\x99\x94(TUE)";
+    if (day == "Wednesday") return "\xEC\x88\x98(WED)";
+    if (day == "Thursday") return "\xEB\xAA\xA9(THU)";
+    if (day == "Friday") return "\xEA\xB8\x88(FRI)";
+    if (day == "Saturday") return "\xED\x86\xA0(SAT)";
+    if (day == "Sunday") return "\xEC\x9D\xBC(SUN)";
+    return std::string(day);
+}
+
+std::string ScheduleReportService::excelTimeLabel(
+    std::string_view rangeLabel
+    )
+{
+    std::string label(rangeLabel);
+    replaceAll(&label, " AM", {});
+    replaceAll(&label, " PM", {});
+    replaceAll(&label, " -\n", "~");
+    replaceAll(&label, "\n- ", "~");
+    replaceAll(&label, " - ", "~");
+    return label;
 }
 
 std::string ScheduleReportService::teacherName(

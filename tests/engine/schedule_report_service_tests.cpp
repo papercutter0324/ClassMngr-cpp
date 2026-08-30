@@ -120,6 +120,32 @@ int main()
         "schedule time-range formatting changed"
         );
 
+    passed &= expect(
+        ScheduleReportService::classLine(" E5 ", " Zeus ")
+            == "E5 - Zeus"
+            && ScheduleReportService::classLine(" E5 ", " Zeus ", true)
+                == "E5-Zeus"
+            && ScheduleReportService::classLine({}, " Zeus ") == "Zeus",
+        "schedule class-line formatting changed"
+        );
+
+    passed &= expect(
+        ScheduleReportService::excelDayLabel("Monday")
+            == "\xEC\x9B\x94(MON)"
+            && ScheduleReportService::excelDayLabel("Sunday")
+                == "\xEC\x9D\xBC(SUN)"
+            && ScheduleReportService::excelDayLabel("Holiday") == "Holiday",
+        "Excel day labels changed"
+        );
+
+    passed &= expect(
+        ScheduleReportService::excelTimeLabel("4:00 PM -\n4:50 PM")
+            == "4:00~4:50"
+            && ScheduleReportService::excelTimeLabel("16:00 - 16:55")
+                == "16:00~16:55",
+        "Excel time labels changed"
+        );
+
     ScheduleReportEntry named = entry();
     passed &= expect(
         ScheduleReportService::teacherRoomLine(named, false)

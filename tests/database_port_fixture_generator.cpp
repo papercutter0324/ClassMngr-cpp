@@ -1,5 +1,11 @@
 #include "data/data_service.h"
 
+#include "classmngr/engine/class_info_service.h"
+#include "classmngr/engine/class_repository.h"
+#include "classmngr/engine/class_transfer_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/teacher_service.h"
+
 #include <QCoreApplication>
 #include <QDate>
 #include <QDebug>
@@ -15,6 +21,7 @@
 #include <QUuid>
 
 #include <cstdio>
+#include <memory>
 #include <optional>
 
 namespace
@@ -910,6 +917,199 @@ bool verifyFixtures(const QString& fixtureDirectory, QString* error)
     return true;
 }
 
+bool verifyQtWrittenProfileWithEngine(QString* error)
+{
+    QTemporaryDir temporaryDirectory;
+    if (!temporaryDirectory.isValid())
+    {
+        *error = QStringLiteral(
+            "Unable to create a temporary directory for the Qt-to-engine round trip."
+            );
+        return false;
+    }
+
+    const QString path = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("qt-written.tps")
+        );
+    if (!createProfile(path, 2, error))
+    {
+        return false;
+    }
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        path.toStdString()
+        );
+    if (!opened || *opened == nullptr)
+    {
+        *error = QStringLiteral(
+            "The engine could not open a profile written by the Qt DataService: %1"
+            ).arg(
+                opened
+                    ? QStringLiteral("no database handle")
+                    : QString::fromStdString(opened.error().message)
+                );
+        return false;
+    }
+
+    std::unique_ptr<classmngr::engine::SqliteDatabase> database =
+        std::move(*opened);
+    classmngr::engine::ClassTransferService transfers(*database);
+    const auto package = transfers.buildPackage({1});
+    if (!package
+        || package->teachers.size() != 1
+        || package->classes.size() != 1
+        || package->classes.front().name != "Fixture Class / 수업"
+        || package->classes.front().roster.rows.size() != 2
+        || package->classes.front().evaluations.size() != 1)
+    {
+        *error = QStringLiteral(
+            "The engine did not recover the complete Qt-written profile payload."
+            );
+        return false;
+    }
+
+    return true;
+}
+
+bool createEngineWrittenProfile(
+    const QString& path,
+    QString* error
+    )
+{
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        path.toStdString()
+        );
+    if (!opened || *opened == nullptr)
+    {
+        *error = QStringLiteral(
+            "The engine could not create its round-trip profile: %1"
+            ).arg(
+                opened
+                    ? QStringLiteral("no database handle")
+                    : QString::fromStdString(opened.error().message)
+                );
+        return false;
+    }
+
+    auto database = std::move(*opened);
+    classmngr::engine::Teacher teacher;
+    teacher.teacherEn = "Engine Teacher";
+    teacher.teacherKr = "\xEC\x97\x94\xEC\xA7\x84 \xEA\xB5\x90\xEC\x82\xAC";
+    teacher.preferredRomanization = "Engine Teacher";
+    teacher.preferredName = teacher.teacherEn;
+    teacher.roomNumber = "302";
+    teacher.birthday = "03-07";
+    teacher.phoneNumber = "010-1111-2222";
+
+    classmngr::engine::TeacherService teachers(*database);
+    const auto teacherId = teachers.create(teacher);
+    if (!teacherId)
+    {
+        *error = QString::fromStdString(teacherId.error().message);
+        return false;
+    }
+
+    classmngr::engine::ClassRepository classes(*database);
+    const auto classId = classes.create(
+        "Engine Class / \xEC\x88\x98\xEC\x97\x85"
+        );
+    if (!classId)
+    {
+        *error = QString::fromStdString(classId.error().message);
+        return false;
+    }
+
+    classmngr::engine::ClassInfo info;
+    info.classId = *classId;
+    info.teacherId = *teacherId;
+    info.classGrade = "E6";
+    info.classLevel = "Helios";
+    info.readingBook = "Reading Explorer 3";
+    info.essayBook = "6A";
+    info.classTimes = {{"Tuesday", "16:00", "16:50"}};
+
+    classmngr::engine::ClassInfoService classInfo(*database);
+    if (const auto saved = classInfo.save(info); !saved)
+    {
+        *error = QString::fromStdString(saved.error().message);
+        return false;
+    }
+
+    database.reset();
+    return true;
+}
+
+bool verifyEngineWrittenProfileWithQt(QString* error)
+{
+    QTemporaryDir temporaryDirectory;
+    if (!temporaryDirectory.isValid())
+    {
+        *error = QStringLiteral(
+            "Unable to create a temporary directory for the engine-to-Qt round trip."
+            );
+        return false;
+    }
+
+    const QString path = QDir(temporaryDirectory.path()).filePath(
+        QStringLiteral("engine-written.tps")
+        );
+    if (!createEngineWrittenProfile(path, error))
+    {
+        return false;
+    }
+
+    const QString name = connectionName();
+    bool verified = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            name
+            );
+        database.setDatabaseName(path);
+        if (!database.open())
+        {
+            *error = QStringLiteral(
+                "Qt could not open the profile written by the engine: %1"
+                ).arg(database.lastError().text());
+        }
+        else
+        {
+            verified = requireSqlValue(
+                database,
+                QStringLiteral(
+                    "SELECT teacher_en || '|' || teacher_kr FROM teachers WHERE id=1"
+                    ),
+                QStringLiteral("Engine Teacher|엔진교사"),
+                QStringLiteral("engine-written.tps"),
+                error
+                )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral("SELECT name FROM classes WHERE id=1"),
+                    QStringLiteral("Engine Class / 수업"),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    )
+                && requireSqlValue(
+                    database,
+                    QStringLiteral("PRAGMA user_version"),
+                    QStringLiteral("6"),
+                    QStringLiteral("engine-written.tps"),
+                    error
+                    );
+            database.close();
+        }
+    }
+    QSqlDatabase::removeDatabase(name);
+    return verified;
+}
+
+bool verifyCrossPlatformRoundTrips(QString* error)
+{
+    return verifyQtWrittenProfileWithEngine(error)
+        && verifyEngineWrittenProfileWithQt(error);
+}
+
 void printUsage(const QString& executable)
 {
     qInfo().noquote()
@@ -937,9 +1137,13 @@ int main(int argc, char* argv[])
     const QString directory = hasOutputDirectory
         ? arguments.at(outputIndex + 1)
         : arguments.at(verifyIndex + 1);
-    const bool succeeded = hasOutputDirectory
+    bool succeeded = hasOutputDirectory
         ? createFixtures(directory, &error)
         : verifyFixtures(directory, &error);
+    if (succeeded && hasVerifyDirectory)
+    {
+        succeeded = verifyCrossPlatformRoundTrips(&error);
+    }
     if (!succeeded)
     {
         qCritical().noquote() << error;

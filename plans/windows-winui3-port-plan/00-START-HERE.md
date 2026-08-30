@@ -78,13 +78,13 @@ Status vocabulary:
 
 ## Progress Dashboard
 
-Last updated: 2026-08-30 (Asia/Seoul)
+Last updated: 2026-08-31 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report/export adapters and models plus fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, sub-prep class-information and pagination policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -100,16 +100,22 @@ error contracts. The database boundary now owns file-format rules, SQLite
 connection/transaction behavior, six-version schema migration, `OpenDatabase`,
 Qt-free class CRUD, validated teacher CRUD, the native-English/GS-team
 directory services, validated class-information persistence, and schedule
-reads/conflicts, schedule-import workflows, class-transfer workflows, the
+reads/conflicts, schedule-builder workflows, schedule-import workflows,
+class-transfer workflows, the
 speaking-evaluation overall-grade report rule, the schedule report model, and
 the by-day/daily/per-class roster report model, the sub-prep pagination policy,
 academic calendar recurrence rules, and calendar-event normalization and campus
 filtering, speaking-evaluation report metadata, output policy, content
 assembly, AI prompt rules, template policy, batch-export policy, PowerPoint
-job content, and student filename policy,
-with the retained Qt code still operational. The next active gate is
-extracting the remaining report/export use cases and connecting the retained
-adapters with cross-platform fixture evidence.
+job content, student filename policy, schedule-report print labels, and the
+sub-prep class-information report model,
+with the retained Qt code still operational. The committed eleven-case
+database-port corpus now passes the Qt-free engine read, migration, write,
+reopen, and class-transfer import checks in all four WinUI lanes. The retained
+Qt fixture verifier also proves temporary Qt-written → engine-read and
+engine-written → Qt-read interoperability. The next active gate is extracting
+the remaining report/export use cases and connecting the retained adapters,
+while extending fixture evidence across each migrated persistence slice.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -473,6 +479,49 @@ After meaningful work:
   directory creation, collision checks, and atomic commits. The existing
   output-policy test and retained offscreen batch-report regression passed;
   all four WinUI sweeps remained green at 27/27.
+- **2026-08-30 — Database fixture round-trip gate added.** The new Qt-free
+  `ClassMngrEngineDatabaseFixtureRoundTripTests` opens all eleven committed
+  current, legacy, and failure fixtures, verifies bilingual class-transfer
+  payloads plus calendar/campus data, checks migration backups and rollback,
+  and performs engine write/reopen and class-transfer import round trips. The
+  target passed in x64/x86 Debug/Release, and the integrated WinUI sweeps
+  passed all twenty-six engine suites plus staging and manifest checks (28/28).
+  Remaining Phase 2 work is the rest of the report/export adapter migration
+  and explicit two-direction cross-platform fixture writes.
+- **2026-08-31 — Schedule-report print labels extracted.** The Qt-free
+  `ScheduleReportService` now owns class-line formatting, bilingual Excel day
+  labels, and Excel time-range compaction. The retained Qt adapters delegate
+  those deterministic labels while keeping fonts, colors, page geometry, and
+  drawing. The headless schedule-report test passed in all four x64/x86
+  Debug/Release lanes, the retained schedule model and PDF regressions passed,
+  and the integrated WinUI sweeps remained green at 28/28. Remaining Phase 2
+  work is the rest of the report/export adapter migration and broader
+  per-slice cross-platform fixture coverage.
+- **2026-08-31 — Two-direction database fixture evidence added.** The
+  retained Qt fixture verifier now creates a temporary Qt-written profile and
+  opens it through `OpenDatabase`, then creates a temporary engine-written
+  profile and opens it through Qt `QSQLITE` queries. The checks cover schema v6
+  and bilingual teacher/class values without modifying the committed corpus;
+  the interoperability regression passed. Remaining Phase 2 work is the rest
+  of the report/export adapter migration and broader per-slice fixture
+  coverage.
+- **2026-08-31 — Sub-prep class-information report model extracted.** The
+  Qt-free `SubPrepClassInformationService` now owns visible-class filtering,
+  meeting-time compaction, teacher grouping, grade/level/time ordering, and
+  renderer-neutral class details. The retained Qt model is a conversion
+  adapter, and the new headless service test passed in all four x64/x86
+  Debug/Release WinUI lanes; the integrated WinUI sweeps remained green at
+  29/29. The next Phase 2 gate remains the remaining report/export
+  adapter/model migration and broader per-slice fixture coverage.
+- **2026-08-31 — Schedule-builder rules extracted.** The Qt-free
+  `ScheduleBuilderService` now owns schedule-time parsing, visible-day
+  filtering, regular/intensive range selection, `:05`/`:55` offset handling,
+  and renderer-neutral entry assembly. The retained Qt builder is now a data
+  access and conversion adapter. Its native test passed in all four x64/x86
+  Debug/Release lanes, the retained Qt schedule-builder regression passed,
+  and the integrated WinUI sweeps passed all twenty-eight engine suites plus
+  staging and manifest checks (30/30). Phase 2 remains open for the remaining
+  report/export adapter/model migration and broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 

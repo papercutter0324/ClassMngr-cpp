@@ -1,16 +1,41 @@
 #include "speaking_eval_report_output.h"
 
 #include "speaking_eval_batch_report_service.h"
-#include "speaking_eval_report_output_policy.h"
+
+#include "classmngr/engine/speaking_evaluation_report_output_policy.h"
 
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QObject>
-#include <QSet>
+
+#include <string_view>
+#include <vector>
 
 namespace SpeakingEvalReportOutput
 {
+QString duplicateFileNameError(
+    const classmngr::engine::Error& error
+    )
+{
+    constexpr std::string_view prefix = "duplicate-student-file-name:";
+    if (error.message.starts_with(prefix))
+    {
+        const std::string_view fileName =
+            std::string_view(error.message).substr(prefix.size());
+        return QObject::tr("A PDF named \"%1\" already exists.")
+            .arg(QString::fromUtf8(
+                fileName.data(),
+                static_cast<qsizetype>(fileName.size())
+                ));
+    }
+
+    return QString::fromUtf8(
+        error.message.data(),
+        static_cast<qsizetype>(error.message.size())
+        );
+}
+
 bool targetFilePaths(
     const SpeakingEvalBatchReportService::Request& request,
     bool saveIndividualPdfFiles,
@@ -80,20 +105,49 @@ bool targetFilePaths(
 
     targetPaths->clear();
     targetPaths->reserve(request.reports.size());
-    QSet<QString> seenPaths;
+    std::vector<
+        classmngr::engine::SpeakingEvaluationReportOutputPolicy::StudentFileNameInput
+        > students;
+    students.reserve(request.reports.size());
     for (const auto& report : request.reports)
     {
+        students.push_back({
+            report.report.englishName
+                .normalized(QString::NormalizationForm_C)
+                .simplified()
+                .toStdString(),
+            report.report.koreanName
+                .normalized(QString::NormalizationForm_C)
+                .simplified()
+                .toStdString()
+        });
+    }
+
+    const auto names =
+        classmngr::engine::SpeakingEvaluationReportOutputPolicy::studentFileNames(
+            students
+            );
+    if (!names)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = duplicateFileNameError(names.error());
+        }
+        return false;
+    }
+
+    for (const std::string& name : *names)
+    {
         const QString path = outputDirectory.filePath(
-            SpeakingEvalReportOutputPolicy::studentFileName(
-                report.report.englishName,
-                report.report.koreanName
+            QString::fromUtf8(
+                name.data(),
+                static_cast<qsizetype>(name.size())
                 )
             );
 
-        if (seenPaths.contains(path)
-            || (saveIndividualPdfFiles
-                && !request.overwriteExisting
-                && QFileInfo::exists(path)))
+        if (saveIndividualPdfFiles
+            && !request.overwriteExisting
+            && QFileInfo::exists(path))
         {
             if (errorMessage)
             {
@@ -104,7 +158,6 @@ bool targetFilePaths(
             return false;
         }
 
-        seenPaths.insert(path);
         targetPaths->append(path);
     }
 

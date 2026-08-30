@@ -1,42 +1,126 @@
 #include "schedule_builder.h"
 
 #include "app/services/feature_services.h"
+#include "classmngr/engine/schedule_builder.h"
 
-#include <QTime>
+#include <utility>
+#include <vector>
 
 namespace
 {
-constexpr int DefaultStartHour = 16;
-constexpr int FinalHour = 21;
-constexpr int FullIntensiveStartHour = 9;
-constexpr int FullIntensiveFinalHour = 21;
+using EngineClassInfo = classmngr::engine::ClassInfo;
+using EngineClassTime = classmngr::engine::ClassTime;
+using classmngr::engine::ScheduleBuilderService;
+using classmngr::engine::ScheduleReportBuildResult;
+using classmngr::engine::ScheduleReportEntry;
 
-ScheduleEntry toEntry(
-    int classId,
-    const ClassInfo& info
-    )
+EngineClassTime toPortable(const ClassTime& time)
 {
-    ScheduleEntry entry;
-
-    entry.classId = classId;
-    entry.teacherKr = info.teacherKr;
-    entry.teacherEn = info.teacherEn;
-    entry.teacherPreferredName = info.teacherPreferredName;
-    entry.roomNumber = info.roomNumber;
-    entry.classGrade = info.classGrade;
-    entry.classLevel = info.classLevel;
-    entry.classColor =
-        info.classColor.isEmpty()
-            ? QStringLiteral("#FFFFFF")
-            : info.classColor;
-    entry.fontColor =
-        info.fontColor.isEmpty()
-            ? QStringLiteral("#000000")
-            : info.fontColor;
-
-    return entry;
+    return {
+        time.day.toStdString(),
+        time.startTime.toStdString(),
+        time.endTime.toStdString()
+    };
 }
+
+EngineClassInfo toPortable(const ClassInfo& info)
+{
+    EngineClassInfo result;
+    result.classId = info.classId;
+    result.teacherId = info.teacherId;
+    result.teacherKr = info.teacherKr.toStdString();
+    result.teacherEn = info.teacherEn.toStdString();
+    result.teacherPreferredName = info.teacherPreferredName.toStdString();
+    result.roomNumber = info.roomNumber.toStdString();
+    result.wifiName = info.wifiName.toStdString();
+    result.wifiPassword = info.wifiPassword.toStdString();
+    result.internetType = info.internetType.toStdString();
+    result.zoomId = info.zoomId.toStdString();
+    result.zoomPassword = info.zoomPassword.toStdString();
+    result.projectionType = info.projectionType.toStdString();
+    result.classGrade = info.classGrade.toStdString();
+    result.classLevel = info.classLevel.toStdString();
+    result.readingBook = info.readingBook.toStdString();
+    result.essayBook = info.essayBook.toStdString();
+    result.classColor = info.classColor.toStdString();
+    result.fontColor = info.fontColor.toStdString();
+    result.notes = info.notes.toStdString();
+    result.timeFillerActivities = info.timeFillerActivities.toStdString();
+
+    result.classTimes.reserve(info.classTimes.size());
+    for (const ClassTime& time : info.classTimes)
+    {
+        result.classTimes.push_back(toPortable(time));
+    }
+    result.intensiveTimes.reserve(info.intensiveTimes.size());
+    for (const ClassTime& time : info.intensiveTimes)
+    {
+        result.intensiveTimes.push_back(toPortable(time));
+    }
+
+    return result;
 }
+
+ScheduleEntry fromPortable(const ScheduleReportEntry& entry)
+{
+    ScheduleEntry result;
+    result.classId = entry.classId;
+    result.kind = entry.kind
+        == classmngr::engine::ScheduleReportEntryKind::TestingClass
+        ? ScheduleEntryKind::TestingClass
+        : ScheduleEntryKind::RegularClass;
+    result.className = QString::fromStdString(entry.className);
+    result.teacherKr = QString::fromStdString(entry.teacherKr);
+    result.teacherEn = QString::fromStdString(entry.teacherEn);
+    result.teacherPreferredName =
+        QString::fromStdString(entry.teacherPreferredName);
+    result.roomNumber = QString::fromStdString(entry.roomNumber);
+    result.classGrade = QString::fromStdString(entry.classGrade);
+    result.classLevel = QString::fromStdString(entry.classLevel);
+    result.classColor = QString::fromStdString(entry.classColor);
+    result.fontColor = QString::fromStdString(entry.fontColor);
+    return result;
+}
+
+ScheduleBuildResult fromPortable(const ScheduleReportBuildResult& source)
+{
+    ScheduleBuildResult result;
+    result.scheduleOffset = source.scheduleOffset;
+    result.uses55Endings = source.uses55Endings;
+
+    result.days.reserve(static_cast<qsizetype>(source.days.size()));
+    for (const std::string& day : source.days)
+    {
+        result.days.append(QString::fromStdString(day));
+    }
+
+    result.rows.reserve(static_cast<qsizetype>(source.rows.size()));
+    for (const auto& row : source.rows)
+    {
+        result.rows.append(
+            ScheduleRow{QString::fromStdString(row.label)}
+            );
+    }
+
+    for (const auto& day : source.schedule)
+    {
+        auto& scheduleSlots =
+            result.schedule[QString::fromStdString(day.first)];
+        for (const auto& slot : day.second)
+        {
+            auto& entries =
+                scheduleSlots[QString::fromStdString(slot.first)];
+            entries.reserve(static_cast<qsizetype>(slot.second.size()));
+            for (const ScheduleReportEntry& entry : slot.second)
+            {
+                entries.append(fromPortable(entry));
+            }
+        }
+    }
+
+    return result;
+}
+} // namespace
 
 ScheduleBuilder::ScheduleBuilder(
     ClassService* classService
@@ -50,29 +134,14 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
     const QStringList& visibleDays
     ) const
 {
-    ScheduleBuildResult result;
-    result.days = visibleDays;
-
+    ScheduleBuildResult empty;
     if (
         !m_classService
         || !m_classService->isAvailable()
         )
     {
-        return result;
+        return empty;
     }
-
-    for (const QString& day : visibleDays)
-    {
-        result.schedule.insert(
-            day,
-            {}
-            );
-    }
-
-    QList<ParsedClass> parsedClasses;
-    bool hasEarliestHour = false;
-    int earliestHour = 0;
-    int scheduleOffset = 0;
 
     const Result<QList<ClassInfo>> classInfos =
         m_classService->scheduleClassInfos();
@@ -81,196 +150,25 @@ Result<ScheduleBuildResult> ScheduleBuilder::build(
         return std::unexpected(classInfos.error());
     }
 
+    std::vector<EngineClassInfo> portableInfos;
+    portableInfos.reserve(classInfos->size());
     for (const ClassInfo& info : *classInfos)
     {
-        const QList<ClassTime>& times =
-            useIntensive
-                ? info.intensiveTimes
-                : info.classTimes;
-
-        for (const ClassTime& time : times)
-        {
-            const QString day =
-                time.day.trimmed().isEmpty()
-                    ? QStringLiteral("Monday")
-                    : time.day.trimmed();
-
-            if (!visibleDays.contains(day))
-            {
-                continue;
-            }
-
-            const QTime startTime =
-                parseTime(time.startTime);
-
-            if (!startTime.isValid())
-            {
-                continue;
-            }
-
-            const QTime endTime =
-                parseTime(time.endTime);
-
-            int adjustedHour =
-                startTime.hour();
-
-            if (startTime.minute() == 55)
-            {
-                ++adjustedHour;
-            }
-
-            if (!hasEarliestHour || adjustedHour < earliestHour)
-            {
-                earliestHour = adjustedHour;
-                hasEarliestHour = true;
-            }
-
-            if (endTime.isValid())
-            {
-                if (endTime.minute() == 55)
-                {
-                    result.uses55Endings = true;
-                }
-            }
-
-            if (startTime.minute() == 55)
-            {
-                scheduleOffset = 55;
-            }
-            else if (
-                startTime.minute() == 5
-                && scheduleOffset != 55
-                )
-            {
-                scheduleOffset = 5;
-            }
-
-            parsedClasses.append(
-                {
-                    day,
-                    startTime,
-                    toEntry(info.classId, info)
-                }
-                );
-        }
+        portableInfos.push_back(toPortable(info));
     }
 
-    const int startHour =
-        useIntensive
-            ? FullIntensiveStartHour
-            : hasEarliestHour && earliestHour < DefaultStartHour
-                ? earliestHour
-                : DefaultStartHour;
-
-    const int finalHour =
-        useIntensive
-            ? FullIntensiveFinalHour
-            : FinalHour;
-
-    if (useIntensive)
+    std::vector<std::string> portableDays;
+    portableDays.reserve(visibleDays.size());
+    for (const QString& day : visibleDays)
     {
-        scheduleOffset = 0;
-        result.uses55Endings = false;
+        portableDays.push_back(day.toStdString());
     }
 
-    result.scheduleOffset = scheduleOffset;
-    result.rows =
-        buildRows(
-            startHour,
-            finalHour,
-            scheduleOffset
-            );
-
-    for (const ParsedClass& parsedClass : parsedClasses)
-    {
-        const QString label =
-            parsedClass.startTime.toString(
-                QStringLiteral("HH:mm")
-                );
-
-        result.schedule[parsedClass.day][label].append(
-            parsedClass.entry
-            );
-    }
-
-    return result;
-}
-
-QTime ScheduleBuilder::parseTime(
-    const QString& value
-    ) const
-{
-    const QString trimmed =
-        value.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return {};
-    }
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
-    {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (time.isValid())
-        {
-            return time;
-        }
-    }
-
-    return {};
-}
-
-QList<ScheduleRow> ScheduleBuilder::buildRows(
-    int startHour,
-    int finalHour,
-    int offset
-    ) const
-{
-    QList<ScheduleRow> rows;
-
-    for (int hour = startHour; hour <= finalHour; ++hour)
-    {
-        int displayHour = hour;
-
-        if (offset == 55)
-        {
-            --displayHour;
-        }
-
-        rows.append(
-            {
-                QStringLiteral("%1:%2")
-                    .arg(
-                        displayHour,
-                        2,
-                        10,
-                        QLatin1Char('0')
-                        )
-                    .arg(
-                        offset,
-                        2,
-                        10,
-                        QLatin1Char('0')
-                        )
-            }
-            );
-    }
-
-    return rows;
+    return fromPortable(
+        ScheduleBuilderService::build(
+            portableInfos,
+            useIntensive,
+            portableDays
+            )
+        );
 }

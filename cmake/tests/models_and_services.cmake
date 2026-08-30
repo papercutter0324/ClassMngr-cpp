@@ -79,6 +79,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrScheduleBuilderTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql

@@ -1,5 +1,6 @@
 #include "schedule_print_service.h"
 
+#include "classmngr/engine/schedule_report.h"
 #include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -162,22 +163,12 @@ QString englishLine(
     bool compact
     )
 {
-    QStringList parts;
-
-    if (!entry.classGrade.trimmed().isEmpty())
-    {
-        parts.append(entry.classGrade.trimmed());
-    }
-
-    if (!entry.classLevel.trimmed().isEmpty())
-    {
-        parts.append(entry.classLevel.trimmed());
-    }
-
-    return parts.join(
-        compact
-            ? QStringLiteral("-")
-            : QStringLiteral(" - ")
+    return QString::fromUtf8(
+        classmngr::engine::ScheduleReportService::classLine(
+            entry.classGrade.toStdString(),
+            entry.classLevel.toStdString(),
+            compact
+            )
         );
 }
 
@@ -185,58 +176,22 @@ QString excelDayLabel(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
-    {
-        return QStringLiteral("월(MON)");
-    }
-
-    if (day == QStringLiteral("Tuesday"))
-    {
-        return QStringLiteral("화(TUE)");
-    }
-
-    if (day == QStringLiteral("Wednesday"))
-    {
-        return QStringLiteral("수(WED)");
-    }
-
-    if (day == QStringLiteral("Thursday"))
-    {
-        return QStringLiteral("목(THU)");
-    }
-
-    if (day == QStringLiteral("Friday"))
-    {
-        return QStringLiteral("금(FRI)");
-    }
-
-    if (day == QStringLiteral("Saturday"))
-    {
-        return QStringLiteral("토(SAT)");
-    }
-
-    if (day == QStringLiteral("Sunday"))
-    {
-        return QStringLiteral("일(SUN)");
-    }
-
-    return day;
+    return QString::fromUtf8(
+        classmngr::engine::ScheduleReportService::excelDayLabel(
+            day.toStdString()
+            )
+        );
 }
 
 QString excelTimeLabel(
     const QString& rangeLabel
     )
 {
-    QString label =
-        rangeLabel;
-
-    label.remove(QStringLiteral(" AM"));
-    label.remove(QStringLiteral(" PM"));
-    label.replace(QStringLiteral(" -\n"), QStringLiteral("~"));
-    label.replace(QStringLiteral("\n- "), QStringLiteral("~"));
-    label.replace(QStringLiteral(" - "), QStringLiteral("~"));
-
-    return label;
+    return QString::fromUtf8(
+        classmngr::engine::ScheduleReportService::excelTimeLabel(
+            rangeLabel.toStdString()
+            )
+        );
 }
 
 QColor classColor(

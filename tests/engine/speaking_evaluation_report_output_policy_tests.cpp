@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace
 {
@@ -123,6 +124,45 @@ int main()
     passed &= expect(
         limitedName.size() == 244,
         "student filename UTF-8 length limit changed"
+        );
+
+    const auto names = SpeakingEvaluationReportOutputPolicy::studentFileNames({
+        {"First Student", "첫학생"},
+        {"Second Student", "둘째학생"}
+    });
+    passed &= expect(
+        names
+            && *names == std::vector<std::string>{
+                "First Student (첫학생).pdf",
+                "Second Student (둘째학생).pdf"
+            },
+        "batch student filenames did not preserve input order"
+        );
+
+    const auto duplicateNames =
+        SpeakingEvaluationReportOutputPolicy::studentFileNames({
+            {"Same:Student", {}},
+            {"Same-Student", {}}
+        });
+    passed &= expect(
+        !duplicateNames
+            && duplicateNames.error().code
+                == classmngr::engine::ErrorCode::Constraint
+            && duplicateNames.error().message
+                == "duplicate-student-file-name:Same-Student.pdf",
+        "duplicate batch student filenames were not rejected by the engine"
+        );
+
+    const auto caseInsensitiveDuplicateNames =
+        SpeakingEvaluationReportOutputPolicy::studentFileNames({
+            {"Case Student", {}},
+            {"case student", {}}
+        });
+    passed &= expect(
+        !caseInsensitiveDuplicateNames
+            && caseInsensitiveDuplicateNames.error().message
+                == "duplicate-student-file-name:case student.pdf",
+        "case-insensitive batch filename collisions were not rejected"
         );
 
     return passed ? 0 : 1;

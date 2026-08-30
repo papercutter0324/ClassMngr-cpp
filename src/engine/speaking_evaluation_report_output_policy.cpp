@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -146,6 +147,19 @@ bool equalsIgnoreAsciiCase(
     }
 
     return true;
+}
+
+std::string asciiCaseFold(std::string_view value)
+{
+    std::string result(value);
+    for (char& character : result)
+    {
+        if (character >= 'A' && character <= 'Z')
+        {
+            character = static_cast<char>(character - 'A' + 'a');
+        }
+    }
+    return result;
 }
 
 bool parseUnsigned(
@@ -594,6 +608,40 @@ std::string SpeakingEvaluationReportOutputPolicy::studentFileName(
     }
 
     return limitUtf8Bytes(baseName, 240) + suffix;
+}
+
+Result<std::vector<std::string>>
+SpeakingEvaluationReportOutputPolicy::studentFileNames(
+    const std::vector<StudentFileNameInput>& students,
+    std::string_view extension,
+    std::string_view fallbackName,
+    char replacement
+    )
+{
+    std::vector<std::string> names;
+    names.reserve(students.size());
+    std::set<std::string> seenNames;
+    for (const StudentFileNameInput& student : students)
+    {
+        std::string name = studentFileName(
+            student.englishName,
+            student.koreanName,
+            extension,
+            fallbackName,
+            replacement
+            );
+        if (!seenNames.insert(asciiCaseFold(name)).second)
+        {
+            return std::unexpected(Error{
+                ErrorCode::Constraint,
+                "duplicate-student-file-name:" + name,
+                std::nullopt
+            });
+        }
+        names.push_back(std::move(name));
+    }
+
+    return names;
 }
 
 } // namespace classmngr::engine

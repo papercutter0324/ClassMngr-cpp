@@ -58,6 +58,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/class_schedule_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_schedule_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/schedule_builder_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_builder.h"
     "${PROJECT_SOURCE_DIR}/src/engine/schedule_import_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"
@@ -83,6 +85,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_report.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_pagination.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_class_information_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_class_information.h"
     "${PROJECT_SOURCE_DIR}/src/engine/academic_calendar.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/academic_calendar.h"
     "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_rules.cpp"
@@ -348,6 +352,23 @@ if(BUILD_TESTING)
         COMMAND ClassMngrEngineClassScheduleServiceTests
     )
 
+    add_executable(ClassMngrEngineScheduleBuilderServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/schedule_builder_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineScheduleBuilderServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineScheduleBuilderServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineScheduleBuilderServiceTests
+        COMMAND ClassMngrEngineScheduleBuilderServiceTests
+    )
+
     add_executable(ClassMngrEngineScheduleImportServiceTests
         "${PROJECT_SOURCE_DIR}/tests/engine/schedule_import_service_tests.cpp"
     )
@@ -569,6 +590,23 @@ if(BUILD_TESTING)
         COMMAND ClassMngrEngineSubPrepPaginationTests
     )
 
+    add_executable(ClassMngrEngineSubPrepClassInformationServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/sub_prep_class_information_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSubPrepClassInformationServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSubPrepClassInformationServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSubPrepClassInformationServiceTests
+        COMMAND ClassMngrEngineSubPrepClassInformationServiceTests
+    )
+
     add_executable(ClassMngrEngineAcademicCalendarTests
         "${PROJECT_SOURCE_DIR}/tests/engine/academic_calendar_tests.cpp"
     )
@@ -601,5 +639,26 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineCalendarEventRulesTests
         COMMAND ClassMngrEngineCalendarEventRulesTests
+    )
+
+    add_executable(ClassMngrEngineDatabaseFixtureRoundTripTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/database_fixture_round_trip_tests.cpp"
+    )
+    target_compile_definitions(ClassMngrEngineDatabaseFixtureRoundTripTests
+        PRIVATE
+            CLASSMNGR_DATABASE_PORT_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/tests/fixtures/database-port"
+    )
+    target_link_libraries(ClassMngrEngineDatabaseFixtureRoundTripTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineDatabaseFixtureRoundTripTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineDatabaseFixtureRoundTripTests
+        COMMAND ClassMngrEngineDatabaseFixtureRoundTripTests
     )
 endif()

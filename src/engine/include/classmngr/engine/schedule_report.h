@@ -194,6 +194,20 @@ public:
         bool use24h
         );
 
+    [[nodiscard]] static std::string classLine(
+        std::string_view classGrade,
+        std::string_view classLevel,
+        bool compact = false
+        );
+
+    [[nodiscard]] static std::string excelDayLabel(
+        std::string_view day
+        );
+
+    [[nodiscard]] static std::string excelTimeLabel(
+        std::string_view rangeLabel
+        );
+
     [[nodiscard]] static std::string teacherName(
         const ScheduleReportEntry& entry,
         bool showEnglishName
