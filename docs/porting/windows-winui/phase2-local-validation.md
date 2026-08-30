@@ -134,6 +134,11 @@ the shared metadata model. The retained Qt dialog only converts `QStringList`
 rows, supplies the current date and signature bytes, and creates widget/report
 types.
 
+The speaking-evaluation AI prompt service now owns observation-line
+normalization, student/classmate name redaction, prompt eligibility and
+composition, and batch-response marker parsing. The retained Qt AI prompt
+callers only convert Qt values and expose the engine results to the dialogs.
+
 ## Local validation
 
 | Lane | Result |
@@ -199,6 +204,10 @@ types.
 | Windows x64 Release speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
 | Windows x86 Debug speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
 | Windows x86 Release speaking-evaluation content test | Passed: `ClassMngrEngineSpeakingEvaluationReportContentTests` |
+| Windows x64 Debug speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
+| Windows x64 Release speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
+| Windows x86 Debug speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
+| Windows x86 Release speaking-evaluation AI prompt test | Passed: `ClassMngrEngineSpeakingEvaluationAiPromptTests` |
 | Windows x64 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x64 Release schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
 | Windows x86 Debug schedule report service test | Passed: `ClassMngrEngineScheduleReportServiceTests` |
@@ -237,18 +246,19 @@ CTest selections with no Qt-dependent test process. The new schedule-import
 service test passed in x64/x86 Debug and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service,
 speaking-evaluation report metadata model, speaking-evaluation report content,
-academic-calendar schedule, calendar-event rules, speaking-evaluation output
-policy, class-information, schedule-read, schedule-import, and class-transfer
-implementations compiled and passed in all four engine lanes. Each lane's
-integrated sweep then passed all twenty-one engine suites plus both WinUI
-staging and manifest checks (23/23). The
+speaking-evaluation AI prompt service, academic-calendar schedule,
+calendar-event rules, speaking-evaluation output policy, class-information,
+schedule-read, schedule-import, and class-transfer implementations compiled
+and passed in all four engine lanes. Each lane's integrated sweep then passed
+all twenty-two engine suites plus both WinUI staging and manifest checks
+(24/24). The
 retained Qt schedule-import
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep pagination adapter,
 academic-calendar, calendar-event, speaking-evaluation report metadata, and
-speaking-evaluation report content adapters, schema-manager, updater, and
-teacher-import
+speaking-evaluation report content and AI prompt adapters, schema-manager,
+updater, and teacher-import
 coverage. The
 batch-report target was also exercised offscreen;
 a normal desktop run was blocked only by the host clipboard being

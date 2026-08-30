@@ -84,7 +84,7 @@ Last updated: 2026-08-30 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output policy, and content assembly, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report models, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, report metadata, output policy, content assembly, AI prompt rules, schedule reports, roster reports, and sub-prep pagination policy are extracted; remaining report models, adapters, and fixture round trips remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -105,7 +105,7 @@ speaking-evaluation overall-grade report rule, the schedule report model, and
 the by-day/daily/per-class roster report model, the sub-prep pagination policy,
 academic calendar recurrence rules, and calendar-event normalization and campus
 filtering, speaking-evaluation report metadata, and speaking-evaluation output
-policy and content assembly,
+policy, content assembly, and AI prompt rules,
 with the retained Qt code still operational. The next active gate is
 extracting the remaining report content/pagination use cases and connecting
 the retained adapters with cross-platform fixture evidence.
@@ -431,6 +431,14 @@ After meaningful work:
   headless test passed in all four x64/x86 Debug/Release lanes, the retained
   Qt batch-report regression passed, and the integrated WinUI sweep passed all
   twenty-one engine suites plus staging and manifest checks (23/23).
+- **2026-08-30 — Speaking-evaluation AI prompt rules extracted.** The Qt-free
+  AI prompt service now owns observation-line normalization, student/classmate
+  name redaction, prompt eligibility and composition, and batch-response marker
+  parsing. The retained Qt callers only convert values and expose engine
+  results to the dialogs. Its headless test passed in all four x64/x86
+  Debug/Release lanes, the retained Qt batch-report regression passed, and the
+  integrated WinUI sweep passed all twenty-two engine suites plus staging and
+  manifest checks (24/24).
 
 ## Shared Completion Rules
 

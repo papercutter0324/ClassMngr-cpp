@@ -251,6 +251,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSpeakingEvaluationReportContentTests
         )
     endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationAiPromptTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationAiPromptTests
+        )
+    endif()
     if(TARGET ClassMngrEngineScheduleReportServiceTests)
         add_dependencies(
             ${classmngr_winui_target}
