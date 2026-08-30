@@ -34,6 +34,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/classroom.h"
     "${PROJECT_SOURCE_DIR}/src/engine/teacher.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/class_naming.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_naming.h"
     "${PROJECT_SOURCE_DIR}/src/engine/validation_result.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/validation_result.h"
     "${PROJECT_SOURCE_DIR}/src/engine/teacher_validator.cpp"
@@ -87,6 +89,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_class_information_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_class_information.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_package_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_package.h"
     "${PROJECT_SOURCE_DIR}/src/engine/academic_calendar.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/academic_calendar.h"
     "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_rules.cpp"
@@ -282,6 +286,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineTeacherServiceTests
         COMMAND ClassMngrEngineTeacherServiceTests
+    )
+
+    add_executable(ClassMngrEngineClassNamingServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/class_naming_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineClassNamingServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineClassNamingServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineClassNamingServiceTests
+        COMMAND ClassMngrEngineClassNamingServiceTests
     )
 
     add_executable(ClassMngrEngineNativeEnglishTeacherServiceTests
@@ -605,6 +626,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSubPrepClassInformationServiceTests
         COMMAND ClassMngrEngineSubPrepClassInformationServiceTests
+    )
+
+    add_executable(ClassMngrEngineSubPrepPackageServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/sub_prep_package_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSubPrepPackageServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSubPrepPackageServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSubPrepPackageServiceTests
+        COMMAND ClassMngrEngineSubPrepPackageServiceTests
     )
 
     add_executable(ClassMngrEngineAcademicCalendarTests

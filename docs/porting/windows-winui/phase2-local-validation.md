@@ -68,6 +68,11 @@ range selection, `:05`/`:55` offset handling, and renderer-neutral entry
 assembly. The retained Qt `ScheduleBuilder` only loads the existing class
 information service and converts values at the presentation boundary.
 
+The portable naming slice now includes `ClassNamingService` for stable
+class/teacher labels and ordering. The retained Qt `SidebarNodeNaming` file is
+now a conversion adapter, so package planning and the existing Qt screens use
+the same UTF-8 naming rules.
+
 The schedule-import slice now includes Qt-free workbook-neutral models and a
 `ScheduleImportService`. The retained workbook parser remains a Qt adapter;
 the engine owns teacher/class match ranking, course meeting-pattern rules,
@@ -119,6 +124,14 @@ page-span detection, the
 page. The retained Qt renderer delegates these decisions through a small
 adapter while keeping text measurement, page counting, PDF geometry, and
 drawing Qt-owned.
+
+The Sub Prep package-planning slice now includes a Qt-free
+`SubPrepPackageService`. It owns selected-date normalization and weekday
+selection, class filtering for regular versus intensive schedules, stable
+class ordering, Windows-safe unique class-folder names, roster document names,
+and ordered relative document paths. The retained Qt package service converts
+loaded records and delegates the plan, while filesystem staging, PDF rendering,
+printing, atomic replacement, and localized messages remain Qt-owned.
 
 The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
 model using standard-library calendar dates. It preserves default elementary
@@ -224,6 +237,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
+| Windows x64 Debug class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
+| Windows x64 Release class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
+| Windows x86 Debug class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
+| Windows x86 Release class/teacher naming test | Passed: `ClassMngrEngineClassNamingServiceTests` |
 | Windows x64 Debug native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
 | Windows x64 Release native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
 | Windows x86 Debug native-English directory test | Passed: `ClassMngrEngineNativeEnglishTeacherServiceTests` |
@@ -304,6 +321,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
 | Windows x86 Debug sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
 | Windows x86 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
+| Windows x64 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
+| Windows x64 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
+| Windows x86 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
+| Windows x86 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x64 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x64 Release academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
 | Windows x86 Debug academic calendar service test | Passed: `ClassMngrEngineAcademicCalendarTests` |
@@ -336,14 +357,16 @@ speaking-evaluation AI prompt service, academic-calendar schedule,
 calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
 template-policy, batch-report policy, PowerPoint job service, and sub-prep
-class-information and schedule-builder
-implementations compiled and passed in all four engine lanes. The Qt-free
+class-information, schedule-builder, class/teacher naming, and Sub Prep
+package-planning implementations compiled and passed in all four engine lanes.
+The new class-naming and Sub Prep package-planning tests also passed in all
+four lanes. The Qt-free
 fixture round-trip test also passed in all four lanes against the committed
 eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-twenty-eight engine suites plus both WinUI staging and manifest checks (30/30).
+thirty engine suites plus both WinUI staging and manifest checks (32/32).
 The
 retained Qt schedule-import and schedule-builder
 regression also passed, alongside the existing class-information, assignment,
