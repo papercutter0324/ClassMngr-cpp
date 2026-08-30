@@ -10,18 +10,28 @@ namespace
 {
 constexpr int RegularEarlyEmptyFinalHour = 15;
 
+constexpr bool isAsciiWhitespace(unsigned char character)
+{
+    return character == ' '
+        || character == '\t'
+        || character == '\n'
+        || character == '\r'
+        || character == '\f'
+        || character == '\v';
+}
+
 std::string trimAscii(std::string_view value)
 {
     std::size_t first = 0;
     while (first < value.size()
-           && std::isspace(static_cast<unsigned char>(value[first])))
+           && isAsciiWhitespace(static_cast<unsigned char>(value[first])))
     {
         ++first;
     }
 
     std::size_t last = value.size();
     while (last > first
-           && std::isspace(static_cast<unsigned char>(value[last - 1])))
+           && isAsciiWhitespace(static_cast<unsigned char>(value[last - 1])))
     {
         --last;
     }
@@ -37,7 +47,7 @@ std::string collapseAsciiWhitespace(std::string_view value)
 
     for (const unsigned char character : value)
     {
-        if (std::isspace(character))
+        if (isAsciiWhitespace(character))
         {
             pendingSpace = !result.empty();
             continue;

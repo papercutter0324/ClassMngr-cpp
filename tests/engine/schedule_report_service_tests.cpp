@@ -155,6 +155,13 @@ int main()
         "teacher/room report line did not preserve language selection"
         );
 
+    named.teacherKr = "이정진";
+    passed &= expect(
+        ScheduleReportService::teacherRoomLine(named, false)
+            == "이정진 413",
+        "teacher/room report line corrupted a Korean teacher name"
+        );
+
     const std::vector<std::string> days{"Monday", "Tuesday"};
     ScheduleReportBuildResult regular = blankResult(
         days,
