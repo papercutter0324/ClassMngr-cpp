@@ -100,6 +100,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_pagination.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_class_information_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_class_information.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_document.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_document.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sub_prep_package_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/sub_prep_package.h"
     "${PROJECT_SOURCE_DIR}/src/engine/academic_calendar.cpp"
@@ -705,6 +707,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSubPrepClassInformationServiceTests
         COMMAND ClassMngrEngineSubPrepClassInformationServiceTests
+    )
+
+    add_executable(ClassMngrEngineSubPrepDocumentTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/sub_prep_document_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSubPrepDocumentTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSubPrepDocumentTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSubPrepDocumentTests
+        COMMAND ClassMngrEngineSubPrepDocumentTests
     )
 
     add_executable(ClassMngrEngineSubPrepPackageServiceTests

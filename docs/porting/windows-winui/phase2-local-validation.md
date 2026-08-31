@@ -163,6 +163,13 @@ and ordered relative document paths. The retained Qt package service converts
 loaded records and delegates the plan, while filesystem staging, PDF rendering,
 printing, atomic replacement, and localized messages remain Qt-owned.
 
+The Sub Prep document-model slice now includes a Qt-free
+`SubPrepDocumentService` aggregate for campus and Zoom information,
+instructional text, schedule-report models, and nested teacher/class details.
+The retained Qt document model converts the complete value graph through UTF-8
+and delegates aggregate construction while the PDF renderer keeps text
+measurement, pagination placement, geometry, and drawing presentation-owned.
+
 The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
 model using standard-library calendar dates. It preserves default elementary
 and middle-school term lengths, custom-year rollover, previous-fall
@@ -367,6 +374,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
 | Windows x86 Debug sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
 | Windows x86 Release sub-prep class-information service test | Passed: `ClassMngrEngineSubPrepClassInformationServiceTests` |
+| Windows x64 Debug sub-prep document-model test | Passed: `ClassMngrEngineSubPrepDocumentTests` |
+| Windows x64 Release sub-prep document-model test | Passed: `ClassMngrEngineSubPrepDocumentTests` |
+| Windows x86 Debug sub-prep document-model test | Passed: `ClassMngrEngineSubPrepDocumentTests` |
+| Windows x86 Release sub-prep document-model test | Passed: `ClassMngrEngineSubPrepDocumentTests` |
 | Windows x64 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x64 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x86 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
@@ -408,21 +419,22 @@ calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
 template-policy, batch-report policy, PowerPoint job service, and sub-prep
 class-information, schedule-builder, class/teacher naming, upcoming-birthday,
-and Sub Prep package-planning implementations compiled and passed in all four
-engine lanes. The new class-naming, upcoming-birthday, and Sub Prep
-package-planning tests also passed in all four lanes. The Qt-free
+Sub Prep document-model, and Sub Prep package-planning implementations
+compiled and passed in all four engine lanes. The new class-naming,
+upcoming-birthday, and Sub Prep document-model and package-planning
+tests also passed in all four lanes. The Qt-free
 fixture round-trip test also passed in all four lanes against the committed
 eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-four engine suites plus both WinUI staging and manifest checks (36/36).
+thirty-five engine suites plus both WinUI staging and manifest checks (37/37).
 The
 retained Qt schedule-import, schedule-builder, and upcoming-birthday
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
-report-widget regressions, including the sub-prep class-information and
-pagination adapters,
+report-widget regressions, including the sub-prep document-model,
+class-information, and pagination adapters,
 academic-calendar, calendar-event, speaking-evaluation report metadata,
 class-analytics, roster-validation, and
 speaking-evaluation report content and AI prompt adapters, schema-manager,
