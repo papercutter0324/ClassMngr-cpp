@@ -1,18 +1,21 @@
 #pragma once
 
+#include "classmngr/engine/calendar_event.h"
 #include "classmngr/engine/calendar_event_rules.h"
 
+#include <QByteArray>
 #include <QDate>
 #include <QString>
 #include <QStringList>
 #include <QTime>
 
-enum class CalendarEventRepeatFrequency
-{
-    Daily,
-    Weekly,
-    Monthly
-};
+#include <chrono>
+#include <optional>
+#include <string>
+#include <string_view>
+
+using CalendarEventRepeatFrequency =
+    classmngr::engine::CalendarEventRepeatFrequency;
 
 struct CalendarEvent
 {
@@ -27,6 +30,123 @@ struct CalendarEvent
     QDate endDate;
     QTime endTime;
 };
+
+namespace calendar_event_detail
+{
+inline std::string toUtf8(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
+}
+
+inline QString fromUtf8(std::string_view value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+inline classmngr::engine::CalendarDate toEngineDate(const QDate& date)
+{
+    if (!date.isValid())
+    {
+        return {};
+    }
+
+    return {
+        std::chrono::year(date.year()),
+        std::chrono::month(static_cast<unsigned>(date.month())),
+        std::chrono::day(static_cast<unsigned>(date.day()))
+    };
+}
+
+inline QDate fromEngineDate(
+    const classmngr::engine::CalendarDate& date
+    )
+{
+    if (!date.ok())
+    {
+        return {};
+    }
+
+    return QDate(
+        static_cast<int>(date.year()),
+        static_cast<int>(static_cast<unsigned>(date.month())),
+        static_cast<int>(static_cast<unsigned>(date.day()))
+        );
+}
+
+inline std::optional<std::chrono::minutes> toEngineTime(const QTime& time)
+{
+    if (!time.isValid())
+    {
+        return std::nullopt;
+    }
+
+    return std::chrono::minutes{time.hour() * 60 + time.minute()};
+}
+
+inline QTime fromEngineTime(
+    const std::optional<std::chrono::minutes>& time
+    )
+{
+    if (!time)
+    {
+        return {};
+    }
+
+    const auto count = time->count();
+    if (count < 0 || count >= 24 * 60)
+    {
+        return {};
+    }
+
+    return QTime(
+        static_cast<int>(count / 60),
+        static_cast<int>(count % 60)
+        );
+}
+} // namespace calendar_event_detail
+
+inline classmngr::engine::CalendarEvent calendarEventToEngine(
+    const CalendarEvent& event
+    )
+{
+    classmngr::engine::CalendarEvent result;
+    result.id = event.id;
+    result.title = calendar_event_detail::toUtf8(event.title);
+    result.eventType = calendar_event_detail::toUtf8(event.eventType);
+    result.timeStatus = calendar_event_detail::toUtf8(event.timeStatus);
+    result.repeatSeriesId = calendar_event_detail::toUtf8(event.repeatSeriesId);
+    result.allDay = event.allDay;
+    result.startDate = calendar_event_detail::toEngineDate(event.startDate);
+    result.startTime = calendar_event_detail::toEngineTime(event.startTime);
+    result.endDate = calendar_event_detail::toEngineDate(event.endDate);
+    result.endTime = calendar_event_detail::toEngineTime(event.endTime);
+    return result;
+}
+
+inline CalendarEvent calendarEventFromEngine(
+    const classmngr::engine::CalendarEvent& event
+    )
+{
+    CalendarEvent result;
+    result.id = event.id;
+    result.title = calendar_event_detail::fromUtf8(event.title);
+    result.eventType = calendar_event_detail::fromUtf8(event.eventType);
+    result.timeStatus = calendar_event_detail::fromUtf8(event.timeStatus);
+    result.repeatSeriesId = calendar_event_detail::fromUtf8(event.repeatSeriesId);
+    result.allDay = event.allDay;
+    result.startDate = calendar_event_detail::fromEngineDate(event.startDate);
+    result.startTime = calendar_event_detail::fromEngineTime(event.startTime);
+    result.endDate = calendar_event_detail::fromEngineDate(event.endDate);
+    result.endTime = calendar_event_detail::fromEngineTime(event.endTime);
+    return result;
+}
 
 inline QStringList calendarEventTypes()
 {

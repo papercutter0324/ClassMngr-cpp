@@ -210,6 +210,12 @@ recognition, and literal campus-code token matching. The retained Qt event
 model and filter delegate through UTF-8 adapters; event storage, date/time
 values, and UI presentation remain in the existing adapters.
 
+The calendar-event validation slice now includes a Qt-free `CalendarEvent`
+model and `CalendarEventValidator` for ASCII string normalization, UTF-8
+length limits, date/time consistency, recurrence bounds with deterministic
+month-end stepping, and repeat-series caps. The retained Qt validator keeps
+its public API and delegates through `QDate`/`QTime` and UTF-8 conversions.
+
 The speaking-evaluation report boundary now includes a Qt-free metadata model
 for elementary-grade parsing, class labels, advanced-template selection, and
 deterministic report dates. Its output-policy companion owns schedule-aware
@@ -433,6 +439,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
 | Windows x86 Debug calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
 | Windows x86 Release calendar-event rules test | Passed: `ClassMngrEngineCalendarEventRulesTests` |
+| Windows x64 Debug calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
+| Windows x64 Release calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
+| Windows x86 Debug calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
+| Windows x86 Release calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
@@ -451,6 +461,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt speaking-evaluation validation regression | Passed: `ClassMngrSharedPolicyTests` through the UTF-8 adapter |
 | Retained Windows Qt report ZIP adapter compile check | Passed: Qt 6.11/MSVC compile-only check for `zip_archive_writer.cpp` |
 | Retained Windows Qt document-output adapter compile check | Passed: Qt 6.11/MSVC compile-only UTF-8 conversion round-trip for `document_output_result.h` |
+| Retained Windows Qt calendar-event validator adapter check | Passed: Qt 6.11/MSVC compile-only check for `calendar_event_validator.cpp` |
 | Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
@@ -500,9 +511,17 @@ build tree.
 
 The document-output result target was subsequently configured, built, and
 passed in all four x64/x86 Debug/Release WinUI lanes. Its focused CTest
-selections passed without a Qt-dependent test process, and a direct Qt
+ selections passed without a Qt-dependent test process, and a direct Qt
 6.11/MSVC compile-only check exercised the retained model's UTF-8 conversion
 round trip.
+
+The calendar-event validator target was subsequently configured, built, and
+passed in all four x64/x86 Debug/Release WinUI lanes. Its focused CTest
+selections covered normalization, UTF-8 data, date/time diagnostics,
+recurrence bounds, month-end stepping, and series caps. A direct Qt 6.11/MSVC
+compile-only check exercised the retained adapter against the current engine
+headers; the full Qt CMake regeneration was not used because
+the existing Qt build tree stalled during regeneration.
 
 ## Remaining Phase 2 work
 

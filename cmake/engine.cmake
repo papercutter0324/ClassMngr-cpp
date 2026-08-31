@@ -113,6 +113,9 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/academic_calendar.h"
     "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_rules.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/calendar_event_rules.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/calendar_event_validator.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/calendar_event.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/calendar_event_validator.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_transfer_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer_service.h"
@@ -799,6 +802,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineCalendarEventRulesTests
         COMMAND ClassMngrEngineCalendarEventRulesTests
+    )
+
+    add_executable(ClassMngrEngineCalendarEventValidatorTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/calendar_event_validator_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineCalendarEventValidatorTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineCalendarEventValidatorTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineCalendarEventValidatorTests
+        COMMAND ClassMngrEngineCalendarEventValidatorTests
     )
 
     add_executable(ClassMngrEngineDatabaseFixtureRoundTripTests

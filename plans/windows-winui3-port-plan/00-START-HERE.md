@@ -103,7 +103,7 @@ Last updated: 2026-08-31 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering rules, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering and validation/recurrence rules, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -124,9 +124,10 @@ class-transfer workflows, the
 speaking-evaluation overall-grade report rule, the schedule report model, and
 the by-day/daily/per-class roster report model and roster template policy, the
 sub-prep pagination policy,
-academic calendar recurrence rules, and calendar-event normalization and campus
-filtering, speaking-evaluation report metadata, output policy, content
-assembly, AI prompt rules, template policy, batch-export policy, PowerPoint
+academic calendar recurrence rules, calendar-event normalization, validation,
+recurrence, and campus filtering, speaking-evaluation report metadata, output
+policy, content assembly, AI prompt rules, template policy, batch-export policy,
+PowerPoint
   job content, student filename policy, schedule-report print labels, and the
   sub-prep class-information report model, class/teacher naming,
   upcoming-birthday scheduling, class analytics, roster validation,
@@ -655,6 +656,15 @@ After meaningful work:
   the Qt 6.11/MSVC compatibility header passed a compile-only round-trip
   check. Phase 2 remains open for the remaining report/export adapter/model
   migration and broader per-slice fixture coverage.
+- **2026-08-31 — Calendar-event validation extracted.** The Qt-free
+  `CalendarEvent` and `CalendarEventValidator` now own string normalization,
+  UTF-8 length checks, date/time consistency, recurrence bounds, month-end
+  recurrence stepping, and repeat-series caps. The retained Qt validator is a
+  UTF-8/date/time conversion adapter with its public API unchanged. The
+  focused engine test passed in all four x64/x86 Debug/Release WinUI lanes;
+  the retained adapter passed a Qt 6.11/MSVC compile-only check. Phase 2
+  remains open for the remaining report/export adapter/model migration and
+  broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 
