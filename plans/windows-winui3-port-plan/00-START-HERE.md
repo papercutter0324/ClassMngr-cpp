@@ -97,7 +97,7 @@ Status vocabulary:
 
 ## Progress Dashboard
 
-Last updated: 2026-08-31 (Asia/Seoul)
+Last updated: 2026-09-01 (Asia/Seoul)
 
 | Phase | Status | Current evidence or next gate |
 | --- | --- | --- |
@@ -141,9 +141,11 @@ reopen, and class-transfer import checks in all four WinUI lanes. The retained
 Qt fixture verifier also proves temporary Qt-written → engine-read and
 engine-written → Qt-read interoperability. The retained Qt roster repository
 now routes its file-backed load, save, student-count, and atomic batch-save
-operations through the engine service. The next active gate is extracting the
-remaining report/export use cases and connecting the retained adapters, while
-extending fixture evidence across each migrated persistence slice.
+operations through the engine service. The retained Qt class-information
+repository now routes its six class-information and schedule operations through
+the engine services as well. The next active gate is extracting the remaining
+report/export use cases and connecting the retained adapters, while extending
+fixture evidence across each migrated persistence slice.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -679,6 +681,16 @@ After meaningful work:
   Debug/Release engine CTest sweeps passed. Phase 2 remains open for the
   remaining report/export adapter/model migration and broader per-slice
   fixture coverage.
+- **2026-09-01 — Class-information adapter connected.** The retained Qt
+  `ClassInfoRepository` now converts through UTF-8 and delegates its six
+  class-information, schedule-read, and conflict operations to the Qt-free
+  `ClassInfoService` and `ClassScheduleService`; engine save and notes failures
+  retain operation and class-id context for the existing rollback diagnostics.
+  A rebuilt focused retained-Qt assignment test passed 8/8 cases, and direct
+  VS 2026/Qt 6.11 compile checks passed for the adapter and engine changes.
+  The regular Qt CMake rebuild remains blocked by the existing regeneration /
+  MSBuild FileTracker issue. Phase 2 remains open for the remaining
+  report/export adapter/model migration and broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 

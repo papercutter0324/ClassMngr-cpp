@@ -551,13 +551,25 @@ single-save and batch-save failures and verified rollback. The retained class
 transfer export path passed through `ClassMngrClassTransferTests`. The complete
 engine CTest selection passed in all four x64/x86 Debug/Release WinUI lanes.
 
+The retained Qt class-information repository was then converted to a UTF-8
+adapter over the engine class-information and schedule services. Its six
+public operations now share the engine persistence, teacher-join, schedule,
+and conflict rules, while the Qt-facing result and diagnostic shapes remain
+unchanged. The adapter and engine sources passed direct VS 2026/Qt 6.11
+compile checks. A rebuilt retained-Qt assignment test using the updated
+adapter passed all 8 cases. The normal Qt CMake regeneration/rebuild was
+attempted but remained blocked by the existing MSBuild FileTracker access
+failure and regeneration stall, so the full current-binary class-information
+lifecycle result is not claimed here.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
 fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
-connected to the extracted engine use case. The next work is migrating the
-remaining report/export adapters and models, connecting the other retained Qt
-adapters to extracted use-case boundaries, and extending fixture evidence
-across each migrated persistence slice.
+connected to the extracted engine use case, and the class-information adapter
+now shares the extracted class-information and schedule use cases. The next
+work is migrating the remaining report/export adapters and models, connecting
+the other retained Qt adapters to extracted use-case boundaries, and extending
+fixture evidence across each migrated persistence slice.

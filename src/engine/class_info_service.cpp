@@ -24,6 +24,27 @@ Error error(
     return {code, std::move(message), std::nullopt};
 }
 
+Error withContext(
+    Error source,
+    std::string_view action,
+    std::optional<int> classId = std::nullopt
+    )
+{
+    std::string message(action);
+    if (classId)
+    {
+        message += " for class id ";
+        message += std::to_string(*classId);
+    }
+    if (!source.message.empty())
+    {
+        message += ": ";
+        message += source.message;
+    }
+    source.message = std::move(message);
+    return source;
+}
+
 Status validClassId(
     int classId,
     std::string_view action
@@ -235,6 +256,7 @@ Status loadTimes(
     SqliteDatabase& database,
     int classId,
     std::string_view table,
+    std::string_view action,
     std::vector<ClassTime>& destination
     )
 {
@@ -245,7 +267,7 @@ Status loadTimes(
         );
     if (!rows)
     {
-        return std::unexpected(rows.error());
+        return std::unexpected(withContext(rows.error(), action, classId));
     }
     destination.reserve(rows->rows.size());
     for (const SqliteRow& row : rows->rows)
@@ -253,7 +275,7 @@ Status loadTimes(
         const Result<ClassTime> time = timeFromRow(row);
         if (!time)
         {
-            return std::unexpected(time.error());
+            return std::unexpected(withContext(time.error(), action, classId));
         }
         destination.push_back(*time);
     }
@@ -293,11 +315,19 @@ Status ClassInfoService::save(const ClassInfo& info)
         );
     if (!classIsPresent)
     {
-        return std::unexpected(classIsPresent.error());
+        return std::unexpected(withContext(
+            classIsPresent.error(),
+            "Saving class information",
+            normalized.classId
+            ));
     }
     if (!*classIsPresent)
     {
-        return std::unexpected(notFound("class", normalized.classId));
+        return std::unexpected(withContext(
+            notFound("class", normalized.classId),
+            "Saving class information",
+            normalized.classId
+            ));
     }
 
     if (normalized.teacherId > 0)
@@ -310,18 +340,30 @@ Status ClassInfoService::save(const ClassInfo& info)
             );
         if (!teacherIsPresent)
         {
-            return std::unexpected(teacherIsPresent.error());
+            return std::unexpected(withContext(
+                teacherIsPresent.error(),
+                "Saving class information",
+                normalized.classId
+                ));
         }
         if (!*teacherIsPresent)
         {
-            return std::unexpected(notFound("teacher", normalized.teacherId));
+            return std::unexpected(withContext(
+                notFound("teacher", normalized.teacherId),
+                "Saving class information",
+                normalized.classId
+                ));
         }
     }
 
     Result<SqliteTransaction> transaction = m_database.beginTransaction();
     if (!transaction)
     {
-        return std::unexpected(transaction.error());
+        return std::unexpected(withContext(
+            transaction.error(),
+            "Starting class information save transaction",
+            normalized.classId
+            ));
     }
 
     const Status upsert = m_database.execute(
@@ -350,17 +392,19 @@ Status ClassInfoService::save(const ClassInfo& info)
         );
     if (!upsert)
     {
-        return upsert;
+        return std::unexpected(withContext(
+            upsert.error(),
+            "Saving class information",
+            normalized.classId
+            ));
     }
 
-    for (const auto [table, times] : {
-             std::pair<std::string_view, const std::vector<ClassTime>&>{
-                 "class_times", normalized.classTimes
-             },
-             std::pair<std::string_view, const std::vector<ClassTime>&>{
-                 "class_intensive_times", normalized.intensiveTimes
-             }
-         })
+    const auto saveTimes = [&](
+        std::string_view table,
+        const std::vector<ClassTime>& times,
+        std::string_view deleteAction,
+        std::string_view insertAction
+        ) -> Status
     {
         const Status deleted = m_database.execute(
             std::string("DELETE FROM ") + std::string(table)
@@ -369,7 +413,11 @@ Status ClassInfoService::save(const ClassInfo& info)
             );
         if (!deleted)
         {
-            return deleted;
+            return std::unexpected(withContext(
+                deleted.error(),
+                deleteAction,
+                normalized.classId
+                ));
         }
 
         for (const ClassTime& time : times)
@@ -387,12 +435,49 @@ Status ClassInfoService::save(const ClassInfo& info)
                 );
             if (!inserted)
             {
-                return inserted;
+                return std::unexpected(withContext(
+                    inserted.error(),
+                    insertAction,
+                    normalized.classId
+                    ));
             }
         }
+        return {};
+    };
+
+    const Status regularTimes = saveTimes(
+        "class_times",
+        normalized.classTimes,
+        "Deleting regular class times",
+        "Inserting regular class time"
+        );
+    if (!regularTimes)
+    {
+        return regularTimes;
     }
 
-    return transaction->commit();
+    const Status intensiveTimes = saveTimes(
+        "class_intensive_times",
+        normalized.intensiveTimes,
+        "Deleting intensive class times",
+        "Inserting intensive class time"
+        );
+    if (!intensiveTimes)
+    {
+        return intensiveTimes;
+    }
+
+    const Status committed = transaction->commit();
+    if (!committed)
+    {
+        return std::unexpected(withContext(
+            committed.error(),
+            "Committing class information",
+            normalized.classId
+            ));
+    }
+
+    return {};
 }
 
 Status ClassInfoService::saveNotes(
@@ -422,14 +507,22 @@ Status ClassInfoService::saveNotes(
         );
     if (!classIsPresent)
     {
-        return std::unexpected(classIsPresent.error());
+        return std::unexpected(withContext(
+            classIsPresent.error(),
+            "Saving class notes",
+            classId
+            ));
     }
     if (!*classIsPresent)
     {
-        return std::unexpected(notFound("class", classId));
+        return std::unexpected(withContext(
+            notFound("class", classId),
+            "Saving class notes",
+            classId
+            ));
     }
 
-    return m_database.execute(
+    const Status saved = m_database.execute(
         "INSERT INTO class_info (class_id, notes, time_filler_activities) "
         "VALUES (?, ?, ?) ON CONFLICT(class_id) DO UPDATE SET "
         "notes=excluded.notes, "
@@ -440,6 +533,16 @@ Status ClassInfoService::saveNotes(
             SqliteValue{std::string(timeFillerActivities)}
         }
         );
+    if (!saved)
+    {
+        return std::unexpected(withContext(
+            saved.error(),
+            "Saving class notes",
+            classId
+            ));
+    }
+
+    return {};
 }
 
 Result<ClassInfo> ClassInfoService::load(int classId)
@@ -612,6 +715,7 @@ Result<ClassInfo> ClassInfoService::load(int classId)
         m_database,
         classId,
         "class_times",
+        "Loading regular class times",
         info.classTimes
         );
     if (!regularTimes)
@@ -622,6 +726,7 @@ Result<ClassInfo> ClassInfoService::load(int classId)
         m_database,
         classId,
         "class_intensive_times",
+        "Loading intensive class times",
         info.intensiveTimes
         );
     if (!intensiveTimes)

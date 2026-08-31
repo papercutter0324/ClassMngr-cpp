@@ -9,12 +9,20 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class ClassInfoRepository
 {
 public:
     explicit ClassInfoRepository(
         QSqlDatabase& database
         );
+    ~ClassInfoRepository();
 
     [[nodiscard]] Status saveClassInfo(
         const ClassInfo& info
@@ -42,5 +50,12 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        int classId = -1
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };
