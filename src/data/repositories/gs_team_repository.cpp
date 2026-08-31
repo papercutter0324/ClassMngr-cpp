@@ -1,25 +1,113 @@
 #include "gs_team_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/gs_team_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QSet>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-QString normalizedName(const QString& value)
+using EngineError = classmngr::engine::Error;
+using EngineGsTeamMember = classmngr::engine::GsTeamMember;
+using EngineGsTeamService = classmngr::engine::GsTeamService;
+
+std::string toUtf8(
+    const QString& value
+    )
 {
-    return value.simplified().toCaseFolded();
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-Status queryError(const QSqlQuery& query, const QString& action)
+QString fromUtf8(
+    std::string_view value
+    )
 {
-    return std::unexpected(
-        SqlQueryUtils::errorFor(query, action).userMessage()
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
+}
+
+EngineGsTeamMember toEngineGsTeamMember(
+    const GsTeamMember& source
+    )
+{
+    EngineGsTeamMember result;
+    result.id = source.id;
+    result.name = toUtf8(source.name);
+    result.koreanName = toUtf8(source.koreanName);
+    result.position = toUtf8(source.position);
+    result.phoneNumber = toUtf8(source.phoneNumber);
+    result.birthday = toUtf8(source.birthday);
+    return result;
+}
+
+GsTeamMember fromEngineGsTeamMember(
+    const EngineGsTeamMember& source
+    )
+{
+    GsTeamMember result;
+    result.id = source.id;
+    result.name = fromUtf8(source.name);
+    result.koreanName = fromUtf8(source.koreanName);
+    result.position = fromUtf8(source.position);
+    result.phoneNumber = fromUtf8(source.phoneNumber);
+    result.birthday = fromUtf8(source.birthday);
+    return result;
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
 }
 }
 
@@ -28,46 +116,91 @@ GsTeamRepository::GsTeamRepository(QSqlDatabase& database)
 {
 }
 
-Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
-{
-    QList<GsTeamMember> result;
-    QSqlQuery query(m_database);
+GsTeamRepository::~GsTeamRepository() = default;
 
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-        SELECT id, name, korean_name, position, phone_number, birthday
-        FROM gs_team
-        ORDER BY CASE position
-            WHEN 'Branch Manager' THEN 1
-            WHEN 'M3' THEN 2
-            WHEN 'M2' THEN 3
-            WHEN 'M1' THEN 4
-            WHEN 'C3' THEN 5
-            WHEN 'C2' THEN 6
-            WHEN 'C1' THEN 7
-            ELSE 8
-        END,
-        CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
-        id
-    )"),
-        QObject::tr("Loading GS Team directory")
-        );
-    if (!executed)
+Status GsTeamRepository::ensureEngineDatabase(
+    const QString& operation
+    ) const
+{
+    if (!m_database.isValid() || !m_database.isOpen())
     {
-        return std::unexpected(executed.error().userMessage());
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
     }
 
-    while (query.next())
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
     {
-        GsTeamMember member;
-        member.id = query.value(0).toInt();
-        member.name = query.value(1).toString();
-        member.koreanName = query.value(2).toString();
-        member.position = query.value(3).toString();
-        member.phoneNumber = query.value(4).toString();
-        member.birthday = query.value(5).toString();
-        result.append(member);
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(toUtf8(databasePath));
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
+Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
+{
+    const QString operation =
+        QObject::tr("Loading GS Team directory");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineGsTeamService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineGsTeamMember>> loaded = service.list();
+    if (!loaded)
+    {
+        return std::unexpected(engineFailure(operation, loaded.error()));
+    }
+
+    QList<GsTeamMember> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineGsTeamMember& member : *loaded)
+    {
+        result.append(fromEngineGsTeamMember(member));
     }
 
     return result;
@@ -78,91 +211,36 @@ Status GsTeamRepository::saveDirectory(
     const QList<int>& deletedIds
     )
 {
-    QSet<QString> englishNames;
-    QSet<QString> koreanNames;
+    const QString operation =
+        QObject::tr("Saving GS Team directory");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
 
+    std::vector<EngineGsTeamMember> engineMembers;
+    engineMembers.reserve(static_cast<std::size_t>(members.size()));
     for (const GsTeamMember& member : members)
     {
-        const QString english = normalizedName(member.name);
-        const QString korean = normalizedName(member.koreanName);
-        if (english.isEmpty() && korean.isEmpty())
-        {
-            return std::unexpected(QObject::tr("Every GS Team member must have a name or Korean name."));
-        }
-        if ((!english.isEmpty() && englishNames.contains(english))
-            || (!korean.isEmpty() && koreanNames.contains(korean)))
-        {
-            return std::unexpected(QObject::tr("GS Team names must be unique."));
-        }
-        if (!english.isEmpty()) englishNames.insert(english);
-        if (!korean.isEmpty()) koreanNames.insert(korean);
+        engineMembers.push_back(toEngineGsTeamMember(member));
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    std::vector<int> engineDeletedIds;
+    engineDeletedIds.reserve(static_cast<std::size_t>(deletedIds.size()));
+    for (const int id : deletedIds)
     {
-        return std::unexpected(QObject::tr("Unable to start the directory save transaction."));
+        engineDeletedIds.push_back(id);
     }
 
-    for (int id : deletedIds)
+    EngineGsTeamService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.saveDirectory(
+        engineMembers,
+        engineDeletedIds
+        );
+    if (!saved)
     {
-        if (id <= 0) continue;
-        QSqlQuery query(m_database);
-        query.prepare(QStringLiteral("DELETE FROM gs_team WHERE id=?"));
-        query.addBindValue(id);
-        if (!query.exec())
-        {
-            return queryError(query, QObject::tr("Deleting a GS Team member"));
-        }
-    }
-
-    for (const GsTeamMember& source : members)
-    {
-        GsTeamMember member = source;
-        member.name = member.name.simplified();
-        member.koreanName = member.koreanName.simplified();
-        member.position = member.position.trimmed();
-        member.phoneNumber = member.phoneNumber.trimmed();
-        member.birthday = member.birthday.trimmed();
-
-        QSqlQuery query(m_database);
-        if (member.id > 0)
-        {
-            query.prepare(R"(
-                UPDATE gs_team
-                SET name=?, korean_name=?, position=?, phone_number=?, birthday=?
-                WHERE id=?
-            )");
-            query.addBindValue(member.name);
-            query.addBindValue(member.koreanName);
-            query.addBindValue(member.position);
-            query.addBindValue(member.phoneNumber);
-            query.addBindValue(member.birthday);
-            query.addBindValue(member.id);
-        }
-        else
-        {
-            query.prepare(R"(
-                INSERT INTO gs_team
-                    (name, korean_name, position, phone_number, birthday)
-                VALUES (?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(member.name);
-            query.addBindValue(member.koreanName);
-            query.addBindValue(member.position);
-            query.addBindValue(member.phoneNumber);
-            query.addBindValue(member.birthday);
-        }
-
-        if (!query.exec())
-        {
-            return queryError(query, QObject::tr("Saving a GS Team member"));
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(QObject::tr("Unable to commit the GS Team directory."));
+        return std::unexpected(engineFailure(operation, saved.error()));
     }
 
     return {};

@@ -597,6 +597,16 @@ the regular Qt CMake rebuild remains blocked by the existing regeneration /
 MSBuild FileTracker stall, so no current-binary directory regression is
 claimed for this slice.
 
+The retained Qt GS Team repository was then converted to a UTF-8 adapter over
+the engine GS Team directory service. Its list and atomic save/delete
+operations now share engine ordering, normalization, uniqueness, and
+transaction rules while preserving the Qt facade. Static adapter checks
+passed, and the existing `ClassMngrEngineGsTeamServiceTests` executable passed
+in all four x64/x86 Debug/Release WinUI lanes. The regular Qt CMake rebuild
+again remained blocked by the existing regeneration / MSBuild FileTracker
+stall, so no current-binary retained-Qt directory regression is claimed for
+this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
