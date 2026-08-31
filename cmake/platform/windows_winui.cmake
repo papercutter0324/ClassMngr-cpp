@@ -191,6 +191,18 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineTeacherServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineClassNamingServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineClassNamingServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineUpcomingBirthdayScheduleTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineUpcomingBirthdayScheduleTests
+        )
+    endif()
     if(TARGET ClassMngrEngineNativeEnglishTeacherServiceTests)
         add_dependencies(
             ${classmngr_winui_target}
@@ -215,6 +227,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassScheduleServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineScheduleBuilderServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineScheduleBuilderServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineScheduleImportServiceTests)
         add_dependencies(
             ${classmngr_winui_target}
@@ -231,6 +249,12 @@ function(classmngr_add_windows_winui_target)
         add_dependencies(
             ${classmngr_winui_target}
             ClassMngrEngineSpeakingAnalyticsTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineRosterValidatorTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineRosterValidatorTests
         )
     endif()
     if(TARGET ClassMngrEngineSpeakingEvaluationValidatorTests)
@@ -317,10 +341,22 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSubPrepPaginationTests
         )
     endif()
+    if(TARGET ClassMngrEngineSubPrepClassInformationServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSubPrepClassInformationServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineSubPrepDocumentTests)
         add_dependencies(
             ${classmngr_winui_target}
             ClassMngrEngineSubPrepDocumentTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineSubPrepPackageServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSubPrepPackageServiceTests
         )
     endif()
     if(TARGET ClassMngrEngineAcademicCalendarTests)
@@ -339,6 +375,12 @@ function(classmngr_add_windows_winui_target)
         add_dependencies(
             ${classmngr_winui_target}
             ClassMngrEngineCalendarEventValidatorTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineDatabaseFixtureRoundTripTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineDatabaseFixtureRoundTripTests
         )
     endif()
     if(TARGET ClassMngrEngineDocumentCatalogTests)
