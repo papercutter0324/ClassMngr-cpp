@@ -323,6 +323,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineCalendarEventRulesTests
         )
     endif()
+    if(TARGET ClassMngrEngineDocumentCatalogTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineDocumentCatalogTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

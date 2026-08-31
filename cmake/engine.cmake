@@ -111,6 +111,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/class_transfer_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_transfer_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/document_catalog.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/document_catalog.h"
 )
 
 target_link_libraries(ClassMngrEngine
@@ -796,5 +798,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineDatabaseFixtureRoundTripTests
         COMMAND ClassMngrEngineDatabaseFixtureRoundTripTests
+    )
+
+    add_executable(ClassMngrEngineDocumentCatalogTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/document_catalog_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineDocumentCatalogTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineDocumentCatalogTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineDocumentCatalogTests
+        COMMAND ClassMngrEngineDocumentCatalogTests
     )
 endif()
