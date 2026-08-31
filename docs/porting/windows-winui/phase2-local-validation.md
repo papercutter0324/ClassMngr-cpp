@@ -190,6 +190,13 @@ size/count/name validation, and atomic temporary-output replacement. The
 retained Qt helper keeps its public API and localized diagnostics while
 delegating archive construction to the engine.
 
+The shared document-output slice now includes a Qt-free
+`classmngr::engine::DocumentOutputResult` for output-status semantics and
+UTF-8 message, PDF-path, and archive-path values. The retained Qt result model
+keeps its public shape and converts to and from the engine contract at the
+adapter boundary; rendering, filesystem commits, and localized presentation
+remain platform-owned.
+
 The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
 model using standard-library calendar dates. It preserves default elementary
 and middle-school term lengths, custom-year rollover, previous-fall
@@ -410,6 +417,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
 | Windows x86 Debug report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
 | Windows x86 Release report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
+| Windows x64 Debug document-output result test | Passed: `ClassMngrEngineDocumentOutputResultTests` |
+| Windows x64 Release document-output result test | Passed: `ClassMngrEngineDocumentOutputResultTests` |
+| Windows x86 Debug document-output result test | Passed: `ClassMngrEngineDocumentOutputResultTests` |
+| Windows x86 Release document-output result test | Passed: `ClassMngrEngineDocumentOutputResultTests` |
 | Windows x64 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x64 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x86 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
@@ -439,6 +450,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt document-catalog regression | Passed: `ClassMngrDocumentCatalogTests` |
 | Retained Windows Qt speaking-evaluation validation regression | Passed: `ClassMngrSharedPolicyTests` through the UTF-8 adapter |
 | Retained Windows Qt report ZIP adapter compile check | Passed: Qt 6.11/MSVC compile-only check for `zip_archive_writer.cpp` |
+| Retained Windows Qt document-output adapter compile check | Passed: Qt 6.11/MSVC compile-only UTF-8 conversion round-trip for `document_output_result.h` |
 | Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
@@ -485,6 +497,12 @@ Direct2D/DirectWrite, or Win32 UI dependency in `src/engine`.
 The complete retained Windows Qt non-visual CTest sweep also passed all 78
 registered tests after the engine test executables were rebuilt in the Qt
 build tree.
+
+The document-output result target was subsequently configured, built, and
+passed in all four x64/x86 Debug/Release WinUI lanes. Its focused CTest
+selections passed without a Qt-dependent test process, and a direct Qt
+6.11/MSVC compile-only check exercised the retained model's UTF-8 conversion
+round trip.
 
 ## Remaining Phase 2 work
 

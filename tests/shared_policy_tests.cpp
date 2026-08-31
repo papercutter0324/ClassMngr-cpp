@@ -1249,6 +1249,8 @@ void SharedPolicyTests::documentOutputStatus_data()
     QTest::newRow("sent-alias") << int(DocumentOutputStatus::Sent) << true;
     QTest::newRow("canceled") << int(DocumentOutputStatus::Canceled) << false;
     QTest::newRow("failed") << int(DocumentOutputStatus::Failed) << false;
+    QTest::newRow("internal-renderer-failed")
+        << int(DocumentOutputStatus::InternalRendererFailed) << false;
 }
 
 void SharedPolicyTests::documentOutputStatus()
@@ -1258,6 +1260,19 @@ void SharedPolicyTests::documentOutputStatus()
     DocumentOutputResult result;
     result.status = DocumentOutputStatus(status);
     QCOMPARE(result.succeeded(), succeeded);
+
+    result.message = QString::fromUtf8("출력 결과");
+    result.savedPdfPaths = {
+        QString::fromUtf8("reports/학생-1.pdf"),
+        QString::fromUtf8("reports/학생-2.pdf")
+    };
+    result.savedArchivePath = QString::fromUtf8("reports/월말.zip");
+    const DocumentOutputResult roundTrip =
+        DocumentOutputResult::fromEngine(result.toEngine());
+    QCOMPARE(roundTrip.status, result.status);
+    QCOMPARE(roundTrip.message, result.message);
+    QCOMPARE(roundTrip.savedPdfPaths, result.savedPdfPaths);
+    QCOMPARE(roundTrip.savedArchivePath, result.savedArchivePath);
 }
 
 QTEST_MAIN(SharedPolicyTests)
