@@ -7,12 +7,20 @@
 #include <QPair>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class RosterRepository
 {
 public:
     explicit RosterRepository(
         QSqlDatabase& database
         );
+    ~RosterRepository();
 
     [[nodiscard]] Status saveRoster(
         int classId,
@@ -32,10 +40,12 @@ public:
         );
 
 private:
-    [[nodiscard]] Status writeRoster(
-        int classId,
-        const Roster& roster
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        int classId
         );
 
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

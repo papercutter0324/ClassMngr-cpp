@@ -231,6 +231,89 @@ int main()
         database.execute("DROP TRIGGER reject_roster_data_insert").has_value(),
         "forced roster failure trigger could not be removed"
         );
+
+    const auto secondClass = classRepository.create("Batch Roster");
+    passed &= expect(
+        secondClass.has_value(),
+        "second class could not be created for the batch save test"
+        );
+    Roster expectedAfterBatch = replacement;
+    if (secondClass)
+    {
+        Roster secondOriginal = replacement;
+        secondOriginal.rows[0][0] = "Second Original";
+        passed &= expect(
+            service.save(*secondClass, secondOriginal).has_value(),
+            "second roster could not be initialized for the batch save test"
+            );
+
+        passed &= expect(
+            database.execute(
+                "CREATE TRIGGER reject_roster_batch_insert "
+                "BEFORE INSERT ON roster_data "
+                "WHEN NEW.value = 'Batch Reject' "
+                "BEGIN SELECT RAISE(ABORT, 'forced batch roster failure'); END"
+                ).has_value(),
+            "batch roster failure trigger could not be created"
+            );
+
+        Roster firstBatch = replacement;
+        firstBatch.rows[0][0] = "First Changed";
+        Roster secondBatch = secondOriginal;
+        secondBatch.rows[0][0] = "Batch Reject";
+        const auto failedBatch = service.saveBatch({
+            {classId, firstBatch},
+            {*secondClass, secondBatch}
+        });
+        passed &= expect(
+            !failedBatch
+                && failedBatch.error().code == ErrorCode::Database,
+            "forced batch roster SQL failure did not fail with a database error"
+            );
+
+        const auto firstAfterFailedBatch = service.load(classId);
+        const auto secondAfterFailedBatch = service.load(*secondClass);
+        passed &= expect(
+            firstAfterFailedBatch
+                && sameRoster(*firstAfterFailedBatch, replacement),
+            "batch roster failure did not restore the first roster"
+            );
+        passed &= expect(
+            secondAfterFailedBatch
+                && sameRoster(*secondAfterFailedBatch, secondOriginal),
+            "batch roster failure did not restore the second roster"
+            );
+
+        passed &= expect(
+            database.execute(
+                "DROP TRIGGER reject_roster_batch_insert"
+                ).has_value(),
+            "batch roster failure trigger could not be removed"
+            );
+
+        expectedAfterBatch = firstBatch;
+        passed &= expect(
+            service.saveBatch({
+                {classId, firstBatch},
+                {*secondClass, secondOriginal}
+            }).has_value(),
+            "successful batch roster save failed"
+            );
+
+        const auto firstAfterSuccessfulBatch = service.load(classId);
+        const auto secondAfterSuccessfulBatch = service.load(*secondClass);
+        passed &= expect(
+            firstAfterSuccessfulBatch
+                && sameRoster(*firstAfterSuccessfulBatch, firstBatch),
+            "successful batch roster save did not commit the first roster"
+            );
+        passed &= expect(
+            secondAfterSuccessfulBatch
+                && sameRoster(*secondAfterSuccessfulBatch, secondOriginal),
+            "successful batch roster save did not commit the second roster"
+            );
+    }
+
     passed &= expect(
         database.execute("PRAGMA ignore_check_constraints = ON").has_value(),
         "SQLite did not enable malformed-roster fixture setup"
@@ -281,7 +364,7 @@ int main()
 
     const auto loadedMalformed = service.load(classId);
     passed &= expect(
-        loadedMalformed && sameRoster(*loadedMalformed, replacement),
+        loadedMalformed && sameRoster(*loadedMalformed, expectedAfterBatch),
         "malformed negative or out-of-range roster data was not skipped"
         );
 

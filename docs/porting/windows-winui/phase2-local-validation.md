@@ -116,8 +116,11 @@ class-scoped roster-column and sparse-cell loading and saving. It preserves
 UTF-8 cell values, declared-column width fallback, replacement semantics, and
 transactional rollback while returning typed invalid-class and missing-class
 errors. The service deliberately leaves roster validation and text policy to
-the existing `RosterValidator`; the retained Qt `RosterRepository` remains an
-adapter boundary until the Qt data path is connected to the engine service.
+the existing `RosterValidator`. The retained Qt `RosterRepository` now converts
+through UTF-8 and routes its file-backed load, save, student-count, and batch
+save operations through the engine service. The engine also exposes one
+transactional batch operation so the retained Qt all-or-nothing save contract
+is preserved; localized operation context remains at the Qt adapter edge.
 
 The speaking-evaluation report slice now includes a Qt-free
 `SpeakingEvaluationReportService` for the six-metric overall-grade rule. It
@@ -363,6 +366,7 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
 | Windows x86 Debug roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
 | Windows x86 Release roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
+| Retained Windows Qt roster persistence adapter regression | Passed: `ClassMngrDataServiceLifecycleTests` with schema-error, UTF-8, replacement, single-save rollback, batch rollback, and student-count coverage |
 | Windows x64 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
@@ -540,12 +544,20 @@ in all four x64/x86 Debug/Release WinUI lanes. Its focused CTest selections
 covered typed class-id errors, missing classes, UTF-8 sparse rows, width
 fallback, replacement, malformed-cell filtering, and transaction rollback.
 
+The retained Qt roster repository was then rebuilt against the engine adapter
+and its file-backed save/load/count path was exercised through
+`ClassMngrDataServiceLifecycleTests`; the same regression covered injected
+single-save and batch-save failures and verified rollback. The retained class
+transfer export path passed through `ClassMngrClassTransferTests`. The complete
+engine CTest selection passed in all four x64/x86 Debug/Release WinUI lanes.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
 fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
-engine-written → Qt-read checks. The next work is migrating the remaining
-report/export adapters and models, connecting retained Qt adapters to the
-extracted use-case boundaries, and extending fixture evidence across each
-migrated persistence slice.
+engine-written → Qt-read checks. The roster persistence adapter is now
+connected to the extracted engine use case. The next work is migrating the
+remaining report/export adapters and models, connecting the other retained Qt
+adapters to extracted use-case boundaries, and extending fixture evidence
+across each migrated persistence slice.
