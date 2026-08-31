@@ -299,6 +299,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineRosterReportServiceTests
         )
     endif()
+    if(TARGET ClassMngrEngineRosterServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineRosterServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineRosterReportTemplateTests)
         add_dependencies(
             ${classmngr_winui_target}

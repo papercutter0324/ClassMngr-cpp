@@ -44,6 +44,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/roster_validator.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_validator.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/roster_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/roster_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_validator.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_validator.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_analytics.cpp"
@@ -377,6 +379,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineRosterValidatorTests
         COMMAND ClassMngrEngineRosterValidatorTests
+    )
+
+    add_executable(ClassMngrEngineRosterServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/roster_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineRosterServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineRosterServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineRosterServiceTests
+        COMMAND ClassMngrEngineRosterServiceTests
     )
 
     add_executable(ClassMngrEngineSpeakingEvaluationValidatorTests

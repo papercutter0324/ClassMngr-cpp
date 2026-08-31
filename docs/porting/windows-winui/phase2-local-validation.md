@@ -111,6 +111,14 @@ duplicate-pair detection, and row/column diagnostics. The retained Qt
 validator converts `QString` values and issues at the edge; the table model,
 editing behavior, and presentation remain Qt-owned.
 
+The roster-persistence slice now includes a Qt-free `RosterService` for
+class-scoped roster-column and sparse-cell loading and saving. It preserves
+UTF-8 cell values, declared-column width fallback, replacement semantics, and
+transactional rollback while returning typed invalid-class and missing-class
+errors. The service deliberately leaves roster validation and text policy to
+the existing `RosterValidator`; the retained Qt `RosterRepository` remains an
+adapter boundary until the Qt data path is connected to the engine service.
+
 The speaking-evaluation report slice now includes a Qt-free
 `SpeakingEvaluationReportService` for the six-metric overall-grade rule. It
 preserves the retained `C` through `A+` mapping, the 0.4 fractional-average
@@ -351,6 +359,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
 | Windows x86 Debug roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
 | Windows x86 Release roster validation test | Passed: `ClassMngrEngineRosterValidatorTests` |
+| Windows x64 Debug roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
+| Windows x64 Release roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
+| Windows x86 Debug roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
+| Windows x86 Release roster persistence test | Passed: `ClassMngrEngineRosterServiceTests` |
 | Windows x64 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x64 Release speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
 | Windows x86 Debug speaking-evaluation report service test | Passed: `ClassMngrEngineSpeakingEvaluationReportServiceTests` |
@@ -522,6 +534,11 @@ recurrence bounds, month-end stepping, and series caps. A direct Qt 6.11/MSVC
 compile-only check exercised the retained adapter against the current engine
 headers; the full Qt CMake regeneration was not used because
 the existing Qt build tree stalled during regeneration.
+
+The roster-persistence target was subsequently configured, built, and passed
+in all four x64/x86 Debug/Release WinUI lanes. Its focused CTest selections
+covered typed class-id errors, missing classes, UTF-8 sparse rows, width
+fallback, replacement, malformed-cell filtering, and transaction rollback.
 
 ## Remaining Phase 2 work
 
