@@ -31,14 +31,12 @@ DatabaseIds populateDatabase(
 {
     Teacher teacher;
     teacher.teacherEn = prefix + QStringLiteral(" Teacher");
-    teacher.teacherKr = prefix + QStringLiteral(" Korean Teacher");
-    teacher.preferredRomanization =
-        prefix + QStringLiteral(" Romanization");
-    teacher.preferredName =
-        prefix + QStringLiteral(" Preferred Name");
+    teacher.teacherKr = QStringLiteral("홍길동");
+    teacher.preferredRomanization = prefix + QStringLiteral(" Roman");
+    teacher.preferredName = prefix + QStringLiteral(" Roman");
     teacher.roomNumber = prefix + QStringLiteral(" Room");
     teacher.birthday = QStringLiteral("02-29");
-    teacher.phoneNumber = prefix + QStringLiteral(" Phone");
+    teacher.phoneNumber = QStringLiteral("010 1234 5678");
     teacher.notes = prefix + QStringLiteral(" Teacher Notes");
 
     DatabaseIds ids;
@@ -139,17 +137,18 @@ void verifyDatabase(
     const Result<Teacher> teacher = service.getTeacher(ids.teacherId);
     QVERIFY(teacher);
     QCOMPARE(teacher->teacherEn, prefix + QStringLiteral(" Teacher"));
+    QCOMPARE(teacher->teacherKr, QStringLiteral("홍길동"));
     QCOMPARE(
         teacher->preferredRomanization,
-        prefix + QStringLiteral(" Romanization")
+        prefix + QStringLiteral(" Roman")
         );
     QCOMPARE(
         teacher->preferredName,
-        prefix + QStringLiteral(" Preferred Name")
+        prefix + QStringLiteral(" Roman")
         );
     QCOMPARE(teacher->roomNumber, prefix + QStringLiteral(" Room"));
     QCOMPARE(teacher->birthday, QStringLiteral("02-29"));
-    QCOMPARE(teacher->phoneNumber, prefix + QStringLiteral(" Phone"));
+    QCOMPARE(teacher->phoneNumber, QStringLiteral("010-1234-5678"));
     const Result<Classroom> classroom = service.getClassById(ids.classId);
     QVERIFY(classroom);
     QCOMPARE(
@@ -162,7 +161,7 @@ void verifyDatabase(
         );
     QCOMPARE(
         service.loadClassInfo(ids.classId)->teacherPreferredName,
-        prefix + QStringLiteral(" Preferred Name")
+        prefix + QStringLiteral(" Roman")
         );
     const Result<QList<IntensiveSlotState>> intensiveSlotStates =
         service.loadIntensiveSlotStates();

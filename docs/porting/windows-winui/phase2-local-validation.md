@@ -562,14 +562,25 @@ attempted but remained blocked by the existing MSBuild FileTracker access
 failure and regeneration stall, so the full current-binary class-information
 lifecycle result is not claimed here.
 
+The retained Qt teacher repository was then converted to a UTF-8 adapter over
+the engine teacher service. All six public CRUD operations now share engine
+validation, normalization, ordering, typed not-found handling, and
+transactional class-assignment cleanup on delete. The lifecycle fixture was
+updated to use valid teacher values and verifies canonical phone formatting;
+the adapter passed a direct VS 2026/Qt 6.11 compile-only check, and the full
+Qt-free engine/WinUI CTest sweep passed 43/43. A normal current Qt lifecycle
+rebuild was attempted but remained blocked by the existing CMake regeneration
+and MSBuild FileTracker stall, so no current-binary Qt lifecycle pass is
+claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
 fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
-connected to the extracted engine use case, and the class-information adapter
-now shares the extracted class-information and schedule use cases. The next
-work is migrating the remaining report/export adapters and models, connecting
-the other retained Qt adapters to extracted use-case boundaries, and extending
+connected to the extracted engine use case, and the class-information and
+teacher adapters now share extracted engine use cases. The next work is
+migrating the remaining report/export adapters and models, connecting the
+other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.
