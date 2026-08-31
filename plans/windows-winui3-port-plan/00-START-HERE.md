@@ -81,6 +81,12 @@ laptop.
 When a job is complete and its required validation has passed, automatically
 create a commit for the completed work without waiting for another prompt.
 
+## Commit Message Note
+
+Use the format `Phase 2 - <short description>` with normal spaces between
+words. For example: `Phase 2 - Document catalog service`. Do not use
+concatenated or slug-style subjects such as `Phase2-document-catalog-service`.
+
 Status vocabulary:
 
 - **Not started:** no phase deliverable has been accepted.
