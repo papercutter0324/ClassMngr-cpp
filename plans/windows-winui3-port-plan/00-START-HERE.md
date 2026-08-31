@@ -68,6 +68,19 @@ in ADR 0001. The replacement decision is recorded in
 For implementation work, load this file and only the active phase file. Finish
 the active phase gate before beginning broad work from a later phase.
 
+## Qt Build-Time Note
+
+Because the project includes substantial features and supports multiple operating
+systems, Qt builds often take longer than initially expected. Use the initial
+estimate as a baseline and add 50% when building on a computer named
+`Felt-Desktop`. Add 100% on `Felt-Work`, as it is a six-year-old ultra-thin
+laptop.
+
+## Completion Commit Note
+
+When a job is complete and its required validation has passed, automatically
+create a commit for the completed work without waiting for another prompt.
+
 Status vocabulary:
 
 - **Not started:** no phase deliverable has been accepted.
