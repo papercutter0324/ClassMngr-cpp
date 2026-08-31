@@ -7,12 +7,20 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class ClassRepository
 {
 public:
     explicit ClassRepository(
         QSqlDatabase& database
         );
+    ~ClassRepository();
 
     [[nodiscard]] Result<int> createClass(
         const QString& name
@@ -34,5 +42,12 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation,
+        const QString& classContext = {}
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

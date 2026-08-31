@@ -103,7 +103,7 @@ Last updated: 2026-09-01 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher-adapter wiring, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering and validation/recurrence rules, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows, class-transfer workflows, academic calendar rules, calendar-event normalization/filtering and validation/recurrence rules, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -143,9 +143,12 @@ engine-written → Qt-read interoperability. The retained Qt roster repository
 now routes its file-backed load, save, student-count, and atomic batch-save
 operations through the engine service. The retained Qt class-information
 repository now routes its six class-information and schedule operations through
-the engine services as well. The next active gate is extracting the remaining
-report/export use cases and connecting the retained adapters, while extending
-fixture evidence across each migrated persistence slice.
+the engine services, and the retained Qt class repository now routes its six
+CRUD operations through the engine class service. The retained Qt Native
+English teacher repository now routes its list and atomic directory-save
+operations through the engine service as well. The next active gate is
+connecting the remaining retained adapters, while extending fixture evidence
+across each migrated persistence slice.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -702,6 +705,30 @@ After meaningful work:
   blocked by the existing regeneration / MSBuild FileTracker issue. Phase 2
   remains open for the remaining report/export adapter/model migration and
   broader per-slice fixture coverage.
+- **2026-09-01 — Class adapter connected.** The retained Qt
+  `ClassRepository` now converts through UTF-8 and delegates its six CRUD
+  operations to the Qt-free `ClassRepository`; class deletion retains the
+  existing child-cleanup order, contextual diagnostics, and transaction
+  rollback. The class-assignment fixture now uses a temporary file so Qt and
+  engine connections exercise the same profile. The adapter, Data project,
+  and focused test source passed direct VS 2026/Qt 6.11 compile checks, and
+  the focused engine class-repository test passed in all four x64/x86
+  Debug/Release WinUI lanes after rebuilding.
+  The regular Qt CMake rebuild remains blocked by the existing regeneration /
+  MSBuild FileTracker issue. Phase 2 remains open for the remaining retained
+  adapters, report/export adapter/model migration, and broader per-slice
+  fixture coverage.
+
+- **2026-09-01 — Native English teacher adapter connected.** The retained Qt
+  `NativeEnglishTeacherRepository` now converts through UTF-8 and delegates
+  list and atomic directory-save operations to the Qt-free
+  `NativeEnglishTeacherService`, including engine-owned ordering,
+  normalization, uniqueness, and transaction behavior. The adapter compiled
+  as part of the real VS 2026/Qt 6.11 Data project. The regular Qt CMake
+  rebuild remains blocked by the existing regeneration / MSBuild FileTracker
+  issue. Phase 2 remains open for the remaining retained adapters,
+  report/export adapter/model migration, and broader per-slice fixture
+  coverage.
 
 ## Shared Completion Rules
 

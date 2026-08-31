@@ -124,6 +124,81 @@ int main()
             );
     }
 
+    const auto rollbackClass = repository.create("Rollback");
+    passed &= expect(
+        rollbackClass.has_value(),
+        "rollback fixture class could not be created"
+        );
+    if (rollbackClass)
+    {
+        passed &= expect(
+            database.execute(
+                "INSERT INTO class_info (class_id, notes) VALUES (?, ?)",
+                SqliteParameters{
+                    SqliteValue{std::int64_t{*rollbackClass}},
+                    SqliteValue{std::string("must survive")}
+                }
+                ).has_value(),
+            "rollback class-info fixture could not be inserted"
+            );
+
+        const std::string triggerSql =
+            "CREATE TRIGGER reject_class_info_delete "
+            "BEFORE DELETE ON class_info "
+            "WHEN OLD.class_id = "
+            + std::to_string(*rollbackClass)
+            + " BEGIN "
+              "SELECT RAISE(ABORT, 'injected class delete failure'); "
+              "END";
+        passed &= expect(
+            database.execute(triggerSql).has_value(),
+            "rollback delete trigger could not be created"
+            );
+
+        const auto rejected = repository.remove(*rollbackClass);
+        passed &= expect(
+            !rejected
+                && rejected.error().message.find(
+                    "Deleting class information") != std::string::npos
+                && rejected.error().message.find(
+                    "class id " + std::to_string(*rollbackClass))
+                    != std::string::npos,
+            "class deletion did not preserve child failure context"
+            );
+
+        const auto rollbackRows = database.query(
+            "SELECT COUNT(*) FROM classes WHERE id=?",
+            SqliteParameters{
+                SqliteValue{std::int64_t{*rollbackClass}}
+            }
+            );
+        passed &= expect(
+            rollbackRows && rollbackRows->rows.size() == 1
+                && rollbackRows->rows.front().values.size() == 1
+                && std::get_if<std::int64_t>(
+                    &rollbackRows->rows.front().values.front()) != nullptr
+                && *std::get_if<std::int64_t>(
+                    &rollbackRows->rows.front().values.front()) == 1,
+            "class deletion did not roll back the class row"
+            );
+
+        const auto rollbackInfoRows = database.query(
+            "SELECT COUNT(*) FROM class_info WHERE class_id=?",
+            SqliteParameters{
+                SqliteValue{std::int64_t{*rollbackClass}}
+            }
+            );
+        passed &= expect(
+            rollbackInfoRows && rollbackInfoRows->rows.size() == 1
+                && rollbackInfoRows->rows.front().values.size() == 1
+                && std::get_if<std::int64_t>(
+                    &rollbackInfoRows->rows.front().values.front()) != nullptr
+                && *std::get_if<std::int64_t>(
+                    &rollbackInfoRows->rows.front().values.front()) == 1,
+            "class deletion did not roll back dependent class information"
+            );
+    }
+
     const auto invalid = repository.get(0);
     passed &= expect(
         !invalid && invalid.error().code == ErrorCode::InvalidArgument,

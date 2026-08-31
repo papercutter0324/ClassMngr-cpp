@@ -562,6 +562,21 @@ attempted but remained blocked by the existing MSBuild FileTracker access
 failure and regeneration stall, so the full current-binary class-information
 lifecycle result is not claimed here.
 
+The retained Qt class repository was then converted to a UTF-8 adapter over
+the engine class repository. Its six public CRUD operations now share engine
+class filtering, persistence, typed errors, and transactional child-row
+cleanup. Class deletion explicitly preserves the former Qt cleanup order and
+operation/class-id diagnostics while rolling back on any child-table failure.
+The class-assignment fixture was changed from Qt `:memory:` storage to a
+temporary file so the Qt and engine connections exercise the same profile;
+the updated adapter, Data project, and focused test source passed direct VS
+2026/Qt 6.11 compile checks. The focused engine class-repository test passed
+in all four x64/x86 Debug/Release WinUI lanes after rebuilding the engine
+target. A normal current Qt binary
+rebuild was attempted but remained blocked by the existing CMake regeneration
+and MSBuild FileTracker stall, so no current-binary Qt class-repository test
+pass is claimed here.
+
 The retained Qt teacher repository was then converted to a UTF-8 adapter over
 the engine teacher service. All six public CRUD operations now share engine
 validation, normalization, ordering, typed not-found handling, and
@@ -573,14 +588,23 @@ rebuild was attempted but remained blocked by the existing CMake regeneration
 and MSBuild FileTracker stall, so no current-binary Qt lifecycle pass is
 claimed for this slice.
 
+The retained Qt Native English teacher repository was then converted to a
+UTF-8 adapter over the engine Native English teacher directory service. Its
+list and atomic save/delete operations now share engine ordering,
+normalization, uniqueness, and transaction rules while preserving the Qt
+facade. The adapter compiled as part of the real VS 2026/Qt 6.11 Data project;
+the regular Qt CMake rebuild remains blocked by the existing regeneration /
+MSBuild FileTracker stall, so no current-binary directory regression is
+claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
 fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
-connected to the extracted engine use case, and the class-information and
-teacher adapters now share extracted engine use cases. The next work is
+connected to the extracted engine use case, and the class-information, class,
+and teacher adapters now share extracted engine use cases. The next work is
 migrating the remaining report/export adapters and models, connecting the
 other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.

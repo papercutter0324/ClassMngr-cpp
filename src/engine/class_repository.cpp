@@ -23,6 +23,46 @@ Error error(
     };
 }
 
+Error contextualError(
+    Error cause,
+    std::string_view action,
+    std::string_view identity
+    )
+{
+    cause.message = std::string(action)
+        + " for "
+        + std::string(identity)
+        + " failed: "
+        + cause.message;
+    return cause;
+}
+
+Status deleteClassRows(
+    SqliteDatabase& database,
+    int classId,
+    std::string_view sql,
+    std::string_view action,
+    std::string_view identity
+    )
+{
+    const Status deleted = database.execute(
+        sql,
+        SqliteParameters{
+            SqliteValue{std::int64_t{classId}}
+        }
+        );
+    if (!deleted)
+    {
+        return std::unexpected(contextualError(
+            deleted.error(),
+            action,
+            identity
+            ));
+    }
+
+    return {};
+}
+
 Result<int> classIdFromValue(
     const SqliteValue& value
     )
@@ -233,12 +273,165 @@ Status ClassRepository::remove(
         return valid;
     }
 
-    return m_database.execute(
-        "DELETE FROM classes WHERE id=?",
+    const std::string identity =
+        "class id " + std::to_string(classId);
+    auto transactionResult = m_database.beginTransaction();
+    if (!transactionResult)
+    {
+        return std::unexpected(contextualError(
+            transactionResult.error(),
+            "Starting class deletion transaction",
+            identity
+            ));
+    }
+    SqliteTransaction transaction = std::move(*transactionResult);
+
+    for (const auto& [sql, action] : {
+             std::pair{
+                 std::string_view{"DELETE FROM roster_columns WHERE class_id=?"},
+                 std::string_view{"Deleting class roster columns"}},
+             std::pair{
+                 std::string_view{"DELETE FROM roster_data WHERE class_id=?"},
+                 std::string_view{"Deleting class roster data"}},
+             std::pair{
+                 std::string_view{"DELETE FROM class_info WHERE class_id=?"},
+                 std::string_view{"Deleting class information"}},
+             std::pair{
+                 std::string_view{"DELETE FROM class_times WHERE class_id=?"},
+                 std::string_view{"Deleting class times"}},
+             std::pair{
+                 std::string_view{
+                     "DELETE FROM class_intensive_times WHERE class_id=?"
+                     },
+                 std::string_view{"Deleting intensive class times"}},
+             std::pair{
+                 std::string_view{
+                     "DELETE FROM schedule_testing_blocks WHERE class_id=?"
+                     },
+                 std::string_view{"Deleting class testing blocks"}},
+             std::pair{
+                 std::string_view{"DELETE FROM testing_classes WHERE class_id=?"},
+                 std::string_view{"Deleting testing class assignment"}}
+             })
+    {
+        const Status deleted = deleteClassRows(
+            m_database,
+            classId,
+            sql,
+            action,
+            identity
+            );
+        if (!deleted)
+        {
+            return deleted;
+        }
+    }
+
+    const auto evaluations = m_database.query(
+        "SELECT id FROM speaking_evaluations WHERE class_id=?",
         SqliteParameters{
             SqliteValue{std::int64_t{classId}}
         }
         );
+    if (!evaluations)
+    {
+        return std::unexpected(contextualError(
+            evaluations.error(),
+            "Loading class speaking evaluations for deletion",
+            identity
+            ));
+    }
+
+    std::vector<int> evaluationIds;
+    evaluationIds.reserve(evaluations->rows.size());
+    for (const SqliteRow& row : evaluations->rows)
+    {
+        if (row.values.size() != 1)
+        {
+            return std::unexpected(error(
+                ErrorCode::Schema,
+                "Loading class speaking evaluations for deletion for "
+                + identity
+                + " failed: SQLite returned an unexpected row shape."
+                ));
+        }
+
+        const auto* evaluationId = std::get_if<std::int64_t>(
+            &row.values.front()
+            );
+        if (evaluationId == nullptr
+            || *evaluationId <= 0
+            || *evaluationId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(error(
+                ErrorCode::Schema,
+                "Loading class speaking evaluations for deletion for "
+                + identity
+                + " failed: SQLite returned an invalid evaluation id."
+                ));
+        }
+
+        evaluationIds.push_back(static_cast<int>(*evaluationId));
+    }
+
+    for (const int evaluationId : evaluationIds)
+    {
+        const std::string evaluationIdentity =
+            "evaluation id "
+            + std::to_string(evaluationId)
+            + " for "
+            + identity;
+        const Status deleted = m_database.execute(
+            "DELETE FROM speaking_eval_data WHERE evaluation_id=?",
+            SqliteParameters{
+                SqliteValue{std::int64_t{evaluationId}}
+            }
+            );
+        if (!deleted)
+        {
+            return std::unexpected(contextualError(
+                deleted.error(),
+                "Deleting speaking evaluation data",
+                evaluationIdentity
+                ));
+        }
+    }
+
+    for (const auto& [sql, action] : {
+             std::pair{
+                 std::string_view{
+                     "DELETE FROM speaking_evaluations WHERE class_id=?"
+                     },
+                 std::string_view{"Deleting class speaking evaluations"}},
+             std::pair{
+                 std::string_view{"DELETE FROM classes WHERE id=?"},
+                 std::string_view{"Deleting class"}}
+             })
+    {
+        const Status deleted = deleteClassRows(
+            m_database,
+            classId,
+            sql,
+            action,
+            identity
+            );
+        if (!deleted)
+        {
+            return deleted;
+        }
+    }
+
+    const Status committed = transaction.commit();
+    if (!committed)
+    {
+        return std::unexpected(contextualError(
+            committed.error(),
+            "Committing class deletion",
+            identity
+            ));
+    }
+
+    return {};
 }
 
 } // namespace classmngr::engine

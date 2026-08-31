@@ -1,32 +1,124 @@
 #include "class_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
+#include "classmngr/engine/class_repository.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QDebug>
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
 
+#include <cstddef>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace
 {
-Status statusFromExecution(
-    const SqlQueryUtils::ExecutionResult& result
+using EngineClassroom = classmngr::engine::Classroom;
+using EngineClassRepository = classmngr::engine::ClassRepository;
+using EngineError = classmngr::engine::Error;
+
+std::string toUtf8(
+    const QString& value
     )
 {
-    if (!result)
-    {
-        return std::unexpected(result.error().userMessage());
-    }
-
-    return {};
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString classIdentity(int classId)
+QString fromUtf8(
+    std::string_view value
+    )
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+Classroom fromEngineClassroom(
+    const EngineClassroom& source
+    )
+{
+    Classroom result;
+    result.id = source.id;
+    result.name = fromUtf8(source.name);
+    return result;
+}
+
+QString classIdentity(
+    int classId
+    )
 {
     return QObject::tr("class id %1").arg(classId);
+}
+
+QString invalidClassIdError(
+    const QString& operation,
+    int classId
+    )
+{
+    return QObject::tr("%1 failed: invalid class id %2.")
+        .arg(operation)
+        .arg(classId);
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& classContext,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+
+    if (!classContext.trimmed().isEmpty())
+    {
+        message += QObject::tr(" for %1").arg(classContext);
+    }
+
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const QString& classContext,
+    const EngineError& error
+    )
+{
+    return operationFailure(
+        operation,
+        classContext,
+        engineErrorDetail(error)
+        );
 }
 } // namespace
 
@@ -37,134 +129,158 @@ ClassRepository::ClassRepository(
 {
 }
 
+ClassRepository::~ClassRepository() = default;
+
+Status ClassRepository::ensureEngineDatabase(
+    const QString& operation,
+    const QString& classContext
+    )
+{
+    if (!m_database.isValid() || !m_database.isOpen())
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                classContext,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty())
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                classContext,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    const std::string encodedPath = toUtf8(databasePath);
+    auto opened = classmngr::engine::OpenDatabase::execute(encodedPath);
+    if (!opened)
+    {
+        return std::unexpected(
+            engineFailure(operation, classContext, opened.error())
+            );
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                classContext,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
 Result<int> ClassRepository::createClass(
     const QString& name
     )
 {
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        INSERT INTO classes (
-            name
-        )
-        VALUES (?)
-    )");
-    query.addBindValue(name);
-
+    const QString operation = QObject::tr("Creating class");
     const QString identity = QObject::tr("class name '%1'")
         .arg(name);
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Creating class"),
-        identity
-        );
-    if (!executed)
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    const int classId = query.lastInsertId().toInt();
-    if (classId <= 0)
+    EngineClassRepository repository(*m_engineDatabase);
+    const classmngr::engine::Result<int> created = repository.create(
+        toUtf8(name)
+        );
+    if (!created)
     {
         return std::unexpected(
-            QObject::tr(
-                "Creating class for %1 failed: the database did not return "
-                "a valid record id."
-                ).arg(identity)
+            engineFailure(operation, identity, created.error())
             );
     }
 
-    return classId;
+    return *created;
 }
 
 Result<QList<Classroom>> ClassRepository::getClasses()
 {
-    QList<Classroom> classes;
-
-    QSqlQuery query(m_database);
-
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QStringLiteral(R"(
-        SELECT c.*
-        FROM classes c
-        LEFT JOIN testing_classes tc
-        ON tc.class_id = c.id
-        WHERE tc.class_id IS NULL
-        ORDER BY c.name
-    )"),
-        QObject::tr("Loading classes")
-        );
-    if (!executed)
+    const QString operation = QObject::tr("Loading classes");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineClassRepository repository(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineClassroom>> loaded =
+        repository.list();
+    if (!loaded)
     {
-        Classroom classroom;
-
-        classroom.id =
-            query.value("id").toInt();
-
-        classroom.name =
-            query.value("name").toString();
-
-        classes.append(classroom);
+        return std::unexpected(
+            engineFailure(operation, {}, loaded.error())
+            );
     }
 
-    return classes;
+    QList<Classroom> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineClassroom& classroom : *loaded)
+    {
+        result.append(fromEngineClassroom(classroom));
+    }
+
+    return result;
 }
 
 Result<Classroom> ClassRepository::getClassById(
     int classId
     )
 {
+    const QString operation = QObject::tr("Loading class");
     if (classId <= 0)
     {
+        return std::unexpected(invalidClassIdError(operation, classId));
+    }
+
+    const QString identity = classIdentity(classId);
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineClassRepository repository(*m_engineDatabase);
+    const classmngr::engine::Result<EngineClassroom> loaded =
+        repository.get(classId);
+    if (!loaded)
+    {
         return std::unexpected(
-            QObject::tr("Loading class failed: invalid class id %1.")
-                .arg(classId)
+            engineFailure(operation, identity, loaded.error())
             );
     }
 
-    QSqlQuery query(m_database);
-
-    query.prepare(R"(
-        SELECT *
-        FROM classes
-        WHERE id=?
-    )");
-
-    query.addBindValue(classId);
-
-    const auto executed = SqlQueryUtils::executePrepared(
-        query,
-        QObject::tr("Loading class"),
-        classIdentity(classId)
-        );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    if (!query.next())
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Loading class failed for %1: no matching record exists."
-                ).arg(classIdentity(classId))
-            );
-    }
-
-    Classroom classroom;
-    classroom.id =
-        query.value("id").toInt();
-
-    classroom.name =
-        query.value("name").toString();
-
-    return classroom;
+    return fromEngineClassroom(*loaded);
 }
 
 Status ClassRepository::updateClassName(
@@ -172,150 +288,57 @@ Status ClassRepository::updateClassName(
     const QString& name
     )
 {
-    QSqlQuery query(m_database);
+    const QString operation = QObject::tr("Renaming class");
+    if (classId <= 0)
+    {
+        return std::unexpected(invalidClassIdError(operation, classId));
+    }
 
-    query.prepare(R"(
-        UPDATE classes
-        SET name=?
-        WHERE id=?
-    )");
+    const QString identity = classIdentity(classId);
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
 
-    query.addBindValue(name);
-    query.addBindValue(classId);
-
-    return statusFromExecution(
-        SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Renaming class"),
-            classIdentity(classId)
-            )
+    EngineClassRepository repository(*m_engineDatabase);
+    const classmngr::engine::Status renamed = repository.rename(
+        classId,
+        toUtf8(name)
         );
+    if (!renamed)
+    {
+        return std::unexpected(
+            engineFailure(operation, identity, renamed.error())
+            );
+    }
+
+    return {};
 }
 
 Status ClassRepository::deleteClass(
     int classId
     )
 {
+    const QString operation = QObject::tr("Deleting class");
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Deleting class failed: invalid class id %1.")
-                .arg(classId)
-            );
-    }
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Starting class deletion transaction failed for %1: %2")
-                .arg(classIdentity(classId), m_database.lastError().text())
-            );
+        return std::unexpected(invalidClassIdError(operation, classId));
     }
 
     const QString identity = classIdentity(classId);
-    QSqlQuery query(m_database);
-    const auto executeClassStatement =
-        [&](const QString& sql, const QString& action) -> Status
-        {
-            query.prepare(sql);
-            query.addBindValue(classId);
-            return statusFromExecution(
-                SqlQueryUtils::executePrepared(query, action, identity)
-                );
-        };
-
-    for (const auto& [sql, action] : {
-             std::pair{
-                 QStringLiteral("DELETE FROM roster_columns WHERE class_id=?"),
-                 QObject::tr("Deleting class roster columns")},
-             std::pair{
-                 QStringLiteral("DELETE FROM roster_data WHERE class_id=?"),
-                 QObject::tr("Deleting class roster data")},
-             std::pair{
-                 QStringLiteral("DELETE FROM class_info WHERE class_id=?"),
-                 QObject::tr("Deleting class information")},
-             std::pair{
-                 QStringLiteral("DELETE FROM class_times WHERE class_id=?"),
-                 QObject::tr("Deleting class times")},
-             std::pair{
-                 QStringLiteral("DELETE FROM class_intensive_times WHERE class_id=?"),
-                 QObject::tr("Deleting intensive class times")}
-             })
+    const Status engineReady = ensureEngineDatabase(operation, identity);
+    if (!engineReady)
     {
-        const Status deleted = executeClassStatement(sql, action);
-        if (!deleted)
-        {
-            return deleted;
-        }
+        return engineReady;
     }
 
-    query.prepare(QStringLiteral(
-        "SELECT id FROM speaking_evaluations WHERE class_id=?"
-        ));
-    query.addBindValue(classId);
-    const Status evaluationsLoaded = statusFromExecution(
-        SqlQueryUtils::executePrepared(
-            query,
-            QObject::tr("Loading class speaking evaluations for deletion"),
-            identity
-            )
-        );
-    if (!evaluationsLoaded)
-    {
-        return evaluationsLoaded;
-    }
-
-    QList<int> evaluationIds;
-    while (query.next())
-    {
-        evaluationIds.append(query.value(QStringLiteral("id")).toInt());
-    }
-
-    for (int evaluationId : evaluationIds)
-    {
-        query.prepare(QStringLiteral(
-            "DELETE FROM speaking_eval_data WHERE evaluation_id=?"
-            ));
-        query.addBindValue(evaluationId);
-        const Status evaluationDataDeleted = statusFromExecution(
-            SqlQueryUtils::executePrepared(
-                query,
-                QObject::tr("Deleting speaking evaluation data"),
-                QObject::tr("evaluation id %1 for %2")
-                    .arg(evaluationId)
-                    .arg(identity)
-                )
-            );
-        if (!evaluationDataDeleted)
-        {
-            return evaluationDataDeleted;
-        }
-    }
-
-    for (const auto& [sql, action] : {
-             std::pair{
-                 QStringLiteral(
-                     "DELETE FROM speaking_evaluations WHERE class_id=?"
-                     ),
-                 QObject::tr("Deleting class speaking evaluations")},
-             std::pair{
-                 QStringLiteral("DELETE FROM classes WHERE id=?"),
-                 QObject::tr("Deleting class")}
-             })
-    {
-        const Status deleted = executeClassStatement(sql, action);
-        if (!deleted)
-        {
-            return deleted;
-        }
-    }
-
-    if (!transaction.commit())
+    EngineClassRepository repository(*m_engineDatabase);
+    const classmngr::engine::Status deleted = repository.remove(classId);
+    if (!deleted)
     {
         return std::unexpected(
-            QObject::tr("Committing class deletion failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
+            engineFailure(operation, identity, deleted.error())
             );
     }
 

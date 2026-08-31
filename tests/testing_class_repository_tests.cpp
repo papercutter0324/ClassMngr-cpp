@@ -164,14 +164,24 @@ void TestingClassRepositoryTests
         QStringLiteral("testing_class_repository_crud");
 
     {
+        QTemporaryDir profileDirectory;
+        QVERIFY(profileDirectory.isValid());
+
         QSqlDatabase database =
             QSqlDatabase::addDatabase(
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
+
+        QSqlQuery schemaVersionQuery(database);
+        QVERIFY(schemaVersionQuery.exec(
+            QStringLiteral("PRAGMA user_version = 6")
+            ));
 
         ClassRepository classRepository(database);
         const Result<int> regularClass =
