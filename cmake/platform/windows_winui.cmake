@@ -335,6 +335,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineDocumentCatalogTests
         )
     endif()
+    if(TARGET ClassMngrEngineZipArchiveWriterTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineZipArchiveWriterTests
+        )
+    endif()
 
     if(BUILD_TESTING)
         add_test(

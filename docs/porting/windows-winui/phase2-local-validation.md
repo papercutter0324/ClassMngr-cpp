@@ -184,6 +184,12 @@ limits, student-name/score/comment/note rules, duplicate-name diagnostics, and
 the configurable questionable Korean-length warning policy. The retained Qt
 validator keeps its public API and delegates through a UTF-8 conversion adapter.
 
+The report batch archive slice now includes a Qt-free `ZipArchiveWriter` for
+stored standard-ZIP construction, UTF-8 entry names, CRC-32, DOS timestamps,
+size/count/name validation, and atomic temporary-output replacement. The
+retained Qt helper keeps its public API and localized diagnostics while
+delegating archive construction to the engine.
+
 The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
 model using standard-library calendar dates. It preserves default elementary
 and middle-school term lengths, custom-year rollover, previous-fall
@@ -400,6 +406,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
 | Windows x86 Debug speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
 | Windows x86 Release speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
+| Windows x64 Debug report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
+| Windows x64 Release report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
+| Windows x86 Debug report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
+| Windows x86 Release report ZIP writer test | Passed: `ClassMngrEngineZipArchiveWriterTests` |
 | Windows x64 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x64 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x86 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
@@ -428,6 +438,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt database-port interoperability regression | Passed: `ClassMngrDatabasePortFixtureTests` with temporary Qt-written → engine-read and engine-written → Qt-read profiles |
 | Retained Windows Qt document-catalog regression | Passed: `ClassMngrDocumentCatalogTests` |
 | Retained Windows Qt speaking-evaluation validation regression | Passed: `ClassMngrSharedPolicyTests` through the UTF-8 adapter |
+| Retained Windows Qt report ZIP adapter compile check | Passed: Qt 6.11/MSVC compile-only check for `zip_archive_writer.cpp` |
 | Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
@@ -444,7 +455,7 @@ schedule-read, schedule-import, class-transfer, and speaking-evaluation
 template-policy, batch-report policy, PowerPoint job service, and sub-prep
 class-information, schedule-builder, class/teacher naming, upcoming-birthday,
 Sub Prep document-model, document-catalog policy, speaking-evaluation grid-validation,
-and Sub Prep package-planning implementations compiled and passed in all four
+report ZIP writer, and Sub Prep package-planning implementations compiled and passed in all four
 engine lanes. The new class-naming, upcoming-birthday, document-catalog,
 speaking-evaluation validator, and Sub Prep document-model and package-planning
 tests also passed in all four lanes. The Qt-free
@@ -453,11 +464,11 @@ eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-seven engine suites plus both WinUI staging and manifest checks (39/39).
+thirty-eight engine suites plus both WinUI staging and manifest checks (40/40).
 The
-retained Qt schedule-import, schedule-builder, upcoming-birthday, and
-speaking-evaluation validation adapter
-regression also passed, alongside the existing class-information, assignment,
+retained Qt schedule-import, schedule-builder, upcoming-birthday,
+speaking-evaluation validation, and report ZIP adapter compile check
+also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep document-model and
 document-catalog, class-information, and pagination adapters,

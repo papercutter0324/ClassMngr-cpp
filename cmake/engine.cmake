@@ -21,6 +21,8 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/semantic_version.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/semantic_version.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/result.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/zip_archive_writer.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/zip_archive_writer.h"
     "${PROJECT_SOURCE_DIR}/src/engine/database_file_format.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/database_file_format.h"
     "${PROJECT_SOURCE_DIR}/src/engine/sqlite_database.cpp"
@@ -834,5 +836,22 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineDocumentCatalogTests
         COMMAND ClassMngrEngineDocumentCatalogTests
+    )
+
+    add_executable(ClassMngrEngineZipArchiveWriterTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/zip_archive_writer_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineZipArchiveWriterTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineZipArchiveWriterTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineZipArchiveWriterTests
+        COMMAND ClassMngrEngineZipArchiveWriterTests
     )
 endif()
