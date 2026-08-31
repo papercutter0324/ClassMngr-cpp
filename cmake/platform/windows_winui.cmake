@@ -233,6 +233,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineSpeakingAnalyticsTests
         )
     endif()
+    if(TARGET ClassMngrEngineSpeakingEvaluationValidatorTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineSpeakingEvaluationValidatorTests
+        )
+    endif()
     if(TARGET ClassMngrEngineSpeakingEvaluationReportServiceTests)
         add_dependencies(
             ${classmngr_winui_target}

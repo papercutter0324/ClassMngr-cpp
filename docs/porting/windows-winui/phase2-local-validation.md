@@ -178,6 +178,12 @@ shape/type checks, filesystem and resource-root existence checks, absolute-path
 reconstruction, active/embedded-root fallback, and localized diagnostics at the
 adapter edge.
 
+The speaking-evaluation grid slice now includes a Qt-free
+`SpeakingEvaluationValidator` for score aliases, row normalization, structural
+limits, student-name/score/comment/note rules, duplicate-name diagnostics, and
+the configurable questionable Korean-length warning policy. The retained Qt
+validator keeps its public API and delegates through a UTF-8 conversion adapter.
+
 The academic-calendar slice now includes a Qt-free `AcademicCalendarSchedule`
 model using standard-library calendar dates. It preserves default elementary
 and middle-school term lengths, custom-year rollover, previous-fall
@@ -390,6 +396,10 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release document-catalog policy test | Passed: `ClassMngrEngineDocumentCatalogTests` |
 | Windows x86 Debug document-catalog policy test | Passed: `ClassMngrEngineDocumentCatalogTests` |
 | Windows x86 Release document-catalog policy test | Passed: `ClassMngrEngineDocumentCatalogTests` |
+| Windows x64 Debug speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
+| Windows x64 Release speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
+| Windows x86 Debug speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
+| Windows x86 Release speaking-evaluation grid-validation test | Passed: `ClassMngrEngineSpeakingEvaluationValidatorTests` |
 | Windows x64 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x64 Release sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
 | Windows x86 Debug sub-prep package-planning service test | Passed: `ClassMngrEngineSubPrepPackageServiceTests` |
@@ -417,6 +427,7 @@ schema version and bilingual teacher/class values.
 | Retained Windows Qt roster report regression | Passed: `ClassMngrRosterTemplatePrintServiceTests` |
 | Retained Windows Qt database-port interoperability regression | Passed: `ClassMngrDatabasePortFixtureTests` with temporary Qt-written → engine-read and engine-written → Qt-read profiles |
 | Retained Windows Qt document-catalog regression | Passed: `ClassMngrDocumentCatalogTests` |
+| Retained Windows Qt speaking-evaluation validation regression | Passed: `ClassMngrSharedPolicyTests` through the UTF-8 adapter |
 | Retained Windows Qt batch-report target | Passed with `QT_QPA_PLATFORM=offscreen`; the native desktop rerun exposed host clipboard ownership failures in two existing AI/clipboard cases, not in report rendering or grade assembly |
 | Retained Windows Qt non-visual regression suite | Passed: 78/78 tests |
 
@@ -432,18 +443,20 @@ calendar-event rules, speaking-evaluation output policy, class-information,
 schedule-read, schedule-import, class-transfer, and speaking-evaluation
 template-policy, batch-report policy, PowerPoint job service, and sub-prep
 class-information, schedule-builder, class/teacher naming, upcoming-birthday,
-Sub Prep document-model, document-catalog policy, and Sub Prep package-planning implementations
-compiled and passed in all four engine lanes. The new class-naming,
-upcoming-birthday, document-catalog, and Sub Prep document-model and package-planning
+Sub Prep document-model, document-catalog policy, speaking-evaluation grid-validation,
+and Sub Prep package-planning implementations compiled and passed in all four
+engine lanes. The new class-naming, upcoming-birthday, document-catalog,
+speaking-evaluation validator, and Sub Prep document-model and package-planning
 tests also passed in all four lanes. The Qt-free
 fixture round-trip test also passed in all four lanes against the committed
 eleven-case database-port corpus, including engine write/reopen and class-
 transfer import coverage. The retained Qt fixture verifier additionally passed
 the explicit temporary Qt-written → engine-read and engine-written → Qt-read
 checks. Each lane's integrated sweep then passed all
-thirty-six engine suites plus both WinUI staging and manifest checks (38/38).
+thirty-seven engine suites plus both WinUI staging and manifest checks (39/39).
 The
-retained Qt schedule-import, schedule-builder, and upcoming-birthday
+retained Qt schedule-import, schedule-builder, upcoming-birthday, and
+speaking-evaluation validation adapter
 regression also passed, alongside the existing class-information, assignment,
 class-transfer, schedule-model, schedule-PDF, sub-prep, roster-report, and
 report-widget regressions, including the sub-prep document-model and
