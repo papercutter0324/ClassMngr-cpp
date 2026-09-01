@@ -1,6 +1,6 @@
 # Phase 2 local validation record
 
-Date: 2026-08-31 (Asia/Seoul)
+Date: 2026-09-01 (Asia/Seoul)
 
 Scope: Phase 2 portable-engine slices on the clean Phase 1 working tree.
 
@@ -618,6 +618,20 @@ remained blocked by the existing regeneration / MSBuild FileTracker stall, so
 no current-binary retained-Qt schedule-import regression is claimed for this
 slice.
 
+The retained Qt class-transfer repository was then converted to a UTF-8
+adapter over the engine `ClassTransferService`. Its complete nested package
+and plan model graphs now cross the boundary through explicit string,
+collection, enum, and UTC timestamp conversions, while package matching,
+schedule preflight, and transactional writes remain engine-owned. Static
+forbidden-symbol and engine-usage checks passed. A direct Qt 6.11/MSVC
+compile-only check passed, and a temporary link-level Qt/engine smoke harness
+passed package build, preview, and import with UTF-8 values and an unset export
+timestamp. The existing `ClassMngrEngineClassTransferServiceTests` executable
+passed in all four x64/x86 Debug/Release WinUI lanes. The normal Qt CMake
+regeneration was attempted but remained blocked by the existing MSBuild
+FileTracker access failure/regeneration stall, so no current-binary retained-
+Qt class-transfer regression is claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -625,7 +639,8 @@ fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
-and teacher adapters now share extracted engine use cases. The next work is
-migrating the remaining report/export adapters and models, connecting the
+teacher, and class-transfer adapters now share extracted engine use cases. The
+next work is migrating the remaining report/export adapters and models,
+connecting the
 other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.

@@ -5,6 +5,14 @@
 
 #include <QList>
 #include <QSqlDatabase>
+#include <QString>
+
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
 
 class ClassTransferRepository
 {
@@ -12,6 +20,7 @@ public:
     explicit ClassTransferRepository(
         QSqlDatabase& database
         );
+    ~ClassTransferRepository();
 
     [[nodiscard]] Result<ClassTransferPackage> buildPackage(
         const QList<int>& classIds
@@ -27,5 +36,11 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

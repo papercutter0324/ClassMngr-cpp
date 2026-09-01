@@ -1,1115 +1,651 @@
 #include "class_transfer_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "data/repositories/class_info_repository.h"
-#include "data/repositories/class_repository.h"
-#include "data/repositories/roster_repository.h"
-#include "data/repositories/teacher_repository.h"
-#include "domain/models/classroom.h"
+#include "classmngr/engine/class_transfer_service.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
 
-#include <QHash>
+#include <QByteArray>
+#include <QDateTime>
 #include <QObject>
-#include <QSet>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QStringList>
+
+#include <chrono>
+#include <cstddef>
+#include <limits>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-struct TimeInterval
-{
-    int start = -1;
-    int end = -1;
-};
+using EngineClassImportAction = classmngr::engine::ClassImportAction;
+using EngineClassImportClassPreview =
+    classmngr::engine::ClassImportClassPreview;
+using EngineClassImportPlan = classmngr::engine::ClassImportPlan;
+using EngineClassImportPreview = classmngr::engine::ClassImportPreview;
+using EngineClassImportSummary = classmngr::engine::ClassImportSummary;
+using EngineClassImportTeacherPreview =
+    classmngr::engine::ClassImportTeacherPreview;
+using EngineClassImportResolution = classmngr::engine::ClassImportResolution;
+using EngineClassInfo = classmngr::engine::ClassInfo;
+using EngineClassTime = classmngr::engine::ClassTime;
+using EngineClassTransferClass = classmngr::engine::ClassTransferClass;
+using EngineClassTransferEvaluation =
+    classmngr::engine::ClassTransferEvaluation;
+using EngineClassTransferPackage = classmngr::engine::ClassTransferPackage;
+using EngineClassTransferService = classmngr::engine::ClassTransferService;
+using EngineClassTransferTeacher = classmngr::engine::ClassTransferTeacher;
+using EngineError = classmngr::engine::Error;
+using EngineRoster = classmngr::engine::Roster;
+using EngineTeacher = classmngr::engine::Teacher;
+using EngineTeacherImportAction = classmngr::engine::TeacherImportAction;
+using EngineTeacherImportResolution =
+    classmngr::engine::TeacherImportResolution;
 
-struct ScheduledTime
-{
-    QString classLabel;
-    ClassTime time;
-};
-
-struct ValidatedPlan
-{
-    QHash<int, ClassImportResolution> classes;
-    QHash<QString, TeacherImportResolution> teachers;
-};
-
-constexpr int MinutesPerDay = 24 * 60;
-constexpr int MinutesPerWeek = 7 * MinutesPerDay;
-
-QString normalized(
+std::string toUtf8(
     const QString& value
     )
 {
-    return value.simplified().toCaseFolded();
-}
-
-bool teacherMatches(
-    const Teacher& source,
-    const Teacher& destination
-    )
-{
-    const QString sourceEnglish = normalized(source.teacherEn);
-    const QString sourceKorean = normalized(source.teacherKr);
-    const QString destinationEnglish = normalized(destination.teacherEn);
-    const QString destinationKorean = normalized(destination.teacherKr);
-
-    if (!sourceEnglish.isEmpty() && !sourceKorean.isEmpty())
-    {
-        return sourceEnglish == destinationEnglish
-            && sourceKorean == destinationKorean;
-    }
-
-    if (!sourceEnglish.isEmpty())
-    {
-        return sourceEnglish == destinationEnglish;
-    }
-
-    if (!sourceKorean.isEmpty())
-    {
-        return sourceKorean == destinationKorean;
-    }
-
-    return false;
-}
-
-const ClassTransferTeacher* packageTeacher(
-    const ClassTransferPackage& package,
-    const QString& key
-    )
-{
-    for (const ClassTransferTeacher& teacher : package.teachers)
-    {
-        if (teacher.key == key)
-        {
-            return &teacher;
-        }
-    }
-
-    return nullptr;
-}
-
-QList<ClassTransferEvaluation> loadEvaluations(
-    QSqlDatabase& database,
-    int classId,
-    QString* errorMessage
-    )
-{
-    QList<ClassTransferEvaluation> evaluations;
-    QSqlQuery evaluationQuery(database);
-
-    evaluationQuery.prepare(R"(
-        SELECT id, evaluation_name
-        FROM speaking_evaluations
-        WHERE class_id=?
-        ORDER BY id
-    )");
-    evaluationQuery.addBindValue(classId);
-
-    if (!evaluationQuery.exec())
-    {
-        *errorMessage = QObject::tr("Unable to read speaking evaluations: %1")
-            .arg(evaluationQuery.lastError().text());
-        return {};
-    }
-
-    while (evaluationQuery.next())
-    {
-        ClassTransferEvaluation evaluation;
-        evaluation.name = evaluationQuery.value("evaluation_name").toString();
-        evaluation.rows = SpeakingEval::emptyRows();
-
-        QSqlQuery rowQuery(database);
-        rowQuery.prepare(R"(
-            SELECT *
-            FROM speaking_eval_data
-            WHERE evaluation_id=?
-            ORDER BY row_index
-        )");
-        rowQuery.addBindValue(evaluationQuery.value("id"));
-
-        if (!rowQuery.exec())
-        {
-            *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
-                .arg(rowQuery.lastError().text());
-            return {};
-        }
-
-        while (rowQuery.next())
-        {
-            const int rowIndex = rowQuery.value("row_index").toInt();
-
-            if (rowIndex < 0 || rowIndex >= SpeakingEval::RowCount)
-            {
-                continue;
-            }
-
-            for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-            {
-                evaluation.rows[rowIndex][column] =
-                    rowQuery.value(
-                        QStringLiteral("col_%1").arg(column)
-                        ).toString();
-            }
-        }
-
-        evaluations.append(evaluation);
-    }
-
-    return evaluations;
-}
-
-QString transferClassLabel(
-    const ClassTransferClass& transferClass
-    )
-{
-    const QString course = QStringList{
-        transferClass.info.classGrade.trimmed(),
-        transferClass.info.classLevel.trimmed()
-        }.join(QStringLiteral(" ")).trimmed();
-
-    if (!course.isEmpty())
-    {
-        return course;
-    }
-
-    if (!transferClass.name.trimmed().isEmpty())
-    {
-        return transferClass.name.trimmed();
-    }
-
-    return transferClass.key;
-}
-
-QString destinationClassLabel(
-    const Classroom& classroom,
-    const ClassInfo& info
-    )
-{
-    const QString course = QStringList{
-        info.classGrade.trimmed(),
-        info.classLevel.trimmed()
-        }.join(QStringLiteral(" ")).trimmed();
-
-    if (!course.isEmpty())
-    {
-        return course;
-    }
-
-    if (!classroom.name.trimmed().isEmpty())
-    {
-        return classroom.name.trimmed();
-    }
-
-    return QObject::tr("Class %1").arg(classroom.id);
-}
-
-int dayIndex(
-    const QString& day
-    )
-{
-    static const QStringList Days{
-        QStringLiteral("Monday"),
-        QStringLiteral("Tuesday"),
-        QStringLiteral("Wednesday"),
-        QStringLiteral("Thursday"),
-        QStringLiteral("Friday"),
-        QStringLiteral("Saturday"),
-        QStringLiteral("Sunday")
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
     };
-
-    return Days.indexOf(day);
 }
 
-int timeToMinutes(
-    const QString& value
+QString fromUtf8(
+    std::string_view value
     )
 {
-    const QStringList parts = value.trimmed().split(
-        QLatin1Char(' '), Qt::SkipEmptyParts);
-
-    if (parts.size() != 2)
-    {
-        return -1;
-    }
-
-    const QStringList timeParts = parts[0].split(QLatin1Char(':'));
-
-    if (timeParts.size() != 2)
-    {
-        return -1;
-    }
-
-    bool hourOk = false;
-    bool minuteOk = false;
-    int hour = timeParts[0].toInt(&hourOk);
-    const int minute = timeParts[1].toInt(&minuteOk);
-    const QString period = parts[1].toUpper();
-
-    if (!hourOk || !minuteOk || hour < 1 || hour > 12
-        || minute < 0 || minute > 59
-        || (period != QStringLiteral("AM")
-            && period != QStringLiteral("PM")))
-    {
-        return -1;
-    }
-
-    if (period == QStringLiteral("AM"))
-    {
-        if (hour == 12)
-        {
-            hour = 0;
-        }
-    }
-    else if (hour != 12)
-    {
-        hour += 12;
-    }
-
-    return hour * 60 + minute;
-}
-
-bool intervalForTime(
-    const ClassTime& time,
-    TimeInterval* interval
-    )
-{
-    const int day = dayIndex(time.day);
-    const int start = timeToMinutes(time.startTime);
-    const int end = timeToMinutes(time.endTime);
-
-    if (day < 0 || start < 0 || end < 0)
-    {
-        return false;
-    }
-
-    interval->start = day * MinutesPerDay + start;
-    interval->end = day * MinutesPerDay + end;
-
-    if (interval->end <= interval->start)
-    {
-        interval->end += MinutesPerDay;
-    }
-
-    return true;
-}
-
-bool intervalsOverlap(
-    const TimeInterval& first,
-    const TimeInterval& second
-    )
-{
-    for (int offset : {-MinutesPerWeek, 0, MinutesPerWeek})
-    {
-        if (first.start < second.end + offset
-            && second.start + offset < first.end)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-QString timeDescription(
-    const ScheduledTime& scheduled
-    )
-{
-    return QObject::tr("%1 — %2 %3–%4")
-        .arg(
-            scheduled.classLabel,
-            scheduled.time.day,
-            scheduled.time.startTime,
-            scheduled.time.endTime
-            );
-}
-
-Status appendAndValidateTimes(
-    QList<ScheduledTime>* destination,
-    const QString& classLabel,
-    const QList<ClassTime>& times,
-    const QString& scheduleLabel
-    )
-{
-    for (const ClassTime& time : times)
-    {
-        TimeInterval interval;
-
-        if (!intervalForTime(time, &interval))
-        {
-            return std::unexpected(
-                QObject::tr("%1 contains an invalid %2 schedule entry: %3 %4–%5")
-                    .arg(
-                        classLabel,
-                        scheduleLabel,
-                        time.day,
-                        time.startTime,
-                        time.endTime
-                        )
-                );
-        }
-
-        destination->append({classLabel, time});
-    }
-
-    return {};
-}
-
-QStringList findScheduleConflicts(
-    const QList<ScheduledTime>& imported,
-    const QList<ScheduledTime>& existing,
-    const QString& scheduleLabel
-    )
-{
-    QStringList conflicts;
-
-    const auto addConflict = [&conflicts, &scheduleLabel](
-        const ScheduledTime& first,
-        const ScheduledTime& second)
-    {
-        const QString message = QObject::tr("%1: %2 conflicts with %3")
-            .arg(
-                scheduleLabel,
-                timeDescription(first),
-                timeDescription(second)
-                );
-
-        if (!conflicts.contains(message))
-        {
-            conflicts.append(message);
-        }
-    };
-
-    for (int first = 0; first < imported.size(); ++first)
-    {
-        TimeInterval firstInterval;
-        intervalForTime(imported[first].time, &firstInterval);
-
-        for (int second = first + 1; second < imported.size(); ++second)
-        {
-            TimeInterval secondInterval;
-            intervalForTime(imported[second].time, &secondInterval);
-
-            if (intervalsOverlap(firstInterval, secondInterval))
-            {
-                addConflict(imported[first], imported[second]);
-            }
-        }
-
-        for (const ScheduledTime& destination : existing)
-        {
-            TimeInterval destinationInterval;
-            intervalForTime(destination.time, &destinationInterval);
-
-            if (intervalsOverlap(firstInterval, destinationInterval))
-            {
-                addConflict(imported[first], destination);
-            }
-        }
-    }
-
-    return conflicts;
-}
-
-Result<ClassImportPreview> buildPreview(
-    QSqlDatabase& database,
-    const ClassTransferPackage& package
-    )
-{
-    TeacherRepository teacherRepository(database);
-    ClassRepository classRepository(database);
-    ClassInfoRepository classInfoRepository(database);
-
-    const Result<QList<Teacher>> destinationTeachers =
-        teacherRepository.getAllTeachers();
-    if (!destinationTeachers)
-    {
-        return std::unexpected(destinationTeachers.error());
-    }
-
-    const Result<QList<Classroom>> destinationClasses =
-        classRepository.getClasses();
-    if (!destinationClasses)
-    {
-        return std::unexpected(destinationClasses.error());
-    }
-
-    ClassImportPreview preview;
-
-    for (const ClassTransferTeacher& packageEntry : package.teachers)
-    {
-        ClassImportTeacherPreview teacherPreview;
-        teacherPreview.teacherKey = packageEntry.key;
-
-        for (const Teacher& destination : *destinationTeachers)
-        {
-            if (teacherMatches(packageEntry.teacher, destination))
-            {
-                teacherPreview.matchingTeacherIds.append(destination.id);
-            }
-        }
-
-        preview.teachers.append(teacherPreview);
-    }
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        const ClassTransferClass& source = package.classes[index];
-        ClassImportClassPreview classPreview;
-        classPreview.packageClassIndex = index;
-
-        const QString sourceGrade = normalized(source.info.classGrade);
-        const QString sourceLevel = normalized(source.info.classLevel);
-
-        if (sourceGrade.isEmpty() || sourceLevel.isEmpty())
-        {
-            preview.classes.append(classPreview);
-            continue;
-        }
-
-        const ClassTransferTeacher* sourceTeacher =
-            packageTeacher(package, source.teacherKey);
-
-        for (const Classroom& destination : *destinationClasses)
-        {
-            const Result<ClassInfo> destinationInfo =
-                classInfoRepository.loadClassInfo(destination.id);
-            if (!destinationInfo)
-            {
-                return std::unexpected(destinationInfo.error());
-            }
-
-            if (normalized(destinationInfo->classGrade) != sourceGrade
-                || normalized(destinationInfo->classLevel) != sourceLevel)
-            {
-                continue;
-            }
-
-            bool sameTeacher = false;
-
-            if (!sourceTeacher)
-            {
-                sameTeacher = destinationInfo->teacherId <= 0;
-            }
-            else if (destinationInfo->teacherId > 0)
-            {
-                const Result<Teacher> destinationTeacher =
-                    teacherRepository.getTeacher(destinationInfo->teacherId);
-                if (!destinationTeacher)
-                {
-                    return std::unexpected(destinationTeacher.error());
-                }
-
-                sameTeacher = teacherMatches(
-                    sourceTeacher->teacher,
-                    *destinationTeacher
-                    );
-            }
-
-            if (sameTeacher)
-            {
-                classPreview.matchingClassIds.append(destination.id);
-            }
-        }
-
-        preview.classes.append(classPreview);
-    }
-
-    return preview;
-}
-
-Result<ValidatedPlan> validatePlan(
-    QSqlDatabase& database,
-    const ClassTransferPackage& package,
-    const ClassImportPlan& plan
-    )
-{
-    const auto previewResult = buildPreview(database, package);
-
-    if (!previewResult)
-    {
-        return std::unexpected(previewResult.error());
-    }
-
-    QHash<int, QList<int>> classMatches;
-    QHash<QString, QList<int>> teacherMatchesByKey;
-
-    for (const ClassImportClassPreview& entry : previewResult->classes)
-    {
-        classMatches.insert(entry.packageClassIndex, entry.matchingClassIds);
-    }
-
-    for (const ClassImportTeacherPreview& entry : previewResult->teachers)
-    {
-        teacherMatchesByKey.insert(entry.teacherKey, entry.matchingTeacherIds);
-    }
-
-    ValidatedPlan validated;
-    QSet<int> replacementTargets;
-    QSet<int> teacherReplacementTargets;
-
-    for (const ClassImportResolution& resolution : plan.classes)
-    {
-        const int index = resolution.packageClassIndex;
-
-        if (index < 0 || index >= package.classes.size()
-            || validated.classes.contains(index))
-        {
-            return std::unexpected(
-                QObject::tr("The class import plan contains an invalid or duplicate class entry.")
-                );
-        }
-
-        const QList<int> matches = classMatches.value(index);
-
-        if (resolution.action == ClassImportAction::Replace)
-        {
-            if (!matches.contains(resolution.targetClassId))
-            {
-                return std::unexpected(
-                    QObject::tr("A replacement class is not one of the inferred matches.")
-                    );
-            }
-
-            if (replacementTargets.contains(resolution.targetClassId))
-            {
-                return std::unexpected(
-                    QObject::tr("Two package classes cannot replace the same destination class.")
-                    );
-            }
-
-            replacementTargets.insert(resolution.targetClassId);
-        }
-        else if (resolution.targetClassId > 0)
-        {
-            return std::unexpected(
-                QObject::tr("Only replacement actions may specify a destination class.")
-                );
-        }
-
-        validated.classes.insert(index, resolution);
-    }
-
-    if (validated.classes.size() != package.classes.size())
-    {
-        return std::unexpected(
-            QObject::tr("Every package class must have an import action.")
-            );
-    }
-
-    for (const TeacherImportResolution& resolution : plan.teachers)
-    {
-        if (resolution.teacherKey.trimmed().isEmpty()
-            || !teacherMatchesByKey.contains(resolution.teacherKey)
-            || validated.teachers.contains(resolution.teacherKey))
-        {
-            return std::unexpected(
-                QObject::tr("The teacher import plan contains an invalid or duplicate teacher entry.")
-                );
-        }
-
-        const QList<int> matches =
-            teacherMatchesByKey.value(resolution.teacherKey);
-
-        if (resolution.action == TeacherImportAction::Create)
-        {
-            if (matches.size() == 1 || resolution.targetTeacherId > 0)
-            {
-                return std::unexpected(
-                    QObject::tr("An unambiguous teacher match must reuse the local teacher.")
-                    );
-            }
-        }
-        else
-        {
-            if (!matches.contains(resolution.targetTeacherId))
-            {
-                return std::unexpected(
-                    QObject::tr("A selected teacher is not one of the inferred matches.")
-                    );
-            }
-
-            if (resolution.action == TeacherImportAction::ReplaceExisting)
-            {
-                if (teacherReplacementTargets.contains(
-                        resolution.targetTeacherId))
-                {
-                    return std::unexpected(
-                        QObject::tr("Two different package teachers cannot replace the same local teacher.")
-                        );
-                }
-
-                teacherReplacementTargets.insert(
-                    resolution.targetTeacherId);
-            }
-        }
-
-        validated.teachers.insert(resolution.teacherKey, resolution);
-    }
-
-    if (validated.teachers.size() != package.teachers.size())
-    {
-        return std::unexpected(
-            QObject::tr("Every package teacher must have an import action.")
-            );
-    }
-
-    return validated;
-}
-
-Status preflightSchedules(
-    QSqlDatabase& database,
-    const ClassTransferPackage& package,
-    const ValidatedPlan& plan
-    )
-{
-    QList<ScheduledTime> importedRegular;
-    QList<ScheduledTime> importedIntensive;
-    QSet<int> replacedClassIds;
-
-    for (auto iterator = plan.classes.cbegin();
-         iterator != plan.classes.cend(); ++iterator)
-    {
-        if (iterator->action == ClassImportAction::Replace)
-        {
-            replacedClassIds.insert(iterator->targetClassId);
-        }
-    }
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        const ClassImportResolution resolution = plan.classes.value(index);
-
-        if (resolution.action == ClassImportAction::Skip)
-        {
-            continue;
-        }
-
-        const ClassTransferClass& transferClass = package.classes[index];
-        const QString label = transferClassLabel(transferClass);
-        Status status = appendAndValidateTimes(
-            &importedRegular,
-            label,
-            transferClass.info.classTimes,
-            QObject::tr("regular")
-            );
-
-        if (!status)
-        {
-            return status;
-        }
-
-        status = appendAndValidateTimes(
-            &importedIntensive,
-            label,
-            transferClass.info.intensiveTimes,
-            QObject::tr("intensive")
-            );
-
-        if (!status)
-        {
-            return status;
-        }
-    }
-
-    ClassRepository classRepository(database);
-    ClassInfoRepository classInfoRepository(database);
-    QList<ScheduledTime> existingRegular;
-    QList<ScheduledTime> existingIntensive;
-
-    const Result<QList<Classroom>> destinationClasses =
-        classRepository.getClasses();
-    if (!destinationClasses)
-    {
-        return std::unexpected(destinationClasses.error());
-    }
-
-    for (const Classroom& classroom : *destinationClasses)
-    {
-        if (replacedClassIds.contains(classroom.id))
-        {
-            continue;
-        }
-
-        const Result<ClassInfo> info =
-            classInfoRepository.loadClassInfo(classroom.id);
-        if (!info)
-        {
-            return std::unexpected(info.error());
-        }
-
-        const QString label = destinationClassLabel(classroom, *info);
-        Status status = appendAndValidateTimes(
-            &existingRegular,
-            label,
-            info->classTimes,
-            QObject::tr("regular")
-            );
-
-        if (!status)
-        {
-            return status;
-        }
-
-        status = appendAndValidateTimes(
-            &existingIntensive,
-            label,
-            info->intensiveTimes,
-            QObject::tr("intensive")
-            );
-
-        if (!status)
-        {
-            return status;
-        }
-    }
-
-    QStringList conflicts = findScheduleConflicts(
-        importedRegular, existingRegular, QObject::tr("Regular schedule"));
-    conflicts.append(findScheduleConflicts(
-        importedIntensive,
-        existingIntensive,
-        QObject::tr("Intensive schedule")
-        ));
-
-    if (!conflicts.isEmpty())
-    {
-        return std::unexpected(
-            QObject::tr("Schedule conflicts prevent this import:\n\n%1")
-                .arg(conflicts.join(QLatin1Char('\n')))
-            );
-    }
-
-    return {};
-}
-
-Status queryFailure(
-    const QSqlQuery& query,
-    const QString& operation
-    )
-{
-    return std::unexpected(
-        SqlQueryUtils::errorFor(query, operation).userMessage()
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
 }
 
-Result<int> insertTeacher(
-    QSqlDatabase& database,
-    const Teacher& teacher
+std::chrono::system_clock::time_point toEngineTimePoint(
+    const QDateTime& source
     )
 {
-    QSqlQuery query(database);
-    query.prepare(R"(
-        INSERT INTO teachers (
-            teacher_kr, teacher_en, preferred_romanization, preferred_name,
-            room_number, birthday, phone_number,
-            wifi_name, wifi_password, internet_type,
-            zoom_id, zoom_password, projection_type, notes
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    )");
-    query.addBindValue(teacher.teacherKr);
-    query.addBindValue(teacher.teacherEn);
-    query.addBindValue(teacher.preferredRomanization);
-    query.addBindValue(teacher.preferredName);
-    query.addBindValue(teacher.roomNumber);
-    query.addBindValue(teacher.birthday);
-    query.addBindValue(teacher.phoneNumber);
-    query.addBindValue(teacher.wifiName);
-    query.addBindValue(teacher.wifiPassword);
-    query.addBindValue(teacher.internetType);
-    query.addBindValue(teacher.zoomId);
-    query.addBindValue(teacher.zoomPassword);
-    query.addBindValue(teacher.projectionType);
-    query.addBindValue(teacher.notes);
-
-    if (!query.exec())
+    if (!source.isValid())
     {
-        return std::unexpected(queryFailure(
-            query, QObject::tr("Creating an imported teacher")).error());
-    }
-
-    const int id = query.lastInsertId().toInt();
-
-    if (id <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("The imported teacher did not receive a Teacher Profile ID.")
-            );
-    }
-
-    return id;
-}
-
-Status updateTeacher(
-    QSqlDatabase& database,
-    int teacherId,
-    const Teacher& teacher
-    )
-{
-    QSqlQuery query(database);
-    query.prepare(R"(
-        UPDATE teachers SET
-            teacher_kr=?, teacher_en=?, preferred_romanization=?, preferred_name=?,
-            room_number=?, birthday=?, phone_number=?,
-            wifi_name=?, wifi_password=?, internet_type=?,
-            zoom_id=?, zoom_password=?, projection_type=?, notes=?
-        WHERE id=?
-    )");
-    query.addBindValue(teacher.teacherKr);
-    query.addBindValue(teacher.teacherEn);
-    query.addBindValue(teacher.preferredRomanization);
-    query.addBindValue(teacher.preferredName);
-    query.addBindValue(teacher.roomNumber);
-    query.addBindValue(teacher.birthday);
-    query.addBindValue(teacher.phoneNumber);
-    query.addBindValue(teacher.wifiName);
-    query.addBindValue(teacher.wifiPassword);
-    query.addBindValue(teacher.internetType);
-    query.addBindValue(teacher.zoomId);
-    query.addBindValue(teacher.zoomPassword);
-    query.addBindValue(teacher.projectionType);
-    query.addBindValue(teacher.notes);
-    query.addBindValue(teacherId);
-
-    if (!query.exec())
-    {
-        return queryFailure(query, QObject::tr("Updating a matched teacher"));
-    }
-
-    if (query.numRowsAffected() != 1)
-    {
-        return std::unexpected(
-            QObject::tr("The matched teacher no longer exists.")
-            );
-    }
-
-    return {};
-}
-
-Status clearClassData(
-    QSqlDatabase& database,
-    int classId
-    )
-{
-    QSqlQuery query(database);
-    query.prepare(R"(
-        DELETE FROM speaking_eval_data
-        WHERE evaluation_id IN (
-            SELECT id FROM speaking_evaluations WHERE class_id=?
-        )
-    )");
-    query.addBindValue(classId);
-
-    if (!query.exec())
-    {
-        return queryFailure(query, QObject::tr("Clearing speaking evaluation rows"));
-    }
-
-    for (const QString& table : {
-             QStringLiteral("speaking_evaluations"),
-             QStringLiteral("roster_columns"),
-             QStringLiteral("roster_data"),
-             QStringLiteral("class_info"),
-             QStringLiteral("class_times"),
-             QStringLiteral("class_intensive_times")
-         })
-    {
-        query.prepare(
-            QStringLiteral("DELETE FROM %1 WHERE class_id=?").arg(table));
-        query.addBindValue(classId);
-
-        if (!query.exec())
-        {
-            return queryFailure(
-                query,
-                QObject::tr("Clearing imported class data from %1").arg(table)
-                );
-        }
-    }
-
-    return {};
-}
-
-Status writeClassData(
-    QSqlDatabase& database,
-    int classId,
-    int teacherId,
-    const ClassTransferClass& transferClass
-    )
-{
-    QSqlQuery query(database);
-    const ClassInfo& info = transferClass.info;
-    query.prepare(R"(
-        INSERT INTO class_info (
-            class_id, teacher_id, class_grade, class_level,
-            reading_book, essay_book, class_color, font_color,
-            notes, time_filler_activities
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    )");
-    query.addBindValue(classId);
-    query.addBindValue(teacherId > 0 ? QVariant(teacherId) : QVariant());
-    query.addBindValue(info.classGrade);
-    query.addBindValue(info.classLevel);
-    query.addBindValue(info.readingBook);
-    query.addBindValue(info.essayBook);
-    query.addBindValue(info.classColor);
-    query.addBindValue(info.fontColor);
-    query.addBindValue(info.notes);
-    query.addBindValue(info.timeFillerActivities);
-
-    if (!query.exec())
-    {
-        return queryFailure(query, QObject::tr("Writing imported class information"));
-    }
-
-    const auto writeTimes = [&database, classId](
-        const QString& table,
-        const QList<ClassTime>& times) -> Status
-    {
-        for (const ClassTime& time : times)
-        {
-            QSqlQuery timeQuery(database);
-            timeQuery.prepare(
-                QStringLiteral(
-                    "INSERT INTO %1 (class_id, day, start_time, end_time) "
-                    "VALUES (?, ?, ?, ?)").arg(table));
-            timeQuery.addBindValue(classId);
-            timeQuery.addBindValue(time.day);
-            timeQuery.addBindValue(time.startTime);
-            timeQuery.addBindValue(time.endTime);
-
-            if (!timeQuery.exec())
-            {
-                return queryFailure(
-                    timeQuery,
-                    QObject::tr("Writing imported schedule data")
-                    );
-            }
-        }
-
+        // The retained Qt model permits an unset export timestamp and the
+        // transfer service does not use it for validation or persistence.
         return {};
-    };
-
-    Status status = writeTimes(
-        QStringLiteral("class_times"), info.classTimes);
-
-    if (!status)
-    {
-        return status;
     }
 
-    status = writeTimes(
-        QStringLiteral("class_intensive_times"), info.intensiveTimes);
+    return std::chrono::system_clock::time_point(
+        std::chrono::milliseconds(source.toMSecsSinceEpoch())
+        );
+}
 
-    if (!status)
+std::optional<QDateTime> fromEngineTimePoint(
+    const std::chrono::system_clock::time_point& source
+    )
+{
+    const auto milliseconds = std::chrono::duration_cast<
+        std::chrono::milliseconds>(source.time_since_epoch());
+    const auto count = milliseconds.count();
+
+    if (count < std::numeric_limits<qint64>::min()
+        || count > std::numeric_limits<qint64>::max())
     {
-        return status;
+        return std::nullopt;
     }
 
-    for (int column = 0; column < transferClass.roster.columns.size(); ++column)
+    const QDateTime result = QDateTime::fromMSecsSinceEpoch(
+        static_cast<qint64>(count),
+        Qt::UTC
+        );
+    if (!result.isValid())
     {
-        query.prepare(R"(
-            INSERT INTO roster_columns (class_id, name, position, width)
-            VALUES (?, ?, ?, ?)
-        )");
-        query.addBindValue(classId);
-        query.addBindValue(transferClass.roster.columns[column]);
-        query.addBindValue(column);
-        query.addBindValue(
-            column < transferClass.roster.columnWidths.size()
-                ? transferClass.roster.columnWidths[column]
-                : 0
+        return std::nullopt;
+    }
+
+    return result;
+}
+
+EngineClassTime toEngineClassTime(
+    const ClassTime& source
+    )
+{
+    EngineClassTime result;
+    result.day = toUtf8(source.day);
+    result.startTime = toUtf8(source.startTime);
+    result.endTime = toUtf8(source.endTime);
+    return result;
+}
+
+ClassTime fromEngineClassTime(
+    const EngineClassTime& source
+    )
+{
+    ClassTime result;
+    result.day = fromUtf8(source.day);
+    result.startTime = fromUtf8(source.startTime);
+    result.endTime = fromUtf8(source.endTime);
+    return result;
+}
+
+std::vector<EngineClassTime> toEngineClassTimes(
+    const QList<ClassTime>& source
+    )
+{
+    std::vector<EngineClassTime> result;
+    result.reserve(static_cast<std::size_t>(source.size()));
+    for (const ClassTime& value : source)
+    {
+        result.push_back(toEngineClassTime(value));
+    }
+    return result;
+}
+
+QList<ClassTime> fromEngineClassTimes(
+    const std::vector<EngineClassTime>& source
+    )
+{
+    QList<ClassTime> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const EngineClassTime& value : source)
+    {
+        result.append(fromEngineClassTime(value));
+    }
+    return result;
+}
+
+EngineClassInfo toEngineClassInfo(
+    const ClassInfo& source
+    )
+{
+    EngineClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.teacherPreferredName = toUtf8(source.teacherPreferredName);
+    result.roomNumber = toUtf8(source.roomNumber);
+    result.wifiName = toUtf8(source.wifiName);
+    result.wifiPassword = toUtf8(source.wifiPassword);
+    result.internetType = toUtf8(source.internetType);
+    result.zoomId = toUtf8(source.zoomId);
+    result.zoomPassword = toUtf8(source.zoomPassword);
+    result.projectionType = toUtf8(source.projectionType);
+    result.classGrade = toUtf8(source.classGrade);
+    result.classLevel = toUtf8(source.classLevel);
+    result.readingBook = toUtf8(source.readingBook);
+    result.essayBook = toUtf8(source.essayBook);
+    result.classColor = toUtf8(source.classColor);
+    result.fontColor = toUtf8(source.fontColor);
+    result.classTimes = toEngineClassTimes(source.classTimes);
+    result.intensiveTimes = toEngineClassTimes(source.intensiveTimes);
+    result.notes = toUtf8(source.notes);
+    result.timeFillerActivities = toUtf8(source.timeFillerActivities);
+    return result;
+}
+
+ClassInfo fromEngineClassInfo(
+    const EngineClassInfo& source
+    )
+{
+    ClassInfo result;
+    result.classId = source.classId;
+    result.teacherId = source.teacherId;
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.teacherEn = fromUtf8(source.teacherEn);
+    result.teacherPreferredName = fromUtf8(source.teacherPreferredName);
+    result.roomNumber = fromUtf8(source.roomNumber);
+    result.wifiName = fromUtf8(source.wifiName);
+    result.wifiPassword = fromUtf8(source.wifiPassword);
+    result.internetType = fromUtf8(source.internetType);
+    result.zoomId = fromUtf8(source.zoomId);
+    result.zoomPassword = fromUtf8(source.zoomPassword);
+    result.projectionType = fromUtf8(source.projectionType);
+    result.classGrade = fromUtf8(source.classGrade);
+    result.classLevel = fromUtf8(source.classLevel);
+    result.readingBook = fromUtf8(source.readingBook);
+    result.essayBook = fromUtf8(source.essayBook);
+    result.classColor = fromUtf8(source.classColor);
+    result.fontColor = fromUtf8(source.fontColor);
+    result.classTimes = fromEngineClassTimes(source.classTimes);
+    result.intensiveTimes = fromEngineClassTimes(source.intensiveTimes);
+    result.notes = fromUtf8(source.notes);
+    result.timeFillerActivities = fromUtf8(source.timeFillerActivities);
+    return result;
+}
+
+EngineTeacher toEngineTeacher(
+    const Teacher& source
+    )
+{
+    EngineTeacher result;
+    result.id = source.id;
+    result.teacherKr = toUtf8(source.teacherKr);
+    result.teacherEn = toUtf8(source.teacherEn);
+    result.preferredRomanization = toUtf8(source.preferredRomanization);
+    result.preferredName = toUtf8(source.preferredName);
+    result.roomNumber = toUtf8(source.roomNumber);
+    result.birthday = toUtf8(source.birthday);
+    result.phoneNumber = toUtf8(source.phoneNumber);
+    result.wifiName = toUtf8(source.wifiName);
+    result.wifiPassword = toUtf8(source.wifiPassword);
+    result.internetType = toUtf8(source.internetType);
+    result.zoomId = toUtf8(source.zoomId);
+    result.zoomPassword = toUtf8(source.zoomPassword);
+    result.projectionType = toUtf8(source.projectionType);
+    result.notes = toUtf8(source.notes);
+    return result;
+}
+
+Teacher fromEngineTeacher(
+    const EngineTeacher& source
+    )
+{
+    Teacher result;
+    result.id = source.id;
+    result.teacherKr = fromUtf8(source.teacherKr);
+    result.teacherEn = fromUtf8(source.teacherEn);
+    result.preferredRomanization = fromUtf8(source.preferredRomanization);
+    result.preferredName = fromUtf8(source.preferredName);
+    result.roomNumber = fromUtf8(source.roomNumber);
+    result.birthday = fromUtf8(source.birthday);
+    result.phoneNumber = fromUtf8(source.phoneNumber);
+    result.wifiName = fromUtf8(source.wifiName);
+    result.wifiPassword = fromUtf8(source.wifiPassword);
+    result.internetType = fromUtf8(source.internetType);
+    result.zoomId = fromUtf8(source.zoomId);
+    result.zoomPassword = fromUtf8(source.zoomPassword);
+    result.projectionType = fromUtf8(source.projectionType);
+    result.notes = fromUtf8(source.notes);
+    return result;
+}
+
+EngineRoster toEngineRoster(
+    const Roster& source
+    )
+{
+    EngineRoster result;
+    result.columns.reserve(static_cast<std::size_t>(source.columns.size()));
+    for (const QString& value : source.columns)
+    {
+        result.columns.push_back(toUtf8(value));
+    }
+
+    result.columnWidths.reserve(
+        static_cast<std::size_t>(source.columnWidths.size())
+        );
+    for (const int value : source.columnWidths)
+    {
+        result.columnWidths.push_back(value);
+    }
+
+    result.rows.reserve(static_cast<std::size_t>(source.rows.size()));
+    for (const QStringList& sourceRow : source.rows)
+    {
+        std::vector<std::string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& value : sourceRow)
+        {
+            row.push_back(toUtf8(value));
+        }
+        result.rows.push_back(std::move(row));
+    }
+
+    return result;
+}
+
+Roster fromEngineRoster(
+    const EngineRoster& source
+    )
+{
+    Roster result;
+    result.columns.reserve(static_cast<qsizetype>(source.columns.size()));
+    for (const std::string& value : source.columns)
+    {
+        result.columns.append(fromUtf8(value));
+    }
+
+    result.columnWidths.reserve(
+        static_cast<qsizetype>(source.columnWidths.size())
+        );
+    for (const int value : source.columnWidths)
+    {
+        result.columnWidths.append(value);
+    }
+
+    result.rows.reserve(static_cast<qsizetype>(source.rows.size()));
+    for (const std::vector<std::string>& sourceRow : source.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::string& value : sourceRow)
+        {
+            row.append(fromUtf8(value));
+        }
+        result.rows.append(std::move(row));
+    }
+
+    return result;
+}
+
+EngineClassTransferEvaluation toEngineEvaluation(
+    const ClassTransferEvaluation& source
+    )
+{
+    EngineClassTransferEvaluation result;
+    result.name = toUtf8(source.name);
+    result.rows.reserve(static_cast<std::size_t>(source.rows.size()));
+    for (const QStringList& sourceRow : source.rows)
+    {
+        std::vector<std::string> row;
+        row.reserve(static_cast<std::size_t>(sourceRow.size()));
+        for (const QString& value : sourceRow)
+        {
+            row.push_back(toUtf8(value));
+        }
+        result.rows.push_back(std::move(row));
+    }
+    return result;
+}
+
+ClassTransferEvaluation fromEngineEvaluation(
+    const EngineClassTransferEvaluation& source
+    )
+{
+    ClassTransferEvaluation result;
+    result.name = fromUtf8(source.name);
+    result.rows.reserve(static_cast<qsizetype>(source.rows.size()));
+    for (const std::vector<std::string>& sourceRow : source.rows)
+    {
+        QStringList row;
+        row.reserve(static_cast<qsizetype>(sourceRow.size()));
+        for (const std::string& value : sourceRow)
+        {
+            row.append(fromUtf8(value));
+        }
+        result.rows.append(std::move(row));
+    }
+    return result;
+}
+
+std::optional<EngineClassTransferPackage> toEnginePackage(
+    const ClassTransferPackage& source
+    )
+{
+    EngineClassTransferPackage result;
+    result.version = source.version;
+    result.exportedAtUtc = toEngineTimePoint(source.exportedAtUtc);
+
+    result.teachers.reserve(static_cast<std::size_t>(source.teachers.size()));
+    for (const ClassTransferTeacher& sourceTeacher : source.teachers)
+    {
+        EngineClassTransferTeacher teacher;
+        teacher.key = toUtf8(sourceTeacher.key);
+        teacher.teacher = toEngineTeacher(sourceTeacher.teacher);
+        result.teachers.push_back(std::move(teacher));
+    }
+
+    result.classes.reserve(static_cast<std::size_t>(source.classes.size()));
+    for (const ClassTransferClass& sourceClass : source.classes)
+    {
+        EngineClassTransferClass transferClass;
+        transferClass.key = toUtf8(sourceClass.key);
+        transferClass.name = toUtf8(sourceClass.name);
+        transferClass.teacherKey = toUtf8(sourceClass.teacherKey);
+        transferClass.info = toEngineClassInfo(sourceClass.info);
+        transferClass.roster = toEngineRoster(sourceClass.roster);
+        transferClass.evaluations.reserve(
+            static_cast<std::size_t>(sourceClass.evaluations.size())
             );
-
-        if (!query.exec())
+        for (const ClassTransferEvaluation& evaluation :
+             sourceClass.evaluations)
         {
-            return queryFailure(query, QObject::tr("Writing imported roster columns"));
+            transferClass.evaluations.push_back(toEngineEvaluation(evaluation));
         }
+        result.classes.push_back(std::move(transferClass));
     }
 
-    for (int row = 0; row < transferClass.roster.rows.size(); ++row)
-    {
-        for (int column = 0;
-             column < transferClass.roster.columns.size(); ++column)
-        {
-            const QString value =
-                column < transferClass.roster.rows[row].size()
-                    ? transferClass.roster.rows[row][column]
-                    : QString();
-
-            if (value.isEmpty())
-            {
-                continue;
-            }
-
-            query.prepare(R"(
-                INSERT INTO roster_data (class_id, row_index, col_index, value)
-                VALUES (?, ?, ?, ?)
-            )");
-            query.addBindValue(classId);
-            query.addBindValue(row);
-            query.addBindValue(column);
-            query.addBindValue(value);
-
-            if (!query.exec())
-            {
-                return queryFailure(query, QObject::tr("Writing imported roster data"));
-            }
-        }
-    }
-
-    for (const ClassTransferEvaluation& evaluation : transferClass.evaluations)
-    {
-        query.prepare(R"(
-            INSERT INTO speaking_evaluations (class_id, evaluation_name)
-            VALUES (?, ?)
-        )");
-        query.addBindValue(classId);
-        query.addBindValue(evaluation.name);
-
-        if (!query.exec())
-        {
-            return queryFailure(query, QObject::tr("Creating an imported speaking evaluation"));
-        }
-
-        const int evaluationId = query.lastInsertId().toInt();
-
-        for (int row = 0; row < SpeakingEval::RowCount; ++row)
-        {
-            query.prepare(R"(
-                INSERT INTO speaking_eval_data (
-                    evaluation_id, row_index,
-                    col_0, col_1, col_2, col_3, col_4, col_5,
-                    col_6, col_7, col_8, col_9, col_10
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            )");
-            query.addBindValue(evaluationId);
-            query.addBindValue(row);
-
-            for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
-            {
-                query.addBindValue(
-                    row < evaluation.rows.size()
-                    && column < evaluation.rows[row].size()
-                        ? evaluation.rows[row][column]
-                        : QString()
-                    );
-            }
-
-            if (!query.exec())
-            {
-                return queryFailure(query, QObject::tr("Writing imported speaking evaluation rows"));
-            }
-        }
-    }
-
-    return {};
+    return result;
 }
+
+std::optional<ClassTransferPackage> fromEnginePackage(
+    const EngineClassTransferPackage& source
+    )
+{
+    const std::optional<QDateTime> exportedAtUtc = fromEngineTimePoint(
+        source.exportedAtUtc
+        );
+    if (!exportedAtUtc)
+    {
+        return std::nullopt;
+    }
+
+    ClassTransferPackage result;
+    result.version = source.version;
+    result.exportedAtUtc = *exportedAtUtc;
+
+    result.teachers.reserve(static_cast<qsizetype>(source.teachers.size()));
+    for (const EngineClassTransferTeacher& sourceTeacher : source.teachers)
+    {
+        ClassTransferTeacher teacher;
+        teacher.key = fromUtf8(sourceTeacher.key);
+        teacher.teacher = fromEngineTeacher(sourceTeacher.teacher);
+        result.teachers.append(std::move(teacher));
+    }
+
+    result.classes.reserve(static_cast<qsizetype>(source.classes.size()));
+    for (const EngineClassTransferClass& sourceClass : source.classes)
+    {
+        ClassTransferClass transferClass;
+        transferClass.key = fromUtf8(sourceClass.key);
+        transferClass.name = fromUtf8(sourceClass.name);
+        transferClass.teacherKey = fromUtf8(sourceClass.teacherKey);
+        transferClass.info = fromEngineClassInfo(sourceClass.info);
+        transferClass.roster = fromEngineRoster(sourceClass.roster);
+        transferClass.evaluations.reserve(
+            static_cast<qsizetype>(sourceClass.evaluations.size())
+            );
+        for (const EngineClassTransferEvaluation& evaluation :
+             sourceClass.evaluations)
+        {
+            transferClass.evaluations.append(fromEngineEvaluation(evaluation));
+        }
+        result.classes.append(std::move(transferClass));
+    }
+
+    return result;
 }
+
+QList<int> fromEngineIds(
+    const std::vector<int>& source
+    )
+{
+    QList<int> result;
+    result.reserve(static_cast<qsizetype>(source.size()));
+    for (const int value : source)
+    {
+        result.append(value);
+    }
+    return result;
+}
+
+ClassImportTeacherPreview fromEngineTeacherPreview(
+    const EngineClassImportTeacherPreview& source
+    )
+{
+    ClassImportTeacherPreview result;
+    result.teacherKey = fromUtf8(source.teacherKey);
+    result.matchingTeacherIds = fromEngineIds(source.matchingTeacherIds);
+    return result;
+}
+
+ClassImportClassPreview fromEngineClassPreview(
+    const EngineClassImportClassPreview& source
+    )
+{
+    ClassImportClassPreview result;
+    result.packageClassIndex = source.packageClassIndex;
+    result.matchingClassIds = fromEngineIds(source.matchingClassIds);
+    return result;
+}
+
+ClassImportPreview fromEnginePreview(
+    const EngineClassImportPreview& source
+    )
+{
+    ClassImportPreview result;
+    result.teachers.reserve(static_cast<qsizetype>(source.teachers.size()));
+    for (const EngineClassImportTeacherPreview& teacher : source.teachers)
+    {
+        result.teachers.append(fromEngineTeacherPreview(teacher));
+    }
+
+    result.classes.reserve(static_cast<qsizetype>(source.classes.size()));
+    for (const EngineClassImportClassPreview& transferClass : source.classes)
+    {
+        result.classes.append(fromEngineClassPreview(transferClass));
+    }
+    return result;
+}
+
+std::optional<EngineClassImportAction> toEngineClassImportAction(
+    ClassImportAction source
+    )
+{
+    switch (source)
+    {
+    case ClassImportAction::Create:
+        return EngineClassImportAction::Create;
+    case ClassImportAction::Replace:
+        return EngineClassImportAction::Replace;
+    case ClassImportAction::Skip:
+        return EngineClassImportAction::Skip;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<EngineTeacherImportAction> toEngineTeacherImportAction(
+    TeacherImportAction source
+    )
+{
+    switch (source)
+    {
+    case TeacherImportAction::Create:
+        return EngineTeacherImportAction::Create;
+    case TeacherImportAction::KeepExisting:
+        return EngineTeacherImportAction::KeepExisting;
+    case TeacherImportAction::ReplaceExisting:
+        return EngineTeacherImportAction::ReplaceExisting;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<EngineClassImportPlan> toEnginePlan(
+    const ClassImportPlan& source
+    )
+{
+    EngineClassImportPlan result;
+    result.classes.reserve(static_cast<std::size_t>(source.classes.size()));
+    for (const ClassImportResolution& sourceResolution : source.classes)
+    {
+        const std::optional<EngineClassImportAction> action =
+            toEngineClassImportAction(sourceResolution.action);
+        if (!action)
+        {
+            return std::nullopt;
+        }
+
+        EngineClassImportResolution resolution;
+        resolution.packageClassIndex = sourceResolution.packageClassIndex;
+        resolution.action = *action;
+        resolution.targetClassId = sourceResolution.targetClassId;
+        result.classes.push_back(std::move(resolution));
+    }
+
+    result.teachers.reserve(static_cast<std::size_t>(source.teachers.size()));
+    for (const TeacherImportResolution& sourceResolution : source.teachers)
+    {
+        const std::optional<EngineTeacherImportAction> action =
+            toEngineTeacherImportAction(sourceResolution.action);
+        if (!action)
+        {
+            return std::nullopt;
+        }
+
+        EngineTeacherImportResolution resolution;
+        resolution.teacherKey = toUtf8(sourceResolution.teacherKey);
+        resolution.action = *action;
+        resolution.targetTeacherId = sourceResolution.targetTeacherId;
+        result.teachers.push_back(std::move(resolution));
+    }
+
+    return result;
+}
+
+ClassImportSummary fromEngineSummary(
+    const EngineClassImportSummary& source
+    )
+{
+    ClassImportSummary result;
+    result.createdClassIds = fromEngineIds(source.createdClassIds);
+    result.replacedClassIds = fromEngineIds(source.replacedClassIds);
+    result.skippedClassCount = source.skippedClassCount;
+    return result;
+}
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error
+    )
+{
+    return operationFailure(operation, engineErrorDetail(error));
+}
+
+QString boundaryConversionFailure(
+    const QString& operation
+    )
+{
+    return operationFailure(
+        operation,
+        QObject::tr("The class transfer contains an unsupported or invalid value.")
+        );
+}
+} // namespace
 
 ClassTransferRepository::ClassTransferRepository(
     QSqlDatabase& database
@@ -1118,142 +654,133 @@ ClassTransferRepository::ClassTransferRepository(
 {
 }
 
+ClassTransferRepository::~ClassTransferRepository() = default;
+
+Status ClassTransferRepository::ensureEngineDatabase(
+    const QString& operation
+    )
+{
+    if (!m_database.isValid() || !m_database.isOpen())
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
 Result<ClassTransferPackage> ClassTransferRepository::buildPackage(
     const QList<int>& classIds
     )
 {
-    if (!m_database.isOpen())
+    const QString operation = QObject::tr("Building class export package");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
+        return std::unexpected(engineReady.error());
     }
 
-    if (classIds.isEmpty())
+    std::vector<int> engineClassIds;
+    engineClassIds.reserve(static_cast<std::size_t>(classIds.size()));
+    for (const int classId : classIds)
     {
-        return std::unexpected(QObject::tr("No classes were selected."));
+        engineClassIds.push_back(classId);
     }
 
-    DatabaseTransaction transaction(m_database);
-
-    if (!transaction.started())
+    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineClassTransferPackage> package =
+        service.buildPackage(engineClassIds);
+    if (!package)
     {
-        return std::unexpected(
-            QObject::tr("Unable to start the class export transaction: %1")
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(engineFailure(operation, package.error()));
     }
 
-    ClassRepository classRepository(m_database);
-    ClassInfoRepository classInfoRepository(m_database);
-    RosterRepository rosterRepository(m_database);
-    TeacherRepository teacherRepository(m_database);
-    ClassTransferPackage package;
-    package.exportedAtUtc = QDateTime::currentDateTimeUtc();
-    QSet<int> seenClasses;
-    QHash<int, QString> teacherKeys;
-
-    for (int index = 0; index < classIds.size(); ++index)
+    const std::optional<ClassTransferPackage> converted = fromEnginePackage(
+        *package
+        );
+    if (!converted)
     {
-        const int classId = classIds[index];
-
-        if (classId <= 0 || seenClasses.contains(classId))
-        {
-            return std::unexpected(
-                QObject::tr("The class selection contains an invalid or duplicate class.")
-                );
-        }
-
-        const Result<Classroom> classroom =
-            classRepository.getClassById(classId);
-        if (!classroom)
-        {
-            return std::unexpected(classroom.error());
-        }
-
-        seenClasses.insert(classId);
-        ClassTransferClass transferClass;
-        transferClass.key = QStringLiteral("class-%1").arg(index + 1);
-        transferClass.name = classroom->name;
-        const Result<ClassInfo> info = classInfoRepository.loadClassInfo(classId);
-        if (!info)
-        {
-            return std::unexpected(info.error());
-        }
-
-        const Result<Roster> roster = rosterRepository.loadRoster(classId);
-        if (!roster)
-        {
-            return std::unexpected(roster.error());
-        }
-
-        transferClass.info = *info;
-        transferClass.roster = *roster;
-
-        if (transferClass.info.teacherId > 0)
-        {
-            const int teacherId = transferClass.info.teacherId;
-
-            if (!teacherKeys.contains(teacherId))
-            {
-                const Result<Teacher> teacher =
-                    teacherRepository.getTeacher(teacherId);
-                if (!teacher)
-                {
-                    return std::unexpected(teacher.error());
-                }
-
-                const QString key =
-                    QStringLiteral("teacher-%1").arg(teacherKeys.size() + 1);
-                teacherKeys.insert(teacherId, key);
-                package.teachers.append({key, *teacher});
-            }
-
-            transferClass.teacherKey = teacherKeys.value(teacherId);
-        }
-
-        QString evaluationError;
-        transferClass.evaluations = loadEvaluations(
-            m_database, classId, &evaluationError);
-
-        if (!evaluationError.isEmpty())
-        {
-            return std::unexpected(evaluationError);
-        }
-
-        transferClass.info.classId = -1;
-        transferClass.info.teacherId = -1;
-        transferClass.info.teacherKr.clear();
-        transferClass.info.teacherEn.clear();
-        transferClass.info.roomNumber.clear();
-        transferClass.info.wifiName.clear();
-        transferClass.info.wifiPassword.clear();
-        transferClass.info.internetType.clear();
-        transferClass.info.zoomId.clear();
-        transferClass.info.zoomPassword.clear();
-        transferClass.info.projectionType.clear();
-        package.classes.append(transferClass);
+        return std::unexpected(boundaryConversionFailure(operation));
     }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to finish the class export transaction: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return package;
+    return *converted;
 }
 
 Result<ClassImportPreview> ClassTransferRepository::previewImport(
     const ClassTransferPackage& package
     )
 {
-    if (!m_database.isOpen())
+    const QString operation = QObject::tr("Previewing class import");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
+        return std::unexpected(engineReady.error());
     }
 
-    return buildPreview(m_database, package);
+    const std::optional<EngineClassTransferPackage> enginePackage =
+        toEnginePackage(package);
+    if (!enginePackage)
+    {
+        return std::unexpected(boundaryConversionFailure(operation));
+    }
+
+    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineClassImportPreview> preview =
+        service.previewImport(*enginePackage);
+    if (!preview)
+    {
+        return std::unexpected(engineFailure(operation, preview.error()));
+    }
+
+    return fromEnginePreview(*preview);
 }
 
 Result<ClassImportSummary> ClassTransferRepository::importClasses(
@@ -1261,175 +788,28 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
     const ClassImportPlan& plan
     )
 {
-    if (!m_database.isOpen())
+    const QString operation = QObject::tr("Importing classes");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
+        return std::unexpected(engineReady.error());
     }
 
-    const auto validatedResult = validatePlan(m_database, package, plan);
-
-    if (!validatedResult)
+    const std::optional<EngineClassTransferPackage> enginePackage =
+        toEnginePackage(package);
+    const std::optional<EngineClassImportPlan> enginePlan = toEnginePlan(plan);
+    if (!enginePackage || !enginePlan)
     {
-        return std::unexpected(validatedResult.error());
+        return std::unexpected(boundaryConversionFailure(operation));
     }
 
-    const Status schedulesReady = preflightSchedules(
-        m_database, package, *validatedResult);
-
-    if (!schedulesReady)
+    EngineClassTransferService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineClassImportSummary> imported =
+        service.importClasses(*enginePackage, *enginePlan);
+    if (!imported)
     {
-        return std::unexpected(schedulesReady.error());
+        return std::unexpected(engineFailure(operation, imported.error()));
     }
 
-    QSet<QString> usedTeacherKeys;
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        if (validatedResult->classes.value(index).action
-                != ClassImportAction::Skip
-            && !package.classes[index].teacherKey.isEmpty())
-        {
-            usedTeacherKeys.insert(package.classes[index].teacherKey);
-        }
-    }
-
-    DatabaseTransaction transaction(m_database);
-
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to start the class import transaction: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    QHash<QString, int> teacherIds;
-
-    for (const ClassTransferTeacher& transferTeacher : package.teachers)
-    {
-        if (!usedTeacherKeys.contains(transferTeacher.key))
-        {
-            continue;
-        }
-
-        const TeacherImportResolution resolution =
-            validatedResult->teachers.value(transferTeacher.key);
-
-        if (resolution.action == TeacherImportAction::Create)
-        {
-            const auto teacherId = insertTeacher(
-                m_database, transferTeacher.teacher);
-
-            if (!teacherId)
-            {
-                return std::unexpected(teacherId.error());
-            }
-
-            teacherIds.insert(transferTeacher.key, *teacherId);
-        }
-        else
-        {
-            if (resolution.action == TeacherImportAction::ReplaceExisting)
-            {
-                const Status updated = updateTeacher(
-                    m_database,
-                    resolution.targetTeacherId,
-                    transferTeacher.teacher
-                    );
-
-                if (!updated)
-                {
-                    return std::unexpected(updated.error());
-                }
-            }
-
-            teacherIds.insert(
-                transferTeacher.key, resolution.targetTeacherId);
-        }
-    }
-
-    ClassImportSummary summary;
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        const ClassImportResolution resolution =
-            validatedResult->classes.value(index);
-        const ClassTransferClass& transferClass = package.classes[index];
-
-        if (resolution.action == ClassImportAction::Skip)
-        {
-            ++summary.skippedClassCount;
-            continue;
-        }
-
-        int classId = resolution.targetClassId;
-        QSqlQuery query(m_database);
-
-        if (resolution.action == ClassImportAction::Create)
-        {
-            query.prepare(QStringLiteral("INSERT INTO classes (name) VALUES (?)"));
-            query.addBindValue(transferClass.name);
-
-            if (!query.exec())
-            {
-                return std::unexpected(
-                    queryFailure(query, QObject::tr("Creating an imported class")).error()
-                    );
-            }
-
-            classId = query.lastInsertId().toInt();
-
-            if (classId <= 0)
-            {
-                return std::unexpected(
-                    QObject::tr("The imported class did not receive a Teacher Profile ID.")
-                    );
-            }
-
-            summary.createdClassIds.append(classId);
-        }
-        else
-        {
-            query.prepare(QStringLiteral("UPDATE classes SET name=? WHERE id=?"));
-            query.addBindValue(transferClass.name);
-            query.addBindValue(classId);
-
-            if (!query.exec() || query.numRowsAffected() != 1)
-            {
-                return std::unexpected(
-                    queryFailure(query, QObject::tr("Updating a replaced class")).error()
-                    );
-            }
-
-            const Status cleared = clearClassData(m_database, classId);
-
-            if (!cleared)
-            {
-                return std::unexpected(cleared.error());
-            }
-
-            summary.replacedClassIds.append(classId);
-        }
-
-        const int teacherId = transferClass.teacherKey.isEmpty()
-            ? -1
-            : teacherIds.value(transferClass.teacherKey, -1);
-        const Status written = writeClassData(
-            m_database, classId, teacherId, transferClass);
-
-        if (!written)
-        {
-            return std::unexpected(written.error());
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to commit the class import transaction: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return summary;
+    return fromEngineSummary(*imported);
 }
