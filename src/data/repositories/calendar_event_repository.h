@@ -6,12 +6,20 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class CalendarEventRepository
 {
 public:
     explicit CalendarEventRepository(
         QSqlDatabase& database
         );
+    ~CalendarEventRepository();
 
     [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForDate(
         const QDate& date
@@ -60,5 +68,11 @@ public:
     [[nodiscard]] Status deleteAllCalendarEvents();
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        );
+
     QSqlDatabase& m_database;
+    std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    QString m_engineDatabasePath;
 };

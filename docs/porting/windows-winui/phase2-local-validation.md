@@ -227,6 +227,15 @@ length limits, date/time consistency, recurrence bounds with deterministic
 month-end stepping, and repeat-series caps. The retained Qt validator keeps
 its public API and delegates through `QDate`/`QTime` and UTF-8 conversions.
 
+The calendar-event persistence slice now includes a Qt-free
+`CalendarEventService` for validated CRUD, date/range/upcoming/repeat-series
+queries, ISO date and HH:mm row mapping, and transactional batch writes. The
+retained Qt `CalendarEventRepository` delegates all eleven operations through
+explicit UTF-8/date/time conversions while preserving its public result and
+diagnostic shapes. File-backed adapter fixtures are used because the Qt and
+engine SQLite connections are separate connections and cannot share a Qt
+`:memory:` database.
+
 The speaking-evaluation report boundary now includes a Qt-free metadata model
 for elementary-grade parsing, class labels, advanced-template selection, and
 deterministic report dates. Its output-policy companion owns schedule-aware
@@ -459,6 +468,9 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
 | Windows x86 Debug calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
 | Windows x86 Release calendar-event validator test | Passed: `ClassMngrEngineCalendarEventValidatorTests` |
+| Windows x64 Release calendar-event service test | Passed: `ClassMngrEngineCalendarEventServiceTests` |
+| Retained Windows Qt calendar-event repository regression | Passed: `ClassMngrCalendarEventRepositoryTests` (11/11 cases) |
+| Retained Windows Qt calendar-event cache regression | Passed: `ClassMngrCalendarEventCacheTests` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
@@ -632,6 +644,17 @@ regeneration was attempted but remained blocked by the existing MSBuild
 FileTracker access failure/regeneration stall, so no current-binary retained-
 Qt class-transfer regression is claimed for this slice.
 
+The retained Qt calendar-event repository was then converted to a UTF-8,
+date/time conversion adapter over the Qt-free `CalendarEventService`. The
+service owns all eleven persistence operations, validation, row mapping, and
+transactional batch behavior; the adapter retains the existing Qt-facing
+results and localized operation context. The x64 Release engine calendar
+selection passed all 3/3 rules, validator, and service tests. The rebuilt Qt
+repository regression passed all 11 cases, and the calendar cache regression
+passed. The broader lifecycle target ran against the current binary but
+reported two existing unrelated fixture assertions, so it is not counted as
+a clean full-suite result for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -639,8 +662,9 @@ fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
-teacher, and class-transfer adapters now share extracted engine use cases. The
-next work is migrating the remaining report/export adapters and models,
+teacher, class-transfer, and calendar-event adapters now share extracted
+engine use cases. The next work is migrating the remaining report/export
+adapters and models,
 connecting the
 other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.

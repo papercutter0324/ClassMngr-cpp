@@ -3,6 +3,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QtTest>
 
 namespace
@@ -95,6 +96,8 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_range_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -103,7 +106,7 @@ void CalendarEventRepositoryTests::rangeQueryIncludesEventsThatOverlapRange()
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -169,6 +172,8 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_sort_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -177,7 +182,7 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -244,6 +249,8 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_upcoming_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -252,7 +259,7 @@ void CalendarEventRepositoryTests::upcomingQueryExcludesPastEventsAndLimitsResul
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -310,6 +317,8 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_next_event_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -317,7 +326,9 @@ void CalendarEventRepositoryTests::nextEventQueryFindsEarliestFutureStartDate()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
+            );
         QVERIFY(database.open());
         createCalendarEventsTable(database);
 
@@ -397,6 +408,8 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_series_save_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -405,7 +418,7 @@ void CalendarEventRepositoryTests::savesAndLoadsRepeatSeriesId()
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -451,6 +464,8 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_series_query_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -459,7 +474,7 @@ void CalendarEventRepositoryTests::repeatSeriesQueryLoadsSelectedAndFollowingOnl
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -541,6 +556,8 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_series_delete_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database =
@@ -549,7 +566,7 @@ void CalendarEventRepositoryTests::repeatSeriesDeleteRemovesSelectedAndFollowing
                 connectionName
                 );
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
             );
 
         QVERIFY(database.open());
@@ -637,15 +654,25 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
 {
     const QString connectionName =
         QStringLiteral("calendar_event_repository_failure_tests");
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
 
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(
             QStringLiteral("QSQLITE"),
             connectionName
             );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            temporaryDirectory.filePath(QStringLiteral("events.db"))
+            );
         QVERIFY(database.open());
         createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        QVERIFY(repository.loadCalendarEventsInRange(
+            QDate(2026, 8, 1),
+            QDate(2026, 8, 31)
+            ).has_value());
 
         QSqlQuery query(database);
         QVERIFY(query.exec(QStringLiteral(
@@ -657,7 +684,6 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
             "END"
             )));
 
-        CalendarEventRepository repository(database);
         const Result<QList<int>> batchSaved = repository.saveCalendarEvents({
             makeEvent(
                 QStringLiteral("Must Roll Back"),
@@ -754,6 +780,6 @@ void CalendarEventRepositoryTests::writeFailuresAreReturnedAndBatchRollsBack()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-QTEST_MAIN(CalendarEventRepositoryTests)
+QTEST_GUILESS_MAIN(CalendarEventRepositoryTests)
 
 #include "calendar_event_repository_tests.moc"

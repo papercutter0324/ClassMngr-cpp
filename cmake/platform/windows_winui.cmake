@@ -377,6 +377,12 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineCalendarEventValidatorTests
         )
     endif()
+    if(TARGET ClassMngrEngineCalendarEventServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineCalendarEventServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineDatabaseFixtureRoundTripTests)
         add_dependencies(
             ${classmngr_winui_target}

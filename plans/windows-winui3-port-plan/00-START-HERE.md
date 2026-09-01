@@ -103,7 +103,7 @@ Last updated: 2026-09-01 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, academic calendar rules, calendar-event normalization/filtering and validation/recurrence rules, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -151,9 +151,11 @@ now routes its list and atomic directory-save operations through the engine
 service as well. The retained Qt schedule-import repository now routes its
 preview and apply workflows through the engine service too, and the retained
 Qt class-transfer repository now routes package build, preview, and import
-through the engine service. The next active gate is connecting the remaining
-retained adapters, while extending fixture evidence across each migrated
-persistence slice.
+through the engine service. The retained Qt calendar-event repository now
+routes its eleven persistence operations through the Qt-free calendar-event
+service, including UTF-8/date/time conversion and transactional batch writes.
+The next active gate is connecting the remaining retained adapters, while
+extending fixture evidence across each migrated persistence slice.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -769,6 +771,19 @@ After meaningful work:
   for this slice. Phase 2 remains open for the remaining retained adapters,
   report/export adapter/model migration, and broader per-slice fixture
   coverage.
+
+- **2026-09-01 — Calendar-event persistence adapter connected.** The
+  Qt-free `CalendarEventService` now owns calendar-event CRUD, date/range/
+  upcoming/repeat-series queries, ISO/HH:mm row mapping, validation, and
+  transactional batch writes. The retained Qt `CalendarEventRepository`
+  delegates all eleven operations through explicit UTF-8/date/time adapters;
+  file-backed fixtures keep the Qt and engine SQLite connections on the same
+  profile. The x64 Release engine calendar-event selection passed 3/3, the
+  retained Qt repository passed 11/11, and the calendar cache regression
+  passed. The full lifecycle target still reports two unrelated existing
+  fixture assertions, so it is not counted as a clean full-suite gate.
+  Phase 2 remains open for the remaining retained adapters, report/export
+  adapter/model migration, and broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 
