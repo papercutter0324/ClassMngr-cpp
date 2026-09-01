@@ -86,6 +86,9 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/schedule_import_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_persistence_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_persistence_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_model.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/speaking_evaluation_report_model.h"
     "${PROJECT_SOURCE_DIR}/src/engine/speaking_evaluation_report_template.cpp"
@@ -571,6 +574,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineSpeakingEvaluationReportServiceTests
         COMMAND ClassMngrEngineSpeakingEvaluationReportServiceTests
+    )
+
+    add_executable(ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/speaking_evaluation_persistence_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
+        COMMAND ClassMngrEngineSpeakingEvaluationPersistenceServiceTests
     )
 
     add_executable(ClassMngrEngineSpeakingEvaluationReportModelTests

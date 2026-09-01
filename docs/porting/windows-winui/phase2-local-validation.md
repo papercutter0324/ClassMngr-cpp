@@ -485,6 +485,11 @@ schema version and bilingual teacher/class values.
 | Windows x86 Debug intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
 | Windows x86 Release intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
 | Retained Windows Qt intensive-slot-state repository regression | Passed: current Qt 6.11/MSVC objects manually linked with the engine service; 5/5 cases under `QT_QPA_PLATFORM=offscreen` |
+| Windows x64 Debug speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
+| Windows x64 Release speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
+| Windows x86 Debug speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
+| Windows x86 Release speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
+| Retained Windows Qt speaking-evaluation persistence adapter smoke | Passed: temporary Qt 6.11/MSVC link-level file-backed save/load, UTF-8, dirty-cell, and roster-score import checks |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
@@ -681,6 +686,19 @@ CMake regeneration remained blocked by the existing stale/missing generated
 project and MSBuild FileTracker stall, so no CMake-generated current-binary
 Qt gate is claimed for this slice.
 
+The retained Qt speaking-evaluation repository was then converted to a UTF-8
+adapter over the Qt-free `SpeakingEvaluationPersistenceService`. The engine
+now owns evaluation lookup/creation, fixed 25x11 grid row creation and
+persistence, dirty-cell versus full-save behavior, typed schema and rollback
+failures, and roster-score import assembly using the shared overall-grade rule.
+The focused native persistence test passed in all four x64/x86 Debug/Release
+WinUI lanes. A temporary Qt 6.11/MSVC link-level smoke harness also passed
+file-backed Qt-to-engine save/load with UTF-8 values, dirty-cell updates, and
+roster-score import through the retained adapter. The regular Qt CMake
+regeneration was attempted but remains blocked by the existing QML generation
+and MSBuild FileTracker stall, so no CMake-generated current-binary Qt
+lifecycle gate is claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -688,9 +706,9 @@ fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
-teacher, class-transfer, calendar-event, and intensive-slot-state adapters now
-share extracted engine use cases. The next work is migrating the remaining
-report/export adapters and models,
+teacher, class-transfer, calendar-event, intensive-slot-state, and speaking-
+evaluation adapters now share extracted engine use cases. The next work is
+migrating the remaining report/export adapters and models,
 connecting the
 other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.

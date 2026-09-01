@@ -285,6 +285,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrDataServiceLifecycleTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Sql

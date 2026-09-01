@@ -7,12 +7,20 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class SpeakingEvalRepository
 {
 public:
     explicit SpeakingEvalRepository(
         QSqlDatabase& database
         );
+    ~SpeakingEvalRepository();
 
     [[nodiscard]] Status saveSpeakingEval(
         int classId,
@@ -32,5 +40,11 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
     QSqlDatabase& m_database;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };
