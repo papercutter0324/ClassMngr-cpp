@@ -103,7 +103,7 @@ Last updated: 2026-09-01 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -154,6 +154,9 @@ Qt class-transfer repository now routes package build, preview, and import
 through the engine service. The retained Qt calendar-event repository now
 routes its eleven persistence operations through the Qt-free calendar-event
 service, including UTF-8/date/time conversion and transactional batch writes.
+The retained Qt intensive-slot-state repository now routes its file-backed
+list and save operations through the Qt-free intensive-slot-state service as
+well.
 The next active gate is connecting the remaining retained adapters, while
 extending fixture evidence across each migrated persistence slice.
 
@@ -784,6 +787,20 @@ After meaningful work:
   fixture assertions, so it is not counted as a clean full-suite gate.
   Phase 2 remains open for the remaining retained adapters, report/export
   adapter/model migration, and broader per-slice fixture coverage.
+- **2026-09-01 — Intensive-slot-state persistence adapter connected.** The
+  Qt-free `IntensiveSlotStateService` now owns ordered UTF-8 state reads,
+  default-state deletion, and upsert persistence with typed SQLite errors. The
+  retained Qt `IntensiveSlotStateRepository` converts through UTF-8 and
+  delegates through a cached file-backed engine connection; its updated
+  regression uses a temporary profile because Qt and engine connections cannot
+  share `:memory:` storage. The focused engine test passed in all four x64/x86
+  Debug/Release WinUI lanes. The current retained Qt objects also passed a
+  manual link-level offscreen run with 5/5 cases after direct Qt 6.11/MSVC
+  compilation. The normal Qt CMake regeneration remains blocked by the
+  existing stale/missing generated project and FileTracker stall, so no
+  CMake-generated current-binary Qt gate is claimed. Phase 2 remains open for
+  the remaining retained adapters, report/export adapter/model migration, and
+  broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 

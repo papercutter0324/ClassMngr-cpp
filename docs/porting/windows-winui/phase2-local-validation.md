@@ -236,6 +236,15 @@ diagnostic shapes. File-backed adapter fixtures are used because the Qt and
 engine SQLite connections are separate connections and cannot share a Qt
 `:memory:` database.
 
+The intensive-slot-state persistence slice now includes a Qt-free
+`IntensiveSlotStateService` for ordered UTF-8 state reads, default-state
+deletion, and upsert persistence with typed SQLite errors. The retained Qt
+`IntensiveSlotStateRepository` preserves its Qt-facing result and diagnostic
+shapes while converting through UTF-8 and delegating through a cached,
+file-backed engine connection. Its adapter fixtures use temporary profiles
+because the Qt and engine SQLite connections are separate connections and
+cannot share a Qt `:memory:` database.
+
 The speaking-evaluation report boundary now includes a Qt-free metadata model
 for elementary-grade parsing, class labels, advanced-template selection, and
 deterministic report dates. Its output-policy companion owns schedule-aware
@@ -471,6 +480,11 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release calendar-event service test | Passed: `ClassMngrEngineCalendarEventServiceTests` |
 | Retained Windows Qt calendar-event repository regression | Passed: `ClassMngrCalendarEventRepositoryTests` (11/11 cases) |
 | Retained Windows Qt calendar-event cache regression | Passed: `ClassMngrCalendarEventCacheTests` |
+| Windows x64 Debug intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
+| Windows x64 Release intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
+| Windows x86 Debug intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
+| Windows x86 Release intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
+| Retained Windows Qt intensive-slot-state repository regression | Passed: current Qt 6.11/MSVC objects manually linked with the engine service; 5/5 cases under `QT_QPA_PLATFORM=offscreen` |
 | Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
@@ -655,6 +669,18 @@ passed. The broader lifecycle target ran against the current binary but
 reported two existing unrelated fixture assertions, so it is not counted as
 a clean full-suite result for this slice.
 
+The retained Qt intensive-slot-state repository was then converted to a UTF-8
+adapter over the Qt-free `IntensiveSlotStateService`. The service owns ordered
+state reads, default-state deletion, upsert behavior, row mapping, and typed
+SQLite failures; the adapter retains the Qt-facing result and localized
+operation context. The focused engine test passed in all four x64/x86
+Debug/Release WinUI lanes. The current adapter and test sources passed direct
+VS 2026/Qt 6.11 compilation, and a manual link-level run of the current
+objects passed all 5 cases with `QT_QPA_PLATFORM=offscreen`. The normal Qt
+CMake regeneration remained blocked by the existing stale/missing generated
+project and MSBuild FileTracker stall, so no CMake-generated current-binary
+Qt gate is claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -662,9 +688,9 @@ fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
-teacher, class-transfer, and calendar-event adapters now share extracted
-engine use cases. The next work is migrating the remaining report/export
-adapters and models,
+teacher, class-transfer, calendar-event, and intensive-slot-state adapters now
+share extracted engine use cases. The next work is migrating the remaining
+report/export adapters and models,
 connecting the
 other retained Qt adapters to extracted use-case boundaries, and extending
 fixture evidence across each migrated persistence slice.

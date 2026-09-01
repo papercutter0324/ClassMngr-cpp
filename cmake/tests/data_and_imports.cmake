@@ -109,6 +109,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrIntensiveSlotStateRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test

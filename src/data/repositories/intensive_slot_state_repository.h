@@ -7,12 +7,20 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class IntensiveSlotStateRepository
 {
 public:
     explicit IntensiveSlotStateRepository(
         QSqlDatabase& database
         );
+    ~IntensiveSlotStateRepository();
 
     [[nodiscard]] Result<QList<IntensiveSlotState>> loadIntensiveSlotStates();
 
@@ -24,5 +32,11 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
     QSqlDatabase& m_database;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase> m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };

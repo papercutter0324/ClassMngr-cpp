@@ -2,6 +2,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QtTest>
 
 class IntensiveSlotStateRepositoryTests : public QObject
@@ -16,8 +17,13 @@ private slots:
 
 void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     const QString connectionName =
         QStringLiteral("intensive_slot_state_repository_tests");
+    const QString databasePath =
+        directory.filePath(QStringLiteral("profile.db"));
 
     {
         QSqlDatabase database =
@@ -27,23 +33,10 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
                 );
 
         database.setDatabaseName(
-            QStringLiteral(":memory:")
+            databasePath
             );
 
         QVERIFY(database.open());
-
-        QSqlQuery query(database);
-        QVERIFY(
-            query.exec(R"(
-                CREATE TABLE intensive_slot_states (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    day TEXT,
-                    start_time TEXT,
-                    state TEXT,
-                    UNIQUE(day, start_time)
-                )
-            )")
-            );
 
         IntensiveSlotStateRepository repository(database);
 
@@ -61,7 +54,7 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
         QVERIFY(repository.saveIntensiveSlotState(
             QStringLiteral("Saturday"),
             QStringLiteral("16:00"),
-            QStringLiteral("lunch")
+            QStringLiteral("점심 🍜")
             ).has_value());
 
         Result<QList<IntensiveSlotState>> loadedStates =
@@ -70,7 +63,7 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
         QList<IntensiveSlotState> states = *loadedStates;
 
         QCOMPARE(states.size(), 1);
-        QCOMPARE(states.first().state, QStringLiteral("lunch"));
+        QCOMPARE(states.first().state, QStringLiteral("점심 🍜"));
 
         QVERIFY(repository.saveIntensiveSlotState(
             QStringLiteral("Saturday"),
@@ -115,18 +108,30 @@ void IntensiveSlotStateRepositoryTests::defaultStateControlsStoredRows()
 
 void IntensiveSlotStateRepositoryTests::readFailuresAreReturned()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     const QString connectionName =
         QStringLiteral("intensive_slot_state_repository_read_failure_tests");
+    const QString databasePath =
+        directory.filePath(QStringLiteral("profile.db"));
 
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(
             QStringLiteral("QSQLITE"),
             connectionName
             );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(databasePath);
         QVERIFY(database.open());
 
         IntensiveSlotStateRepository repository(database);
+        QVERIFY(repository.loadIntensiveSlotStates());
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(QStringLiteral(
+            "DROP TABLE intensive_slot_states"
+            )));
+
         const Result<QList<IntensiveSlotState>> states =
             repository.loadIntensiveSlotStates();
         QVERIFY(!states);
@@ -140,27 +145,26 @@ void IntensiveSlotStateRepositoryTests::readFailuresAreReturned()
 
 void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
     const QString connectionName =
         QStringLiteral("intensive_slot_state_repository_failure_tests");
+    const QString databasePath =
+        directory.filePath(QStringLiteral("profile.db"));
 
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(
             QStringLiteral("QSQLITE"),
             connectionName
             );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(databasePath);
         QVERIFY(database.open());
 
+        IntensiveSlotStateRepository repository(database);
+        QVERIFY(repository.loadIntensiveSlotStates());
+
         QSqlQuery query(database);
-        QVERIFY(query.exec(R"(
-            CREATE TABLE intensive_slot_states (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                day TEXT,
-                start_time TEXT,
-                state TEXT,
-                UNIQUE(day, start_time)
-            )
-        )"));
         QVERIFY(query.exec(QStringLiteral(
             "CREATE TRIGGER reject_slot_insert "
             "BEFORE INSERT ON intensive_slot_states "
@@ -169,7 +173,6 @@ void IntensiveSlotStateRepositoryTests::writeFailuresAreReturned()
             "END"
             )));
 
-        IntensiveSlotStateRepository repository(database);
         const Status inserted = repository.saveIntensiveSlotState(
             QStringLiteral("Monday"),
             QStringLiteral("09:00"),

@@ -64,6 +64,9 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/gs_team_service.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_member.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/gs_team_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/intensive_slot_state_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/intensive_slot_state.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/intensive_slot_state_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_info_config.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_info_config.h"
@@ -449,6 +452,23 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineGsTeamServiceTests
         COMMAND ClassMngrEngineGsTeamServiceTests
+    )
+
+    add_executable(ClassMngrEngineIntensiveSlotStateServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/intensive_slot_state_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineIntensiveSlotStateServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineIntensiveSlotStateServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineIntensiveSlotStateServiceTests
+        COMMAND ClassMngrEngineIntensiveSlotStateServiceTests
     )
 
     add_executable(ClassMngrEngineClassInfoServiceTests
