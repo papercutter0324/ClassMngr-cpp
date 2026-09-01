@@ -142,6 +142,15 @@ function(classmngr_finalize_test_targets)
             continue()
         endif()
 
+        get_target_property(target_qml_module_uri
+            "${test_name}" QT_QML_MODULE_URI
+        )
+        if(NOT target_qml_module_uri)
+            set_property(TARGET "${test_name}"
+                PROPERTY QT_QML_MODULE_NO_IMPORT_SCAN TRUE
+            )
+        endif()
+
         get_target_property(target_sources "${test_name}" SOURCES)
         set(test_sources)
         set(has_production_overrides FALSE)
