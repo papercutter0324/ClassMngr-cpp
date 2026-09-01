@@ -3,6 +3,7 @@
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "features/my_info/data/personal_details_repository.h"
 
 #include <QFileInfo>
 #include <QSqlDatabase>
@@ -231,9 +232,60 @@ private slots:
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
     void legacyRepositoryWriteFailuresRollBack();
+    void personalDetailsRepositoryUsesEngineBoundary();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
 };
+
+void DataServiceLifecycleTests::personalDetailsRepositoryUsesEngineBoundary()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService dataService;
+    const QString path = directory.filePath(
+        QStringLiteral("personal-details.db")
+        );
+    QVERIFY(dataService.openDatabase(path).has_value());
+
+    SettingsService settings(
+        dataService.databaseSession(),
+        &dataService
+        );
+    PersonalDetailsRepository repository(&settings);
+
+    PersonalDetails expected;
+    expected.name = QStringLiteral("홍길동 🧑‍🏫");
+    expected.campus = QStringLiteral("서울 캠퍼스");
+    expected.zoomLoginId = QStringLiteral("teacher@example.test");
+    expected.zoomPassword = QStringLiteral("비밀번호");
+    expected.zoomNotAvailable = false;
+    expected.signatureMode = SignatureMode::Type;
+    expected.typedSignatureText = QStringLiteral("서명 이름");
+    expected.typedSignatureFont = 3;
+
+    QVERIFY(repository.save(expected));
+
+    const PersonalDetails loaded = repository.load();
+    QCOMPARE(loaded.name, expected.name);
+    QCOMPARE(loaded.campus, expected.campus);
+    QCOMPARE(loaded.zoomLoginId, expected.zoomLoginId);
+    QCOMPARE(loaded.zoomPassword, expected.zoomPassword);
+    QCOMPARE(loaded.zoomNotAvailable, expected.zoomNotAvailable);
+    QCOMPARE(loaded.signatureMode, expected.signatureMode);
+    QCOMPARE(loaded.typedSignatureText, expected.typedSignatureText);
+    QCOMPARE(loaded.typedSignatureFont, expected.typedSignatureFont);
+
+    QVERIFY(repository.saveCampus(QStringLiteral("부산 캠퍼스")));
+    QCOMPARE(repository.load().campus, QStringLiteral("부산 캠퍼스"));
+
+    QSqlQuery query(dataService.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT value FROM app_settings WHERE key='myInfo/name'"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), expected.name);
+}
 
 void DataServiceLifecycleTests::applicationServicesOwnDatabaseFileOperations()
 {

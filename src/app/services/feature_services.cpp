@@ -138,6 +138,18 @@ DataService* FeatureService::dataService() const
     return m_legacyDataService;
 }
 
+DatabaseSession* SettingsService::databaseSession() const
+{
+    if (session())
+    {
+        return session();
+    }
+
+    return dataService()
+        ? dataService()->databaseSession()
+        : nullptr;
+}
+
 Status SettingsService::save(
     const QString& key,
     const QVariant& value

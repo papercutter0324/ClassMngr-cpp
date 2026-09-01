@@ -57,6 +57,7 @@ class SettingsService final : public FeatureService
 {
 public:
     using FeatureService::FeatureService;
+    [[nodiscard]] DatabaseSession* databaseSession() const;
     [[nodiscard]] Status save(
         const QString& key,
         const QVariant& value

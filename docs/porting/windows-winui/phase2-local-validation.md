@@ -1,6 +1,6 @@
 # Phase 2 local validation record
 
-Date: 2026-09-01 (Asia/Seoul)
+Date: 2026-09-02 (Asia/Seoul)
 
 Scope: Phase 2 portable-engine slices on the clean Phase 1 working tree.
 
@@ -341,6 +341,15 @@ engine connection; teacher-import and schedule-import app-settings access now
 uses the same service. The existing `app_settings.value TEXT` schema is
 preserved, including its numeric-to-text affinity behavior.
 
+The personal-details slice now includes a Qt-free `PersonalDetailsService`
+over `ApplicationSettingsService`. It owns UTF-8 name/campus/Zoom settings,
+`N/A` defaults, legacy `subPrep/...` fallback and promotion, signature
+mode/font/text and opaque base64 storage, campus-only updates, and
+transactional nine-setting saves. The retained Qt
+`PersonalDetailsRepository` converts `QString` and image values at the edge
+and delegates file-backed reads and writes through the engine; Qt retains
+signature-image preparation and its existing localized/default API behavior.
+
 The retained Qt `DatabaseSession` now routes ordinary file-backed profile path
 preparation and schema migration through engine `OpenDatabase` before creating
 the Qt `QSQLITE` connection. Exact `:memory:` sessions retain the Qt schema
@@ -388,6 +397,9 @@ profile is migrated and readable through the retained Qt connection.
 | Windows x86 application-settings service test | Passed: direct VS 2026/v145 compile, link, and run |
 | Retained Windows Qt settings adapter smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load, QVariant conversion, and cross-connection batch-rollback link-level smoke |
 | Application-settings import call-site compile check | Passed: direct VS 2026/v145 x64 and x86 compile-only checks for teacher-import and schedule-import services |
+| Windows x64 Debug personal-details service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Windows x86 Debug personal-details service test | Passed: direct VS 2026/v145 compile, link, and run |
+| Retained Windows Qt personal-details adapter/lifecycle smoke | Passed: Qt 6.11/MSVC file-backed UTF-8 save/load/campus link-level smoke with `QT_QPA_PLATFORM=offscreen` |
 | Retained Windows Qt DatabaseSession boundary | Source compilation passed; focused lifecycle target rebuild is blocked by the existing MSBuild FileTracker `UnauthorizedAccessException` during `ZERO_CHECK`/compile tracking |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -817,6 +829,19 @@ attempted, but the existing MSBuild FileTracker `UnauthorizedAccessException`
 recurred during `ZERO_CHECK`/compile tracking, so no current-binary lifecycle
 pass is claimed for this slice.
 
+The personal-details settings slice was then connected to the retained Qt
+adapter. The focused engine service compiled, linked, and passed directly in
+VS 2026/v145 x64 and x86 Debug harnesses, covering defaults, UTF-8 round trips,
+legacy fallback/promotion, explicit-empty handling, mode normalization,
+campus updates, malformed setting errors, rollback, and closed-database
+propagation. The retained adapter, feature-service boundary, and lifecycle
+test source compiled against Qt 6.11/MSVC; a manually linked offscreen
+lifecycle selection passed the file-backed personal-details save/load/campus
+interoperability check. CMake reconfiguration passed for x64 Qt and x64/x86
+WinUI, while the normal CMake target rebuild remains blocked by the existing
+MSBuild FileTracker `UnauthorizedAccessException`, so no CMake-generated
+current-binary lifecycle result is claimed.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -834,6 +859,8 @@ engine application-settings use case as well.
 The retained Qt `DatabaseSession` now uses engine `OpenDatabase` for ordinary
 file-backed profile preparation and schema migration, with the Qt schema
 initializer retained only for exact `:memory:` compatibility.
+The personal-details settings service and retained adapter now share the
+engine settings boundary for file-backed reads and writes as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.
