@@ -1,172 +1,135 @@
 #include "testing_block_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "domain/rules/schedule_value_parser.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
+#include "classmngr/engine/testing_block_service.h"
 
+#include <QByteArray>
 #include <QObject>
-#include <QSqlError>
-#include <QSqlQuery>
+
+#include <cstddef>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-struct CanonicalScheduleKey
-{
-    QString day;
-    QString startTime;
-};
+using EngineError = classmngr::engine::Error;
+using EngineTestingAssignment = classmngr::engine::TestingAssignment;
+using EngineTestingBlock = classmngr::engine::TestingBlock;
+using EngineTestingBlockService =
+    classmngr::engine::TestingBlockService;
 
-Result<CanonicalScheduleKey> canonicalScheduleKey(
-    const QString& day,
-    const QString& startTime
+std::string toUtf8(
+    const QString& value
     )
 {
-    const auto weekday = ScheduleValueParser::parseWeekday(day);
-    const auto time = ScheduleValueParser::parseTime(startTime);
-
-    if (!weekday || !time)
-    {
-        return std::unexpected(
-            QObject::tr("A testing block requires a valid weekday and start time.")
-            );
-    }
-
-    return CanonicalScheduleKey{weekday->text, time->text};
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-QString queryFailure(
-    const QSqlQuery& query,
-    const QString& action
+QString fromUtf8(
+    std::string_view value
     )
 {
-    return SqlQueryUtils::errorFor(query, action).userMessage();
-}
-
-Status validateKey(
-    const QString& day,
-    const QString& startTime
-    )
-{
-    if (!canonicalScheduleKey(day, startTime))
-    {
-        return std::unexpected(
-            QObject::tr("A testing block requires a valid weekday and start time.")
-            );
-    }
-
-    return {};
-}
-
-Result<int> existingClassId(
-    QSqlDatabase& database,
-    const QString& day,
-    const QString& startTime
-    )
-{
-    const auto key = canonicalScheduleKey(day, startTime);
-    if (!key)
-    {
-        return std::unexpected(key.error());
-    }
-
-    QSqlQuery query(database);
-    query.prepare(R"(
-        SELECT class_id
-        FROM schedule_testing_blocks
-        WHERE day=?
-        AND start_time=?
-    )");
-    query.addBindValue(key->day);
-    query.addBindValue(key->startTime);
-
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QObject::tr("Checking the testing assignment")
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
         );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    if (!query.next())
-    {
-        return -1;
-    }
-
-    if (query.value(QStringLiteral("class_id")).isNull())
-    {
-        return 0;
-    }
-
-    return query.value(QStringLiteral("class_id")).toInt();
 }
 
-Status validateTestingClass(
-    QSqlDatabase& database,
-    int classId
+TestingAssignment fromEngineAssignment(
+    const EngineTestingAssignment& source
     )
 {
-    if (classId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("A valid testing class is required.")
-            );
-    }
-
-    QSqlQuery query(database);
-    query.prepare(R"(
-        SELECT
-            c.name,
-            ci.class_grade,
-            ci.class_level,
-            tc.room
-        FROM testing_classes tc
-        JOIN classes c
-        ON c.id=tc.class_id
-        JOIN class_info ci
-        ON ci.class_id=tc.class_id
-        WHERE tc.class_id=?
-    )");
-    query.addBindValue(classId);
-
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Checking the testing class")
-                )
-            );
-    }
-
-    if (!query.next())
-    {
-        return std::unexpected(
-            QObject::tr("The selected testing class no longer exists.")
-            );
-    }
-
-    if (
-        query.value(QStringLiteral("name"))
-            .toString().trimmed().isEmpty()
-        || query.value(QStringLiteral("class_grade"))
-            .toString().trimmed().isEmpty()
-        || query.value(QStringLiteral("class_level"))
-            .toString().trimmed().isEmpty()
-        || query.value(QStringLiteral("room"))
-            .toString().trimmed().isEmpty()
-        )
-    {
-        return std::unexpected(
-            QObject::tr(
-                "The selected testing class is missing required details."
-                )
-            );
-    }
-
-    return {};
+    TestingAssignment result;
+    result.day = fromUtf8(source.day);
+    result.startTime = fromUtf8(source.startTime);
+    result.kind = source.kind
+        == classmngr::engine::TestingAssignmentKind::SpecialClass
+        ? TestingAssignmentKind::SpecialClass
+        : TestingAssignmentKind::PlainTesting;
+    result.room = fromUtf8(source.room);
+    result.classId = source.classId;
+    return result;
 }
+
+TestingBlock fromEngineBlock(
+    const EngineTestingBlock& source
+    )
+{
+    TestingBlock result;
+    result.day = fromUtf8(source.day);
+    result.startTime = fromUtf8(source.startTime);
+    result.room = fromUtf8(source.room);
+    return result;
 }
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail = {},
+    const QString& identity = {}
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedIdentity = identity.trimmed();
+    if (!trimmedIdentity.isEmpty())
+    {
+        message += QObject::tr(" for %1").arg(identity);
+    }
+
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
+}
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error,
+    const QString& identity = {}
+    )
+{
+    return operationFailure(
+        operation,
+        engineErrorDetail(error),
+        identity
+        );
+}
+
+QString slotIdentity(
+    const QString& day,
+    const QString& startTime
+    )
+{
+    return QObject::tr("slot %1 at %2").arg(day, startTime);
+}
+} // namespace
 
 TestingBlockRepository::TestingBlockRepository(
     QSqlDatabase& database
@@ -175,82 +138,124 @@ TestingBlockRepository::TestingBlockRepository(
 {
 }
 
-Result<QList<TestingBlock>>
-TestingBlockRepository::loadTestingBlocks()
+TestingBlockRepository::~TestingBlockRepository() = default;
+
+Status TestingBlockRepository::ensureEngineDatabase(
+    const QString& operation
+    ) const
 {
-    QList<TestingBlock> blocks;
-    const Result<QList<TestingAssignment>> assignments =
-        loadTestingAssignments();
-
-    if (!assignments)
+    if (!m_database.isValid() || !m_database.isOpen())
     {
-        return std::unexpected(assignments.error());
-    }
-
-    for (const TestingAssignment& assignment : *assignments)
-    {
-        if (assignment.kind != TestingAssignmentKind::PlainTesting)
-        {
-            continue;
-        }
-
-        blocks.append(
-            {
-                assignment.day,
-                assignment.startTime,
-                assignment.room
-            }
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
             );
     }
 
-    return blocks;
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
 }
 
 Result<QList<TestingAssignment>>
 TestingBlockRepository::loadTestingAssignments()
 {
-    QList<TestingAssignment> assignments;
-    QSqlQuery query(m_database);
-
-    if (!query.exec(R"(
-        SELECT
-            day,
-            start_time,
-            room,
-            class_id
-        FROM schedule_testing_blocks
-        ORDER BY day, start_time
-    )"))
+    const QString operation = QObject::tr("Loading testing blocks");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Loading testing blocks")
-                )
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineTestingAssignment>> loaded =
+        service.listAssignments();
+    if (!loaded)
     {
-        TestingAssignment assignment;
-        assignment.day =
-            query.value(QStringLiteral("day")).toString();
-        assignment.startTime =
-            query.value(QStringLiteral("start_time")).toString();
-        assignment.room =
-            query.value(QStringLiteral("room")).toString();
-        assignment.classId =
-            query.value(QStringLiteral("class_id")).isNull()
-                ? -1
-                : query.value(QStringLiteral("class_id")).toInt();
-        assignment.kind =
-            assignment.classId > 0
-                ? TestingAssignmentKind::SpecialClass
-                : TestingAssignmentKind::PlainTesting;
-        assignments.append(assignment);
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    return assignments;
+    QList<TestingAssignment> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineTestingAssignment& assignment : *loaded)
+    {
+        result.append(fromEngineAssignment(assignment));
+    }
+
+    return result;
+}
+
+Result<QList<TestingBlock>> TestingBlockRepository::loadTestingBlocks()
+{
+    const QString operation = QObject::tr("Loading testing blocks");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return std::unexpected(engineReady.error());
+    }
+
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Result<std::vector<EngineTestingBlock>> loaded =
+        service.listBlocks();
+    if (!loaded)
+    {
+        return std::unexpected(engineFailure(operation, loaded.error()));
+    }
+
+    QList<TestingBlock> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineTestingBlock& block : *loaded)
+    {
+        result.append(fromEngineBlock(block));
+    }
+
+    return result;
 }
 
 Status TestingBlockRepository::saveTestingBlock(
@@ -260,72 +265,27 @@ Status TestingBlockRepository::saveTestingBlock(
     bool replaceExisting
     )
 {
-    const Status valid =
-        validateKey(
-            day,
-            startTime
-            );
-
-    if (!valid)
+    const QString operation = QObject::tr("Saving the testing block");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return valid;
+        return engineReady;
     }
 
-    const Result<int> existing =
-        existingClassId(
-            m_database,
-            day,
-            startTime
-            );
-
-    if (!existing)
-    {
-        return std::unexpected(existing.error());
-    }
-
-    if (*existing > 0 && !replaceExisting)
-    {
-        return std::unexpected(
-            QObject::tr("This slot is assigned to a testing class. Confirm replacement first.")
-            );
-    }
-
-    const auto key = canonicalScheduleKey(day, startTime);
-    Q_ASSERT(key);
-
-    QSqlQuery query(m_database);
-    query.prepare(R"(
-        INSERT INTO schedule_testing_blocks (
-            day,
-            start_time,
-            room,
-            class_id
-        )
-        VALUES (?, ?, ?, NULL)
-
-        ON CONFLICT(day, start_time)
-        DO UPDATE SET
-            room=excluded.room,
-            class_id=NULL
-    )");
-    query.addBindValue(key->day);
-    query.addBindValue(key->startTime);
-    const QString normalizedRoom =
-        room.trimmed();
-    query.addBindValue(
-        normalizedRoom.isNull()
-            ? QStringLiteral("")
-            : normalizedRoom
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status saved = service.saveBlock(
+        toUtf8(day),
+        toUtf8(startTime),
+        toUtf8(room),
+        replaceExisting
         );
-
-    if (!query.exec())
+    if (!saved)
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Saving the testing block")
-                )
-            );
+        return std::unexpected(engineFailure(
+            operation,
+            saved.error(),
+            slotIdentity(day, startTime)
+            ));
     }
 
     return {};
@@ -338,101 +298,27 @@ Status TestingBlockRepository::assignTestingClass(
     bool replaceExisting
     )
 {
-    const Status valid =
-        validateKey(
-            day,
-            startTime
-            );
-
-    if (!valid)
+    const QString operation = QObject::tr("Assigning the testing class");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return valid;
+        return engineReady;
     }
 
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status assigned = service.assignClass(
+        toUtf8(day),
+        toUtf8(startTime),
+        classId,
+        replaceExisting
+        );
+    if (!assigned)
     {
-        return std::unexpected(
-            QObject::tr(
-                "Could not start the testing assignment transaction."
-                )
-            );
-    }
-
-    const Status validClass =
-        validateTestingClass(
-            m_database,
-            classId
-            );
-
-    if (!validClass)
-    {
-        return validClass;
-    }
-
-    const Result<int> existing =
-        existingClassId(
-            m_database,
-            day,
-            startTime
-            );
-
-    if (!existing)
-    {
-        return std::unexpected(existing.error());
-    }
-
-    if (
-        *existing >= 0
-        && *existing != classId
-        && !replaceExisting
-        )
-    {
-        return std::unexpected(
-            QObject::tr("This slot already has a testing assignment. Confirm replacement first.")
-            );
-    }
-
-    const auto key = canonicalScheduleKey(day, startTime);
-    Q_ASSERT(key);
-
-    QSqlQuery query(m_database);
-    query.prepare(R"(
-        INSERT INTO schedule_testing_blocks (
-            day,
-            start_time,
-            room,
-            class_id
-        )
-        VALUES (?, ?, '', ?)
-
-        ON CONFLICT(day, start_time)
-        DO UPDATE SET
-            room='',
-            class_id=excluded.class_id
-    )");
-    query.addBindValue(key->day);
-    query.addBindValue(key->startTime);
-    query.addBindValue(classId);
-
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Assigning the testing class")
-                )
-            );
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr(
-                "Committing the testing assignment transaction failed: %1"
-                )
-                .arg(m_database.lastError().text())
-            );
+        return std::unexpected(engineFailure(
+            operation,
+            assigned.error(),
+            slotIdentity(day, startTime)
+            ));
     }
 
     return {};
@@ -443,10 +329,28 @@ Status TestingBlockRepository::deleteTestingAssignment(
     const QString& startTime
     )
 {
-    return deleteTestingBlock(
-        day,
-        startTime
+    const QString operation = QObject::tr("Removing the testing assignment");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
+
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.deleteAssignment(
+        toUtf8(day),
+        toUtf8(startTime)
         );
+    if (!deleted)
+    {
+        return std::unexpected(engineFailure(
+            operation,
+            deleted.error(),
+            slotIdentity(day, startTime)
+            ));
+    }
+
+    return {};
 }
 
 Status TestingBlockRepository::deleteTestingBlock(
@@ -454,37 +358,44 @@ Status TestingBlockRepository::deleteTestingBlock(
     const QString& startTime
     )
 {
-    const Status valid =
-        validateKey(
-            day,
-            startTime
-            );
-
-    if (!valid)
+    const QString operation = QObject::tr("Removing the testing block");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return valid;
+        return engineReady;
     }
 
-    const auto key = canonicalScheduleKey(day, startTime);
-    Q_ASSERT(key);
-
-    QSqlQuery query(m_database);
-    query.prepare(R"(
-        DELETE FROM schedule_testing_blocks
-        WHERE day=?
-        AND start_time=?
-    )");
-    query.addBindValue(key->day);
-    query.addBindValue(key->startTime);
-
-    if (!query.exec())
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.deleteBlock(
+        toUtf8(day),
+        toUtf8(startTime)
+        );
+    if (!deleted)
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Removing the testing block")
-                )
-            );
+        return std::unexpected(engineFailure(
+            operation,
+            deleted.error(),
+            slotIdentity(day, startTime)
+            ));
+    }
+
+    return {};
+}
+
+Status TestingBlockRepository::clearTestingAssignments()
+{
+    const QString operation = QObject::tr("Clearing the testing layout");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
+    {
+        return engineReady;
+    }
+
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status cleared = service.clearAssignments();
+    if (!cleared)
+    {
+        return std::unexpected(engineFailure(operation, cleared.error()));
     }
 
     return {};
@@ -492,25 +403,18 @@ Status TestingBlockRepository::deleteTestingBlock(
 
 Status TestingBlockRepository::clearTestingBlocks()
 {
-    return clearTestingAssignments();
-}
-
-Status TestingBlockRepository::clearTestingAssignments()
-{
-    QSqlQuery query(m_database);
-
-    if (!query.exec(
-            QStringLiteral(
-                "DELETE FROM schedule_testing_blocks"
-                )
-            ))
+    const QString operation = QObject::tr("Clearing the testing layout");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            queryFailure(
-                query,
-                QObject::tr("Clearing the testing layout")
-                )
-            );
+        return engineReady;
+    }
+
+    EngineTestingBlockService service(*m_engineDatabase);
+    const classmngr::engine::Status cleared = service.clearBlocks();
+    if (!cleared)
+    {
+        return std::unexpected(engineFailure(operation, cleared.error()));
     }
 
     return {};

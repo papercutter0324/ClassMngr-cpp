@@ -122,7 +122,6 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     qt_add_executable(ClassMngrTestingBlockRepositoryTests
         tests/testing_block_repository_tests.cpp
-        src/data/database/database_transaction.cpp
         src/data/repositories/testing_block_repository.cpp
     )
 
@@ -138,6 +137,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrTestingBlockRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
@@ -170,6 +170,7 @@ qt_add_executable(ClassMngrTeacherInfoSectionTests
 
     target_link_libraries(ClassMngrTestingClassRepositoryTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test

@@ -6,12 +6,20 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <memory>
+
+namespace classmngr::engine
+{
+class SqliteDatabase;
+}
+
 class TestingClassRepository
 {
 public:
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
+    ~TestingClassRepository();
 
     [[nodiscard]] Result<int> createTestingClass(
         const TestingClass& testingClass,
@@ -38,5 +46,12 @@ public:
         );
 
 private:
+    [[nodiscard]] Status ensureEngineDatabase(
+        const QString& operation
+        ) const;
+
     QSqlDatabase& m_database;
+    mutable std::unique_ptr<classmngr::engine::SqliteDatabase>
+        m_engineDatabase;
+    mutable QString m_engineDatabasePath;
 };

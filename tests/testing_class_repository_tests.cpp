@@ -309,6 +309,9 @@ void TestingClassRepositoryTests
 
 void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_validation");
 
@@ -318,7 +321,9 @@ void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 
@@ -346,6 +351,9 @@ void TestingClassRepositoryTests::rejectsIncompleteTestingClasses()
 
 void TestingClassRepositoryTests::persistsEverySupportedMixedLevel()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_mixed_levels");
 
@@ -355,7 +363,9 @@ void TestingClassRepositoryTests::persistsEverySupportedMixedLevel()
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 
@@ -443,6 +453,9 @@ void TestingClassRepositoryTests
 void TestingClassRepositoryTests
     ::createsClassAndAssignmentAtomically()
 {
+    QTemporaryDir profileDirectory;
+    QVERIFY(profileDirectory.isValid());
+
     const QString connectionName =
         QStringLiteral("testing_class_repository_atomic_assignment");
 
@@ -452,7 +465,9 @@ void TestingClassRepositoryTests
                 QStringLiteral("QSQLITE"),
                 connectionName
                 );
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(
+            profileDirectory.filePath(QStringLiteral("profile.db"))
+            );
         QVERIFY(database.open());
         QVERIFY(createSchema(database));
 

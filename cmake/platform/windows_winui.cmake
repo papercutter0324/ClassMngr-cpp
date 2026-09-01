@@ -185,6 +185,18 @@ function(classmngr_add_windows_winui_target)
             ClassMngrEngineClassRepositoryTests
         )
     endif()
+    if(TARGET ClassMngrEngineTestingClassServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineTestingClassServiceTests
+        )
+    endif()
+    if(TARGET ClassMngrEngineTestingBlockServiceTests)
+        add_dependencies(
+            ${classmngr_winui_target}
+            ClassMngrEngineTestingBlockServiceTests
+        )
+    endif()
     if(TARGET ClassMngrEngineTeacherServiceTests)
         add_dependencies(
             ${classmngr_winui_target}

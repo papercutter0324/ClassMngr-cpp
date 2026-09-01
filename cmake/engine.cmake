@@ -34,6 +34,12 @@ add_library(ClassMngrEngine STATIC
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/open_database.h"
     "${PROJECT_SOURCE_DIR}/src/engine/class_repository.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/class_repository.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/testing_class_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_class.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_class_service.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/testing_block_service.cpp"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_block.h"
+    "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/testing_block_service.h"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/classroom.h"
     "${PROJECT_SOURCE_DIR}/src/engine/teacher.cpp"
     "${PROJECT_SOURCE_DIR}/src/engine/include/classmngr/engine/teacher.h"
@@ -305,6 +311,40 @@ if(BUILD_TESTING)
     add_test(
         NAME ClassMngrEngineClassRepositoryTests
         COMMAND ClassMngrEngineClassRepositoryTests
+    )
+
+    add_executable(ClassMngrEngineTestingClassServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/testing_class_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineTestingClassServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineTestingClassServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineTestingClassServiceTests
+        COMMAND ClassMngrEngineTestingClassServiceTests
+    )
+
+    add_executable(ClassMngrEngineTestingBlockServiceTests
+        "${PROJECT_SOURCE_DIR}/tests/engine/testing_block_service_tests.cpp"
+    )
+    target_link_libraries(ClassMngrEngineTestingBlockServiceTests
+        PRIVATE
+            ClassMngrEngine
+            ClassMngrCommonBuildSettings
+    )
+    set_target_properties(ClassMngrEngineTestingBlockServiceTests
+        PROPERTIES
+            CXX_EXTENSIONS OFF
+    )
+    add_test(
+        NAME ClassMngrEngineTestingBlockServiceTests
+        COMMAND ClassMngrEngineTestingBlockServiceTests
     )
 
     add_executable(ClassMngrEngineTeacherServiceTests

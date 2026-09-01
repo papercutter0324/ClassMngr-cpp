@@ -36,6 +36,18 @@ The first product CRUD slice is Qt-free `Classroom` plus `ClassRepository`.
 It covers UTF-8 create/list/get/rename/delete behavior, testing-class
 filtering, cascade cleanup, and typed invalid/not-found errors.
 
+The testing-workspace slice now includes Qt-free `TestingClassService` and
+`TestingBlockService` boundaries. Testing-class persistence owns required-field
+validation, mixed-level choice catalogs, class-info/class-row writes,
+assignment creation, ordering, membership, and transactional cleanup. The
+testing-block service owns canonical weekday/HH:mm keys, plain-versus-special
+assignment mapping, explicit replacement conflicts, testing-class validation,
+UTF-8 rooms, typed SQLite row errors, and assignment rollback. The retained Qt
+testing-class and testing-block repositories now convert through UTF-8 and use
+cached file-backed engine connections; localized diagnostics and Qt-facing
+containers remain adapters. Their Qt fixtures use temporary profiles because a
+separate engine connection cannot share Qt `:memory:` storage.
+
 The next product slice is Qt-free `Teacher` plus `TeacherValidator` and the
 validated `TeacherService` use-case boundary. It preserves the existing
 English/Korean name normalization rules, preferred-name derivation, Korean
@@ -342,6 +354,16 @@ schema version and bilingual teacher/class values.
 | Windows x64 Release class CRUD test | Passed: `ClassMngrEngineClassRepositoryTests` |
 | Windows x86 Debug class CRUD test | Passed: `ClassMngrEngineClassRepositoryTests` |
 | Windows x86 Release class CRUD test | Passed: `ClassMngrEngineClassRepositoryTests` |
+| Windows x64 Debug testing-class service test | Passed: `ClassMngrEngineTestingClassServiceTests` |
+| Windows x64 Release testing-class service test | Passed: `ClassMngrEngineTestingClassServiceTests` |
+| Windows x86 Debug testing-class service test | Passed: `ClassMngrEngineTestingClassServiceTests` |
+| Windows x86 Release testing-class service test | Passed: `ClassMngrEngineTestingClassServiceTests` |
+| Windows x64 Debug testing-block service test | Passed: `ClassMngrEngineTestingBlockServiceTests` |
+| Windows x64 Release testing-block service test | Passed: `ClassMngrEngineTestingBlockServiceTests` |
+| Windows x86 Debug testing-block service test | Passed: `ClassMngrEngineTestingBlockServiceTests` |
+| Windows x86 Release testing-block service test | Passed: `ClassMngrEngineTestingBlockServiceTests` |
+| Retained Windows Qt testing-class repository regression | Passed: `ClassMngrTestingClassRepositoryTests` |
+| Retained Windows Qt testing-block repository regression | Passed: `ClassMngrTestingBlockRepositoryTests` |
 | Windows x64 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x64 Release teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
 | Windows x86 Debug teacher model/validator/use-case test | Passed: `ClassMngrEngineTeacherServiceTests` |
@@ -722,6 +744,18 @@ released active Qt read queries before the separate engine connection wrote;
 this covers the existing parser plus import matching, field preservation,
 rollback, and latest-source-date behavior.
 
+The retained Qt testing-class and testing-block repositories were then
+converted to UTF-8 adapters over the Qt-free `TestingClassService` and
+`TestingBlockService`. Their engine tests cover CRUD, mixed-level catalogs,
+assignment creation and cleanup, canonical schedule keys, plain/special
+filtering, explicit replacement, typed schema failures, and assignment
+rollback. The native focused selections passed in all four x64/x86
+Debug/Release WinUI lanes. Rebuilt retained Qt regressions passed for both
+repositories; their fixtures use temporary file-backed profiles so Qt and
+engine SQLite connections exercise the same database. The testing-block
+fixture also verifies that class-over-plain replacement retains the existing
+explicit-confirmation behavior.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -731,6 +765,8 @@ engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
 teacher, class-transfer, calendar-event, intensive-slot-state, speaking-
 evaluation, and teacher-import adapters now share extracted engine use cases.
+The testing-class and testing-block repositories now share extracted engine
+use cases as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

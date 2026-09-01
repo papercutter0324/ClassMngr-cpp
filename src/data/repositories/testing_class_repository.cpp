@@ -1,129 +1,154 @@
 #include "testing_class_repository.h"
 
-#include "data/database/database_transaction.h"
-#include "data/database/sql_query_utils.h"
-#include "domain/rules/schedule_value_parser.h"
+#include "classmngr/engine/open_database.h"
+#include "classmngr/engine/sqlite_database.h"
+#include "classmngr/engine/testing_class_service.h"
 
+#include <QByteArray>
 #include <QObject>
-#include <QPair>
-#include <QSqlError>
-#include <QSqlQuery>
-#include <QVariant>
+
+#include <cstddef>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace
 {
-QString queryFailure(
-    const QSqlQuery& query,
-    const QString& action
+using EngineError = classmngr::engine::Error;
+using EngineTestingClass = classmngr::engine::TestingClass;
+using EngineTestingClassService =
+    classmngr::engine::TestingClassService;
+
+std::string toUtf8(
+    const QString& value
     )
 {
-    return SqlQueryUtils::errorFor(query, action).userMessage();
+    const QByteArray encoded = value.toUtf8();
+    return {
+        encoded.constData(),
+        static_cast<std::size_t>(encoded.size())
+    };
 }
 
-Status validateTestingClass(
-    const TestingClass& testingClass,
-    bool requireId
+QString fromUtf8(
+    std::string_view value
     )
 {
-    if (requireId && testingClass.classId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("A valid testing class is required.")
-            );
-    }
-
-    if (testingClass.name.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QObject::tr("Testing class name is required.")
-            );
-    }
-
-    if (testingClass.grade.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QObject::tr("Testing class grade is required.")
-            );
-    }
-
-    if (testingClass.level.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QObject::tr("Testing class level is required.")
-            );
-    }
-
-    if (testingClass.room.trimmed().isEmpty())
-    {
-        return std::unexpected(
-            QObject::tr("Testing class room is required.")
-            );
-    }
-
-    return {};
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
 }
 
-TestingClass readTestingClass(
-    const QSqlQuery& query
+EngineTestingClass toEngineTestingClass(
+    const TestingClass& source
     )
 {
-    TestingClass testingClass;
-    testingClass.classId =
-        query.value(QStringLiteral("class_id")).toInt();
-    testingClass.name =
-        query.value(QStringLiteral("name")).toString();
-    testingClass.grade =
-        query.value(QStringLiteral("class_grade")).toString();
-    testingClass.level =
-        query.value(QStringLiteral("class_level")).toString();
-    testingClass.room =
-        query.value(QStringLiteral("room")).toString();
-    testingClass.teacherId =
-        query.value(QStringLiteral("teacher_id")).isNull()
-            ? -1
-            : query.value(QStringLiteral("teacher_id")).toInt();
-    testingClass.classColor =
-        query.value(QStringLiteral("class_color")).toString();
-    testingClass.fontColor =
-        query.value(QStringLiteral("font_color")).toString();
-    testingClass.notes =
-        query.value(QStringLiteral("notes")).toString();
-
-    if (testingClass.classColor.trimmed().isEmpty())
-    {
-        testingClass.classColor = QStringLiteral("#FFFFFF");
-    }
-    if (testingClass.fontColor.trimmed().isEmpty())
-    {
-        testingClass.fontColor = QStringLiteral("#000000");
-    }
-
-    return testingClass;
+    EngineTestingClass result;
+    result.classId = source.classId;
+    result.name = toUtf8(source.name);
+    result.grade = toUtf8(source.grade);
+    result.level = toUtf8(source.level);
+    result.room = toUtf8(source.room);
+    result.teacherId = source.teacherId;
+    result.classColor = toUtf8(source.classColor);
+    result.fontColor = toUtf8(source.fontColor);
+    result.notes = toUtf8(source.notes);
+    return result;
 }
 
-QString testingClassSelect(
-    const QString& suffix = {}
+TestingClass fromEngineTestingClass(
+    const EngineTestingClass& source
     )
 {
-    return QStringLiteral(R"(
-        SELECT
-            c.id AS class_id,
-            c.name,
-            tc.room,
-            ci.teacher_id,
-            ci.class_grade,
-            ci.class_level,
-            ci.class_color,
-            ci.font_color,
-            ci.notes
-        FROM testing_classes tc
-        JOIN classes c
-        ON c.id = tc.class_id
-        LEFT JOIN class_info ci
-        ON ci.class_id = tc.class_id
-    )") + suffix;
+    TestingClass result;
+    result.classId = source.classId;
+    result.name = fromUtf8(source.name);
+    result.grade = fromUtf8(source.grade);
+    result.level = fromUtf8(source.level);
+    result.room = fromUtf8(source.room);
+    result.teacherId = source.teacherId;
+    result.classColor = fromUtf8(source.classColor);
+    result.fontColor = fromUtf8(source.fontColor);
+    result.notes = fromUtf8(source.notes);
+    return result;
 }
+
+QString operationFailure(
+    const QString& operation,
+    const QString& detail = {},
+    const QString& identity = {}
+    )
+{
+    QString message = QObject::tr("%1 failed").arg(operation);
+    const QString trimmedIdentity = identity.trimmed();
+    if (!trimmedIdentity.isEmpty())
+    {
+        message += QObject::tr(" for %1").arg(identity);
+    }
+
+    const QString trimmedDetail = detail.trimmed();
+    if (!trimmedDetail.isEmpty())
+    {
+        message += QStringLiteral(": ") + trimmedDetail;
+    }
+
+    return message;
 }
+
+QString engineErrorDetail(
+    const EngineError& error
+    )
+{
+    if (error.code == classmngr::engine::ErrorCode::NotFound)
+    {
+        return QObject::tr("no matching record exists.");
+    }
+
+    const QString detail = fromUtf8(error.message);
+    if (!detail.trimmed().isEmpty())
+    {
+        return detail;
+    }
+
+    return QObject::tr("The engine reported a %1 error.")
+        .arg(fromUtf8(classmngr::engine::errorCodeName(error.code)));
+}
+
+QString engineFailure(
+    const QString& operation,
+    const EngineError& error,
+    const QString& identity = {}
+    )
+{
+    return operationFailure(
+        operation,
+        engineErrorDetail(error),
+        identity
+        );
+}
+
+QString testingClassIdentity(
+    int classId
+    )
+{
+    return QObject::tr("testing class id %1").arg(classId);
+}
+
+QString testingClassIdentity(
+    const TestingClass& testingClass
+    )
+{
+    const QString displayName = testingClass.name.trimmed();
+    if (!displayName.isEmpty())
+    {
+        return QObject::tr("testing class '%1'").arg(displayName);
+    }
+
+    return QObject::tr("testing class");
+}
+} // namespace
 
 TestingClassRepository::TestingClassRepository(
     QSqlDatabase& database
@@ -132,260 +157,122 @@ TestingClassRepository::TestingClassRepository(
 {
 }
 
+TestingClassRepository::~TestingClassRepository() = default;
+
+Status TestingClassRepository::ensureEngineDatabase(
+    const QString& operation
+    ) const
+{
+    if (!m_database.isValid() || !m_database.isOpen())
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No Teacher Profile is open.")
+                )
+            );
+    }
+
+    const QString databasePath = m_database.databaseName();
+    if (databasePath.trimmed().isEmpty()
+        || databasePath.trimmed() == QStringLiteral(":memory:"))
+    {
+        m_engineDatabase.reset();
+        m_engineDatabasePath.clear();
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("No database path is available.")
+                )
+            );
+    }
+
+    if (m_engineDatabase
+        && m_engineDatabase->isOpen()
+        && m_engineDatabasePath == databasePath)
+    {
+        return {};
+    }
+
+    m_engineDatabase.reset();
+    m_engineDatabasePath.clear();
+
+    auto opened = classmngr::engine::OpenDatabase::execute(
+        toUtf8(databasePath)
+        );
+    if (!opened)
+    {
+        return std::unexpected(engineFailure(operation, opened.error()));
+    }
+    if (*opened == nullptr)
+    {
+        return std::unexpected(
+            operationFailure(
+                operation,
+                QObject::tr("The engine database could not be opened.")
+                )
+            );
+    }
+
+    m_engineDatabase = std::move(*opened);
+    m_engineDatabasePath = databasePath;
+    return {};
+}
+
 Result<int> TestingClassRepository::createTestingClass(
     const TestingClass& testingClass,
     const QString& assignmentDay,
     const QString& assignmentStartTime
     )
 {
-    const Status valid =
-        validateTestingClass(
-            testingClass,
-            false
-            );
-
-    if (!valid)
+    const QString operation = QObject::tr("Creating testing class");
+    const QString identity = testingClassIdentity(testingClass);
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(valid.error());
+        return std::unexpected(engineReady.error());
     }
 
-    const bool hasAssignment =
-        !assignmentDay.trimmed().isEmpty()
-        || !assignmentStartTime.trimmed().isEmpty();
-    const auto canonicalDay =
-        ScheduleValueParser::parseWeekday(assignmentDay);
-    const auto normalizedStartTime =
-        ScheduleValueParser::parseTime(assignmentStartTime);
-    if (
-        hasAssignment
-        && (
-            !canonicalDay
-            || !normalizedStartTime
-            )
-        )
-    {
-        return std::unexpected(
-            QObject::tr(
-                "A testing assignment requires a valid weekday and start time."
-                )
-            );
-    }
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Could not start the testing class transaction.")
-            );
-    }
-
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral("INSERT INTO classes (name) VALUES (?)"));
-    query.addBindValue(testingClass.name.trimmed());
-    const auto executed = SqlQueryUtils::execute(
-        query,
-        QObject::tr("Creating the testing class")
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Result<int> created = service.create(
+        toEngineTestingClass(testingClass),
+        toUtf8(assignmentDay),
+        toUtf8(assignmentStartTime)
         );
-    if (!executed)
-    {
-        return std::unexpected(executed.error().userMessage());
-    }
-
-    const int classId =
-        query.lastInsertId().toInt();
-    if (classId <= 0)
+    if (!created)
     {
         return std::unexpected(
-            QObject::tr("Creating the testing class did not return a valid ID.")
+            engineFailure(operation, created.error(), identity)
             );
     }
 
-    query.prepare(R"(
-        INSERT INTO class_info (
-            class_id,
-            teacher_id,
-            class_grade,
-            class_level,
-            class_color,
-            font_color,
-            notes,
-            time_filler_activities
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, '')
-    )");
-    query.addBindValue(classId);
-    query.addBindValue(
-        testingClass.teacherId > 0
-            ? QVariant(testingClass.teacherId)
-            : QVariant()
-        );
-    query.addBindValue(testingClass.grade.trimmed());
-    query.addBindValue(testingClass.level.trimmed());
-    query.addBindValue(testingClass.classColor.trimmed());
-    query.addBindValue(testingClass.fontColor.trimmed());
-    query.addBindValue(testingClass.notes);
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Saving testing class details"))
-            );
-    }
-
-    query.prepare(R"(
-        INSERT INTO testing_classes (
-            class_id,
-            room
-        )
-        VALUES (?, ?)
-    )");
-    query.addBindValue(classId);
-    query.addBindValue(testingClass.room.trimmed());
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Saving the testing class room"))
-            );
-    }
-
-    if (hasAssignment)
-    {
-        query.prepare(R"(
-            INSERT INTO schedule_testing_blocks (
-                day,
-                start_time,
-                room,
-                class_id
-            )
-            VALUES (?, ?, '', ?)
-        )");
-        query.addBindValue(canonicalDay->text);
-        query.addBindValue(normalizedStartTime->text);
-        query.addBindValue(classId);
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(
-                    query,
-                    QObject::tr("Assigning the new testing class")
-                    )
-                );
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing the testing class transaction failed: %1")
-                .arg(m_database.lastError().text())
-            );
-    }
-
-    return classId;
+    return *created;
 }
 
 Status TestingClassRepository::updateTestingClass(
     const TestingClass& testingClass
     )
 {
-    const Status valid =
-        validateTestingClass(
-            testingClass,
-            true
-            );
-
-    if (!valid)
+    const QString operation = QObject::tr("Updating testing class");
+    const QString identity = testingClass.classId > 0
+        ? testingClassIdentity(testingClass.classId)
+        : testingClassIdentity(testingClass);
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return valid;
+        return engineReady;
     }
 
-    const Result<bool> existing =
-        isTestingClass(testingClass.classId);
-    if (!existing)
-    {
-        return std::unexpected(existing.error());
-    }
-    if (!*existing)
-    {
-        return std::unexpected(
-            QObject::tr("The testing class no longer exists.")
-            );
-    }
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Could not start the testing class transaction.")
-            );
-    }
-
-    QSqlQuery query(m_database);
-    query.prepare(QStringLiteral("UPDATE classes SET name=? WHERE id=?"));
-    query.addBindValue(testingClass.name.trimmed());
-    query.addBindValue(testingClass.classId);
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Updating the testing class name"))
-            );
-    }
-
-    query.prepare(R"(
-        INSERT INTO class_info (
-            class_id,
-            teacher_id,
-            class_grade,
-            class_level,
-            class_color,
-            font_color,
-            notes,
-            time_filler_activities
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, '')
-        ON CONFLICT(class_id)
-        DO UPDATE SET
-            teacher_id=excluded.teacher_id,
-            class_grade=excluded.class_grade,
-            class_level=excluded.class_level,
-            class_color=excluded.class_color,
-            font_color=excluded.font_color,
-            notes=excluded.notes
-    )");
-    query.addBindValue(testingClass.classId);
-    query.addBindValue(
-        testingClass.teacherId > 0
-            ? QVariant(testingClass.teacherId)
-            : QVariant()
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Status updated = service.update(
+        toEngineTestingClass(testingClass)
         );
-    query.addBindValue(testingClass.grade.trimmed());
-    query.addBindValue(testingClass.level.trimmed());
-    query.addBindValue(testingClass.classColor.trimmed());
-    query.addBindValue(testingClass.fontColor.trimmed());
-    query.addBindValue(testingClass.notes);
-    if (!query.exec())
+    if (!updated)
     {
         return std::unexpected(
-            queryFailure(query, QObject::tr("Updating testing class details"))
-            );
-    }
-
-    query.prepare(
-        QStringLiteral("UPDATE testing_classes SET room=? WHERE class_id=?")
-        );
-    query.addBindValue(testingClass.room.trimmed());
-    query.addBindValue(testingClass.classId);
-    if (!query.exec())
-    {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Updating the testing class room"))
-            );
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing the testing class transaction failed: %1")
-                .arg(m_database.lastError().text())
+            engineFailure(operation, updated.error(), identity)
             );
     }
 
@@ -396,154 +283,74 @@ Result<TestingClass> TestingClassRepository::loadTestingClass(
     int classId
     )
 {
-    if (classId <= 0)
+    const QString operation = QObject::tr("Loading testing class");
+    const QString identity = testingClassIdentity(classId);
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            QObject::tr("A valid testing class is required.")
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-    query.prepare(
-        testingClassSelect(
-            QStringLiteral(" WHERE tc.class_id=?")
-            )
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Result<EngineTestingClass> loaded = service.get(
+        classId
         );
-    query.addBindValue(classId);
-    if (!query.exec())
+    if (!loaded)
     {
         return std::unexpected(
-            queryFailure(query, QObject::tr("Loading the testing class"))
+            engineFailure(operation, loaded.error(), identity)
             );
     }
 
-    if (!query.next())
-    {
-        return std::unexpected(
-            QObject::tr("The testing class was not found.")
-            );
-    }
-
-    return readTestingClass(query);
+    return fromEngineTestingClass(*loaded);
 }
 
 Result<QList<TestingClass>>
 TestingClassRepository::loadTestingClasses()
 {
-    QList<TestingClass> testingClasses;
-    QSqlQuery query(m_database);
-    if (!query.exec(
-            testingClassSelect(
-                QStringLiteral(
-                    " ORDER BY ci.class_grade, ci.class_level, c.name, c.id"
-                    )
-                )
-            ))
+    const QString operation = QObject::tr("Loading testing classes");
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Loading testing classes"))
-            );
+        return std::unexpected(engineReady.error());
     }
 
-    while (query.next())
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Result<
+        std::vector<EngineTestingClass>> loaded = service.list();
+    if (!loaded)
     {
-        testingClasses.append(readTestingClass(query));
+        return std::unexpected(engineFailure(operation, loaded.error()));
     }
 
-    return testingClasses;
+    QList<TestingClass> result;
+    result.reserve(static_cast<qsizetype>(loaded->size()));
+    for (const EngineTestingClass& testingClass : *loaded)
+    {
+        result.append(fromEngineTestingClass(testingClass));
+    }
+
+    return result;
 }
 
 Status TestingClassRepository::deleteTestingClass(
     int classId
     )
 {
-    const Result<bool> existing =
-        isTestingClass(classId);
-    if (!existing)
+    const QString operation = QObject::tr("Deleting testing class");
+    const QString identity = testingClassIdentity(classId);
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return std::unexpected(existing.error());
+        return engineReady;
     }
-    if (!*existing)
+
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Status deleted = service.remove(classId);
+    if (!deleted)
     {
         return std::unexpected(
-            QObject::tr("The testing class no longer exists.")
-            );
-    }
-
-    DatabaseTransaction transaction(m_database);
-    if (!transaction.started())
-    {
-        return std::unexpected(
-            QObject::tr("Could not start the testing class transaction.")
-            );
-    }
-
-    QSqlQuery query(m_database);
-    const QList<QPair<QString, QString>> deletions{
-        {
-            QStringLiteral("DELETE FROM schedule_testing_blocks WHERE class_id=?"),
-            QObject::tr("Removing testing assignments")
-        },
-        {
-            QStringLiteral("DELETE FROM roster_columns WHERE class_id=?"),
-            QObject::tr("Removing roster columns")
-        },
-        {
-            QStringLiteral("DELETE FROM roster_data WHERE class_id=?"),
-            QObject::tr("Removing roster data")
-        },
-        {
-            QStringLiteral(
-                "DELETE FROM speaking_eval_data "
-                "WHERE evaluation_id IN ("
-                "SELECT id FROM speaking_evaluations WHERE class_id=?"
-                ")"
-                ),
-            QObject::tr("Removing speaking evaluation data")
-        },
-        {
-            QStringLiteral("DELETE FROM speaking_evaluations WHERE class_id=?"),
-            QObject::tr("Removing speaking evaluations")
-        },
-        {
-            QStringLiteral("DELETE FROM class_times WHERE class_id=?"),
-            QObject::tr("Removing regular class times")
-        },
-        {
-            QStringLiteral("DELETE FROM class_intensive_times WHERE class_id=?"),
-            QObject::tr("Removing intensive class times")
-        },
-        {
-            QStringLiteral("DELETE FROM class_info WHERE class_id=?"),
-            QObject::tr("Removing class details")
-        },
-        {
-            QStringLiteral("DELETE FROM testing_classes WHERE class_id=?"),
-            QObject::tr("Removing the testing class profile")
-        },
-        {
-            QStringLiteral("DELETE FROM classes WHERE id=?"),
-            QObject::tr("Removing the testing class")
-        }
-    };
-
-    for (const auto& deletion : deletions)
-    {
-        query.prepare(deletion.first);
-        query.addBindValue(classId);
-        if (!query.exec())
-        {
-            return std::unexpected(
-                queryFailure(query, deletion.second)
-                );
-        }
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing the testing class deletion failed: %1")
-                .arg(m_database.lastError().text())
+            engineFailure(operation, deleted.error(), identity)
             );
     }
 
@@ -554,24 +361,23 @@ Result<bool> TestingClassRepository::isTestingClass(
     int classId
     )
 {
-    if (classId <= 0)
+    const QString operation = QObject::tr("Checking testing class");
+    const QString identity = testingClassIdentity(classId);
+    const Status engineReady = ensureEngineDatabase(operation);
+    if (!engineReady)
     {
-        return false;
+        return std::unexpected(engineReady.error());
     }
 
-    QSqlQuery query(m_database);
-    query.prepare(
-        QStringLiteral(
-            "SELECT 1 FROM testing_classes WHERE class_id=?"
-            )
-        );
-    query.addBindValue(classId);
-    if (!query.exec())
+    EngineTestingClassService service(*m_engineDatabase);
+    const classmngr::engine::Result<bool> exists =
+        service.isTestingClass(classId);
+    if (!exists)
     {
         return std::unexpected(
-            queryFailure(query, QObject::tr("Checking the testing class"))
+            engineFailure(operation, exists.error(), identity)
             );
     }
 
-    return query.next();
+    return *exists;
 }
