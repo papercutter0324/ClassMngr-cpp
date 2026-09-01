@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest>
 
@@ -384,9 +385,13 @@ void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
 {
     const QString connectionName =
         QStringLiteral("teacher-import-suffix-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("teacher-import-suffix.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -426,9 +431,13 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
 {
     const QString connectionName =
         QStringLiteral("teacher-import-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("teacher-import.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 
@@ -482,6 +491,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QCOMPARE(counts.value(2).toString(), QStringLiteral("Canadian"));
         QCOMPARE(counts.value(3).toString(), QStringLiteral("alex@example.com"));
 
+        counts.finish();
         TeacherImportPlan older = plan;
         older.templateId = QStringLiteral("alternate-template-v2");
         older.sourceDate = QDate(2026, 1, 1);
@@ -493,6 +503,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         QVERIFY(dateQuery.exec());
         QVERIFY(dateQuery.next());
         QCOMPARE(dateQuery.value(0).toString(), QStringLiteral("2026-07-09"));
+        dateQuery.finish();
 
         TeacherImportPlan duplicatePlan;
         duplicatePlan.templateId = QStringLiteral("duplicate-test");
@@ -531,6 +542,7 @@ void TeacherImportTests::importsIntoSeparateTablesAndPreservesManualFields()
         ambiguousPlan.nativeEnglishTeachers.append(
             {-1, QStringLiteral("JAMIE"), QStringLiteral("Team Leader"),
              QString(), QString(), QString()});
+        counts.finish();
         QVERIFY(!repository.importTeachers(ambiguousPlan).has_value());
         QVERIFY(counts.exec(QStringLiteral(
             "SELECT COUNT(*) FROM teachers WHERE teacher_kr='원자성교사'")));
@@ -545,9 +557,13 @@ void TeacherImportTests::sortsGsTeamPositions()
 {
     const QString connectionName =
         QStringLiteral("gs-team-order-test-%1").arg(QUuid::createUuid().toString());
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
     {
         QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
-        database.setDatabaseName(QStringLiteral(":memory:"));
+        database.setDatabaseName(temporaryDirectory.filePath(
+            QStringLiteral("gs-team-order.tps")
+            ));
         QVERIFY(database.open());
         QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
 

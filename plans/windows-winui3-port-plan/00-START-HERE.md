@@ -103,7 +103,7 @@ Last updated: 2026-09-01 (Asia/Seoul)
 | --- | --- | --- |
 | [Phase 0 — Baseline and contracts](phase-0-baseline-and-contracts.md) | **Complete** | Owner-accepted Qt captures, parity inventory, fixture corpus, and retained-platform validation exist. |
 | [Phase 1 — Build split and WinUI bootstrap](phase-1-winui-bootstrap.md) | **Complete** | Phase 1 exit gate passed: local and hosted VS 2026/v145 x64/x86 Debug/Release builds, staged smoke tests, retained Qt validation, and owner-reviewed WinUI/Qt visual evidence are complete. The hosted x86 Release idle-memory report is uploaded; representative feature-workload peak evidence is intentionally deferred until a realistic feature slice exists, so no x86 release peak-budget claim is made. |
-| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
+| [Phase 2 — Portable engine extraction](phase-2-portable-engine-extraction.md) | **In progress** | Typed errors, UTF-8 path rules, six-version schema/OpenDatabase behavior, Qt-free class CRUD, teacher validation/CRUD and retained teacher/class-adapter wiring, directory services and retained Native English/GS Team adapter wiring, class-information persistence, schedule reads/conflicts, schedule-builder workflows, schedule-import workflows and retained schedule-import adapter wiring, class-transfer workflows and retained class-transfer adapter wiring, teacher-import workflows and retained teacher-import adapter wiring, academic calendar rules, calendar-event normalization/filtering, validation/recurrence rules, and calendar-event persistence with retained adapter wiring, intensive-slot-state persistence with retained adapter wiring, speaking-evaluation grade calculation, speaking-evaluation grid validation and persistence with retained adapter wiring, report batch ZIP archive writing, shared document-output result semantics, report metadata, output and filename policy, content assembly, AI prompt rules, template policy, batch-export policy, PowerPoint job content, schedule reports and print labels, roster reports, Qt-free roster persistence and its retained Qt adapter wiring, roster template policy and validation, class/teacher naming, upcoming-birthday scheduling, class analytics, sub-prep class-information, pagination, package-planning, document-model, and document-catalog policies, and the eleven-case fixture corpus round-trip gate are extracted; remaining report/export adapters/models, other retained adapters, and broader per-slice cross-platform fixture coverage remain. See the [Phase 2 local validation record](../../docs/porting/windows-winui/phase2-local-validation.md). |
 | [Phase 3 — WinUI application foundation](phase-3-winui-application-foundation.md) | **Not started** | Begins after the Phase 2 engine gate. |
 | [Phase 4 — Shared UX and high-risk controls](phase-4-shared-ux-and-high-risk-controls.md) | **Not started** | Begins after the application foundation is stable. |
 | [Phase 5 — Shell and first feature slice](phase-5-shell-and-first-feature-slice.md) | **Not started** | No feature parity is claimed by the current WinUI bootstrap shell. |
@@ -120,7 +120,7 @@ connection/transaction behavior, six-version schema migration, `OpenDatabase`,
 Qt-free class CRUD, validated teacher CRUD, the native-English/GS-team
 directory services, validated class-information persistence, and schedule
 reads/conflicts, schedule-builder workflows, schedule-import workflows,
-class-transfer workflows, the
+class-transfer workflows, teacher-import workflows, the
 speaking-evaluation overall-grade report rule, the schedule report model, and
 the by-day/daily/per-class roster report model and roster template policy, the
 sub-prep pagination policy,
@@ -159,7 +159,9 @@ list and save operations through the Qt-free intensive-slot-state service as
 well.
 The retained Qt speaking-evaluation repository now routes its file-backed save,
 load, and roster-score import operations through the Qt-free speaking-
-evaluation persistence service as well.
+evaluation persistence service as well. The retained Qt teacher-import
+repository now routes its file-backed import workflow through the Qt-free
+teacher-import service as well.
 The next active gate is connecting the remaining retained adapters, while
 extending fixture evidence across each migrated persistence slice.
 
@@ -818,6 +820,18 @@ After meaningful work:
   binary Qt lifecycle gate is claimed. Phase 2 remains open for the remaining
   retained adapters, report/export adapter/model migration, and broader
   per-slice fixture coverage.
+
+- **2026-09-01 — Teacher-import service and adapter connected.** The
+  Qt-free `TeacherImportService` now owns ISO source-date validation,
+  Hangul-only Korean matching, case-insensitive Native English/GS Team
+  matching, blank-field preservation, duplicate/ambiguous diagnostics,
+  transactional writes, and monotonic latest-source-date persistence. The
+  retained Qt `TeacherImportRepository` converts its existing plan and result
+  models through a cached file-backed engine connection. The focused engine
+  test passed in x64/x86 Debug/Release, and the retained Qt teacher-import
+  regression passed with file-backed fixtures. Phase 2 remains open for the
+  remaining retained adapters, report/export adapter/model migration, and
+  broader per-slice fixture coverage.
 
 ## Shared Completion Rules
 

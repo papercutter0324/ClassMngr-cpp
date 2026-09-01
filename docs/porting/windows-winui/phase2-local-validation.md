@@ -245,6 +245,16 @@ file-backed engine connection. Its adapter fixtures use temporary profiles
 because the Qt and engine SQLite connections are separate connections and
 cannot share a Qt `:memory:` database.
 
+The teacher-import slice now includes a Qt-free `TeacherImportService` and
+UTF-8 standard-library import models. It owns source-date validation,
+Hangul-only Korean matching, case-insensitive directory matching, blank-field
+preservation, typed ambiguity/duplicate diagnostics, transactional writes,
+and monotonic `teacher_import/latest_source_date` persistence across Korean
+teachers, Native English teachers, and GS Team members. The retained Qt
+`TeacherImportRepository` converts the existing Qt plan and summary through
+the boundary and uses a cached file-backed engine connection; parser and
+localized presentation behavior remain Qt-owned.
+
 The speaking-evaluation report boundary now includes a Qt-free metadata model
 for elementary-grade parsing, class labels, advanced-template selection, and
 deterministic report dates. Its output-policy companion owns schedule-aware
@@ -485,12 +495,16 @@ schema version and bilingual teacher/class values.
 | Windows x86 Debug intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
 | Windows x86 Release intensive-slot-state service test | Passed: `ClassMngrEngineIntensiveSlotStateServiceTests` |
 | Retained Windows Qt intensive-slot-state repository regression | Passed: current Qt 6.11/MSVC objects manually linked with the engine service; 5/5 cases under `QT_QPA_PLATFORM=offscreen` |
+| Windows x64 Debug teacher-import service test | Passed: `ClassMngrEngineTeacherImportServiceTests` |
+| Windows x64 Release teacher-import service test | Passed: `ClassMngrEngineTeacherImportServiceTests` |
+| Windows x86 Debug teacher-import service test | Passed: `ClassMngrEngineTeacherImportServiceTests` |
+| Windows x86 Release teacher-import service test | Passed: `ClassMngrEngineTeacherImportServiceTests` |
+| Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` under the x64 Debug Qt build, including file-backed adapter, UTF-8 matching, field preservation, rollback, and date monotonicity |
 | Windows x64 Debug speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
 | Windows x64 Release speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
 | Windows x86 Debug speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
 | Windows x86 Release speaking-evaluation persistence service test | Passed: `ClassMngrEngineSpeakingEvaluationPersistenceServiceTests` |
 | Retained Windows Qt speaking-evaluation persistence adapter smoke | Passed: temporary Qt 6.11/MSVC link-level file-backed save/load, UTF-8, dirty-cell, and roster-score import checks |
-| Retained Windows Qt teacher-import regression | Passed: `ClassMngrTeacherImportTests` |
 | Retained Windows Qt upcoming-birthday regression | Passed: `ClassMngrUpcomingBirthdaysTests` |
 | Retained Windows Qt class-information lifecycle regression | Passed: `ClassMngrDataServiceLifecycleTests` |
 | Retained Windows Qt class-assignment regression | Passed: `ClassMngrTestingClassRepositoryTests` |
@@ -514,8 +528,9 @@ schema version and bilingual teacher/class values.
 
 All four engine lanes configured or regenerated successfully after the engine
 source addition, compiled the new implementation, and passed the targeted
-CTest selections with no Qt-dependent test process. The new schedule-import
-and schedule-builder service tests passed in x64/x86 Debug and Release. The speaking-evaluation
+CTest selections with no Qt-dependent test process. The new schedule-import,
+schedule-builder, and teacher-import service tests passed in x64/x86 Debug
+and Release. The speaking-evaluation
 report service, schedule-report service, roster-report service, roster-report
 template policy,
 speaking-evaluation report metadata model, speaking-evaluation report content,
@@ -699,6 +714,14 @@ regeneration was attempted but remains blocked by the existing QML generation
 and MSBuild FileTracker stall, so no CMake-generated current-binary Qt
 lifecycle gate is claimed for this slice.
 
+The retained Qt teacher-import repository was then converted to a UTF-8
+adapter over the Qt-free `TeacherImportService`. The focused native service
+test passed in all four x64/x86 Debug/Release WinUI lanes. The retained Qt
+teacher-import regression passed after its file-backed fixtures explicitly
+released active Qt read queries before the separate engine connection wrote;
+this covers the existing parser plus import matching, field preservation,
+rollback, and latest-source-date behavior.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -706,9 +729,8 @@ fixture corpus now has Qt-generated read, migration, and engine write/reopen
 coverage on Windows, plus explicit temporary Qt-written → engine-read and
 engine-written → Qt-read checks. The roster persistence adapter is now
 connected to the extracted engine use case, and the class-information, class,
-teacher, class-transfer, calendar-event, intensive-slot-state, and speaking-
-evaluation adapters now share extracted engine use cases. The next work is
-migrating the remaining report/export adapters and models,
-connecting the
-other retained Qt adapters to extracted use-case boundaries, and extending
-fixture evidence across each migrated persistence slice.
+teacher, class-transfer, calendar-event, intensive-slot-state, speaking-
+evaluation, and teacher-import adapters now share extracted engine use cases.
+The next work is migrating the remaining report/export adapters and models,
+connecting the other retained Qt adapters to extracted use-case boundaries,
+and extending fixture evidence across each migrated persistence slice.

@@ -144,6 +144,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrTeacherImportTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
