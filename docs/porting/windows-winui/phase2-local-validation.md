@@ -862,6 +862,16 @@ normal Qt CMake target build remains blocked by the existing MSBuild FileTracker
 `UnauthorizedAccessException`, so no CMake-generated current-binary gate is
 claimed for this slice.
 
+The retained Qt `ClassInfoConfig` catalog is now a conversion adapter over the
+Qt-free engine catalog, preserving the existing `QStringList` API. Focused
+parity coverage compares all six public catalog lists and lookup behavior for
+canonical grades and levels, GraVoca entries, fallback branches, and
+case-sensitive invalid inputs. Direct VS 2026/v145 Qt compile and MOC checks
+passed, and CMake configure/generate succeeded. The focused Qt target rebuild
+remains blocked by the existing MSBuild FileTracker
+`UnauthorizedAccessException`, so no current-binary Qt parity result is
+claimed for this slice.
+
 ## Remaining Phase 2 work
 
 This is an in-progress record, not the Phase 2 exit gate. The committed
@@ -883,6 +893,9 @@ The personal-details settings service and retained adapter now share the
 engine settings boundary for file-backed reads and writes as well.
 The retained Qt teacher, class-information, and standalone class-time
 validators now share the extracted engine validation boundaries as well.
+The retained Qt `ClassInfoConfig` catalog adapter now shares the extracted
+engine grade, level, and book configuration while preserving its existing Qt
+lookup API as well.
 The next work is migrating the remaining report/export adapters and models,
 connecting the other retained Qt adapters to extracted use-case boundaries,
 and extending fixture evidence across each migrated persistence slice.

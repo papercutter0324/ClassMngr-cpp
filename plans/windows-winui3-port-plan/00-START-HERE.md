@@ -184,7 +184,9 @@ The retained Qt teacher and class-information validators now route their
 normalization and validation through the Qt-free engine validators as well.
 The standalone retained Qt `ClassTimeValidator` now delegates to the same
 engine contract while restoring its Qt row/column and diagnostic-argument
-surface.
+surface. The retained Qt `ClassInfoConfig` catalog now delegates its public
+`QStringList` catalogs and lookup fallbacks to the Qt-free engine configuration
+as well.
 
 1. Extend the typed engine error and validation contracts where remaining
    domain and import slices need domain-specific diagnostics.
@@ -953,6 +955,17 @@ After meaningful work:
   `UnauthorizedAccessException`. Phase 2 remains open for the remaining
   report/export adapters, other retained adapters, and broader fixture
   evidence.
+- **2026-09-02 — Class-information catalog adapter connected.** The retained
+  Qt `ClassInfoConfig` now converts the engine's UTF-8 grade, level, and book
+  catalogs into its existing `QStringList` API; Qt consumers no longer carry a
+  duplicate catalog map. Focused parity coverage compares all public catalog
+  lists, canonical grade/level lookups, GraVoca and fallback branches, and
+  case-sensitive invalid inputs. Direct VS 2026/v145 Qt compile and MOC checks
+  passed; CMake configure/generate succeeded, but the focused target rebuild
+  remains blocked by the existing MSBuild FileTracker
+  `UnauthorizedAccessException`, so no current-binary Qt pass is claimed.
+  Phase 2 remains open for remaining report/export adapters and broader
+  fixture evidence.
 
 ## Shared Completion Rules
 

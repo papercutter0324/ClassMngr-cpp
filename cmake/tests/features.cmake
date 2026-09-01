@@ -109,6 +109,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrScheduleImportTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Sql
             Qt6::Test
@@ -258,6 +259,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     target_link_libraries(ClassMngrClassTabNavigationModelTests
         PRIVATE
+            ClassMngrEngine
             Qt6::Core
             Qt6::Test
     )
